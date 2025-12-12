@@ -64,6 +64,7 @@ export function useUsersApi(): UseUserApiReturn {
         treat409AsSuccess: true,
       },
     );
+    api.cancelAllQueued();
     api.cancel();
     return success;
   };

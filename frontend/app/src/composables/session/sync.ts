@@ -52,6 +52,7 @@ export const useSync = createSharedComposable(() => {
     };
 
     try {
+      api.cancelAllQueued();
       api.cancel();
       const action = get(syncAction);
       if (action === SYNC_UPLOAD)

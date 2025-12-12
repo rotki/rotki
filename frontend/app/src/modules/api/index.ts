@@ -1,12 +1,23 @@
 export { apiUrls, defaultApiUrls } from './api-urls';
 
-export { api, RotkiApi, type RotkiFetchOptions } from './rotki-api';
+export {
+  QueueOverflowError,
+  type QueueState,
+  QueueTimeoutError,
+  RequestCancelledError,
+  RequestPriority,
+  type RequestPriorityLevel,
+} from './request-queue';
+
+export { api, RotkiApi } from './rotki-api';
 
 export {
   camelCaseTransformer,
   noRootCamelCaseTransformer,
   snakeCaseTransformer,
 } from './transformers';
+
+export type { RotkiFetchOptions } from './types';
 
 export {
   serialize,

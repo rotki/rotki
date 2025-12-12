@@ -3,6 +3,7 @@ import { promiseTimeout } from '@vueuse/core';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
+import { api } from '@/modules/api';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -22,6 +23,10 @@ export function useLogout(): UseLogoutReturn {
   const { disconnect: disconnectWallet } = useWalletStore();
 
   const logout = async (navigate: boolean = true): Promise<void> => {
+    // Cancel all pending API requests first to prevent race conditions
+    api.cancelAllQueued();
+    api.cancel();
+
     // Notify electron to cleanup wallet bridge connections BEFORE disconnecting
     notifyUserLogout();
 
@@ -48,6 +53,10 @@ export function useLogout(): UseLogoutReturn {
   };
 
   const logoutRemoteSession = async (): Promise<ActionStatus> => {
+    // Cancel all pending API requests first to prevent race conditions
+    api.cancelAllQueued();
+    api.cancel();
+
     try {
       await disconnectWallet();
       const loggedUsers = await getLoggedUsers();
