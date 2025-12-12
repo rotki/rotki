@@ -10,7 +10,8 @@ from rotkehlchen.types import Location
 @pytest.mark.parametrize('data_migration_version', [21])
 def test_migration_22_remove_coinbase_legacy_keys(database: DBHandler) -> None:
     """Test that migration 22 removes Coinbase legacy keys but doesn't touch ECDSA or ED25519 keys.
-    Uses a uuid to simulate a valid ED25519 key.
+    Generates uuids to simulate valid keys in the proper formats. Doesn't include api secrets
+    since they are not referenced in the migration.
     """
     with database.user_write() as write_cursor:
         write_cursor.executemany(
