@@ -12,7 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import asset_normalized_value, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_USD
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
@@ -111,7 +111,7 @@ class NFT(NamedTuple):
     permalink: str | None
     price_asset: Asset
     price_in_asset: FVal
-    price_usd: FVal
+    price: FVal
     collection: Collection | None
 
     def serialize(self) -> dict[str, Any]:
@@ -124,7 +124,7 @@ class NFT(NamedTuple):
             'permalink': self.permalink,
             'price_asset': self.price_asset.identifier,
             'price_in_asset': str(self.price_in_asset),
-            'price_usd': str(self.price_usd),
+            'price': str(self.price),
             'collection': self.collection.serialize() if self.collection else None,
         }
 
@@ -326,7 +326,7 @@ class Opensea(ExternalServiceWithApiKey):
                 permalink=entry['opensea_url'],
                 price_in_asset=price_in_asset,
                 price_asset=price_asset,
-                price_usd=price_in_usd,
+                price=price_in_usd * Inquirer.find_main_currency_price(A_USD),
                 collection=collection,
             )
         except KeyError as e:

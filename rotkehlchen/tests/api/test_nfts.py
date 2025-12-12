@@ -44,7 +44,7 @@ TEST_NFT_NEBOLAX_ETH = NFT(
     permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',
     price_in_asset=FVal(0.0012),
     price_asset=A_ETH,
-    price_usd=FVal(1.2379458),
+    price=FVal(1.2379458),
     collection=Collection(
         name='ENS: Ethereum Name Service',
         banner_image=None,
@@ -64,7 +64,7 @@ TEST_NFT_YABIR_ETH = NFT(
     permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/26612040215479394739615825115912800930061094786769410446114278812336794170041',
     price_in_asset=FVal(0.00098),
     price_asset=A_ETH,
-    price_usd=FVal(1.2379458),
+    price=FVal(1.2379458),
     collection=Collection(
         name='ENS: Ethereum Name Service',
         banner_image=None,
@@ -115,7 +115,7 @@ def test_nft_query(rotkehlchen_api_server: 'APIServer', start_with_valid_premium
             assert entry['external_link'] == 'https://api.mooncat.community/traits/129'
             assert 'image_url' in entry
             assert FVal(entry['price_in_asset']) > ZERO
-            assert FVal(entry['price_usd']) > ZERO
+            assert FVal(entry['price']) > ZERO
             assert entry['collection']['name'] == 'MoonCats'
             assert entry['collection']['banner_image'].startswith('https://')
             assert isinstance(entry['collection']['description'], str)
@@ -337,11 +337,11 @@ def test_nft_balances_and_prices(rotkehlchen_api_server: 'APIServer') -> None:
                 'manually_input': False,
                 'price_asset': 'ETH',
             }
-            price = nft.pop('price_in_asset')
-            price_usd = nft.pop('price')
+            price_in_asset = nft.pop('price_in_asset')
+            price = nft.pop('price')
             assert expected_result == nft
+            assert FVal(price_in_asset) > 0
             assert FVal(price) > 0
-            assert FVal(price_usd) > 0
 
     # check that getting information from the database works as expected
     response = requests.post(api_url_for(
@@ -417,7 +417,7 @@ def test_edit_delete_nft(rotkehlchen_api_server: 'APIServer') -> None:
             permalink='https://opensea.io/assets/ethereum/0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85/73552724610198397480670284492690114609730214421511097849210414928326607694469',
             price_in_asset=FVal(0.5),
             price_asset=A_ETH,
-            price_usd=FVal(1.2379458),
+            price=FVal(1.2379458),
             collection=Collection(
                 name='ENS: Ethereum Name Service',
                 banner_image=None,
