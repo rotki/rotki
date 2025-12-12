@@ -11,7 +11,6 @@ from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -124,11 +123,9 @@ class HopBalances(ProtocolWithBalance):
                 call_order=call_order,
                 calls_chunk_size=chunk_size,
             )
-            token_price = Inquirer.find_price(
-                from_asset=staking_token,
-                to_asset=(main_currency := CachedSettings().main_currency),
-            )
-            rewards_price = Inquirer.find_price(rewards_token, main_currency)
+            prices = Inquirer.find_main_currency_prices([staking_token, rewards_token])
+            token_price = prices[staking_token]
+            rewards_price = prices[rewards_token]
             for user, lp, reward in zip(addresses, staked_lps, staked_rewards, strict=True):
                 try:
                     if (balance := staking_contract.decode(

@@ -12,7 +12,6 @@ from rotkehlchen.chain.base.modules.runmoney.constants import (
 )
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -62,7 +61,7 @@ class RunmoneyBalances(ProtocolWithBalance):
             log.error(f'Failed to query runmoney balances for addresses {addresses_with_deposits}: {e!s}')  # noqa: E501
             return balances
 
-        price = Inquirer.find_price(self.usdc_asset, CachedSettings().main_currency)
+        price = Inquirer.find_main_currency_price(self.usdc_asset)
         for idx, result in enumerate(results):
             _, staked_amount_raw, _ = self.runmoney_contract.decode(
                 result=result,

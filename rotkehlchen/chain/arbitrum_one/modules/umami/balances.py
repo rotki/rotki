@@ -146,9 +146,8 @@ class UmamiBalances(ProtocolWithBalance):
             token_amount=balance,
             token_decimals=vault_token.decimals,
         )
-        main_currency = CachedSettings().main_currency
-        if main_currency != A_USD:
-            price = usd_price * Inquirer.find_price(Inquirer.usd, main_currency)
+        if CachedSettings().main_currency != A_USD:
+            price = usd_price * Inquirer.find_main_currency_price(Inquirer.usd)
         else:
             price = usd_price
         balances[user_address].assets[vault_token][self.counterparty] += Balance(

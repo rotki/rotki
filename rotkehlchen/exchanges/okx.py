@@ -13,7 +13,6 @@ from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.constants import OKX_LOCATION_KEY
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -273,7 +272,6 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         https://www.okx.com/docs-v5/en/#funding-account-rest-api-get-balance
         """
         currencies_data: list[dict] = []
-        main_currency = CachedSettings().main_currency
         try:
             data = self._api_query_list(endpoint=OkxEndpoint.TRADING_BALANCE)
         except RemoteError as e:
@@ -312,7 +310,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 continue
 
             try:
-                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                price = Inquirer.find_main_currency_price(asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '

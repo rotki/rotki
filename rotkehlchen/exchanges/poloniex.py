@@ -374,7 +374,6 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             return None, msg
 
         assets_balance: dict[AssetWithOracles, Balance] = {}
-        main_currency = CachedSettings().main_currency
         for account_info in resp:
             try:
                 balances = account_info['balances']
@@ -427,7 +426,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                         continue  # https://github.com/rotki/rotki/issues/2530
 
                     try:
-                        price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                        price = Inquirer.find_main_currency_price(asset)
                     except RemoteError as e:
                         self.msg_aggregator.add_error(
                             f'Error processing poloniex balance entry due to inability to '

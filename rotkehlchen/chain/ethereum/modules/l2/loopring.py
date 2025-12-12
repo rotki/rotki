@@ -459,7 +459,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
             # to the mapping above
             amount = asset_normalized_value(amount=total, asset=asset)
             try:
-                price = Inquirer.find_price(asset, CachedSettings().main_currency)
+                price = Inquirer.find_main_currency_price(asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing loopring balance entry due to inability to '

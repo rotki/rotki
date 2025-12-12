@@ -437,7 +437,6 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         - DeserializationError
         """
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
-        main_currency = CachedSettings().main_currency
         for coin_data in entries:
             try:
                 asset = asset_from_bybit(coin_data['coin'])
@@ -448,7 +447,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                 )) == ZERO:
                     continue
 
-                value = amount * Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                value = amount * Inquirer.find_main_currency_price(asset)
 
             except UnknownAsset as e:
                 self.send_unknown_asset_message(

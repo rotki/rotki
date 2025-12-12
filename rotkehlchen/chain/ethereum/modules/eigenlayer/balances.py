@@ -12,7 +12,6 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import EvmEventFilterQuery
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -114,7 +113,7 @@ class EigenlayerBalances(ProtocolWithBalance):
                 )
                 continue
 
-            token_price = Inquirer.find_price(from_asset=token, to_asset=CachedSettings().main_currency)  # noqa: E501
+            token_price = Inquirer.find_main_currency_price(token)
             balances[depositor].assets[token][self.counterparty] += Balance(
                 amount=amount,
                 value=token_price * amount,
@@ -156,7 +155,6 @@ class EigenlayerBalances(ProtocolWithBalance):
         addresses_with_withdrawals = self.addresses_with_activity(
             event_types={(HistoryEventType.INFORMATIONAL, HistoryEventSubType.REMOVE_ASSET)},
         )
-        main_currency = CachedSettings().main_currency
         for address, event_list in addresses_with_withdrawals.items():
             for event in event_list:
                 if event.asset == A_ETH:
@@ -177,7 +175,7 @@ class EigenlayerBalances(ProtocolWithBalance):
                     log.error(f'Unexpected eigenlayer withdrawal queueing event {event}. Missing amount from extra data. Skipping.')  # noqa: E501
                     continue
 
-                token_price = Inquirer.find_price(event.asset, main_currency)
+                token_price = Inquirer.find_main_currency_price(event.asset)
                 balances[withdrawer].assets[event.asset][self.counterparty] += Balance(
                     amount=(amount := FVal(str_amount)),
                     value=token_price * amount,
@@ -190,7 +188,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         if len(eigenpod_to_owner := get_eigenpods_to_owners_mapping(self.event_db.db)) == 0:
             return balances
 
-        eth_price = Inquirer.find_price(from_asset=A_ETH, to_asset=CachedSettings().main_currency)  # now query all eigenpod balances and add it  # noqa: E501
+        eth_price = Inquirer.find_main_currency_price(A_ETH)  # now query all eigenpod balances and add it  # noqa: E501
         for eigenpod_address, amount in self.evm_inquirer.get_multi_balance(accounts=list(eigenpod_to_owner.keys())).items():  # noqa: E501
             if amount > ZERO:
                 balances[eigenpod_to_owner[eigenpod_address]].assets[A_ETH][self.counterparty] += Balance(  # noqa: E501

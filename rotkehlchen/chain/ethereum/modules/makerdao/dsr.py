@@ -8,7 +8,6 @@ from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -67,7 +66,7 @@ class MakerdaoDsr(EthereumModule):
             proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy(proxy_type=ProxyType.DS)  # noqa: E501
             balances = {}
             try:
-                current_dai_price = Inquirer.find_price(A_DAI, CachedSettings().main_currency)
+                current_dai_price = Inquirer.find_main_currency_price(A_DAI)
             except RemoteError:
                 current_dai_price = Price(ONE)
             for account, proxies in proxy_mappings.items():

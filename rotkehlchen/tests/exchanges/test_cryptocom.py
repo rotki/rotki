@@ -75,8 +75,8 @@ def test_query_balances(mock_cryptocom):
         attribute='_api_query',
         return_value=MockResponse(HTTPStatus.OK, text=json.dumps(BALANCES_RESPONSE)),
     ), patch(
-        target='rotkehlchen.inquirer.Inquirer.find_price',
-        side_effect=lambda from_asset, to_asset: (FVal(112000) if from_asset == A_BTC else ONE),
+        target='rotkehlchen.inquirer.Inquirer.find_main_currency_price',
+        side_effect=lambda from_asset: (FVal(112000) if from_asset == A_BTC else ONE),
     )):
         balances, msg = mock_cryptocom.query_balances()
         assert msg == ''

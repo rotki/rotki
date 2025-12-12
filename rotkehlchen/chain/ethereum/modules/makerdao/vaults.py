@@ -13,7 +13,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.constants.timing import YEAR_IN_SECONDS
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -208,10 +207,7 @@ class MakerdaoVaults(EthereumModule):
         else:
             liquidation_price = (debt_value * liquidation_ratio) / collateral_amount
 
-        prices = Inquirer.find_prices(
-            from_assets=[asset, A_DAI],
-            to_asset=CachedSettings().main_currency,
-        )
+        prices = Inquirer.find_main_currency_prices([asset, A_DAI])
         return MakerdaoVault(
             identifier=identifier,
             owner=owner,

@@ -13,7 +13,6 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_woo
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -129,13 +128,12 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(msg) from e
 
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
-        main_currency = CachedSettings().main_currency
         for entry in balances:
             try:
                 if (amount := deserialize_fval(entry['holding'] + entry['staked'])) == ZERO:
                     continue
                 asset = asset_from_woo(entry['token'])
-                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                price = Inquirer.find_main_currency_price(asset)
             except (DeserializationError, KeyError) as e:
                 log.error('Error processing a Woo balance.', entry=entry, error=str(e))
                 self.msg_aggregator.add_error(

@@ -326,7 +326,6 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
             log.error(msg)
             return None, msg
 
-        main_currency = CachedSettings().main_currency
         returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
         for entry in balances:
             try:
@@ -341,7 +340,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
 
                 asset = asset_from_gemini(entry['currency'])
                 try:
-                    price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                    price = Inquirer.find_main_currency_price(asset)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing gemini {balance_type} balance result due to '
