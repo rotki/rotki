@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import type { ProfitLossEvent, Report } from '@/types/reports';
-import DateDisplay from '@/components/display/DateDisplay.vue';
-import ExternalLink from '@/components/helper/ExternalLink.vue';
+import type { Report } from '@/types/reports';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import AccountingSettingsDisplay from '@/components/profitloss/AccountingSettingsDisplay.vue';
 import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
@@ -11,7 +9,6 @@ import ReportActionable from '@/components/profitloss/ReportActionable.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
 import { defaultReportEvents, useReportsStore } from '@/store/reports';
 import { NoteLocation } from '@/types/notes';
-import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 definePage({
   meta: {
@@ -44,9 +41,6 @@ const selectedReport = computed<Report>(() => get(reports).entries.find(item => 
 const settings = computed(() => get(selectedReport).settings);
 
 const reportEvents = ref(defaultReportEvents());
-
-const { found, limit, total } = getCollectionData<ProfitLossEvent>(reportEvents);
-const { showUpgradeRow } = setupEntryLimit(limit, found, total);
 
 onMounted(async () => {
   set(loading, true);
@@ -89,40 +83,6 @@ async function regenerateReport() {
   >
     <div class="flex flex-col gap-8">
       <ReportHeader :period="{ start: selectedReport.startTs, end: selectedReport.endTs }" />
-      <RuiAlert
-        v-if="showUpgradeRow"
-        type="warning"
-      >
-        <i18n-t
-          scope="global"
-          tag="div"
-          keypath="profit_loss_report.upgrade"
-          class="text-subtitle-1"
-        >
-          <template #processed>
-            <span class="font-medium">{{ reportEvents.found }}</span>
-          </template>
-          <template #start>
-            <DateDisplay
-              :timestamp="selectedReport.firstProcessedTimestamp"
-              class="font-medium"
-            />
-          </template>
-        </i18n-t>
-        <i18n-t
-          scope="global"
-          tag="div"
-          keypath="profit_loss_report.upgrade2"
-        >
-          <template #link>
-            <ExternalLink
-              color="primary"
-              :text="t('upgrade_row.rotki_premium')"
-              premium
-            />
-          </template>
-        </i18n-t>
-      </RuiAlert>
       <AccountingSettingsDisplay :accounting-settings="settings" />
       <div class="flex gap-2">
         <template v-if="latest">

@@ -4424,9 +4424,7 @@
     "out_of_sync_alert": "Your history events data is out of sync. Please update your history events before generating a report.",
     "processing_alert": "History events are currently being processed. Please wait until processing is complete.",
     "report_period": "Report starting from {start} to {end}",
-    "settings_tooltip": "Open the accounting settings",
-    "upgrade": "{processed} total events have been processed starting from {start}.",
-    "upgrade2": "The limit of the free version has been reached. To get the full report please upgrade to {link}"
+    "settings_tooltip": "Open the accounting settings"
   },
   "profit_loss_reports": {
     "columns": {
@@ -5286,8 +5284,9 @@
     "restart": "rotki will restart in a moment to apply the update."
   },
   "upgrade_row": {
-    "events": "Processed {limit} out of {total} {label} from {from} until {to}. To view more please upgrade to {link}",
-    "events_premium": "Processed {limit} out of {total} {label} from {from} until {to}. To view more please {link}",
+    "events": "@:upgrade_row.first_line To view more please upgrade to {link}",
+    "events_premium": "@:upgrade_row.first_line To view more please {link}",
+    "first_line": "Processed {limit} out of {total} {label} from {from} until {to}.",
     "rotki_premium": "rotki Premium",
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
     "upgrade_premium": "Displaying {limit} out of {total} {label}. To view more please {link}",

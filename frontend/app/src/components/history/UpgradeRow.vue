@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { usePremium } from '@/composables/premium';
@@ -50,7 +51,7 @@ const linkText = computed<string>(() => {
 
 const linkUrl = computed<string | undefined>(() => {
   const isPremium = get(premium);
-  return isPremium ? 'https://rotki.com/home/subscription' : undefined;
+  return isPremium ? externalLinks.manageSubscriptions : undefined;
 });
 
 const displayTotal = computed<number>(() => props.entriesFoundTotal ?? props.total);
