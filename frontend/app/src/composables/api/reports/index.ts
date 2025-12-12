@@ -87,11 +87,7 @@ export function useReportsApi(): UseReportsApi {
     const data = new FormData();
     data.append('filepath', filepath);
     data.append('async_query', 'true');
-    const response = await api.patch<PendingTask>('/history/debug', data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await api.patch<PendingTask>('/history/debug', data);
 
     return PendingTaskSchema.parse(response);
   };

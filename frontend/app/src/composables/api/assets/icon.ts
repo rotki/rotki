@@ -38,11 +38,7 @@ export function useAssetIconApi(): UseAssetIconApiReturn {
     const data = new FormData();
     data.append('file', file);
     data.append('asset', identifier);
-    return api.post<boolean>(`/assets/icon/modify`, data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    return api.post<boolean>(`/assets/icon/modify`, data);
   };
 
   const setIcon = async (asset: string, file: string): Promise<boolean> => api.put<boolean>(`/assets/icon/modify`, {

@@ -22,11 +22,7 @@ export function useImportDataApi(): UseImportDataApiReturn {
   };
 
   const importFile = async (data: FormData): Promise<PendingTask> => {
-    const response = await api.post<PendingTask>('/import', data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await api.post<PendingTask>('/import', data);
 
     return PendingTaskSchema.parse(response);
   };
