@@ -61,9 +61,6 @@ export function useAssetsApi(): UseAssetApiReturn {
       data.append('async_query', 'true');
 
       const response = await api.post<PendingTask>('/assets/user', data, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
         validStatuses: VALID_FILE_OPERATION_STATUS,
       });
       return PendingTaskSchema.parse(response);
