@@ -418,6 +418,39 @@ BINANCE_FIATWITHDRAWS_RESPONSE: Final = """{
    "success": true
 }"""
 
+BINANCE_CONVERT_TRADES_RESPONSE: Final = """{
+    "list": [
+        {
+            "quoteId": "12415572564",
+            "orderId": 1674537715234,
+            "orderStatus": "SUCCESS",
+            "fromAsset": "BTC",
+            "fromAmount": "0.00100000",
+            "toAsset": "USDT",
+            "toAmount": "30.52100000",
+            "ratio": "30521.00000000",
+            "inverseRatio": "0.00003276",
+            "createTime": 1674537715234
+        },
+        {
+            "quoteId": "12415572565",
+            "orderId": 1674537815234,
+            "orderStatus": "SUCCESS",
+            "fromAsset": "ETH",
+            "fromAmount": "0.10000000",
+            "toAsset": "BNB",
+            "toAmount": "0.50000000",
+            "ratio": "5.00000000",
+            "inverseRatio": "0.20000000",
+            "createTime": 1674537815234
+        }
+    ],
+    "startTime": 1674537700000,
+    "endTime": 1674538000000,
+    "limit": 100,
+    "moreData": false
+}"""
+
 
 BINANCE_SIMPLE_EARN_FLEXIBLE_POSITION: Final = """{
     "rows":[{
