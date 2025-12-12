@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL, PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
@@ -15,8 +17,11 @@ from rotkehlchen.tests.utils.constants import (
 from rotkehlchen.types import Location, Price, Timestamp
 from rotkehlchen.utils.misc import create_order_by_rules_list, timestamp_to_date
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
-def setup_db_account_settings(database):
+
+def setup_db_account_settings(database: 'DBHandler') -> tuple[DBAccountingReports, DBSettings]:
     """Setup accounting reports and settings db"""
     dbreport = DBAccountingReports(database)
 
@@ -201,3 +206,101 @@ def test_report_events_sort_by_columns(database):
                 index = idx if is_ascending else len(results) - 1 - idx
                 expected_value = test_case['expected_values'][index]
                 assert field_value == expected_value
+
+
+def test_get_report_data_pagination_total_count(database: 'DBHandler') -> None:
+    """Test that entries_total is calculated correctly with and without pagination.
+
+    This is a regression test for https://github.com/rotki/rotki/issues/11108
+    where entries_total would always return the total count of all events in
+    the table when pagination was used, ignoring any filters applied.
+    """
+    dbreport, settings = setup_db_account_settings(database)
+    report_ids, event_counter = [], 0
+    timestamps = [Timestamp(1741634066 + i * 100) for i in range(5)]
+    for report_idx in range(2):
+        num_events = 3 if report_idx == 0 else 2
+        start_ts = timestamps[event_counter]
+        end_ts = timestamps[event_counter + num_events - 1]
+        report_id = dbreport.add_report(
+            first_processed_timestamp=start_ts,
+            start_ts=start_ts,
+            end_ts=end_ts,
+            settings=settings,
+        )
+        report_ids.append(report_id)
+
+        for event_idx in range(num_events):
+            event = ProcessedAccountingEvent(
+                event_type=AccountingEventType.TRANSACTION_EVENT,
+                notes=f'Report {report_idx + 1} - Event {event_idx + 1}',
+                location=Location.ETHEREUM,
+                timestamp=timestamps[event_counter],
+                asset=A_ETH if event_idx % 2 == 0 else A_DAI,
+                free_amount=FVal(event_idx + 1),
+                taxable_amount=ZERO,
+                price=Price(FVal(2000 + event_counter * 100)),
+                pnl=PNL(free=ZERO, taxable=ZERO),
+                cost_basis=None,
+                index=event_counter,
+                extra_data={},
+            )
+            dbreport.add_report_data(
+                report_id=report_id,
+                time=event.timestamp,
+                ts_converter=timestamp_to_date,
+                event=event,
+            )
+            event_counter += 1
+
+    # Check that first report with pagination returns correct count
+    results, entries_found, entries_total = dbreport.get_report_data(
+        filter_=ReportDataFilterQuery.make(
+            report_id=report_ids[0],
+            limit=2,
+            offset=0,
+        ),
+        limit=TEST_PREMIUM_PNL_EVENTS_LIMIT,
+    )
+    assert len(results) == 2
+    assert entries_found == 3
+    assert entries_total == 3
+
+    # Check that second report with pagination returns only its events
+    results, entries_found, entries_total = dbreport.get_report_data(
+        filter_=ReportDataFilterQuery.make(
+            report_id=report_ids[1],
+            limit=10,
+            offset=0,
+        ),
+        limit=TEST_PREMIUM_PNL_EVENTS_LIMIT,
+    )
+    assert len(results) == 2
+    assert entries_found == 2
+    assert entries_total == 2
+
+    # Check that without pagination entries_total equals entries_found
+    results, entries_found, entries_total = dbreport.get_report_data(
+        filter_=ReportDataFilterQuery.make(
+            report_id=report_ids[0],
+        ),
+        limit=TEST_PREMIUM_PNL_EVENTS_LIMIT,
+    )
+    assert len(results) == 3
+    assert entries_found == 3
+    assert entries_total == entries_found
+
+    # Check that timestamp filter with pagination returns filtered count
+    results, entries_found, entries_total = dbreport.get_report_data(
+        filter_=ReportDataFilterQuery.make(
+            report_id=report_ids[0],
+            from_ts=timestamps[1],
+            to_ts=timestamps[2],
+            limit=1,
+            offset=0,
+        ),
+        limit=TEST_PREMIUM_PNL_EVENTS_LIMIT,
+    )
+    assert len(results) == 1
+    assert entries_found == 2
+    assert entries_total == 2
