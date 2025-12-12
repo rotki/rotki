@@ -28,7 +28,7 @@ const location = locationData(name);
   <RouterLink :to="manualBalancesRoute">
     <ListItem
       data-cy="manual-balance__summary"
-      class="group py-1 px-6"
+      class="group !py-1 px-6"
       :data-location="name"
     >
       <template #avatar>

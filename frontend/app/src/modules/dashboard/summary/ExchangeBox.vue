@@ -25,7 +25,7 @@ const exchangeLocationRoute = computed<string>(() => {
   <RouterLink :to="exchangeLocationRoute">
     <ListItem
       :id="`${location}_box`"
-      class="exchange-box__item group py-1 px-6"
+      class="exchange-box__item group !py-1 px-6"
     >
       <template #avatar>
         <div class="grayscale group-hover:grayscale-0">

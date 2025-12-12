@@ -80,6 +80,21 @@ const colorBgClass = computed<string>(() => {
   }
 });
 
+const expandButtonClass = computed<string>(() => {
+  switch (get(color)) {
+    case 'warning':
+      return '!to-rui-warning/10';
+    case 'error':
+      return '!to-rui-error/10';
+    case 'info':
+      return '!to-rui-info/10';
+    case 'reminder':
+      return '!to-rui-secondary/10';
+    default:
+      return '';
+  }
+});
+
 const circleBgClass = computed(() => {
   switch (props.notification.severity) {
     case Severity.ERROR:
@@ -226,8 +241,11 @@ function getIcon(action: NotificationAction): RuiIcons {
         :class="color ? 'dark:to-[#363636]' : 'dark:to-[#1E1E1E]'"
       >
         <RuiButton
+          :class="[
+            expandButtonClass,
+            color ? 'dark:to-[#363636]' : 'dark:to-[#1E1E1E]',
+          ]"
           class="!p-0.5 w-full bg-gradient-to-b from-transparent to-white rounded-none !bg-transparent"
-          :class="color ? 'dark:to-[#363636]' : 'dark:to-[#1E1E1E]'"
           @click.stop="buttonClicked()"
         >
           <RuiIcon
