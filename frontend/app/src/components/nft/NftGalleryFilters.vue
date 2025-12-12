@@ -14,7 +14,7 @@ const selectedAccounts = defineModel<BlockchainAccount<AddressData>[]>('selected
 
 const selectedCollection = defineModel<string | undefined>('selectedCollection', { required: true });
 
-const sortBy = defineModel<'name' | 'priceUsd' | 'collection'>('sortBy', { required: true });
+const sortBy = defineModel<'name' | 'price' | 'collection'>('sortBy', { required: true });
 
 const sortDescending = defineModel<boolean>('sortDescending', { required: true });
 

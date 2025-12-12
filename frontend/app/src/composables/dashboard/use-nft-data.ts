@@ -19,7 +19,7 @@ interface UseNftDataReturn {
   percentageOfCurrentGroup: (value: BigNumber) => string;
   percentageOfTotalNetValue: (value: BigNumber) => string;
   refreshNonFungibleBalances: (force?: boolean) => Promise<void>;
-  totalUsdValue: ComputedRef<BigNumber | undefined | null>;
+  totalValue: ComputedRef<BigNumber | undefined | null>;
 }
 
 export function useNftData(): UseNftDataReturn {
@@ -40,7 +40,7 @@ export function useNftData(): UseNftDataReturn {
     NonFungibleBalancesRequestPayload
   >(fetchNonFungibleBalances, {
     defaultSortBy: [{
-      column: 'usdPrice',
+      column: 'price',
       direction: 'desc',
     }],
     extraParams,
@@ -48,14 +48,14 @@ export function useNftData(): UseNftDataReturn {
 
   const { isLoading: isSectionLoading } = useStatusStore();
   const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
-  const { data, totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
+  const { data, totalValue } = getCollectionData<NonFungibleBalance>(balances);
 
   function percentageOfTotalNetValue(value: BigNumber): string {
     return calculatePercentage(value, get(totalNetWorthUsd));
   }
 
   function percentageOfCurrentGroup(value: BigNumber): string {
-    return calculatePercentage(value, get(totalUsdValue) as BigNumber);
+    return calculatePercentage(value, get(totalValue) as BigNumber);
   }
 
   return {
@@ -67,6 +67,6 @@ export function useNftData(): UseNftDataReturn {
     percentageOfCurrentGroup,
     percentageOfTotalNetValue,
     refreshNonFungibleBalances,
-    totalUsdValue,
+    totalValue,
   };
 }

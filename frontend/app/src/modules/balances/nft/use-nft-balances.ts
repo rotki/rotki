@@ -39,7 +39,7 @@ export function useNftBalances(): NftBalancesReturn {
     const result = await fetchNfBalances(get(payloadVal));
 
     if (!payloadVal.ignoredAssetsHandling || payloadVal.ignoredAssetsHandling === 'exclude')
-      set(nonFungibleTotalValue, result.totalUsdValue);
+      set(nonFungibleTotalValue, result.totalValue);
 
     return mapCollectionResponse(result);
   };

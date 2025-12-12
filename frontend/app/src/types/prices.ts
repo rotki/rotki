@@ -140,7 +140,7 @@ export const PriceInformation = z.object({
   manuallyInput: z.boolean(),
   priceAsset: z.string().min(1),
   priceInAsset: NumericString,
-  usdPrice: NumericString,
+  price: NumericString,
 });
 
 export type PriceInformation = z.infer<typeof PriceInformation>;

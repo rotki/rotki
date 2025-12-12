@@ -27,7 +27,7 @@ const {
   percentageOfCurrentGroup,
   percentageOfTotalNetValue,
   refreshNonFungibleBalances,
-  totalUsdValue,
+  totalValue,
 } = useNftData();
 
 const { sort, tableHeaders } = useNftTableConfig(currencySymbol);
@@ -67,10 +67,10 @@ watch(loading, async (isLoading, wasLoading) => {
     </template>
     <template #shortDetails>
       <AmountDisplay
-        v-if="totalUsdValue"
-        :value="totalUsdValue"
+        v-if="totalValue"
+        :value="totalValue"
         show-currency="symbol"
-        fiat-currency="USD"
+        force-currency
         class="text-h6 font-bold"
       />
     </template>
@@ -98,25 +98,25 @@ watch(loading, async (isLoading, wasLoading) => {
         />
         <span v-else>-</span>
       </template>
-      <template #item.usdPrice="{ row }">
+      <template #item.price="{ row }">
         <AmountDisplay
           is-asset-price
           :price-asset="row.priceAsset"
           :amount="row.priceInAsset"
-          :value="row.usdPrice"
+          :value="row.price"
           show-currency="symbol"
-          fiat-currency="USD"
+          force-currency
         />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
         <PercentageDisplay
-          :value="percentageOfTotalNetValue(row.usdPrice)"
+          :value="percentageOfTotalNetValue(row.price)"
           :asset-padding="0.1"
         />
       </template>
       <template #item.percentageOfTotalCurrentGroup="{ row }">
         <PercentageDisplay
-          :value="percentageOfCurrentGroup(row.usdPrice)"
+          :value="percentageOfCurrentGroup(row.price)"
           :asset-padding="0.1"
         />
       </template>
@@ -129,10 +129,10 @@ watch(loading, async (isLoading, wasLoading) => {
           class-name="[&>td]:p-4 text-sm"
         >
           <AmountDisplay
-            v-if="totalUsdValue"
-            :value="totalUsdValue"
+            v-if="totalValue"
+            :value="totalValue"
             show-currency="symbol"
-            fiat-currency="USD"
+            force-currency
           />
         </RowAppend>
       </template>

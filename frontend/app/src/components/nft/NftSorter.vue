@@ -24,7 +24,7 @@ const sortProperties = [
   },
   {
     text: t('common.price'),
-    value: 'priceUsd',
+    value: 'price',
   },
   {
     text: t('nft_gallery.sort.collection'),

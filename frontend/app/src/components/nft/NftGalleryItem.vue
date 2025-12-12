@@ -171,9 +171,9 @@ const mediaStyle = computed<StyleValue>(() => {
           class="text-rui-text-secondary"
           :price-asset="item.priceAsset"
           :amount="item.priceInAsset"
-          :value="item.priceUsd"
+          :value="item.price"
           show-currency="ticker"
-          fiat-currency="USD"
+          force-currency
         />
       </div>
     </div>

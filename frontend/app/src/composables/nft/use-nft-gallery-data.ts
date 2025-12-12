@@ -47,8 +47,8 @@ export function useNftGalleryData(): UseNftGalleryDataReturn {
         const price = value[nft.tokenIdentifier];
 
         if (price?.manuallyInput) {
-          const { priceAsset, priceInAsset, usdPrice: priceUsd } = price;
-          allNfts.push({ ...nft, address, priceAsset, priceInAsset, priceUsd });
+          const { priceAsset, priceInAsset, price: priceVal } = price;
+          allNfts.push({ ...nft, address, priceAsset, priceInAsset, price: priceVal });
         }
         else {
           allNfts.push({ ...nft, address });

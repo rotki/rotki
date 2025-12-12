@@ -24,7 +24,7 @@ export function defaultCollectionState<T>(): Collection<T> {
     found: 0,
     limit: 0,
     total: 0,
-    totalUsdValue: Zero,
+    totalValue: Zero,
   };
 }
 
@@ -36,14 +36,14 @@ export function getCollectionData<T>(collection: Ref<Collection<T>>): {
   found: ComputedRef<number>;
   total: ComputedRef<number>;
   entriesFoundTotal: ComputedRef<number | undefined>;
-  totalUsdValue: ComputedRef<TotalValue>;
+  totalValue: ComputedRef<TotalValue>;
 } {
   const data = computed<T[]>(() => get(collection).data);
   const limit = computed<number>(() => get(collection).limit);
   const found = computed<number>(() => get(collection).found);
   const total = computed<number>(() => get(collection).total);
   const entriesFoundTotal = computed<number | undefined>(() => get(collection).entriesFoundTotal);
-  const totalUsdValue = computed<TotalValue>(() => get(collection).totalUsdValue);
+  const totalValue = computed<TotalValue>(() => get(collection).totalValue);
 
   return {
     data,
@@ -51,7 +51,7 @@ export function getCollectionData<T>(collection: Ref<Collection<T>>): {
     found,
     limit,
     total,
-    totalUsdValue,
+    totalValue,
   };
 }
 
