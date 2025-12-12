@@ -453,7 +453,6 @@ class Bitpanda(ExchangeWithoutApiSecret):
             return None, msg
 
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
-        main_currency = CachedSettings().main_currency
         wallets_len = len(wallets)
         for idx, entry in enumerate(wallets + fiat_wallets):
 
@@ -490,7 +489,7 @@ class Bitpanda(ExchangeWithoutApiSecret):
                 continue
 
             try:
-                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                price = Inquirer.find_main_currency_price(asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitpanda balance entry due to inability to '

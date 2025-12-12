@@ -11,7 +11,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_GMX
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -126,7 +125,6 @@ class GmxBalances(ProtocolWithBalance):
             log.error(f'Failed to query GMX balances due to {e!s}')
             return balances
 
-        main_currency = CachedSettings().main_currency
         for idx, result in enumerate(call_output):  # each iteration is a different address with its positions  # noqa: E501
             pos_information = reader_contract.decode(
                 result=result,
@@ -151,10 +149,7 @@ class GmxBalances(ProtocolWithBalance):
                     )
                     continue
 
-                prices = Inquirer.find_prices(
-                    from_assets=[collateral_asset, Inquirer.usd],
-                    to_asset=main_currency,
-                )
+                prices = Inquirer.find_main_currency_prices([collateral_asset, Inquirer.usd])
                 if ZERO in ((asset_price := prices[collateral_asset]), (usd_price := prices[Inquirer.usd])):  # noqa: E501
                     continue
 
@@ -190,7 +185,7 @@ class GmxBalances(ProtocolWithBalance):
             return balances
 
         reward_contract = self.evm_inquirer.contracts.contract(GMX_STAKING_REWARD)
-        gmx_price = Inquirer.find_price(from_asset=A_GMX, to_asset=CachedSettings().main_currency)
+        gmx_price = Inquirer.find_main_currency_price(A_GMX)
         for user_address in addresses_events:
             staked_amount_raw = reward_contract.call(
                 node_inquirer=self.evm_inquirer,

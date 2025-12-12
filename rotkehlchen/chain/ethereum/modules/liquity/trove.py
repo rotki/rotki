@@ -9,7 +9,6 @@ from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_LQTY, A_LUSD
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -124,10 +123,7 @@ class Liquity(EthereumModule):
         )
 
         data: dict[ChecksumEvmAddress, Trove] = {}
-        main_currency_prices = Inquirer.find_prices(
-            from_assets=[A_ETH, A_LUSD],
-            to_asset=CachedSettings().main_currency,
-        )
+        main_currency_prices = Inquirer.find_main_currency_prices([A_ETH, A_LUSD])
         eth_price = main_currency_prices[A_ETH]
         lusd_price = main_currency_prices[A_LUSD]
         for idx, output in enumerate(outputs):
@@ -233,7 +229,6 @@ class Liquity(EthereumModule):
         # the structure of the queried data is:
         # staked address 1, reward 1 of address 1, reward 2 of address 1, staked address 2, reward 1 of address 2, ...  # noqa: E501
         data: defaultdict[ChecksumEvmAddress, LiquityBalanceWithProxy] = defaultdict(default_balance_with_proxy_factory)  # noqa: E501
-        main_currency = CachedSettings().main_currency
         for idx, output in enumerate(outputs):
             # depending on the output index get the address we are tracking
             current_address = addresses[idx // 3]
@@ -254,7 +249,7 @@ class Liquity(EthereumModule):
                     break
 
             # get price information for the asset and deserialize the amount
-            asset_price = Inquirer.find_price(asset, main_currency)
+            asset_price = Inquirer.find_main_currency_price(asset)
             amount = deserialize_fval(
                 token_normalized_value_decimals(gain_info, 18),
             )

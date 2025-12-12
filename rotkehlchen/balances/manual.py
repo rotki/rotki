@@ -5,7 +5,6 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -57,19 +56,17 @@ def get_manually_tracked_balances(
             balance_type=balance_type,
             include_entries_with_missing_assets=include_entries_with_missing_assets,
         )
-        target_asset = CachedSettings().main_currency
 
     balances_with_value = []
     for entry in balances:
         try:
-            price = Inquirer.find_prices(
-                from_assets=[entry.asset],
-                to_asset=target_asset,
+            price = Inquirer.find_main_currency_prices(
+                [entry.asset],
             ).get(entry.asset, ZERO_PRICE) if not entry.asset_is_missing else ZERO_PRICE
         except RemoteError as e:
             db.msg_aggregator.add_warning(
                 f'Could not find price for {entry.asset.identifier} to '
-                f'{target_asset.identifier} during manually tracked balance querying due to {e!s}',
+                f'during manually tracked balance querying due to {e!s}',
             )
             price = ZERO_PRICE
 

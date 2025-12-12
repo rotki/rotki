@@ -13,7 +13,6 @@ from rotkehlchen.assets.utils import normalized_fval_value_decimals, symbol_to_a
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -269,7 +268,6 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         self.first_connection()
         returned_balances: dict[AssetWithOracles, Balance] = {}
-        main_currency = CachedSettings().main_currency
         try:
             resp = self._api_query('user/wallet', {'currency': 'all'})
         except RemoteError as e:
@@ -292,7 +290,7 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
 
             amount = normalized_fval_value_decimals(amount=FVal(raw_amount), decimals=decimals)
             try:
-                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                price = Inquirer.find_main_currency_price(asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} balance entry due to inability to '

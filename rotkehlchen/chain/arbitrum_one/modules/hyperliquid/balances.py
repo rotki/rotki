@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -41,7 +40,7 @@ class HyperliquidBalances(ProtocolWithBalance):
         for user in addresses_with_deposits:
             user_balances = hyperliquid.query_balances(address=user)
             for asset, amount in user_balances.items():
-                token_price = Inquirer.find_price(asset, CachedSettings().main_currency)
+                token_price = Inquirer.find_main_currency_price(asset)
                 balances[user].assets[asset][self.counterparty] += Balance(
                     amount=amount,
                     value=token_price * amount,

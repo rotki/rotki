@@ -397,7 +397,6 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 return None, msg
 
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
-        main_currency = CachedSettings().main_currency
         for kraken_name, amount_ in kraken_balances.items():
             try:
                 amount = deserialize_fval(amount_)
@@ -429,7 +428,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             if our_asset.identifier != 'KFEE':
                 # There is no price value for KFEE
                 try:
-                    price = Inquirer.find_price(from_asset=our_asset, to_asset=main_currency)
+                    price = Inquirer.find_main_currency_price(our_asset)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing kraken balance entry due to inability to '

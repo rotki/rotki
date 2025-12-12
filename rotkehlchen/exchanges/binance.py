@@ -485,7 +485,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             new_balances: list[dict],
     ) -> defaultdict[AssetWithOracles, Balance]:
         """Add new balances to balances dict"""
-        main_currency = CachedSettings().main_currency
         for entry in new_balances:
             try:
                 # force string https://github.com/rotki/rotki/issues/2342
@@ -534,7 +533,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 continue
 
             try:
-                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                price = Inquirer.find_main_currency_price(asset)
             except RemoteError as e:
                 log.error(
                     f'Error processing {self.name} balance entry due to inability to '
@@ -637,7 +636,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 f'Could not query simple earn account balances at {timestamp}. {e!s}',
             ) from e
 
-        main_currency = CachedSettings().main_currency
         for amount_key, positions in all_positions:
             for entry in positions:
                 try:
@@ -669,7 +667,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     continue
 
                 try:
-                    price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                    price = Inquirer.find_main_currency_price(asset)
                 except RemoteError as e:
                     log.error(
                         f'Error processing {self.name} balance entry due to inability to '
@@ -895,7 +893,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         - RemoteError
         """
         futures_response = self.api_query_dict('sapi', 'futures/loan/wallet')
-        main_currency = CachedSettings().main_currency
         try:
             cross_collaterals = futures_response['crossCollaterals']
             for entry in cross_collaterals:
@@ -925,7 +922,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     continue
 
                 try:
-                    price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                    price = Inquirer.find_main_currency_price(asset)
                 except RemoteError as e:
                     log.error(
                         f'Error processing {self.name} balance entry due to inability to '
@@ -973,7 +970,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             )
             return balances
 
-        main_currency = CachedSettings().main_currency
         try:
             for entry in response:
                 amount = deserialize_fval(entry['balance'])
@@ -1002,7 +998,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                     continue
 
                 try:
-                    price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                    price = Inquirer.find_main_currency_price(asset)
                 except RemoteError as e:
                     log.error(
                         f'Error processing {self.name} balance entry due to inability to '
@@ -1032,7 +1028,6 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         May raise:
         - RemoteError
         """
-        main_currency = CachedSettings().main_currency
 
         def process_pool_asset(asset_name: str, asset_amount: FVal) -> None:
             if asset_amount == ZERO:
@@ -1060,7 +1055,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 return None
 
             try:
-                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                price = Inquirer.find_main_currency_price(asset)
             except RemoteError as e:
                 log.error(
                     f'Error processing {self.name} balance entry due to inability to '

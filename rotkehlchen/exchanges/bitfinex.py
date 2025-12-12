@@ -19,7 +19,6 @@ from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_f
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -848,7 +847,6 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         currency_index = 1
         balance_index = 2
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
-        main_currency = CachedSettings().main_currency
         for wallet in response_list:
             if len(wallet) < API_WALLET_MIN_RESULT_LENGTH:
                 log.error(
@@ -881,7 +879,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 continue
 
             try:
-                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                price = Inquirer.find_main_currency_price(asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '

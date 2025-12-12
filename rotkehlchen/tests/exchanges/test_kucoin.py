@@ -12,7 +12,7 @@ import requests
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_LINK, A_USD, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_BNB, A_BTC, A_ETH, A_LINK, A_USDC, A_USDT
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
@@ -221,7 +221,7 @@ def test_deserialize_accounts_balances(mock_kucoin, inquirer):  # pylint: disabl
             'holds': '0',
         },
     ]
-    assets_balance = mock_kucoin._deserialize_accounts_balances({'data': accounts_data}, main_currency=A_USD)  # noqa: E501
+    assets_balance = mock_kucoin._deserialize_accounts_balances({'data': accounts_data})
     assert assets_balance == {
         A_BTC: Balance(
             amount=FVal('2.61018067'),

@@ -193,7 +193,7 @@ class BeaconInquirer:
         May Raise:
         - RemoteError
         """
-        price = Inquirer.find_price(A_ETH, CachedSettings().main_currency)
+        price = Inquirer.find_main_currency_price(A_ETH)
         balance_mapping: dict[Eth2PubKey, Balance] = defaultdict(Balance)
         if self.node is not None:
             try:

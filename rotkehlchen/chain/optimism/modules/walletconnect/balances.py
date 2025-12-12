@@ -10,7 +10,6 @@ from rotkehlchen.chain.optimism.modules.walletconnect.constants import (
     WCT_TOKEN_ID,
 )
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -43,7 +42,7 @@ class WalletconnectBalances(ProtocolWithBalance):
         """Query balances of staked WalletConnect"""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         wct_token = Asset(WCT_TOKEN_ID)
-        wct_price = Inquirer.find_price(Asset(WCT_TOKEN_ID), CachedSettings().main_currency)
+        wct_price = Inquirer.find_main_currency_price(Asset(WCT_TOKEN_ID))
         for address, events in self.addresses_with_deposits().items():
             amount = ZERO
             for event in events:

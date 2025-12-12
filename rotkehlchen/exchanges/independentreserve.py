@@ -245,7 +245,6 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         assets_balance: dict[AssetWithOracles, Balance] = {}
-        main_currency = CachedSettings().main_currency
         try:
             response = self._api_query(verb='post', method_type='Private', path='GetAccounts')
         except RemoteError as e:
@@ -258,7 +257,7 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
         for entry in response:
             try:
                 asset = independentreserve_asset(entry['CurrencyCode'])
-                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                price = Inquirer.find_main_currency_price(asset)
                 amount = deserialize_fval(entry['TotalBalance'])
                 account_guids.append(entry['AccountGuid'])
             except UnsupportedAsset as e:

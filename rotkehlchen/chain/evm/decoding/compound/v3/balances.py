@@ -10,7 +10,6 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -179,7 +178,6 @@ class Compoundv3Balances(ProtocolWithBalance):
             log.error(f'Failed to query Compound v3 collateral due to {e!s}')
             return balances
 
-        main_currency = CachedSettings().main_currency
         for idx, result in enumerate(call_output):
             raw_amount = comet_contract.decode(
                 result=result,
@@ -198,7 +196,7 @@ class Compoundv3Balances(ProtocolWithBalance):
                 token_decimals=collateral_asset.decimals,
             )
 
-            if (asset_price := Inquirer.find_price(collateral_asset, main_currency)) == ZERO:
+            if (asset_price := Inquirer.find_main_currency_price(collateral_asset)) == ZERO:
                 log.error(
                     f'Failed to query price of {collateral_asset!s} '
                     'while fetching the collateral balances of Compound v3',
@@ -252,7 +250,6 @@ class Compoundv3Balances(ProtocolWithBalance):
             log.error(f'Failed to query Compound v3 liabilities due to {e!s}')
             return balances
 
-        main_currency = CachedSettings().main_currency
         for idx, result in enumerate(call_output):
             raw_amount = token_contract.decode(
                 result=result,
@@ -268,7 +265,7 @@ class Compoundv3Balances(ProtocolWithBalance):
             )
 
             # query the current price of the underlying asset
-            if (asset_price := Inquirer.find_price(underlying_token[calls[idx][0]], main_currency)) == ZERO:  # noqa: E501
+            if (asset_price := Inquirer.find_main_currency_price(underlying_token[calls[idx][0]])) == ZERO:  # noqa: E501
                 log.error(
                     f'Failed to query price of {underlying_token[calls[idx][0]]!s} '
                     'while fetching the liability balances of Compound v3',

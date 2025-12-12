@@ -601,7 +601,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                     )
                     amount = asset_normalized_value(raw_amount, asset)
                     try:
-                        price = Inquirer.find_price(asset, CachedSettings().main_currency)
+                        price = Inquirer.find_main_currency_price(asset)
                     except RemoteError as e:
                         log.error(
                             f'Error processing zksync lite balance entry due to inability to '

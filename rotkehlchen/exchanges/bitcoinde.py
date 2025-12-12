@@ -12,7 +12,6 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bitcoinde
 from rotkehlchen.constants.assets import A_EUR
-from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -175,7 +174,6 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
 
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         assets_balance: dict[AssetWithOracles, Balance] = {}
-        main_currency = CachedSettings().main_currency
         try:
             resp_info = self._api_query('get', 'account')
         except RemoteError as e:
@@ -197,7 +195,7 @@ class Bitcoinde(ExchangeInterface, SignatureGeneratorMixin):
                 )
                 continue
             try:
-                price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                price = Inquirer.find_main_currency_price(asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitcoin.de balance entry due to inability to '

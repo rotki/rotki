@@ -361,7 +361,6 @@ class Coinbase(ExchangeInterface):
             return None, f'{msg_prefix} Check logs for more details'
 
         returned_balances: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
-        main_currency = CachedSettings().main_currency
         for account in resp:
             try:
                 if (balance := account.get('balance')) is None:
@@ -382,7 +381,7 @@ class Coinbase(ExchangeInterface):
 
                 asset = asset_from_coinbase(account['balance']['currency'])
                 try:
-                    price = Inquirer.find_price(from_asset=asset, to_asset=main_currency)
+                    price = Inquirer.find_main_currency_price(asset)
                 except RemoteError as e:
                     log.error(
                         f'Error processing coinbase balance for {asset.identifier} due to'
