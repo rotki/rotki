@@ -65,3 +65,66 @@ def test_try_indexers_respects_settings_order() -> None:
 
     assert result == 'ok'
     assert calls == ['Routescan', 'Etherscan', 'Blockscout']
+
+
+def test_try_indexers_custom_override() -> None:
+    cached_settings = CachedSettings()
+    previous_order = cached_settings.get_entry('evm_indexers_order')
+    inquirer = DummyEvmNodeInquirer()
+    cached_settings.update_entry(
+        'evm_indexers_order',
+        {ChainID.ETHEREUM: (EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN)},
+    )
+    calls: list[str] = []
+
+    def query(indexer: DummyIndexer) -> str:
+        calls.append(indexer.name)
+        if indexer.name != 'Blockscout':
+            raise RemoteError('boom')
+        return 'ok'
+
+    indexer_setting = CachedSettings().evm_indexers_order_override_var.set((
+        EvmIndexer.ETHERSCAN,
+        EvmIndexer.ROUTESCAN,
+        EvmIndexer.BLOCKSCOUT,
+    ))
+
+    try:
+        result = inquirer._try_indexers(func=cast('Callable[[Any], str]', query))
+    finally:
+        cached_settings.update_entry('evm_indexers_order', previous_order)
+
+    CachedSettings().evm_indexers_order_override_var.reset(indexer_setting)
+    assert result == 'ok'
+    assert calls == ['Etherscan', 'Routescan', 'Blockscout']
+
+
+def test_try_indexers_custom_override_subset() -> None:
+    cached_settings = CachedSettings()
+    previous_order = cached_settings.get_entry('evm_indexers_order')
+    inquirer = DummyEvmNodeInquirer()
+    cached_settings.update_entry(
+        'evm_indexers_order',
+        {ChainID.ETHEREUM: (EvmIndexer.ROUTESCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN)},
+    )
+    calls: list[str] = []
+
+    def query(indexer: DummyIndexer) -> str:
+        calls.append(indexer.name)
+        if indexer.name != 'Routescan':
+            raise RemoteError('boom')
+        return 'ok'
+
+    indexer_setting = CachedSettings().evm_indexers_order_override_var.set((
+        EvmIndexer.ETHERSCAN,
+        EvmIndexer.ROUTESCAN,
+    ))
+
+    try:
+        result = inquirer._try_indexers(func=cast('Callable[[Any], str]', query))
+    finally:
+        cached_settings.update_entry('evm_indexers_order', previous_order)
+
+    CachedSettings().evm_indexers_order_override_var.reset(indexer_setting)
+    assert result == 'ok'
+    assert calls == ['Etherscan', 'Routescan']
