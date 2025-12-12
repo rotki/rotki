@@ -306,6 +306,7 @@ class EvmTransactions(ABC):  # noqa: B024
         else:
             query_period_or_hash = period_or_hash
 
+        parent_tx_timestamps: dict[EVMTxHash, Timestamp] = {}
         for new_internal_txs in self.evm_inquirer.get_transactions(
                 account=address,
                 period_or_hash=query_period_or_hash,
@@ -317,14 +318,21 @@ class EvmTransactions(ABC):  # noqa: B024
             for internal_tx in new_internal_txs:
                 if internal_tx.value == 0:
                     continue  # Only reason we need internal is for ether transfer. Ignore 0
-                # make sure internal transaction parent transactions are in the DB
-                with self.database.conn.read_ctx() as cursor:
-                    tx, _ = self.get_or_create_transaction(
-                        cursor=cursor,
-                        tx_hash=internal_tx.parent_tx_hash,
-                        relevant_address=address,
-                    )
+
+                # make sure internal transaction parent transactions are in the DB.
+                # new_internal_txs potentially contains internal txs of different parents.
+                if internal_tx.parent_tx_hash not in parent_tx_timestamps:
+                    with self.database.conn.read_ctx() as cursor:
+                        tx, _ = self.get_or_create_transaction(
+                            cursor=cursor,
+                            tx_hash=internal_tx.parent_tx_hash,
+                            relevant_address=address,
+                        )
+
                     timestamp = tx.timestamp
+                    parent_tx_timestamps[internal_tx.parent_tx_hash] = timestamp
+                else:
+                    timestamp = parent_tx_timestamps[internal_tx.parent_tx_hash]
 
                 with self.database.conn.write_ctx() as write_cursor:
                     self.dbevmtx.add_evm_internal_transactions(
