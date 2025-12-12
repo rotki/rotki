@@ -32,6 +32,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_event_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_ADA, A_AXS, A_BUSD, A_LUNA, A_RDN
 from rotkehlchen.tests.utils.exchanges import (
+    BINANCE_CONVERT_TRADES_RESPONSE,
     BINANCE_DEPOSITS_HISTORY_RESPONSE,
     BINANCE_FIATBUY_RESPONSE,
     BINANCE_FIATDEPOSITS_RESPONSE,
@@ -585,7 +586,7 @@ def test_binance_query_deposits_withdrawals(function_scope_binance: 'Binance') -
                     response_str = '[]'
             else:
                 raise AssertionError('Unexpected binance request in test')
-        elif 'myTrades' in url or 'fiat/payments' in url:
+        elif 'myTrades' in url or 'fiat/payments' in url or 'convert/tradeFlow' in url:
             response_str = '[]'
         else:
             raise AssertionError('Unexpected binance request in test')
@@ -826,7 +827,7 @@ def test_binance_query_deposits_withdrawals_gte_89_days(function_scope_binance):
                 response_str = next(get_fiat_withdraw_result)
             else:
                 raise AssertionError('Unexpected binance request in test')
-        elif 'myTrades' in url or 'fiat/payments' in url:
+        elif 'myTrades' in url or 'fiat/payments' in url or 'convert/tradeFlow' in url:
             response_str = '[]'
         else:
             raise AssertionError('Unexpected binance request in test')
@@ -1124,3 +1125,72 @@ def test_binance_query_lending_interests_history(
 
     assert len(binance.msg_aggregator.consume_errors()) == 0
     assert len(binance.msg_aggregator.consume_warnings()) == 0
+
+
+def test_binance_query_convert_trades(function_scope_binance: 'Binance') -> None:
+    """Test that Binance Convert trades are queried and deserialized correctly"""
+    def mock_convert_trades(url, params, *args, **kwargs):  # pylint: disable=unused-argument
+        if 'convert/tradeFlow' in url:
+            return MockResponse(200, BINANCE_CONVERT_TRADES_RESPONSE)
+        elif 'myTrades' in url:
+            return MockResponse(200, '[]')
+        elif 'fiat/payments' in url:
+            return MockResponse(200, '{"data": [], "total": 0}')
+        return MockResponse(200, '[]')
+
+    with patch.object(function_scope_binance.session, 'request', side_effect=mock_convert_trades):
+        assert function_scope_binance._query_online_trade_history(
+            start_ts=Timestamp(1674537700),
+            end_ts=Timestamp(1674538000),
+        ) == [SwapEvent(
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.BINANCE,
+                unique_id='1674537715234',
+            ),
+            sequence_index=0,
+            timestamp=TimestampMS(1674537715234),
+            location=Location.BINANCE,
+            location_label='binance',
+            asset=A_BTC,
+            amount=FVal('0.001'),
+            event_subtype=HistoryEventSubType.SPEND,
+        ), SwapEvent(
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.BINANCE,
+                unique_id='1674537715234',
+            ),
+            sequence_index=1,
+            timestamp=TimestampMS(1674537715234),
+            location=Location.BINANCE,
+            location_label='binance',
+            asset=A_USDT,
+            amount=FVal('30.521'),
+            event_subtype=HistoryEventSubType.RECEIVE,
+        ), SwapEvent(
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.BINANCE,
+                unique_id='1674537815234',
+            ),
+            sequence_index=0,
+            timestamp=TimestampMS(1674537815234),
+            location=Location.BINANCE,
+            location_label='binance',
+            asset=A_ETH,
+            amount=FVal('0.1'),
+            event_subtype=HistoryEventSubType.SPEND,
+        ), SwapEvent(
+            event_identifier=create_event_identifier_from_unique_id(
+                location=Location.BINANCE,
+                unique_id='1674537815234',
+            ),
+            sequence_index=1,
+            timestamp=TimestampMS(1674537815234),
+            location=Location.BINANCE,
+            location_label='binance',
+            asset=A_BNB,
+            amount=FVal('0.5'),
+            event_subtype=HistoryEventSubType.RECEIVE,
+        )]
+
+    assert len(function_scope_binance.msg_aggregator.consume_errors()) == 0
+    assert len(function_scope_binance.msg_aggregator.consume_warnings()) == 0
