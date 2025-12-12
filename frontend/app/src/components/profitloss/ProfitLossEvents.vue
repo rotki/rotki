@@ -13,11 +13,10 @@ import CostBasisTable from '@/components/profitloss/CostBasisTable.vue';
 import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue';
 import ReportProfitLossEventAction from '@/components/profitloss/ReportProfitLossEventAction.vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { usePremium } from '@/composables/premium';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useReportsStore } from '@/store/reports';
-import { getCollectionData } from '@/utils/collection';
+import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { isTransactionEvent } from '@/utils/report';
 
 interface GroupLine {
@@ -147,7 +146,8 @@ const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [
 
 useRememberTableSorting<PnLItem>(TableId.REPORT_EVENTS, sort, tableHeaders);
 
-const { data } = getCollectionData<ProfitLossEvent>(state);
+const { data, entriesFoundTotal, found, limit, total } = getCollectionData<ProfitLossEvent>(state);
+const { showUpgradeRow } = setupEntryLimit(limit, found, total, entriesFoundTotal);
 
 const items = computed<PnLItem[]>(() => {
   const dataVal = get(data);
@@ -156,13 +156,6 @@ const items = computed<PnLItem[]>(() => {
     groupLine: checkGroupLine(dataVal, index),
     id: index,
   }));
-});
-
-const premium = usePremium();
-
-const showUpgradeMessage = computed(() => {
-  const { processedActions, totalActions } = get(report);
-  return !get(premium) && totalActions > processedActions;
 });
 
 function checkGroupLine(entries: ProfitLossEvents, index: number) {
@@ -289,13 +282,14 @@ onMounted(async () => {
         />
       </template>
       <template
-        v-if="showUpgradeMessage"
+        v-if="showUpgradeRow"
         #body.prepend="{ colspan }"
       >
         <UpgradeRow
           events
-          :total="report.totalActions"
-          :limit="report.processedActions"
+          :limit="limit"
+          :total="total"
+          :found="found"
           :time-end="report.lastProcessedTimestamp"
           :time-start="report.firstProcessedTimestamp"
           :colspan="colspan"

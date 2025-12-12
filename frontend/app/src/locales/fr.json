@@ -3183,9 +3183,7 @@
     "loading_hint": "La génération de votre rapport peut prendre un certain temps en fonction du nombre d'opérations et d'actions que vous avez effectués pendant la période sélectionnée.",
     "loading_message": "Patientez pendant la génération du rapport...",
     "report_period": "Rapport à partir du {start} au {end}",
-    "settings_tooltip": "Ouvrir les paramètres de comptabilité",
-    "upgrade": "{processed} événements au total ont été traités à partir de {start}.",
-    "upgrade2": "La limite de la version gratuite a été atteinte. Pour obtenir le rapport complet, veuillez passer à {link}"
+    "settings_tooltip": "Ouvrir les paramètres de comptabilité"
   },
   "profit_loss_reports": {
     "columns": {
@@ -3762,8 +3760,9 @@
     "restart": "rotki va redémarrer dans un instant pour appliquer la mise à jour."
   },
   "upgrade_row": {
-    "events": "Traitement de {limit} sur {total} {label} à partir de {from} jusqu'à {to}. Pour en afficher plus, merci de passer à {link}",
-    "events_premium": "Traitement de {limit} sur {total} {label} à partir de {from} jusqu'à {to}. Pour en afficher plus, merci de {link}",
+    "events": "@:upgrade_row.first_line Pour en afficher plus, merci de passer à {link}",
+    "events_premium": "@:upgrade_row.first_line Pour en afficher plus, merci de {link}",
+    "first_line": "Traitement de {limit} sur {total} {label} à partir de {from} jusqu'à {to}.",
     "rotki_premium": "rotki Premium",
     "upgrade": "Affichage de {limit} sur {total} {label}. Pour en afficher plus, merci de passer à {link}",
     "upgrade_premium": "Affichage de {limit} sur {total} {label}. Pour en afficher plus, merci de {link}",

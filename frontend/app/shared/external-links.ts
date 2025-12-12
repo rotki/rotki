@@ -28,6 +28,7 @@ export const externalLinks = {
   premium: `${BASE_URL}products`,
   premiumDevices: `${DOCS_BASE_URL}premium/devices`,
   sponsor: `${BASE_URL}sponsor/mint`,
+  manageSubscriptions: `${BASE_URL}home/subscription`,
   usageGuide: USAGE_GUIDE_URL,
   usageGuideSection: {
     dockerWarning: `${USAGE_GUIDE_URL}using-rotki-from-mobile#docker`,
