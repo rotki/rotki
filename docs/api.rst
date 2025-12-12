@@ -2462,6 +2462,7 @@ Decode transactions that haven't been decoded yet
    :reqjson string chain: The name of the chain for which to decode transactions.
    :reqjson list tx_refs: A list of transaction hashes/signatures from the specified chain to redecode.
    :reqjson bool delete_custom: Boolean denoting whether to delete any customized events of the transaction or not. Default is false
+   :reqjson list[string][optional] custom_indexers_order: Optional ordered list of indexers (``etherscan``, ``blockscout`` or ``routescan``) to prioritize when redecoding EVM transactions for the given request.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
 

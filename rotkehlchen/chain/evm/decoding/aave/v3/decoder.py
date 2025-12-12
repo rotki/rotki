@@ -343,8 +343,8 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
                     if (interest_entries := interest_event_lookup.get(return_event.asset)) is not None:  # noqa: E501
                         interest_event_lookup[return_event.asset] = [
-                            evt for evt in interest_entries
-                            if evt is not return_event
+                            event for event in interest_entries
+                            if event is not return_event
                         ]
                         if len(interest_event_lookup[return_event.asset]) == 0:
                             interest_event_lookup.pop(return_event.asset, None)
