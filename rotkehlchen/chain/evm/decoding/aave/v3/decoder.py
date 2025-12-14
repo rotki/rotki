@@ -284,9 +284,12 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                     )
                 ) > 0
             ):  # parse the mint amount and balance_increase
-                if _log.topics[0] == BURN and (earned_token := get_single_underlying_token(earned_token)) is None:  # type: ignore[assignment]  # we ignore if None  # noqa: E501
-                    log.error(f'Failed to find underlying token for Aave v3 token {earned_token}. Skipping')  # noqa: E501
-                    continue
+                if _log.topics[0] == BURN:
+                    if (underlying_token := get_single_underlying_token(earned_token)) is None:
+                        log.error(f'Failed to find underlying token for Aave v3 token {earned_token}. Skipping')  # noqa: E501
+                        continue
+
+                    earned_token = underlying_token
 
                 if (  # check if we need to create the earned event
                         maybe_earned_event is None or
