@@ -1,97 +1,88 @@
+import { expect, type Page } from '@playwright/test';
+import { confirmInlineSuccess } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 export class EvmSettingsPage {
-  visit(): void {
-    cy.get('[data-cy=user-menu-button]').click();
-    cy.get('[data-cy=user-dropdown]').should('exist');
-    cy.get('[data-cy=settings-button]').click();
-    cy.get('[data-cy=user-dropdown]').should('not.exist');
-    cy.get('[data-cy="settings__evm"]').click();
+  constructor(private readonly page: Page) {}
+
+  async visit(): Promise<void> {
+    await this.page.locator('[data-cy=user-menu-button]').click();
+    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-cy=settings-button]').click();
+    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
+    await this.page.locator('[data-cy="settings__evm"]').click();
+    await this.page.locator('[data-cy=chains-to-skip-detection]').waitFor({ state: 'visible' });
   }
 
-  confirmInlineSuccess(target: string, messageContains?: string): void {
-    cy.confirmFieldMessage({ target, messageContains, mustInclude: 'Setting saved' });
-  }
-
-  navigateAway(): void {
-    RotkiApp.navigateTo('dashboard');
+  async navigateAway(): Promise<void> {
+    await RotkiApp.navigateTo(this.page, 'dashboard');
   }
 
   // Indexer Order Settings
-  getIndexerOrderSection(): Cypress.Chainable {
-    return cy.get('[data-cy=indexer-order-setting]');
+  getIndexerOrderSection() {
+    return this.page.locator('[data-cy=indexer-order-setting]');
   }
 
-  clickAddChainButton(): void {
-    cy.get('[data-cy=add-chain-button]').click();
+  async clickAddChainButton(): Promise<void> {
+    await this.page.locator('[data-cy=add-chain-button]').click();
   }
 
-  isAddChainButtonDisabled(): Cypress.Chainable<boolean> {
-    return cy.get('[data-cy=add-chain-button]').then($btn => $btn.is(':disabled'));
+  async isAddChainButtonDisabled(): Promise<boolean> {
+    return this.page.locator('[data-cy=add-chain-button]').isDisabled();
   }
 
-  selectChainFromMenu(chainId: string): void {
-    cy.get('[data-cy=chain-menu]').should('be.visible');
-    cy.get(`[data-cy=chain-menu-item-${chainId}]`).click();
+  async selectChainFromMenu(chainId: string): Promise<void> {
+    await this.page.locator('[data-cy=chain-menu]').waitFor({ state: 'visible' });
+    await this.page.locator(`[data-cy=chain-menu-item-${chainId}]`).click();
   }
 
-  addChain(chainId: string): void {
-    this.clickAddChainButton();
-    this.selectChainFromMenu(chainId);
+  async addChain(chainId: string): Promise<void> {
+    await this.clickAddChainButton();
+    await this.selectChainFromMenu(chainId);
   }
 
-  removeChain(chainId: string): void {
-    cy.get(`[data-cy=remove-chain-${chainId}]`).click();
+  async removeChain(chainId: string): Promise<void> {
+    await this.page.locator(`[data-cy=remove-chain-${chainId}]`).click();
   }
 
-  selectTab(tabId: string): void {
-    cy.get(`[data-cy=indexer-tab-${tabId}]`).click();
+  async selectTab(tabId: string): Promise<void> {
+    await this.page.locator(`[data-cy=indexer-tab-${tabId}]`).click();
   }
 
-  verifyTabExists(tabId: string): void {
-    cy.get(`[data-cy=indexer-tab-${tabId}]`).should('exist');
+  async verifyTabExists(tabId: string): Promise<void> {
+    await expect(this.page.locator(`[data-cy=indexer-tab-${tabId}]`)).toBeAttached();
   }
 
-  verifyTabNotExists(tabId: string): void {
-    cy.get(`[data-cy=indexer-tab-${tabId}]`).should('not.exist');
-  }
-
-  verifyDefaultIndexerOrder(indexers: string[]): void {
-    cy.get('[data-cy=default-indexer-order] [data-cy^=prioritized-list-item-]').should('have.length', indexers.length);
-    indexers.forEach((indexer, index) => {
-      cy.get('[data-cy=default-indexer-order] [data-cy^=prioritized-list-item-]')
-        .eq(index)
-        .should('contain.text', indexer);
-    });
-  }
-
-  verifyChainIndexerOrder(chainId: string, indexers: string[]): void {
-    cy.get(`[data-cy=chain-indexer-order-${chainId}] [data-cy^=prioritized-list-item-]`).should('have.length', indexers.length);
-    indexers.forEach((indexer, index) => {
-      cy.get(`[data-cy=chain-indexer-order-${chainId}] [data-cy^=prioritized-list-item-]`)
-        .eq(index)
-        .should('contain.text', indexer);
-    });
+  async verifyTabNotExists(tabId: string): Promise<void> {
+    await expect(this.page.locator(`[data-cy=indexer-tab-${tabId}]`)).not.toBeAttached();
   }
 
   // Chains to Skip Detection Settings
-  selectChainToIgnore(value: string): void {
-    cy.get('[data-cy=chains-to-skip-detection] [class*=icon__wrapper]').click();
-    cy.get('[data-cy=chains-to-skip-detection] input').should('not.be.disabled');
-    cy.get('[data-cy=chains-to-skip-detection] input').type(value);
-    cy.get('[role=menu-content] button').should('have.length', 1);
-    cy.get('[data-cy=chains-to-skip-detection] input').type('{enter}');
-    cy.get('[data-cy=chains-to-skip-detection] [class*=icon__wrapper]').click();
-    this.confirmInlineSuccess(
+  async selectChainToIgnore(value: string, waitForMessageToDisappear: boolean = true): Promise<void> {
+    await this.page.locator('[data-cy=chains-to-skip-detection] [class*=icon__wrapper]').click();
+    await expect(this.page.locator('[data-cy=chains-to-skip-detection] input')).not.toBeDisabled();
+    await this.page.locator('[data-cy=chains-to-skip-detection] input').fill(value);
+    await expect(this.page.locator('[role=menu-content] button')).toHaveCount(1);
+    await this.page.locator('[data-cy=chains-to-skip-detection] input').press('Enter');
+    await this.page.locator('[data-cy=chains-to-skip-detection] [class*=icon__wrapper]').click();
+
+    // Always wait for the success message to appear
+    await confirmInlineSuccess(
+      this.page,
       '[data-cy=chains-to-skip-detection] .details',
       'EVM Chains for which to skip automatic token detection saved successfully',
     );
-    cy.get('[data-cy=chains-to-skip-detection] .details').should('be.empty');
+
+    // Only wait for message to disappear on the last chain
+    if (waitForMessageToDisappear) {
+      await expect(this.page.locator('[data-cy=chains-to-skip-detection] .details')).toBeEmpty();
+    }
   }
 
-  verifySkipped(entries: string[]): void {
-    entries.forEach((item) => {
-      cy.get(`[data-cy=chains-to-skip-detection] [data-value=${item}]`).should('exist');
-    });
+  async verifySkipped(entries: string[]): Promise<void> {
+    for (const item of entries) {
+      // Use .first() since the selector may match both chip and dropdown option
+      await expect(this.page.locator(`[data-cy=chains-to-skip-detection] [data-value=${item}]`).first()).toBeAttached();
+    }
   }
 }

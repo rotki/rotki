@@ -1,13 +1,13 @@
 /**
- * Creates a polyfill of ResizeObserver to work around some crashes when running cypress tests.
+ * Creates a polyfill of ResizeObserver to work around some crashes when running e2e tests.
  * for more information check: https://github.com/cypress-io/cypress/issues/27415#issuecomment-2169155274
  * make sure to remove if the linked issue is resolved.
  */
 export function attemptPolyfillResizeObserver(): void {
-  if (!import.meta.env.VITE_CYPRESS)
+  if (!import.meta.env.VITE_E2E)
     return;
 
-  console.warn('Using polyfill for ResizeObserver because of VITE_CYPRESS being set');
+  console.warn('Using polyfill for ResizeObserver because of VITE_E2E being set');
 
   const RealResizeObserver = ResizeObserver;
 

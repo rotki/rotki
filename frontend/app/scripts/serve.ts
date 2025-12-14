@@ -3,26 +3,11 @@
 import type { OutputPlugin } from 'rollup';
 import { type ChildProcessWithoutNullStreams, spawn } from 'node:child_process';
 import process from 'node:process';
-import { ArgumentParser } from 'argparse';
+import { cac } from 'cac';
 import consola from 'consola';
 import electron from 'electron';
 import { build, createLogger, createServer, type ViteDevServer } from 'vite';
 import { type BuildOutput, LOG_LEVEL, sharedConfig } from './setup';
-
-const parser = new ArgumentParser({
-  description: 'Rotki frontend build',
-});
-
-parser.add_argument('--web', { action: 'store_true' });
-parser.add_argument('--remote-debugging-port', { type: 'int' });
-parser.add_argument('--mode', { help: 'mode docker', default: 'development' });
-parser.add_argument('--port', {
-  help: 'listening port',
-  default: 8080,
-  type: 'int',
-});
-const args = parser.parse_args();
-const { web, remote_debugging_port, mode, port } = args;
 
 /** Messages on stderr that match any of the contained patterns will be stripped from output */
 const stderrFilterPatterns = [
@@ -38,7 +23,14 @@ interface WatcherConfig {
   writeBundle: OutputPlugin['writeBundle'];
 }
 
-async function getWatcher({ name, configFile, writeBundle }: WatcherConfig): Promise<BuildOutput> {
+interface ServeOptions {
+  web: boolean;
+  remoteDebuggingPort?: number;
+  mode: string;
+  port: number;
+}
+
+async function getWatcher({ name, configFile, writeBundle }: WatcherConfig, mode: string): Promise<BuildOutput> {
   return build({
     ...sharedConfig,
     mode,
@@ -52,7 +44,7 @@ let childProcesses: ChildProcessWithoutNullStreams[] = [];
 /**
  * Start or restart App when source files are changed
  */
-async function setupMainPackageWatcher({ config: { server } }: ViteDevServer): Promise<BuildOutput> {
+async function setupMainPackageWatcher({ config: { server } }: ViteDevServer, mode: string, remoteDebuggingPort?: number): Promise<BuildOutput> {
   // Create VITE_DEV_SERVER_URL environment variable to pass it to the main process.
   const protocol = server.https ? 'https:' : 'http:';
   const host = server.host || 'localhost';
@@ -78,8 +70,8 @@ async function setupMainPackageWatcher({ config: { server } }: ViteDevServer): P
       }
 
       const args = ['.'];
-      if (remote_debugging_port)
-        args.push(`--remote-debugging-port=${remote_debugging_port}`);
+      if (remoteDebuggingPort)
+        args.push(`--remote-debugging-port=${remoteDebuggingPort}`);
 
       if (process.env.XDG_SESSION_TYPE === 'wayland')
         args.push('--enable-features=WaylandWindowDecorations', '--ozone-platform-hint=auto');
@@ -103,13 +95,13 @@ async function setupMainPackageWatcher({ config: { server } }: ViteDevServer): P
       // Stops the watch script when the application has been quit
       spawnProcess.on('exit', () => process.exit());
     },
-  });
+  }, mode);
 }
 
 /**
  * Start or restart App when source files are changed
  */
-async function setupPreloadPackageWatcher({ ws }: ViteDevServer): Promise<BuildOutput> {
+async function setupPreloadPackageWatcher({ ws }: ViteDevServer, mode: string): Promise<BuildOutput> {
   return getWatcher({
     name: 'reload-page-on-preload-package-change',
     configFile: 'vite.config.preload.ts',
@@ -118,10 +110,12 @@ async function setupPreloadPackageWatcher({ ws }: ViteDevServer): Promise<BuildO
         type: 'full-reload',
       });
     },
-  });
+  }, mode);
 }
 
-async function serve(): Promise<void> {
+async function serve(options: ServeOptions): Promise<void> {
+  const { web, remoteDebuggingPort, mode, port } = options;
+
   try {
     const viteDevServer = await createServer({
       ...sharedConfig,
@@ -136,11 +130,12 @@ async function serve(): Promise<void> {
     viteDevServer.printUrls();
 
     if (!web) {
-      await setupPreloadPackageWatcher(viteDevServer);
-      await setupMainPackageWatcher(viteDevServer);
+      await setupPreloadPackageWatcher(viteDevServer, mode);
+      await setupMainPackageWatcher(viteDevServer, mode, remoteDebuggingPort);
     }
 
-    process.on('SIGINT', () => {
+    const cleanup = (signal: string): void => {
+      consola.info(`Received ${signal}, cleaning up...`);
       viteDevServer.close().then(() => {
         consola.info('Vite server stopped');
       }).catch(error => consola.error(error)).finally(() => {
@@ -150,7 +145,11 @@ async function serve(): Promise<void> {
         });
         process.exit();
       });
-    });
+    };
+
+    process.on('SIGINT', () => cleanup('SIGINT'));
+    process.on('SIGTERM', () => cleanup('SIGTERM'));
+    process.on('SIGHUP', () => cleanup('SIGHUP'));
   }
   catch (error) {
     consola.error(error);
@@ -158,4 +157,21 @@ async function serve(): Promise<void> {
   }
 }
 
-await serve();
+const cli = cac();
+
+cli.command('', 'Rotki frontend development server')
+  .option('--web', 'Run as web-only (no Electron)')
+  .option('--remote-debugging-port <port>', 'Chrome remote debugging port')
+  .option('--mode <mode>', 'Development mode', { default: 'development' })
+  .option('--port <port>', 'Listening port', { default: 8080 })
+  .action(async (options) => {
+    await serve({
+      web: options.web ?? false,
+      remoteDebuggingPort: options.remoteDebuggingPort ? Number(options.remoteDebuggingPort) : undefined,
+      mode: options.mode,
+      port: Number(options.port),
+    });
+  });
+
+cli.help();
+cli.parse();

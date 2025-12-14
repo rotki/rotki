@@ -1,0 +1,21 @@
+{
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "dist/**/*.js"
+  ],
+  "exclude": [
+    "node_modules",
+    "tests/",
+    "**/*.d.ts",
+    "src/main.ts",
+    "src/router/index.ts"
+  ],
+  "all": false,
+  "reporter": [
+    "lcov",
+    "text-summary"
+  ],
+  "report-dir": "./tests/e2e/coverage",
+  "temp-directory": "./tests/e2e/.v8-coverage"
+}

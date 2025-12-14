@@ -11,8 +11,92 @@ on:
 permissions: { }
 
 jobs:
+  build-frontend:
+    name: 'Build Frontend'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Load env
+        uses: rotki/action-env@v2
+        with:
+          env_file: .github/.env.ci
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: frontend/package.json
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'frontend/.nvmrc'
+          cache: 'pnpm'
+          cache-dependency-path: 'frontend/pnpm-lock.yaml'
+
+      - name: Restore dependencies
+        working-directory: ./frontend
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        working-directory: ./frontend/app
+        env:
+          VITE_BACKEND_URL: http://127.0.0.1:30302
+          VITE_COLIBRI_URL: http://127.0.0.1:30303
+          VITE_COVERAGE: true
+        run: pnpm run build:app --mode e2e
+
+      - name: Upload frontend build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/app/dist
+          retention-days: 1
+
+  build-colibri:
+    name: 'Build Colibri'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+          persist-credentials: false
+
+      - name: Cache Colibri binary
+        id: colibri-cache
+        uses: actions/cache@v4
+        with:
+          path: colibri/target/release/colibri
+          key: ${{ runner.os }}-colibri-${{ hashFiles('colibri/Cargo.lock', 'colibri/Cargo.toml', 'colibri/build.rs', 'colibri/src/**') }}
+
+      - name: Setup Rust
+        if: steps.colibri-cache.outputs.cache-hit != 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build Colibri
+        if: steps.colibri-cache.outputs.cache-hit != 'true'
+        working-directory: ./colibri
+        run: cargo build --release
+
+      - name: Upload Colibri binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: colibri-binary
+          path: colibri/target/release/colibri
+          retention-days: 1
+
   e2e:
     name: '${{ matrix.group }}'
+    needs: [ build-frontend, build-colibri ]
     env:
       CI: true
       GROUP: ${{ matrix.group }}
@@ -20,7 +104,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: [ app, balances ]
+        group: [ app, settings, balances ]
     permissions:
       actions: write
       contents: read
@@ -42,11 +126,6 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
-      - uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: colibri
-          cache-on-failure: true
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
@@ -58,15 +137,6 @@ jobs:
           node-version-file: 'frontend/.nvmrc'
           cache: 'pnpm'
           cache-dependency-path: 'frontend/pnpm-lock.yaml'
-
-      - name: Setup cypress cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/Cypress
-          key: ${{ runner.os }}-cypress-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-cypress-
 
       - name: Store test data
         uses: actions/cache@v4
@@ -84,35 +154,73 @@ jobs:
           cache-dependency-glob: "uv.lock"
 
       - name: Setup backend
-        run: |
-          uv sync
+        run: uv sync
 
       - name: Restore dependencies
         working-directory: ./frontend
-        run: |
-          pnpm install --frozen-lockfile
-          pnpm cypress install
+        run: pnpm install --frozen-lockfile
+
+      - name: Download frontend build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/app/dist
+
+      - name: Download Colibri binary
+        uses: actions/download-artifact@v4
+        with:
+          name: colibri-binary
+          path: colibri/target/release
+
+      - name: Make Colibri executable
+        run: chmod +x colibri/target/release/colibri
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('frontend/pnpm-lock.yaml') }}
+
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        working-directory: ./frontend/app
+        run: npx playwright install chromium
+
+      - name: Install Playwright system dependencies
+        working-directory: ./frontend/app
+        run: npx playwright install-deps chromium
 
       - name: Run e2e tests
         timeout-minutes: 20
         env:
-          CYPRESS_ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
-        run: pnpm run test:integration-ci --browser chrome
-        working-directory: ./frontend
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          GROUP: ${{ matrix.group }}
+          E2E_COVERAGE: true
+          VITE_COVERAGE: true
+        run: pnpm run test:e2e --project=chromium
+        working-directory: ./frontend/app
 
-      - name: Upload coverage
+      - name: Generate coverage report
+        if: success()
+        working-directory: ./frontend/app
+        run: pnpm run test:e2e:coverage:report
+
+      - name: Upload coverage to Codecov
+        if: success()
         uses: codecov/codecov-action@v5
         with:
-          flags: frontend_integration
-          env_vars: GROUP
           token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./frontend/app/tests/e2e/coverage/lcov.info
+          flags: e2e-${{ matrix.group }}
+          fail_ci_if_error: false
 
-      - name: Upload screenshots
+      - name: Upload test artifacts
         uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: screenshots-${{ runner.os }}-${{ matrix.group }}
-          path: ./frontend/app/tests/e2e/screenshots
+          name: test-artifacts-${{ runner.os }}-${{ matrix.group }}
+          path: ./frontend/app/tests/e2e/test-results
 
       - name: Upload backend logs
         uses: actions/upload-artifact@v4
@@ -120,10 +228,3 @@ jobs:
         with:
           name: backend-logs-${{ runner.os }}-${{ matrix.group }}
           path: ./frontend/app/.e2e/logs/*.log
-
-      - name: Upload videos
-        uses: actions/upload-artifact@v4
-        if: failure()
-        with:
-          name: videos-${{ runner.os }}-${{ matrix.group }}
-          path: ./frontend/app/tests/e2e/videos

@@ -1,5 +1,3 @@
-/* istanbul ignore file */
-
 import { startPromise } from '@shared/utils';
 import { createRouter, createWebHashHistory, type RouteLocationRaw } from 'vue-router';
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';

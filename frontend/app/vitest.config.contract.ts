@@ -1,7 +1,7 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { merge } from 'es-toolkit';
-import { configDefaults, defineConfig, mergeConfig } from 'vitest/config';
+import { defineConfig, mergeConfig } from 'vitest/config';
 import viteConfig from './vite.config';
 
 export default mergeConfig(
@@ -15,34 +15,22 @@ export default mergeConfig(
   defineConfig({
     test: {
       globals: true,
-      environment: 'happy-dom',
-      testTimeout: 15_000,
+      environment: 'node',
+      testTimeout: 30_000,
       env: {
         TZ: 'UTC',
         VITE_TEST: 'true',
       },
-      fakeTimers: {
-        toFake: [
-          'setTimeout',
-          'clearTimeout',
-          'setInterval',
-          'clearInterval',
-          'setImmediate',
-          'clearImmediate',
-          'Date',
-        ],
-      },
-      exclude: [...configDefaults.exclude, 'tests/e2e/**', 'tests/contract/**'],
+      include: ['tests/contract/**/*.spec.ts'],
       root: fileURLToPath(new URL('./', import.meta.url)),
       server: {
         deps: {
           inline: ['@rotki/ui-library'],
         },
       },
-      setupFiles: ['tests/unit/setup-files/setup.ts'],
       coverage: {
         provider: 'v8',
-        reportsDirectory: 'tests/unit/coverage',
+        reportsDirectory: 'tests/contract/coverage',
         reporter: ['json', 'lcov', 'html'],
         include: ['src/*'],
         exclude: ['node_modules', 'tests/', '**/*.d.ts', '**/*.spec.ts'],
