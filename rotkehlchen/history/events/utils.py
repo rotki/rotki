@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.db.filtering import DBMultiStringFilter
 from rotkehlchen.exchanges.data_structures import hash_id
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
-from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.types import AssetAmount, Location
 from rotkehlchen.utils.misc import timestamp_to_date, ts_ms_to_sec
 
@@ -21,19 +20,14 @@ def history_event_to_staking_for_api(event: HistoryBaseEntry) -> dict[str, Any]:
     TODO: Think if we need these and if instead the frontend could just consume normal
     history events through the rotki API
     """
-    data = {
+    return {
         'asset': event.asset.identifier,
         'timestamp': ts_ms_to_sec(event.timestamp),
         'location': str(event.location),
         'amount': abs(event.amount),
+        # event_subtype to event_type serialization is intended here according to api docs
+        'event_type': event.event_subtype.serialize(),
     }
-    if not (
-            event.location == Location.BINANCE and
-            event.event_type == HistoryEventSubType.REWARD
-    ):
-        data['event_type'] = event.event_subtype.serialize()
-
-    return data
 
 
 def create_event_identifier_from_unique_id(
