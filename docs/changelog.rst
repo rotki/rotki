@@ -10,6 +10,7 @@ Changelog
 * :feature:`11086` rotki will now properly handle Kraken margin profit, loss, fee, and any other so far unsupported event.
 * :bug:`11084` Indexer related backend query task will no longer randomly die.
 * :bug:`11094` rotki should now process correctly all the RPCs responses from Binance SC nodes.
+* :bug:`11148` Locked Curve CRV balances in the vote escrow contract will now show up correctly.
 
 * :release:`1.41.2 <2025-12-05>`
 * :feature:`11063` rotki has now improved the date/time range selector in the PnL report generation menu.

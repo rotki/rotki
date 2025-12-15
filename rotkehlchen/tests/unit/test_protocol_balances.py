@@ -34,6 +34,7 @@ from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.blur.constants import BLUR_IDENTIFIER, CPT_BLUR
 from rotkehlchen.chain.ethereum.modules.convex.balances import CPT_CONVEX, ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
+from rotkehlchen.chain.ethereum.modules.curve.constants import VOTING_ESCROW
 from rotkehlchen.chain.ethereum.modules.curve.crvusd.balances import CurveCrvusdBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
@@ -82,6 +83,7 @@ from rotkehlchen.chain.optimism.modules.walletconnect.constants import (
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_ARB,
+    A_CRV,
     A_CVX,
     A_ENS,
     A_ETH,
@@ -97,11 +99,14 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_curve_crvusd import (
     fixture_crvusd_controller,  # noqa: F401
 )
@@ -116,12 +121,15 @@ from rotkehlchen.tests.utils.ethereum import (
     get_decoded_events_of_transaction,
     wait_until_all_nodes_connected,
 )
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
+    Location,
     Price,
     SupportedBlockchain,
+    TimestampMS,
     TokenKind,
     deserialize_evm_tx_hash,
 )
@@ -167,6 +175,43 @@ def test_curve_balances(
         amount=FVal('2402.233522210805651105'),
         usd_value=FVal('3603.3502833162084766575'),
     )
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [['0x21Ab0875611da0235BC5b6405b8A08268D859700']])
+def test_curve_locked_crv_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Ensure locked CRV balances stored in the veCRV escrow are detected."""
+    lock_event = EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TimestampMS(0),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        asset=A_CRV,
+        amount=(locked_crv_amount := FVal('311.05616434049212239')),
+        location_label=(address := ethereum_accounts[0]),
+        counterparty=CPT_CURVE,
+        address=VOTING_ESCROW,
+    )
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        events_db.add_history_event(write_cursor=write_cursor, event=lock_event)
+
+        curve_balances = CurveBalances(
+            evm_inquirer=ethereum_inquirer,
+            tx_decoder=ethereum_transaction_decoder,
+        ).query_balances()
+        user_balance = curve_balances[address]
+        assert user_balance.assets[A_CRV][CPT_CURVE] == Balance(
+            amount=locked_crv_amount,
+            usd_value=locked_crv_amount * CURRENT_PRICE_MOCK,
+        )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
