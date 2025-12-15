@@ -1285,6 +1285,7 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             tx_hashes: list[EVMTxHash] | None = None,
             counterparties: list[str] | None = None,
             addresses: list[ChecksumEvmAddress] | None = None,
+            excluded_addresses: list[ChecksumEvmAddress] | None = None,
     ) -> Self:
         if entry_types is None:
             entry_types = IncludeExcludeFilterData(values=[HistoryBaseEntryType.EVM_EVENT, HistoryBaseEntryType.EVM_SWAP_EVENT])  # noqa: E501
@@ -1329,6 +1330,14 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
                 column='address',
                 values=addresses,
                 operator='IN',
+            ))
+
+        if excluded_addresses is not None:
+            filter_query.filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='address',
+                values=excluded_addresses,
+                operator='NOT IN',
             ))
 
         return filter_query
