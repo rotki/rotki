@@ -3,7 +3,7 @@ import { queryTransformer, snakeCaseTransformer } from '@/modules/api/transforme
 import { nonEmptyProperties } from '@/utils/data';
 
 export interface TransformOptions {
-  skipSnakeCase?: boolean;
+  skipSnakeCase?: boolean | string[];
   filterEmptyProperties?: true | NonEmptyPropertiesOptions;
 }
 
@@ -24,8 +24,10 @@ export function transformRequestBody(
     transformed = nonEmptyProperties(transformed, filterOptions);
   }
 
-  if (!options.skipSnakeCase)
-    transformed = snakeCaseTransformer(transformed);
+  if (options.skipSnakeCase !== true) {
+    const skipKeys = Array.isArray(options.skipSnakeCase) ? options.skipSnakeCase : undefined;
+    transformed = snakeCaseTransformer(transformed, skipKeys);
+  }
 
   return transformed;
 }
@@ -47,8 +49,10 @@ export function transformRequestQuery(
     transformed = nonEmptyProperties(transformed, filterOptions);
   }
 
-  if (!options.skipSnakeCase)
-    return queryTransformer(transformed);
+  if (options.skipSnakeCase !== true) {
+    const skipKeys = Array.isArray(options.skipSnakeCase) ? options.skipSnakeCase : undefined;
+    return queryTransformer(transformed, skipKeys);
+  }
 
   return transformed as Record<string, string | number | boolean>;
 }

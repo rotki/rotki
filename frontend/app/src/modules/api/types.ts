@@ -17,8 +17,8 @@ export interface RotkiFetchOptions<R extends ResponseType = 'json', T = unknown>
   skipCamelCase?: boolean;
   /** Use noRootCamelCaseTransformer instead of camelCaseTransformer (skips root keys transformation) */
   skipRootCamelCase?: boolean;
-  /** Skip snake_case transformation on request body/query */
-  skipSnakeCase?: boolean;
+  /** Skip snake_case transformation on request body/query. Can be boolean or array of property names to skip. */
+  skipSnakeCase?: boolean | string[];
   /** Valid HTTP status codes. Defaults to [200, 400, 409]. 401 is always handled separately. */
   validStatuses?: ValidStatuses;
   /** Skip automatic ActionResult unwrapping - returns raw response instead of result */

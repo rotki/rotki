@@ -33,6 +33,28 @@ describe('request-transformers', () => {
       expect(result).toEqual({ userName: 'test', isActive: true });
     });
 
+    it('skips nested transformation for specified keys when skipSnakeCase is an array', () => {
+      const body = {
+        asyncQuery: true,
+        upToVersion: 5,
+        conflicts: {
+          someAssetId: 'local',
+          anotherAssetId: 'remote',
+        },
+      };
+
+      const result = transformRequestBody(body, { skipSnakeCase: ['conflicts'] });
+
+      expect(result).toEqual({
+        async_query: true,
+        up_to_version: 5,
+        conflicts: {
+          someAssetId: 'local',
+          anotherAssetId: 'remote',
+        },
+      });
+    });
+
     it('filters empty properties when filterEmptyProperties is true', () => {
       const body = { userName: 'test', emptyField: null, undefinedField: undefined };
 
@@ -98,6 +120,20 @@ describe('request-transformers', () => {
       const result = transformRequestQuery(query, { skipSnakeCase: true });
 
       expect(result).toEqual({ pageSize: 10, sortOrder: 'asc' });
+    });
+
+    it('skips nested transformation for specified keys when skipSnakeCase is an array', () => {
+      const query = {
+        pageSize: 10,
+        filterData: { nestedKey: 'value' },
+      };
+
+      const result = transformRequestQuery(query, { skipSnakeCase: ['filterData'] });
+
+      expect(result).toEqual({
+        page_size: 10,
+        filter_data: JSON.stringify({ nestedKey: 'value' }),
+      });
     });
 
     it('filters empty properties when filterEmptyProperties is true', () => {
