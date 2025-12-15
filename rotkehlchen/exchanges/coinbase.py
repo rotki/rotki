@@ -233,20 +233,22 @@ class Coinbase(ExchangeInterface):
 
         return changed
 
-    def _get_active_account_info(self, accounts: list[dict[str, Any]]) -> list[tuple[str, Timestamp]]:  # noqa: E501
-        """Gets the account ids and last_update timestamp out of the accounts response
+    def _get_active_account_info(self, accounts: list[dict[str, Any]]) -> list[str]:
+        """Gets the account ids from the accounts response.
 
         At the moment of writing this the coinbase API returns the accounts for the assets
         that the user has interacted with and in addition account for BCH, ETH2, BTC and ETH.
 
         We used to have an activity check comparing the `updated_at` and `created_at` fields
-        of the response but in some cases it proved to not be reliable.
+        of the response and later checking `updated_at` against its value from the last query,
+        but these checks proved to be unreliable.
         """
         account_info = []
         for account_data in accounts:
             if 'id' not in account_data:
                 log.error(
-                    'Found coinbase account entry without an id key. Skipping it. ',
+                    'Found coinbase account entry without an id key. '
+                    f'Skipping it. Raw account data: {account_data}',
                 )
                 continue
 
@@ -257,15 +259,8 @@ class Coinbase(ExchangeInterface):
                 )
                 continue
 
-            updated_at = account_data.get('updated_at')
-            try:
-                timestamp = deserialize_timestamp_from_date(updated_at, 'iso8601', 'coinbase')
-            except DeserializationError:
-                log.error(f'Skipping coinbase account {account_data} due to inability to deserialize timestamp')  # noqa: E501
-                continue
-
             log.debug(f'Found coinbase account: {account_data}')
-            account_info.append((account_data['id'], timestamp))
+            account_info.append(account_data['id'])
 
         return account_info
 
@@ -430,23 +425,19 @@ class Coinbase(ExchangeInterface):
         self.staking_events = set()
         conversion_pairs: defaultdict[str, list[dict]] = defaultdict(list)
         all_events: list[HistoryBaseEntry] = []
-        for account_id, last_update_timestamp in account_info:
+        for account_id in account_info:
             if force_refresh:
                 last_id = None  # Bypass cache when force_refresh is True
             else:
                 with self.db.conn.read_ctx() as cursor:
-                    last_query = 0
-                    if (result := self.db.get_dynamic_cache(
+                    if (last_query := self.db.get_dynamic_cache(
                         cursor=cursor,
                         name=DBCacheDynamic.LAST_QUERY_TS,
                         location=self.location.serialize(),
                         location_name=self.name,
                         account_id=account_id,
-                    )) is not None:
-                        last_query = result
-
-                    if now - last_query < HOUR_IN_SECONDS or last_update_timestamp < last_query:
-                        continue  # if no update since last query or last query is recent, then stop  # noqa: E501
+                    )) is not None and now - last_query < HOUR_IN_SECONDS:
+                        continue  # the last query is recent, skip this account
 
                     last_id = None
                     if (result_id := self.db.get_dynamic_cache(

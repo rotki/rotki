@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11149` rotki will now properly pull all new Coinbase events.
 * :bug:`-` Asset selection fields will now properly display ignored assets if they are already selected as the value.
 * :bug:`11113` An invalid Coinbase API key in the DB will no longer prevent logging into the app.
 * :bug:`11108` rotki will now correctly count the number of events allowed for the tier during the PnL report
