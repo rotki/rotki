@@ -194,9 +194,12 @@ class AssetsUpdater:
         self.asset_parser = AssetParser()
         self.asset_collection_parser = AssetCollectionParser()
         self.multiasset_mappings_parser = MultiAssetMappingsParser()
-        self.branch = os.getenv('GITHUB_BASE_REF', 'develop')
         if is_production():
             self.branch = 'master'
+        elif (base_ref := os.getenv('GITHUB_BASE_REF', 'develop')) != '':
+            self.branch = base_ref
+        else:  # In the CI when it's not triggered by a PR the base ref is ''
+            self.branch = 'develop'
 
     def _get_remote_info_json(self) -> dict[str, Any]:
         url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/info.json'
