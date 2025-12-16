@@ -311,14 +311,18 @@ def test_sync_events_success(google_calendar_api, database):
     mock_creds = _create_mock_credentials()
 
     # Create test events
+    ens_timestamp = Timestamp(int(
+        datetime.datetime.now(tz=datetime.UTC).timestamp() + DAY_IN_SECONDS,
+    ))
+    crv_timestamp = Timestamp(int(
+        datetime.datetime.now(tz=datetime.UTC).timestamp() + 2 * DAY_IN_SECONDS,
+    ))
     events = [
         CalendarEntry(
             identifier=1,
             name='ENS Renewal',
             description='Renew ENS domain',
-            timestamp=Timestamp(int(
-                datetime.datetime.now(tz=datetime.UTC).timestamp() + DAY_IN_SECONDS,
-            )),
+            timestamp=ens_timestamp,
             counterparty='ENS',
             address=string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
             blockchain=SupportedBlockchain.ETHEREUM,
@@ -329,9 +333,7 @@ def test_sync_events_success(google_calendar_api, database):
             identifier=2,
             name='CRV Unlock',
             description='CRV tokens unlock',
-            timestamp=Timestamp(int(
-                datetime.datetime.now(tz=datetime.UTC).timestamp() + 2 * DAY_IN_SECONDS,
-            )),
+            timestamp=crv_timestamp,
             counterparty='Curve',
             address=None,
             blockchain=None,
@@ -342,7 +344,11 @@ def test_sync_events_success(google_calendar_api, database):
 
     # Mock service with one existing event
     mock_service = _create_mock_service(
-        existing_events=[{'id': 'existing_event', 'summary': 'ENS Renewal'}],
+        existing_events=[{
+            'id': 'existing_event',
+            'summary': 'ENS Renewal',
+            'start': {'dateTime': datetime.datetime.fromtimestamp(ens_timestamp, tz=datetime.UTC).isoformat()},  # noqa: E501
+        }],
     )
 
     with (
@@ -356,6 +362,78 @@ def test_sync_events_success(google_calendar_api, database):
     assert result['events_updated'] == 1  # ENS Renewal
     assert result['calendar_id'] == 'rotki_cal'
     assert 'errors' not in result
+
+
+def test_sync_events_same_summary_different_times(google_calendar_api, database):
+    """Events sharing the same name but different timestamps should both sync."""
+    # Store credentials with calendar_id already set
+    creds_data = {
+        'token': 'mock_token',
+        'refresh_token': 'mock_refresh_token',
+        'user_email': 'test@example.com',
+        'calendar_id': 'rotki_cal',
+    }
+
+    with database.conn.write_ctx() as cursor:
+        cursor.execute(
+            'INSERT INTO key_value_cache (name, value) VALUES (?, ?)',
+            ('google_calendar_credentials', json.dumps(creds_data)),
+        )
+
+    mock_creds = _create_mock_credentials()
+
+    base_ts = int(datetime.datetime.now(tz=datetime.UTC).timestamp())
+    first_timestamp = Timestamp(base_ts + DAY_IN_SECONDS)
+    second_timestamp = Timestamp(base_ts + 2 * DAY_IN_SECONDS)
+    events = [
+        CalendarEntry(
+            identifier=1,
+            name='Recurring Reminder',
+            description='First reminder',
+            timestamp=first_timestamp,
+            counterparty=None,
+            address=None,
+            blockchain=None,
+            color=None,
+            auto_delete=False,
+        ),
+        CalendarEntry(
+            identifier=2,
+            name='Recurring Reminder',
+            description='Second reminder',
+            timestamp=second_timestamp,
+            counterparty=None,
+            address=None,
+            blockchain=None,
+            color=None,
+            auto_delete=False,
+        ),
+    ]
+
+    mock_service = _create_mock_service(
+        existing_events=[
+            {
+                'id': 'existing_event_1',
+                'summary': 'Recurring Reminder',
+                'start': {'dateTime': datetime.datetime.fromtimestamp(first_timestamp, tz=datetime.UTC).isoformat()},  # noqa: E501
+            },
+            {
+                'id': 'existing_event_2',
+                'summary': 'Recurring Reminder',
+                'start': {'dateTime': datetime.datetime.fromtimestamp(second_timestamp, tz=datetime.UTC).isoformat()},  # noqa: E501
+            },
+        ],
+    )
+
+    with (
+        patch('rotkehlchen.externalapis.google_calendar.Credentials', return_value=mock_creds),
+        patch('rotkehlchen.externalapis.google_calendar.build', return_value=mock_service),
+    ):
+        result = google_calendar_api.sync_events(events)
+
+    assert result['events_processed'] == 2
+    assert result['events_created'] == 0
+    assert result['events_updated'] == 2
 
 
 def test_sync_events_with_errors(google_calendar_api, database):

@@ -2,9 +2,10 @@
 Changelog
 =========
 
+
 * :bug:`-` Clicking the "more years" menu in the PnL report range selector will no longer cause an error during login.
-* :bug:`-` Fix an issue where users cannot authenticate Gnosis Pay using Zeal Wallet.
-* :bug:`-` Fix an issue where the WalletConnect modal is not visible.
+* :bug:`-` Gnosis Pay users will now be able to authenticate using Zeal Wallet.
+* :bug:`-` The WalletConnect modal should now be visible under all circumstances.
 * :bug:`11147` rotki will now properly detect staked GRT balances on Arbitrum after The Graph's Horizon upgrade.
 * :bug:`11149` rotki will now properly pull all new Coinbase events.
 * :bug:`-` Asset selection fields will now properly display ignored assets if they are already selected as the value.
@@ -16,6 +17,7 @@ Changelog
 * :bug:`11084` Indexer related backend query task will no longer randomly die.
 * :bug:`11094` rotki should now process correctly all the RPCs responses from Binance SC nodes.
 * :bug:`11148` Locked Curve CRV balances in the vote escrow contract will now show up correctly.
+* :bug:`-` Google calendar sync should no longer overwrite event reminder with the same title.
 
 * :release:`1.41.2 <2025-12-05>`
 * :feature:`11063` rotki has now improved the date/time range selector in the PnL report generation menu.
