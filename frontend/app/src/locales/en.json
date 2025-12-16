@@ -4626,6 +4626,7 @@
   "swap_event_form": {
     "add_asset": "Add asset",
     "fee_notes": "Fee notes",
+    "fee_notes_indexed": "Fee notes #{index}",
     "receive_notes": "Receive notes",
     "spend_notes": "Spend notes",
     "unique_id": "Unique Identifier",

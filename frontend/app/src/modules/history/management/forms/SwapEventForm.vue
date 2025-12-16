@@ -47,7 +47,7 @@ function emptyEvent(): FormData {
     spendAsset: '',
     timestamp: dayjs().valueOf(),
     uniqueId: '',
-    userNotes: ['', '', ''],
+    userNotes: ['', ''],
   };
 }
 
@@ -141,9 +141,13 @@ async function save(): Promise<boolean> {
 
   const model = get(states);
   const fees = get(hasFee) ? model.fees.filter(fee => fee.amount && fee.asset) : undefined;
+  const feeCount = fees?.length ?? 0;
+  // Only include userNotes for spend, receive, and actual fees (2 + fee count)
+  const userNotes = model.userNotes.slice(0, 2 + feeCount) as SwapEventUserNotes;
   const payload: AddSwapEventPayload = {
-    ...omit(model, ['fees']),
+    ...omit(model, ['fees', 'userNotes']),
     fees,
+    userNotes,
   };
 
   const eventIdentifiers = get(identifiers);
@@ -202,11 +206,9 @@ watchImmediate(() => props.data, (data) => {
     asset: fee.asset,
   }));
 
-  const userNotes: SwapEventUserNotes = [
-    getNotes(spend),
-    getNotes(receive),
-    hasFeeEvents ? getNotes(feeEvents[0]) : '',
-  ];
+  const userNotes: SwapEventUserNotes = hasFeeEvents
+    ? [getNotes(spend), getNotes(receive), ...feeEvents.map(fee => getNotes(fee))]
+    : [getNotes(spend), getNotes(receive)];
 
   set(states, {
     entryType: HistoryEventEntryType.SWAP_EVENT,
@@ -227,20 +229,53 @@ watchImmediate(() => props.data, (data) => {
 watch(hasFee, (hasFee) => {
   const oldStates = get(states);
   if (hasFee) {
-    // When enabling fees, ensure there's at least one empty fee entry
+    // When enabling fees, ensure there's at least one empty fee entry and fee note
+    const updates: Partial<FormData> = {};
     if (oldStates.fees.length === 0) {
+      updates.fees = [{ amount: '', asset: '' }];
+    }
+    // Add empty fee note if not present
+    if (oldStates.userNotes.length < 3) {
+      updates.userNotes = [...oldStates.userNotes, ''] as SwapEventUserNotes;
+    }
+    if (Object.keys(updates).length > 0) {
       set(states, {
         ...oldStates,
-        fees: [{ amount: '', asset: '' }],
+        ...updates,
       });
     }
     return;
   }
+  // When disabling fees, remove fee entries and keep only spend/receive notes
   set(states, {
     ...oldStates,
     fees: [],
-    userNotes: [oldStates.userNotes[0], oldStates.userNotes[1], ''],
+    userNotes: [oldStates.userNotes[0], oldStates.userNotes[1]],
   });
+});
+
+// Sync userNotes array with fees array when fees are added/removed
+watch(() => get(states).fees.length, (newLength, oldLength) => {
+  if (!get(hasFee))
+    return;
+
+  const currentNotes = get(states).userNotes;
+  const expectedLength = 2 + newLength; // 2 for spend/receive + fee count
+
+  if (currentNotes.length === expectedLength)
+    return;
+
+  if (newLength > oldLength) {
+    // Fee added - add empty notes
+    const notesToAdd = newLength - oldLength;
+    const newNotes = [...currentNotes, ...Array.from({ length: notesToAdd }).fill('')] as SwapEventUserNotes;
+    set(states, { ...get(states), userNotes: newNotes });
+  }
+  else {
+    // Fee removed - remove corresponding notes from the end
+    const newNotes = currentNotes.slice(0, expectedLength) as SwapEventUserNotes;
+    set(states, { ...get(states), userNotes: newNotes });
+  }
 });
 
 watch(errorMessages, (errors) => {
@@ -326,7 +361,7 @@ defineExpose({
 
     <SwapEventNotes
       v-model="states.userNotes"
-      :has-fee="hasFee"
+      :fee-count="hasFee ? states.fees.length : 0"
       :error-messages="toMessages(v$.userNotes)"
       @blur="v$.userNotes.$touch()"
     />

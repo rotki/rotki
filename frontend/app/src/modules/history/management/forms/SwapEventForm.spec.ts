@@ -200,7 +200,7 @@ describe('forms/SwapEventForm', () => {
       spendAsset: 'ETH',
       timestamp: nowInMs,
       uniqueId: 'abcd',
-      userNotes: ['', '', ''],
+      userNotes: ['', ''],
     } satisfies AddSwapEventPayload);
     vi.useRealTimers();
   });
@@ -229,7 +229,7 @@ describe('forms/SwapEventForm', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     expect(feeAddButton.attributes('disabled')).toBeUndefined();
-    expect(wrapper.find('[data-cy=fee-notes]').exists()).toBe(true);
+    expect(wrapper.find('[data-cy=fee-notes-1]').exists()).toBe(true);
   });
 
   it('calls editHistoryEvent when editing an event', async () => {
@@ -247,7 +247,7 @@ describe('forms/SwapEventForm', () => {
     await feeAmountInputs[0].setValue('2');
 
     const receiveNotes = wrapper.find('[data-cy=receive-notes] textarea:not([aria-hidden="true"])');
-    const feeNotes = wrapper.find('[data-cy=fee-notes] textarea:not([aria-hidden="true"])');
+    const feeNotes = wrapper.find('[data-cy=fee-notes-1] textarea:not([aria-hidden="true"])');
     await receiveNotes.setValue('receive');
     await feeNotes.setValue('fee');
 
