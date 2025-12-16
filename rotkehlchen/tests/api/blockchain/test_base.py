@@ -612,11 +612,16 @@ def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not a
     assert_proper_response(response)
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('btc_accounts', [[]])
 def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that if we add blockchain accounts concurrently we won't get any duplicates"""
-    ethereum_accounts = [make_evm_address(), make_evm_address(), make_evm_address()]
+    ethereum_accounts = [  # Hardcode the addresses to keep it deterministic for the vcr
+        '0x419Ec7D064B2746B2A34A8Aed2c6F523D2f32cdd',
+        '0x7E5E6921F4Ea2A19D4CE1863a9f217c0a1bee583',
+        '0x9395A427929b5001c99857CB7DAd1dACFD2344d1',
+    ]
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     query_accounts = ethereum_accounts.copy()
