@@ -49,7 +49,6 @@ from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
 from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import CPT_PICKLE
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
-from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
@@ -182,7 +181,6 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         Compoundv3Balances,
         CurveBalances,  # only needed in ethereum, because other chains have new gauge contracts
         ConvexBalances,
-        ThegraphBalances,
         OctantBalances,
         EigenlayerBalances,
         HedgeyBalances,
