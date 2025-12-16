@@ -5,6 +5,7 @@ Changelog
 * :bug:`11149` rotki will now properly pull all new Coinbase events.
 * :bug:`-` Asset selection fields will now properly display ignored assets if they are already selected as the value.
 * :bug:`11113` An invalid Coinbase API key in the DB will no longer prevent logging into the app.
+* :bug:`-` Gas events will be editable again.
 * :bug:`11108` rotki will now correctly count the number of events allowed for the tier during the PnL report
 * :feature:`10832` rotki will now query and store Binance Convert trades.
 * :feature:`11086` rotki will now properly handle Kraken margin profit, loss, fee, and any other so far unsupported event.

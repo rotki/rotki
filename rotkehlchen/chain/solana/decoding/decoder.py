@@ -7,6 +7,7 @@ from solders.solders import Signature
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.decoder import TransactionDecoder
+from rotkehlchen.chain.decoding.types import DecodingRulesBase
 from rotkehlchen.chain.decoding.utils import decode_safely
 from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
@@ -67,7 +68,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class SolanaDecodingRules:
+class SolanaDecodingRules(DecodingRulesBase):
     address_mappings: dict[SolanaAddress, tuple[Any, ...]]
     all_counterparties: set['CounterpartyDetails']
 
