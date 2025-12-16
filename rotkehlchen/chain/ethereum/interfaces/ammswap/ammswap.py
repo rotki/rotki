@@ -89,7 +89,7 @@ class AMMSwapPlatform:
     def _get_lp_addresses(
             self,
             addresses: list[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, list[Asset]]:
+    ) -> dict[ChecksumEvmAddress, set[Asset]]:
         """Query all LP tokens that the given users have ever gotten as a result of depositing"""
         db_filter = EvmEventFilterQuery.make(
             counterparties=self.counterparties,
@@ -99,11 +99,11 @@ class AMMSwapPlatform:
             ],
         )
         query, bindings = db_filter.prepare()
-        address_to_pools = defaultdict(list)
+        address_to_pools = defaultdict(set)
         with self.database.conn.read_ctx() as cursor:
             cursor.execute('SELECT location_label, asset FROM history_events JOIN chain_events_info ON history_events.identifier = chain_events_info.identifier ' + query, bindings)  # noqa: E501
             for address, lp_token in cursor:
-                address_to_pools[string_to_evm_address(address)].append(Asset(lp_token))
+                address_to_pools[string_to_evm_address(address)].add(Asset(lp_token))
 
         return address_to_pools
 
