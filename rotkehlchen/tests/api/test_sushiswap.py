@@ -45,21 +45,22 @@ def test_get_balances_module_not_activated(rotkehlchen_api_server: 'APIServer') 
 @pytest.mark.parametrize('ethereum_modules', [['sushiswap']])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_get_balances(
         rotkehlchen_api_server: 'APIServer',
-        start_with_valid_premium: bool,
         inquirer: Inquirer,  # pylint: disable=unused-argument
         ethereum_accounts: list[ChecksumEvmAddress],
 ) -> None:
     """Check querying the sushiswap balances endpoint works. Uses real data. Needs the deposit
     event in uniswap to trigger the logic based on events to query pool balances.
     """
-    tx_hash = deserialize_evm_tx_hash('0xbc99e10c1e48969f4a580229abebc97f7a358b7ba8365dca1f829f9c387bec51')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
-    get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
-    )
+    for tx_hash in (
+        deserialize_evm_tx_hash('0xbc99e10c1e48969f4a580229abebc97f7a358b7ba8365dca1f829f9c387bec51'),
+        deserialize_evm_tx_hash('0x7c3742c291636d3c9d045dff5a364dc545a8493b83c543a80fbb3af15f557434'),
+    ):
+        get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+
     async_query = random.choice([False, True])
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'evmmodulebalancesresource', module='sushiswap'),
@@ -77,36 +78,14 @@ def test_get_balances(
     else:
         result = assert_proper_sync_response_with_result(response)
 
-    address_balances = result[ethereum_accounts[0]]
-    for lp in address_balances:
-        # LiquidityPool attributes
-        assert lp['address'].startswith('0x')
-        assert len(lp['assets']) == 2
-        if start_with_valid_premium:
-            assert lp['total_supply'] is not None
-        else:
-            assert lp['total_supply'] is None
-        assert lp['user_balance']['amount']
-        assert lp['user_balance']['usd_value']
-
-        # LiquidityPoolAsset attributes
-        for lp_asset in lp['assets']:
-            lp_asset_type = type(lp_asset['asset'])
-
-            assert lp_asset_type in (str, dict)
-
-            # Unknown asset, at least contains token address
-            if lp_asset_type is dict:
-                assert lp_asset['asset']['evm_address'].startswith('0x')
-            # Known asset, contains identifier
-            else:
-                assert not lp_asset['asset'].startswith('0x')
-
-            if start_with_valid_premium:
-                assert lp_asset['total_amount'] is not None
-            else:
-                assert lp_asset['total_amount'] is None
-            assert lp_asset['usd_price']
-            assert len(lp_asset['user_balance']) == 2
-            assert lp_asset['user_balance']['amount']
-            assert lp_asset['user_balance']['usd_value']
+    assert len(address_balances := result[ethereum_accounts[0]]) == 1
+    assert (lp := address_balances[0])['address'] == '0xCEfF51756c56CeFFCA006cD410B03FFC46dd3a58'
+    assert len(lp['assets']) == 2
+    assert (wbtc_data := lp['assets'][0])['asset'] == 'eip155:1/erc20:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'  # noqa: E501
+    assert wbtc_data['user_balance']['amount'] == '0.00431729'
+    assert wbtc_data['user_balance']['usd_value'] == '379.08828303'
+    assert (weth_data := lp['assets'][1])['asset'] == 'eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'  # noqa: E501
+    assert weth_data['user_balance']['amount'] == '0.128050764818040042'
+    assert weth_data['user_balance']['usd_value'] == '378.04939500289233759828'
+    assert lp['user_balance']['amount'] == '0.000000008965605681'
+    assert lp['user_balance']['usd_value'] == '757.13767803289233759828'
