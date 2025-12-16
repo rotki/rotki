@@ -3,6 +3,7 @@ import { builtinModules } from 'node:module';
 import path, { join, resolve } from 'node:path';
 import process from 'node:process';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
+import { ruiIconsPlugin } from '@rotki/ui-library/vite-plugin';
 import vue from '@vitejs/plugin-vue';
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
@@ -11,8 +12,10 @@ import VueRouter from 'unplugin-vue-router/vite';
 import checker from 'vite-plugin-checker';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import { defineConfig } from 'vitest/config';
+import { scanBackendIcons } from './scripts/extract-backend-icons';
 
 const PACKAGE_ROOT = __dirname;
+const PROJECT_ROOT = resolve(PACKAGE_ROOT, '../..');
 const envPath = process.env.VITE_PUBLIC_PATH;
 const publicPath = envPath || '/';
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -129,6 +132,25 @@ export default defineConfig({
           from: 'vue-router',
           names: ['RouterLink', 'RouterView'],
         },
+      ],
+    }),
+    ruiIconsPlugin({
+      include: [
+        ...scanBackendIcons(PROJECT_ROOT).icons,
+        // icons used by the components
+        'lu-minus',
+        'lu-message-square-quote',
+        'lu-equal',
+        'lu-map-pin-check-inside',
+        'lu-square-kanban',
+        'lu-corner-up-left',
+        'lu-droplets',
+        'lu-receipt-cent',
+        'lu-deposits',
+        'lu-liabilities',
+        'lu-palette',
+        'lu-slash',
+        'lu-monitor',
       ],
     }),
     VueI18nPlugin({
