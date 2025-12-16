@@ -1,11 +1,16 @@
-from typing import NamedTuple, Protocol, Self
+from abc import ABC, abstractmethod
+from typing import NamedTuple, Self
 
 
-class SupportsAddition(Protocol):
-    """Protocol for types that support addition with the + operator.
+class DecodingRulesBase(ABC):
+    """Abstract base class for decoding rules that have counterparties and support addition.
     Decoding rules must implement this to allow merging during recursive discovery.
     """
-    def __add__(self, other: Self) -> Self: ...
+    all_counterparties: set['CounterpartyDetails']
+
+    @abstractmethod
+    def __add__(self, other: Self) -> Self:
+        """Merge two decoding rules instances."""
 
 
 def get_versioned_counterparty_label(counterparty: str) -> str:

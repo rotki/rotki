@@ -1297,12 +1297,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def get_all_counterparties(self) -> set['CounterpartyDetails']:
         """
         Obtain the set of unique counterparties from the decoders across
-        all EVM chains and Solana.
+        all EVM chains and Solana, including misc entries defined per decoder.
         """
         return reduce(
             operator.or_,
             [
-                self.get_chain_manager(chain).transactions_decoder.rules.all_counterparties  # type: ignore[attr-defined]
+                self.get_chain_manager(chain).transactions_decoder.get_all_counterparties()  # type: ignore[attr-defined]
                 for chain in CHAINS_WITH_TRANSACTION_DECODERS
             ],
         )

@@ -14,7 +14,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_evm_token, get_or_create_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS, MIN_LOGS_PROCESSED_TO_SLEEP
 from rotkehlchen.chain.decoding.decoder import TransactionDecoder
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import DecodingRulesBase
 from rotkehlchen.chain.decoding.utils import decode_safely
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -94,6 +94,7 @@ from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithProxies
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -123,7 +124,7 @@ class EventDecoderFunction(Protocol):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class EvmDecodingRules:
+class EvmDecodingRules(DecodingRulesBase):
     address_mappings: dict[ChecksumEvmAddress, tuple[Any, ...]]
     event_rules: list[EventDecoderFunction]
     input_data_rules: dict[bytes, dict[bytes, Callable]]
@@ -173,7 +174,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             transactions: 'EvmTransactions',
             value_asset: 'AssetWithOracles',
             event_rules: list[EventDecoderFunction],
-            misc_counterparties: list[CounterpartyDetails],
+            misc_counterparties: list['CounterpartyDetails'],
             base_tools: 'BaseEvmDecoderTools',
             premium: 'Premium | None' = None,
             dbevmtx_class: type[DBEvmTx] = DBEvmTx,
@@ -1322,7 +1323,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             transactions: 'EvmTransactions',
             value_asset: 'AssetWithOracles',
             event_rules: list[EventDecoderFunction],
-            misc_counterparties: list[CounterpartyDetails],
+            misc_counterparties: list['CounterpartyDetails'],
             base_tools: 'BaseEvmDecoderToolsWithProxy',
             beacon_chain: 'BeaconChain | None' = None,
             premium: 'Premium | None' = None,
