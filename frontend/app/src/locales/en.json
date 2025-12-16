@@ -2550,8 +2550,10 @@
         "step2_title": "Checking connected address eligibility",
         "step3_title": "Sign Authentication Message",
         "success_message": "Successfully authenticated with Gnosis Pay",
+        "switch_to_gnosis": "Switch to Gnosis",
         "validating_address": "Validating address...",
-        "verifying_signature": "Verifying signature and generating token"
+        "verifying_signature": "Verifying signature and generating token",
+        "wrong_chain": "You are not connected to the Gnosis network. Please switch to continue."
       },
       "title": "Gnosis Pay"
     },

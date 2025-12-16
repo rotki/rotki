@@ -2,6 +2,7 @@
 import type { BrowserProvider } from 'ethers';
 import type { EnhancedProviderDetail } from '@/modules/onchain/wallet-providers/provider-detection';
 import type { TaskMeta } from '@/types/task';
+import { gnosis } from '@reown/appkit/networks';
 import GnosisPayAuthStep from '@/components/settings/api-keys/external/GnosisPayAuthStep.vue';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import ProviderSelectionDialog from '@/components/wallets/ProviderSelectionDialog.vue';
@@ -73,6 +74,7 @@ const walletStore = useWalletStore();
 const {
   connected,
   connectedAddress,
+  connectedChainId,
   isDisconnecting,
   isWalletConnect,
   preparing,
@@ -80,9 +82,11 @@ const {
   walletMode,
 } = storeToRefs(walletStore);
 
-const { connect: connectWallet, disconnect: disconnectWallet } = walletStore;
+const { connect: connectWallet, disconnect: disconnectWallet, switchNetwork } = walletStore;
 
 const isWalletConnected = computed<boolean>(() => get(connected) && !!get(connectedAddress));
+const isOnGnosisChain = computed<boolean>(() => get(connectedChainId) === gnosis.id);
+const switchingNetwork = ref<boolean>(false);
 
 const errorCloseable = computed<boolean>(() => {
   const type = get(errorType);
@@ -169,7 +173,7 @@ const validationErrorMessage = computed<string>(() => {
   }
 });
 
-const primaryActionDisabled = logicOr(signingInProgress, logicNot(connectedAddress));
+const primaryActionDisabled = logicOr(signingInProgress, logicNot(connectedAddress), logicNot(isOnGnosisChain));
 
 const injectedWallet = useInjectedWallet();
 const walletConnect = useWalletConnect();
@@ -291,6 +295,25 @@ async function disconnect(): Promise<void> {
     set(errorType, GnosisPayError.CONNECTION_FAILED);
     set(errorContext, { message: error.message });
   }
+}
+
+async function switchToGnosis(): Promise<void> {
+  try {
+    set(switchingNetwork, true);
+    await switchNetwork(BigInt(gnosis.id));
+  }
+  catch (error: any) {
+    logger.error('Failed to switch to Gnosis network:', error);
+    set(errorType, GnosisPayError.CONNECTION_FAILED);
+    set(errorContext, { message: error.message });
+  }
+  finally {
+    set(switchingNetwork, false);
+  }
+}
+
+function cancelSigning(): void {
+  set(signingInProgress, false);
 }
 
 async function onConnectClicked(): Promise<void> {
@@ -715,20 +738,58 @@ watch(isStep3Complete, (complete) => {
             {{ t('external_services.gnosispay.siwe.sign_explanation') }}
           </div>
 
-          <RuiButton
-            :disabled="primaryActionDisabled || signingInProgress"
-            :loading="signingInProgress"
-            color="primary"
-            @click="signInWithEthereum()"
+          <!-- Warning when not on Gnosis chain -->
+          <RuiAlert
+            v-if="isWalletConnected && !isOnGnosisChain"
+            type="warning"
           >
-            <template #prepend>
-              <RuiIcon
-                name="lu-pencil-line"
-                size="16"
-              />
-            </template>
-            {{ t('external_services.gnosispay.siwe.sign_message') }}
-          </RuiButton>
+            {{ t('external_services.gnosispay.siwe.wrong_chain') }}
+          </RuiAlert>
+
+          <div class="flex gap-2 items-center">
+            <!-- Switch to Gnosis button when not on correct chain -->
+            <RuiButton
+              v-if="isWalletConnected && !isOnGnosisChain"
+              :loading="switchingNetwork"
+              color="primary"
+              @click="switchToGnosis()"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-repeat"
+                  size="16"
+                />
+              </template>
+              {{ t('external_services.gnosispay.siwe.switch_to_gnosis') }}
+            </RuiButton>
+
+            <!-- Sign button -->
+            <RuiButton
+              v-else
+              :disabled="primaryActionDisabled"
+              :loading="signingInProgress"
+              color="primary"
+              @click="signInWithEthereum()"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-pencil-line"
+                  size="16"
+                />
+              </template>
+              {{ t('external_services.gnosispay.siwe.sign_message') }}
+            </RuiButton>
+
+            <!-- Cancel button when signing is in progress -->
+            <RuiButton
+              v-if="signingInProgress"
+              variant="outlined"
+              color="primary"
+              @click="cancelSigning()"
+            >
+              {{ t('common.actions.cancel') }}
+            </RuiButton>
+          </div>
         </GnosisPayAuthStep>
       </template>
     </ServiceKeyCard>
