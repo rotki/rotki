@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users will now be able to customize the indexer order when redecoding EVM transactions.
 * :bug:`-` Swap event creation form now correctly handles user notes for multiple fee assets.
 * :bug:`-` Clicking the "more years" menu in the PnL report range selector will no longer cause an error during login.
 * :bug:`-` Gnosis Pay users will now be able to authenticate using Zeal Wallet.

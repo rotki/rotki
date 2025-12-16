@@ -38,6 +38,7 @@ const emit = defineEmits<{
   'add-event': [event: StandaloneEditableEvents];
   'toggle-ignore': [event: HistoryEventEntry];
   'redecode': [event: PullEventPayload];
+  'redecode-with-options': [event: PullEventPayload];
   'delete-tx': [data: LocationAndTxRef];
 }>();
 
@@ -123,6 +124,13 @@ function redecode(event: EthBlockEvent | DecodableEventType): void {
   });
 }
 
+function redecodeWithOptions(event: DecodableEventType): void {
+  emit('redecode-with-options', {
+    data: toLocationAndTxRef(event),
+    type: event.entryType,
+  });
+}
+
 function deleteTxAndEvents(params: LocationAndTxRef) {
   return emit('delete-tx', params);
 }
@@ -186,16 +194,38 @@ function hideAddAction(item: HistoryEvent): boolean {
           </RuiButton>
         </template>
         <template v-else-if="eventWithDecoding">
-          <RuiButton
-            variant="list"
-            :disabled="loading || txEventsDecoding"
-            @click="redecode(eventWithDecoding)"
-          >
-            <template #prepend>
-              <RuiIcon name="lu-rotate-ccw" />
-            </template>
-            {{ t('transactions.actions.redecode_events') }}
-          </RuiButton>
+          <div class="flex justify-between">
+            <RuiButton
+              variant="list"
+              class="grow"
+              :disabled="loading || txEventsDecoding"
+              @click="redecode(eventWithDecoding)"
+            >
+              <template #prepend>
+                <RuiIcon name="lu-rotate-ccw" />
+              </template>
+              {{ t('transactions.actions.redecode_events') }}
+            </RuiButton>
+            <RuiTooltip
+              v-if="evmEvent"
+              :popper="{ placement: 'top' }"
+            >
+              <template #activator>
+                <RuiButton
+                  variant="list"
+                  size="sm"
+                  :disabled="loading || txEventsDecoding"
+                  @click="redecodeWithOptions(evmEvent)"
+                >
+                  <RuiIcon
+                    name="lu-settings"
+                    size="16"
+                  />
+                </RuiButton>
+              </template>
+              {{ t('transactions.actions.redecode_with_options') }}
+            </RuiTooltip>
+          </div>
         </template>
         <RuiButton
           v-if="eventWithTxRef"

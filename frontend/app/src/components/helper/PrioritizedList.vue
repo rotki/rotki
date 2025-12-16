@@ -14,6 +14,7 @@ const props = withDefaults(
     itemDataName?: string;
     disableAdd?: boolean;
     disableDelete?: boolean;
+    dense?: boolean;
     status?: BaseMessage;
     variant?: 'flat' | 'outlined';
   }>(),
@@ -120,7 +121,8 @@ const autoCompleteHint = computed<string>(() => {
 
       <div
         v-if="!disableAdd"
-        class="flex px-6 py-2 gap-2 items-start border-b border-default"
+        class="flex py-2 gap-2 items-start border-b border-default"
+        :class="variant === 'outlined' ? 'px-6' : 'px-[1px]'"
       >
         <RuiAutoComplete
           v-model="selection"
@@ -197,6 +199,7 @@ const autoCompleteHint = computed<string>(() => {
                   :id="`move-up-${identifier}`"
                   size="sm"
                   class="!px-1"
+                  :class="{ '!py-0.5': dense }"
                   :disabled="isFirst(identifier)"
                   @click="move(identifier, false)"
                 >
@@ -209,6 +212,7 @@ const autoCompleteHint = computed<string>(() => {
                   :id="`move-down-${identifier}`"
                   size="sm"
                   class="!px-1"
+                  :class="{ '!py-0.5': dense }"
                   :disabled="isLast(identifier)"
                   @click="move(identifier, true)"
                 >
@@ -239,10 +243,14 @@ const autoCompleteHint = computed<string>(() => {
                     :id="`delete-${identifier}`"
                     class="transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible"
                     icon
+                    :class="{ '!p-2': dense }"
                     variant="text"
                     @click="remove(identifier)"
                   >
-                    <RuiIcon name="lu-x" />
+                    <RuiIcon
+                      name="lu-x"
+                      :size="dense ? 16 : 20"
+                    />
                   </RuiButton>
                 </template>
                 <span>

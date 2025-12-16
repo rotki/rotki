@@ -4838,7 +4838,8 @@
       "add_event_here": "Add new event here",
       "delete_transaction": "Delete transaction & events",
       "redecode_events": "Redecode events",
-      "redecode_page": "Redecode page"
+      "redecode_page": "Redecode page",
+      "redecode_with_options": "Redecode with options"
     },
     "cache_refresh": {
       "refreshing": "Refreshing protocol cache data"
@@ -4887,6 +4888,9 @@
           "title": "Ignore Transaction in Accounting"
         },
         "reset": {
+          "custom_events_title": "Custom Events",
+          "indexer_order_hint": "Change the order of indexers used when redecoding this transaction. This does not affect your settings.",
+          "indexer_order_title": "Indexer Order",
           "message": "There are custom events in this transaction",
           "options": {
             "keep_custom_events": "Don't remove my custom events",
