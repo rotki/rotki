@@ -1,96 +1,98 @@
+import { expect, type Page } from '@playwright/test';
 import { type BigNumber, Zero } from '@rotki/common';
-import { parseBigNumber, updateLocationBalance } from '../utils/amounts';
+import { parseBigNumber, updateLocationBalance } from '../helpers/utils';
 import { RotkiApp } from './rotki-app';
 
 export class DashboardPage {
-  visit() {
-    RotkiApp.navigateTo('dashboard');
+  constructor(private readonly page: Page) {}
+
+  async visit(): Promise<void> {
+    await RotkiApp.navigateTo(this.page, 'dashboard');
   }
 
-  getOverallBalance() {
-    return cy
-      .get('[data-cy=overall-balances__net-worth] [data-cy=display-amount]')
-      .then($amount => parseBigNumber($amount.text()));
+  async getOverallBalance(): Promise<BigNumber> {
+    const amountText = await this.page
+      .locator('[data-cy=overall-balances__net-worth] [data-cy=display-amount]')
+      .textContent();
+    return parseBigNumber(amountText ?? '0');
   }
 
-  getBlockchainBalances() {
-    cy.get('[data-cy=blockchain-balances]').should('be.visible');
-    cy.get('[data-cy=blockchain-balances]').should('not.be.empty');
+  async getBlockchainBalances(): Promise<Map<string, BigNumber>> {
+    await this.page.locator('[data-cy=blockchain-balances]').waitFor({ state: 'visible' });
 
-    const balances: Map<string, BigNumber> = new Map<string, BigNumber>();
+    const balances = new Map<string, BigNumber>();
+    const elements = this.page.locator('[data-cy=blockchain-balance__summary]');
+    const count = await elements.count();
 
-    cy.get('[data-cy=blockchain-balance__summary').each(($element) => {
-      const location = $element.attr('data-location');
-      if (!location) {
-        cy.log('missing location for element ', $element);
-        return true;
-      }
+    for (let i = 0; i < count; i++) {
+      const element = elements.nth(i);
+      const location = await element.getAttribute('data-location');
+      if (!location)
+        continue;
 
-      const amount = $element.find('[data-cy=display-amount]').text();
-      updateLocationBalance(amount, balances, location);
-    });
-    return cy.wrap(balances);
+      const amountText = await element.locator('[data-cy=display-amount]').textContent();
+      updateLocationBalance(amountText ?? '0', balances, location);
+    }
+
+    return balances;
   }
 
-  getNonFungibleBalances() {
-    return cy.get('[data-cy=dashboard]').then(($dashboard) => {
-      const nftTable = $dashboard.find('[data-cy=nft-balance-table]');
-      const nftTableExists = nftTable.length > 0;
+  async getNonFungibleBalances(): Promise<BigNumber> {
+    const nftTable = this.page.locator('[data-cy=nft-balance-table]');
+    const nftTableExists = (await nftTable.count()) > 0;
 
-      cy.log('NFT table exists', nftTableExists);
+    if (!nftTableExists) {
+      return Zero;
+    }
 
-      if (!nftTableExists)
-        return cy.wrap(Zero);
+    const displayAmount = nftTable.locator('tbody tr:last-child td:nth-child(2) [data-cy=display-amount]');
+    const displayAmountExists = (await displayAmount.count()) > 0;
 
-      const selector = 'tbody tr:last-child td:nth-child(2) [data-cy=display-amount]';
-      const $displayAmount = nftTable.find(selector);
+    if (!displayAmountExists) {
+      return Zero;
+    }
 
-      let amount = Zero;
-      if ($displayAmount.length > 0)
-        amount = parseBigNumber($displayAmount.text());
-
-      return cy.wrap(amount);
-    });
+    const amountText = await displayAmount.textContent();
+    return parseBigNumber(amountText ?? '0');
   }
 
-  getLocationBalances() {
-    cy.get('[data-cy=manual-balances]').as('manual_balances');
-    cy.get('@manual_balances').should('be.visible');
-    cy.get('@manual_balances').should('not.be.empty');
+  async getLocationBalances(): Promise<Map<string, BigNumber>> {
+    await this.page.locator('[data-cy=manual-balances]').first().waitFor({ state: 'visible' });
 
-    const balances: Map<string, BigNumber> = new Map();
+    const balances = new Map<string, BigNumber>();
+    const elements = this.page.locator('[data-cy=manual-balance__summary]');
+    const count = await elements.count();
 
-    cy.get('[data-cy=manual-balance__summary').each(($element) => {
-      const location = $element.attr('data-location');
-      if (!location) {
-        cy.log('missing location for element ', $element);
-        return true;
-      }
+    for (let i = 0; i < count; i++) {
+      const element = elements.nth(i);
+      const location = await element.getAttribute('data-location');
+      if (!location)
+        continue;
 
-      const amount = $element.find('[data-cy=display-amount]').text();
-      updateLocationBalance(amount, balances, location);
-    });
+      const amountText = await element.locator('[data-cy=display-amount]').textContent();
+      updateLocationBalance(amountText ?? '0', balances, location);
+    }
 
-    return cy.wrap(balances);
+    return balances;
   }
 
-  amountDisplayIsBlurred() {
-    cy.get('[data-cy=amount-display]').should(($div) => {
-      expect($div.css('filter')).to.match(/^blur/);
-    });
+  async amountDisplayIsBlurred(): Promise<void> {
+    const amountDisplay = this.page.locator('[data-cy=amount-display]').first();
+    const filter = await amountDisplay.evaluate(el => getComputedStyle(el).filter);
+    expect(filter).toMatch(/^blur/);
   }
 
-  amountDisplayIsNotBlurred() {
-    cy.get('[data-cy=amount-display]').should(($div) => {
-      expect($div.css('filter')).not.to.match(/^blur/);
-    });
+  async amountDisplayIsNotBlurred(): Promise<void> {
+    const amountDisplay = this.page.locator('[data-cy=amount-display]').first();
+    const filter = await amountDisplay.evaluate(el => getComputedStyle(el).filter);
+    expect(filter).not.toMatch(/^blur/);
   }
 
-  percentageDisplayIsBlurred() {
-    cy.get('[data-cy=percentage-display]').should('have.class', 'blur');
+  async percentageDisplayIsBlurred(): Promise<void> {
+    await expect(this.page.locator('[data-cy=percentage-display]').first()).toHaveClass(/blur/);
   }
 
-  percentageDisplayIsNotBlurred() {
-    cy.get('[data-cy=percentage-display]').should('not.have.class', 'blur');
+  async percentageDisplayIsNotBlurred(): Promise<void> {
+    await expect(this.page.locator('[data-cy=percentage-display]').first()).not.toHaveClass(/blur/);
   }
 }

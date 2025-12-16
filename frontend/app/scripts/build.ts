@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
-import { ArgumentParser } from 'argparse';
+import { cac } from 'cac';
 import consola from 'consola';
 import { config } from 'dotenv';
 import { isEmpty } from 'es-toolkit/compat';
@@ -15,16 +15,6 @@ process.env.NODE_ENV = 'production';
 const OUTPUT_DIR = 'dist';
 const currentDirectory = import.meta.dirname;
 
-const parser = new ArgumentParser({
-  description: 'Rotki frontend build',
-});
-
-parser.add_argument('--mode', { help: 'mode docker', default: 'production' });
-
-const { mode } = parser.parse_args();
-
-consola.info(`Building for ${mode}...`);
-
 function injectEnv(envName = '.env'): void {
   const envPath = path.resolve(currentDirectory, `../${envName}`);
   const envExists = fs.existsSync(envPath);
@@ -32,7 +22,7 @@ function injectEnv(envName = '.env'): void {
     config({ path: envPath, override: true });
 }
 
-async function getBuilder({ name, configFile }: { name: string; configFile: string }): Promise<BuildOutput> {
+async function getBuilder({ name, configFile, mode }: { name: string; configFile: string; mode: string }): Promise<BuildOutput> {
   return build({
     ...sharedConfig,
     mode,
@@ -41,31 +31,34 @@ async function getBuilder({ name, configFile }: { name: string; configFile: stri
   });
 }
 
-async function setupMainBuilder(): Promise<BuildOutput> {
+async function setupMainBuilder(mode: string): Promise<BuildOutput> {
   consola.box('Building main process');
   return getBuilder({
     name: 'build-main',
     configFile: 'vite.config.main.ts',
+    mode,
   });
 }
 
-async function setupPreloadBuilder(): Promise<BuildOutput> {
+async function setupPreloadBuilder(mode: string): Promise<BuildOutput> {
   consola.box('Building preload process');
   return getBuilder({
     name: 'build-preload',
     configFile: 'vite.config.preload.ts',
+    mode,
   });
 }
 
-async function setupRendererBuilder(): Promise<BuildOutput> {
+async function setupRendererBuilder(mode: string): Promise<BuildOutput> {
   consola.box('Building renderer process');
   return getBuilder({
     name: 'build-renderer',
     configFile: 'vite.config.ts',
+    mode,
   });
 }
 
-function cleanupDist() {
+function cleanupDist(): void {
   if (fs.existsSync(OUTPUT_DIR))
     fs.rmSync(OUTPUT_DIR, { recursive: true });
 }
@@ -74,7 +67,7 @@ function cleanupDist() {
  * If the env already contains env variables about the backend urls,
  * e.g., from the e2e script, then we want to keep these settings.
  */
-function loadUrlConfig(): Record<string, string> {
+function loadUrlConfig(mode: string): Record<string, string> {
   const urlsVars: Record<string, string> = {};
   if (mode !== 'e2e') {
     return urlsVars;
@@ -97,8 +90,9 @@ function updateEnvVars(vars: Record<string, string>): void {
   }
 }
 
-async function setup(): Promise<void> {
-  const urlsVars: Record<string, string> = loadUrlConfig();
+async function setup(mode: string): Promise<void> {
+  consola.info(`Building for ${mode}...`);
+  const urlsVars: Record<string, string> = loadUrlConfig(mode);
 
   try {
     cleanupDist();
@@ -112,11 +106,11 @@ async function setup(): Promise<void> {
         injectEnv(`.env.${mode}`);
       updateEnvVars(urlsVars);
 
-      await setupPreloadBuilder();
-      await setupMainBuilder();
+      await setupPreloadBuilder(mode);
+      await setupMainBuilder(mode);
     }
 
-    await setupRendererBuilder();
+    await setupRendererBuilder(mode);
 
     consola.info('Build is complete!');
     process.exit(0);
@@ -127,4 +121,13 @@ async function setup(): Promise<void> {
   }
 }
 
-await setup();
+const cli = cac();
+
+cli.command('', 'Rotki frontend build')
+  .option('--mode <mode>', 'Build mode (production, docker, e2e)', { default: 'production' })
+  .action(async (options) => {
+    await setup(options.mode);
+  });
+
+cli.help();
+cli.parse();

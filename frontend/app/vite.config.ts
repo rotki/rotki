@@ -9,7 +9,6 @@ import Components from 'unplugin-vue-components/vite';
 import { VueRouterAutoImports } from 'unplugin-vue-router';
 import VueRouter from 'unplugin-vue-router/vite';
 import checker from 'vite-plugin-checker';
-import istanbul from 'vite-plugin-istanbul';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import { defineConfig } from 'vitest/config';
 
@@ -17,8 +16,8 @@ const PACKAGE_ROOT = __dirname;
 const envPath = process.env.VITE_PUBLIC_PATH;
 const publicPath = envPath || '/';
 const isDevelopment = process.env.NODE_ENV === 'development';
-const isCypress = !!process.env.VITE_CYPRESS;
 const isTest = !!process.env.VITE_TEST;
+const isCoverage = !!process.env.VITE_COVERAGE;
 const hmrEnabled = isDevelopment && !(process.env.CI && isTest);
 
 function RuiComponentResolver(): ComponentResolver {
@@ -136,26 +135,16 @@ export default defineConfig({
       include: [path.resolve(__dirname, './src/locales/**')],
     }),
     ...(!isTest && process.env.ENABLE_DEV_TOOLS ? [vueDevTools()] : []),
-    ...(isCypress
-      ? [
-          istanbul({
-            include: 'src/*',
-            exclude: ['node_modules', 'tests/', '**/*.d.ts'],
-            extension: ['.ts', '.vue'],
-            forceBuildInstrument: true,
-          }),
-        ]
-      : []),
   ],
   server: {
     port: 8080,
     hmr: hmrEnabled,
     watch: {
-      ignored: ['**/.e2e/**', '**/.nyc_output/**'],
+      ignored: ['**/.e2e/**'],
     },
   },
   build: {
-    sourcemap: isDevelopment || isTest,
+    sourcemap: isDevelopment || isTest || isCoverage,
     outDir: 'dist',
     assetsDir: '.',
     minify: true,

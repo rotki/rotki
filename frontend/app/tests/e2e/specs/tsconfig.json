@@ -2,8 +2,8 @@
   "extends": "@vue/tsconfig/tsconfig.dom.json",
   "compilerOptions": {
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.e2e.tsbuildinfo",
-    "types": ["cypress"],
+    "types": ["node"],
     "isolatedModules": false
   },
-  "include": ["./**/*", "../support/**/*", "../common/**/*", "../pages/**/*", "../utils/**/*"]
+  "include": ["./**/*", "../helpers/**/*", "../pages/**/*", "../fixtures/**/*", "../coverage.ts"]
 }

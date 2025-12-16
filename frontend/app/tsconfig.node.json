@@ -12,8 +12,6 @@
   "include": [
     "vite.config.*",
     "vitest.config.*",
-    "cypress.config.*",
-    "nightwatch.conf.*",
     "playwright.config.*",
     "tailwind.config.*",
     "scripts/**/*",

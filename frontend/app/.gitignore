@@ -28,10 +28,10 @@ yarn-error.log*
 
 #Electron-builder output
 /dist_electron
-tests/e2e/videos
-tests/e2e/screenshots
+tests/e2e/test-results
+playwright-report
 tests/**/coverage
-.nyc_output
+tests/**/.v8-coverage
 .eslintcache
 
 rotki_config.json

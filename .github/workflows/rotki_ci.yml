@@ -103,8 +103,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      CYPRESS_INSTALL_BINARY: 0
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -306,6 +304,7 @@ jobs:
     uses: ./.github/workflows/task_e2e_tests.yml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
     permissions:
       contents: read
       actions: write

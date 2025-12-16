@@ -1,7 +1,7 @@
 import { type ChildProcess, execSync, spawn } from 'node:child_process';
 import path from 'node:path';
 import process from 'node:process';
-import { ArgumentParser } from 'argparse';
+import { cac } from 'cac';
 import consola from 'consola';
 
 /**
@@ -26,58 +26,84 @@ else {
   process.exit(1);
 }
 
-const parser = new ArgumentParser({
-  description: 'rotki backend',
-});
+interface BackendOptions {
+  data: string;
+  logs: string;
+  port: number;
+}
 
-parser.add_argument('--data', {
-  help: 'data directory',
-  type: 'str',
-  required: true,
-});
+function startBackend(options: BackendOptions): void {
+  const { data: dataDir, logs: logDir, port } = options;
 
-parser.add_argument('--logs', {
-  help: 'logs directory',
-  type: 'str',
-  required: true,
-});
+  const args = [
+    'run',
+    '-m',
+    'rotkehlchen',
+    '--rest-api-port',
+    port.toString(),
+    '--api-cors',
+    'http://localhost:*',
+    '--data-dir',
+    dataDir,
+    '--logfile',
+    `${path.join(logDir, 'rotki.log')}`,
+    '--disable-task-manager',
+  ];
 
-parser.add_argument('--port', {
-  help: 'listening port',
-  required: true,
-  type: 'int',
-});
+  consola.box('Starting backend');
 
-const { data: dataDir, logs: logDir, port } = parser.parse_args();
+  let backend: ChildProcess;
+  let isCleaningUp = false;
 
-const args = [
-  'run',
-  '-m',
-  'rotkehlchen',
-  '--rest-api-port',
-  port.toString(),
-  '--api-cors',
-  'http://localhost:*',
-  '--data-dir',
-  dataDir,
-  '--logfile',
-  `${path.join(logDir, 'rotki.log')}`,
-  '--disable-task-manager',
-];
+  function cleanup(signal: string): void {
+    if (isCleaningUp)
+      return;
+    isCleaningUp = true;
 
-consola.box('Starting backend');
+    consola.info(`Received ${signal}, cleaning up...`);
+    if (backend && !backend.killed) {
+      backend.kill('SIGTERM');
+      // Give it a moment to die gracefully, then force kill
+      setTimeout(() => {
+        if (backend && !backend.killed) {
+          backend.kill('SIGKILL');
+        }
+      }, 5000);
+    }
+  }
 
-let backend: ChildProcess;
+  process.on('SIGTERM', () => cleanup('SIGTERM'));
+  process.on('SIGINT', () => cleanup('SIGINT'));
+  process.on('SIGHUP', () => cleanup('SIGHUP'));
 
-process.on('SIGTERM', () => {
-  if (backend)
-    backend.kill();
+  backend = spawn('uv', args, {
+    stdio: [process.stdin, process.stdout, process.stderr],
+    cwd: path.join('..', '..'),
+  });
 
-  consola.info('Cleanup: complete\n');
-  process.exit(0);
-});
+  backend.on('exit', (code) => {
+    consola.info(`Backend exited with code ${code}`);
+    process.exit(code ?? 0);
+  });
+}
 
-backend = spawn('uv', args, {
-  stdio: [process.stdin, process.stdout, process.stderr],
-  cwd: path.join('..', '..'),
-});
+const cli = cac();
+
+cli.command('', 'Start rotki backend')
+  .option('--data <dir>', 'Data directory')
+  .option('--logs <dir>', 'Logs directory')
+  .option('--port <port>', 'Listening port')
+  .action((options) => {
+    if (!options.data || !options.logs || !options.port) {
+      consola.error('Missing required options: --data, --logs, --port');
+      process.exit(1);
+    }
+    startBackend({
+      data: options.data,
+      logs: options.logs,
+      port: Number(options.port),
+    });
+  });
+
+cli.help();
+cli.parse();

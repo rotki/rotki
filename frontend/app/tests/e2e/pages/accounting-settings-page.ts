@@ -1,33 +1,40 @@
+import { expect, type Page } from '@playwright/test';
+import { confirmInlineSuccess } from '../helpers/utils';
+
 export class AccountingSettingsPage {
-  visit() {
-    cy.get('[data-cy=user-menu-button]').click();
-    cy.get('[data-cy=user-dropdown]').should('exist');
-    cy.get('[data-cy=settings-button]').click();
-    cy.get('[data-cy="settings__accounting"]').click();
-    cy.get('[data-cy=user-dropdown]').should('not.exist');
+  constructor(private readonly page: Page) {}
+
+  async visit(): Promise<void> {
+    await this.page.locator('[data-cy=user-menu-button]').click();
+    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-cy=settings-button]').click();
+    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
+    await this.page.locator('[data-cy="settings__accounting"]').click();
+    await this.page.locator('[data-cy=crypto2crypto-switch]').waitFor({ state: 'visible' });
   }
 
-  setTaxFreePeriodDays(value: string) {
-    cy.get('[data-cy=taxfree-period]').clear();
-    cy.get('[data-cy=taxfree-period]').type(value);
-    cy.get('[data-cy=taxfree-period] input').blur();
-    this.confirmInlineSuccess('[data-cy=taxfree-period]', value);
+  async setTaxFreePeriodDays(value: string): Promise<void> {
+    await this.page.locator('[data-cy=taxfree-period] input').clear();
+    await this.page.locator('[data-cy=taxfree-period] input').fill(value);
+    await this.page.locator('[data-cy=taxfree-period] input').blur();
+    await confirmInlineSuccess(this.page, '[data-cy=taxfree-period] .details', value);
   }
 
-  changeSwitch(target: string, enabled: boolean) {
-    cy.get(`${target}`).scrollIntoView();
-    cy.get(`${target}`).should('be.visible');
-    this.verifySwitchState(target, !enabled);
-    cy.get(`${target} input`).click();
-    this.verifySwitchState(target, enabled);
-    this.confirmInlineSuccess(`${target} .details .text-rui-success`);
+  async changeSwitch(target: string, enabled: boolean): Promise<void> {
+    await this.page.locator(target).scrollIntoViewIfNeeded();
+    await this.page.locator(target).waitFor({ state: 'visible' });
+    await this.verifySwitchState(target, !enabled);
+    await this.page.locator(`${target} input`).click();
+    await this.verifySwitchState(target, enabled);
+    await confirmInlineSuccess(this.page, `${target} .details .text-rui-success`);
   }
 
-  verifySwitchState(target: string, enabled: boolean) {
-    cy.get(`${target} input`).should(enabled ? 'be.checked' : 'not.be.checked');
-  }
-
-  confirmInlineSuccess(target: string, messageContains?: string) {
-    cy.confirmFieldMessage({ target, messageContains, mustInclude: 'Setting saved' });
+  async verifySwitchState(target: string, enabled: boolean): Promise<void> {
+    if (enabled) {
+      await expect(this.page.locator(`${target} input`)).toBeChecked();
+    }
+    else {
+      await expect(this.page.locator(`${target} input`)).not.toBeChecked();
+    }
   }
 }

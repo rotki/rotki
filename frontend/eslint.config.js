@@ -16,9 +16,6 @@ export default rotki({
       '@rotki/no-dot-ts-imports': 'error',
     },
   },
-  cypress: {
-    testDirectory: path.join('app', 'tests', 'e2e'),
-  },
   imports: {
     overrides: {
       '@rotki/max-dependencies': ['warn', { max: 20 }],

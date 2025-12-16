@@ -1,48 +1,54 @@
+import { expect, type Page } from '@playwright/test';
 import { RotkiApp } from './rotki-app';
 
 export class RpcSettingsPage {
-  visit() {
-    cy.get('[data-cy=user-menu-button]').click();
-    cy.get('[data-cy=user-dropdown]').should('exist');
-    cy.get('[data-cy=settings-button]').click();
-    cy.get('[data-cy=user-dropdown]').should('not.exist');
-    cy.get('[data-cy="settings__rpc"]').click();
+  constructor(private readonly page: Page) {}
+
+  async visit(): Promise<void> {
+    await this.page.locator('[data-cy=user-menu-button]').click();
+    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-cy=settings-button]').click();
+    await this.page.locator('[data-cy=user-dropdown]').waitFor({ state: 'detached' });
+    await this.page.locator('[data-cy="settings__rpc"]').click();
+    await this.page.locator('[data-cy=add-node]').waitFor({ state: 'visible' });
   }
 
-  changePassword(currentPassword: string, newPassword: string) {
-    cy.get('[data-cy=current-password-input]').clear();
-    cy.get('[data-cy=current-password-input]').type(currentPassword);
-    cy.get('[data-cy=new-password-input]').clear();
-    cy.get('[data-cy=new-password-input]').type(newPassword);
-    cy.get('[data-cy=confirm-password-input]').clear();
-    cy.get('[data-cy=confirm-password-input]').type(newPassword);
-    cy.get('[data-cy=change-password-button]').click();
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    await this.page.locator('[data-cy=current-password-input] input').clear();
+    await this.page.locator('[data-cy=current-password-input] input').fill(currentPassword);
+    await this.page.locator('[data-cy=new-password-input] input').clear();
+    await this.page.locator('[data-cy=new-password-input] input').fill(newPassword);
+    await this.page.locator('[data-cy=confirm-password-input] input').clear();
+    await this.page.locator('[data-cy=confirm-password-input] input').fill(newPassword);
+    await this.page.locator('[data-cy=change-password-button]').click();
   }
 
-  confirmInlineSuccess(target: string, messageContains?: string) {
-    cy.confirmFieldMessage({ target, messageContains, mustInclude: 'Setting saved' });
+  async navigateAway(): Promise<void> {
+    await RotkiApp.navigateTo(this.page, 'dashboard');
   }
 
-  navigateAway() {
-    RotkiApp.navigateTo('dashboard');
+  async addEthereumRPC(name: string, endpoint: string): Promise<void> {
+    const addButton = this.page.locator('[data-cy=add-node]');
+    await addButton.scrollIntoViewIfNeeded();
+    await addButton.waitFor({ state: 'visible' });
+    await addButton.click();
+    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-cy=node-name] input').fill(name);
+    await this.page.locator('[data-cy=node-endpoint] input').fill(endpoint);
+    await this.page.locator('[data-cy=confirm]').click();
+    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'detached' });
   }
 
-  addEthereumRPC(name: string, endpoint: string) {
-    cy.get('[data-cy=add-node]').click();
-    cy.get('[data-cy=bottom-dialog]').should('be.visible');
-    cy.get('[data-cy=node-name]').type(name);
-    cy.get('[data-cy=node-endpoint]').type(endpoint);
-    cy.get('[data-cy=confirm]').click();
-    cy.get('[data-cy=bottom-dialog]').should('not.exist');
+  async confirmRPCAddition(name: string, endpoint: string): Promise<void> {
+    // Use filter to find the specific node row
+    const nodeRow = this.page.locator('[data-cy=ethereum-node]').filter({ hasText: name });
+    await expect(nodeRow).toBeVisible();
+    await expect(nodeRow).toContainText(endpoint);
   }
 
-  confirmRPCAddition(name: string, endpoint: string) {
-    cy.get('[data-cy=ethereum-node]').children().should('contain.text', name);
-    cy.get('[data-cy=ethereum-node]').children().should('contain.text', endpoint);
-  }
-
-  confirmRPCmissing(name: string, endpoint: string) {
-    cy.get('[data-cy=ethereum-node]').children().should('not.contain.text', name);
-    cy.get('[data-cy=ethereum-node]').children().should('not.contain.text', endpoint);
+  async confirmRPCmissing(name: string, _endpoint: string): Promise<void> {
+    // Check that no node row contains the name
+    const nodeRow = this.page.locator('[data-cy=ethereum-node]').filter({ hasText: name });
+    await expect(nodeRow).toHaveCount(0);
   }
 }

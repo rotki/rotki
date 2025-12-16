@@ -10,11 +10,10 @@ import { usePremiumApi } from '@/premium/setup-interface';
 import { router } from '@/router';
 import { StoreStatePersistsPlugin } from '@/store/debug';
 import { StoreResetPlugin, StoreTrackPlugin } from '@/store/plugins';
-import { attemptPolyfillResizeObserver } from '@/utils/cypress';
 import { setupDayjs } from '@/utils/date';
+import { attemptPolyfillResizeObserver } from '@/utils/e2e';
 import { setupFormatter } from '@/utils/setup-formatter';
 
-/* istanbul ignore file */
 import './main.css';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';

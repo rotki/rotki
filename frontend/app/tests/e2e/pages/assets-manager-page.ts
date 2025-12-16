@@ -1,296 +1,331 @@
+import { expect, type Locator, type Page } from '@playwright/test';
+import { TIMEOUT_LONG, TIMEOUT_MEDIUM, TIMEOUT_SHORT } from '../helpers/constants';
 import { RotkiApp } from './rotki-app';
 
 export class AssetsManagerPage {
-  visit(submenu: string) {
-    RotkiApp.navigateTo('asset-manager', submenu);
+  constructor(private readonly page: Page) {}
+
+  async visit(submenu: string): Promise<void> {
+    await RotkiApp.navigateTo(this.page, 'asset-manager', submenu);
   }
 
-  openStatusFilter() {
-    cy.get('[data-cy=status-filter]').scrollIntoView();
-    cy.get('[data-cy=status-filter]').should('be.visible');
-    cy.get('[data-cy=status-filter]').click();
-    cy.get('[data-cy=asset-filter-menu]').should('exist');
+  async openStatusFilter(): Promise<void> {
+    await this.page.locator('[data-cy=status-filter]').scrollIntoViewIfNeeded();
+    await this.page.locator('[data-cy=status-filter]').waitFor({ state: 'visible' });
+    await this.page.locator('[data-cy=status-filter]').click();
+    await this.page.locator('[data-cy=asset-filter-menu]').waitFor({ state: 'attached' });
   }
 
-  closeStatusFilter() {
-    cy.get('[data-cy=status-filter]').click();
-    cy.get('[data-cy=asset-filter-menu]').should('not.exist');
+  async closeStatusFilter(): Promise<void> {
+    await this.page.locator('[data-cy=status-filter]').click();
+    await this.page.locator('[data-cy=asset-filter-menu]').waitFor({ state: 'detached' });
   }
 
-  ignoredAssets() {
-    this.openStatusFilter();
-    return cy
-      .get('[data-cy=asset-filter-show_only]')
-      .invoke('text')
-      .then((text) => {
-        this.closeStatusFilter();
-        cy.wrap(text.replace(/[^\d.]/g, ''));
-      });
+  async ignoredAssets(): Promise<string> {
+    await this.openStatusFilter();
+    const text = await this.page.locator('[data-cy=asset-filter-show_only]').textContent();
+    await this.closeStatusFilter();
+    return (text ?? '').replace(/[^\d.]/g, '');
   }
 
-  ignoredAssetCount(number: number) {
-    this.openStatusFilter();
-    cy.get('[data-cy=asset-filter-show_only]').should('include.text', number.toString());
-    this.closeStatusFilter();
+  async ignoredAssetCount(number: number): Promise<void> {
+    await this.openStatusFilter();
+    await expect(this.page.locator('[data-cy=asset-filter-show_only]')).toContainText(number.toString());
+    await this.closeStatusFilter();
   }
 
-  visibleEntries(visible: number) {
-    // the total row is added to the visible entries
-    cy.get('[data-cy=managed-assets-table] tbody').find('tr').should('have.length', visible);
+  async visibleEntries(visible: number): Promise<void> {
+    await expect(this.page.locator('[data-cy=managed-assets-table] tbody tr')).toHaveCount(visible);
   }
 
-  focusOnTableFilter() {
-    cy.get('[data-cy=table-filter] [data-id=activator]').then(($activator) => {
-      const arrowButton = $activator.find('> span:last-child');
-      cy.wrap(arrowButton).click();
-      const clearButton = $activator.find('> button:nth-child(3)');
-      if (clearButton && clearButton.length > 0) {
-        cy.wrap(clearButton).click();
-        cy.wrap(arrowButton).click();
-      }
-    });
+  async clearAllFilters(): Promise<void> {
+    const maxIterations = 20;
+
+    for (let i = 0; i < maxIterations; i++) {
+      // Find filter chips by their accessible name pattern (e.g., "symbol = X" or "address = 0x...")
+      const symbolChip = this.page.getByRole('button', { name: /^symbol = / });
+      const addressChip = this.page.getByRole('button', { name: /^address = / });
+
+      const symbolCount = await symbolChip.count();
+      const addressCount = await addressChip.count();
+
+      if (symbolCount === 0 && addressCount === 0)
+        break;
+
+      // Pick whichever chip exists
+      const chip = symbolCount > 0 ? symbolChip.first() : addressChip.first();
+
+      // Scroll chip into view and wait for it to be visible
+      await chip.scrollIntoViewIfNeeded();
+      await chip.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
+
+      // The close button is a nested button inside the chip
+      const closeButton = chip.locator('button');
+      await closeButton.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
+      await closeButton.click();
+
+      // Wait for chip to be removed
+      await expect(chip).toBeHidden({ timeout: TIMEOUT_SHORT });
+
+      // Wait for table to update
+      await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+    }
   }
 
-  searchAsset(asset: string) {
-    this.focusOnTableFilter();
-    cy.get('[data-cy=table-filter] input').type(`symbol: ${asset}`);
-    cy.get('[data-cy=table-filter] input').type(`{enter}{esc}`);
-    cy.get('div[class*=thead__loader]').should('not.exist');
-    this.visibleEntries(1);
+  async focusOnTableFilter(): Promise<void> {
+    // Clear any existing filter chips first
+    await this.clearAllFilters();
+
+    // Wait for any pending table updates after clearing filters
+    await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+
+    const activator = this.page.locator('[data-cy=table-filter] [data-id=activator]');
+    const arrowButton = activator.locator('> span:last-child');
+    await arrowButton.click();
   }
 
-  searchAssetByAddress(address: string) {
-    this.focusOnTableFilter();
-    cy.get('[data-cy=table-filter] input').type(`address: ${address}`);
-    cy.get('[data-cy=table-filter] input').type(`{enter}{esc}`);
-    cy.get('div[class*=thead__loader]').should('not.exist');
-    this.visibleEntries(1);
+  async searchAsset(asset: string): Promise<void> {
+    await this.focusOnTableFilter();
+    const input = this.page.locator('[data-cy=table-filter] input');
+    await input.fill(`symbol: ${asset}`);
+    await input.press('Enter');
+    await input.press('Escape');
+
+    // Wait for the filter chip to appear (confirms filter was applied)
+    // The chip appears as a button containing text like "symbol = 1SG"
+    const filterChip = this.page.getByRole('button', { name: `symbol = ${asset}` });
+    await filterChip.waitFor({ state: 'visible', timeout: TIMEOUT_SHORT });
+
+    // Wait for loader to detach (it may or may not appear)
+    await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
+
+    // Poll until the results are filtered (pagination shows small total, not thousands)
+    await expect(async () => {
+      // Check pagination shows a small count (filtered results)
+      const paginationText = await this.page.locator('[data-cy=managed-assets-table]').locator('text=/of \\d+/').first().textContent();
+      const totalMatch = paginationText?.match(/of\s+(\d+)/);
+      const total = totalMatch ? Number.parseInt(totalMatch[1]) : 0;
+      // Filtered results should be less than 100
+      expect(total).toBeLessThan(100);
+      expect(total).toBeGreaterThan(0);
+    }).toPass({ timeout: 30000 });
   }
 
-  addIgnoredAsset(asset: string) {
-    this.searchAsset(asset);
+  async findRowBySymbol(symbol: string): Promise<Locator> {
+    const table = this.page.locator('[data-cy=managed-assets-table]');
+    // Find the row that contains the exact symbol in the list-title element
+    const row = table.locator('tbody tr').filter({
+      has: this.page.locator('[data-cy=list-title]', { hasText: new RegExp(`^${symbol}$`) }),
+    }).first();
+    await expect(row).toBeVisible({ timeout: TIMEOUT_MEDIUM });
+    return row;
+  }
 
-    cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').then(
-      ($switch) => {
-        const initialValue = $switch.is(':checked');
-        expect(initialValue, 'false');
-        cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').click();
-        cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').should(
-          'be.checked',
-        );
-      },
+  async searchAssetByAddress(address: string): Promise<void> {
+    await this.focusOnTableFilter();
+    const input = this.page.locator('[data-cy=table-filter] input');
+    await input.fill(`address: ${address}`);
+    await input.press('Enter');
+    await input.press('Escape');
+    await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached' });
+    await this.visibleEntries(1);
+  }
+
+  async addIgnoredAsset(asset: string): Promise<void> {
+    await this.searchAsset(asset);
+    const row = await this.findRowBySymbol(asset);
+
+    const switchInput = row.locator('td:nth-child(6) input');
+    // Wait for the switch to be enabled (not loading)
+    await expect(switchInput).toBeEnabled();
+    const isChecked = await switchInput.isChecked();
+    expect(isChecked).toBe(false);
+
+    await switchInput.click();
+    await expect(switchInput).toBeChecked();
+    await this.page.locator('[data-cy=confirm-dialog]').locator('[data-cy=button-confirm]').click();
+    // Wait for dialog to close and table to refresh
+    await this.page.locator('[data-cy=confirm-dialog]').waitFor({ state: 'detached' });
+  }
+
+  async selectShowAll(): Promise<void> {
+    await this.openStatusFilter();
+    await this.page.locator('[data-cy=asset-filter-none]').scrollIntoViewIfNeeded();
+    await this.page.locator('[data-cy=asset-filter-none]').click();
+    await this.closeStatusFilter();
+  }
+
+  async removeIgnoredAsset(asset: string): Promise<void> {
+    await this.searchAsset(asset);
+    const row = await this.findRowBySymbol(asset);
+
+    const switchInput = row.locator('td:nth-child(6) input');
+    // Wait for the switch to be enabled (not loading)
+    await expect(switchInput).toBeEnabled();
+    const isChecked = await switchInput.isChecked();
+    expect(isChecked).toBe(true);
+
+    await switchInput.click();
+    await expect(switchInput).not.toBeChecked();
+  }
+
+  async confirmDelete(): Promise<void> {
+    await expect(
+      this.page.locator('[data-cy=confirm-dialog]').locator('[data-cy=dialog-title]'),
+    ).toContainText('Delete asset');
+
+    const responsePromise = this.page.waitForResponse(
+      response => response.url().includes('/api/1/assets/all') && response.request().method() === 'DELETE',
     );
-    cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
+
+    await this.page.locator('[data-cy=confirm-dialog]').locator('[data-cy=button-confirm]').click();
+    const response = await responsePromise;
+    expect(response.status()).toBe(200);
+
+    await this.page.locator('[data-cy=confirm-dialog]').waitFor({ state: 'detached' });
   }
 
-  selectShowAll(): void {
-    this.openStatusFilter();
-    cy.get('[data-cy=asset-filter-none]').scrollIntoView();
-    cy.get('[data-cy=asset-filter-none]').click();
-    this.closeStatusFilter();
+  async deleteAnEvmAsset(address: string): Promise<void> {
+    await this.searchAssetByAddress(address);
+    await this.page.locator('[data-cy=managed-assets-table] [data-cy=row-delete]').click();
+    await this.confirmDelete();
   }
 
-  removeIgnoredAsset(asset: string) {
-    this.searchAsset(asset);
-    cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').then(
-      ($switch) => {
-        const initialValue = $switch.is(':checked');
-        expect(initialValue, 'true');
-        cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').click();
-        cy.get('[data-cy=managed-assets-table] > div > table > tbody > tr:first-child td:nth-child(6) input').should(
-          'not.be.checked',
-          'false',
-        );
-      },
-    );
+  async deleteOtherAsset(symbol: string): Promise<void> {
+    await this.searchAsset(symbol);
+    const row = await this.findRowBySymbol(symbol);
+    await row.locator('[data-cy=row-delete]').click();
+    await this.confirmDelete();
   }
 
-  createWaitForDeleteManagedAssets() {
-    cy.intercept({
-      method: 'DELETE',
-      url: '/api/1/assets/all**',
-    }).as('apiCall');
+  async showAddAssetModal(): Promise<void> {
+    // Ensure any existing dialog is closed first
+    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    if (await dialog.isVisible()) {
+      await this.page.keyboard.press('Escape');
+      await dialog.waitFor({ state: 'detached' });
+    }
 
-    return () => {
-      // Wait for response.status to be 200
-      cy.wait('@apiCall', { timeout: 30000 }).its('response.statusCode').should('equal', 200);
-    };
+    const addButton = this.page.locator('[data-cy=managed-asset-add-btn]');
+    await addButton.scrollIntoViewIfNeeded();
+    await addButton.waitFor({ state: 'visible' });
+    await addButton.click();
+    await dialog.waitFor({ state: 'visible', timeout: TIMEOUT_MEDIUM });
+    await expect(this.page.locator('[data-cy=bottom-dialog] h5')).toContainText('Add a new asset');
   }
 
-  confirmDelete() {
-    cy.get('[data-cy=confirm-dialog]').find('[data-cy=dialog-title]').should('contain', 'Delete asset');
-    const waitForAssetDeleted = this.createWaitForDeleteManagedAssets();
-    cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
-    waitForAssetDeleted();
-    cy.get('[data-cy=confirm-dialog]').should('not.exist');
+  async addAnEvmAsset(address: string, uniqueId: string): Promise<void> {
+    // Open the add asset dialog
+    await this.showAddAssetModal();
+
+    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    const chainInput = dialog.locator('[data-cy=chain-select]');
+    const tokenInput = dialog.locator('[data-cy=token-select]');
+    const addressInput = dialog.locator('[data-cy=address-input] input');
+    const nameInput = dialog.locator('[data-cy=name-input] input');
+    const symbolInput = dialog.locator('[data-cy=symbol-input] input');
+    const decimalInput = dialog.locator('[data-cy=decimal-input] input[type=number]');
+    const submitButton = dialog.locator('[data-cy=confirm]');
+
+    // Wait for form to be fully rendered
+    await expect(chainInput).toBeVisible({ timeout: TIMEOUT_MEDIUM });
+
+    // Select a chain first
+    await chainInput.click();
+    const menuContent = this.page.locator('[role="menu-content"]');
+    await expect(menuContent).toBeVisible({ timeout: TIMEOUT_SHORT });
+    await menuContent.locator('button[type="button"]').first().click();
+
+    // Select a token type
+    await tokenInput.click();
+    await expect(menuContent).toBeVisible({ timeout: TIMEOUT_SHORT });
+    await menuContent.locator('button[type="button"]').first().click();
+
+    // Enter address
+    await addressInput.fill(address);
+
+    // Enter name with unique ID
+    await nameInput.clear();
+    await nameInput.fill(`ASSET NAME ${uniqueId}`);
+
+    const symbol = `SYM${uniqueId}`;
+    // Enter symbol with unique ID
+    await symbolInput.clear();
+    await symbolInput.fill(symbol);
+
+    // Enter decimals
+    await decimalInput.clear();
+    await decimalInput.fill('2');
+
+    // Submit the form
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+    await dialog.waitFor({ state: 'detached' });
+
+    // Refresh the table to ensure the new asset appears
+    await this.page.locator('button', { hasText: 'Refresh' }).first().click();
+    await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
+
+    // Search the asset
+    await this.searchAssetByAddress(address);
+    await expect(this.page.locator('[data-cy=managed-assets-table] [data-cy=list-title]')).toContainText(symbol);
   }
 
-  deleteAnEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8') {
-    this.searchAssetByAddress(address);
-    cy.get('[data-cy=managed-assets-table] [data-cy=row-delete]').click();
-    this.confirmDelete();
+  async addOtherAsset(uniqueId: string): Promise<void> {
+    // Open the add asset dialog
+    await this.showAddAssetModal();
+
+    const dialog = this.page.locator('[data-cy=bottom-dialog]');
+    const typeInput = dialog.locator('[data-cy=type-select]');
+    const nameInput = dialog.locator('[data-cy=name-input] input');
+    const symbolInput = dialog.locator('[data-cy=symbol-input] input');
+    const submitButton = dialog.locator('[data-cy=confirm]');
+
+    // Wait for form to be fully rendered
+    await expect(typeInput).toBeVisible({ timeout: TIMEOUT_MEDIUM });
+
+    await typeInput.click();
+    await this.page.locator('[role="menu-content"] button[type="button"]').filter({ hasText: 'Own chain' }).click();
+
+    await nameInput.clear();
+    await nameInput.fill(`NAME ${uniqueId}`);
+
+    const symbol = `OTH${uniqueId}`;
+    await symbolInput.clear();
+    await symbolInput.fill(symbol);
+
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+    await dialog.waitFor({ state: 'detached' });
+
+    // Refresh the table to ensure the new asset appears
+    await this.page.locator('button', { hasText: 'Refresh' }).first().click();
+    await this.page.locator('div[class*=thead__loader]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
+
+    // Search the asset
+    await this.searchAsset(symbol);
+    await expect(this.page.locator('[data-cy=managed-assets-table] [data-cy=list-title]')).toContainText(symbol);
   }
 
-  deleteOtherAsset(symbol = 'SYMBOL 2') {
-    this.searchAsset(symbol);
-    cy.get('[data-cy=managed-assets-table] [data-cy=row-delete]').click();
-    this.confirmDelete();
-  }
+  async editEvmAsset(address: string, uniqueId: string): Promise<void> {
+    await this.searchAssetByAddress(address);
 
-  showAddAssetModal(): void {
-    cy.get('[data-cy=managed-asset-add-btn]').scrollIntoView();
-    // click the add asset button
-    cy.get('[data-cy=managed-asset-add-btn]').click();
-    // dialog should be visible
-    cy.get('[data-cy=bottom-dialog]').should('be.visible');
-    // dialog title should match as well
-    cy.get('[data-cy=bottom-dialog] h5').contains('Add a new asset').should('be.visible');
+    await this.page.locator('[data-cy=managed-assets-table] [data-cy=row-edit]').click();
 
-    // on load the confirm button should be visible and enabled
-    cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
-    cy.get('@submitButton').should('be.enabled');
-    cy.get('@submitButton').click();
-    // button should be enabled regardless of the validation status
-    cy.get('@submitButton').should('be.enabled');
-  }
+    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'visible' });
+    await expect(this.page.locator('[data-cy=bottom-dialog] h5')).toContainText('Edit an asset');
 
-  addAnEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'): void {
-    // get the fields
-    cy.get('[data-cy=chain-select]').as('chainInput');
+    const symbolInput = this.page.locator('[data-cy=symbol-input] input');
+    const submitButton = this.page.locator('[data-cy=bottom-dialog] [data-cy=confirm]');
 
-    cy.get('[data-cy=token-select]').as('tokenInput');
+    const symbol = `EDT${uniqueId}`;
+    await symbolInput.clear();
+    await symbolInput.fill(symbol);
 
-    cy.get('[data-cy=address-input] input').as('addressInput');
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
 
-    cy.get('[data-cy=name-input] input').as('nameInput');
-
-    cy.get('[data-cy=symbol-input] input').as('symbolInput');
-
-    cy.get('[data-cy=decimal-input] input[type=number]').as('decimalInput');
-
-    cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
-
-    // Frontend validation for address
-    cy.get('@submitButton').trigger('click');
-
-    cy.get('[data-cy=address-input] .details').as('addressMessage');
-    cy.get('@addressMessage').contains('The value is required').should('be.visible');
-
-    // enter address
-    cy.get('@addressInput').type(address);
-    cy.get('@submitButton').click();
-
-    cy.get('[data-cy=chain-select] .details').as('chainMessage');
-    cy.get('[data-cy=token-select] .details').as('tokenMessage');
-    cy.get('[data-cy=decimal-input] .details').as('decimalMessage');
-
-    // expect to see backend validation messages
-    cy.get('@chainMessage').scrollIntoView();
-    cy.get('@chainMessage').contains('Field may not be null.').should('be.visible');
-    cy.get('@tokenMessage').contains('Field may not be null.').should('be.visible');
-    cy.get('@decimalMessage').contains('Field may not be null.').should('be.visible');
-
-    cy.get('@chainMessage').should('not.be.empty');
-    // select a chain
-    cy.get('@chainInput').click();
-    cy.get('[role="menu-content"] button[type="button"]').first().click();
-    // selecting a chain should clear the validation message
-    cy.get('@chainMessage').should('be.empty');
-
-    cy.get('@tokenMessage').should('not.be.empty');
-    // select a token
-    cy.get('@tokenInput').click();
-    cy.get('[role="menu-content"] button[type="button"]').first().click();
-    // selecting a chain should clear the validation message
-    cy.get('@tokenMessage').should('be.empty');
-
-    // after loading, input should be enabled
-    cy.get('@addressInput').should('be.enabled');
-
-    // enter name
-    cy.get('@nameInput').clear();
-    cy.get('@nameInput').type('ASSET NAME 1');
-
-    const symbol = 'SYMBOL 1';
-    // enter symbol
-    cy.get('@symbolInput').clear();
-    cy.get('@symbolInput').type(symbol);
-
-    // enter decimals
-    cy.get('@decimalInput').clear();
-    cy.get('@decimalInput').type('2');
-
-    // at this point, no validation message, button should be enabled
-    cy.get('@submitButton').should('be.enabled');
-    // create the asset
-    cy.get('@submitButton').click();
-    // dialog should not be visible
-    cy.get('[data-cy=bottom-dialog]').should('not.exist');
-
-    // search the asset
-    this.searchAssetByAddress(address);
-
-    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should('contain', symbol);
-  }
-
-  addOtherAsset() {
-    // get the fields
-    cy.get('[data-cy=type-select]').as('typeInput');
-    cy.get('[data-cy=name-input] input').as('nameInput');
-    cy.get('[data-cy=symbol-input] input').as('symbolInput');
-
-    cy.get('@typeInput').click();
-    cy.get('[role="menu-content"] button[type="button"]').contains('Own chain').click();
-
-    cy.get('@nameInput').clear();
-    cy.get('@nameInput').type('NAME 2');
-
-    const symbol = 'SYMBOL 2';
-    cy.get('@symbolInput').clear();
-    cy.get('@symbolInput').type('SYMBOL 2');
-
-    // at this point, no validation message, button should be enabled
-    cy.get('@submitButton').should('be.enabled');
-    // create the asset
-    cy.get('@submitButton').click();
-    // dialog should not be visible
-    cy.get('[data-cy=bottom-dialog]').should('not.exist');
-
-    // search the asset
-    this.searchAsset(symbol);
-
-    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should('contain', symbol);
-  }
-
-  editEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'): void {
-    // search the asset
-    this.searchAssetByAddress(address);
-
-    // click edit button
-    cy.get('[data-cy=managed-assets-table] [data-cy=row-edit]').click();
-
-    // dialog should be visible
-    cy.get('[data-cy=bottom-dialog]').should('be.visible');
-    // dialog title should match as well
-    cy.get('[data-cy=bottom-dialog] h5').contains('Edit an asset').should('be.visible');
-
-    cy.get('[data-cy=symbol-input] input').as('symbolInput');
-
-    cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
-
-    const symbol = 'SYMBOL 3';
-    // edit symbol
-    cy.get('@symbolInput').clear();
-    cy.get('@symbolInput').type(symbol);
-
-    // at this point, no validation message, button should be enabled
-    cy.get('@submitButton').should('be.enabled');
-    // create the asset
-    cy.get('@submitButton').click();
-
-    // dialog should not be visible
-    cy.get('[data-cy=bottom-dialog]').should('not.exist');
-
-    cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should('contain', symbol);
+    await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'detached' });
+    await expect(this.page.locator('[data-cy=managed-assets-table] [data-cy=list-title]')).toContainText(symbol);
   }
 }

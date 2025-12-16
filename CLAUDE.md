@@ -337,6 +337,7 @@ The mapping of these HistoryEvents types, subtypes, and categories is done in [r
 
 ### Frontend Testing
 - Vitest for unit tests with Vue Test Utils
+- Playwright for E2E testing
 - Component tests should follow existing patterns in `frontend/app/tests/` and `*.spec.ts`
 
 ## Packaging
