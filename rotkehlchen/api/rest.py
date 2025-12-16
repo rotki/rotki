@@ -1649,7 +1649,7 @@ class RestAPI:
 
         if success:
             AssetResolver.clean_memory_cache()  # clean the cache after deleting any possible asset
-            return _wrap_in_ok_result(OK_RESULT)
+            return OK_RESULT
         return wrap_in_fail_result(msg, status_code=HTTPStatus.CONFLICT)
 
     def query_netvalue_data(self, include_nfts: bool) -> Response:
