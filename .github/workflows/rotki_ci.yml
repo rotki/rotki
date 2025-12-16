@@ -279,6 +279,29 @@ jobs:
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
+      - name: Cache find-duplicate-constants binary
+        id: fdc-cache
+        uses: actions/cache@v4
+        with:
+          path: tools/find-duplicate-constants/target/release/find-duplicate-constants
+          key: ${{ runner.os }}-find-duplicate-constants-${{ hashFiles('tools/find-duplicate-constants/Cargo.lock', 'tools/find-duplicate-constants/Cargo.toml', 'tools/find-duplicate-constants/src/**') }}
+
+      - name: Setup Rust
+        if: steps.fdc-cache.outputs.cache-hit != 'true'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        if: steps.fdc-cache.outputs.cache-hit != 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          cache-on-failure: true
+          workspaces: tools/find-duplicate-constants
+
+      - name: Build find-duplicate-constants
+        if: steps.fdc-cache.outputs.cache-hit != 'true'
+        working-directory: ./tools/find-duplicate-constants
+        run: cargo build --release
+
       - name: Install dependencies
         run: uv sync --group lint
 
