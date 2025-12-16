@@ -1049,24 +1049,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
                 else:
                     evm_manager = cast('EvmManager', chain_manager)
-                    if (blockscout := evm_manager.node_inquirer.blockscout) is not None:
-                        try:
-                            chain_activity = blockscout.has_activity(chain_id=chain.to_chain_id(), account=address)  # noqa: E501
-                        except RemoteError as e:
-                            log.debug(
-                                'Failed to check activity using blockscout '
-                                f'for {chain} due to {e}',
-                            )
-                            chain_activity = evm_manager.node_inquirer.etherscan.has_activity(
-                                chain_id=chain.to_chain_id(),
-                                account=address,
-                            )
-                    else:
-                        chain_activity = evm_manager.node_inquirer.etherscan.has_activity(
-                            chain_id=chain.to_chain_id(),
-                            account=address,
-                        )
-
+                    chain_activity = evm_manager.node_inquirer.has_activity(
+                        chain_id=chain.to_chain_id(),
+                        account=address,
+                    )
                     only_token_spam = (
                         chain_activity == HasChainActivity.TOKENS and
                         evm_manager.transactions.address_has_been_spammed(address=address)

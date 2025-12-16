@@ -219,6 +219,8 @@ class Blockscout(EtherscanLikeApi):
             message.endswith('found')
         ):  # tokentx "No token transfers found", "No internal transactions found" and "No transactions found"  # noqa: E501
             return []
+        elif message == 'Contract source code not verified':
+            return None
         elif message != 'OK':
             raise RemoteError(f'Non ok response from blockscout v1 with {query_args}: {response}')
 

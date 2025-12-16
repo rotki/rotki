@@ -13,13 +13,14 @@ from eth_utils import to_checksum_address
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.chain.evm.transactions import EvmTransaction
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
+from rotkehlchen.tests.unit.decoders.test_cowswap import BSC_NODES_TO_CONNECT
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -29,9 +30,11 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR
+from rotkehlchen.tests.utils.base import BASE_MAINNET_NODE
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.ethereum import txreceipt_to_data
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.optimism import OPTIMISM_MAINNET_NODE
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
@@ -397,6 +400,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'], allow_playback_repeats=True)
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+@pytest.mark.parametrize('db_settings', [{'default_evm_indexer_order': [EvmIndexer.BLOCKSCOUT]}])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_detect_evm_accounts(
         rotkehlchen_api_server: 'APIServer',
@@ -613,6 +617,9 @@ def test_argent_names(rotkehlchen_api_server: 'APIServer') -> None:
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
+@pytest.mark.parametrize('binance_sc_manager_connect_at_start', BSC_NODES_TO_CONNECT)
+@pytest.mark.parametrize('base_manager_connect_at_start', [(BASE_MAINNET_NODE,)])
 def test_adding_safe(rotkehlchen_api_server: 'APIServer') -> None:
     """Test adding a safe proxy. The address is deployed on arb and base only"""
     safe_address = string_to_evm_address('0x9d25AdBcffE28923E619f4Af88ECDe732c985b63')
@@ -625,6 +632,7 @@ def test_adding_safe(rotkehlchen_api_server: 'APIServer') -> None:
     result = assert_proper_sync_response_with_result(response)
     assert result == {
         'added': {safe_address: ['arbitrum_one', 'base']},
+        'failed': {safe_address: ['binance_sc']},  # currently no indexers support bsc with free api keys, so detection fails  # noqa: E501
     }
 
 

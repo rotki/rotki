@@ -39,4 +39,4 @@ def data_migration_22(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                 [(cred.name, cred.location.serialize_for_db()) for cred in creds_to_remove],
             )
 
-    perform_userdb_migration_steps(rotki, progress_handler, should_vacuum=True)
+    perform_userdb_migration_steps(rotki, progress_handler)
