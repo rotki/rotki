@@ -944,7 +944,7 @@ def test_async_db_reset(rotkehlchen_api_server: 'APIServer') -> None:
         rotkehlchen_api_server,
         task_id,
     )
-    assert outcome['result']['result'] is True
+    assert outcome['result'] is True
     assert outcome['message'] == ''
 
     with pytest.raises(UnknownAsset):
