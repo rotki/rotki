@@ -8,7 +8,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
-def run_single_migration(database: 'DBHandler', migration: int) -> None:
+def run_single_migration(database: 'DBHandler', migration: int) -> MockRotkiForMigrations:
     """Helper function to run a single migration in the migration tests."""
     migration_record = None
     for record in MIGRATION_LIST:
@@ -21,4 +21,6 @@ def run_single_migration(database: 'DBHandler', migration: int) -> None:
         target='rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[migration_record],
     ):
-        DataMigrationManager(MockRotkiForMigrations(database)).maybe_migrate_data()
+        DataMigrationManager(rotki := MockRotkiForMigrations(database)).maybe_migrate_data()
+
+    return rotki

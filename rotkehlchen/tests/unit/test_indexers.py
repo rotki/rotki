@@ -16,18 +16,20 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='check_all_indexers', params=[
-    [],
+    [],  # no patches, uses etherscan
     [(etherscan_patch := patch(
         target='rotkehlchen.externalapis.etherscan.Etherscan._query',
         side_effect=RemoteError('BOOM'),
-    ))],
+    ))],  # etherscan patched, uses blockscout
     [etherscan_patch, patch(
         target='rotkehlchen.externalapis.blockscout.Blockscout._query_and_process',
         side_effect=RemoteError('BOOM'),
-    )],
+    )],  # etherscan and blockscout patched, uses routescan.
 ])
 def fixture_check_all_indexers(request: pytest.FixtureRequest) -> Iterator[None]:
-    """Run the test once for each indexer, patching the other indexers to fail."""
+    """Run the test once for each indexer (etherscan, blockscout, routescan).
+    Each run patches the previous indexers to fail, forcing fallback to the target indexer.
+    """
     with ExitStack() as stack:
         for indexer_patch in request.param:
             stack.enter_context(indexer_patch)
