@@ -14,6 +14,7 @@ const props = withDefaults(
     itemDataName?: string;
     disableAdd?: boolean;
     disableDelete?: boolean;
+    dense?: boolean;
     status?: BaseMessage;
     variant?: 'flat' | 'outlined';
   }>(),
@@ -120,12 +121,14 @@ const autoCompleteHint = computed<string>(() => {
 
       <div
         v-if="!disableAdd"
-        class="flex px-6 py-2 gap-2 items-start border-b border-default"
+        class="flex pb-2 gap-2 items-start border-b border-default overflow-hidden"
+        :class="variant === 'outlined' ? 'px-6' : 'px-[1px]'"
       >
         <RuiAutoComplete
           v-model="selection"
           dense
           variant="outlined"
+          class="overflow-hidden py-1.5"
           :label="t('common.actions.search')"
           :no-data-text="t('prioritized_list.all_added', itemNameTr)"
           :options="missing"
@@ -150,7 +153,7 @@ const autoCompleteHint = computed<string>(() => {
           color="primary"
           variant="outlined"
           :disabled="!selection"
-          class="h-10"
+          class="h-10 my-1.5"
           @click="addItem()"
         >
           <div class="flex items-center gap-2">
@@ -169,7 +172,7 @@ const autoCompleteHint = computed<string>(() => {
             <th class="ps-6">
               {{ t('common.name') }}
             </th>
-            <th />
+            <th class="!pl-0" />
           </tr>
         </thead>
         <tbody v-if="noResults">
@@ -197,6 +200,7 @@ const autoCompleteHint = computed<string>(() => {
                   :id="`move-up-${identifier}`"
                   size="sm"
                   class="!px-1"
+                  :class="{ '!py-0.5': dense }"
                   :disabled="isFirst(identifier)"
                   @click="move(identifier, false)"
                 >
@@ -209,6 +213,7 @@ const autoCompleteHint = computed<string>(() => {
                   :id="`move-down-${identifier}`"
                   size="sm"
                   class="!px-1"
+                  :class="{ '!py-0.5': dense }"
                   :disabled="isLast(identifier)"
                   @click="move(identifier, true)"
                 >
@@ -228,7 +233,7 @@ const autoCompleteHint = computed<string>(() => {
                 size="28px"
               />
             </td>
-            <td class="text-end">
+            <td class="text-end !pl-0">
               <RuiTooltip
                 v-if="!disableDelete"
                 :popper="{ placement: 'top' }"
@@ -239,10 +244,14 @@ const autoCompleteHint = computed<string>(() => {
                     :id="`delete-${identifier}`"
                     class="transition-all opacity-0 invisible group-hover:opacity-100 group-hover:visible"
                     icon
+                    :class="{ '!p-2': dense }"
                     variant="text"
                     @click="remove(identifier)"
                   >
-                    <RuiIcon name="lu-x" />
+                    <RuiIcon
+                      name="lu-x"
+                      :size="dense ? 16 : 20"
+                    />
                   </RuiButton>
                 </template>
                 <span>
