@@ -176,6 +176,7 @@ onMounted(() => {
 
 defineExpose({
   save,
+  v$,
 });
 </script>
 
@@ -185,6 +186,7 @@ defineExpose({
       <DateTimePicker
         v-model="timestamp"
         :label="t('common.datetime')"
+        required
         persistent-hint
         max-date="now"
         variant="outlined"
@@ -200,6 +202,7 @@ defineExpose({
         integer
         data-cy="validatorIndex"
         :label="t('transactions.events.form.validator_index.label')"
+        required
         :error-messages="toMessages(v$.validatorIndex)"
         @blur="v$.validatorIndex.$touch()"
       />
@@ -211,6 +214,7 @@ defineExpose({
       color="primary"
       data-cy="tx-ref"
       :label="t('common.tx_hash')"
+      required
       :error-messages="toMessages(v$.txRef)"
       @blur="v$.txRef.$touch()"
     />
@@ -235,6 +239,7 @@ defineExpose({
         :items="depositorSuggestions"
         data-cy="depositor"
         :label="t('transactions.events.form.depositor.label')"
+        required
         :error-messages="toMessages(v$.depositor)"
         auto-select-first
         @blur="v$.depositor.$touch()"
@@ -246,6 +251,7 @@ defineExpose({
         integer
         data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
+        required
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"
       />

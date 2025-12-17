@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useFormErrorScroll } from '@/composables/form/use-form-error-scroll';
 import { useConfirmStore } from '@/store/confirm';
 
 defineOptions({
@@ -19,11 +20,15 @@ const props = withDefaults(defineProps<{
   divide?: boolean;
   autoHeight?: boolean;
   promptOnClose?: boolean;
+  errorCount?: number;
+  autoScrollToError?: boolean;
 }>(), {
   actionDisabled: false,
   actionHidden: false,
   autoHeight: false,
+  autoScrollToError: false,
   divide: false,
+  errorCount: 0,
   loading: false,
   maxWidth: '900px',
   persistent: false,
@@ -46,12 +51,22 @@ defineSlots<{
   'left-buttons': () => any;
 }>();
 
-const { display, primaryAction, promptOnClose, secondaryAction, subtitle } = toRefs(props);
+const { autoScrollToError, display, errorCount, primaryAction, promptOnClose, secondaryAction, subtitle } = toRefs(props);
 
 const wrapper = useTemplateRef('wrapper');
 
 const { show } = useConfirmStore();
 const { t } = useI18n({ useScope: 'global' });
+const { scrollToFirstError } = useFormErrorScroll();
+
+const hasErrors = computed<boolean>(() => get(errorCount) > 0);
+
+watch(errorCount, async (newCount, oldCount) => {
+  if (get(autoScrollToError) && newCount > 0 && oldCount === 0) {
+    await nextTick();
+    await scrollToFirstError(get(wrapper) ?? undefined);
+  }
+});
 
 const primary = computed(() => get(primaryAction) || t('common.actions.confirm'));
 const secondary = computed(() => get(secondaryAction) || t('common.actions.cancel'));
@@ -154,12 +169,24 @@ function promptClose() {
             <RuiButton
               v-if="!actionHidden"
               data-cy="confirm"
-              color="primary"
+              :color="hasErrors ? 'error' : 'primary'"
               :disabled="actionDisabled || loading"
               :loading="loading"
               type="submit"
             >
               {{ primary }}
+              <template
+                v-if="hasErrors"
+                #append
+              >
+                <RuiChip
+                  size="sm"
+                  class="!py-0 !px-0.5 !bg-rui-error-darker"
+                  color="error"
+                >
+                  {{ errorCount }}
+                </RuiChip>
+              </template>
             </RuiButton>
           </div>
         </slot>

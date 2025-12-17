@@ -107,7 +107,7 @@ describe('form/EthDepositEventForm.vue', () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
 
-    await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
+    await wrapper.find('[data-cy=eth-deposit-event-form__advance] [data-accordion-trigger]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
     const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-cy=validatorIndex] input');
@@ -128,7 +128,7 @@ describe('form/EthDepositEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { group: event, nextSequenceId: '10', type: 'group-add' } });
 
-    await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
+    await wrapper.find('[data-cy=eth-deposit-event-form__advance] [data-accordion-trigger]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
     const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-cy=validatorIndex] input');
@@ -151,7 +151,7 @@ describe('form/EthDepositEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { event, nextSequenceId: '1', type: 'edit' } });
 
-    await wrapper.find('[data-cy=eth-deposit-event-form__advance] .accordion__header').trigger('click');
+    await wrapper.find('[data-cy=eth-deposit-event-form__advance] [data-accordion-trigger]').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
     const validatorIndexInput = wrapper.find<HTMLInputElement>('[data-cy=validatorIndex] input');

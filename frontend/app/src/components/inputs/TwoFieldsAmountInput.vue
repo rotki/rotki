@@ -164,7 +164,7 @@ const focused = ref<boolean>(false);
     }
   }
 
-  :deep([class*='with-error']) {
+  :deep([data-error]) {
     label {
       @apply border-rui-error #{!important};
       @apply border-2;

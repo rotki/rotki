@@ -74,6 +74,7 @@ const { t } = useI18n({ useScope: 'global' });
         variant="outlined"
         :disabled="disabled"
         :label="t('transactions.events.form.event_type.label')"
+        required
         :options="historyEventTypesData"
         key-attr="identifier"
         text-attr="label"
@@ -87,6 +88,7 @@ const { t } = useI18n({ useScope: 'global' });
         variant="outlined"
         :disabled="disabled"
         :label="t('transactions.events.form.event_subtype.label')"
+        required
         :options="historyEventSubTypeFilteredData"
         key-attr="identifier"
         text-attr="label"
