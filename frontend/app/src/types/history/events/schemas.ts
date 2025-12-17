@@ -131,7 +131,7 @@ export interface FeeEntry {
   asset: string;
 }
 
-export type SwapEventUserNotes = [string, string, string];
+export type SwapEventUserNotes = [string, string, ...string[]];
 
 export type StandaloneEditableEvents = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | SolanaEvent;
 

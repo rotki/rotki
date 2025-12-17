@@ -226,7 +226,7 @@ defineExpose({
             auto-grow
             :label="userNotesLabel"
             :error-messages="toMessages(v$.userNotes)"
-            @blur="v$.userNotes.touch()"
+            @blur="v$.userNotes.$touch()"
           />
         </div>
       </RuiAccordion>

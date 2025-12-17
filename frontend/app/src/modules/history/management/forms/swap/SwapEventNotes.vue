@@ -3,11 +3,11 @@ import type { SwapEventUserNotes } from '@/types/history/events/schemas';
 
 const userNotes = defineModel<SwapEventUserNotes>({ required: true });
 
-// Array indices: [0] = spend, [1] = receive, [2] = fee
+// Array indices: [0] = spend, [1] = receive, [2+] = fee(s)
 
 defineProps<{
   errorMessages: string[];
-  hasFee: boolean;
+  feeCount: number;
 }>();
 
 const emit = defineEmits<{
@@ -56,17 +56,17 @@ const { t } = useI18n({ useScope: 'global' });
           @blur="emit('blur')"
         />
         <RuiTextArea
-          v-if="hasFee"
-          v-model="userNotes[2]"
+          v-for="feeIndex in feeCount"
+          :key="`fee-${feeIndex}`"
+          v-model="userNotes[1 + feeIndex]"
           prepend-icon="lu-sticky-note"
-          data-cy="fee-notes"
-          :disabled="!hasFee"
+          :data-cy="`fee-notes-${feeIndex}`"
           variant="outlined"
           color="primary"
           max-rows="5"
           min-rows="3"
           auto-grow
-          :label="t('swap_event_form.fee_notes')"
+          :label="feeCount > 1 ? t('swap_event_form.fee_notes_indexed', { index: feeIndex }) : t('swap_event_form.fee_notes')"
           :error-messages="errorMessages"
           @blur="emit('blur')"
         />
