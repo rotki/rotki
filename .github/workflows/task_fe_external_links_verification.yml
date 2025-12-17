@@ -21,7 +21,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@v2
+        uses: rotki/action-env@v3
         with:
           env_file: .github/.env.ci
 
