@@ -168,6 +168,7 @@ const feeRecipientSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 defineExpose({
   save,
+  v$,
 });
 </script>
 
@@ -178,6 +179,7 @@ defineExpose({
         v-model="timestamp"
         class="md:col-span-2"
         :label="t('common.datetime')"
+        required
         persistent-hint
         max-date="now"
         variant="outlined"
@@ -193,6 +195,7 @@ defineExpose({
         integer
         data-cy="blockNumber"
         :label="t('transactions.events.form.block_number.label')"
+        required
         :error-messages="toMessages(v$.blockNumber)"
         @blur="v$.blockNumber.$touch()"
       />
@@ -202,6 +205,7 @@ defineExpose({
         integer
         data-cy="validatorIndex"
         :label="t('transactions.events.form.validator_index.label')"
+        required
         :error-messages="toMessages(v$.validatorIndex)"
         @blur="v$.validatorIndex.$touch()"
       />
@@ -226,6 +230,7 @@ defineExpose({
       :items="feeRecipientSuggestions"
       data-cy="feeRecipient"
       :label="t('transactions.events.form.fee_recipient.label')"
+      required
       :error-messages="toMessages(v$.feeRecipient)"
       auto-select-first
       @blur="v$.feeRecipient.$touch()"

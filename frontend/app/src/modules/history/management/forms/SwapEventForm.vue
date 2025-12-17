@@ -148,9 +148,14 @@ async function save(): Promise<boolean> {
   const feeCount = fees?.length ?? 0;
   // Only include userNotes for spend, receive, and actual fees (2 + fee count)
   const userNotes = createUserNotes(model.userNotes[0], model.userNotes[1], ...model.userNotes.slice(2, 2 + feeCount));
+
+  // Generate UUID for uniqueId if not present and not in edit mode
+  const uniqueId = !isEditMode && !model.uniqueId ? crypto.randomUUID() : model.uniqueId;
+
   const payload: AddSwapEventPayload = {
-    ...omit(model, ['fees', 'userNotes']),
+    ...omit(model, ['fees', 'userNotes', 'uniqueId']),
     fees,
+    uniqueId,
     userNotes,
   };
 
@@ -289,6 +294,7 @@ watch(errorMessages, (errors) => {
 
 defineExpose({
   save,
+  v$,
 });
 </script>
 

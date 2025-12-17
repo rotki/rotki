@@ -267,6 +267,7 @@ watch(errorMessages, (errors) => {
 
 defineExpose({
   save,
+  v$,
 });
 </script>
 
@@ -276,6 +277,7 @@ defineExpose({
       <DateTimePicker
         v-model="timestamp"
         :label="t('common.datetime')"
+        required
         persistent-hint
         max-date="now"
         variant="outlined"
@@ -290,6 +292,7 @@ defineExpose({
         :disabled="data.type === 'edit-group'"
         data-cy="location"
         :label="t('common.location')"
+        required
         :error-messages="toMessages(v$.location)"
         @blur="v$.location.$touch()"
       />
@@ -309,6 +312,7 @@ defineExpose({
       v-model="eventType"
       variant="outlined"
       :label="t('transactions.events.form.event_type.label')"
+      required
       :options="historyEventTypesData"
       key-attr="identifier"
       text-attr="label"

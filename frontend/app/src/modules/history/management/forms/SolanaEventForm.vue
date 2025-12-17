@@ -215,6 +215,7 @@ onMounted(() => {
 
 defineExpose({
   save,
+  v$,
 });
 </script>
 
@@ -241,6 +242,7 @@ defineExpose({
       :disabled="data.type !== 'add'"
       data-cy="tx-ref"
       :label="t('common.signature')"
+      required
       :error-messages="toMessages(v$.txRef)"
       @blur="v$.txRef.$touch()"
     />
@@ -275,6 +277,7 @@ defineExpose({
         integer
         data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
+        required
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"
       />

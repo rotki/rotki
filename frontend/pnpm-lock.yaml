@@ -80,8 +80,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       '@rotki/ui-library':
-        specifier: 2.8.3
-        version: 2.8.3(@vueuse/core@13.8.0(vue@3.5.22(typescript@5.9.3)))(@vueuse/shared@13.8.0(vue@3.5.22(typescript@5.9.3)))(dayjs@1.11.14)(vue@3.5.22(typescript@5.9.3))
+        specifier: 2.10.0
+        version: 2.10.0(@vueuse/core@13.8.0(vue@3.5.22(typescript@5.9.3)))(@vueuse/shared@13.8.0(vue@3.5.22(typescript@5.9.3)))(dayjs@1.11.14)(vue@3.5.22(typescript@5.9.3))
       '@types/jsdom':
         specifier: 21.1.7
         version: 21.1.7
@@ -1955,8 +1955,8 @@ packages:
     peerDependencies:
       eslint: ^9.20.0
 
-  '@rotki/ui-library@2.8.3':
-    resolution: {integrity: sha512-mYvFBzrjgUnhzPe93vm1HkLcYd851L9uYPudEArRx+E1WJ/70wrTseH/7QWdhSr8uc8kPuggKNOXFEc6fIKOlw==}
+  '@rotki/ui-library@2.10.0':
+    resolution: {integrity: sha512-8nEx4q+DFAZNolwGHEsgbpjCgcL2GBXhKSSF3nZYcNjIXIk+fcvPPrf6jv+JzdzMyxa8pOeE71w6LpIzmb+rEg==}
     engines: {node: '>=22 <23', pnpm: '>=10 <11'}
     peerDependencies:
       '@vueuse/core': '>13.0.0'
@@ -2487,6 +2487,7 @@ packages:
 
   '@walletconnect/sign-client@2.21.7':
     resolution: {integrity: sha512-9k/JEl9copR6nXRhqnmzWz2Zk1hiWysH+o6bp6Cqo8TgDUrZoMLBZMZ6qbo+2HLI54V02kKf0Vg8M81nNFOpjQ==}
+    deprecated: 'Reliability and performance improvements. See: https://github.com/WalletConnect/walletconnect-monorepo/releases'
 
   '@walletconnect/time@1.0.2':
     resolution: {integrity: sha512-uzdd9woDcJ1AaBZRhqy5rNC9laqWGErfc4dxA9a87mPdKOgWMD85mcFo9dIYIts/Jwocfwn07EC6EzclKubk/g==}
@@ -2499,6 +2500,7 @@ packages:
 
   '@walletconnect/universal-provider@2.21.7':
     resolution: {integrity: sha512-8PB+vA5VuR9PBqt5Y0xj4JC2doYNPlXLGQt3wJORVF9QC227Mm/8R1CAKpmneeLrUH02LkSRwx+wnN/pPnDiQA==}
+    deprecated: 'Reliability and performance improvements. See: https://github.com/WalletConnect/walletconnect-monorepo/releases'
 
   '@walletconnect/utils@2.21.7':
     resolution: {integrity: sha512-qyaclTgcFf9AwVuoV8CLLg8wfH3nX7yZdpylNkDqCpS7wawQL9zmFFTaGgma8sQrCsd3Sd9jUIymcpRvCJnSTw==}
@@ -9643,7 +9645,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@rotki/ui-library@2.8.3(@vueuse/core@13.8.0(vue@3.5.22(typescript@5.9.3)))(@vueuse/shared@13.8.0(vue@3.5.22(typescript@5.9.3)))(dayjs@1.11.14)(vue@3.5.22(typescript@5.9.3))':
+  '@rotki/ui-library@2.10.0(@vueuse/core@13.8.0(vue@3.5.22(typescript@5.9.3)))(@vueuse/shared@13.8.0(vue@3.5.22(typescript@5.9.3)))(dayjs@1.11.14)(vue@3.5.22(typescript@5.9.3))':
     dependencies:
       '@popperjs/core': 2.11.8
       '@vueuse/core': 13.8.0(vue@3.5.22(typescript@5.9.3))

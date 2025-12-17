@@ -31,6 +31,7 @@ const { t } = useI18n({ useScope: 'global' });
     <DateTimePicker
       v-model="timestamp"
       :label="t('common.datetime')"
+      required
       persistent-hint
       max-date="now"
       variant="outlined"
@@ -47,6 +48,7 @@ const { t } = useI18n({ useScope: 'global' });
       data-cy="location"
       :items="locations"
       :label="t('common.location')"
+      required
       :error-messages="errorMessages.location"
       @blur="emit('blur', 'location')"
     />

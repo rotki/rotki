@@ -200,6 +200,7 @@ onMounted(() => {
 
 defineExpose({
   save,
+  v$,
 });
 </script>
 
@@ -209,6 +210,7 @@ defineExpose({
       <DateTimePicker
         v-model="timestamp"
         :label="t('common.datetime')"
+        required
         persistent-hint
         max-date="now"
         variant="outlined"
@@ -223,6 +225,7 @@ defineExpose({
         :disabled="data.type !== 'add'"
         data-cy="location"
         :label="t('common.location')"
+        required
         :error-messages="toMessages(v$.location)"
         @blur="v$.location.$touch()"
       />
@@ -235,6 +238,7 @@ defineExpose({
       :disabled="data.type !== 'add'"
       data-cy="eventIdentifier"
       :label="t('transactions.events.form.event_identifier.label')"
+      required
       :error-messages="toMessages(v$.eventIdentifier)"
       @blur="v$.eventIdentifier.$touch()"
     />
@@ -278,6 +282,7 @@ defineExpose({
         integer
         data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
+        required
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"
       />
