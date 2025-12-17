@@ -15,7 +15,7 @@ Changelog
 * :bug:`11113` An invalid Coinbase API key in the DB will no longer prevent logging into the app.
 * :bug:`-` Gas events will be editable again.
 * :bug:`11108` rotki will now correctly count the number of events allowed for the tier during the PnL report
-* :feature:`10832` rotki will now query and store Binance Convert trades.
+* :feature:`10832` rotki will now query and store Binance Convert trades (not supported for Binance US).
 * :feature:`11086` rotki will now properly handle Kraken margin profit, loss, fee, and any other so far unsupported event.
 * :bug:`11084` Indexer related backend query task will no longer randomly die.
 * :bug:`11094` rotki should now process correctly all the RPCs responses from Binance SC nodes.

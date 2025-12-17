@@ -1328,6 +1328,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         """Query Binance Convert trades using the convert/tradeFlow endpoint.
         Docs: https://developers.binance.com/docs/convert/trade/Get-Convert-Trade-History
         """
+        if self.location == Location.BINANCEUS:
+            return []  # Binance US does not support the convert API endpoint as of 2025-12-17
+
         convert_trades = self._api_query_list_within_time_delta(
             start_ts=start_ts,
             end_ts=end_ts,
