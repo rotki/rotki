@@ -94,7 +94,6 @@ pub async fn logout_user(State(state): State<Arc<AppState>>) -> impl IntoRespons
 
     // Explicitly close the SQLite connection if available, then drop the handle
     if let Some(client) = &db.client {
-        // If the client exposes a close method (rusqlite-backed), call it
         std::mem::drop(client.close());
     }
     db.client = None;

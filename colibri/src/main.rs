@@ -88,7 +88,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .collect();
 
-    // configure cors to allow only requests from the localhost
+    // configure cors to allow only requests matching the configured glob patterns
     let cors_layer = CorsLayer::new()
         .allow_origin(AllowOrigin::predicate(
             move |origin: &HeaderValue, _request_parts: &RequestParts| {
