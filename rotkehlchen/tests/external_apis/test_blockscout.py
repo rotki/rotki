@@ -1,3 +1,5 @@
+from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 
@@ -6,10 +8,13 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, SupportedBlockchain, TimestampMS
 
 
@@ -107,3 +112,23 @@ def test_hash_activity(eth_blockscout):
         chain_id=ChainID.ETHEREUM,
         account=string_to_evm_address('0x6c66149E65c517605e0a2e4F707550ca342f9c1B'),
     ) == HasChainActivity.NONE
+
+
+def test_missing_data_error(eth_blockscout: Blockscout) -> None:
+    """Test that we properly handle the custom status 2 missing data error from blockscout
+    when querying internal transactions. Should raise a remote error so that we fall back to
+    a different indexer.
+    """
+    with (
+        pytest.raises(RemoteError, match='Blockscout is missing data'),
+        patch.object(eth_blockscout.session, 'get', return_value=MockResponse(
+            status_code=HTTPStatus.OK,
+            text='{"message": "Internal transactions for this transaction have not been processed yet","result": [],"status": "2"}',  # noqa: E501
+        )),
+    ):
+        next(eth_blockscout.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=make_evm_address(),
+            action='txlistinternal',
+            period_or_hash=make_evm_tx_hash(),
+        ))
