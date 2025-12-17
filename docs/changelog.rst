@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Clicking the "more years" menu in the PnL report range selector will no longer cause an error during login.
 * :bug:`-` Fix an issue where users cannot authenticate Gnosis Pay using Zeal Wallet.
 * :bug:`-` Fix an issue where the WalletConnect modal is not visible.
 * :bug:`11147` rotki will now properly detect staked GRT balances on Arbitrum after The Graph's Horizon upgrade.
