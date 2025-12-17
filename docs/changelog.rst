@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` rotki will now properly fall back to other indexers when Blockscout has incomplete data.
 * :bug:`-` Sushiswap LP balances will now have correct balances in the LP tokens view.
 * :feature:`-` Users will now be able to customize the indexer order when redecoding EVM transactions.
 * :bug:`-` Swap event creation form now correctly handles user notes for multiple fee assets.

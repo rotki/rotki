@@ -213,6 +213,9 @@ class Blockscout(EtherscanLikeApi):
             params=query_args,
             timeout=timeout,
         )
+        if str(response.get('status')) == '2':  # Missing data, fall back to other indexers
+            raise RemoteError(f'Blockscout is missing data for {query_args}: {response}')
+
         if (
             (message := response.get('message')) is not None and
             message.startswith('No') and
