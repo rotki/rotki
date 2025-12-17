@@ -1103,6 +1103,38 @@ def test_native_tokens_in_asset_search(rotkehlchen_api_server: 'APIServer') -> N
     assert_asset_at_top_position('BTC', max_position_index=1, result=result)
 
 
+def test_fiat_assets_prioritized_in_search(rotkehlchen_api_server: 'APIServer') -> None:
+    # When searching for USD, the USD fiat currency should appear first
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'USD', 'limit': 50},
+    ))
+    assert_asset_at_top_position('USD', max_position_index=0, result=result)
+    assert result[0]['asset_type'] == 'fiat'
+
+    # When searching for EUR, the EUR fiat currency should appear first
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'EUR', 'limit': 50},
+    ))
+    assert_asset_at_top_position('EUR', max_position_index=0, result=result)
+    assert result[0]['asset_type'] == 'fiat'
+
+    # For partial matches, fiat currencies should still have priority over native tokens
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'U', 'limit': 100},
+    ))
+    fiat_positions, native_positions = [], []
+    for i, entry in enumerate(result):
+        if entry.get('asset_type') == 'fiat':
+            fiat_positions.append(i)
+        elif entry['identifier'] in ('ETH', 'BTC', 'SOL', 'MATIC', 'AVAX'):
+            native_positions.append(i)
+
+    assert max(fiat_positions) < min(native_positions)
+
+
 def test_only_ignored_assets(rotkehlchen_api_server: 'APIServer') -> None:
     """Test it's possible to ask to only see the ignored assets"""
     clean_ignored_assets(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
