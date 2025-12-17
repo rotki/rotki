@@ -49,6 +49,8 @@ const {
 
 const { event } = toRefs(props);
 
+const showMenu = ref<boolean>(false);
+
 const evmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
   const currentEvent = get(event);
   if (isEvmSwapEvent(currentEvent) || isEvmEvent(currentEvent)) {
@@ -125,6 +127,7 @@ function redecode(event: EthBlockEvent | DecodableEventType): void {
 }
 
 function redecodeWithOptions(event: DecodableEventType): void {
+  set(showMenu, false);
   emit('redecode-with-options', {
     data: toLocationAndTxRef(event),
     type: event.entryType,
@@ -143,6 +146,7 @@ function hideAddAction(item: HistoryEvent): boolean {
 <template>
   <div class="flex items-center">
     <RuiMenu
+      v-model="showMenu"
       menu-class="max-w-[15rem]"
       :popper="{ placement: 'bottom-end' }"
       close-on-content-click
@@ -194,38 +198,44 @@ function hideAddAction(item: HistoryEvent): boolean {
           </RuiButton>
         </template>
         <template v-else-if="eventWithDecoding">
-          <div class="flex justify-between">
-            <RuiButton
-              variant="list"
-              class="grow"
-              :disabled="loading || txEventsDecoding"
-              @click="redecode(eventWithDecoding)"
-            >
-              <template #prepend>
-                <RuiIcon name="lu-rotate-ccw" />
-              </template>
-              {{ t('transactions.actions.redecode_events') }}
-            </RuiButton>
-            <RuiTooltip
-              v-if="evmEvent"
-              :popper="{ placement: 'top' }"
-            >
-              <template #activator>
-                <RuiButton
-                  variant="list"
-                  size="sm"
-                  :disabled="loading || txEventsDecoding"
-                  @click="redecodeWithOptions(evmEvent)"
-                >
-                  <RuiIcon
-                    name="lu-settings"
-                    size="16"
-                  />
-                </RuiButton>
-              </template>
-              {{ t('transactions.actions.redecode_with_options') }}
-            </RuiTooltip>
-          </div>
+          <RuiButton
+            variant="list"
+            class="!py-2"
+            :disabled="loading || txEventsDecoding"
+            @click="redecode(eventWithDecoding)"
+          >
+            <template #prepend>
+              <RuiIcon
+                name="lu-rotate-ccw"
+                class="w-8"
+                size="20"
+              />
+            </template>
+            {{ t('transactions.actions.redecode_events') }}
+            <template #append>
+              <RuiTooltip
+                v-if="evmEvent"
+                :popper="{ placement: 'top' }"
+              >
+                <template #activator>
+                  <RuiButton
+                    icon
+                    variant="text"
+                    size="sm"
+                    class="!p-2"
+                    :disabled="loading || txEventsDecoding"
+                    @click.stop="redecodeWithOptions(evmEvent)"
+                  >
+                    <RuiIcon
+                      name="lu-settings-2"
+                      size="16"
+                    />
+                  </RuiButton>
+                </template>
+                {{ t('transactions.actions.redecode_with_options') }}
+              </RuiTooltip>
+            </template>
+          </RuiButton>
         </template>
         <RuiButton
           v-if="eventWithTxRef"

@@ -133,6 +133,7 @@ function resolveDataDirectory(): string {
 
   let baseDir: string;
 
+  // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check
   switch (platform) {
     case 'win32':
       baseDir = process.env.LOCALAPPDATA ?? path.join(homedir, 'AppData', 'Local');

@@ -121,13 +121,14 @@ const autoCompleteHint = computed<string>(() => {
 
       <div
         v-if="!disableAdd"
-        class="flex py-2 gap-2 items-start border-b border-default"
+        class="flex pb-2 gap-2 items-start border-b border-default overflow-hidden"
         :class="variant === 'outlined' ? 'px-6' : 'px-[1px]'"
       >
         <RuiAutoComplete
           v-model="selection"
           dense
           variant="outlined"
+          class="overflow-hidden py-1.5"
           :label="t('common.actions.search')"
           :no-data-text="t('prioritized_list.all_added', itemNameTr)"
           :options="missing"
@@ -152,7 +153,7 @@ const autoCompleteHint = computed<string>(() => {
           color="primary"
           variant="outlined"
           :disabled="!selection"
-          class="h-10"
+          class="h-10 my-1.5"
           @click="addItem()"
         >
           <div class="flex items-center gap-2">
@@ -171,7 +172,7 @@ const autoCompleteHint = computed<string>(() => {
             <th class="ps-6">
               {{ t('common.name') }}
             </th>
-            <th />
+            <th class="!pl-0" />
           </tr>
         </thead>
         <tbody v-if="noResults">
@@ -232,7 +233,7 @@ const autoCompleteHint = computed<string>(() => {
                 size="28px"
               />
             </td>
-            <td class="text-end">
+            <td class="text-end !pl-0">
               <RuiTooltip
                 v-if="!disableDelete"
                 :popper="{ placement: 'top' }"

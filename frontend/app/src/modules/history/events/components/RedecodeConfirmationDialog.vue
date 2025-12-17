@@ -119,8 +119,8 @@ watch(show, (value) => {
       <!-- Custom events section - only show when there are custom events -->
       <SettingsItem
         v-if="hasCustomEvents"
-        class="!pt-0 !pb-6"
-        :class="{ '!border-0': !showIndexerOptions || !isEvmEvent }"
+        class="!pt-0 pb-6"
+        :class="{ '!border-0 !pb-0': !showIndexerOptions || !isEvmEvent }"
       >
         <template #title>
           {{ t('transactions.events.confirmation.reset.custom_events_title') }}
