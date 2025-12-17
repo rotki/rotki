@@ -12,10 +12,12 @@ import VueRouter from 'unplugin-vue-router/vite';
 import checker from 'vite-plugin-checker';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import { defineConfig } from 'vitest/config';
-import { scanBackendIcons } from './scripts/extract-backend-icons';
+import { backendIcons } from './backend-icons.generated';
+import { backendIconsCachePlugin } from './scripts/extract-backend-icons';
 
 const PACKAGE_ROOT = __dirname;
 const PROJECT_ROOT = resolve(PACKAGE_ROOT, '../..');
+
 const envPath = process.env.VITE_PUBLIC_PATH;
 const publicPath = envPath || '/';
 const isDevelopment = process.env.NODE_ENV === 'development';
@@ -86,6 +88,7 @@ export default defineConfig({
     ],
   },
   plugins: [
+    backendIconsCachePlugin(PROJECT_ROOT),
     VueRouter({
       importMode: 'async',
     }),
@@ -136,7 +139,7 @@ export default defineConfig({
     }),
     ruiIconsPlugin({
       include: [
-        ...scanBackendIcons(PROJECT_ROOT).icons,
+        ...backendIcons,
         // icons used by the components
         'lu-minus',
         'lu-message-square-quote',
