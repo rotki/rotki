@@ -17,6 +17,7 @@
     "electron:package": "electron-builder build --config .electron-builder.config.ts --publish onTag",
     "electron:serve": "tsx scripts/serve.ts",
     "check:icons": "tsx scripts/extract-backend-icons.ts",
+    "generate:backend-icons": "tsx scripts/extract-backend-icons.ts --generate",
     "get-protocols": "tsx scripts/get-protocols.ts",
     "link:verify": "tsx scripts/check-external-links.ts",
     "lint:style": "stylelint 'src/**/*.{vue,css}'",

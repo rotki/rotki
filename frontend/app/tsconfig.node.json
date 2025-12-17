@@ -16,6 +16,7 @@
     "tailwind.config.*",
     "scripts/**/*",
     "shared/external-links.ts",
-    ".electron-builder.config.*"
+    ".electron-builder.config.*",
+    "backend-icons.generated.ts"
   ]
 }
