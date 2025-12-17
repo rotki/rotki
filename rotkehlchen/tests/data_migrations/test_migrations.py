@@ -21,6 +21,7 @@ from rotkehlchen.data_migrations.manager import (
 )
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_delete_general_cache_values
@@ -65,6 +66,21 @@ class MockRotkiForMigrations(Rotkehlchen):
     def __init__(self, db: DBHandler) -> None:  # pylint: disable=W0231 # inheritance from Rotkehlchen is just for the type checker
         self.data = MockDataForMigrations(db=db)  # type: ignore
         self.msg_aggregator = db.msg_aggregator
+
+
+class MockRotkiForMigrationsWithExchangeManager(MockRotkiForMigrations):
+    """Mock rotki for migration tests that also includes an exchange manager."""
+
+    def __init__(self, db: DBHandler) -> None:
+        super().__init__(db=db)
+        self.exchange_manager = ExchangeManager(msg_aggregator=self.msg_aggregator)
+        with db.conn.write_ctx() as cursor:
+            exchange_credentials = db.get_exchange_credentials(cursor)
+
+        self.exchange_manager.initialize_exchanges(
+            exchange_credentials=exchange_credentials,
+            database=db,
+        )
 
 
 def assert_progress_message(msg: dict[str, Any], step_num: int, description: str | None, migration_version: int, migration_steps: int) -> None:  # noqa: E501

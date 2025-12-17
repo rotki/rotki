@@ -1,19 +1,23 @@
+import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.exchanges.coinbase import ECDSA_KEY_RE
-from rotkehlchen.logging import enter_exit_debug_log
-from rotkehlchen.types import ExchangeApiCredentials, Location
+from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
+from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_migration_steps, progress_step
 
 if TYPE_CHECKING:
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
     from rotkehlchen.rotkehlchen import Rotkehlchen
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
 
 @enter_exit_debug_log()
 def data_migration_22(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:
     """Introduced at v1.41.3
-    Removes legacy Coinbase api keys from the user db.
+    Removes any Coinbase exchanges with legacy api keys.
     """
     @progress_step(description='Removing legacy Coinbase api keys')
     def _remove_legacy_coinbase_keys(rotki: 'Rotkehlchen') -> None:
@@ -23,7 +27,7 @@ def data_migration_22(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                 location=Location.COINBASE,
             )[Location.COINBASE]
 
-        creds_to_remove: list[ExchangeApiCredentials] = []
+        success = True
         for cred in creds:
             if (
                 ECDSA_KEY_RE.match(cred.api_key) or
@@ -31,12 +35,15 @@ def data_migration_22(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             ):  # skip any valid ECDSA or ED25519 keys
                 continue
 
-            creds_to_remove.append(cred)
-
-        with rotki.data.db.conn.write_ctx() as write_cursor:
-            write_cursor.executemany(
-                'DELETE FROM user_credentials WHERE name=? AND location=?',
-                [(cred.name, cred.location.serialize_for_db()) for cred in creds_to_remove],
+            # Use delete_exchange to remove both from the DB and the list of connected exchanges.
+            success, msg = rotki.exchange_manager.delete_exchange(
+                name=cred.name,
+                location=cred.location,
             )
+            if not success:
+                log.error(f'Failed to remove legacy coinbase credentials for {cred.name}: {msg}')
 
-    perform_userdb_migration_steps(rotki, progress_handler)
+        if not success:
+            rotki.msg_aggregator.add_error('Failed to remove legacy coinbase credentials. See logs for details.')  # noqa: E501
+
+    perform_userdb_migration_steps(rotki, progress_handler, should_vacuum=False)
