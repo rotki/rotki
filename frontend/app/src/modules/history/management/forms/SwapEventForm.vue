@@ -51,6 +51,10 @@ function emptyEvent(): FormData {
   };
 }
 
+function createUserNotes(spendNote: string, receiveNote: string, ...feeNotes: string[]): SwapEventUserNotes {
+  return [spendNote, receiveNote, ...feeNotes];
+}
+
 const states = ref<FormData>(emptyEvent());
 const hasFee = ref<boolean>(false);
 const identifiers = ref<number[]>();
@@ -143,7 +147,7 @@ async function save(): Promise<boolean> {
   const fees = get(hasFee) ? model.fees.filter(fee => fee.amount && fee.asset) : undefined;
   const feeCount = fees?.length ?? 0;
   // Only include userNotes for spend, receive, and actual fees (2 + fee count)
-  const userNotes = model.userNotes.slice(0, 2 + feeCount) as SwapEventUserNotes;
+  const userNotes = createUserNotes(model.userNotes[0], model.userNotes[1], ...model.userNotes.slice(2, 2 + feeCount));
   const payload: AddSwapEventPayload = {
     ...omit(model, ['fees', 'userNotes']),
     fees,
@@ -236,7 +240,7 @@ watch(hasFee, (hasFee) => {
     }
     // Add empty fee note if not present
     if (oldStates.userNotes.length < 3) {
-      updates.userNotes = [...oldStates.userNotes, ''] as SwapEventUserNotes;
+      updates.userNotes = createUserNotes(oldStates.userNotes[0], oldStates.userNotes[1], ...oldStates.userNotes.slice(2), '');
     }
     if (Object.keys(updates).length > 0) {
       set(states, {
@@ -250,7 +254,7 @@ watch(hasFee, (hasFee) => {
   set(states, {
     ...oldStates,
     fees: [],
-    userNotes: [oldStates.userNotes[0], oldStates.userNotes[1]],
+    userNotes: createUserNotes(oldStates.userNotes[0], oldStates.userNotes[1]),
   });
 });
 
@@ -268,12 +272,12 @@ watch(() => get(states).fees.length, (newLength, oldLength) => {
   if (newLength > oldLength) {
     // Fee added - add empty notes
     const notesToAdd = newLength - oldLength;
-    const newNotes = [...currentNotes, ...Array.from({ length: notesToAdd }).fill('')] as SwapEventUserNotes;
+    const newNotes = createUserNotes(currentNotes[0], currentNotes[1], ...currentNotes.slice(2), ...new Array<string>(notesToAdd).fill(''));
     set(states, { ...get(states), userNotes: newNotes });
   }
   else {
     // Fee removed - remove corresponding notes from the end
-    const newNotes = currentNotes.slice(0, expectedLength) as SwapEventUserNotes;
+    const newNotes = createUserNotes(currentNotes[0], currentNotes[1], ...currentNotes.slice(2, expectedLength));
     set(states, { ...get(states), userNotes: newNotes });
   }
 });
