@@ -192,7 +192,7 @@ export default defineConfig({
           'vue-vendor': ['vue', 'vue-router', 'pinia', 'vue-i18n'],
           'common': ['@rotki/common', 'bignumber.js'],
           'ui-vendor': ['@rotki/ui-library'],
-          'chart': ['echarts', 'vue-echarts'],
+          'chart': ['echarts/core', 'echarts/charts', 'echarts/components', 'echarts/renderers', 'vue-echarts'],
           'editor': ['vanilla-jsoneditor'],
           'utils': [
             '@vueuse/math',

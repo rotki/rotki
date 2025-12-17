@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import AuthLayout from '@/layouts/auth.vue';
-import DefaultLayout from '@/layouts/default.vue';
-import PlainLayout from '@/layouts/plain.vue';
+const AuthLayout = defineAsyncComponent(() => import('@/layouts/auth.vue'));
+const DefaultLayout = defineAsyncComponent(() => import('@/layouts/default.vue'));
+const PlainLayout = defineAsyncComponent(() => import('@/layouts/plain.vue'));
 
 const layouts = {
   auth: AuthLayout,
