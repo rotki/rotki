@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 from unittest.mock import patch
 
 import pytest
@@ -59,8 +59,9 @@ if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.types import ChecksumEvmAddress
 
-ADDR1 = string_to_evm_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
-ADDR2 = string_to_evm_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19')
+HOUR_IN_MILLISECONDS: Final = 3600000
+ADDR1: Final = string_to_evm_address('0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397')
+ADDR2: Final = string_to_evm_address('0x00F8a0D8EE1c21151BCcB416bCa1C152f9952D19')
 
 
 @pytest.mark.parametrize('eth2_mock_data', [{
@@ -979,6 +980,97 @@ def test_staking_performance_division_by_zero_protection(eth2) -> None:
         assert FVal(validator_apr['sum']) == ONE
         assert FVal(validator_apr['withdrawals']) == ONE
         assert FVal(validator_apr['apr']) == ZERO
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_accumulating_validator_exit_pnl_with_multiple_deposits(
+        eth2: 'Eth2',
+        database: 'DBHandler',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that exit PnL calculation for accumulating validators with multiple deposits is correct.
+    Regression test for https://github.com/rotki/rotki/issues/11146
+
+    It reproduces the issue where an accumulating validator (0x02 type) with:
+    - Initial 32 ETH deposit
+    - Multiple additional 8 ETH deposits (total 64 ETH deposited)
+    - Accumulated consensus rewards through skimming withdrawals
+    - Exits with a balance higher than deposits
+
+    The issue was that the exit PnL incorrectly counted the entire difference between
+    exit amount and deposits as profit, even though consensus rewards were already
+    accounted for in withdrawals.
+    """  # noqa: E501
+    validator = ValidatorDetails(
+        validator_index=123456,
+        validator_type=ValidatorType.ACCUMULATING,
+        public_key=Eth2PubKey('0xb016e31f633a21fbe42a015152399361184f1e2c0803d89823c224994af74a561c4ad8cfc94b18781d589d03e952cd5b'),
+    )
+    assert validator.validator_index is not None
+    events = [EthDepositEvent(  # First deposit
+            tx_ref=make_evm_tx_hash(),
+            validator_index=validator.validator_index,
+            sequence_index=0,
+            timestamp=(start_ts := TimestampMS(1700000000000)),
+            amount=MIN_EFFECTIVE_BALANCE,
+            depositor=(user_address := ethereum_accounts[0]),
+        ), *[  # Additional deposits of 8 ETH
+            EthDepositEvent(
+                tx_ref=make_evm_tx_hash(),
+                validator_index=validator.validator_index,
+                sequence_index=i + 1,
+                timestamp=TimestampMS(start_ts + (i + 1) * HOUR_IN_MILLISECONDS),
+                amount=FVal('8'),
+                depositor=user_address,
+            )
+            for i in range(4)
+        ], EthWithdrawalEvent(  # first skimming withdrawal
+            validator_index=validator.validator_index,
+            timestamp=TimestampMS(start_ts + 24 * HOUR_IN_MILLISECONDS),
+            amount=FVal('1'),
+            withdrawal_address=user_address,
+            is_exit=False,
+        ), EthWithdrawalEvent(  # second skimming withdrawal
+            validator_index=validator.validator_index,
+            timestamp=TimestampMS(start_ts + 48 * HOUR_IN_MILLISECONDS),
+            amount=FVal('1'),
+            withdrawal_address=user_address,
+            is_exit=False,
+        ), EthWithdrawalEvent(  # exit withdrawal
+            validator_index=validator.validator_index,
+            timestamp=TimestampMS(start_ts + 72 * HOUR_IN_MILLISECONDS),
+            amount=FVal('66'),
+            withdrawal_address=user_address,
+            is_exit=True,
+        ),
+    ]
+
+    with database.user_write() as write_cursor:
+        DBEth2(database).add_or_update_validators(write_cursor, [validator])
+        DBHistoryEvents(database).add_history_events(write_cursor, events)
+
+    with (
+        patch('rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.get_validator_data', return_value=[validator]),  # noqa: E501
+        patch('rotkehlchen.chain.ethereum.modules.eth2.eth2.Eth2._check_eth_staking_limit'),
+    ):
+        performance = eth2.get_performance(
+            from_ts=ts_ms_to_sec(start_ts),
+            to_ts=ts_ms_to_sec(TimestampMS(start_ts + 100 * HOUR_IN_MILLISECONDS)),
+            limit=10,
+            offset=0,
+            ignore_cache=True,
+        )
+
+    validator_performance = performance['validators'][validator.validator_index]
+    # The validator earned 2 ETH in consensus rewards through skimming withdrawals.
+    # When it exits with 66 ETH (64 deposited + 2 rewards), the exit PnL should be 0
+    # since the 2 ETH profit was already accounted for in withdrawals.
+    assert validator_performance['withdrawals'] == FVal('2')
+    # Exit PnL should be 0 (or absent) to avoid double-counting the rewards
+    assert validator_performance.get('exits', ZERO) == ZERO
+    # Total sum should equal just the consensus rewards (2 ETH)
+    assert validator_performance['sum'] == FVal('2')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

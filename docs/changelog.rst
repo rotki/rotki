@@ -6,6 +6,7 @@ Changelog
 * :bug:`-` Sushiswap LP balances will now have correct balances in the LP tokens view.
 * :feature:`-` Users will now be able to customize the indexer order when redecoding EVM transactions.
 * :bug:`-` Swap event creation form now correctly handles user notes for multiple fee assets.
+* :bug:`11146` Accumulating validators with multiple deposits will now show correct rewards and APR when exiting.
 * :bug:`-` Clicking the "more years" menu in the PnL report range selector will no longer cause an error during login.
 * :bug:`-` Gnosis Pay users will now be able to authenticate using Zeal Wallet.
 * :bug:`-` The WalletConnect modal should now be visible under all circumstances.
