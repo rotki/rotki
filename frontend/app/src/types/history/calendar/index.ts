@@ -8,7 +8,7 @@ export const CalendarEventPayload = z.object({
   blockchain: z.string().optional(),
   color: z.string().optional(),
   counterparty: z.string().optional(),
-  description: z.string(),
+  description: z.string().optional(),
   name: z.string(),
   timestamp: z.number(),
 });
