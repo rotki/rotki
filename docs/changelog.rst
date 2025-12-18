@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.41.3 <2025-12-19>`
 * :bug:`11166` Date time picker quick options will now work cumulatively, allowing users to go further back in time with multiple clicks.
 * :bug:`11168` The history event forms will now automatically scroll to the first error and expand any collapsed sections containing errors.
 * :feature:`-` The swap, asset movement and online events forms will now automatically generate a unique identifier if one is not provided.
