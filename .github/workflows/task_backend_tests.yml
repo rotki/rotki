@@ -133,23 +133,16 @@ jobs:
           FORCE_COLOR: 1
           MATRIX_JOB: ${{ matrix.test-group }}
         run: |
-          if [ "${{ runner.os }}" == 'macOS' ];
-          then
-            COVERAGE_ARGS=''
-          else
-            COVERAGE_ARGS='--cov=./'
-          fi
-
           export CASSETTES_DIR="$HOME/work/rotki/rotki/test-caching"
 
           if [ "${{ matrix.test-group }}" == 'api' ]
           then
-            uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" rotkehlchen/tests/api
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" rotkehlchen/tests/api
           elif [ "${{ matrix.test-group }}" == 'decoders' ]
           then
-            uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" -n 6 rotkehlchen/tests/unit/decoders rotkehlchen/tests/unit/solana_decoders -v
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" -n 6 rotkehlchen/tests/unit/decoders rotkehlchen/tests/unit/solana_decoders -v
           else
-            uv run pytestgeventwrapper.py "$PYTEST_ARGS" "$COVERAGE_ARGS" --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders --ignore=rotkehlchen/tests/unit/solana_decoders rotkehlchen/tests/
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders --ignore=rotkehlchen/tests/unit/solana_decoders rotkehlchen/tests/
           fi
 
           if [ "${{ matrix.test-group }}" == 'others' ]
@@ -158,9 +151,3 @@ jobs:
             uv run pytestgeventwrapper.py --dead-fixtures
           fi
         shell: bash
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v5
-        with:
-          flags: backend
-          token: ${{ secrets.CODECOV_TOKEN }}
