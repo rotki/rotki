@@ -215,6 +215,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
+from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntryType,
     get_event_type_identifier,
@@ -251,6 +252,7 @@ from rotkehlchen.tasks.assets import (
     update_aave_v3_underlying_assets,
     update_spark_underlying_assets,
 )
+from rotkehlchen.tasks.events import update_asset_movement_matched_event
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     BLOCKSCOUT_TO_CHAINID,
@@ -6326,3 +6328,39 @@ class RestAPI:
             return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
 
         return api_response(OK_RESULT)
+
+    def match_asset_movements(
+            self,
+            asset_movement_identifier: int,
+            matched_event_identifier: int,
+    ) -> Response:
+        """Match an exchange asset movement to an onchain event."""
+        events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
+        asset_movement = matched_event = None
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            for event in events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(
+                    identifiers=[asset_movement_identifier, matched_event_identifier],
+                ),
+            ):
+                if event.identifier == asset_movement_identifier:
+                    asset_movement = event
+                elif event.identifier == matched_event_identifier:
+                    matched_event = event
+
+        if asset_movement is None or not isinstance(asset_movement, AssetMovement):
+            error_msg = f'No asset movement event found in the DB for identifier {asset_movement_identifier}'  # noqa: E501
+        elif matched_event is None:
+            error_msg = f'No event found in the DB for identifier {matched_event_identifier}'
+        else:
+            success, error_msg = update_asset_movement_matched_event(
+                events_db=events_db,
+                asset_movement=asset_movement,
+                matched_event=matched_event,
+                is_deposit=asset_movement.event_type == HistoryEventType.DEPOSIT,
+            )
+            if success:
+                return api_response(OK_RESULT)
+
+        return api_response(wrap_in_fail_result(message=error_msg), HTTPStatus.BAD_REQUEST)

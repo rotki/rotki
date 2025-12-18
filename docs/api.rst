@@ -6268,6 +6268,48 @@ Re-querying exchange history events in a range
    :statuscode 401: No user is currently logged in
    :statuscode 409: Exchange entry is missing or the provided range is invalid
 
+Match exchange asset movements with onchain events
+==================================================
+
+.. http:post:: /api/(version)/history/events/match/asset_movements
+
+   Matches exchange asset movement events with corresponding onchain events.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/match/asset_movements HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "asset_movement": 123,
+          "matched_event": 124
+      }
+
+   :reqjson int asset_movement: DB identifier of the asset movement to match
+   :reqjson int matched_event: DB identifier of the corresponding onchain event to match with the asset movement.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: A boolean for success or failure
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Events matched successfully
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or failure.
+   :statuscode 500: Internal rotki error
+
 Querying messages to show to the user
 =====================================
 

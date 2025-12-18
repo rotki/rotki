@@ -127,6 +127,7 @@ from rotkehlchen.api.v1.schemas import (
     ManualPriceDeleteSchema,
     ManualPriceRegisteredSchema,
     ManualPriceSchema,
+    MatchAssetMovementsSchema,
     ModuleBalanceProcessingSchema,
     ModuleBalanceWithVersionProcessingSchema,
     ModuleHistoryProcessingSchema,
@@ -3616,3 +3617,16 @@ class PremiumCapabilitiesResource(BaseMethodView):
     @require_premium_user(active_check=False)
     def get(self) -> Response:
         return self.rest_api.get_premium_capabilities()
+
+
+class MatchAssetMovementsResource(BaseMethodView):
+
+    post_schema = MatchAssetMovementsSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json')
+    def post(self, asset_movement: int, matched_event: int) -> Response:
+        return self.rest_api.match_asset_movements(
+            asset_movement_identifier=asset_movement,
+            matched_event_identifier=matched_event,
+        )

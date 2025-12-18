@@ -86,45 +86,74 @@ def match_asset_movements(database: 'DBHandler') -> None:
         )) is None:
             continue  # No event found. Skip. Will retry next time this logic runs.
 
-        # This could also be a plain history event (i.e. a btc event, or custom event)
-        # so only set counterparty if the event supports it.
-        if isinstance(matched_event, OnchainEvent):
-            if matched_event.counterparty is not None:
-                # This event has been decoded by a protocol decoder and likely isn't the match
-                # TODO: Figure out how to handle some cases like swaps and bridging where a
-                # protocol event could be the corresponding event for an asset movement.
-                continue
-
-            matched_event.counterparty = asset_movement.location.name.lower()
-
-        # Modify the matched event
-        if is_deposit:
-            matched_event.event_type = HistoryEventType.DEPOSIT
-            matched_event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-            notes = 'Deposit {amount} {asset} to {exchange}'
-        else:
-            matched_event.event_type = HistoryEventType.WITHDRAWAL
-            matched_event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-            notes = 'Withdraw {amount} {asset} from {exchange}'
-
-        matched_event.notes = notes.format(
-            amount=matched_event.amount,
-            asset=matched_event.asset.resolve_to_asset_with_symbol().symbol,
-            exchange=asset_movement.location_label,
+        update_asset_movement_matched_event(
+            events_db=events_db,
+            asset_movement=asset_movement,
+            matched_event=matched_event,
+            is_deposit=is_deposit,
         )
 
-        # Save the event and cache the matched identifiers
-        with database.conn.write_ctx() as write_cursor:
-            events_db.edit_history_event(
-                write_cursor=write_cursor,
-                event=matched_event,
-            )
-            database.set_dynamic_cache(  # type: ignore[call-overload]  # identifiers will not be None here since the events are from the db
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.MATCHED_ASSET_MOVEMENT,
-                value=asset_movement.identifier,
-                identifier=matched_event.identifier,
-            )
+
+def update_asset_movement_matched_event(
+        events_db: DBHistoryEvents,
+        asset_movement: AssetMovement,
+        matched_event: HistoryBaseEntry,
+        is_deposit: bool,
+) -> tuple[bool, str]:
+    """Update the given matched event with proper event_type, counterparty, etc and cache the
+    event identifiers. Returns a tuple containing a boolean indicating success and a string
+    containing any error message.
+    """
+    if isinstance(matched_event, OnchainEvent):
+        # This could also be a plain history event (i.e. a btc event, or custom event)
+        # so only set counterparty if the event supports it.
+        if matched_event.counterparty is not None:
+            # This event has been decoded by a protocol decoder and likely isn't the match
+            # TODO: Figure out how to handle some cases like swaps and bridging where a
+            # protocol event could be the corresponding event for an asset movement.
+            return False, 'Event already has a counterparty set'
+
+        matched_event.counterparty = asset_movement.location.name.lower()
+
+    # Modify the matched event
+    if is_deposit:
+        matched_event.event_type = HistoryEventType.DEPOSIT
+        matched_event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+        notes = 'Deposit {amount} {asset} to {exchange}'
+    else:
+        matched_event.event_type = HistoryEventType.WITHDRAWAL
+        matched_event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+        notes = 'Withdraw {amount} {asset} from {exchange}'
+
+    matched_event.notes = notes.format(
+        amount=matched_event.amount,
+        asset=matched_event.asset.resolve_to_asset_with_symbol().symbol,
+        exchange=asset_movement.location_label,
+    )
+
+    if matched_event.extra_data is None:
+        matched_event.extra_data = {}
+
+    matched_event.extra_data['matched_asset_movement'] = {
+        'group_identifier': asset_movement.group_identifier,
+        'exchange': asset_movement.location.serialize(),
+        'exchange_name': asset_movement.location_label,
+    }
+
+    # Save the event and cache the matched identifiers
+    with events_db.db.conn.write_ctx() as write_cursor:
+        events_db.edit_history_event(
+            write_cursor=write_cursor,
+            event=matched_event,
+        )
+        events_db.db.set_dynamic_cache(  # type: ignore[call-overload]  # identifiers will not be None here since the events are from the db
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.MATCHED_ASSET_MOVEMENT,
+            value=asset_movement.identifier,
+            identifier=matched_event.identifier,
+        )
+
+    return True, ''
 
 
 def _find_asset_movement_match(
