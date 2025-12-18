@@ -12,6 +12,10 @@ on:
       test_environment:
         required: true
         type: string
+      collect_coverage:
+        required: false
+        default: false
+        type: boolean
 
 permissions: { }
 
@@ -22,6 +26,7 @@ jobs:
       TEST_ENVIRONMENT: ${{ inputs.test_environment }}
       TARGET_BRANCH: ${{ github.base_ref }}
       SOURCE_BRANCH: ${{ github.head_ref }}
+      COLLECT_COVERAGE: ${{ inputs.collect_coverage }}
     runs-on: ${{ inputs.os }}
     name: 'Backend tests'
     timeout-minutes: 50
@@ -133,16 +138,23 @@ jobs:
           FORCE_COLOR: 1
           MATRIX_JOB: ${{ matrix.test-group }}
         run: |
+          if [ "${{ inputs.collect_coverage }}" = 'true' ]; then
+            export COVERAGE_FILE=".coverage.${{ matrix.test-group }}"
+            COVERAGE_ARGS='--cov=rotkehlchen --cov-report=term-missing'
+          else
+            COVERAGE_ARGS=''
+          fi
+
           export CASSETTES_DIR="$HOME/work/rotki/rotki/test-caching"
 
           if [ "${{ matrix.test-group }}" == 'api' ]
           then
-            uv run pytestgeventwrapper.py "$PYTEST_ARGS" rotkehlchen/tests/api
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" $COVERAGE_ARGS rotkehlchen/tests/api
           elif [ "${{ matrix.test-group }}" == 'decoders' ]
           then
-            uv run pytestgeventwrapper.py "$PYTEST_ARGS" -n 6 rotkehlchen/tests/unit/decoders rotkehlchen/tests/unit/solana_decoders -v
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" $COVERAGE_ARGS -n 6 rotkehlchen/tests/unit/decoders rotkehlchen/tests/unit/solana_decoders -v
           else
-            uv run pytestgeventwrapper.py "$PYTEST_ARGS" --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders --ignore=rotkehlchen/tests/unit/solana_decoders rotkehlchen/tests/
+            uv run pytestgeventwrapper.py "$PYTEST_ARGS" $COVERAGE_ARGS --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders --ignore=rotkehlchen/tests/unit/solana_decoders rotkehlchen/tests/
           fi
 
           if [ "${{ matrix.test-group }}" == 'others' ]
@@ -151,3 +163,10 @@ jobs:
             uv run pytestgeventwrapper.py --dead-fixtures
           fi
         shell: bash
+
+      - name: Upload coverage artifacts
+        if: ${{ inputs.collect_coverage }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ inputs.os }}-${{ matrix.test-group }}
+          path: .coverage.${{ matrix.test-group }}
