@@ -51,7 +51,7 @@ const commonRules = createCommonRules();
 const rules = {
   amount: commonRules.createRequiredAmountRule(),
   asset: commonRules.createRequiredAssetRule(),
-  eventIdentifier: commonRules.createRequiredEventIdentifierRule(),
+  eventIdentifier: commonRules.createRequiredEventIdentifierRule(() => get(data).type === 'edit'),
   eventSubtype: commonRules.createRequiredEventSubtypeRule(),
   eventType: commonRules.createRequiredEventTypeRule(),
   location: commonRules.createRequiredLocationRule(),
@@ -146,11 +146,14 @@ async function save(): Promise<boolean> {
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
   const userNotes = get(notes).trim();
 
+  // Generate UUID for eventIdentifier if not present and not in edit mode
+  const generatedEventIdentifier = !editable && !get(eventIdentifier) ? crypto.randomUUID() : get(eventIdentifier);
+
   const payload: NewOnlineHistoryEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
     entryType: HistoryEventEntryType.HISTORY_EVENT,
-    eventIdentifier: get(eventIdentifier),
+    eventIdentifier: generatedEventIdentifier,
     eventSubtype: get(eventSubtype),
     eventType: get(eventType),
     location: get(location),
@@ -238,7 +241,7 @@ defineExpose({
       :disabled="data.type !== 'add'"
       data-cy="eventIdentifier"
       :label="t('transactions.events.form.event_identifier.label')"
-      required
+      :required="data.type === 'edit'"
       :error-messages="toMessages(v$.eventIdentifier)"
       @blur="v$.eventIdentifier.$touch()"
     />

@@ -191,6 +191,9 @@ async function save(): Promise<boolean> {
   const eventData = get(data);
   const editable = eventData.type === 'edit-group' ? eventData.eventsInGroup[0] : undefined;
 
+  // Generate UUID for uniqueId if not present and not in edit mode
+  const generatedUniqueId = !editable && !get(uniqueId) ? crypto.randomUUID() : get(uniqueId);
+
   let payload: NewAssetMovementEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
@@ -204,7 +207,7 @@ async function save(): Promise<boolean> {
     locationLabel: get(locationLabel),
     timestamp: get(timestamp),
     transactionId: get(transactionId),
-    uniqueId: get(uniqueId),
+    uniqueId: generatedUniqueId,
     userNotes: get(notes),
   };
 
