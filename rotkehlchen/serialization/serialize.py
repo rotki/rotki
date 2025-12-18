@@ -145,7 +145,7 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
     )):
         return process_result(entry._asdict())
     if isinstance(entry, tuple):
-        return list(entry)
+        return [_process_entry(x) for x in entry]
     if isinstance(entry, Asset):
         return entry.identifier
     if isinstance(entry, (
