@@ -49,6 +49,7 @@ jobs:
           backend_paths: |
             rotkehlchen
             pyproject.toml
+            .github/workflows/task_backend_tests.yml
           frontend_paths: |
             frontend
 
