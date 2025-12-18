@@ -41,10 +41,11 @@ class CalendarEntry(NamedTuple):
         data = {
             'identifier': self.identifier,
             'name': self.name,
-            'description': self.description,
             'timestamp': self.timestamp,
             'auto_delete': self.auto_delete,
         }
+        if self.description is not None:
+            data['description'] = self.description
         if self.color is not None:
             data['color'] = self.color
         if self.counterparty is not None:

@@ -13582,9 +13582,9 @@ Managing calendar entries
 
   :reqjsonarr optional[list[object]] accounts: List of addresses + their chain linked to the calendar events. The blockchain part can be omitted and it will return information for the address in all the chains.
   :reqjsonarr optional[integer] identifiers: List of identifiers linked to the calendar events.
-  :reqjsonarr string counterparty: Counterparty used to filter the events.
-  :reqjsonarr string name: Substring used to filter for in the ``name`` attribute when querying calendar events.
-  :reqjsonarr string description: Substring used to filter for in the ``description`` attribute when querying calendar events.
+  :reqjson optional[string] counterparty: Counterparty used to filter the events.
+  :reqjson optional[string] name: Substring used to filter for in the ``name`` attribute when querying calendar events.
+  :reqjson optional[string] description: Substring used to filter for in the ``description`` attribute when querying calendar events.
   :resjson int from_timestamp: The earliest timestamp of the events queried.
   :resjson int to_timestamp: The latest timestamp of the events queried.
 
