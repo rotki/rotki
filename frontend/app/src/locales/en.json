@@ -2224,9 +2224,9 @@
     "days_before": "{days} Days Before",
     "month_before": "1 Month Before",
     "months_before": "{months} Months Before",
+    "one_day_before": "1 Day Before",
     "week_before": "1 Week Before",
-    "year_before": "1 Year Before",
-    "yesterday": "Yesterday"
+    "year_before": "1 Year Before"
   },
   "date_time_range_picker": {
     "last_1_month": "Last 1 month",
