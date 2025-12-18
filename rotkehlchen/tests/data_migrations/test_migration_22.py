@@ -35,3 +35,32 @@ def test_migration_22_remove_coinbase_legacy_keys(database: DBHandler) -> None:
     with database.conn.read_ctx() as cursor:
         result = cursor.execute('SELECT name FROM user_credentials').fetchall()
         assert result == [('Coinbase 2',), ('Coinbase 3',)]
+
+
+@pytest.mark.parametrize('data_migration_version', [21])
+def test_migration_22_purge_eth_validators_data_cache(database: DBHandler) -> None:
+    """Test that migration 22 purges eth_validators_data_cache only for accumulating validators."""
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO eth2_validators (validator_index, public_key, ownership_proportion, validator_type) VALUES (?, ?, ?, ?)',  # noqa: E501
+            [
+                (123, '0xabcd', '1.0', 2),
+                ((non_accumulating_validator_index := 456), '0xefgh', '1.0', 1),
+            ],
+        )
+        write_cursor.executemany(
+            'INSERT INTO eth_validators_data_cache (validator_index, timestamp, balance, withdrawals_pnl, exit_pnl) VALUES (?, ?, ?, ?, ?)',  # noqa: E501
+            [
+                (123, 1700000000000, '32000000000', '100000000', '0'),
+                (non_accumulating_validator_index, 1700000000000, '32000000000', '0', '0'),
+            ],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM eth_validators_data_cache').fetchone()[0] == 2
+
+    run_single_migration(database=database, migration=22)
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT validator_index FROM eth_validators_data_cache').fetchall() == [(non_accumulating_validator_index,)]  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM eth2_validators').fetchone()[0] == 2

@@ -1393,6 +1393,7 @@ class ProtocolsWithCache(SerializableEnumNameMixin):
     #  once https://github.com/rotki/rotki/issues/9302 is implemented
     ETH_WITHDRAWALS = auto()
     ETH_BLOCKS = auto()
+    ETH_VALIDATORS_DATA = auto()
 
 
 UniqueCacheType = Literal[
