@@ -4524,3 +4524,8 @@ class ConfigurationUpdateSchema(Schema):
             error=f'Invalid log level. Must be one of {VALID_LOGLEVELS}',
         ),
     )
+
+
+class MatchAssetMovementsSchema(Schema):
+    asset_movement = fields.Integer(required=True)
+    matched_event = fields.Integer(required=True)

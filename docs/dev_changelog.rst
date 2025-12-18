@@ -7,6 +7,16 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Matching Asset Movements With Onchain Events
+--------------------------------------------
+
+Exchange asset movement events may now be manually matched with specific onchain events via the API.
+
+* **New Endpoint**: ``POST /api/(version)/history/events/match/asset_movements``
+
+  - Two required parameters (``asset_movement`` and ``matched_event``) specifying the DB identifiers of the events to match.
+  - Example: ``{"asset_movement": 123, "matched_event": 124}``
+
 Event/Group Identifier Renaming
 -------------------------------
 
