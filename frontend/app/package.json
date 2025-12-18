@@ -28,8 +28,8 @@
     "test:contract": "node scripts/contract.js",
     "test:integration": "tsx scripts/e2e.ts",
     "test:integration-ci": "tsx scripts/e2e.ts --ci",
-    "test:unit": "vitest --coverage --exclude tests/contract/**",
-    "test:unit:run": "vitest run --coverage --exclude tests/contract/**",
+    "test:unit": "vitest --coverage --exclude 'tests/contract/**'",
+    "test:unit:run": "vitest run --coverage --exclude 'tests/contract/**'",
     "typecheck": "vue-tsc --build --force",
     "traces": "vue-tsc --build --force --generateTrace traces"
   },
