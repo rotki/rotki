@@ -3,7 +3,7 @@ Changelog
 =========
 
 * :bug:`11168` The history event forms will now automatically scroll to the first error and expand any collapsed sections containing errors.
-* :feature:`-` The swap event form will now automatically generate a unique identifier if one is not provided.
+* :feature:`-` The swap, asset movement and online events forms will now automatically generate a unique identifier if one is not provided.
 * :feature:`-` Input fields will now display a required indicator when validation requires a value.
 * :bug:`-` The calendar year navigation will no longer be limited to a 12-year range.
 * :bug:`-` The calendar will now preserve the selected date when switching months or years.

@@ -357,6 +357,35 @@ describe('forms/AssetMovementEventForm.vue', () => {
     );
   });
 
+  it('should auto-generate uniqueId when not provided on new event', async () => {
+    const mockUUID = '550e8400-e29b-41d4-a716-446655440000';
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue(mockUUID);
+
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    const now = dayjs();
+    const nowInMs = now.valueOf();
+    await wrapper.find('[data-cy=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
+    await wrapper.find('[data-cy=eventType] input').setValue('deposit');
+    await wrapper.find('[data-cy=location] input').setValue('kraken');
+    await wrapper.find('[data-cy=asset] input').setValue('BTC');
+    await wrapper.find('[data-cy=amount] input').setValue('2.5');
+    // Note: uniqueId field is left empty
+
+    await vi.advanceTimersToNextTimerAsync();
+
+    addHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    const saveResult = await wrapper.vm.save();
+    expect(saveResult).toBe(true);
+    expect(addHistoryEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        uniqueId: mockUUID,
+      }),
+    );
+  });
+
   it('should show eventTypes options correctly', async () => {
     wrapper = createWrapper({ props: { data: { eventsInGroup: [event], type: 'edit-group' } } });
     await vi.advanceTimersToNextTimerAsync();

@@ -389,6 +389,43 @@ describe('forms/SwapEventForm', () => {
     );
   });
 
+  it('should auto-generate uniqueId when not provided on new event', async () => {
+    const mockUUID = '550e8400-e29b-41d4-a716-446655440000';
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue(mockUUID);
+
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    const datetimePicker = wrapper.find('[data-cy=datetime] input');
+    const locationField = wrapper.find('[data-cy=location] input');
+    const spendAmountField = wrapper.find('[data-cy=spend-amount] input');
+    const spendAssetField = wrapper.find('[data-cy=spend-asset] input');
+    const receiveAmountField = wrapper.find('[data-cy=receive-amount] input');
+    const receiveAssetField = wrapper.find('[data-cy=receive-asset] input');
+
+    const now = dayjs();
+    const nowInMs = now.valueOf();
+    await datetimePicker.setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
+    await locationField.setValue('kraken');
+    await spendAmountField.setValue('100');
+    await spendAssetField.setValue('ETH');
+    await receiveAmountField.setValue('0.05');
+    await receiveAssetField.setValue('BTC');
+    // Note: uniqueId field is left empty
+
+    await vi.advanceTimersToNextTimerAsync();
+
+    addHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    const saveResult = await wrapper.vm.save();
+    expect(saveResult).toBe(true);
+    expect(addHistoryEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        uniqueId: mockUUID,
+      }),
+    );
+  });
+
   it('should handle server validation errors', async () => {
     wrapper = createWrapper({
       props: {

@@ -343,6 +343,34 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     expect(wrapper.find('[data-cy=location] .details').text()).toBe('invalid location');
   });
 
+  it('should auto-generate eventIdentifier when not provided on new event', async () => {
+    const mockUUID = '550e8400-e29b-41d4-a716-446655440000';
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue(mockUUID);
+
+    wrapper = createWrapper();
+    await vi.advanceTimersToNextTimerAsync();
+
+    await wrapper.find('[data-cy=location] input').setValue(event.location);
+    await wrapper.find('[data-cy=datetime] input').setValue(dayjs(event.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
+    await wrapper.find('[data-cy=eventType] input').setValue(event.eventType);
+    await wrapper.find('[data-cy=eventSubtype] input').setValue(event.eventSubtype);
+    await wrapper.find('[data-cy=asset] input').setValue(asset.symbol);
+    await wrapper.find('[data-cy=amount] input').setValue(event.amount.toString());
+    // Note: eventIdentifier field is left empty
+
+    await vi.advanceTimersToNextTimerAsync();
+
+    addHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    const saveResult = await wrapper.vm.save();
+    expect(saveResult).toBe(true);
+    expect(addHistoryEventMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        eventIdentifier: mockUUID,
+      }),
+    );
+  });
+
   it('should display validation errors when the form is invalid', async () => {
     wrapper = createWrapper();
     const saveMethod = wrapper.vm.save;
