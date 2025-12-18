@@ -15,7 +15,7 @@ const props = defineProps<RuiDateTimePickerProps>();
 const { t } = useI18n({ useScope: 'global' });
 
 const quickOptions: QuickOption[] = [
-  { label: t('date_time_picker.yesterday'), unit: 'day', value: 1 },
+  { label: t('date_time_picker.one_day_before'), unit: 'day', value: 1 },
   { label: t('date_time_picker.week_before'), unit: 'week', value: 1 },
   { label: t('date_time_picker.month_before'), unit: 'month', value: 1 },
   { label: t('date_time_picker.days_before', { days: 90 }), unit: 'day', value: 90 },
@@ -26,7 +26,9 @@ const quickOptions: QuickOption[] = [
 const useMilliseconds = computed<boolean>(() => props.accuracy === 'millisecond');
 
 function applyQuickOption(option: QuickOption): void {
-  const date = dayjs().subtract(option.value, option.unit);
+  const currentValue = get(modelValue);
+  const currentDate = get(useMilliseconds) ? dayjs(currentValue) : dayjs.unix(currentValue);
+  const date = currentDate.subtract(option.value, option.unit);
   set(modelValue, get(useMilliseconds) ? date.valueOf() : date.unix());
 }
 </script>
