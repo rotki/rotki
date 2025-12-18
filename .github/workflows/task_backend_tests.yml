@@ -78,7 +78,7 @@ jobs:
           echo "VCR setup: $SOURCE_BRANCH not fully rebased on $TARGET_BRANCH" && exit 1
 
       - name: Load env
-        uses: rotki/action-env@v2
+        uses: rotki/action-env@v3
         with:
           env_file: .github/.env.ci
 

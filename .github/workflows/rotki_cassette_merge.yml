@@ -13,7 +13,7 @@ jobs:
     if: ${{ github.repository == 'rotki/rotki' }}
     environment: cassette-merge
     steps:
-      - uses: rotki/action-cassette-deck@v2
+      - uses: rotki/action-cassette-deck@v3
         with:
           token: ${{ secrets.MERGE_TOKEN }}
           cassette_repo: test-caching

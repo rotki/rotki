@@ -40,7 +40,7 @@ jobs:
           persist-credentials: false
 
       - name: Run check action
-        uses: rotki/action-job-checker@v3
+        uses: rotki/action-job-checker@v4
         id: checker
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -111,7 +111,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@v2
+        uses: rotki/action-env@v3
         with:
           env_file: .github/.env.ci
 
@@ -166,7 +166,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@v2
+        uses: rotki/action-env@v3
         with:
           env_file: .github/.env.ci
 
@@ -262,7 +262,7 @@ jobs:
           persist-credentials: false
 
       - name: Load env
-        uses: rotki/action-env@v2
+        uses: rotki/action-env@v3
         with:
           env_file: .github/.env.ci
 
