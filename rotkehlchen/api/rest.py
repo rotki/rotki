@@ -5058,6 +5058,9 @@ class RestAPI:
                         write_cursor=write_cursor,
                         key_parts=[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS.value[0][:30]],
                     )
+            case ProtocolsWithCache.ETH_VALIDATORS_DATA:
+                with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                    write_cursor.execute('DELETE FROM eth_validators_data_cache')
             case ProtocolsWithCache.MERKL:
                 with GlobalDBHandler().conn.write_ctx() as write_cursor:
                     write_cursor.execute(
