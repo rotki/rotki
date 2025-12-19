@@ -53,7 +53,7 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
-from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
+from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
@@ -1189,11 +1189,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
         May raise:
         - RemoteError: in case of a problem contacting chain/nodes/remotes"""
-        deployed_hash = self.etherscan.get_contract_creation_hash(
+        if (deployed_hash := self.get_contract_creation_hash(
             chain_id=self.chain_id,
             address=address,
-        )
-        if deployed_hash is None:
+        )) is None:
             return None
 
         transaction, _ = self.get_transaction_by_hash(deployed_hash)
@@ -1405,6 +1404,36 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             account=account,
             from_block=from_block,
             to_block=to_block,
+        ))
+
+    def has_activity(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress,
+    ) -> HasChainActivity:
+        return self._try_indexers(func=lambda indexer: indexer.has_activity(
+            chain_id=chain_id,
+            account=account,
+        ))
+
+    def get_contract_abi(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            address: ChecksumEvmAddress,
+    ) -> str | None:
+        return self._try_indexers(func=lambda indexer: indexer.get_contract_abi(
+            chain_id=chain_id,
+            address=address,
+        ))
+
+    def get_contract_creation_hash(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            address: ChecksumEvmAddress,
+    ) -> EVMTxHash | None:
+        return self._try_indexers(func=lambda indexer: indexer.get_contract_creation_hash(
+            chain_id=chain_id,
+            address=address,
         ))
 
     def _get_indexers_in_order(self) -> list[tuple[EvmIndexer, EtherscanLikeApi]]:

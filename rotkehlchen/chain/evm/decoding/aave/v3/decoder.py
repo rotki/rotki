@@ -283,9 +283,12 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                     )
                 ) > 0
             ):  # parse the mint amount and balance_increase
-                if i_log.topics[0] == BURN and (earned_token := get_single_underlying_token(earned_token)) is None:  # type: ignore[assignment]  # we ignore if None  # noqa: E501
-                    log.error(f'Failed to find underlying token for Aave v3 token {earned_token}. Skipping')  # noqa: E501
-                    continue
+                if i_log.topics[0] == BURN:
+                    if (underlying_token := get_single_underlying_token(earned_token)) is None:
+                        log.error(f'Failed to find underlying token for Aave v3 token {earned_token}. Skipping')  # noqa: E501
+                        continue
+
+                    earned_token = underlying_token
 
                 if (  # check if we need to create the earned event
                         maybe_earned_event is None or
@@ -342,8 +345,8 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
                     if (interest_entries := interest_event_lookup.get(return_event.asset)) is not None:  # noqa: E501
                         interest_event_lookup[return_event.asset] = [
-                            evt for evt in interest_entries
-                            if evt is not return_event
+                            event for event in interest_entries
+                            if event is not return_event
                         ]
                         if len(interest_event_lookup[return_event.asset]) == 0:
                             interest_event_lookup.pop(return_event.asset, None)

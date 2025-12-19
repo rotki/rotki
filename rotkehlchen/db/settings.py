@@ -1,6 +1,7 @@
 import json
 import logging
 from collections.abc import Mapping, Sequence
+from contextvars import ContextVar
 from dataclasses import dataclass, field, fields
 from typing import TYPE_CHECKING, Any, ClassVar, Literal, NamedTuple, Optional
 
@@ -476,6 +477,10 @@ class CachedSettings:
     __instance: Optional['CachedSettings'] = None
     _settings: DBSettings = DBSettings()  # the default settings values
     _evm_indexers_order_per_chain: ClassVar[Mapping[ChainID, tuple[EvmIndexer, ...]]] = {}
+    evm_indexers_order_override_var: ClassVar[ContextVar[tuple[EvmIndexer, ...] | None]] = ContextVar(  # noqa: E501
+        'cachedsettings_evm_indexer_override',
+        default=None,
+    )
 
     def __new__(cls) -> 'CachedSettings':
         if CachedSettings.__instance is not None:
@@ -535,7 +540,11 @@ class CachedSettings:
 
     def get_evm_indexers_order_for_chain(self, chain_id: ChainID) -> tuple[EvmIndexer, ...]:
         """Return chain-specific indexer order falling back to defaults."""
-        return self._evm_indexers_order_per_chain[chain_id]
+        default_order = self._evm_indexers_order_per_chain[chain_id]
+        if (override := self.evm_indexers_order_override_var.get()) is None:
+            return default_order
+
+        return tuple(override)
 
     @property
     def oracle_penalty_duration(self) -> int:

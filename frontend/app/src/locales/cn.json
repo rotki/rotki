@@ -2904,9 +2904,7 @@
     "loading_hint": "您的报告生成可能需要一段时间，具体取决于您在选定时间段内执行的交易量和操作。",
     "loading_message": "正在生成您的报告，请稍候...",
     "report_period": "报告从{start}到{end}",
-    "settings_tooltip": "打开会计设置",
-    "upgrade": "从 {start} 开始处理了 {processed} 个事件。",
-    "upgrade2": "已达到免费版本的限制。要获得完整报告，请升级到{link}"
+    "settings_tooltip": "打开会计设置"
   },
   "profit_loss_reports": {
     "columns": {
@@ -3363,8 +3361,9 @@
     "restart": "rotki 将立即重启以应用更新。"
   },
   "upgrade_row": {
-    "events": "从 {from} 到 {to} 处理了 {limit} out of {total} {label}。要查看更多请升级到 {link}",
-    "events_premium": "从 {from} 到 {to} 处理了 {limit} out of {total} {label}。要查看更多请 {link}",
+    "events": "@:upgrade_row.first_line 要查看更多请升级到 {link}",
+    "events_premium": "@:upgrade_row.first_line 要查看更多请 {link}",
+    "first_line": "从 {from} 到 {to} 处理了 {limit} out of {total} {label}。",
     "rotki_premium": "rotki 高级版",
     "upgrade": "显示 {limit} out of {total} {label}。要查看更多，请升级到 {link}",
     "upgrade_premium": "显示 {limit} out of {total} {label}。要查看更多请 {link}",

@@ -9,6 +9,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
+from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
@@ -491,11 +492,12 @@ def test_counterparties(rotkehlchen_api_server_with_exchanges: 'APIServer') -> N
         ),
     )
     result = assert_proper_sync_response_with_result(response)
+    assert any(counterparty_details['identifier'] == CPT_GAS for counterparty_details in result)
     for counterparty_details in result:
         assert 'identifier' in counterparty_details
         assert 'label' in counterparty_details
         assert 'icon' in counterparty_details or 'image' in counterparty_details
-        if counterparty_details['identifier'] == 'gas':
+        if counterparty_details['identifier'] == CPT_GAS:
             assert counterparty_details['icon'] == 'lu-flame'
         elif counterparty_details['identifier'] == 'jupiter':
             assert counterparty_details['label'] == 'Jupiter'

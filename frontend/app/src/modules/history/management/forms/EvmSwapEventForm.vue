@@ -227,6 +227,7 @@ watch(errorMessages, (errors) => {
 
 defineExpose({
   save,
+  v$,
 });
 </script>
 
@@ -253,6 +254,7 @@ defineExpose({
       :disabled="data.type !== 'add'"
       data-cy="tx-ref"
       :label="t('common.tx_hash')"
+      required
       :error-messages="toMessages(v$.txRef)"
       @blur="v$.txRef.$touch()"
     />
@@ -318,6 +320,7 @@ defineExpose({
         :disabled="data.type === 'edit-group'"
         data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
+        required
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"
       />

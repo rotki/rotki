@@ -435,6 +435,12 @@ class TransactionDecodingSchema(AsyncQueryArgumentSchema):
         validate=webargs.validate.Length(min=1),
     )
     delete_custom = fields.Boolean(load_default=False)
+    custom_indexers_order = fields.List(
+        EvmIndexerField(),
+        load_default=None,
+        allow_none=True,
+        validate=webargs.validate.Length(min=1),
+    )
 
     @validates_schema
     def validate_tx_refs(self, data: dict[str, Any], **kwargs: Any) -> None:
@@ -444,6 +450,15 @@ class TransactionDecodingSchema(AsyncQueryArgumentSchema):
             tx_ref_field.deserialize_string_value(tx_ref)
             for tx_ref in data['tx_refs']
         ]
+        if (custom_indexers_order := data.get('custom_indexers_order')) is not None:
+            if not data['chain'].is_evm():
+                serialized = ', '.join(indexer.serialize() for indexer in custom_indexers_order)
+                raise ValidationError(
+                    f'Custom indexers [{serialized}] can only be used for EVM chains',
+                    field_name='custom_indexers_order',
+                )
+
+            _validate_indexers_list(custom_indexers_order)
 
 
 class PendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
@@ -1411,14 +1426,19 @@ def _settings_list_is_valid(lst: Sequence[Any]) -> bool:
     return len(lst) > 0 and len(lst) == len(set(lst))
 
 
+def _raise_if_invalid_enum_list(lst: Sequence[Any], error_message: str) -> None:
+    if not _settings_list_is_valid(lst):
+        raise ValidationError(error_message)
+
+
 def _validate_current_price_oracles(
         current_price_oracles: list[CurrentPriceOracle],
 ) -> None:
     """Prevents repeated oracle names, empty list and illegal values"""
-    if not _settings_list_is_valid(current_price_oracles):
-        raise ValidationError(
-            'Current price oracles list should not be empty and should have no repeated entries',
-        )
+    _raise_if_invalid_enum_list(
+        current_price_oracles,
+        'Current price oracles list should not be empty and should have no repeated entries',
+    )
 
     if (invalid_oracles := set(current_price_oracles) - SETTABLE_CURRENT_PRICE_ORACLES) != set():
         raise ValidationError(
@@ -1441,9 +1461,11 @@ def _validate_historical_price_oracles(
         )
 
 
-def _validate_default_indexers(indexers: list[EvmIndexer]) -> None:
-    if not _settings_list_is_valid(indexers):
-        raise ValidationError('List of indexers has to contain unique elements and be non empty')
+def _validate_indexers_list(indexers: list[EvmIndexer]) -> None:
+    _raise_if_invalid_enum_list(
+        indexers,
+        'List of indexers has to contain unique elements and be non empty',
+    )
 
 
 class EvmIndexerOrderField(fields.Field):
@@ -1479,7 +1501,7 @@ class EvmIndexerOrderField(fields.Field):
             }
 
             for chain, order in deserialized_map.items():
-                _validate_default_indexers(order)
+                _validate_indexers_list(order)
                 if chain not in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
                     raise ValidationError(f'{chain} does not use indexers to query transactions')
 
@@ -1563,7 +1585,7 @@ class ModifiableSettingsSchema(Schema):
     evm_indexers_order = EvmIndexerOrderField(load_default=None)
     default_evm_indexer_order = fields.List(
         EvmIndexerField,
-        validate=_validate_default_indexers,
+        validate=_validate_indexers_list,
         load_default=None,
     )
     pnl_csv_with_formulas = fields.Bool(load_default=None)

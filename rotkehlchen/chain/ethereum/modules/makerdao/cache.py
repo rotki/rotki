@@ -187,7 +187,7 @@ def update_ilk_registry(
 
             try:
                 deployed_block = ethereum.get_contract_deployed_block(join_address)
-                abi = ethereum.etherscan.get_contract_abi(
+                abi = ethereum.get_contract_abi(
                     chain_id=ChainID.ETHEREUM,
                     address=join_address,
                 )

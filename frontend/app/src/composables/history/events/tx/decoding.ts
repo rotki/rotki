@@ -232,7 +232,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     }
   };
 
-  const pullAndRedecodeTransactions = async ({ deleteCustom, transactions }: PullLocationTransactionPayload): Promise<void> => {
+  const pullAndRedecodeTransactions = async ({ customIndexersOrder, deleteCustom, transactions }: PullLocationTransactionPayload): Promise<void> => {
     resetUndecodedTransactionsStatus();
 
     const grouped = groupBy(transactions, item => item.location);
@@ -274,21 +274,27 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     });
 
     // Process all chain types in parallel
-    const processChainMap = async (chainMap: Map<string, string[]>): Promise<void> => {
+    // Note: customIndexersOrder is only passed for EVM chains
+    const processChainMap = async (chainMap: Map<string, string[]>, includeIndexerOrder: boolean): Promise<void> => {
       if (chainMap.size === 0)
         return;
 
       await awaitParallelExecution(
         Array.from(chainMap.entries()),
         ([chain]) => chain,
-        async ([chain, txRefs]) => pullAndDecodeTransactions({ chain, deleteCustom, txRefs }),
+        async ([chain, txRefs]) => pullAndDecodeTransactions({
+          chain,
+          customIndexersOrder: includeIndexerOrder ? customIndexersOrder : undefined,
+          deleteCustom,
+          txRefs,
+        }),
         2,
       );
     };
 
-    await processChainMap(chainMaps.evm);
-    await processChainMap(chainMaps.solana);
-    await processChainMap(chainMaps.evmLike);
+    await processChainMap(chainMaps.evm, true);
+    await processChainMap(chainMaps.solana, false);
+    await processChainMap(chainMaps.evmLike, false);
   };
 
   const pullAndRecodeEthBlockEvents = async (payload: PullEthBlockEventPayload): Promise<void> => {

@@ -27,14 +27,17 @@ interface UseHistoryEventsOperationsReturn {
   // State
   showRedecodeConfirmation: Ref<boolean>;
   redecodePayload: Ref<PullEventPayload | undefined>;
+  hasCustomEvents: Ref<boolean>;
+  showIndexerOptions: Ref<boolean>;
 
   // Functions
   getItemClass: (item: HistoryEventEntry) => '' | 'opacity-50';
   confirmDelete: (payload: HistoryEventDeletePayload) => void;
   suggestNextSequenceId: (group: HistoryEventEntry) => string;
   confirmTxAndEventsDelete: (payload: LocationAndTxRef) => void;
-  redecode: (payload: PullEventPayload, groupIdentifier: string) => void;
-  confirmRedecode: (event: { payload: PullEventPayload; deleteCustom: boolean }) => void;
+  redecode: (payload: PullEventPayload, eventIdentifier: string) => void;
+  redecodeWithOptions: (payload: PullEventPayload, groupIdentifier: string) => void;
+  confirmRedecode: (event: { payload: PullEventPayload; deleteCustom: boolean; customIndexersOrder?: string[] }) => void;
   toggle: (event: HistoryEventEntry) => Promise<void>;
 }
 
@@ -47,6 +50,8 @@ export function useHistoryEventsOperations(
   const selected = ref<HistoryEventEntry[]>([]);
   const showRedecodeConfirmation = ref<boolean>(false);
   const redecodePayload = ref<PullEventPayload>();
+  const hasCustomEvents = ref<boolean>(false);
+  const showIndexerOptions = ref<boolean>(false);
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -140,6 +145,11 @@ export function useHistoryEventsOperations(
     }, async () => onConfirmTxAndEventDelete(payload));
   }
 
+  function isEvmPayload(payload: PullEventPayload): boolean {
+    return payload.type === HistoryEventEntryType.EVM_EVENT
+      || payload.type === HistoryEventEntryType.EVM_SWAP_EVENT;
+  }
+
   function redecode(payload: PullEventPayload, groupIdentifier: string): void {
     if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
       emit('refresh:block-event', { blockNumbers: payload.data });
@@ -150,17 +160,41 @@ export function useHistoryEventsOperations(
     const childEvents = flatten(groupedEvents);
     const isAnyCustom = childEvents.some(item => item.customized);
 
-    if (!isAnyCustom) {
-      emit('refresh', { transactions: [payload.data] });
-    }
-    else {
+    // If there are custom events, show dialog to ask about custom event handling
+    if (isAnyCustom) {
+      set(hasCustomEvents, true);
+      set(showIndexerOptions, false);
       set(redecodePayload, payload);
       set(showRedecodeConfirmation, true);
+      return;
     }
+
+    // No custom events - just redecode directly without dialog
+    emit('refresh', {
+      deleteCustom: false,
+      transactions: [payload.data],
+    });
   }
 
-  function confirmRedecode(event: { payload: PullEventPayload; deleteCustom: boolean }): void {
-    const { deleteCustom, payload } = event;
+  function redecodeWithOptions(payload: PullEventPayload, eventIdentifier: string): void {
+    if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
+      emit('refresh:block-event', { blockNumbers: payload.data });
+      return;
+    }
+
+    const groupedEvents = get(allEventsMapped)[eventIdentifier] || [];
+    const childEvents = flatten(groupedEvents);
+    const isAnyCustom = childEvents.some(item => item.customized);
+
+    // Show dialog with indexer options (only for EVM events)
+    set(hasCustomEvents, isAnyCustom);
+    set(showIndexerOptions, isEvmPayload(payload));
+    set(redecodePayload, payload);
+    set(showRedecodeConfirmation, true);
+  }
+
+  function confirmRedecode(event: { payload: PullEventPayload; deleteCustom: boolean; customIndexersOrder?: string[] }): void {
+    const { customIndexersOrder, deleteCustom, payload } = event;
     if (payload.type === HistoryEventEntryType.ETH_BLOCK_EVENT) {
       emit('refresh:block-event', {
         blockNumbers: payload.data,
@@ -168,6 +202,7 @@ export function useHistoryEventsOperations(
     }
     else {
       emit('refresh', {
+        customIndexersOrder,
         deleteCustom,
         transactions: [payload.data],
       });
@@ -180,8 +215,11 @@ export function useHistoryEventsOperations(
     confirmRedecode,
     confirmTxAndEventsDelete,
     getItemClass,
+    hasCustomEvents,
     redecode,
     redecodePayload,
+    redecodeWithOptions,
+    showIndexerOptions,
     showRedecodeConfirmation,
     suggestNextSequenceId,
     toggle,

@@ -19,7 +19,7 @@ from rotkehlchen.assets.utils import (
 )
 from rotkehlchen.chain.decoding.constants import CPT_GAS, MIN_LOGS_PROCESSED_TO_SLEEP
 from rotkehlchen.chain.decoding.decoder import TransactionDecoder
-from rotkehlchen.chain.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.decoding.types import CounterpartyDetails, DecodingRulesBase
 from rotkehlchen.chain.decoding.utils import decode_safely, maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.v3.constants import BALANCER_V3_SUPPORTED_CHAINS
@@ -98,6 +98,7 @@ from .structures import (
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
+    from rotkehlchen.chain.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithProxies
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -127,7 +128,7 @@ class EventDecoderFunction(Protocol):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class EvmDecodingRules:
+class EvmDecodingRules(DecodingRulesBase):
     address_mappings: dict[ChecksumEvmAddress, tuple[Any, ...]]
     event_rules: list[EventDecoderFunction]
     input_data_rules: dict[bytes, dict[bytes, Callable]]
@@ -177,7 +178,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             transactions: 'EvmTransactions',
             value_asset: 'AssetWithOracles',
             event_rules: list[EventDecoderFunction],
-            misc_counterparties: list[CounterpartyDetails],
+            misc_counterparties: list['CounterpartyDetails'],
             base_tools: 'BaseEvmDecoderTools',
             premium: 'Premium | None' = None,
             dbevmtx_class: type[DBEvmTx] = DBEvmTx,
@@ -1327,7 +1328,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             transactions: 'EvmTransactions',
             value_asset: 'AssetWithOracles',
             event_rules: list[EventDecoderFunction],
-            misc_counterparties: list[CounterpartyDetails],
+            misc_counterparties: list['CounterpartyDetails'],
             base_tools: 'BaseEvmDecoderToolsWithProxy',
             beacon_chain: 'BeaconChain | None' = None,
             premium: 'Premium | None' = None,

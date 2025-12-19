@@ -1059,6 +1059,7 @@ def test_increase_locked_amount(optimism_accounts, optimism_transaction_decoder)
             counterparty=CPT_VELODROME,
             address=string_to_evm_address('0xFAf8FD17D9840595845582fCB047DF13f006787d'),
             notes=f'Increase locked amount in veNFT-20820 by {lock_amount} VELO',
+            extra_data={'token_id': 20820},
         ),
     ]
     assert events == expected_events

@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
@@ -27,7 +26,6 @@ from rotkehlchen.types import (
     EVMTxHash,
     ExternalService,
     Timestamp,
-    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import from_gwei, hexstr_to_int, ts_sec_to_ms
 
@@ -275,54 +273,6 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             options=options,
             timeout=(timeout_tuple[0], timeout_tuple[1] * 2),
         )
-
-    def get_contract_creation_hash(
-            self,
-            chain_id: SUPPORTED_CHAIN_IDS,
-            address: ChecksumEvmAddress,
-    ) -> EVMTxHash | None:
-        """Get the contract creation block from etherscan for the given address.
-
-        Returns `None` if the address is not a contract.
-
-        May raise:
-        - RemoteError in case of problems contacting etherscan.
-        """
-        options = {'contractaddresses': address}
-        result = self._query(
-            chain_id=chain_id,
-            module='contract',
-            action='getcontractcreation',
-            options=options,
-        )
-        return deserialize_evm_tx_hash(result[0]['txHash']) if result is not None else None
-
-    def get_contract_abi(
-            self,
-            chain_id: SUPPORTED_CHAIN_IDS,
-            address: ChecksumEvmAddress,
-    ) -> str | None:
-        """Get the contract abi from etherscan for the given address if verified.
-
-        Returns `None` if the address is not a verified contract.
-
-        May raise:
-        - RemoteError in case of problems contacting etherscan
-        """
-        options = {'address': address}
-        result = self._query(
-            chain_id=chain_id,
-            module='contract',
-            action='getabi',
-            options=options,
-        )
-        if result is None:
-            return None
-
-        try:
-            return json.loads(result)
-        except json.JSONDecodeError:
-            return None
 
     def get_withdrawals(
             self,

@@ -511,7 +511,9 @@ class DBEth2:
                 v_index = event.validator_index
                 if event.is_exit_or_blocknumber is True:  # Exit withdrawals
                     if from_ts_ms <= event.timestamp <= to_ts_ms:  # only count pnl within the specified range  # noqa: E501
-                        exits_pnl[v_index] = event.amount - validator_balances[v_index]
+                        # For accumulating validators, subtract already counted withdrawals
+                        # from exit PnL to avoid double-counting consensus rewards
+                        exits_pnl[v_index] = event.amount - validator_balances[v_index] - sum(withdrawals_pnl_over_time[v_index].values())  # noqa: E501
                         validator_balances[v_index] = ZERO
                     else:
                         continue

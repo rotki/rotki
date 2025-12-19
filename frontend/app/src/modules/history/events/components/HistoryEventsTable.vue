@@ -81,8 +81,11 @@ const {
   confirmRedecode,
   confirmTxAndEventsDelete,
   getItemClass,
+  hasCustomEvents,
   redecode,
   redecodePayload,
+  redecodeWithOptions,
+  showIndexerOptions,
   showRedecodeConfirmation,
   suggestNextSequenceId,
   toggle,
@@ -198,6 +201,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
           @add-event="addEvent($event, row);"
           @toggle-ignore="toggle($event)"
           @redecode="redecode($event, row.groupIdentifier)"
+          @redecode-with-options="redecodeWithOptions($event, row.groupIdentifier)"
           @delete-tx="confirmTxAndEventsDelete($event)"
         />
       </LazyLoader>
@@ -240,6 +244,8 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
   <RedecodeConfirmationDialog
     v-model:show="showRedecodeConfirmation"
     :payload="redecodePayload"
+    :has-custom-events="hasCustomEvents"
+    :show-indexer-options="showIndexerOptions"
     @confirm="confirmRedecode($event)"
   />
 </template>

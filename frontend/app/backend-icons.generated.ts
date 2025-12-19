@@ -60,6 +60,7 @@ export const backendIcons: string[] = [
   'lu-sprout',
   'lu-square-pen',
   'lu-trending-down',
+  'lu-trending-up',
   'lu-trophy',
   'lu-undo-2',
   'lu-upload',

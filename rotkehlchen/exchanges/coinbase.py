@@ -24,7 +24,7 @@ from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
-from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
@@ -91,11 +91,9 @@ class CoinbaseKeyType(Enum):
     ED25519 = 'EdDSA'
 
     @classmethod
-    def detect_type(cls, api_key: str) -> 'CoinbaseKeyType':
-        """Detect API key type from format
-
-        May raise:
-        - InputError: if api_key format is invalid
+    def detect_type(cls, api_key: str) -> 'CoinbaseKeyType | None':
+        """Detect the API key type of the given key.
+        Returns the detected type or None if the format is invalid.
         """
         if ECDSA_KEY_RE.match(api_key):
             return cls.ECDSA
@@ -103,7 +101,7 @@ class CoinbaseKeyType(Enum):
         if len(api_key) == 36 and api_key.count('-') == 4:  # for ED25519, check uuid format
             return cls.ED25519
 
-        raise InputError(f'Invalid API key format: {api_key}')
+        return None
 
     def validate_secret(self, secret: bytes) -> tuple[bool, str]:
         """Validate secret format for this key type.
@@ -184,10 +182,13 @@ class Coinbase(ExchangeInterface):
             RemoteError: If there is an error during the JWT token generation process.
         """
         try:
-            if self.key_type == CoinbaseKeyType.ECDSA:
-                private_key = serialization.load_pem_private_key(self.secret, password=None)
-            else:  # can only be ED25519
-                private_key = ed25519.Ed25519PrivateKey.from_private_bytes(base64.b64decode(self.secret)[:32])  # noqa: E501
+            match self.key_type:
+                case CoinbaseKeyType.ECDSA:
+                    private_key = serialization.load_pem_private_key(self.secret, password=None)
+                case CoinbaseKeyType.ED25519:
+                    private_key = ed25519.Ed25519PrivateKey.from_private_bytes(base64.b64decode(self.secret)[:32])  # noqa: E501
+                case None:
+                    raise RemoteError('Unable to generate JWT token due to invalid Coinbase API key')  # noqa: E501
 
             current_time = int(time.time())
             jwt_payload = {
@@ -212,10 +213,9 @@ class Coinbase(ExchangeInterface):
         """Validates that the Coinbase API key is good for usage in rotki.
         Checks that the API key format is correct and the secret is properly formatted.
         """
-        try:
-            self.key_type = CoinbaseKeyType.detect_type(self.api_key)
-        except InputError as e:
-            return False, str(e)
+        self.key_type = CoinbaseKeyType.detect_type(self.api_key)
+        if self.key_type is None:
+            return False, f'Invalid API key format: {self.api_key}'
 
         is_valid, error_msg = self.key_type.validate_secret(self.secret)
         if not is_valid:
@@ -224,10 +224,6 @@ class Coinbase(ExchangeInterface):
         return True, ''
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
-        """
-        May raise:
-        - InputError: if credentials.api_key format is invalid
-        """
         changed = super().edit_exchange_credentials(credentials)
         if (
                 credentials.api_key is not None and
@@ -237,20 +233,22 @@ class Coinbase(ExchangeInterface):
 
         return changed
 
-    def _get_active_account_info(self, accounts: list[dict[str, Any]]) -> list[tuple[str, Timestamp]]:  # noqa: E501
-        """Gets the account ids and last_update timestamp out of the accounts response
+    def _get_active_account_info(self, accounts: list[dict[str, Any]]) -> list[str]:
+        """Gets the account ids from the accounts response.
 
         At the moment of writing this the coinbase API returns the accounts for the assets
         that the user has interacted with and in addition account for BCH, ETH2, BTC and ETH.
 
         We used to have an activity check comparing the `updated_at` and `created_at` fields
-        of the response but in some cases it proved to not be reliable.
+        of the response and later checking `updated_at` against its value from the last query,
+        but these checks proved to be unreliable.
         """
         account_info = []
         for account_data in accounts:
             if 'id' not in account_data:
                 log.error(
-                    'Found coinbase account entry without an id key. Skipping it. ',
+                    'Found coinbase account entry without an id key. '
+                    f'Skipping it. Raw account data: {account_data}',
                 )
                 continue
 
@@ -261,15 +259,8 @@ class Coinbase(ExchangeInterface):
                 )
                 continue
 
-            updated_at = account_data.get('updated_at')
-            try:
-                timestamp = deserialize_timestamp_from_date(updated_at, 'iso8601', 'coinbase')
-            except DeserializationError:
-                log.error(f'Skipping coinbase account {account_data} due to inability to deserialize timestamp')  # noqa: E501
-                continue
-
             log.debug(f'Found coinbase account: {account_data}')
-            account_info.append((account_data['id'], timestamp))
+            account_info.append(account_data['id'])
 
         return account_info
 
@@ -431,23 +422,19 @@ class Coinbase(ExchangeInterface):
         self.staking_events = set()
         conversion_pairs: defaultdict[str, list[dict]] = defaultdict(list)
         all_events: list[HistoryBaseEntry] = []
-        for account_id, last_update_timestamp in account_info:
+        for account_id in account_info:
             if force_refresh:
                 last_id = None  # Bypass cache when force_refresh is True
             else:
                 with self.db.conn.read_ctx() as cursor:
-                    last_query = 0
-                    if (result := self.db.get_dynamic_cache(
+                    if (last_query := self.db.get_dynamic_cache(
                         cursor=cursor,
                         name=DBCacheDynamic.LAST_QUERY_TS,
                         location=self.location.serialize(),
                         location_name=self.name,
                         account_id=account_id,
-                    )) is not None:
-                        last_query = result
-
-                    if now - last_query < HOUR_IN_SECONDS or last_update_timestamp < last_query:
-                        continue  # if no update since last query or last query is recent, then stop  # noqa: E501
+                    )) is not None and now - last_query < HOUR_IN_SECONDS:
+                        continue  # the last query is recent, skip this account
 
                     last_id = None
                     if (result_id := self.db.get_dynamic_cache(

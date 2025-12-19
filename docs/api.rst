@@ -2462,6 +2462,7 @@ Decode transactions that haven't been decoded yet
    :reqjson string chain: The name of the chain for which to decode transactions.
    :reqjson list tx_refs: A list of transaction hashes/signatures from the specified chain to redecode.
    :reqjson bool delete_custom: Boolean denoting whether to delete any customized events of the transaction or not. Default is false
+   :reqjson list[string][optional] custom_indexers_order: Optional ordered list of indexers (``etherscan``, ``blockscout`` or ``routescan``) to prioritize when redecoding EVM transactions for the given request.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
 
@@ -13429,9 +13430,9 @@ Managing calendar entries
 
   :reqjsonarr optional[list[object]] accounts: List of addresses + their chain linked to the calendar events. The blockchain part can be omitted and it will return information for the address in all the chains.
   :reqjsonarr optional[integer] identifiers: List of identifiers linked to the calendar events.
-  :reqjsonarr string counterparty: Counterparty used to filter the events.
-  :reqjsonarr string name: Substring used to filter for in the ``name`` attribute when querying calendar events.
-  :reqjsonarr string description: Substring used to filter for in the ``description`` attribute when querying calendar events.
+  :reqjson optional[string] counterparty: Counterparty used to filter the events.
+  :reqjson optional[string] name: Substring used to filter for in the ``name`` attribute when querying calendar events.
+  :reqjson optional[string] description: Substring used to filter for in the ``description`` attribute when querying calendar events.
   :resjson int from_timestamp: The earliest timestamp of the events queried.
   :resjson int to_timestamp: The latest timestamp of the events queried.
 

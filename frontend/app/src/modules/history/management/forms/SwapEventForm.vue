@@ -47,8 +47,12 @@ function emptyEvent(): FormData {
     spendAsset: '',
     timestamp: dayjs().valueOf(),
     uniqueId: '',
-    userNotes: ['', '', ''],
+    userNotes: ['', ''],
   };
+}
+
+function createUserNotes(spendNote: string, receiveNote: string, ...feeNotes: string[]): SwapEventUserNotes {
+  return [spendNote, receiveNote, ...feeNotes];
 }
 
 const states = ref<FormData>(emptyEvent());
@@ -141,9 +145,18 @@ async function save(): Promise<boolean> {
 
   const model = get(states);
   const fees = get(hasFee) ? model.fees.filter(fee => fee.amount && fee.asset) : undefined;
+  const feeCount = fees?.length ?? 0;
+  // Only include userNotes for spend, receive, and actual fees (2 + fee count)
+  const userNotes = createUserNotes(model.userNotes[0], model.userNotes[1], ...model.userNotes.slice(2, 2 + feeCount));
+
+  // Generate UUID for uniqueId if not present and not in edit mode
+  const uniqueId = !isEditMode && !model.uniqueId ? crypto.randomUUID() : model.uniqueId;
+
   const payload: AddSwapEventPayload = {
-    ...omit(model, ['fees']),
+    ...omit(model, ['fees', 'userNotes', 'uniqueId']),
     fees,
+    uniqueId,
+    userNotes,
   };
 
   const eventIdentifiers = get(identifiers);
@@ -202,11 +215,9 @@ watchImmediate(() => props.data, (data) => {
     asset: fee.asset,
   }));
 
-  const userNotes: SwapEventUserNotes = [
-    getNotes(spend),
-    getNotes(receive),
-    hasFeeEvents ? getNotes(feeEvents[0]) : '',
-  ];
+  const userNotes: SwapEventUserNotes = hasFeeEvents
+    ? [getNotes(spend), getNotes(receive), ...feeEvents.map(fee => getNotes(fee))]
+    : [getNotes(spend), getNotes(receive)];
 
   set(states, {
     entryType: HistoryEventEntryType.SWAP_EVENT,
@@ -227,20 +238,53 @@ watchImmediate(() => props.data, (data) => {
 watch(hasFee, (hasFee) => {
   const oldStates = get(states);
   if (hasFee) {
-    // When enabling fees, ensure there's at least one empty fee entry
+    // When enabling fees, ensure there's at least one empty fee entry and fee note
+    const updates: Partial<FormData> = {};
     if (oldStates.fees.length === 0) {
+      updates.fees = [{ amount: '', asset: '' }];
+    }
+    // Add empty fee note if not present
+    if (oldStates.userNotes.length < 3) {
+      updates.userNotes = createUserNotes(oldStates.userNotes[0], oldStates.userNotes[1], ...oldStates.userNotes.slice(2), '');
+    }
+    if (Object.keys(updates).length > 0) {
       set(states, {
         ...oldStates,
-        fees: [{ amount: '', asset: '' }],
+        ...updates,
       });
     }
     return;
   }
+  // When disabling fees, remove fee entries and keep only spend/receive notes
   set(states, {
     ...oldStates,
     fees: [],
-    userNotes: [oldStates.userNotes[0], oldStates.userNotes[1], ''],
+    userNotes: createUserNotes(oldStates.userNotes[0], oldStates.userNotes[1]),
   });
+});
+
+// Sync userNotes array with fees array when fees are added/removed
+watch(() => get(states).fees.length, (newLength, oldLength) => {
+  if (!get(hasFee))
+    return;
+
+  const currentNotes = get(states).userNotes;
+  const expectedLength = 2 + newLength; // 2 for spend/receive + fee count
+
+  if (currentNotes.length === expectedLength)
+    return;
+
+  if (newLength > oldLength) {
+    // Fee added - add empty notes
+    const notesToAdd = newLength - oldLength;
+    const newNotes = createUserNotes(currentNotes[0], currentNotes[1], ...currentNotes.slice(2), ...new Array<string>(notesToAdd).fill(''));
+    set(states, { ...get(states), userNotes: newNotes });
+  }
+  else {
+    // Fee removed - remove corresponding notes from the end
+    const newNotes = createUserNotes(currentNotes[0], currentNotes[1], ...currentNotes.slice(2, expectedLength));
+    set(states, { ...get(states), userNotes: newNotes });
+  }
 });
 
 watch(errorMessages, (errors) => {
@@ -250,6 +294,7 @@ watch(errorMessages, (errors) => {
 
 defineExpose({
   save,
+  v$,
 });
 </script>
 
@@ -326,7 +371,7 @@ defineExpose({
 
     <SwapEventNotes
       v-model="states.userNotes"
-      :has-fee="hasFee"
+      :fee-count="hasFee ? states.fees.length : 0"
       :error-messages="toMessages(v$.userNotes)"
       @blur="v$.userNotes.$touch()"
     />

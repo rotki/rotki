@@ -13,8 +13,34 @@ Changelog
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.
 * :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
+
+* :release:`1.41.3 <2025-12-19>`
+* :bug:`11166` Date time picker quick options will now work cumulatively, allowing users to go further back in time with multiple clicks.
+* :bug:`11168` The history event forms will now automatically scroll to the first error and expand any collapsed sections containing errors.
+* :feature:`-` The swap, asset movement and online events forms will now automatically generate a unique identifier if one is not provided.
+* :feature:`-` Input fields will now display a required indicator when validation requires a value.
+* :bug:`-` The calendar year navigation will no longer be limited to a 12-year range.
+* :bug:`-` The calendar will now preserve the selected date when switching months or years.
+* :bug:`-` rotki will now properly fall back to other indexers when Blockscout has incomplete data.
+* :bug:`-` Sushiswap LP balances will now have correct balances in the LP tokens view.
+* :feature:`-` Users will now be able to customize the indexer order when redecoding EVM transactions.
+* :bug:`-` Swap event creation form now correctly handles user notes for multiple fee assets.
+* :bug:`11146` Accumulating validators with multiple deposits will now show correct rewards and APR when exiting.
+* :bug:`-` Clicking the "more years" menu in the PnL report range selector will no longer cause an error during login.
+* :bug:`-` Gnosis Pay users will now be able to authenticate using Zeal Wallet.
+* :bug:`-` The WalletConnect modal should now be visible under all circumstances.
+* :bug:`11147` rotki will now properly detect staked GRT balances on Arbitrum after The Graph's Horizon upgrade.
+* :bug:`11149` rotki will now properly pull all new Coinbase events.
+* :bug:`-` Asset selection fields will now properly display ignored assets if they are already selected as the value.
+* :bug:`11113` An invalid Coinbase API key in the DB will no longer prevent logging into the app.
+* :bug:`-` Gas events will be editable again.
+* :bug:`11108` rotki will now correctly count the number of events allowed for the tier during the PnL report
+* :feature:`10832` rotki will now query and store Binance Convert trades (not supported for Binance US).
+* :feature:`11086` rotki will now properly handle Kraken margin profit, loss, fee, and any other so far unsupported event.
 * :bug:`11084` Indexer related backend query task will no longer randomly die.
 * :bug:`11094` rotki should now process correctly all the RPCs responses from Binance SC nodes.
+* :bug:`11148` Locked Curve CRV balances in the vote escrow contract will now show up correctly.
+* :bug:`-` Google calendar sync should no longer overwrite event reminder with the same title.
 
 * :release:`1.41.2 <2025-12-05>`
 * :feature:`11063` rotki has now improved the date/time range selector in the PnL report generation menu.

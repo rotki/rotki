@@ -24,7 +24,7 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 from .constants import CPT_GAS
 from .structures import T_Event
 from .tools import BaseDecoderTools
-from .types import CounterpartyDetails, SupportsAddition
+from .types import CounterpartyDetails, DecodingRulesBase
 
 if TYPE_CHECKING:
     from types import ModuleType
@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-T_DecodingRules = TypeVar('T_DecodingRules', bound=SupportsAddition)
+T_DecodingRules = TypeVar('T_DecodingRules', bound=DecodingRulesBase)
 T_DecoderInterface = TypeVar('T_DecoderInterface')
 T_DecoderTools = TypeVar('T_DecoderTools', bound=BaseDecoderTools)
 T_TransactionDecodingContext = TypeVar('T_TransactionDecodingContext')
@@ -101,6 +101,10 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         # Recursively check all submodules to get all decoder address mappings and rules
         self.rules += self._recursively_initialize_decoders(self.chain_modules_root)
         self.undecoded_tx_query_lock = Semaphore()
+
+    def get_all_counterparties(self) -> set[CounterpartyDetails]:
+        """Return all known counterparties for this decoder instance."""
+        return set(self.rules.all_counterparties).union(self.misc_counterparties)
 
     @abstractmethod
     def _add_builtin_decoders(self, rules: T_DecodingRules) -> None:

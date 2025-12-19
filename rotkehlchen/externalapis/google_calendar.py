@@ -239,12 +239,14 @@ class GoogleCalendarAPI:
         events_updated = 0
         errors = []
 
-        # Get existing events from Google Calendar
+        # Get existing events from Google Calendar indexed by (summary, start)
         try:
-            existing_events = {}
+            existing_events: dict[tuple[str, str | None], dict[str, Any]] = {}
             page_token = None
 
             while True:
+                # API resource for calendar event
+                # https://developers.google.com/workspace/calendar/api/v3/reference/events#resource
                 events_result = service.events().list(  # pylint: disable=no-member
                     calendarId=calendar_id,
                     pageToken=page_token,
@@ -253,8 +255,10 @@ class GoogleCalendarAPI:
                 ).execute()
 
                 for event in events_result.get('items', []):
-                    # Store by summary (title) for matching
-                    existing_events[event.get('summary', '')] = event
+                    start_info = event.get('start', {})
+                    start_value = start_info.get('dateTime') or start_info.get('date')
+                    key = (event.get('summary', ''), start_value)
+                    existing_events[key] = event
 
                 page_token = events_result.get('nextPageToken')
                 if not page_token:
@@ -304,6 +308,7 @@ class GoogleCalendarAPI:
 
             # Create event data
             description = entry.description or ''
+            event_start_iso = event_date.isoformat()
 
             # Add additional details to description
             details = []
@@ -342,7 +347,7 @@ class GoogleCalendarAPI:
 
             try:
                 # Check if event already exists
-                existing_event = existing_events.get(entry.name)
+                existing_event = existing_events.get((entry.name, event_start_iso))
 
                 if existing_event:
                     # Update existing event

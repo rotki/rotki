@@ -1,4 +1,5 @@
 import abc
+import json
 import logging
 import operator
 from abc import ABC
@@ -662,3 +663,49 @@ class EtherscanLikeApi(ExternalServiceWithApiKey, ABC):
             if int(balance) != 0:
                 return HasChainActivity.BALANCE
         return HasChainActivity.NONE
+
+    def get_contract_abi(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            address: ChecksumEvmAddress,
+    ) -> str | None:
+        """Get the contract abi for the given address if verified.
+        Returns `None` if the address is not a verified contract.
+        May raise RemoteError if the query to the indexer fails.
+        """
+        if (result := self._query(
+            chain_id=chain_id,
+            module='contract',
+            action='getabi',
+            options={'address': address},
+        )) is None:
+            return None
+
+        try:
+            return json.loads(result)
+        except json.JSONDecodeError:
+            return None
+
+    def get_contract_creation_hash(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            address: ChecksumEvmAddress,
+    ) -> EVMTxHash | None:
+        """Get the contract creation tx hash for the given address.
+        Returns None if the address is not a contract.
+        May raise RemoteError in case of problems contacting the indexer.
+        """
+        if (result := self._query(
+            chain_id=chain_id,
+            module='contract',
+            action='getcontractcreation',
+            options={'contractaddresses': address},
+        )) is None:
+            return None
+
+        try:
+            return deserialize_evm_tx_hash(result[0]['txHash'])
+        except (DeserializationError, IndexError, KeyError) as e:
+            msg = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
+            log.error(f'Failed to get contract creation hash for {address} from {self.name}: {msg}')  # noqa: E501
+            return None

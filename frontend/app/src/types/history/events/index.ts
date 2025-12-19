@@ -26,6 +26,7 @@ export interface TransactionRequestPayload {
 export interface PullLocationTransactionPayload {
   readonly transactions: LocationAndTxRef[];
   readonly deleteCustom?: boolean;
+  readonly customIndexersOrder?: string[];
 }
 
 export interface PullEthBlockEventPayload {
@@ -47,6 +48,7 @@ export interface ChainAndTxRefs {
 
 export interface PullTransactionPayload extends ChainAndTxRefs {
   readonly deleteCustom?: boolean;
+  readonly customIndexersOrder?: string[];
 }
 
 export interface LocationAndTxRef {
