@@ -22,7 +22,6 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.externalapis.utils import get_earliest_ts
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -38,7 +37,6 @@ from rotkehlchen.types import (
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
-    ExternalService,
     Location,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -78,30 +76,37 @@ class HasChainActivity(Enum):
     NONE = auto()
 
 
-class EtherscanLikeApi(ExternalServiceWithApiKey, ABC):
+class EtherscanLikeApi(ABC):
     """Base class for any APIs similar to etherscan."""
 
     def __init__(
             self,
             database: 'DBHandler',
             msg_aggregator: 'MessagesAggregator',
-            service_name: ExternalService,
+            name: Literal['Etherscan', 'Blockscout', 'Routescan'],
             pagination_limit: int,
             default_api_key: ApiKey,
     ) -> None:
-        super().__init__(database=database, service_name=service_name)
+        self.db = database
         self.msg_aggregator = msg_aggregator
         self.session = create_session()
         set_user_agent(self.session)
         self.default_api_key = default_api_key
         self.pagination_limit = pagination_limit
-        self.name = service_name.name.capitalize()
+        self.name = name
 
     @staticmethod
     @abc.abstractmethod
     def _get_url(chain_id: SUPPORTED_CHAIN_IDS) -> str:
         """Get the API URL for the given chain. Override in subclasses for different endpoints.
         May raise UnsupportedChain if the service does not support the given chain.
+        """
+
+    @abc.abstractmethod
+    def _get_api_key_for_chain(self, chain_id: ChainID) -> ApiKey | None:
+        """Get the API key for the given chain, or None if it is not present.
+        Overridden in subclasses depending on whether the service uses a single key or different
+        keys for each chain.
         """
 
     @staticmethod
@@ -278,7 +283,10 @@ class EtherscanLikeApi(ExternalServiceWithApiKey, ABC):
         an unexpected response is returned. Also in the case of exhausting the backoff time.
         """
         result = None
-        if (api_key := self._get_api_key()) is None and self.default_api_key is not None:
+        if (
+            (api_key := self._get_api_key_for_chain(chain_id)) is None and
+            self.default_api_key is not None
+        ):
             api_key = self.default_api_key
             log.debug(f'Using default {self.name} key')
 

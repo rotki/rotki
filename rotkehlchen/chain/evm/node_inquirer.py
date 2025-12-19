@@ -214,6 +214,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
+            blockscout: Blockscout,
             routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
@@ -221,7 +222,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             contract_multicall: 'EvmContract',
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
-            blockscout: Blockscout | None = None,
     ) -> None:
         self.greenlet_manager = greenlet_manager
         self.database = database
@@ -1497,6 +1497,7 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
+            blockscout: Blockscout,
             routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
@@ -1505,12 +1506,12 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             dsproxy_registry: 'EvmContract',
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
-            blockscout: Blockscout | None = None,
     ) -> None:
         super().__init__(
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            blockscout=blockscout,
             routescan=routescan,
             blockchain=blockchain,
             contracts=contracts,
@@ -1518,7 +1519,6 @@ class EvmNodeInquirerWithProxies(EvmNodeInquirer):
             contract_multicall=contract_multicall,
             rpc_timeout=rpc_timeout,
             native_token=native_token,
-            blockscout=blockscout,
         )
         self.proxies_inquirer = EvmProxiesInquirer(
             node_inquirer=self,
@@ -1536,6 +1536,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
+            blockscout: Blockscout,
             routescan: Routescan,
             blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             contracts: EvmContracts,
@@ -1544,12 +1545,12 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             dsproxy_registry: 'EvmContract',
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
-            blockscout: Blockscout | None = None,
     ) -> None:
         super().__init__(
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            blockscout=blockscout,
             routescan=routescan,
             blockchain=blockchain,
             contracts=contracts,
@@ -1558,5 +1559,4 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithProxies):
             rpc_timeout=rpc_timeout,
             native_token=native_token,
             dsproxy_registry=dsproxy_registry,
-            blockscout=blockscout,
         )

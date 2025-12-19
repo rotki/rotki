@@ -7,7 +7,6 @@ from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -22,6 +21,7 @@ from .constants import (
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
 
@@ -36,6 +36,7 @@ class BaseInquirer(L2WithL1FeesInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            blockscout: 'Blockscout',
             routescan: 'Routescan',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
@@ -44,6 +45,7 @@ class BaseInquirer(L2WithL1FeesInquirer):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            blockscout=blockscout,
             routescan=routescan,
             blockchain=SupportedBlockchain.BASE,
             contracts=contracts,
@@ -51,11 +53,6 @@ class BaseInquirer(L2WithL1FeesInquirer):
             contract_multicall=contracts.contract(string_to_evm_address('0xeDF6D2a16e8081F777eB623EeB4411466556aF3d')),
             contract_scan=contracts.contract(BALANCE_SCANNER_ADDRESS),
             native_token=A_ETH.resolve_to_crypto_asset(),
-            blockscout=Blockscout(
-                blockchain=SupportedBlockchain.BASE,
-                database=database,
-                msg_aggregator=database.msg_aggregator,
-            ),
         )
 
     # -- Implementation of EvmNodeInquirer base methods --

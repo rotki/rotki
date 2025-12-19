@@ -15,7 +15,6 @@ from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
-from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -30,6 +29,7 @@ from .constants import (
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
 
@@ -44,6 +44,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            blockscout: 'Blockscout',
             routescan: 'Routescan',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
@@ -52,6 +53,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            blockscout=blockscout,
             routescan=routescan,
             blockchain=SupportedBlockchain.ARBITRUM_ONE,
             contracts=contracts,
@@ -59,11 +61,6 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             contract_multicall=contracts.contract(string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')),
             contract_scan=contracts.contract(BALANCE_SCANNER_ADDRESS),
             native_token=A_ETH.resolve_to_crypto_asset(),
-            blockscout=Blockscout(
-                blockchain=SupportedBlockchain.ARBITRUM_ONE,
-                database=database,
-                msg_aggregator=database.msg_aggregator,
-            ),
         )
 
     # -- Implementation of EvmNodeInquirer base methods --

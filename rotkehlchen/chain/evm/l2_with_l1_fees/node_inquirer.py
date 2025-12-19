@@ -7,13 +7,13 @@ from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import SupportedL2WithL1FeesType
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
-from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
 
@@ -31,6 +31,7 @@ class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            blockscout: 'Blockscout',
             routescan: 'Routescan',
             blockchain: SupportedL2WithL1FeesType,
             contracts: EvmContracts,
@@ -38,12 +39,12 @@ class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
             contract_scan: 'EvmContract',
             contract_multicall: 'EvmContract',
             native_token: CryptoAsset,
-            blockscout: Blockscout | None = None,
     ) -> None:
         super().__init__(
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            blockscout=blockscout,
             routescan=routescan,
             blockchain=blockchain,
             contracts=contracts,
@@ -51,7 +52,6 @@ class L2WithL1FeesInquirer(EvmNodeInquirer, ABC):
             contract_multicall=contract_multicall,
             contract_scan=contract_scan,
             native_token=native_token,
-            blockscout=blockscout,
         )
 
     def _additional_receipt_processing(self, tx_receipt: dict[str, Any]) -> None:
@@ -72,6 +72,7 @@ class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, ABC):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            blockscout: 'Blockscout',
             routescan: 'Routescan',
             blockchain: SupportedL2WithL1FeesType,
             contracts: EvmContracts,
@@ -80,12 +81,12 @@ class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, ABC):
             contract_multicall: 'EvmContract',
             dsproxy_registry: 'EvmContract',
             native_token: CryptoAsset,
-            blockscout: Blockscout | None = None,
     ) -> None:
         super().__init__(
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            blockscout=blockscout,
             routescan=routescan,
             blockchain=blockchain,
             contracts=contracts,
@@ -93,7 +94,6 @@ class DSProxyL2WithL1FeesInquirerWithCacheData(L2WithL1FeesInquirer, ABC):
             contract_multicall=contract_multicall,
             contract_scan=contract_scan,
             native_token=native_token,
-            blockscout=blockscout,
         )
         self.proxies_inquirer = EvmProxiesInquirer(
             node_inquirer=self,

@@ -26,7 +26,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -43,6 +42,7 @@ from .constants import ETH2_DEPOSIT_ADDRESS, WeightedNode
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
 
@@ -59,6 +59,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            blockscout: 'Blockscout',
             routescan: 'Routescan',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
@@ -67,6 +68,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            blockscout=blockscout,
             routescan=routescan,
             blockchain=SupportedBlockchain.ETHEREUM,
             contracts=contracts,
@@ -75,14 +77,8 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             contract_scan=contracts.contract(BALANCE_SCANNER_ADDRESS),
             dsproxy_registry=contracts.contract(string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4')),
             native_token=A_ETH.resolve_to_crypto_asset(),
-            blockscout=Blockscout(
-                blockchain=SupportedBlockchain.ETHEREUM,
-                database=database,
-                msg_aggregator=database.msg_aggregator,
-            ),
         )
         self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
-        self.blockscout: Blockscout  # for ethereum blockscout is never None since it's used for the withdrawals  # noqa: E501
 
     def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, str | None]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses

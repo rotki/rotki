@@ -15,24 +15,23 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, SupportedBlockchain, TimestampMS
+from rotkehlchen.types import ChainID, TimestampMS
 
 
-@pytest.fixture(name='eth_blockscout')
+@pytest.fixture(name='blockscout')
 def fixture_blockscout(database, messages_aggregator):
     return Blockscout(
-        blockchain=SupportedBlockchain.ETHEREUM,
         database=database,
         msg_aggregator=messages_aggregator,
     )
 
 
 @pytest.mark.vcr
-def test_query_withdrawals(eth_blockscout: Blockscout, database: DBHandler):
+def test_query_withdrawals(blockscout: Blockscout, database: DBHandler):
     """Test the querying logic of eth withdrawal for blockscout"""
     address = string_to_evm_address('0xE12799BC799fc024db69E118fD2A6eA293DBFF7d')
     dbevents = DBHistoryEvents(database)
-    eth_blockscout.query_withdrawals(address)
+    blockscout.query_withdrawals(address)
 
     with database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events_internal(
@@ -87,7 +86,7 @@ def test_query_withdrawals(eth_blockscout: Blockscout, database: DBHandler):
 
 
 @pytest.mark.vcr
-def test_hash_activity(eth_blockscout):
+def test_hash_activity(blockscout):
     for chain in (
         ChainID.ETHEREUM,
         ChainID.OPTIMISM,
@@ -95,38 +94,38 @@ def test_hash_activity(eth_blockscout):
         ChainID.GNOSIS,
         ChainID.BASE,
     ):
-        assert eth_blockscout.has_activity(  # yabir.eth
+        assert blockscout.has_activity(  # yabir.eth
             chain_id=chain,
             account=string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65'),
         ) == HasChainActivity.TRANSACTIONS
 
-    assert eth_blockscout.has_activity(
+    assert blockscout.has_activity(
         chain_id=ChainID.ETHEREUM,
         account=string_to_evm_address('0x3C69Bc9B9681683890ad82953Fe67d13Cd91D5EE'),
     ) == HasChainActivity.BALANCE
-    assert eth_blockscout.has_activity(
+    assert blockscout.has_activity(
         chain_id=ChainID.ETHEREUM,
         account=string_to_evm_address('0x014cd0535b2Ea668150a681524392B7633c8681c'),
     ) == HasChainActivity.TOKENS
-    assert eth_blockscout.has_activity(
+    assert blockscout.has_activity(
         chain_id=ChainID.ETHEREUM,
         account=string_to_evm_address('0x6c66149E65c517605e0a2e4F707550ca342f9c1B'),
     ) == HasChainActivity.NONE
 
 
-def test_missing_data_error(eth_blockscout: Blockscout) -> None:
+def test_missing_data_error(blockscout: Blockscout) -> None:
     """Test that we properly handle the custom status 2 missing data error from blockscout
     when querying internal transactions. Should raise a remote error so that we fall back to
     a different indexer.
     """
     with (
         pytest.raises(RemoteError, match='Blockscout is missing data'),
-        patch.object(eth_blockscout.session, 'get', return_value=MockResponse(
+        patch.object(blockscout.session, 'get', return_value=MockResponse(
             status_code=HTTPStatus.OK,
             text='{"message": "Internal transactions for this transaction have not been processed yet","result": [],"status": "2"}',  # noqa: E501
         )),
     ):
-        next(eth_blockscout.get_transactions(
+        next(blockscout.get_transactions(
             chain_id=ChainID.ETHEREUM,
             account=make_evm_address(),
             action='txlistinternal',

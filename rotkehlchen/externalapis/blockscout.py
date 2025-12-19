@@ -13,6 +13,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
+from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.externalapis.utils import get_earliest_ts, maybe_read_integer
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -20,7 +21,6 @@ from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_
 from rotkehlchen.types import (
     BLOCKSCOUT_TO_CHAINID,
     SUPPORTED_CHAIN_IDS,
-    SUPPORTED_EVM_CHAINS_TYPE,
     ApiKey,
     ChainID,
     ChecksumEvmAddress,
@@ -48,22 +48,23 @@ class Blockscout(EtherscanLikeApi):
 
     def __init__(
             self,
-            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ) -> None:
-        self.chain_id = blockchain.to_chain_id()
         EtherscanLikeApi.__init__(
             self,
             database=database,
             msg_aggregator=msg_aggregator,
-            service_name={v: k for k, v in BLOCKSCOUT_TO_CHAINID.items()}[self.chain_id],
+            name='Blockscout',
             pagination_limit=BLOCKSCOUT_PAGINATION_LIMIT,
             default_api_key=ApiKey(''),  # no default api key used for blockscout
         )
         self.session = create_session()
         set_user_agent(self.session)
-        self.url = self._get_url(self.chain_id)
+        self.service_details: dict[ChainID, ExternalServiceWithApiKey] = {
+            chain_id: ExternalServiceWithApiKey(database=database, service_name=service_name)
+            for service_name, chain_id in BLOCKSCOUT_TO_CHAINID.items()
+        }
 
     @staticmethod
     def _get_url(chain_id: ChainID) -> str:
@@ -84,6 +85,15 @@ class Blockscout(EtherscanLikeApi):
                 return 'https://scroll.blockscout.com/api'
             case _:
                 raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
+
+    def _get_api_key_for_chain(self, chain_id: ChainID) -> ApiKey | None:
+        """Blockscout has different keys for each chain. Returns None if the requested
+        chain is not present in the service_details dict.
+        """
+        if (service_for_chain := self.service_details.get(chain_id)) is None:
+            return None
+
+        return service_for_chain._get_api_key()
 
     @staticmethod
     def _build_query_params(
@@ -206,7 +216,7 @@ class Blockscout(EtherscanLikeApi):
     ) -> list[dict[str, Any]] | str | int | dict[str, Any] | None:
         query_args = {} if options is None else options
         query_args |= {'module': module, 'action': action}
-        if (api_key := self._get_api_key()) is not None:
+        if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
             query_args['apikey'] = api_key
         response = self._query_and_process(
             query_str=self._get_url(chain_id=chain_id),
@@ -250,6 +260,7 @@ class Blockscout(EtherscanLikeApi):
     @overload
     def _query_v2(
             self,
+            chain_id: SUPPORTED_CHAIN_IDS,
             module: Literal['addresses'],
             encoded_args: str,
             endpoint: Literal['withdrawals'],
@@ -260,6 +271,7 @@ class Blockscout(EtherscanLikeApi):
     @overload
     def _query_v2(
             self,
+            chain_id: SUPPORTED_CHAIN_IDS,
             module: Literal['transactions'],
             encoded_args: str,
             endpoint: None = None,
@@ -269,6 +281,7 @@ class Blockscout(EtherscanLikeApi):
 
     def _query_v2(
             self,
+            chain_id: SUPPORTED_CHAIN_IDS,
             module: Literal['addresses', 'transactions'],
             encoded_args: str,
             endpoint: Literal['withdrawals'] | None = None,
@@ -280,10 +293,10 @@ class Blockscout(EtherscanLikeApi):
         - RemoteError due to problems querying blockscout
         """
         extra_args = {} if extra_args is None else extra_args
-        query_str = f'{self.url}/v2/{module}/{encoded_args}'
+        query_str = f'{self._get_url(chain_id)}/v2/{module}/{encoded_args}'
         if endpoint is not None:
             query_str += f'/{endpoint}'
-        if (api_key := self._get_api_key()) is not None:
+        if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
             extra_args['apikey'] = api_key
 
         return self._query_and_process(
@@ -314,7 +327,13 @@ class Blockscout(EtherscanLikeApi):
                 last_known_withdrawal_idx = idx_result
 
         while True:
-            result = self._query_v2(module='addresses', endpoint='withdrawals', encoded_args=address, extra_args=extra_args)  # noqa: E501
+            result = self._query_v2(
+                chain_id=ChainID.ETHEREUM,  # querying withdrawals is always on ethereum
+                module='addresses',
+                endpoint='withdrawals',
+                encoded_args=address,
+                extra_args=extra_args,
+            )
             if len(result['items']) == 0:
                 log.debug(f'Could not find withdrawals for address {address}')
                 break
@@ -454,12 +473,12 @@ class Blockscout(EtherscanLikeApi):
         if len(result) != 0:
             return HasChainActivity.TOKENS
 
-        if self.chain_id in {ChainID.ETHEREUM, ChainID.GNOSIS, ChainID.POLYGON_POS}:
+        if chain_id in {ChainID.ETHEREUM, ChainID.GNOSIS, ChainID.POLYGON_POS}:
             # since ethereum, gnosis and polygon have a lot of spam transactions for addresses
             # that were never used we add as requirement that in those chains the user must have
             # some balance.
             balance = self._query(
-                chain_id=self.chain_id,
+                chain_id=chain_id,
                 module='account',
                 action='balance',
                 options={'address': account},
@@ -481,6 +500,7 @@ class Blockscout(EtherscanLikeApi):
         - RemoteError if unable to get the L1 fee amount or query fails.
         """
         response = self._query_v2(
+            chain_id=chain_id,
             module='transactions',
             encoded_args=str(tx_hash),
         )

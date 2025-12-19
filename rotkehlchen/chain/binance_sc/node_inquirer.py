@@ -24,6 +24,7 @@ from .constants import (
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
 
@@ -35,6 +36,7 @@ class BinanceSCInquirer(EvmNodeInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: 'Etherscan',
+            blockscout: 'Blockscout',
             routescan: 'Routescan',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
@@ -42,6 +44,7 @@ class BinanceSCInquirer(EvmNodeInquirer):
             greenlet_manager=greenlet_manager,
             database=database,
             etherscan=etherscan,
+            blockscout=blockscout,
             routescan=routescan,
             blockchain=SupportedBlockchain.BINANCE_SC,
             contracts=(contracts := EvmContracts[Literal[ChainID.BINANCE_SC]](chain_id=ChainID.BINANCE_SC)),  # noqa: E501
