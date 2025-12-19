@@ -51,6 +51,7 @@ class HistoryEventType(SerializableEnumNameMixin):
     MINT = auto()
     BURN = auto()
     MULTI_TRADE = auto()
+    MARGIN = auto()
 
 
 class HistoryEventSubType(SerializableEnumNameMixin):
@@ -99,6 +100,8 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     LIQUIDITY_PROVISION_LOSS = auto()
     BURN = auto()
     MESSAGE = auto()
+    PROFIT = auto()
+    LOSS = auto()
 
     def serialize_or_none(self) -> str | None:
         return self.serialize()
@@ -190,6 +193,7 @@ class EventCategory(Enum):
     MESSAGE = 56, EventDirection.NEUTRAL
     ACCOUNT_DEPOSIT = 57, EventDirection.NEUTRAL
     ACCOUNT_WITHDRAWAL = 58, EventDirection.NEUTRAL
+    PROFIT = 59, EventDirection.IN
 
     @property
     def direction(self) -> EventDirection:

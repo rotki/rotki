@@ -12,6 +12,7 @@ from eth_utils import to_checksum_address
 from hexbytes import HexBytes
 from packaging.version import Version
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.constants.assets import A_USDC
 from rotkehlchen.constants.resolver import identifier_to_evm_address
@@ -56,6 +57,34 @@ def test_process_result():
         json.dumps(d)
 
     json.dumps(process_result(d))
+
+
+def test_process_result_recursively_processes_tuples():
+    nested_tuple = {
+        'tuple': (
+            FVal('1.5'),
+            {
+                'nested': (
+                    FVal('3.2'),
+                    Asset('ETH'),
+                ),
+            },
+        ),
+    }
+
+    processed = process_result(nested_tuple)
+    assert processed == {
+        'tuple': [
+            '1.5',
+            {
+                'nested': [
+                    '3.2',
+                    'ETH',
+                ],
+            },
+        ],
+    }
+    json.dumps(processed)
 
 
 def test_hexbytes_in_process_result():

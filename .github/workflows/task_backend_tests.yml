@@ -12,6 +12,10 @@ on:
       test_environment:
         required: true
         type: string
+      collect_coverage:
+        required: false
+        default: false
+        type: boolean
 
 permissions: { }
 
@@ -22,6 +26,7 @@ jobs:
       TEST_ENVIRONMENT: ${{ inputs.test_environment }}
       TARGET_BRANCH: ${{ github.base_ref }}
       SOURCE_BRANCH: ${{ github.head_ref }}
+      COLLECT_COVERAGE: ${{ inputs.collect_coverage }}
     runs-on: ${{ inputs.os }}
     name: 'Backend tests'
     timeout-minutes: 60
@@ -132,11 +137,11 @@ jobs:
           FORCE_COLOR: 1
           MATRIX_JOB: ${{ matrix.test-group }}
         run: |
-          if [ "${{ runner.os }}" == 'macOS' ];
-          then
-            COVERAGE_ARGS=''
+          if [ "${{ inputs.collect_coverage }}" = 'true' ]; then
+            export COVERAGE_FILE=".coverage.${{ matrix.test-group }}"
+            COVERAGE_ARGS='--cov=rotkehlchen --cov-report=term-missing'
           else
-            COVERAGE_ARGS='--cov=./'
+            COVERAGE_ARGS=''
           fi
 
           export CASSETTES_DIR="$(pwd)/test-caching"
@@ -151,11 +156,16 @@ jobs:
             uv run pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders --ignore=rotkehlchen/tests/unit/solana_decoders rotkehlchen/tests/
           fi
 
-          uv run pytestgeventwrapper.py --dead-fixtures
+          if [ "${{ matrix.test-group }}" == 'others' ]
+          then
+            # dead-fixtures needs only one full collection, so run it once in this leg
+            uv run pytestgeventwrapper.py --dead-fixtures
+          fi
         shell: bash
 
-      - name: Upload coverage
-        uses: codecov/codecov-action@v5
+      - name: Upload coverage artifacts
+        if: ${{ inputs.collect_coverage }}
+        uses: actions/upload-artifact@v4
         with:
-          flags: backend
-          token: ${{ secrets.CODECOV_TOKEN }}
+          name: coverage-${{ inputs.os }}-${{ matrix.test-group }}
+          path: .coverage.${{ matrix.test-group }}

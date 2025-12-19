@@ -1,7 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any, Final
-
-from eth_typing.abi import ABI
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import token_normalized_value
@@ -14,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -22,8 +20,20 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.misc import bytes_to_address
+from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
-from .constants import CPT_THEGRAPH, THEGRAPH_CPT_DETAILS
+from .constants import (
+    CPT_THEGRAPH,
+    GRAPH_TOKEN_LOCK_WALLET_ABI,
+    THEGRAPH_CPT_DETAILS,
+    TOPIC_STAKE_DELEGATED,
+    TOPIC_STAKE_DELEGATED_HORIZON,
+    TOPIC_STAKE_DELEGATED_LOCKED,
+    TOPIC_STAKE_DELEGATED_LOCKED_HORIZON,
+    TOPIC_STAKE_DELEGATED_WITHDRAWN,
+    TOPIC_STAKE_DELEGATED_WITHDRAWN_HORIZON,
+    TOPIC_THAW_REQUEST_CREATED,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
@@ -33,22 +43,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-TOPIC_STAKE_DELEGATED: Final = b'\xcd\x03f\xdc\xe5$}\x87O\xfc`\xa7b\xaaz\xbb\xb8,\x16\x95\xbb\xb1q`\x9c\x1b\x88a\xe2y\xebs'  # noqa: E501
-TOPIC_STAKE_DELEGATED_LOCKED: Final = b'\x040\x18?\x84\xd9\xc4P#\x86\xd4\x99\xda\x80eC\xde\xe1\xd9\xde\x83\xc0\x8b\x01\xe3\x9am!\x16\xc4;%'  # noqa: E501
-TOPIC_STAKE_DELEGATED_WITHDRAWN: Final = b'\x1b.w7\xe0C\xc5\xcf\x1bX|\xebM\xae\xb7\xae\x00\x14\x8b\x9b\xda\x8fy\xf1\t>\xea\xd0\x8f\x14\x19R'  # noqa: E501
 
-GRAPH_TOKEN_LOCK_WALLET_ABI: Final[ABI] = [
-    {
-        'inputs': [],
-        'name': 'beneficiary',
-        'outputs': [{'name': '', 'type': 'address'}],
-        'stateMutability': 'view',
-        'type': 'function',
-    },
-]
-
-
-class ThegraphCommonDecoder(EvmDecoderInterface):
+class ThegraphCommonDecoder(EvmDecoderInterface, CustomizableDateMixin):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -62,16 +58,56 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
+        CustomizableDateMixin.__init__(self, base_tools.database)
         self.token = native_asset.resolve_to_evm_token()
         self.staking_contract = staking_contract
 
     def _decode_delegator_staking(self, context: DecoderContext) -> EvmDecodingOutput:
-        if context.tx_log.topics[0] == TOPIC_STAKE_DELEGATED:
-            return self._decode_stake_delegated(context)
-        elif context.tx_log.topics[0] == TOPIC_STAKE_DELEGATED_LOCKED:
-            return self._decode_stake_locked(context)
-        elif context.tx_log.topics[0] == TOPIC_STAKE_DELEGATED_WITHDRAWN:
-            return self._decode_stake_withdrawn(context)
+        """Decode delegator staking events for The Graph protocol.
+        Handles events from both pre and post Horizon upgrade contracts.
+        """
+        if (topic := context.tx_log.topics[0]) == TOPIC_STAKE_DELEGATED:
+            return self._decode_stake_delegated(
+                context=context,
+                delegator=bytes_to_address(context.tx_log.topics[2]),
+                verifier=None,
+            )
+        elif topic == TOPIC_STAKE_DELEGATED_HORIZON:
+            return self._decode_stake_delegated(
+                context=context,
+                delegator=bytes_to_address(context.tx_log.topics[3]),
+                verifier=bytes_to_address(context.tx_log.topics[2]),
+            )
+        elif topic == TOPIC_STAKE_DELEGATED_LOCKED:
+            return self._decode_stake_locked(
+                context=context,
+                delegator=bytes_to_address(context.tx_log.topics[2]),
+                lock_duration_msg=f' Lock expires at epoch {int.from_bytes(context.tx_log.data[64:128])}',  # noqa: E501
+            )
+        elif topic == TOPIC_STAKE_DELEGATED_LOCKED_HORIZON:
+            for log_entry in context.all_logs:
+                if log_entry.topics[0] == TOPIC_THAW_REQUEST_CREATED:
+                    lock_duration = f' Lock expires at {self.timestamp_to_date(Timestamp(int.from_bytes(log_entry.data[64:96])))}'  # noqa: E501
+                    break
+            else:
+                log.error(f'Could not find ThawRequestCreated event for transaction {context.transaction}')  # noqa: E501
+                lock_duration = ''
+
+            return self._decode_stake_locked(
+                context=context,
+                delegator=bytes_to_address(context.tx_log.topics[3]),
+                lock_duration_msg=lock_duration,
+            )
+        elif topic == TOPIC_STAKE_DELEGATED_WITHDRAWN:
+            return self._decode_stake_withdrawn(
+                context=context,
+                delegator=bytes_to_address(context.tx_log.topics[2]),
+            )
+        elif topic == TOPIC_STAKE_DELEGATED_WITHDRAWN_HORIZON:
+            return self._decode_stake_withdrawn(
+                context=context,
+                delegator=bytes_to_address(context.tx_log.topics[3]),
+            )
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -90,16 +126,18 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
                 return None
         return address_l2 or address
 
-    def _decode_stake_delegated(self, context: DecoderContext) -> EvmDecodingOutput:
-        deposit_event, burn_event = None, None
-        delegator = bytes_to_address(context.tx_log.topics[2])
-        if delegator is None or self.base.is_tracked(delegator) is False:
+    def _decode_stake_delegated(
+            self,
+            context: DecoderContext,
+            delegator: ChecksumEvmAddress,
+            verifier: ChecksumEvmAddress | None,
+    ) -> EvmDecodingOutput:
+        if not self.base.is_tracked(delegator):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[1])
-        stake_amount = int.from_bytes(context.tx_log.data[:32])
-        stake_amount_norm = token_normalized_value(
-            token_amount=stake_amount,
+        stake_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
             token=self.token,
         )
         # identify and override the original stake Transfer event
@@ -110,18 +148,18 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
-                initial_amount_norm = event.amount
+                initial_amount = event.amount
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.amount = stake_amount_norm
-                event.notes = f'Delegate {stake_amount_norm} GRT to indexer {indexer}'
+                event.amount = stake_amount
+                event.notes = f'Delegate {stake_amount} GRT to indexer {indexer}'
                 event.counterparty = CPT_THEGRAPH
                 event.extra_data = {'indexer': indexer}
-                deposit_event = event
+                if verifier is not None:
+                    event.extra_data['verifier'] = verifier
 
                 # also account for the GRT burnt due to delegation tax
-                tokens_burnt = initial_amount_norm - stake_amount_norm
-                if tokens_burnt > 0:
+                if (tokens_burnt := initial_amount - stake_amount) > 0:
                     burn_event = self.base.make_event_from_transaction(
                         transaction=context.transaction,
                         tx_log=context.tx_log,
@@ -135,7 +173,7 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
                         address=context.tx_log.address,
                     )
                     maybe_reshuffle_events(
-                        ordered_events=[deposit_event, burn_event],
+                        ordered_events=[event, burn_event],
                         events_list=context.decoded_events,
                     )
                     return EvmDecodingOutput(events=[burn_event])
@@ -153,19 +191,20 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_stake_locked(self, context: DecoderContext) -> EvmDecodingOutput:
-        delegator = bytes_to_address(context.tx_log.topics[2])
-        if delegator is None or self.base.is_tracked(delegator) is False:
+    def _decode_stake_locked(
+            self,
+            context: DecoderContext,
+            delegator: ChecksumEvmAddress,
+            lock_duration_msg: str,
+    ) -> EvmDecodingOutput:
+        if not self.base.is_tracked(delegator):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[1])
-        tokens_amount = int.from_bytes(context.tx_log.data[:32])
-        lock_timeout_secs = int.from_bytes(context.tx_log.data[64:128])
-        tokens_amount_norm = token_normalized_value(
-            token_amount=tokens_amount,
+        tokens_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
             token=self.token,
         )
-        # create a new informational event about undelegation and the expiring lock on tokens
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
@@ -174,38 +213,52 @@ class ThegraphCommonDecoder(EvmDecoderInterface):
             asset=self.token,
             amount=ZERO,
             location_label=delegator,
-            notes=(
-                f'Undelegate {tokens_amount_norm} GRT from indexer {indexer}.'
-                f' Lock expires in {lock_timeout_secs} seconds'
-            ),
+            notes=f'Undelegate {tokens_amount} GRT from indexer {indexer}.{lock_duration_msg}',
             counterparty=CPT_THEGRAPH,
             address=context.tx_log.address,
         )
         return EvmDecodingOutput(events=[event])
 
-    def _decode_stake_withdrawn(self, context: DecoderContext) -> EvmDecodingOutput:
-        delegator = bytes_to_address(context.tx_log.topics[2])
-        if delegator is None or self.base.is_tracked(delegator) is False:
+    def _decode_stake_withdrawn(
+            self,
+            context: DecoderContext,
+            delegator: ChecksumEvmAddress,
+    ) -> EvmDecodingOutput:
+        if not self.base.is_tracked(delegator):
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        indexer = bytes_to_address(context.tx_log.topics[1])
-        tokens_amount_norm = token_normalized_value(
+        action_items, indexer, token_amount = [], bytes_to_address(context.tx_log.topics[1]), token_normalized_value(  # noqa: E501
             token_amount=int.from_bytes(context.tx_log.data[:32]),
             token=self.token,
         )
-        # create action item that will modify the relevant Transfer event that will appear later
-        action_item = ActionItem(
-            action='transform',
-            from_event_type=HistoryEventType.RECEIVE,
-            from_event_subtype=HistoryEventSubType.NONE,
-            asset=self.token,
-            amount=tokens_amount_norm,
-            to_event_type=HistoryEventType.STAKING,
-            to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
-            to_notes=f'Withdraw {tokens_amount_norm} GRT from indexer {indexer}',
-            to_counterparty=CPT_THEGRAPH,
-        )
-        return EvmDecodingOutput(action_items=[action_item])
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.amount == token_amount and
+                    event.asset == self.token
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.notes = f'Withdraw {token_amount} GRT from indexer {indexer}'
+                event.counterparty = CPT_THEGRAPH
+                break
+        else:
+            # create action item that will modify
+            # the relevant Transfer event that will appear later
+            action_items.append(ActionItem(
+                action='transform',
+                from_event_type=HistoryEventType.RECEIVE,
+                from_event_subtype=HistoryEventSubType.NONE,
+                asset=self.token,
+                amount=token_amount,
+                to_event_type=HistoryEventType.STAKING,
+                to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                to_notes=f'Withdraw {token_amount} GRT from indexer {bytes_to_address(context.tx_log.topics[1])}',  # noqa: E501
+                to_counterparty=CPT_THEGRAPH,
+            ))
+
+        return EvmDecodingOutput(action_items=action_items)
 
     # -- DecoderInterface methods
 

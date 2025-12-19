@@ -103,6 +103,7 @@ from rotkehlchen.chain.evm.names import (
 )
 from rotkehlchen.chain.evm.types import (
     ChainID,
+    EvmIndexer,
     NodeName,
     RemoteDataQueryStatus,
     WeightedNode,
@@ -163,7 +164,7 @@ from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.db.queried_addresses import QueriedAddresses
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.db.search_assets import search_assets_levenshtein
-from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.db.snapshots import DBSnapshot
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.unresolved_conflicts import DBRemoteConflicts
@@ -1648,7 +1649,7 @@ class RestAPI:
 
         if success:
             AssetResolver.clean_memory_cache()  # clean the cache after deleting any possible asset
-            return _wrap_in_ok_result(OK_RESULT)
+            return OK_RESULT
         return wrap_in_fail_result(msg, status_code=HTTPStatus.CONFLICT)
 
     def query_netvalue_data(self, include_nfts: bool) -> Response:
@@ -3098,6 +3099,7 @@ class RestAPI:
             chain: CHAINS_WITH_TX_DECODING_TYPE,
             tx_refs: list[EVMTxHash | Signature],
             delete_custom: bool,
+            custom_indexers_order: list[EvmIndexer] | None = None,
     ) -> dict[str, Any]:
         """Re-pull data for the specified tx_refs in the given chain
         and redecode all related events.
@@ -3118,14 +3120,19 @@ class RestAPI:
             decode_function = self._decode_given_solana_tx
 
         success, message, status_code = True, '', HTTPStatus.OK
-        for tx_ref in tx_refs:
-            try:
-                decode_function(tx_ref, delete_custom)  # type: ignore[arg-type]  # schema ensures all tx refs match the type required for the given chain
-            except (RemoteError, DeserializationError, InputError) as e:
-                success = False
-                message = f'Failed to request {chain.name.lower()} transaction decoding due to {e!s}'  # noqa: E501
-                status_code = HTTPStatus.CONFLICT if isinstance(e, InputError) else HTTPStatus.BAD_GATEWAY  # noqa: E501
-                break
+        indexer_order_customized = CachedSettings().evm_indexers_order_override_var.set(tuple(custom_indexers_order)) if custom_indexers_order else None  # noqa: E501
+        try:
+            for tx_ref in tx_refs:
+                try:
+                    decode_function(tx_ref, delete_custom)  # type: ignore[arg-type]  # schema ensures all tx refs match the type required for the given chain
+                except (RemoteError, DeserializationError, InputError) as e:
+                    success = False
+                    message = f'Failed to request {chain.name.lower()} transaction decoding due to {e!s}'  # noqa: E501
+                    status_code = HTTPStatus.CONFLICT if isinstance(e, InputError) else HTTPStatus.BAD_GATEWAY  # noqa: E501
+                    break
+        finally:
+            if indexer_order_customized:
+                CachedSettings().evm_indexers_order_override_var.reset(indexer_order_customized)
 
         return {'result': success, 'message': message, 'status_code': status_code}
 
@@ -5148,6 +5155,9 @@ class RestAPI:
                         write_cursor=write_cursor,
                         key_parts=[DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS.value[0][:30]],
                     )
+            case ProtocolsWithCache.ETH_VALIDATORS_DATA:
+                with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                    write_cursor.execute('DELETE FROM eth_validators_data_cache')
             case ProtocolsWithCache.MERKL:
                 with GlobalDBHandler().conn.write_ctx() as write_cursor:
                     write_cursor.execute(

@@ -328,7 +328,8 @@ def mock_exchange_responses(rotki: Rotkehlchen, remote_errors: bool):
                 'capital/withdraw' in url or
                 'fiat/orders' in url or
                 'fiat/payments' in url or
-                'asset/get-funding-asset' in url
+                'asset/get-funding-asset' in url or
+                'convert/tradeFlow' in url
         ):
             payload = '[]'
         else:

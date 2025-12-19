@@ -225,7 +225,7 @@ def test_location_asset_mappings_errors(rotkehlchen_api_server: 'APIServer') -> 
         response=response,
         status_code=HTTPStatus.CONFLICT,
         contained_in_msg=(
-            'Failed to add the location asset mapping of AXS in None because it already exists in the DB.'  # noqa: E501
+            'Failed to add the location asset mapping AXS in None because it already exists in the DB.'  # noqa: E501
         ),
     )
 
@@ -264,7 +264,7 @@ def test_location_asset_mappings_errors(rotkehlchen_api_server: 'APIServer') -> 
         response=response,
         status_code=HTTPStatus.CONFLICT,
         contained_in_msg=(
-            'Failed to delete the location asset mapping of DNE in kraken because it does not exist in the DB.'  # noqa: E501
+            'Failed to delete the location asset mapping DNE in kraken because it does not exist in the DB.'  # noqa: E501
         ),
     )
 
@@ -286,6 +286,6 @@ def test_location_asset_mappings_errors(rotkehlchen_api_server: 'APIServer') -> 
         response=response,
         status_code=HTTPStatus.CONFLICT,
         contained_in_msg=(
-            'Failed to update the location asset mapping of DNE in kraken because it does not exist in the DB.'  # noqa: E501
+            'Failed to update the location asset mapping DNE in kraken because it does not exist in the DB.'  # noqa: E501
         ),
     )

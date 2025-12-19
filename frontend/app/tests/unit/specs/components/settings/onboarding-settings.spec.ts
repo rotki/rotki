@@ -184,7 +184,7 @@ describe('onboardingSetting.vue', () => {
 
   describe('advanced settings', () => {
     beforeEach(async () => {
-      await wrapper.find('[data-cy=onboarding-setting__advance] .accordion__header').trigger('click');
+      await wrapper.find('[data-cy=onboarding-setting__advance] [data-accordion-trigger]').trigger('click');
 
       await nextTick();
     });

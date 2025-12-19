@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.chain.arbitrum_one.modules.thegraph.constants import (
@@ -16,7 +18,16 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    Location,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
 
 ADDY_USER = string_to_evm_address('0xd200aeEC7Cd9dD27CAB5a85083953a734D4e84f0')
 ADDY_USER_2 = string_to_evm_address('0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d')
@@ -302,7 +313,7 @@ def test_thegraph_undelegate(ethereum_inquirer):
             asset=A_GRT,
             amount=ZERO,
             location_label=ADDY_USER,
-            notes=f'Undelegate {undelegate_amount} GRT from indexer {indexer_address}. Lock expires in {lock_time} seconds',  # noqa: E501
+            notes=f'Undelegate {undelegate_amount} GRT from indexer {indexer_address}. Lock expires at epoch {lock_time}',  # noqa: E501
             counterparty=CPT_THEGRAPH,
             address=CONTRACT_STAKING,
         ),
@@ -467,7 +478,7 @@ def test_thegraph_undelegate_arbitrum_one(arbitrum_one_inquirer):
             asset=A_GRT_ARB,
             amount=ZERO,
             location_label=ADDY_USER_2_ARB,
-            notes=f'Undelegate {undelegate_amount} GRT from indexer {indexer_address}. Lock expires in {lock_time} seconds',  # noqa: E501
+            notes=f'Undelegate {undelegate_amount} GRT from indexer {indexer_address}. Lock expires at epoch {lock_time}',  # noqa: E501
             counterparty=CPT_THEGRAPH,
             address=CONTRACT_STAKING_ARB,
         ),
@@ -515,3 +526,139 @@ def test_thegraph_delegated_withdrawn_arbitrum_one(arbitrum_one_inquirer):
         ),
     ]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x01A0370bc11CA10D1D7AbFB892E85127C4eE921C']])
+def test_delegate_horizon(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """This checks that delegation post-horizon works correctly"""
+    tx_hash = deserialize_evm_tx_hash('0x7beba0df2eee3a7425ec1dae22b33209c40d37bba73bddd8749a29143ce57f14')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1765816117000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000001695601856'),
+        location_label=(delegator_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=7,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        asset=A_GRT_ARB,
+        amount=FVal(delegate_amount := '19356.3701652321'),
+        location_label=delegator_address,
+        notes=f'Delegate {delegate_amount} GRT to indexer 0x0058223C6617CCa7ce76fC929Ec9724cd43d4542',  # noqa: E501
+        counterparty=CPT_THEGRAPH,
+        address=CONTRACT_STAKING_ARB,
+        extra_data={
+            'indexer': '0x0058223C6617CCa7ce76fC929Ec9724cd43d4542',
+            'verifier': '0xb2Bb92d0DE618878E438b55D5846cfecD9301105',
+        },
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=8,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=A_GRT_ARB,
+        amount=FVal(approval_amount := '115792089237316195423570985008687907853269984665640563400795.889548978764957742'),  # noqa: E501
+        location_label=delegator_address,
+        notes=f'Set GRT spending approval of {delegator_address} by {CONTRACT_STAKING_ARB} to {approval_amount}',  # noqa: E501
+        address=CONTRACT_STAKING_ARB,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x40792210D62f471612E2891877d8612E02cB7Db6']])
+def test_undelegate_horizon(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """This checks that un-delegation post-horizon works correctly"""
+    tx_hash, lock_expiration = deserialize_evm_tx_hash('0x57f89011a6a489c1d901bb0e30a54c8089d4e5faf60ac26881ef4fd02ec89988'), Timestamp(1765815857)  # noqa: E501
+    events, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1765815857000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000006997289591'),
+        location_label=(delegator_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=9,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_GRT_ARB,
+        amount=ZERO,
+        location_label=delegator_address,
+        notes=f'Undelegate 163.464055706537930283 GRT from indexer 0xECcDF8231326A9c5aaD32df76a633aaa4c49b104. Lock expires at {decoder.decoders["Thegraph"].timestamp_to_date(lock_expiration)}',  # type: ignore  # noqa: E501
+        counterparty=CPT_THEGRAPH,
+        address=CONTRACT_STAKING_ARB,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x1C15b0374FC43d594A3Dc4147E45741FBA6c70f3']])
+def test_thegraph_delegated_withdrawn_horizon(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """This checks that delegation withdrawal post-horizon works correctly"""
+    tx_hash = deserialize_evm_tx_hash('0xcaba90e80b65df1d6fc542940d0f8362a16f93c03cfb6f0603dad1eb45b07b0e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1765823914000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000890050078'),
+        location_label=(delegator_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=11,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REMOVE_ASSET,
+        asset=A_GRT_ARB,
+        amount=FVal(withdraw_amount := '613.662387915752934545'),
+        location_label=delegator_address,
+        notes=f'Withdraw {withdraw_amount} GRT from indexer 0x920FDEB00EE04dd72f62d8A8f80F13c82ef76C1e',  # noqa: E501
+        counterparty=CPT_THEGRAPH,
+        address=CONTRACT_STAKING_ARB,
+    )]

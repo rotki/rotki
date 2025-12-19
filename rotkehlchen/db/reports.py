@@ -314,17 +314,20 @@ class DBAccountingReports:
 
             records.append(record)
 
-        entries_found = len(records)
         if filter_.pagination is not None:
             no_pagination_filter = deepcopy(filter_)
             no_pagination_filter.pagination = None
             query, bindings = no_pagination_filter.prepare()
             entries_found = cursor.execute(f'SELECT COUNT(*) FROM pnl_events {query}', bindings).fetchone()[0]  # noqa: E501
+            entries_total = entries_found
+        else:
+            entries_found = len(records)
+            entries_total = entries_found
 
         return _get_reports_or_events_maybe_limit(
             entry_type='events',
             entries_found=entries_found,
-            entries_total=cursor.execute('SELECT COUNT(*) FROM pnl_events').fetchone()[0],
+            entries_total=entries_total,
             entries=records,
             limit=limit,
         )

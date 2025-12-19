@@ -50,7 +50,6 @@ from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
 from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import CPT_PICKLE
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
-from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
@@ -183,7 +182,6 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         Compoundv3Balances,
         CurveBalances,  # only needed in ethereum, because other chains have new gauge contracts
         ConvexBalances,
-        ThegraphBalances,
         OctantBalances,
         LidoCsmBalances,
         EigenlayerBalances,
@@ -1056,24 +1054,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
                 else:
                     evm_manager = cast('EvmManager', chain_manager)
-                    if (blockscout := evm_manager.node_inquirer.blockscout) is not None:
-                        try:
-                            chain_activity = blockscout.has_activity(chain_id=chain.to_chain_id(), account=address)  # noqa: E501
-                        except RemoteError as e:
-                            log.debug(
-                                'Failed to check activity using blockscout '
-                                f'for {chain} due to {e}',
-                            )
-                            chain_activity = evm_manager.node_inquirer.etherscan.has_activity(
-                                chain_id=chain.to_chain_id(),
-                                account=address,
-                            )
-                    else:
-                        chain_activity = evm_manager.node_inquirer.etherscan.has_activity(
-                            chain_id=chain.to_chain_id(),
-                            account=address,
-                        )
-
+                    chain_activity = evm_manager.node_inquirer.has_activity(
+                        chain_id=chain.to_chain_id(),
+                        account=address,
+                    )
                     only_token_spam = (
                         chain_activity == HasChainActivity.TOKENS and
                         evm_manager.transactions.address_has_been_spammed(address=address)
@@ -1304,12 +1288,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def get_all_counterparties(self) -> set['CounterpartyDetails']:
         """
         Obtain the set of unique counterparties from the decoders across
-        all EVM chains and Solana.
+        all EVM chains and Solana, including misc entries defined per decoder.
         """
         return reduce(
             operator.or_,
             [
-                self.get_chain_manager(chain).transactions_decoder.rules.all_counterparties  # type: ignore[attr-defined]
+                self.get_chain_manager(chain).transactions_decoder.get_all_counterparties()  # type: ignore[attr-defined]
                 for chain in CHAINS_WITH_TRANSACTION_DECODERS
             ],
         )

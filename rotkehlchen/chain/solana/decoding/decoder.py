@@ -11,6 +11,7 @@ from rotkehlchen.assets.utils import (
 )
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.decoding.decoder import TransactionDecoder
+from rotkehlchen.chain.decoding.types import DecodingRulesBase
 from rotkehlchen.chain.decoding.utils import decode_safely
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.chain.solana.types import (
@@ -69,7 +70,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
-class SolanaDecodingRules:
+class SolanaDecodingRules(DecodingRulesBase):
     program_id_mappings: dict[SolanaAddress, tuple[Any, ...]]
     transfer_address_mappings: dict[SolanaAddress, tuple[Any, ...]]
     all_counterparties: set['CounterpartyDetails']

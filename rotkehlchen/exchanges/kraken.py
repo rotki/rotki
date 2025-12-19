@@ -90,31 +90,36 @@ def kraken_ledger_entry_type_to_ours(value: str) -> tuple[HistoryEventType, Hist
 
     Docs: https://support.kraken.com/hc/en-us/articles/360001169383-How-to-interpret-Ledger-history-fields
 
+    Note that as of 2025-12-10 the following types are included, but we have not seen real-world
+    examples of them yet, so may need further adjustment to actually be handled properly:
+    reward, conversion, credit, dividend, sale, nfttrade, nftcreatorfee, nftrebate, custodytransfer
+
     Returns Informational type for any kraken event that we don't know how to process
     """
     event_type = HistoryEventType.INFORMATIONAL  # returned for kraken's unknown events
     event_subtype = HistoryEventSubType.NONE  # may be further edited down out of this function
-    if value == 'trade':
+    if value in ('trade', 'conversion', 'sale', 'nfttrade'):
         event_type = HistoryEventType.TRADE
-    if value == 'staking':
+    elif value == 'staking':
         event_type = HistoryEventType.STAKING
-    if value == 'deposit':
+    elif value == 'deposit':
         event_type = HistoryEventType.DEPOSIT
-    if value == 'withdrawal':
+    elif value == 'withdrawal':
         event_type = HistoryEventType.WITHDRAWAL
-    if value == 'spend':
+    elif value in ('spend', 'nftcreatorfee'):
         event_type = HistoryEventType.SPEND
-    if value == 'receive':
+    elif value in ('receive', 'credit', 'nftrebate'):
         event_type = HistoryEventType.RECEIVE
-    if value == 'transfer':
+    elif value in ('transfer', 'custodytransfer'):
         event_type = HistoryEventType.TRANSFER
-    if value == 'adjustment':
+    elif value == 'adjustment':
         event_type = HistoryEventType.ADJUSTMENT
-    if value == 'invite bonus':
+    elif value in ('invite bonus', 'reward', 'dividend'):
         event_type = HistoryEventType.RECEIVE
         event_subtype = HistoryEventSubType.REWARD
+    elif value in ('margin', 'rollover', 'settled'):
+        event_type = HistoryEventType.MARGIN
 
-    # we ignore margin, rollover, settled since they are for margin trades
     return event_type, event_subtype
 
 
@@ -933,6 +938,13 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         notes = 'Automatic virtual conversion of staked ETH rewards to ETH'
                     else:
                         event_subtype = HistoryEventSubType.REWARD
+                elif event_type == HistoryEventType.MARGIN:
+                    event_subtype = HistoryEventSubType.PROFIT if raw_amount > ZERO else HistoryEventSubType.LOSS  # noqa: E501
+                    notes = (
+                        'Margin trade' if (raw_type := raw_event['type']) == 'margin' else
+                        'Margin rollover' if raw_type == 'rollover' else
+                        'Margin settlement' if raw_type == 'settled' else None
+                    )
                 elif event_type == HistoryEventType.INFORMATIONAL:
                     found_unknown_event = True
                     notes = raw_event['type']
@@ -971,22 +983,23 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         )
                         continue
 
-                    history_event = HistoryEvent(
-                        group_identifier=identifier,
-                        sequence_index=idx,
-                        timestamp=timestamp,
-                        location=Location.KRAKEN,
-                        location_label=self.name,
-                        asset=asset,
-                        amount=abs(raw_amount),  # amount sign was used above to determine types now enforce positive  # noqa: E501
-                        notes=notes,
-                        event_type=event_type,
-                        event_subtype=event_subtype,
-                    )
-                    if history_event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.SPEND):  # noqa: E501
-                        receive_spend_events[history_event.group_identifier].append((idx, history_event))  # noqa: E501
-                    else:
-                        group_events.append((idx, history_event))
+                    if raw_amount != ZERO or event_type == HistoryEventType.INFORMATIONAL:  # only allow zero amount informational events  # noqa: E501
+                        history_event = HistoryEvent(
+                            group_identifier=identifier,
+                            sequence_index=idx,
+                            timestamp=timestamp,
+                            location=Location.KRAKEN,
+                            location_label=self.name,
+                            asset=asset,
+                            amount=abs(raw_amount),  # amount sign was used above to determine types now enforce positive  # noqa: E501
+                            notes=notes,
+                            event_type=event_type,
+                            event_subtype=event_subtype,
+                        )
+                        if history_event.event_type in (HistoryEventType.RECEIVE, HistoryEventType.SPEND):  # noqa: E501
+                            receive_spend_events[history_event.group_identifier].append((idx, history_event))  # noqa: E501
+                        else:
+                            group_events.append((idx, history_event))
                 if event_type != HistoryEventType.INFORMATIONAL and fee_amount != ZERO:  # avoid processing ignored events with fees that were converted to informational  # noqa: E501
                     group_events.append((idx, HistoryEvent(
                         group_identifier=identifier,

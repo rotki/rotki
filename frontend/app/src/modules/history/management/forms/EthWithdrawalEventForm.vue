@@ -160,6 +160,7 @@ onMounted(() => {
 
 defineExpose({
   save,
+  v$,
 });
 </script>
 
@@ -169,6 +170,7 @@ defineExpose({
       <DateTimePicker
         v-model="timestamp"
         :label="t('common.datetime')"
+        required
         persistent-hint
         max-date="now"
         variant="outlined"
@@ -185,6 +187,7 @@ defineExpose({
         integer
         data-cy="validatorIndex"
         :label="t('transactions.events.form.validator_index.label')"
+        required
         :error-messages="toMessages(v$.validatorIndex)"
         @blur="v$.validatorIndex.$touch()"
       />
@@ -209,6 +212,7 @@ defineExpose({
       :items="withdrawalAddressSuggestions"
       data-cy="withdrawalAddress"
       :label="t('transactions.events.form.withdrawal_address.label')"
+      required
       :error-messages="toMessages(v$.withdrawalAddress)"
       auto-select-first
       @blur="v$.withdrawalAddress.$touch()"

@@ -2233,9 +2233,9 @@
     "days_before": "{days} Days Before",
     "month_before": "1 Month Before",
     "months_before": "{months} Months Before",
+    "one_day_before": "1 Day Before",
     "week_before": "1 Week Before",
-    "year_before": "1 Year Before",
-    "yesterday": "Yesterday"
+    "year_before": "1 Year Before"
   },
   "date_time_range_picker": {
     "last_1_month": "Last 1 month",
@@ -2559,8 +2559,10 @@
         "step2_title": "Checking connected address eligibility",
         "step3_title": "Sign Authentication Message",
         "success_message": "Successfully authenticated with Gnosis Pay",
+        "switch_to_gnosis": "Switch to Gnosis",
         "validating_address": "Validating address...",
-        "verifying_signature": "Verifying signature and generating token"
+        "verifying_signature": "Verifying signature and generating token",
+        "wrong_chain": "You are not connected to the Gnosis network. Please switch to continue."
       },
       "title": "Gnosis Pay"
     },
@@ -4482,9 +4484,7 @@
     "out_of_sync_alert": "Your history events data is out of sync. Please update your history events before generating a report.",
     "processing_alert": "History events are currently being processed. Please wait until processing is complete.",
     "report_period": "Report starting from {start} to {end}",
-    "settings_tooltip": "Open the accounting settings",
-    "upgrade": "{processed} total events have been processed starting from {start}.",
-    "upgrade2": "The limit of the free version has been reached. To get the full report please upgrade to {link}"
+    "settings_tooltip": "Open the accounting settings"
   },
   "profit_loss_reports": {
     "columns": {
@@ -4727,6 +4727,7 @@
   "swap_event_form": {
     "add_asset": "Add asset",
     "fee_notes": "Fee notes",
+    "fee_notes_indexed": "Fee notes #{index}",
     "receive_notes": "Receive notes",
     "spend_notes": "Spend notes",
     "unique_id": "Unique Identifier",
@@ -4938,7 +4939,8 @@
       "add_event_here": "Add new event here",
       "delete_transaction": "Delete transaction & events",
       "redecode_events": "Redecode events",
-      "redecode_page": "Redecode page"
+      "redecode_page": "Redecode page",
+      "redecode_with_options": "Redecode with options"
     },
     "cache_refresh": {
       "refreshing": "Refreshing protocol cache data"
@@ -4987,6 +4989,9 @@
           "title": "Ignore Transaction in Accounting"
         },
         "reset": {
+          "custom_events_title": "Custom Events",
+          "indexer_order_hint": "Change the order of indexers used when redecoding this transaction. This does not affect your settings.",
+          "indexer_order_title": "Indexer Order",
           "message": "There are custom events in this transaction",
           "options": {
             "keep_custom_events": "Don't remove my custom events",
@@ -5400,8 +5405,9 @@
     "restart": "rotki will restart in a moment to apply the update."
   },
   "upgrade_row": {
-    "events": "Processed {limit} out of {total} {label} from {from} until {to}. To view more please upgrade to {link}",
-    "events_premium": "Processed {limit} out of {total} {label} from {from} until {to}. To view more please {link}",
+    "events": "@:upgrade_row.first_line To view more please upgrade to {link}",
+    "events_premium": "@:upgrade_row.first_line To view more please {link}",
+    "first_line": "Processed {limit} out of {total} {label} from {from} until {to}.",
     "rotki_premium": "rotki Premium",
     "upgrade": "Displaying {limit} out of {total} {label}. To view more please upgrade to {link}",
     "upgrade_premium": "Displaying {limit} out of {total} {label}. To view more please {link}",

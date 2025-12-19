@@ -1,0 +1,65 @@
+diff --git a/rotkehlchen/api/rest.py b/rotkehlchen/api/rest.py
+index f8ec79bf53..6b943234c5 100644
+--- a/rotkehlchen/api/rest.py
++++ b/rotkehlchen/api/rest.py
+@@ -665,6 +665,7 @@ class RestAPI:
+         return self._return_external_services_response()
+ 
+     def add_external_services(self, services: list[ExternalServiceApiCredentials]) -> Response:
++        should_renable_etherscan = False
+         for x in services:
+             if x.service.premium_only() and not has_premium_check(self.rotkehlchen.premium):
+                 return api_response(
+@@ -676,6 +677,8 @@ class RestAPI:
+                     wrap_in_fail_result('GnosisPay credentials are set using /services/gnosispay/token'),  # noqa: E501
+                     status_code=HTTPStatus.FORBIDDEN,
+                 )
++            if x.service == ExternalService.ETHERSCAN:
++                should_renable_etherscan = True
+ 
+         with self.rotkehlchen.data.db.user_write() as write_cursor:
+             self.rotkehlchen.data.db.add_external_service_credentials(
+@@ -683,6 +686,9 @@ class RestAPI:
+                 credentials=services,
+             )
+ 
++        if should_renable_etherscan:
++            self.rotkehlchen.chains_aggregator.renable_etherscan_indixer()
++
+         return self._return_external_services_response()
+ 
+     def delete_external_services(self, services: list[ExternalService]) -> Response:
+diff --git a/rotkehlchen/chain/aggregator.py b/rotkehlchen/chain/aggregator.py
+index 8085517435..088acef229 100644
+--- a/rotkehlchen/chain/aggregator.py
++++ b/rotkehlchen/chain/aggregator.py
+@@ -53,6 +53,7 @@ from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalance
+ from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
+ from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
+ from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
++from rotkehlchen.chain.evm.types import EvmIndexer
+ from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
+ from rotkehlchen.chain.optimism.modules.extrafi.balances import (
+     ExtrafiBalances as ExtrafiBalancesOp,
+@@ -91,6 +92,8 @@ from rotkehlchen.types import (
+     CHAINS_WITH_NODES,
+     CHAINS_WITH_TRANSACTION_DECODERS,
+     CHAINS_WITH_TRANSACTIONS_TYPE,
++    EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
++    EVM_CHAINS_WITH_TRANSACTIONS,
+     SUPPORTED_BITCOIN_CHAINS_TYPE,
+     SUPPORTED_CHAIN_IDS,
+     SUPPORTED_EVM_CHAINS,
+@@ -993,6 +996,12 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
+     def get_evm_manager(self, chain_id: SUPPORTED_CHAIN_IDS) -> 'EvmManager':
+         return self.get_chain_manager(chain_id.to_blockchain())  # type: ignore[call-overload]  # SUPPORTED_CHAIN_IDS only includes chains with chain managers.
+ 
++    def renable_etherscan_indixer(self):
++        for chain in EVM_CHAINS_WITH_TRANSACTIONS:
++            chain_manager = self.get_chain_manager(chain)
++            if EvmIndexer.ETHERSCAN not in chain_manager.node_inquirer.available_indexers:
++                chain_manager.node_inquirer.available_indexers[EvmIndexer.ETHERSCAN] = chain_manager.node_inquirer.etherscan
++
+     def check_single_address_activity(
+             self,
+             address: ChecksumEvmAddress,

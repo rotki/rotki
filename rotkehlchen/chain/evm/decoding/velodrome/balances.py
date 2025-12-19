@@ -61,13 +61,15 @@ class VelodromeLikeBalances(ProtocolWithGauges):
 
     def query_balances(self) -> BalancesSheetType:
         balances = super().query_balances()
-        if len(addresses_with_deposits := self.addresses_with_deposits()) == 0:
+        if (
+            len(addresses_with_deposits := self.addresses_with_deposits()) == 0 or
+            len(addresses_to_token_ids := {
+                address: list(token_ids_set) for address, events in addresses_with_deposits.items()
+                if len(token_ids_set := {event.extra_data['token_id'] for event in events if event.extra_data is not None}) != 0  # noqa: E501
+            }) == 0
+        ):  # Skip voting escrow balances if there are no deposits with token ids in the extra data
             return balances
 
-        addresses_to_token_ids = {
-            address: [event.extra_data['token_id'] for event in events if event.extra_data is not None]  # noqa: E501
-            for address, events in addresses_with_deposits.items()
-        }
         voting_escrow_contract = EvmContract(
             address=self.voting_escrow_address,
             abi=VOTING_ESCROW_ABI,

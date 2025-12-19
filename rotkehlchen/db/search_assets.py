@@ -126,8 +126,10 @@ def search_assets_levenshtein(
         if search_nfts is True:
             search_result += _search_only_nfts_levenstein(cursor=cursor, filter_query=filter_query)
 
+    fiat_asset_type = AssetType.FIAT.serialize()
     sorted_search_result = [result for _, result in sorted(search_result, key=lambda item: (
-        int(item[1]['identifier'] not in NATIVE_TOKEN_IDS),  # prioritize native tokens
+        int(item[1]['asset_type'] != fiat_asset_type),  # prioritize fiat assets
+        int(item[1]['identifier'] not in NATIVE_TOKEN_IDS),  # then prioritize native tokens
         item[0],  # levenshtein distance
     ))]
     return sorted_search_result[:limit] if limit is not None else sorted_search_result

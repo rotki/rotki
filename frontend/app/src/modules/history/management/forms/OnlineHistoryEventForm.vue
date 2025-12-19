@@ -53,7 +53,7 @@ const rules = {
   asset: commonRules.createRequiredAssetRule(),
   eventSubtype: commonRules.createRequiredEventSubtypeRule(),
   eventType: commonRules.createRequiredEventTypeRule(),
-  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(),
+  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
   location: commonRules.createRequiredLocationRule(),
   locationLabel: commonRules.createExternalValidationRule(),
   notes: commonRules.createExternalValidationRule(),
@@ -146,13 +146,16 @@ async function save(): Promise<boolean> {
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
   const userNotes = get(notes).trim();
 
+  // Generate UUID for eventIdentifier if not present and not in edit mode
+  const generatedGroupIdentifier = !editable && !get(groupIdentifier) ? crypto.randomUUID() : get(groupIdentifier);
+
   const payload: NewOnlineHistoryEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
     asset: get(asset),
     entryType: HistoryEventEntryType.HISTORY_EVENT,
     eventSubtype: get(eventSubtype),
     eventType: get(eventType),
-    groupIdentifier: get(groupIdentifier),
+    groupIdentifier: generatedGroupIdentifier,
     location: get(location),
     locationLabel: get(locationLabel) || null,
     sequenceIndex: get(sequenceIndex) || '0',
@@ -200,6 +203,7 @@ onMounted(() => {
 
 defineExpose({
   save,
+  v$,
 });
 </script>
 
@@ -209,6 +213,7 @@ defineExpose({
       <DateTimePicker
         v-model="timestamp"
         :label="t('common.datetime')"
+        required
         persistent-hint
         max-date="now"
         variant="outlined"
@@ -223,6 +228,7 @@ defineExpose({
         :disabled="data.type !== 'add'"
         data-cy="location"
         :label="t('common.location')"
+        required
         :error-messages="toMessages(v$.location)"
         @blur="v$.location.$touch()"
       />
@@ -235,6 +241,7 @@ defineExpose({
       :disabled="data.type !== 'add'"
       data-cy="groupIdentifier"
       :label="t('transactions.events.form.event_identifier.label')"
+      :required="data.type === 'edit'"
       :error-messages="toMessages(v$.groupIdentifier)"
       @blur="v$.groupIdentifier.$touch()"
     />
@@ -278,6 +285,7 @@ defineExpose({
         integer
         data-cy="sequence-index"
         :label="t('transactions.events.form.sequence_index.label')"
+        required
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"
       />

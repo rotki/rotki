@@ -223,7 +223,7 @@ def test_counterparty_asset_mappings_errors(rotkehlchen_api_server: 'APIServer')
         response=response,
         status_code=HTTPStatus.CONFLICT,
         contained_in_msg=(
-            'Failed to add the counterparty asset mapping of AXS in hyperliquid because it already exists in the DB.'  # noqa: E501
+            'Failed to add the counterparty asset mapping AXS in hyperliquid because it already exists in the DB.'  # noqa: E501
         ),
     )
 
@@ -243,7 +243,7 @@ def test_counterparty_asset_mappings_errors(rotkehlchen_api_server: 'APIServer')
         response=response,
         status_code=HTTPStatus.CONFLICT,
         contained_in_msg=(
-            'Failed to delete the counterparty asset mapping of DNE in hyperliquid because it does not exist in the DB.'  # noqa: E501
+            'Failed to delete the counterparty asset mapping DNE in hyperliquid because it does not exist in the DB.'  # noqa: E501
         ),
     )
 
@@ -264,7 +264,7 @@ def test_counterparty_asset_mappings_errors(rotkehlchen_api_server: 'APIServer')
         response=response,
         status_code=HTTPStatus.CONFLICT,
         contained_in_msg=(
-            'Failed to update the counterparty asset mapping of DNE in hyperliquid because it does not exist in the DB.'  # noqa: E501
+            'Failed to update the counterparty asset mapping DNE in hyperliquid because it does not exist in the DB.'  # noqa: E501
         ),
     )
 

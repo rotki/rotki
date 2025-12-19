@@ -17,6 +17,7 @@ import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue'
 
 interface FormComponent {
   save: () => Promise<boolean>;
+  v$: { $errors: unknown[] };
 }
 
 interface HistoryEventFormProps {
@@ -74,6 +75,13 @@ const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.SWAP_EVENT]: SwapEventForm,
 };
 
+const errorCount = computed<number>(() => {
+  const formRef = get(form);
+  if (!formRef?.v$)
+    return 0;
+  return formRef.v$.$errors.length;
+});
+
 async function save() {
   if (!isDefined(form))
     return false;
@@ -94,6 +102,7 @@ watchImmediate(data, (data) => {
 });
 
 defineExpose({
+  errorCount,
   save,
 });
 </script>

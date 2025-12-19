@@ -81,10 +81,12 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
   const itemsVal = get(items);
   const excludesVal = get(excludes);
   const knownAssets = get(assets);
+  const currentValue = get(modelValue);
 
   const includeIgnored = get(showIgnored);
   const filtered = knownAssets.filter(({ identifier }: AssetInfoWithId) => {
-    const unIgnored = includeIgnored || !get(useIsAssetIgnored(identifier));
+    const isCurrentValue = identifier === currentValue;
+    const unIgnored = includeIgnored || isCurrentValue || !get(useIsAssetIgnored(identifier));
 
     const included = itemsVal && itemsVal.length > 0 ? itemsVal.includes(identifier) : true;
 
@@ -186,9 +188,18 @@ watchDebounced(search, async (search) => {
   await searchAssets(search, pending.signal);
 }, { debounce: 800 });
 
-watch(visibleAssets, () => {
+watch(visibleAssets, (_, oldVisibleAssets) => {
   const identifier = get(modelValue);
-  if (identifier && !getVisibleAsset(identifier))
+  if (!identifier || !oldVisibleAssets)
+    return;
+
+  // Only clear if the asset was previously visible and is now not visible
+  // This prevents clearing newly selected values that haven't been loaded yet
+  const wasVisible = oldVisibleAssets.some(asset => asset.identifier === identifier);
+  if (!wasVisible)
+    return;
+
+  if (!getVisibleAsset(identifier))
     onUpdateModelValue('');
 });
 

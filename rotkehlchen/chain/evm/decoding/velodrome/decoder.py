@@ -369,7 +369,10 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             ):  # increase amount locked
                 token_id = event.extra_data['token_id']  # type: ignore[index]  # it is always available
                 event.notes = f'Increase locked amount in veNFT-{token_id} by {event.amount} {self.token_symbol}'  # noqa: E501
-                event.extra_data = None
+                # The lock time on amount increases is zero, so remove it from the extra data.
+                # But keep the token_id for balance detection if the original deposit was from a
+                # different address or wasn't decoded for some reason.
+                event.extra_data.pop('lock_time', None)  # type: ignore[union-attr]  # extra_data is not None
                 return DEFAULT_EVM_DECODING_OUTPUT
 
         for tx_log in context.all_logs:  # Handle increase unlock time case

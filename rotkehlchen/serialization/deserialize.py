@@ -197,7 +197,7 @@ def deserialize_timestamp_from_intms(value: Any) -> Timestamp:
     """Deserializes a Timestamp from an integer timestamp in milliseconds.
     May raise DeserializationError if the data is not as expected.
     """
-    return Timestamp(int(deserialize_timestamp_ms_from_intms(value) / 1000))
+    return Timestamp(int(deserialize_timestamp_ms_from_intms(value) // 1000))
 
 
 def deserialize_fval(

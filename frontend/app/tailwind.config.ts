@@ -15,6 +15,7 @@ const componentsPlugin = plugin((pluginAPI: PluginAPI) => {
     },
     'body': {
       '@apply transition-all bg-rui-grey-50 dark:bg-[#121212] overflow-x-hidden h-[calc(100vh-4rem)] scroll-smooth scroll-pt-16 mt-16 overflow-y-auto': {},
+      '--w3m-z-index': '10000',
     },
     '@media only screen and (max-width: 767px)': {
       body: {

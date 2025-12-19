@@ -75,12 +75,14 @@ class ProtocolWithBalance(abc.ABC):
             tx_decoder: 'EVMTransactionDecoder',
             counterparty: PROTOCOLS_WITH_BALANCES,
             deposit_event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
+            excluded_addresses: list[ChecksumEvmAddress] | None = None,
     ):
         self.counterparty = counterparty
         self.event_db = DBHistoryEvents(evm_inquirer.database)
         self.evm_inquirer = evm_inquirer
         self.tx_decoder = tx_decoder
         self.deposit_event_types = deposit_event_types
+        self.excluded_addresses = excluded_addresses
 
     def addresses_with_activity(
             self,
@@ -97,6 +99,7 @@ class ProtocolWithBalance(abc.ABC):
             type_and_subtype_combinations=event_types,
             location=Location.from_chain_id(self.evm_inquirer.chain_id),
             entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.EVM_EVENT]),
+            excluded_addresses=self.excluded_addresses,
         )
         with self.event_db.db.conn.read_ctx() as cursor:
             events = self.event_db.get_history_events_internal(
@@ -135,8 +138,15 @@ class ProtocolWithGauges(ProtocolWithBalance):
             counterparty: PROTOCOLS_WITH_BALANCES,
             deposit_event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
             gauge_deposit_event_types: set[tuple[HistoryEventType, HistoryEventSubType]],
+            excluded_addresses: list[ChecksumEvmAddress] | None = None,
     ):
-        super().__init__(evm_inquirer=evm_inquirer, tx_decoder=tx_decoder, counterparty=counterparty, deposit_event_types=deposit_event_types)  # noqa: E501
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            tx_decoder=tx_decoder,
+            counterparty=counterparty,
+            deposit_event_types=deposit_event_types,
+            excluded_addresses=excluded_addresses,
+        )
         self.gauge_deposit_event_types = gauge_deposit_event_types
 
     def addresses_with_gauge_deposits(self) -> dict[ChecksumEvmAddress, list['EvmEvent']]:
@@ -231,9 +241,12 @@ class ProtocolWithGauges(ProtocolWithBalance):
         for address, events in self.addresses_with_gauge_deposits().items():
             # Create a mapping of a gauge to its token
             for event in events:
-                gauge_address = self.get_gauge_address(event)
-                if gauge_address is None:
+                if (
+                    (gauge_address := self.get_gauge_address(event)) is None or
+                    gauge_address in gauges_to_token  # avoid the call to resolve_to_evm_token by checking if we already processed the gauge  # noqa: E501
+                ):
                     continue
+
                 gauges_to_token[gauge_address] = event.asset.resolve_to_evm_token()
 
             balances[address] = self._query_gauges_balances(

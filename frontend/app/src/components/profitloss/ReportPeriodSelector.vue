@@ -174,31 +174,34 @@ const quarterModel = computed({
               required
               class="flex-wrap justify-center"
               active-color="primary"
+              data-cy="button-group-report-period-year"
             >
               <RuiButton
                 v-for="period in periods"
                 :key="period"
                 :color="year === period ? 'primary' : undefined"
-                class="px-4"
+                class="px-4 [&:last-child]:!rounded-r-none"
                 :model-value="period"
               >
                 {{ period }}
               </RuiButton>
-              <RuiButton
-                v-bind="attrs"
-                :color="isOlderYearSelected ? 'primary' : undefined"
-              >
-                <div class="flex items-center gap-2">
-                  <template v-if="isOlderYearSelected">
-                    {{ year }}
-                  </template>
-                  <RuiIcon
-                    name="lu-chevron-down"
-                    size="16"
-                  />
-                </div>
-              </RuiButton>
             </RuiButtonGroup>
+            <RuiButton
+              v-bind="attrs"
+              class="!rounded-l-none border-l border-rui-grey-400"
+              :color="isOlderYearSelected ? 'primary' : undefined"
+              data-cy="button-older-years"
+            >
+              <div class="flex items-center gap-2">
+                <template v-if="isOlderYearSelected">
+                  {{ year }}
+                </template>
+                <RuiIcon
+                  name="lu-chevron-down"
+                  size="16"
+                />
+              </div>
+            </RuiButton>
           </template>
 
           <div class="flex flex-col py-2">
@@ -217,6 +220,7 @@ const quarterModel = computed({
         <RuiButton
           class="px-4"
           :color="isAllTime ? 'primary' : undefined"
+          data-cy="button-all-time"
           @click="selectAllTime()"
         >
           {{ t('generate.all_time') }}
@@ -225,6 +229,7 @@ const quarterModel = computed({
         <RuiButton
           class="px-4"
           :color="isCustom ? 'primary' : undefined"
+          data-cy="button-custom"
           @click="yearModel = 'custom'"
         >
           {{ t('generate.custom_selection') }}
@@ -243,6 +248,7 @@ const quarterModel = computed({
         required
         class="flex-wrap justify-center"
         active-color="primary"
+        data-cy="button-group-quarter"
       >
         <RuiButton
           v-for="subPeriod in subPeriods"

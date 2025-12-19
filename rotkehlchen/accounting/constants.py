@@ -137,6 +137,11 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.RECEIVE: {DEFAULT: EventCategory.SWAP_IN},
         HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
     },
+    HistoryEventType.MARGIN: {
+        HistoryEventSubType.PROFIT: {DEFAULT: EventCategory.PROFIT},
+        HistoryEventSubType.LOSS: {DEFAULT: EventCategory.LOSS},
+        HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
+    },
 }
 
 EVENT_GROUPING_ORDER = {  # Determines how to group events when serializing for the api
@@ -342,6 +347,9 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.ACCOUNT_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='account withdraw',
         icon='lu-download',
+    )}, EventCategory.PROFIT: {DEFAULT: EventCategoryDetails(
+        label='profit',
+        icon='lu-trending-up',
     )},
 }
 

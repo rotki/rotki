@@ -1,7 +1,7 @@
 import datetime
+import operator
 from collections import defaultdict
 from contextlib import ExitStack
-from functools import wraps
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import patch
@@ -20,9 +20,7 @@ from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
 from rotkehlchen.chain.arbitrum_one.modules.gmx.constants import CPT_GMX
 from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.balances import HyperliquidBalances
 from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import CPT_HYPER
-from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
-    ThegraphBalances as ThegraphBalancesArbitrumOne,
-)
+from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.arbitrum_one.modules.umami.balances import UmamiBalances
 from rotkehlchen.chain.arbitrum_one.modules.umami.constants import CPT_UMAMI
 from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
@@ -35,6 +33,7 @@ from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.blur.constants import BLUR_IDENTIFIER, CPT_BLUR
 from rotkehlchen.chain.ethereum.modules.convex.balances import CPT_CONVEX, ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
+from rotkehlchen.chain.ethereum.modules.curve.constants import VOTING_ESCROW
 from rotkehlchen.chain.ethereum.modules.curve.crvusd.balances import CurveCrvusdBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
@@ -48,7 +47,6 @@ from rotkehlchen.chain.ethereum.modules.pendle.balances import PendleBalances
 from rotkehlchen.chain.ethereum.modules.pendle.constants import PENDLE_TOKEN
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.safe.constants import CPT_SAFE, SAFE_TOKEN_ID
-from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE, CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
@@ -83,12 +81,12 @@ from rotkehlchen.chain.optimism.modules.walletconnect.constants import (
 from rotkehlchen.constants.assets import (
     A_AAVE,
     A_ARB,
+    A_CRV,
     A_CVX,
     A_ENS,
     A_ETH,
     A_GLM,
     A_GMX,
-    A_GRT,
     A_GRT_ARB,
     A_STETH,
     A_USDC,
@@ -98,11 +96,14 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_last_queried_ts_by_key,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_curve_crvusd import (
     fixture_crvusd_controller,  # noqa: F401
 )
@@ -119,12 +120,15 @@ from rotkehlchen.tests.utils.ethereum import (
     get_decoded_events_of_transaction,
     wait_until_all_nodes_connected,
 )
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
+    Location,
     Price,
     SupportedBlockchain,
+    TimestampMS,
     TokenKind,
     deserialize_evm_tx_hash,
 )
@@ -170,6 +174,43 @@ def test_curve_balances(
         amount=FVal('2402.233522210805651105'),
         value=FVal('3603.3502833162084766575'),
     )
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [['0x21Ab0875611da0235BC5b6405b8A08268D859700']])
+def test_curve_locked_crv_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Ensure locked CRV balances stored in the veCRV escrow are detected."""
+    lock_event = EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TimestampMS(0),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        asset=A_CRV,
+        amount=(locked_crv_amount := FVal('311.05616434049212239')),
+        location_label=(address := ethereum_accounts[0]),
+        counterparty=CPT_CURVE,
+        address=VOTING_ESCROW,
+    )
+    events_db = DBHistoryEvents(ethereum_inquirer.database)
+    with ethereum_inquirer.database.conn.write_ctx() as write_cursor:
+        events_db.add_history_event(write_cursor=write_cursor, event=lock_event)
+
+        curve_balances = CurveBalances(
+            evm_inquirer=ethereum_inquirer,
+            tx_decoder=ethereum_transaction_decoder,
+        ).query_balances()
+        user_balance = curve_balances[address]
+        assert user_balance.assets[A_CRV][CPT_CURVE] == Balance(
+            amount=locked_crv_amount,
+            value=locked_crv_amount * CURRENT_PRICE_MOCK,
+        )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -292,52 +333,20 @@ def test_velodrome_v2_staking_balances(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_accounts', [['0x72296d54B83491c59236E45F19b6fdE8a2B2771b']])
-def test_thegraph_balances(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_accounts: list[ChecksumEvmAddress],
-        inquirer: 'Inquirer',  # pylint: disable=unused-argument
-) -> None:
-    """Check that balances of GRT currently delegated to indexers are properly detected."""
-    tx_hash = deserialize_evm_tx_hash('0x81cdf7a4201d3e89c9f3a8d3ae18e3cb7ae0e06a5cbc514f1e41504b9b263667')  # noqa: E501
-    amount = '6626.873960369737'
-    _, tx_decoder = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hash,
-    )
-    thegraph_balances_inquirer = ThegraphBalances(
-        evm_inquirer=ethereum_inquirer,
-        tx_decoder=tx_decoder,
-    )
-    thegraph_balances = thegraph_balances_inquirer.query_balances()
-    user_balance = thegraph_balances[ethereum_accounts[0]]
-    assert user_balance.assets[A_GRT][CPT_THEGRAPH] == Balance(
-        amount=FVal(amount),
-        value=FVal(amount) * FVal(1.5),
-    )
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xA9728D95567410555557a54EcA320e5E8bEa36a5']])
-@pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(get_arbitrum_allthatnode(weight=ONE, owned=True),)])  # noqa: E501
 def test_thegraph_balances_arbitrum_one(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list[ChecksumEvmAddress],
-        arbitrum_one_manager_connect_at_start,
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
     """Check that balances of GRT currently delegated to indexers are properly detected."""
-    wait_until_all_nodes_connected(
-        connect_at_start=arbitrum_one_manager_connect_at_start,
-        evm_inquirer=arbitrum_one_inquirer,
-    )
-    amount = FVal('25.607552758075613')
+    amount = FVal('32.04878202377411')
     tx_hash = deserialize_evm_tx_hash('0x3c846f305330969fb0ddb87c5ae411b4e9692f451a7ff3237b6f71020030c7d1')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=tx_hash,
     )
-    thegraph_balances_inquirer = ThegraphBalancesArbitrumOne(
+    thegraph_balances_inquirer = ThegraphBalances(
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -360,7 +369,7 @@ def test_thegraph_balances_vested_arbitrum_one(
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
     """Check that balances of GRT currently vested are properly detected."""
-    expected_grt_balance = FVal('246914.881548572905')
+    expected_grt_balance = FVal('300243.11331623966')
     # decode the delegation transfer event which has the vested contract address as delegator_l2
     for tx_hash in (
         '0x48321bb00e5c5b67f080991864606dbc493051d20712735a579d7ae31eca3d78',
@@ -373,28 +382,18 @@ def test_thegraph_balances_vested_arbitrum_one(
             ),
         )
 
-    def mock_process_staking_events(self, events):
-        original_process_staking_events = ThegraphBalances.process_staking_events
+    original_get_delegations = ThegraphBalances._get_delegations
 
-        @wraps(original_process_staking_events)
-        def wrapper(*args, **kwargs):
-            result = original_process_staking_events(self, *args, **kwargs)
-            # Sort the result tuples in alphabetical order to keep it same each run
-            return sorted(result)
+    def mock_get_delegations(self):
+        """Mock _get_delegations to ensure deterministic ordering for VCR"""
+        delegations = original_get_delegations(self)
+        return sorted(delegations, key=operator.itemgetter(0, 1, 2, 3))
 
-        return wrapper(events)
-
-    # Patch it to guarantee order of returned list and thus
-    # making the test's remote calls deterministic for VCR
-    with patch(
-        'rotkehlchen.chain.arbitrum_one.modules.thegraph.balances.ThegraphBalances.process_staking_events',
-        new=mock_process_staking_events,
-    ):
-        thegraph_balances_inquirer = ThegraphBalancesArbitrumOne(
+    with patch.object(ThegraphBalances, '_get_delegations', mock_get_delegations):
+        thegraph_balances = ThegraphBalances(
             evm_inquirer=arbitrum_one_inquirer,
             tx_decoder=arbitrum_one_transaction_decoder,
-        )
-        thegraph_balances = thegraph_balances_inquirer.query_balances()
+        ).query_balances()
     assert thegraph_balances[arbitrum_one_accounts[0]].assets[A_GRT_ARB][CPT_THEGRAPH] == Balance(
         amount=expected_grt_balance,
         value=expected_grt_balance * FVal(1.5),

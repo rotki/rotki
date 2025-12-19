@@ -213,12 +213,17 @@ class Blockscout(EtherscanLikeApi):
             params=query_args,
             timeout=timeout,
         )
+        if str(response.get('status')) == '2':  # Missing data, fall back to other indexers
+            raise RemoteError(f'Blockscout is missing data for {query_args}: {response}')
+
         if (
             (message := response.get('message')) is not None and
             message.startswith('No') and
             message.endswith('found')
         ):  # tokentx "No token transfers found", "No internal transactions found" and "No transactions found"  # noqa: E501
             return []
+        elif message == 'Contract source code not verified':
+            return None
         elif message != 'OK':
             raise RemoteError(f'Non ok response from blockscout v1 with {query_args}: {response}')
 

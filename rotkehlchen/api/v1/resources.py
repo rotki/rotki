@@ -208,7 +208,7 @@ from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockcha
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.evm.types import EvmIndexer, NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, ReminderEntry
@@ -724,12 +724,14 @@ class TransactionsDecodingResource(BaseMethodView):
             chain: CHAINS_WITH_TX_DECODING_TYPE,
             tx_refs: list[EVMTxHash | Signature],
             delete_custom: bool,
+            custom_indexers_order: list[EvmIndexer] | None = None,
     ) -> Response:
         return self.rest_api.decode_given_transactions(
             async_query=async_query,
             chain=chain,
             tx_refs=tx_refs,
             delete_custom=delete_custom,
+            custom_indexers_order=custom_indexers_order,
         )
 
     @require_loggedin_user()

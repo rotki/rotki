@@ -135,6 +135,7 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
         'maker',
         'eth withdrawals',
         'eth blocks',
+        'eth validators data',
         'spark',
         'balancer v1',
         'balancer v2',
@@ -185,6 +186,11 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             'delete_dynamic_caches',
             new=MagicMock(),
         ))
+        patched_eth_validators_cache = stack.enter_context(patch.object(
+            rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn,
+            'write_ctx',
+            new=MagicMock(),
+        ))
         patched_balancer_query = stack.enter_context(patch(
             'rotkehlchen.api.rest.query_balancer_data',
             new=MagicMock(),
@@ -206,6 +212,7 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             (ProtocolsWithCache.SPARK, patched_spark_assets, 1),
             (ProtocolsWithCache.ETH_WITHDRAWALS, patched_eth_withdrawals_cache, 1),
             (ProtocolsWithCache.ETH_BLOCKS, patched_eth_withdrawals_cache, 1),
+            (ProtocolsWithCache.ETH_VALIDATORS_DATA, patched_eth_validators_cache, 1),
             (ProtocolsWithCache.BALANCER_V1, patched_balancer_query, 3),  # supported on 3 chains
             (ProtocolsWithCache.BALANCER_V2, patched_balancer_query, 6),  # supported on 6 chains
             (ProtocolsWithCache.BALANCER_V3, patched_balancer_query, 5),  # supported on 5 chains

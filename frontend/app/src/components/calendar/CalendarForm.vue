@@ -15,7 +15,7 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { isBlockchain } from '@/types/blockchain/chains';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { useRefPropVModel } from '@/utils/model';
+import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<CalendarEvent>({ required: true });
@@ -29,7 +29,7 @@ defineProps<{
 const { t } = useI18n({ useScope: 'global' });
 
 const name = useRefPropVModel(modelValue, 'name');
-const description = useRefPropVModel(modelValue, 'description');
+const description = refOptional(useRefPropVModel(modelValue, 'description'), '');
 const counterparty = useRefPropVModel(modelValue, 'counterparty');
 const color = useRefPropVModel(modelValue, 'color');
 const autoDelete = useRefPropVModel(modelValue, 'autoDelete');

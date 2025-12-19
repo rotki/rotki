@@ -3,7 +3,7 @@ import json
 import logging
 import operator
 from collections import defaultdict
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from contextlib import suppress
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal
@@ -18,7 +18,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_binance
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import DAY_IN_SECONDS, ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import BINANCE_MARKETS_KEY
@@ -92,6 +92,10 @@ API_TIME_INTERVAL_CONSTRAINT_TS: Final = 7689600  # 89 days
 
 # this determines the length of the data returned, 100 is the maximum value possible.
 BINANCE_SIMPLE_EARN_HISTORY_PAGE_SIZE: Final = 100
+
+# Convert API has 30-day max interval constraint
+CONVERT_API_TIME_DELTA: Final = 30 * DAY_IN_SECONDS
+CONVERT_API_MAX_LIMIT: Final = 1000
 
 V3_METHODS: Final = (
     'account',
@@ -464,6 +468,8 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 result = result['data']
             elif 'rows' in result:
                 result = result['rows']
+            elif 'list' in result:
+                result = result['list']
             elif 'total' in result and result['total'] == 0:
                 # This is a completely undocumented behavior of their api seen in the wild.
                 # At least one endpoint (/sapi/v1/fiat/payments) can omit the data
@@ -1263,9 +1269,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         queried_pair=symbol,
                     )
 
-        fiat_payments = self._query_online_fiat_payments(start_ts=start_ts, end_ts=end_ts)
-        if fiat_payments:
+        if len(fiat_payments := self._query_online_fiat_payments(start_ts=start_ts, end_ts=end_ts)) != 0:  # noqa: E501
             events.extend(fiat_payments)
+
+        if len(convert_trades := self._query_online_convert_trades(start_ts=start_ts, end_ts=end_ts)) != 0:  # noqa: E501
+            events.extend(convert_trades)
+
+        if len(fiat_payments) != 0 or len(convert_trades) != 0:
             events.sort(key=lambda x: x.timestamp)
 
         return events
@@ -1310,6 +1320,102 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         return events
 
+    def _query_online_convert_trades(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> list[SwapEvent]:
+        """Query Binance Convert trades using the convert/tradeFlow endpoint.
+        Docs: https://developers.binance.com/docs/convert/trade/Get-Convert-Trade-History
+        """
+        if self.location == Location.BINANCEUS:
+            return []  # Binance US does not support the convert API endpoint as of 2025-12-17
+
+        convert_trades = self._api_query_list_within_time_delta(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            time_delta=CONVERT_API_TIME_DELTA,
+            api_type='sapi',
+            method='convert/tradeFlow',
+            additional_options={'limit': CONVERT_API_MAX_LIMIT},
+        )
+        log.debug(f'{self.name} convert trades history result', results_num=len(convert_trades))
+
+        events = []
+        for raw_convert in convert_trades:
+            events.extend(self._deserialize_convert_trade(raw_data=raw_convert))
+
+        return events
+
+    @staticmethod
+    def handle_deserialization_errors(
+            operation_type: Literal['convert trade', 'fiat payment', 'fiat deposit/withdrawal', 'deposit/withdrawal'],  # noqa: E501
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        """Decorator to handle common deserialization errors for Binance operations."""
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            def wrapper(self: 'Binance', raw_data: dict[str, Any], *args: Any, **kwargs: Any) -> Any:  # noqa: E501
+                try:
+                    return func(self, raw_data, *args, **kwargs)
+                except UnknownAsset as e:
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details=operation_type,
+                    )
+                except UnsupportedAsset as e:
+                    log.error(
+                        f'Found {self.location!s} {operation_type} with unsupported asset '
+                        f'{e.identifier}. Ignoring it.',
+                    )
+                except (DeserializationError, KeyError) as e:
+                    msg = str(e)
+                    if isinstance(e, KeyError):
+                        msg = f'Missing key entry for {msg}.'
+                    self.msg_aggregator.add_error(
+                        f'Error processing a {self.location!s} {operation_type}. Check logs '
+                        f'for details. Ignoring it.',
+                    )
+                    log.error(
+                        f'Error processing a {self.location!s} {operation_type}',
+                        raw_data=raw_data,
+                        error=msg,
+                    )
+
+                return []
+
+            return wrapper
+        return decorator
+
+    @handle_deserialization_errors('convert trade')
+    def _deserialize_convert_trade(
+            self,
+            raw_data: dict[str, Any],
+    ) -> list[SwapEvent]:
+        """Processes a single convert trade from Binance and deserializes it into SwapEvents.
+        Can log error/warning and return an empty list if something went wrong at deserialization
+        """
+        if raw_data.get('orderStatus') != 'SUCCESS':
+            log.debug(f'Found {self.location!s} unsuccessful convert trade with data {raw_data}. Ignoring it.')  # noqa: E501
+            return []
+
+        return create_swap_events(
+            timestamp=deserialize_timestamp_ms_from_intms(raw_data['createTime']),
+            location=self.location,
+            spend=AssetAmount(
+                asset=asset_from_binance(raw_data['fromAsset']),
+                amount=deserialize_fval_force_positive(raw_data['fromAmount']),
+            ),
+            receive=AssetAmount(
+                asset=asset_from_binance(raw_data['toAsset']),
+                amount=deserialize_fval_force_positive(raw_data['toAmount']),
+            ),
+            location_label=self.name,
+            group_identifier=create_group_identifier_from_unique_id(
+                location=self.location,
+                unique_id=str(raw_data['orderId']),
+            ),
+        )
+
+    @handle_deserialization_errors('fiat payment')
     def _deserialize_fiat_payment(
             self,
             raw_data: dict[str, Any],
@@ -1319,190 +1425,103 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         Can log error/warning and return an empty list if something went wrong at deserialization
         """
-        try:
-            if 'status' not in raw_data or raw_data['status'] != 'Completed':
-                log.error(f'Found {self.location!s} fiat payment with failed status. Ignoring it.')
-                return []
+        if 'status' not in raw_data or raw_data['status'] != 'Completed':
+            log.error(f'Found {self.location!s} fiat payment with failed status. Ignoring it.')
+            return []
 
-            spend, receive = get_swap_spend_receive(
-                is_buy=is_buy,
-                base_asset=asset_from_binance(raw_data['cryptoCurrency']),
-                quote_asset=(fiat_asset := asset_from_binance(raw_data['fiatCurrency'])),
-                amount=deserialize_fval_force_positive(raw_data['obtainAmount']),
-                rate=deserialize_price(raw_data['price']),
-            )
-            unique_id = get_key_if_has_val(raw_data, 'orderNo')
-            return create_swap_events(
-                timestamp=deserialize_timestamp_ms_from_intms(raw_data['createTime']),
+        spend, receive = get_swap_spend_receive(
+            is_buy=is_buy,
+            base_asset=asset_from_binance(raw_data['cryptoCurrency']),
+            quote_asset=(fiat_asset := asset_from_binance(raw_data['fiatCurrency'])),
+            amount=deserialize_fval_force_positive(raw_data['obtainAmount']),
+            rate=deserialize_price(raw_data['price']),
+        )
+        unique_id = get_key_if_has_val(raw_data, 'orderNo')
+        return create_swap_events(
+            timestamp=deserialize_timestamp_ms_from_intms(raw_data['createTime']),
+            location=self.location,
+            spend=spend,
+            receive=receive,
+            fee=AssetAmount(
+                asset=fiat_asset,
+                amount=deserialize_fval(raw_data['totalFee']),
+            ),
+            location_label=self.name,
+            group_identifier=create_group_identifier_from_unique_id(
                 location=self.location,
-                spend=spend,
-                receive=receive,
-                fee=AssetAmount(
-                    asset=fiat_asset,
-                    amount=deserialize_fval(raw_data['totalFee']),
-                ),
-                location_label=self.name,
-                group_identifier=create_group_identifier_from_unique_id(
-                    location=self.location,
-                    unique_id=unique_id,
-                ) if unique_id else f'{uuid4().hex}',
-            )
-        except UnknownAsset as e:
-            self.send_unknown_asset_message(
-                asset_identifier=e.identifier,
-                details='fiat payment',
-            )
-        except UnsupportedAsset as e:
-            log.error(
-                f'Found {self.location!s} fiat payment with unsupported asset '
-                f'{e.identifier}. Ignoring it.',
-            )
-        except (DeserializationError, KeyError) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'Missing key entry for {msg}.'
-            self.msg_aggregator.add_error(
-                f'Error processing a {self.location!s} fiat payment. Check logs '
-                f'for details. Ignoring it.',
-            )
-            log.error(
-                f'Error processing a {self.location!s} fiat payment',
-                asset_movement=raw_data,
-                error=msg,
-            )
+                unique_id=unique_id,
+            ) if unique_id else f'{uuid4().hex}',
+        )
 
-        return []
-
+    @handle_deserialization_errors('fiat deposit/withdrawal')
     def _deserialize_fiat_movement(
             self,
             raw_data: dict[str, Any],
             event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
-    ) -> list[AssetMovement] | None:
+    ) -> list[AssetMovement]:
         """Processes a single deposit/withdrawal from binance and deserializes it
 
-        Can log error/warning and return None if something went wrong at deserialization
+        Can log error/warning and return an empty list if something went wrong at deserialization
         """
-        try:
-            if 'status' not in raw_data or raw_data['status'] not in {'Successful', 'Finished'}:
-                log.error(
-                    f'Found {self.location!s} fiat deposit/withdrawal with failed status. Ignoring it.',  # noqa: E501
-                )
-                return None
-
-            asset = asset_from_binance(raw_data['fiatCurrency'])
-            tx_id = get_key_if_has_val(raw_data, 'orderNo')
-            timestamp = ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['createTime']))
-            fee = deserialize_fval(raw_data['totalFee'])
-            amount = deserialize_fval_force_positive(raw_data['amount'])
-            address = deserialize_asset_movement_address(raw_data, 'address', asset)
-        except UnknownAsset as e:
-            self.send_unknown_asset_message(
-                asset_identifier=e.identifier,
-                details='fiat deposit/withdrawal',
-            )
-        except UnsupportedAsset as e:
+        if 'status' not in raw_data or raw_data['status'] not in {'Successful', 'Finished'}:
             log.error(
-                f'Found {self.location!s} fiat deposit/withdrawal with unsupported asset '
-                f'{e.identifier}. Ignoring it.',
+                f'Found {self.location!s} fiat deposit/withdrawal with failed status. Ignoring it.',  # noqa: E501
             )
-        except (DeserializationError, KeyError) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'Missing key entry for {msg}.'
-            self.msg_aggregator.add_error(
-                f'Error processing a {self.location!s} fiat deposit/withdrawal. Check logs '
-                f'for details. Ignoring it.',
-            )
-            log.error(
-                f'Error processing a {self.location!s} fiat deposit/withdrawal',
-                asset_movement=raw_data,
-                error=msg,
-            )
-        else:
-            return create_asset_movement_with_fee(
-                location=self.location,
-                location_label=self.name,
-                event_type=event_type,
-                timestamp=timestamp,
-                asset=asset,
-                amount=amount,
-                fee=AssetAmount(asset=asset, amount=fee),
-                unique_id=tx_id,
-                extra_data=maybe_set_transaction_extra_data(
-                    address=address,
-                    transaction_id=tx_id,
-                ),
-            )
+            return []
 
-        return None
+        return create_asset_movement_with_fee(
+            location=self.location,
+            location_label=self.name,
+            event_type=event_type,
+            timestamp=ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['createTime'])),
+            asset=(asset := asset_from_binance(raw_data['fiatCurrency'])),
+            amount=deserialize_fval_force_positive(raw_data['amount']),
+            fee=AssetAmount(asset=asset, amount=deserialize_fval(raw_data['totalFee'])),
+            unique_id=(tx_id := get_key_if_has_val(raw_data, 'orderNo')),
+            extra_data=maybe_set_transaction_extra_data(
+                address=deserialize_asset_movement_address(raw_data, 'address', asset),
+                transaction_id=tx_id,
+            ),
+        )
 
-    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> list[AssetMovement] | None:
+    @handle_deserialization_errors('deposit/withdrawal')
+    def _deserialize_asset_movement(self, raw_data: dict[str, Any]) -> list[AssetMovement]:
         """Processes a single deposit/withdrawal from binance and deserializes it
 
-        Can log error/warning and return None if something went wrong at deserialization
+        Can log error/warning and return an empty list if something went wrong at deserialization
         """
-        try:
-            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
-            if 'insertTime' in raw_data:
-                event_type = HistoryEventType.DEPOSIT
-                timestamp = ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['insertTime']))
-                fee = ZERO
-            else:
-                event_type = HistoryEventType.WITHDRAWAL
-                timestamp = ts_sec_to_ms(deserialize_timestamp_from_date(
-                    date=raw_data['applyTime'],
-                    formatstr='%Y-%m-%d %H:%M:%S',
-                    location='binance withdrawal',
-                    skip_milliseconds=True,
-                ))
-                fee = deserialize_fval(raw_data['transactionFee'])
-
-            asset = asset_from_binance(raw_data['coin'])
-            tx_id = get_key_if_has_val(raw_data, 'txId')
-            internal_id = get_key_if_has_val(raw_data, 'id')
-            unique_id = str(internal_id) if internal_id else str(tx_id) if tx_id else ''
-            address = deserialize_asset_movement_address(raw_data, 'address', asset)
-            amount = deserialize_fval_force_positive(raw_data['amount'])
-        except UnknownAsset as e:
-            self.send_unknown_asset_message(
-                asset_identifier=e.identifier,
-                details='deposit/withdrawal',
-            )
-        except UnsupportedAsset as e:
-            log.error(
-                f'Found {self.location!s} deposit/withdrawal with unsupported asset '
-                f'{e.identifier}. Ignoring it.',
-            )
-        except (DeserializationError, KeyError) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'Missing key entry for {msg}.'
-            self.msg_aggregator.add_error(
-                f'Error processing a {self.location!s} deposit/withdrawal. Check logs '
-                f'for details. Ignoring it.',
-            )
-            log.error(
-                f'Error processing a {self.location!s} deposit/withdrawal',
-                asset_movement=raw_data,
-                error=msg,
-            )
+        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
+        if 'insertTime' in raw_data:
+            event_type = HistoryEventType.DEPOSIT
+            timestamp = ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['insertTime']))
+            fee = ZERO
         else:
-            return create_asset_movement_with_fee(
-                location=self.location,
-                location_label=self.name,
-                event_type=event_type,
-                timestamp=timestamp,
-                asset=asset,
-                amount=amount,
-                fee=AssetAmount(asset=asset, amount=fee),
-                unique_id=unique_id,
-                extra_data=maybe_set_transaction_extra_data(
-                    address=address,
-                    transaction_id=tx_id,
-                ),
-            )
+            event_type = HistoryEventType.WITHDRAWAL
+            timestamp = ts_sec_to_ms(deserialize_timestamp_from_date(
+                date=raw_data['applyTime'],
+                formatstr='%Y-%m-%d %H:%M:%S',
+                location='binance withdrawal',
+                skip_milliseconds=True,
+            ))
+            fee = deserialize_fval(raw_data['transactionFee'])
 
-        return None
+        tx_id = get_key_if_has_val(raw_data, 'txId')
+        internal_id = get_key_if_has_val(raw_data, 'id')
+        unique_id = str(internal_id) if internal_id else str(tx_id) if tx_id else ''
+        return create_asset_movement_with_fee(
+            location=self.location,
+            location_label=self.name,
+            event_type=event_type,
+            timestamp=timestamp,
+            asset=(asset := asset_from_binance(raw_data['coin'])),
+            amount=deserialize_fval_force_positive(raw_data['amount']),
+            fee=AssetAmount(asset=asset, amount=fee),
+            unique_id=unique_id,
+            extra_data=maybe_set_transaction_extra_data(
+                address=deserialize_asset_movement_address(raw_data, 'address', asset),
+                transaction_id=tx_id,
+            ),
+        )
 
     def _api_query_list_within_time_delta(
             self,
@@ -1513,6 +1532,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             method: Literal[
                 'capital/deposit/hisrec',
                 'capital/withdraw/history',
+                'convert/tradeFlow',
                 'fiat/orders',
                 'fiat/payments',
                 'simple-earn/flexible/history/rewardsRecord',
@@ -1644,17 +1664,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         movements = []
         for raw_movement in deposits + withdraws:
-            movement = self._deserialize_asset_movement(raw_movement)
-            if movement:
-                movements.extend(movement)
+            movements.extend(self._deserialize_asset_movement(raw_movement))
 
         for idx, fiat_movement in enumerate(fiat_deposits + fiat_withdraws):
-            movement = self._deserialize_fiat_movement(
+            movements.extend(self._deserialize_fiat_movement(
                 raw_data=fiat_movement,
                 event_type=HistoryEventType.DEPOSIT if idx < len(fiat_deposits) else HistoryEventType.WITHDRAWAL,  # noqa: E501
-            )
-            if movement:
-                movements.extend(movement)
+            ))
 
         return movements
 
