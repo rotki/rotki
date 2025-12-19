@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { gnosis } from '@reown/appkit/networks';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import ProviderSelectionDialog from '@/components/wallets/ProviderSelectionDialog.vue';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
@@ -6,6 +7,7 @@ import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unified-providers';
 import { useMessageStore } from '@/store/message';
 import { getPublicServiceImagePath } from '@/utils/file';
+import { logger } from '@/utils/logging';
 import { AuthStep, GnosisPayError } from '../types';
 import { useGnosisPayAuthState, useGnosisPayAuthSteps } from '../use-gnosis-pay-auth-state';
 import { useGnosisPaySigning } from '../use-gnosis-pay-signing';
@@ -93,8 +95,12 @@ const { currentStep, isStepComplete, isStepCurrent } = useGnosisPayAuthSteps(
 );
 
 // Wallet providers
-const { isDisconnecting, preparing }
-  = storeToRefs(useWalletStore());
+const walletStore = useWalletStore();
+const { connectedChainId, isDisconnecting, preparing } = storeToRefs(walletStore);
+const { switchNetwork } = walletStore;
+
+const isOnGnosisChain = computed<boolean>(() => get(connectedChainId) === gnosis.id);
+const switchingNetwork = ref<boolean>(false);
 
 const unifiedProviders = useUnifiedProviders();
 const { availableProviders, isDetecting: detectingProviders, showProviderSelection } = unifiedProviders;
@@ -143,7 +149,25 @@ const validationErrorMessage = computed<string>(() => {
   }
 });
 
-const primaryActionDisabled = logicOr(signingInProgress, logicNot(connectedAddress));
+const primaryActionDisabled = logicOr(signingInProgress, logicNot(connectedAddress), logicNot(isOnGnosisChain));
+
+async function switchToGnosis(): Promise<void> {
+  try {
+    set(switchingNetwork, true);
+    await switchNetwork(BigInt(gnosis.id));
+  }
+  catch (error: any) {
+    logger.error('Failed to switch to Gnosis network:', error);
+    setError(GnosisPayError.CONNECTION_FAILED, { message: error.message });
+  }
+  finally {
+    set(switchingNetwork, false);
+  }
+}
+
+function cancelSigning(): void {
+  set(signingInProgress, false);
+}
 
 async function onConnectClicked(): Promise<void> {
   if (get(isWalletConnected))
@@ -324,7 +348,12 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
           <GnosisPaySignMessage
             :signing-in-progress="signingInProgress"
             :primary-action-disabled="primaryActionDisabled"
+            :is-on-gnosis-chain="isOnGnosisChain"
+            :is-wallet-connected="isWalletConnected"
+            :switching-network="switchingNetwork"
             @sign-in="signInWithEthereum()"
+            @cancel="cancelSigning()"
+            @switch-to-gnosis="switchToGnosis()"
           />
         </GnosisPayAuthStep>
       </template>

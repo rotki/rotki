@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Content, JSONContent, JsonEditor, TextContent } from 'vanilla-jsoneditor';
-import { assert } from '@rotki/common';
 import { debounce } from 'es-toolkit';
 
 const modelValue = defineModel<Record<string, any>>({ required: true });
@@ -23,6 +22,10 @@ watch(modelValue, (newValue: any) => {
 });
 
 onMounted(async () => {
+  const container = get(jsonEditorContainer);
+  if (!container)
+    return;
+
   const { createJSONEditor } = await import('vanilla-jsoneditor');
 
   const onChange = debounce((updatedContent: Content) => {
@@ -30,8 +33,6 @@ onMounted(async () => {
       ? (updatedContent as JSONContent).json
       : (updatedContent as TextContent).text);
   }, 100);
-
-  assert(isDefined(jsonEditorContainer));
 
   const newJsonEditor = createJSONEditor({
     props: {
@@ -41,7 +42,7 @@ onMounted(async () => {
       navigationBar: false,
       onChange,
     },
-    target: get(jsonEditorContainer),
+    target: container,
   });
 
   set(jsonEditor, newJsonEditor);
