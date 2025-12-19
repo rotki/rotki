@@ -3624,6 +3624,10 @@ class MatchAssetMovementsResource(BaseMethodView):
     post_schema = MatchAssetMovementsSchema()
 
     @require_loggedin_user()
+    def get(self) -> Response:
+        return self.rest_api.get_unmatched_asset_movements()
+
+    @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
     def post(self, asset_movement: int, matched_event: int) -> Response:
         return self.rest_api.match_asset_movements(

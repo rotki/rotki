@@ -17,6 +17,11 @@ Exchange asset movement events may now be manually matched with specific onchain
   - Two required parameters (``asset_movement`` and ``matched_event``) specifying the DB identifiers of the events to match.
   - Example: ``{"asset_movement": 123, "matched_event": 124}``
 
+* **New Endpoint**: ``GET /api/(version)/history/events/match/asset_movements``
+
+  - Takes no parameters.
+  - Returns a list of group identifiers of any unmatched asset movements in the DB.
+
 Event/Group Identifier Renaming
 -------------------------------
 

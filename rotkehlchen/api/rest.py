@@ -252,7 +252,10 @@ from rotkehlchen.tasks.assets import (
     update_aave_v3_underlying_assets,
     update_spark_underlying_assets,
 )
-from rotkehlchen.tasks.events import update_asset_movement_matched_event
+from rotkehlchen.tasks.events import (
+    get_unmatched_asset_movements,
+    update_asset_movement_matched_event,
+)
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     BLOCKSCOUT_TO_CHAINID,
@@ -6364,3 +6367,10 @@ class RestAPI:
                 return api_response(OK_RESULT)
 
         return api_response(wrap_in_fail_result(message=error_msg), HTTPStatus.BAD_REQUEST)
+
+    def get_unmatched_asset_movements(self) -> Response:
+        """Get the group identifiers of all unmatched asset movements."""
+        asset_movements, _ = get_unmatched_asset_movements(database=self.rotkehlchen.data.db)
+        return api_response(_wrap_in_ok_result(
+            result=list({event.group_identifier for event in asset_movements}),
+        ))
