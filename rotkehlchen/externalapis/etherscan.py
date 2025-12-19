@@ -57,7 +57,7 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
             self,
             database=database,
             msg_aggregator=msg_aggregator,
-            service_name=ExternalService.ETHERSCAN,
+            name='Etherscan',
             default_api_key=ROTKI_PACKAGED_KEY,
             pagination_limit=ETHERSCAN_PAGINATION_LIMIT,
         )
@@ -66,6 +66,10 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
     def _get_url(chain_id: ChainID) -> str:
         """Etherscan sends the chain in the params instead of having different urls."""
         return ETHERSCAN_BASE_URL
+
+    def _get_api_key_for_chain(self, chain_id: ChainID) -> ApiKey | None:
+        """Etherscan uses the same api key for all chains."""
+        return self._get_api_key()
 
     @staticmethod
     def _build_query_params(

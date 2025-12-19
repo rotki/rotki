@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
+from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -35,16 +36,22 @@ ROUTESCAN_BASE_URL: Final = 'https://api.routescan.io/v2/network/mainnet/evm/{ch
 ROUTESCAN_SUPPORTED_CHAINS: Final = (ChainID.ETHEREUM, ChainID.OPTIMISM, ChainID.BASE)
 
 
-class Routescan(EtherscanLikeApi):
+class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
     def __init__(
             self,
             database: 'DBHandler',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        super().__init__(
+        ExternalServiceWithApiKey.__init__(
+            self,
+            database=database,
+            service_name=ExternalService.ROUTESCAN,
+        )
+        EtherscanLikeApi.__init__(
+            self,
             database=database,
             msg_aggregator=msg_aggregator,
-            service_name=ExternalService.ROUTESCAN,
+            name='Routescan',
             pagination_limit=ROUTESCAN_PAGINATION_LIMIT,
             default_api_key=ApiKey('placeholder'),  # free tier can use any placeholder api key as mentioned in their docs https://routescan.io/documentation  # noqa: E501
         )
@@ -55,6 +62,10 @@ class Routescan(EtherscanLikeApi):
             raise ChainNotSupported(f'Routescan does not support {chain_id.name}')
 
         return ROUTESCAN_BASE_URL.format(chain_id=chain_id.serialize())
+
+    def _get_api_key_for_chain(self, chain_id: ChainID) -> ApiKey | None:
+        """Routescan uses the same api key for all chains."""
+        return self._get_api_key()
 
     @staticmethod
     def _build_query_params(
