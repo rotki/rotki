@@ -673,3 +673,18 @@ Sent when the premium subscription status changes, such as activation, deactivat
 - ``expired``: Whether the premium subscription has expired
 - ``reason``: Only included when device limit is exceeded. Contains the device limit error message.
 
+
+Unmatched Asset Movements
+=================================
+
+Sent when the periodic event processing task is unable to find corresponding events for some asset movements.
+
+::
+
+    {
+        "type": "unmatched_asset_movements",
+        "data": {"count": 2}
+    }
+
+
+- ``count``: Total number of asset movements that could not be matched.

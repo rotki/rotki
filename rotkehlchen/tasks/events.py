@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Final
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.constants import CHAIN_EVENT_FIELDS, HISTORY_BASE_ENTRY_FIELDS
@@ -53,20 +54,35 @@ def match_asset_movements(database: 'DBHandler') -> None:
     log.debug('Analyzing asset movements for corresponding onchain events...')
     events_db = DBHistoryEvents(database=database)
     asset_movements, fee_events = get_unmatched_asset_movements(database)
+    unmatched_asset_movements = []
     for asset_movement in asset_movements:
         if (matched_event := _find_asset_movement_match(
             events_db=events_db,
             asset_movement=asset_movement,
             is_deposit=(is_deposit := asset_movement.event_type == HistoryEventType.DEPOSIT),
             fee_event=fee_events.get(asset_movement.group_identifier),
-        )) is None:
-            continue  # No event found. Skip. Will retry next time this logic runs.
+        )) is not None:
+            success, error_msg = update_asset_movement_matched_event(
+                events_db=events_db,
+                asset_movement=asset_movement,
+                matched_event=matched_event,
+                is_deposit=is_deposit,
+            )
+            if success:
+                continue
+            else:
+                log.error(
+                    f'Failed to match asset movement {asset_movement.group_identifier} '
+                    f'due to: {error_msg}',
+                )
 
-        update_asset_movement_matched_event(
-            events_db=events_db,
-            asset_movement=asset_movement,
-            matched_event=matched_event,
-            is_deposit=is_deposit,
+        unmatched_asset_movements.append(asset_movement)
+
+    if (unmatched_count := len(unmatched_asset_movements)) > 0:
+        log.warning(f'Failed to match {unmatched_count} asset movements')
+        database.msg_aggregator.add_message(
+            message_type=WSMessageType.UNMATCHED_ASSET_MOVEMENTS,
+            data={'count': unmatched_count},
         )
 
 
