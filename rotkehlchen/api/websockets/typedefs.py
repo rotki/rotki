@@ -31,6 +31,7 @@ class WSMessageType(StrEnum):
     SOLANA_TOKENS_MIGRATION = auto()
     DATABASE_UPLOAD_PROGRESS = auto()
     BINANCE_PAIRS_MISSING = auto()
+    UNMATCHED_ASSET_MOVEMENTS = auto()
 
 
 class ProgressUpdateSubType(StrEnum):

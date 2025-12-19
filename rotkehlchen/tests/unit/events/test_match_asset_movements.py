@@ -1,6 +1,9 @@
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
+import pytest
+
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_USDC
 from rotkehlchen.db.filtering import (
@@ -14,6 +17,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.events import match_asset_movements
+from rotkehlchen.tests.fixtures import MockedWsMessage
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash, make_solana_signature
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
@@ -22,6 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
 
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 def test_match_asset_movements(database: 'DBHandler') -> None:
     """Test that the asset movement matching logic works correctly.
 
@@ -228,6 +233,12 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
     assert matched_asset_movements[1] == withdrawal1
     deposit3.identifier = deposit_3_identifier
     assert matched_asset_movements[2] == deposit3
+
+    # Check that the unmatched movements ws message was sent
+    assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(  # type: ignore  # pop_message will be present since it's a MockRotkiNotifier
+        message_type=WSMessageType.UNMATCHED_ASSET_MOVEMENTS,
+        data={'count': 2},
+    )
 
     # Check that the matching logic is now only run for unmatched asset movements
     with patch('rotkehlchen.tasks.events._find_asset_movement_match', return_value=None) as find_match_mock:  # noqa: E501
