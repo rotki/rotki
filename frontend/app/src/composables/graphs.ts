@@ -1,32 +1,9 @@
 import type { Ref } from 'vue';
 import { type BigNumber, type GradientArea, type NewGraphApi, Zero } from '@rotki/common';
-import { LineChart, PieChart } from 'echarts/charts';
-import {
-  BrushComponent,
-  DataZoomComponent,
-  GridComponent,
-  LegendComponent,
-  ToolboxComponent,
-  TooltipComponent,
-} from 'echarts/components';
-import { use } from 'echarts/core';
-import { CanvasRenderer } from 'echarts/renderers';
-import { THEME_KEY } from 'vue-echarts';
 import { useDarkMode } from '@/composables/dark-mode';
 
-export function initGraph(): void {
-  use([
-    CanvasRenderer,
-    LineChart,
-    TooltipComponent,
-    GridComponent,
-    DataZoomComponent,
-    PieChart,
-    LegendComponent,
-    BrushComponent,
-    ToolboxComponent,
-  ]);
-}
+// vue-echarts THEME_KEY constant - defined inline to avoid pulling in echarts to main bundle
+const THEME_KEY = 'ecTheme';
 
 export function useGraph(): NewGraphApi {
   const { isDark } = useRotkiTheme();

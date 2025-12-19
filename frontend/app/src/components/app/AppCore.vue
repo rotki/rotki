@@ -4,7 +4,7 @@ import AppIndicators from '@/components/app/AppIndicators.vue';
 import AppSidebars from '@/components/app/AppSidebars.vue';
 import NotificationPopup from '@/components/status/notifications/NotificationPopup.vue';
 import { useInterop } from '@/composables/electron-interop';
-import { initGraph } from '@/composables/graphs';
+import { initGraph } from '@/composables/init-graph';
 import { useCoreScroll } from '@/composables/use-core-scroll';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useAreaVisibilityStore } from '@/store/session/visibility';

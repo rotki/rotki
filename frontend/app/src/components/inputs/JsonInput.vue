@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import type { Content, JSONContent, JsonEditor, TextContent } from 'vanilla-jsoneditor';
 import { assert } from '@rotki/common';
 import { debounce } from 'es-toolkit';
-import { type Content, createJSONEditor, type JSONContent, type JsonEditor, type TextContent } from 'vanilla-jsoneditor';
 
 const modelValue = defineModel<Record<string, any>>({ required: true });
 
@@ -22,7 +22,9 @@ watch(modelValue, (newValue: any) => {
   deep: true,
 });
 
-onMounted(() => {
+onMounted(async () => {
+  const { createJSONEditor } = await import('vanilla-jsoneditor');
+
   const onChange = debounce((updatedContent: Content) => {
     set(modelValue, (updatedContent as TextContent).text === undefined
       ? (updatedContent as JSONContent).json
