@@ -6310,6 +6310,39 @@ Match exchange asset movements with onchain events
    :statuscode 409: No user is logged in or failure.
    :statuscode 500: Internal rotki error
 
+.. http:get:: /api/(version)/history/events/match/asset_movements
+
+   Get a list of unmatched asset movements group identifiers.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/events/match/asset_movements HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              "ef2fcd9d69e358f184e5aae29f74b39e7613a13eaaae00717bde70a165cfd69f",
+              "b4e1c0d8439c1abc501c2198f7ed86f3047d23caf7b49df6dbaa3d9b1753a934",
+          ],
+          "message": ""
+      }
+
+   :resjson list result: A list of group identifiers for the unmatched asset movements.
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: List of group identifiers returned successfully
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or failure
+   :statuscode 500: Internal rotki error
+
 Querying messages to show to the user
 =====================================
 

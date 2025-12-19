@@ -52,31 +52,7 @@ def match_asset_movements(database: 'DBHandler') -> None:
     """
     log.debug('Analyzing asset movements for corresponding onchain events...')
     events_db = DBHistoryEvents(database=database)
-
-    # get all exchange asset movements
-    asset_movements: list[AssetMovement] = []
-    fee_events: dict[str, AssetMovement] = {}
-    with database.conn.read_ctx() as cursor:
-        for entry in cursor.execute(
-            f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS} FROM history_events '
-            'LEFT JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier '  # noqa: E501
-            'WHERE history_events.entry_type=? AND history_events.identifier NOT IN '
-            '(SELECT value FROM key_value_cache WHERE name LIKE ?) '
-            'ORDER BY timestamp, sequence_index',
-            (HistoryBaseEntryType.ASSET_MOVEMENT_EVENT.value, 'matched_asset_movement_%'),
-        ):
-            if (asset_movement := AssetMovement.deserialize_from_db(entry[1:])).asset.is_fiat():
-                continue
-
-            if asset_movement.event_subtype == HistoryEventSubType.FEE:
-                fee_events[asset_movement.group_identifier] = asset_movement
-            else:
-                asset_movements.append(asset_movement)
-
-        if len(asset_movements) == 0:
-            return
-
-    # for each asset movement, find a matching onchain event and update it.
+    asset_movements, fee_events = get_unmatched_asset_movements(database)
     for asset_movement in asset_movements:
         if (matched_event := _find_asset_movement_match(
             events_db=events_db,
@@ -92,6 +68,34 @@ def match_asset_movements(database: 'DBHandler') -> None:
             matched_event=matched_event,
             is_deposit=is_deposit,
         )
+
+
+def get_unmatched_asset_movements(
+        database: 'DBHandler',
+) -> tuple[list[AssetMovement], dict[str, AssetMovement]]:
+    """Get all asset movements that have not been matched yet. Returns a tuple containing the list
+    of asset movements and a dict of the corresponding fee events keyed by their group_identifier.
+    """
+    asset_movements: list[AssetMovement] = []
+    fee_events: dict[str, AssetMovement] = {}
+    with database.conn.read_ctx() as cursor:
+        for entry in cursor.execute(
+                f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS} FROM history_events '
+                'LEFT JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier '  # noqa: E501
+                'WHERE history_events.entry_type=? AND history_events.identifier NOT IN '
+                '(SELECT value FROM key_value_cache WHERE name LIKE ?) '
+                'ORDER BY timestamp, sequence_index',
+                (HistoryBaseEntryType.ASSET_MOVEMENT_EVENT.value, 'matched_asset_movement_%'),
+        ):
+            if (asset_movement := AssetMovement.deserialize_from_db(entry[1:])).asset.is_fiat():
+                continue
+
+            if asset_movement.event_subtype == HistoryEventSubType.FEE:
+                fee_events[asset_movement.group_identifier] = asset_movement
+            else:
+                asset_movements.append(asset_movement)
+
+    return asset_movements, fee_events
 
 
 def update_asset_movement_matched_event(

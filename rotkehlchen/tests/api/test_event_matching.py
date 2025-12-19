@@ -14,6 +14,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_proper_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
@@ -117,3 +118,43 @@ def test_match_asset_movements_errors(rotkehlchen_api_server: 'APIServer') -> No
         status_code=HTTPStatus.BAD_REQUEST,
         contained_in_msg='No event found in the DB for identifier 2',
     )
+
+
+def test_get_unmatched_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test getting unmatched asset movements"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=[(matched_movement := AssetMovement(
+                identifier=1,
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=TimestampMS(1510000000000),
+                asset=A_ETH,
+                amount=FVal('0.1'),
+                unique_id='1',
+            )), (unmatched_movement := AssetMovement(
+                identifier=2,
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=TimestampMS(1510000000000),
+                asset=A_ETH,
+                amount=FVal('0.1'),
+                unique_id='2',
+            ))],
+        )
+        assert matched_movement.identifier is not None
+        rotki.data.db.set_dynamic_cache(
+            write_cursor=write_cursor,
+            name=DBCacheDynamic.MATCHED_ASSET_MOVEMENT,
+            identifier=5,  # matched event identifier can be anything here
+            value=matched_movement.identifier,
+        )
+
+    result = assert_proper_response_with_result(
+        response=requests.get(api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource')),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )
+    assert result == [unmatched_movement.group_identifier]
