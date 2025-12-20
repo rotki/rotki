@@ -1,5 +1,6 @@
 import logging
 from collections.abc import Callable
+from typing import Final
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_32_BYTES_HEX_NO_PREFIX
@@ -20,6 +21,8 @@ from .constants import CPT_SAFE_MULTISIG
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+CHANGED_MASTER_COPY_TOPIC: Final = b'\x75\xe4\x1b\xc3\x5f\xf1\xbf\x14\xd8\x1d\x1d\x2f\x64\x9c\x00\x84\xa0\xf9\x74\xf9\x28\x9c\x80\x3e\xc9\x89\x8e\xee\xc4\xc8\xd0\xb8'  # noqa: E501
 
 
 def _get_maybe_indexed_address(context: DecoderContext, details: str) -> ChecksumEvmAddress | None:
@@ -180,6 +183,27 @@ class SafemultisigDecoder(EvmDecoderInterface):
         )
         return EvmDecodingOutput(events=[event])
 
+    def _decode_changed_master_copy(self, context: DecoderContext) -> EvmDecodingOutput:
+        if (address := _get_maybe_indexed_address(context, details='safe master copy change')) is None:  # noqa: E501
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if not self.base.any_tracked([context.transaction.from_address, context.tx_log.address]):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.UPDATE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=context.transaction.from_address,
+            notes=f'Upgrade Safe master copy to {address} for multisig {context.tx_log.address}',
+            counterparty=CPT_SAFE_MULTISIG,
+            address=context.tx_log.address,
+        )
+        return EvmDecodingOutput(events=[event])
+
     # -- DecoderInterface methods
 
     def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
@@ -190,6 +214,7 @@ class SafemultisigDecoder(EvmDecoderInterface):
                 b'a\x0f\x7f\xf2\xb3\x04\xae\x89\x03\xc3\xdet\xc6\x0cj\xb1\xf7\xd6"k?R\xc5\x16\x19\x05\xbbZ\xd4\x03\x9c\x93': self._decode_changed_threshold,  # noqa: E501
                 b"D.q_bcF\xe8\xc5C\x81\x00-\xa6\x14\xf6+\xee\x8d'8e5\xb2R\x1e\xc8T\x08\x98Un": self._decode_execution_success,  # noqa: E501
                 b'#B\x8b\x18\xac\xfb>\xa6K\x08\xdc\x0c\x1d)n\xa9\xc0\x97\x02\xc0\x90\x83\xcaRr\xe6M\x11[h}#': self._decode_execution_failure,  # noqa: E501
+                CHANGED_MASTER_COPY_TOPIC: self._decode_changed_master_copy,
             },
             b'\x16\x88\xf0\xb9': {  # createProxyWithNonce
                 b'\x14\x1d\xf8h\xa63\x1a\xf5(\xe3\x8c\x83\xb7\xaa\x03\xed\xc1\x9b\xe6n7\xaeg\xf9([\xf4\xf8\xe3\xc6\xa1\xa8': self.decode_safe_creation,  # noqa: E501
