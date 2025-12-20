@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.base.transactions import BaseTransactions
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.safe.constants import (
     CPT_SAFE,
@@ -11,14 +12,28 @@ from rotkehlchen.chain.ethereum.modules.safe.constants import (
     SAFEPASS_AIRDROP,
 )
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    NodeName,
+    SerializableChainIndexerOrder,
+    WeightedNode,
+    string_to_evm_address,
+)
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_XDAI
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -243,6 +258,68 @@ def test_execution_failure(ethereum_inquirer, ethereum_accounts):
             notes=f'Failed to execute safe transaction 0x4663a55668527aaa4c7811e8277c7258b5e43af4269a651b1d1cf6ab24293b1e for multisig {multisig_address}',  # noqa: E501
             counterparty=CPT_SAFE_MULTISIG,
             address=multisig_address,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{
+    'evm_indexers_order': SerializableChainIndexerOrder(
+        order={ChainID.BASE: [EvmIndexer.ROUTESCAN]},
+    ),
+}])
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base-open-rpc',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ),
+        active=True,
+        weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('base_accounts', [[
+    '0x8De14E014402C0677B075A69122F94C0425Cc179',
+    '0x0BeBD2FcA9854F657329324aA7dc90F656395189',
+]])
+def test_safe_mastercopy_upgrade_on_base(base_inquirer, base_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x37d530d1347e3d0903bcb2c8650bd223b39259ba22af373ba70a3cb064ac46b4')  # noqa: E501
+    transactions = BaseTransactions(base_inquirer, base_inquirer.database)
+    transactions.single_address_query_transactions(  # temporary hack at the time of writing get_decoded_events_of_transaction does not respect the `evm_indexers_order` so we do this here to use the given order  # noqa: E501
+        address=base_accounts[0],
+        start_ts=Timestamp(1756713300),
+        end_ts=Timestamp(1756713400),
+    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1756713353000)),
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=(gas_amount := FVal('0.000000145868417642')),
+            location_label=(user := base_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=336,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.UPDATE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user,
+            notes=f'Upgrade Safe master copy to 0x29fcB43b46531BcA003ddC8FCB67FFE91900C762 for multisig {base_accounts[1]}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=base_accounts[1],
         ),
     ]
     assert events == expected_events
@@ -630,6 +707,19 @@ def test_safe_added_owner_indexed(gnosis_inquirer, gnosis_accounts):
             location_label=user_address,
             notes=f'Burn {gas} XDAI for gas',
             counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=57,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.UPDATE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes=f'Upgrade Safe master copy to 0x29fcB43b46531BcA003ddC8FCB67FFE91900C762 for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=60,
