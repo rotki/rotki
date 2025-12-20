@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`11021` Users are now able to edit the name of a tag.
 * :feature:`10890` rotki will now properly handle Safe upgrades.
 * :feature:`4609` rotki will now properly handle Superfluid stream transactions and balances.
 * :feature:`10980` Users will now be able to report unsupported events through the history event page.

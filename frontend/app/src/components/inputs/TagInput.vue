@@ -25,6 +25,8 @@ const { tags } = storeToRefs(store);
 const search = ref<string>('');
 
 const newTag = ref<Tag | undefined>(undefined);
+const editMode = ref<boolean>(false);
+const originalName = ref<string>('');
 
 const newTagBackground = ref(randomColor());
 
@@ -61,7 +63,33 @@ function onUpdateModelValue(_value: ({ name: string } | string | Tag)[]) {
   set(modelValue, tags);
 }
 
+function handleEditTag(tag: Tag): void {
+  set(editMode, true);
+  set(originalName, tag.name);
+  set(newTag, { ...tag });
+}
+
+function handleTagSaved(tag: Tag, previousName: string): void {
+  if (!previousName || previousName === tag.name)
+    return;
+
+  const previousLower = previousName.toLowerCase();
+  const updatedTags = get(modelValue).map(item => (item.toLowerCase() === previousLower ? tag.name : item));
+  const dedupedTags: string[] = [];
+  const seen = new Set<string>();
+  for (const item of updatedTags) {
+    if (seen.has(item))
+      continue;
+    seen.add(item);
+    dedupedTags.push(item);
+  }
+
+  set(modelValue, dedupedTags);
+}
+
 function handleCreateNewTag() {
+  set(editMode, false);
+  set(originalName, '');
   set(newTag, defaultTag());
 }
 
@@ -131,6 +159,7 @@ watch(tags, () => {
           closeable
           :disabled="disabled"
           clickable
+          @click="handleEditTag(item)"
         />
       </template>
       <template #item="{ item }">
@@ -154,6 +183,11 @@ watch(tags, () => {
       <RuiIcon name="lu-plus" />
     </RuiButton>
 
-    <TagFormDialog v-model="newTag" />
+    <TagFormDialog
+      v-model="newTag"
+      :edit-mode="editMode"
+      :original-name="originalName"
+      @saved="handleTagSaved($event.tag, $event.originalName)"
+    />
   </div>
 </template>

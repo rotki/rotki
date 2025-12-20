@@ -1394,6 +1394,7 @@ class ManuallyTrackedBalancesDeleteSchema(AsyncQueryArgumentSchema):
 
 class TagSchema(Schema):
     name = NonEmptyStringField(required=True)
+    new_name = NonEmptyStringField(load_default=None)
     description = EmptyAsNoneStringField(load_default=None)
     background_color = ColorField(required=False, load_default=None)
     foreground_color = ColorField(required=False, load_default=None)

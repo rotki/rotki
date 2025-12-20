@@ -1,6 +1,6 @@
 import type { AccountPayload, Accounts, BlockchainAccount } from '@/types/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-import { removeTags } from '@/utils/tags';
+import { removeTags, renameTags } from '@/utils/tags';
 
 export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () => {
   const accounts = ref<Accounts>({});
@@ -54,11 +54,22 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
     set(accounts, copy);
   };
 
+  const renameTag = (oldName: string, newName: string): void => {
+    const copy = { ...get(accounts) };
+    for (const chain in copy) {
+      const accountData = copy[chain];
+      copy[chain] = renameTags(accountData, oldName, newName);
+    }
+
+    set(accounts, copy);
+  };
+
   return {
     accounts,
     getAccountByAddress,
     getAccounts,
     removeTag,
+    renameTag,
     updateAccountData,
     updateAccounts,
   };

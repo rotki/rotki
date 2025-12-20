@@ -127,7 +127,7 @@ describe('composables/api/tags', () => {
           description: 'Updated description',
           backgroundColor: 'DDEEFF',
           foregroundColor: '445566',
-        });
+        }, 'updated');
 
         expect(capturedBody).toEqual({
           name: 'updated',

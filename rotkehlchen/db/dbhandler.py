@@ -3086,6 +3086,7 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             name: str,
+            new_name: str | None,
             description: str | None,
             background_color: HexColorCode | None,
             foreground_color: HexColorCode | None,
@@ -3096,8 +3097,52 @@ class DBHandler:
         - TagConstraintError: If the tag name to edit does not exist in the DB
         - InputError: If no field to edit was given.
         """
+        if new_name == name:
+            new_name = None
+
+        if new_name is not None and new_name.lower() != name.lower():  # TODO: Perhaps this can be simplified by changing DB schema to have an int primary key and lose the complicated logic here # noqa: E501
+            write_cursor.execute(  # name editing case. Create new tag, copy old tag & mappings to it, delete old tag  # noqa: E501
+                'SELECT description, background_color, foreground_color FROM tags WHERE name = ?;',
+                (name,),
+            )
+            result = write_cursor.fetchone()
+            if result is None:
+                raise TagConstraintError(
+                    f'Tried to edit tag with name "{name}" which does not exist',
+                )
+
+            updated_description = description if description is not None else result[0]
+            updated_background = background_color if background_color is not None else result[1]
+            updated_foreground = foreground_color if foreground_color is not None else result[2]
+
+            try:
+                write_cursor.execute(
+                    'INSERT INTO tags(name, description, background_color, foreground_color) '
+                    'VALUES (?, ?, ?, ?)',
+                    (new_name, updated_description, updated_background, updated_foreground),
+                )
+            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                msg = str(e)
+                if 'UNIQUE constraint failed: tags.name' in msg:
+                    msg = f'Tag with name {new_name} already exists. Tag name matching is case insensitive.'  # noqa: E501
+                else:
+                    msg = f'Unexpected DB error: {msg} while editing a tag'
+                    log.error(msg)
+
+                raise TagConstraintError(msg) from e
+
+            write_cursor.execute(
+                'UPDATE tag_mappings SET tag_name = ? WHERE tag_name = ? COLLATE NOCASE;',
+                (new_name, name),
+            )
+            write_cursor.execute('DELETE FROM tags WHERE name = ?;', (name,))
+            return
+
         query_values = []
         querystr = 'UPDATE tags SET '
+        if new_name is not None:
+            querystr += 'name = ?,'
+            query_values.append(new_name)
         if description is not None:
             querystr += 'description = ?,'
             query_values.append(description)
@@ -3117,6 +3162,11 @@ class DBHandler:
         if write_cursor.rowcount < 1:
             raise TagConstraintError(
                 f'Tried to edit tag with name "{name}" which does not exist',
+            )
+        if new_name is not None:
+            write_cursor.execute(
+                'UPDATE tag_mappings SET tag_name = ? WHERE tag_name = ? COLLATE NOCASE;',
+                (new_name, name),
             )
 
     def delete_tag(self, write_cursor: 'DBCursor', name: str) -> None:

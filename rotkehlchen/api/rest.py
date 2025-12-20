@@ -1208,6 +1208,7 @@ class RestAPI:
     def edit_tag(
             self,
             name: str,
+            new_name: str | None,
             description: str | None,
             background_color: HexColorCode | None,
             foreground_color: HexColorCode | None,
@@ -1217,6 +1218,7 @@ class RestAPI:
                 self.rotkehlchen.data.db.edit_tag(
                     write_cursor=cursor,
                     name=name,
+                    new_name=new_name,
                     description=description,
                     background_color=background_color,
                     foreground_color=foreground_color,

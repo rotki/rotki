@@ -451,6 +451,34 @@ def test_edit_tags(rotkehlchen_api_server: 'APIServer') -> None:
         status_code=HTTPStatus.CONFLICT,
     )
 
+    # Now rename the second tag and ensure mappings update
+    with rotki.data.db.user_write() as cursor:
+        cursor.execute(
+            'INSERT INTO tag_mappings(object_reference, tag_name) VALUES (?, ?);',
+            ('0x123', 'private'),
+        )
+
+    edit_tag_data = {
+        'name': 'private',
+        'new_name': 'personal',
+    }
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'tagsresource',
+        ), json=edit_tag_data,
+    )
+    assert_proper_response(response)
+    data = response.json()
+    tag2['name'] = 'personal'
+    assert data['result']['personal'] == tag2
+    assert 'private' not in data['result']
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT object_reference, tag_name FROM tag_mappings WHERE object_reference = ?;',
+            ('0x123',),
+        ).fetchall() == [('0x123', 'personal')]
+
     # Query tags and see that both added/edited tags are in the response
     response = requests.get(
         api_url_for(
@@ -462,14 +490,14 @@ def test_edit_tags(rotkehlchen_api_server: 'APIServer') -> None:
     data = response.json()
     assert len(data['result']) == 2
     assert data['result']['Public'] == tag1
-    assert data['result']['private'] == tag2
+    assert data['result']['personal'] == tag2
 
     # And finally also check the DB to be certain
     with rotki.data.db.conn.read_ctx() as cursor:
         db_response = rotki.data.db.get_tags(cursor)
     assert len(db_response) == 2
     assert db_response['Public'].serialize() == tag1
-    assert db_response['private'].serialize() == tag2
+    assert db_response['personal'].serialize() == tag2
 
 
 def test_delete_tags(rotkehlchen_api_server: 'APIServer') -> None:
