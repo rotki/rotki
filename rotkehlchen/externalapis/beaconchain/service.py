@@ -62,9 +62,31 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         self.url = f'{BEACONCHAIN_ROOT_URL}/api/v1/'
         self.produced_blocks_lock = Semaphore()
         self.ratelimited_until = Timestamp(0)
+        self.last_rate_limit_notification_ts = Timestamp(0)
 
     def is_rate_limited(self) -> bool:
         return self.ratelimited_until > ts_now()
+
+    def _maybe_notify_rate_limit(self, error_message: str) -> None:
+        """Notify user about rate limit error, but only once every 5 minutes.
+        
+        Always logs the error at debug level, but only sends user notification
+        if 5 minutes (300 seconds) have passed since the last notification.
+        
+        Args:
+            error_message: The error message to potentially notify the user about
+        """
+        # Always log at debug level for all occurrences
+        log.debug(f'Rate limited by beaconcha.in: {error_message}')
+        
+        # Only notify user if 5 minutes (300 seconds) have passed since last notification
+        RATE_LIMIT_NOTIFICATION_COOLDOWN = 300  # 5 minutes in seconds
+        current_time = ts_now()
+        if current_time - self.last_rate_limit_notification_ts >= RATE_LIMIT_NOTIFICATION_COOLDOWN:
+            self.msg_aggregator.add_error(
+                f'Rate limited by beaconcha.in: {error_message}'
+            )
+            self.last_rate_limit_notification_ts = current_time
 
     def _query(
             self,

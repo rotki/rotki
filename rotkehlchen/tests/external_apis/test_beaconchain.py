@@ -115,3 +115,43 @@ def test_rate_limit(beaconchain: BeaconChain, freezer):
 
     assert beaconchain.ratelimited_until == Timestamp(ts_now() + 1000)
     assert requests_made == 2
+
+
+@pytest.mark.freeze_time('2025-03-03 17:00:00 GMT')
+def test_rate_limit_notification_throttling(beaconchain: BeaconChain, freezer):
+    """Tests that rate limit notifications are throttled to once every 5 minutes."""
+    # Track notification calls
+    notification_calls = []
+    original_add_error = beaconchain.msg_aggregator.add_error
+    
+    def mock_add_error(msg: str) -> None:
+        notification_calls.append(msg)
+        original_add_error(msg)
+    
+    beaconchain.msg_aggregator.add_error = mock_add_error
+    
+    # First rate limit error - should send notification
+    error_msg = 'Beaconcha.in is rate limited until 2025-03-03T17:10:00Z. Check logs for more details'
+    beaconchain._maybe_notify_rate_limit(error_msg)
+    assert len(notification_calls) == 1
+    assert notification_calls[0] == f'Rate limited by beaconcha.in: {error_msg}'
+    assert beaconchain.last_rate_limit_notification_ts == Timestamp(ts_now())
+    
+    # Second rate limit error within 5 minutes - should NOT send notification
+    freezer.tick(60)  # 1 minute later
+    beaconchain._maybe_notify_rate_limit(error_msg)
+    assert len(notification_calls) == 1  # Still only 1 notification
+    
+    # Third rate limit error still within 5 minutes - should NOT send notification
+    freezer.tick(120)  # 2 more minutes (3 minutes total)
+    beaconchain._maybe_notify_rate_limit(error_msg)
+    assert len(notification_calls) == 1  # Still only 1 notification
+    
+    # After 5 minutes (300 seconds) - should send notification again
+    freezer.tick(180)  # 3 more minutes (6 minutes total from start)
+    beaconchain._maybe_notify_rate_limit(error_msg)
+    assert len(notification_calls) == 2  # Now 2 notifications
+    assert notification_calls[1] == f'Rate limited by beaconcha.in: {error_msg}'
+    
+    # Restore original method
+    beaconchain.msg_aggregator.add_error = original_add_error

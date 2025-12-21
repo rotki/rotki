@@ -792,10 +792,25 @@ class Eth2(EthereumModule):
         try:
             self.detect_and_refresh_validators([address])
         except RemoteError as e:
-            self.msg_aggregator.add_error(
-                f'Did not manage to query beaconcha.in api for address {address} due to {e!s}.'
-                f' If you have Eth2 staked balances the final balance results may not be accurate',
+            error_msg = str(e)
+            # Check if this is a rate limit error (check for various rate limit indicators)
+            is_rate_limit = (
+                'rate limited' in error_msg.lower() or
+                'rate limit' in error_msg.lower() or
+                '429' in error_msg  # HTTP 429 is the rate limit status code
             )
+            if is_rate_limit:
+                # Use throttled notification for rate limit errors
+                self.beacon_inquirer.beaconchain._maybe_notify_rate_limit(
+                    f'Did not manage to query beaconcha.in api for address {address} due to {error_msg}.'
+                    f' If you have Eth2 staked balances the final balance results may not be accurate',
+                )
+            else:
+                # For non-rate-limit errors, notify immediately
+                self.msg_aggregator.add_error(
+                    f'Did not manage to query beaconcha.in api for address {address} due to {error_msg}.'
+                    f' If you have Eth2 staked balances the final balance results may not be accurate',
+                )
 
         self._adjust_blockproduction_at_account_modification(address, HistoryEventType.STAKING)
 
