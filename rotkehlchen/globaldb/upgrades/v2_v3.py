@@ -167,7 +167,7 @@ ASSET_CREATION_TYPE = (
 def _maybe_upgrade_identifier(identifier: str) -> str:
     """Change the identifier to the new format and return it.
 
-    - If it's an ethereim token return its CAIP
+    - If it's an ethereum token return its CAIP
     - If it's another known EVM chain identifier return its CAIP
     - Otherwise return unmodified
     """
