@@ -7,7 +7,7 @@ about: Submit bug reports about rotki
 ## Problem Definition
 
 <!-- Provide a description of what is the current problem and why you are raising this issue.
-If it's a bug please describe what was the unexpected thing that occured and what was the
+If it's a bug please describe what was the unexpected thing that occurred and what was the
 expected behaviour. -->
 
 ## Logs

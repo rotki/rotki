@@ -280,7 +280,7 @@ def objcount_data(filepath):
 
     data = []
     with suppress(EOFError), open(filepath, 'rb') as handler:
-        while True:  # while we dont hit EOFError
+        while True:  # while we don't hit EOFError
             timestamp_string, object_count = pickle.load(handler)  # noqa: S301
             timestamp = ts_to_dt(timestamp_string)
             line = (timestamp, object_count)
