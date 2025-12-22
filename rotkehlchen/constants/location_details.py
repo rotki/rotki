@@ -34,6 +34,10 @@ LOCATION_DETAILS: dict = {
         'image': 'binance.svg',
     },
     Location.BITFINEX: {'image': 'bitfinex.svg'},
+    Location.BIT2ME: {
+        'label': 'Bit2Me',
+        'image': 'bit2me.png',
+    },
     Location.BITCOINDE: {
         'label': 'Bitcoin.de',
         'image': 'btcde.svg',
