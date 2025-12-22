@@ -55,9 +55,10 @@ def edit_grouped_events_with_optional_fee(
     if (new_event_count := len(events)) == no_fee_num and existing_event_count == with_fee_num:
         # in the db we had a fee entry and now we have removed it
         events_to_edit = events[:new_event_count]
-        write_cursor.execute(
-            'DELETE FROM history_events WHERE group_identifier=? and sequence_index=?',
-            (events[0].group_identifier, events[0].sequence_index + no_fee_num),
+        events_db.delete_events_and_track(
+            write_cursor=write_cursor,
+            where_clause='WHERE group_identifier=? AND sequence_index=?',
+            where_bindings=(events[0].group_identifier, events[0].sequence_index + no_fee_num),
         )
     elif new_event_count == with_fee_num and existing_event_count == no_fee_num:
         # we didn't have a fee in the db and we have it now
@@ -102,9 +103,12 @@ def edit_grouped_swap_events(
             edited_identifiers.append(event.identifier)
 
     if identifiers != edited_identifiers:  # There are identifiers with no corresponding events - these events need to be deleted.  # noqa: E501
-        write_cursor.executemany(
-            'DELETE FROM history_events WHERE identifier=?',
-            [(identifier,) for identifier in set(identifiers) - set(edited_identifiers)],
+        ids_to_delete = tuple(set(identifiers) - set(edited_identifiers))
+        placeholders = ','.join(['?'] * len(ids_to_delete))
+        events_db.delete_events_and_track(
+            write_cursor=write_cursor,
+            where_clause=f'WHERE identifier IN ({placeholders})',
+            where_bindings=ids_to_delete,
         )
 
     for event in new_events:

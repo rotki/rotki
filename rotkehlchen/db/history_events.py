@@ -13,7 +13,7 @@ from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
     CHAIN_FIELD_LENGTH,
@@ -88,6 +88,78 @@ class DBHistoryEvents:
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
 
+    def _mark_events_modified(
+            self,
+            write_cursor: 'DBCursor',
+            timestamp: TimestampMS,
+    ) -> None:
+        """Track earliest modified event timestamp for balance cache invalidation."""
+        write_cursor.execute(
+            'INSERT INTO key_value_cache (name, value) VALUES (?, ?) '
+            'ON CONFLICT(name) DO UPDATE SET value = '
+            'MIN(CAST(value AS INTEGER), CAST(excluded.value AS INTEGER))',
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value, str(timestamp)),
+        )
+
+    def _execute_and_track_modified(
+            self,
+            write_cursor: 'DBCursor',
+            result: 'DBCursor',
+    ) -> int:
+        """Iterate cursor results, track earliest timestamp, and return count.
+        Single-pass iteration to compute both count and minimum timestamp.
+        """
+        count, min_ts = 0, None
+        for (ts,) in result:
+            count += 1
+            if min_ts is None or ts < min_ts:
+                min_ts = ts
+
+        if count > 0:
+            self._mark_events_modified(write_cursor=write_cursor, timestamp=TimestampMS(min_ts))  # type: ignore
+        return count
+
+    def delete_events_and_track(
+            self,
+            write_cursor: 'DBCursor',
+            where_clause: str,
+            where_bindings: tuple,
+    ) -> int:
+        """Delete history_events and track the earliest affected timestamp for cache invalidation.
+
+        Returns the number of rows deleted.
+        """
+        return self._execute_and_track_modified(
+            write_cursor=write_cursor,
+            result=write_cursor.execute(
+                f'DELETE FROM history_events {where_clause} RETURNING timestamp',
+                where_bindings,
+            ),
+        )
+
+    def update_events_and_track(
+            self,
+            write_cursor: 'DBCursor',
+            where_clause: str,
+            where_bindings: tuple,
+            set_clause: str,
+            set_bindings: tuple = (),
+    ) -> int:
+        """Update history_events and track the earliest affected timestamp for cache invalidation.
+
+        This method exists because edit_history_event requires a HistoryEvent object,
+        making it unsuitable for bulk updates.
+
+        Returns the number of rows updated.
+        """
+        return self._execute_and_track_modified(
+            write_cursor=write_cursor,
+            result=write_cursor.execute(
+                f'UPDATE history_events {set_clause} {where_clause} RETURNING timestamp',
+                set_bindings + where_bindings,
+            ),
+        )
+
     def add_history_event(
             self,
             write_cursor: 'DBCursor',
@@ -130,6 +202,7 @@ class DBHistoryEvents:
                 [(identifier, k, v) for k, v in mapping_values.items()],
             )
 
+        self._mark_events_modified(write_cursor=write_cursor, timestamp=event.timestamp)
         return identifier
 
     def add_history_events(
@@ -152,9 +225,18 @@ class DBHistoryEvents:
         Edit a history entry to the DB with information provided by the user.
         NOTE: It edits all the fields except the extra_data one.
 
+        Only tracks modification for balance cache invalidation if balance-affecting
+        fields change (timestamp, asset, amount, type, subtype, location_label).
+
         May raise:
             - InputError if an error occurred.
         """
+        old_data = write_cursor.execute(
+            'SELECT timestamp, asset, amount, type, subtype, location_label '
+            'FROM history_events WHERE identifier=?',
+            (event.identifier,),
+        ).fetchone()
+
         for idx, (_, updatestr, bindings) in enumerate(event.serialize_for_db()):
             if idx == 0:  # base history event data
                 try:
@@ -179,6 +261,22 @@ class DBHistoryEvents:
             'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
             'VALUES(?, ?, ?)',
             (event.identifier, HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+        )
+
+        # Track modification only if balance-affecting fields changed. cannot be None here
+        if old_data == (
+            event.timestamp,
+            event.asset.identifier,
+            str(event.amount),
+            event.event_type.serialize(),
+            event.event_subtype.serialize(),
+            event.location_label,
+        ):
+            return
+
+        self._mark_events_modified(
+            write_cursor=write_cursor,
+            timestamp=TimestampMS(min(old_data[0], event.timestamp)),
         )
 
     def delete_history_events_by_identifier(
@@ -215,10 +313,11 @@ class DBHistoryEvents:
                         )
 
             with self.db.user_write() as write_cursor:
-                write_cursor.execute(
-                    'DELETE FROM history_events WHERE identifier=?', (identifier,),
+                affected_rows = self.delete_events_and_track(
+                    write_cursor=write_cursor,
+                    where_clause='WHERE identifier=?',
+                    where_bindings=(identifier,),
                 )
-                affected_rows = write_cursor.rowcount
             if affected_rows != 1:
                 return (
                     f'Tried to remove history event with id {identifier} which does not exist'
@@ -235,7 +334,11 @@ class DBHistoryEvents:
         cache entries to enable fresh data retrieval.
         """
         with self.db.conn.write_ctx() as write_cursor:
-            write_cursor.execute('DELETE FROM history_events WHERE entry_type=?', (entry_type.serialize_for_db(),))  # noqa: E501
+            self.delete_events_and_track(
+                write_cursor=write_cursor,
+                where_clause='WHERE entry_type=?',
+                where_bindings=(entry_type.serialize_for_db(),),
+            )
             if entry_type == HistoryBaseEntryType.ETH_BLOCK_EVENT:
                 key_parts = [DBCacheDynamic.LAST_PRODUCED_BLOCKS_QUERY_TS.value[0][:30]]
             else:
@@ -246,8 +349,8 @@ class DBHistoryEvents:
 
             self.db.delete_dynamic_caches(write_cursor=write_cursor, key_parts=key_parts)
 
-    @staticmethod
     def delete_location_events(
+            self,
             write_cursor: 'DBCursor',
             location: BLOCKCHAIN_LOCATIONS_TYPE,
             address: str | None,
@@ -272,22 +375,24 @@ class DBHistoryEvents:
                 f'AND C.tx_ref IN ({sub_query}) AND'
             )
 
-        querystr = (
-            'DELETE FROM history_events WHERE identifier IN ('
-            f'SELECT H.identifier from history_events H {join_or_where} H.location = ?)'
-        )
+        base_query = f'SELECT H.identifier from history_events H {join_or_where} H.location = ?'
         bindings: tuple = (location.serialize_for_db(),)
+        filter_conditions = ''
         if customized_events_num != 0:
-            querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+            filter_conditions += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
             bindings += (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
         if address is not None:
-            querystr += ' AND location_label = ?'
+            filter_conditions += ' AND location_label = ?'
             bindings += (address,)
 
-        write_cursor.execute(querystr, bindings)
+        self.delete_events_and_track(
+            write_cursor=write_cursor,
+            where_clause=f'WHERE identifier IN ({base_query}){filter_conditions}',
+            where_bindings=bindings,
+        )
 
-    @staticmethod
     def reset_events_for_redecode(
+            self,
             write_cursor: 'DBCursor',
             location: BLOCKCHAIN_LOCATIONS_TYPE,
     ) -> None:
@@ -298,7 +403,7 @@ class DBHistoryEvents:
           transaction in the evm_transactions table.
         * EVM - removes the TX_DECODED evm_tx_mappings to enable re-processing.
         """
-        DBHistoryEvents.delete_location_events(
+        self.delete_location_events(
             write_cursor=write_cursor,
             location=location,
             address=None,
@@ -358,7 +463,11 @@ class DBHistoryEvents:
             where_str += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
             bindings.extend(customized_event_ids)  # type: ignore  # different type of elements in the list
 
-        write_cursor.execute(f'DELETE FROM history_events {where_str}', bindings)
+        self.delete_events_and_track(
+            write_cursor=write_cursor,
+            where_clause=where_str,
+            where_bindings=tuple(bindings),
+        )
 
     def get_customized_group_identifiers(
             self,

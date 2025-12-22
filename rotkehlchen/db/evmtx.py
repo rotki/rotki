@@ -490,11 +490,15 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             tx_refs=tx_hashes,
             location=Location.from_chain_id(chain_id),
         )
-        write_cursor.execute(  # delete genesis tx events related to the provided address
-            'DELETE FROM history_events WHERE identifier IN ('
-            'SELECT H.identifier from history_events H INNER JOIN chain_events_info C '
-            'ON H.identifier=C.identifier WHERE C.tx_ref=? AND H.location_label=?)',
-            (GENESIS_HASH, address),
+        # Delete genesis tx events related to the provided address
+        dbevents.delete_events_and_track(
+            write_cursor=write_cursor,
+            where_clause=(
+                'WHERE identifier IN (SELECT H.identifier from history_events H '
+                'INNER JOIN chain_events_info C ON H.identifier=C.identifier '
+                'WHERE C.tx_ref=? AND H.location_label=?)'
+            ),
+            where_bindings=(GENESIS_HASH, address),
         )
         genesis_events_count = write_cursor.execute(
             'SELECT COUNT (*) FROM history_events H INNER JOIN chain_events_info C'

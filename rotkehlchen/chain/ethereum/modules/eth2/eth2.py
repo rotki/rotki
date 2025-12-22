@@ -774,13 +774,12 @@ class Eth2(EthereumModule):
            if the fee recipient is the newly added address and vice versa if the fee recipient
            is the removed address then turn to informational."""
         with self.database.user_write() as write_cursor:
-            write_cursor.execute(
-                'UPDATE history_events SET type=? WHERE entry_type=? AND sequence_index=0 AND location_label=?',  # noqa: E501
-                (
-                    event_type.serialize(),
-                    HistoryBaseEntryType.ETH_BLOCK_EVENT.serialize_for_db(),
-                    address,
-                ),
+            DBHistoryEvents(self.database).update_events_and_track(
+                write_cursor=write_cursor,
+                where_clause='WHERE entry_type=? AND sequence_index=0 AND location_label=?',
+                where_bindings=(HistoryBaseEntryType.ETH_BLOCK_EVENT.serialize_for_db(), address),
+                set_clause='SET type=?',
+                set_bindings=(event_type.serialize(),),
             )
 
     # -- Methods following the EthereumModule interface -- #
