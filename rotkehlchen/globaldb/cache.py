@@ -33,7 +33,11 @@ def compute_cache_key(key_parts: Iterable[str | CacheType]) -> str:
 def base_pool_tokens_key_length(chain_id: ChainID) -> int:
     """Returns the length of the base pool tokens cache key for the given chain id.
     Using any random address here, since length of all addresses is the same."""
-    return len(compute_cache_key([CacheType.CURVE_POOL_TOKENS, str(chain_id.serialize_for_db()), ZERO_ADDRESS]))  # noqa: E501
+    return len(compute_cache_key([
+        CacheType.CURVE_POOL_TOKENS,
+        str(chain_id.serialize_for_db()),
+        ZERO_ADDRESS,
+    ]))
 
 
 def globaldb_set_general_cache_values_at_ts(

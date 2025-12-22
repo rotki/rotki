@@ -2,8 +2,13 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.utils import TokenEncounterInfo, asset_normalized_value, asset_raw_value
+from rotkehlchen.assets.asset import Asset, UnderlyingToken
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    asset_normalized_value,
+    asset_raw_value,
+    get_or_create_evm_token,
+)
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import (
@@ -32,6 +37,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     TOKEN_EXCHANGE_UNDERLYING,
 )
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
+    get_curve_address_from_cache,
     get_lp_and_gauge_token_addresses,
     query_curve_data,
     read_curve_pools_and_gauges,
@@ -51,13 +57,24 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction, TokenKind
+from rotkehlchen.types import (
+    AddressbookEntry,
+    AddressbookType,
+    CacheType,
+    ChecksumEvmAddress,
+    EvmTransaction,
+    OptionalChainAddress,
+    TokenKind,
+)
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -128,6 +145,147 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         except (NotERC20Conformant, NotERC721Conformant) as e:
             log.error(f'Failed to read curve asset with address {asset_address} due to {e!s}')
             return None
+
+    def _ensure_curve_pool_token_exist(
+            self,
+            pool_address: ChecksumEvmAddress,
+            encounter: TokenEncounterInfo,
+    ) -> None:
+        """Ensure the Curve pool's LP token exists in the user DB.
+
+        This resolves the pool's LP token address and creates the single LP token entry if valid.
+        """
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            lp_token_address = get_curve_address_from_cache(
+                cursor=cursor,
+                cache_type=CacheType.CURVE_POOL_ADDRESS,
+                chain_id=self.node_inquirer.chain_id,
+                cache_value=pool_address,
+            )
+        if lp_token_address is None:
+            return
+
+        try:
+            get_or_create_evm_token(
+                userdb=self.base.database,
+                evm_address=lp_token_address,
+                chain_id=self.node_inquirer.chain_id,
+                evm_inquirer=self.node_inquirer,
+                protocol=CPT_CURVE,
+                encounter=encounter,
+            )
+        except (NotERC20Conformant, NotERC721Conformant) as e:
+            log.error(f'Failed to ensure curve pool token {lp_token_address} due to {e!s}')
+
+    def _ensure_curve_pool_tokens_exists(
+            self,
+            pool_address: ChecksumEvmAddress,
+            encounter: TokenEncounterInfo,
+    ) -> None:
+        """Ensure the Curve pool's constituent tokens exist in the user DB.
+
+        This uses the cached pool token list (and optional underlying tokens if available) and
+        creates entries for those assets, skipping ETH.
+        """
+        if (pool_tokens := self.pools.get(pool_address)) is None:
+            return
+
+        underlying_token_names: list[str] = []
+        for token_address in pool_tokens:
+            if token_address == ETH_SPECIAL_ADDRESS:
+                underlying_token_names.append('ETH')
+                continue
+            try:
+                token = get_or_create_evm_token(
+                    userdb=self.base.database,
+                    evm_address=token_address,
+                    chain_id=self.node_inquirer.chain_id,
+                    evm_inquirer=self.node_inquirer,
+                    encounter=encounter,
+                )
+                underlying_token_names.append(token.symbol)
+            except (NotERC20Conformant, NotERC721Conformant) as e:
+                log.error(
+                    f'Skipping pool {pool_address} because {token_address} is not a '
+                    f'valid ERC20 token. {e}',
+                )
+
+        self._ensure_curve_pool_token_exist(pool_address=pool_address, encounter=encounter)
+        if len(underlying_token_names) == 0:
+            return
+
+        if (db_addressbook := DBAddressbook(db_handler=self.base.database)).get_addressbook_entry_name(  # noqa: E501
+            book_type=AddressbookType.GLOBAL,
+            chain_address=OptionalChainAddress(
+                address=pool_address,
+                blockchain=self.node_inquirer.blockchain,
+            ),
+        ) is not None:
+            return
+
+        pool_name = '/'.join(underlying_token_names)
+        with db_addressbook.write_ctx(AddressbookType.GLOBAL) as write_cursor:
+            db_addressbook.add_or_update_addressbook_entries(
+                write_cursor=write_cursor,
+                entries=[AddressbookEntry(
+                    address=pool_address,
+                    name=pool_name,
+                    blockchain=self.node_inquirer.blockchain,
+                )],
+            )
+
+    def _ensure_curve_gauge_token_exist(
+            self,
+            gauge_address: ChecksumEvmAddress,
+            encounter: TokenEncounterInfo,
+    ) -> None:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            if (pool_address := get_curve_address_from_cache(
+                cursor=cursor,
+                cache_type=CacheType.CURVE_GAUGE_ADDRESS,
+                chain_id=self.node_inquirer.chain_id,
+                cache_value=gauge_address,
+            )) is None:
+                return
+            if (lp_token_address := get_curve_address_from_cache(
+                cursor=cursor,
+                cache_type=CacheType.CURVE_POOL_ADDRESS,
+                chain_id=self.node_inquirer.chain_id,
+                cache_value=pool_address,
+            )) is None:
+                return
+
+        try:
+            pool_lp_token = get_or_create_evm_token(
+                userdb=self.base.database,
+                evm_address=lp_token_address,
+                chain_id=self.node_inquirer.chain_id,
+                evm_inquirer=self.node_inquirer,
+                protocol=CPT_CURVE,
+                encounter=encounter,
+            )
+        except (NotERC20Conformant, NotERC721Conformant) as e:
+            log.error(f'Failed to ensure curve pool token {lp_token_address} due to {e!s}')
+            return
+
+        try:
+            get_or_create_evm_token(
+                userdb=self.base.database,
+                evm_address=gauge_address,
+                chain_id=self.node_inquirer.chain_id,
+                evm_inquirer=self.node_inquirer,
+                encounter=encounter,
+                underlying_tokens=[UnderlyingToken(
+                    address=pool_lp_token.evm_address,
+                    token_kind=TokenKind.ERC20,
+                    weight=ONE,
+                )],
+                fallback_decimals=18,
+                fallback_name=f'{pool_lp_token.name} Gauge Deposit',
+                fallback_symbol=f'{pool_lp_token.symbol}-gauge',
+            )
+        except (NotERC20Conformant, NotERC721Conformant):
+            log.warning(f'Curve gauge {gauge_address} is not a valid ERC20 token.')
 
     @property
     def pools(self) -> dict[ChecksumEvmAddress, list[ChecksumEvmAddress]]:
@@ -675,6 +833,12 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        if context.tx_log.address in self.pools:
+            self._ensure_curve_pool_tokens_exists(
+                pool_address=context.tx_log.address,
+                encounter=TokenEncounterInfo(tx_ref=context.transaction.tx_hash),
+            )
+
         if context.tx_log.topics[0] in REMOVE_LIQUIDITY_EVENTS:
             # it can either be the user or a deposit zap contract
             user_or_contract_address = bytes_to_address(context.tx_log.topics[1])
@@ -718,6 +882,21 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         raw_amount = int.from_bytes(context.tx_log.data)
         found_event_modifying_balances = False
         gauge_events = []
+
+        if (
+            gauge_address in self.gauges and
+            any(  # Guard against legacy gauges that are not ERC20 tokens.
+                log.address == gauge_address and
+                len(log.topics) > 0 and
+                log.topics[0] == ERC20_OR_ERC721_TRANSFER
+                for log in context.all_logs
+            )
+        ):
+            self._ensure_curve_gauge_token_exist(
+                gauge_address=gauge_address,
+                encounter=TokenEncounterInfo(tx_ref=context.transaction.tx_hash),
+            )
+
         # get pool tokens for this gauge
         lp_and_gauge_token_addresses = get_lp_and_gauge_token_addresses(
             pool_address=context.tx_log.address,

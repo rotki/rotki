@@ -1,10 +1,12 @@
+from contextlib import suppress
 from typing import TYPE_CHECKING, Final, cast
 
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.binance_sc.modules.curve.constants import (
     CURVE_SWAP_ROUTER_NG as CURVE_SWAP_ROUTER_NG_BSC,
 )
@@ -37,8 +39,12 @@ from rotkehlchen.constants.assets import (
     A_USDT,
     A_XDAI,
 )
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import compute_cache_key
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -46,7 +52,9 @@ from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.unit.decoders.test_zerox import A_POLYGON_POS_USDT
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
+    CacheType,
     ChainID,
     EvmInternalTransaction,
     EvmTransaction,
@@ -57,14 +65,13 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
-from rotkehlchen.utils.misc import timestamp_to_date
+from rotkehlchen.utils.misc import timestamp_to_date, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.types import ChecksumEvmAddress
 
 
@@ -900,6 +907,8 @@ def test_gauge_deposit(
     )
     mocked_notifier = database.msg_aggregator.rotki_notifier
     message = mocked_notifier.pop_message()
+    if message is not None and message.message_type == WSMessageType.NEW_TOKEN_DETECTED:
+        message = mocked_notifier.pop_message()
     assert message == MockedWsMessage(
         message_type=WSMessageType.REFRESH_BALANCES,
         data={
@@ -3259,3 +3268,61 @@ def test_tricrypto_deposit(
         address=ZERO_ADDRESS,
     )]
     assert events == expected_events
+
+
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+def test_ensure_curve_pool_and_gauge_tokens(globaldb, ethereum_transaction_decoder) -> None:
+    """Test the logic to add pools and gauges automatically"""
+    curve_decoder = ethereum_transaction_decoder.decoders['Curve']
+    lp_token_address = pool_address = string_to_evm_address('0x027B40F5917FCd0eac57d7015e120096A5F92ca9')  # noqa: E501
+    gauge_address = string_to_evm_address('0xFB496973ac782813A0885761295B13ae4a292A2f')
+    token_addresses = [
+        string_to_evm_address('0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E'),  # crvusd
+        string_to_evm_address('0xB58E61C3098d85632Df34EecfB899A1Ed80921cB'),  # frankencoin
+        lp_token_address,
+        gauge_address,
+    ]
+
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO general_cache ("key", "value", "last_queried_ts") VALUES (?, ?, ?);',  # noqa: E501
+            [
+                (compute_cache_key((CacheType.CURVE_LP_TOKENS, '1')), pool_address, (now := ts_now())),  # noqa: E501
+                (compute_cache_key((CacheType.CURVE_POOL_TOKENS, '1', pool_address, '0')), token_addresses[0], now),  # noqa: E501
+                (compute_cache_key((CacheType.CURVE_POOL_TOKENS, '1', pool_address, '1')), token_addresses[1], now),  # noqa: E501
+            ],
+        )
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO unique_cache ("key", "value", "last_queried_ts") VALUES (?, ?, ?);',  # noqa: E501
+            [
+                (compute_cache_key((CacheType.CURVE_POOL_ADDRESS, '1', lp_token_address)), pool_address, now),  # noqa: E501
+                (compute_cache_key((CacheType.CURVE_GAUGE_ADDRESS, '1', pool_address)), gauge_address, now),  # noqa: E501
+            ],
+        )
+
+    # ensure that no token is present in the db
+    for address in token_addresses:
+        token_id = evm_address_to_identifier(address=address, chain_id=ChainID.ETHEREUM)
+        with suppress(InputError):
+            GlobalDBHandler.delete_asset_by_identifier(token_id)
+        assert GlobalDBHandler.get_evm_token(address, ChainID.ETHEREUM) is None
+        AssetResolver.clean_memory_cache(token_id)
+
+    curve_decoder.reload_data()  # reload the cache to have the pools in the decoder
+    curve_decoder._ensure_curve_pool_tokens_exists(  # trigger the logic to create the tokens
+        pool_address=pool_address,
+        encounter=TokenEncounterInfo(description='test pool token', should_notify=False),
+    )
+    curve_decoder._ensure_curve_gauge_token_exist(
+        gauge_address=gauge_address,
+        encounter=TokenEncounterInfo(tx_ref=make_evm_tx_hash()),
+    )
+
+    for address in token_addresses:  # ensure that the tokens were created
+        assert (token := GlobalDBHandler.get_evm_token(
+            address=address,
+            chain_id=ChainID.ETHEREUM,
+        )) is not None
+        if address == gauge_address:
+            assert token.underlying_tokens is not None
+            assert token.underlying_tokens[0].address == lp_token_address

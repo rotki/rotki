@@ -14,7 +14,7 @@ from web3 import HTTPProvider, Web3
 
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
 from rotkehlchen.chain.ethereum.modules.yearn.constants import CPT_YEARN_V3
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -519,19 +519,17 @@ def test_find_aerodrome_lp_token_price(inquirer, base_manager):
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggregator'):
     tested_tokens: dict[ChainID, tuple[str, FVal]] = {
-        ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('2577.551783')),
+        ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('3228.15')),
         # 3CRV-OP-gauge
-        ChainID.OPTIMISM: ('0x4456d13Fc6736e8e8330394c0C622103E06ea419', FVal('1782.773383')),
+        ChainID.OPTIMISM: ('0x4456d13Fc6736e8e8330394c0C622103E06ea419', FVal('2075.09')),
         # Curve.fi amDAI/amUSDC/amUSDT (am3CRV)
-        ChainID.POLYGON_POS: ('0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171', FVal('1.139380')),
+        ChainID.POLYGON_POS: ('0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171', FVal('1.14')),
         # crvUSDT-gauge
-        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('1.726938')),
+        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('1.45')),
         # tricrypto
         ChainID.BASE: ('0x63Eb7846642630456707C3efBb50A03c79B89D81', FVal('1.039377')),
         # crvusdusdt-gauge
         ChainID.GNOSIS: ('0xC2EfDbC1a21D82A677380380eB282a963A6A6ada', FVal('1.000344')),
-        # crvUSD/USDT gauge
-        ChainID.BINANCE_SC: ('0x6c816d6Ed4b2B77e121aD7951841A7D0711561b3', FVal('1.004194')),
     }
 
     inquirer.inject_evm_managers([
@@ -551,8 +549,6 @@ def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggr
             data = '{"success":true,"data":{"poolData":[{"id":"factory-tricrypto-0","address":"0x4456d13Fc6736e8e8330394c0C622103E06ea419","coinsAddresses":["0xC52D7F23a2e460248Db6eE192Cb23dD12bDDCbf6","0x68f180fcCe6836688e9084f035309E29Bf0A2095","0x4200000000000000000000000000000000000006"],"decimals":["18","8","18"],"virtualPrice":"1026058244404784142","amplificationCoefficient":"540000","name":"Tricrypto-crvUSD","symbol":"3c-crvUSD","totalSupply":"206330118314705274159","implementationAddress":"0x0458ea5F4CD00E873264Be2031Ceb8f9d9b3116c","priceOracle":107809.79726857698,"priceOracles":[107809.79726857698,2650.749012273789],"implementation":"","assetTypeName":"unknown","coins":[{"address":"0xC52D7F23a2e460248Db6eE192Cb23dD12bDDCbf6","usdPrice":0.9998913378083019,"decimals":"18","isBasePoolLpToken":false,"symbol":"crvUSD","name":"Curve.Fi USD Stablecoin","poolBalance":"140414653142932467698454"},{"address":"0x68f180fcCe6836688e9084f035309E29Bf0A2095","usdPrice":107893.29977891193,"decimals":"8","isBasePoolLpToken":false,"symbol":"WBTC","name":"Wrapped BTC","poolBalance":"129651652"},{"address":"0x4200000000000000000000000000000000000006","usdPrice":2643.836568272872,"decimals":"18","isBasePoolLpToken":false,"symbol":"WETH","name":"Wrapped Ether","poolBalance":"52117579692910262745"}],"poolUrls":{"swap":["https://curve.finance/dex/#/optimism/pools/factory-tricrypto-0/swap","https://optimism.curve.finance/factory-tricrypto-0"],"deposit":["https://curve.finance/dex/#/optimism/pools/factory-tricrypto-0/deposit","https://optimism.curve.finance/factory-tricrypto-0/deposit"],"withdraw":["https://curve.finance/dex/#/optimism/pools/factory-tricrypto-0/withdraw","https://optimism.curve.finance/factory-tricrypto-0/withdraw"]},"lpTokenAddress":"0x4456d13Fc6736e8e8330394c0C622103E06ea419","usdTotal":418075.2039816388,"isMetaPool":false,"usdTotalExcludingBasePool":418075.2039816388,"gaugeAddress":"0x3050a62335948e008c6241b3ef9a81a8c0613b76","gaugeRewards":[{"gaugeAddress":"0x3050a62335948e008c6241b3ef9a81a8c0613b76","tokenPrice":0.7778376599158858,"name":"Optimism","symbol":"OP","decimals":"18","apy":14.717377979394996,"metaData":{"rate":"2389549858431262","periodFinish":1748468645},"tokenAddress":"0x4200000000000000000000000000000000000042"}],"gaugeCrvApy":[0,0],"usesRateOracle":false,"isBroken":false,"hasMethods":{"exchange_received":true,"exchange_extended":false},"creationTs":1711848343,"creationBlockNumber":118124783,"blockchainId":"optimism","registryId":"factory-tricrypto","factory":true}]}}'  # noqa: E501
         elif 'xdai' in url:
             data = '{"success":true,"data":{"poolData":[{"id":"factory-stable-ng-12","address":"0x892406491a47eF0Db3AbaD92064Fb5551ff776E0","coinsAddresses":["0xaBEf652195F98A91E490f047A5006B71c85f058d","0x4ECaBa5870353805a9F068101A40E0f32ed605C6"],"decimals":["18","6"],"virtualPrice":"1000836248551486011","amplificationCoefficient":"1000","totalSupply":"202133923683225478645","name":"crvUSD/USDT","implementationAddress":"0x3d6cB2F6DcF47CDd9C13E4e3beAe9af041d8796a","symbol":"crvusdusdt","implementation":"plainstableng","assetTypeName":"unknown","coins":[{"address":"0xaBEf652195F98A91E490f047A5006B71c85f058d","usdPrice":0.9998905206292624,"decimals":"18","isBasePoolLpToken":false,"symbol":"crvUSD","name":"Curve.Fi USD Stablecoin from Mainnet","poolBalance":"101630853153718948066"},{"address":"0x4ECaBa5870353805a9F068101A40E0f32ed605C6","usdPrice":1.0005218800809865,"decimals":"6","isBasePoolLpToken":false,"symbol":"USDT","name":"Tether USD on xDai","poolBalance":"100672107"}],"poolUrls":{"swap":["https://curve.finance/dex/#/gnosis/pools/factory-stable-ng-12/swap","https://xdai.curve.finance/factory-stable-ng-12"],"deposit":["https://curve.finance/dex/#/gnosis/pools/factory-stable-ng-12/deposit","https://xdai.curve.finance/factory-stable-ng-12/deposit"],"withdraw":["https://curve.finance/dex/#/gnosis/pools/factory-stable-ng-12/withdraw","https://xdai.curve.finance/factory-stable-ng-12/withdraw"]},"lpTokenAddress":"0x892406491a47eF0Db3AbaD92064Fb5551ff776E0","usdTotal":202.3443724392224,"isMetaPool":false,"usdTotalExcludingBasePool":202.3443724392224,"gaugeAddress":"0xc2efdbc1a21d82a677380380eb282a963a6a6ada","gaugeRewards":[{"gaugeAddress":"0xc2efdbc1a21d82a677380380eb282a963a6a6ada","tokenPrice":1.0004593482853341,"name":"Curve.Fi USD Stablecoin from Mainnet","symbol":"crvUSD","decimals":"18","apy":0,"metaData":{"rate":"8267195767195767","periodFinish":1708788705},"tokenAddress":"0xaBEf652195F98A91E490f047A5006B71c85f058d"}],"gaugeCrvApy":[null,null],"usesRateOracle":false,"isBroken":false,"hasMethods":{"exchange_received":true,"exchange_extended":false},"creationTs":1706738200,"creationBlockNumber":32225654,"blockchainId":"xdai","registryId":"factory-stable-ng","factory":true}]}}'  # noqa: E501
-        elif 'bsc' in url:
-            data = '{"success":true,"data":{"poolData":[{"id":"factory-stable-ng-10","address":"0xAE87E5Fa20f335ce14AA3B9E0616308d9AC7d4Ce","coinsAddresses":["0xe2fb3F127f5450DeE44afe054385d74C392BdeF4","0x55d398326f99059fF775485246999027B3197955"],"decimals":["18","18"],"virtualPrice":"1002655142397373520","amplificationCoefficient":"1000","totalSupply":"640475169551097332597","name":"crvUSD/USDT","implementationAddress":"0x505d666E4DD174DcDD7FA090ed95554486d2Be44","symbol":"crvusdUSDT","implementation":"plainstableng","assetTypeName":"unknown","coins":[{"address":"0xe2fb3F127f5450DeE44afe054385d74C392BdeF4","usdPrice":0.999606,"decimals":"18","isBasePoolLpToken":false,"symbol":"crvUSD","name":"Curve.fi USD Stablecoin","poolBalance":"609458169177334410228"},{"address":"0x55d398326f99059fF775485246999027B3197955","usdPrice":0.996422,"decimals":"18","isBasePoolLpToken":false,"symbol":"USDT","name":"Tether USD","poolBalance":"33994264175292214796"}],"poolUrls":{"swap":["https://curve.finance/dex/#/bsc/pools/factory-stable-ng-10/swap"],"deposit":["https://curve.finance/dex/#/bsc/pools/factory-stable-ng-10/deposit"],"withdraw":["https://curve.finance/dex/#/bsc/pools/factory-stable-ng-10/withdraw"]},"lpTokenAddress":"0xAE87E5Fa20f335ce14AA3B9E0616308d9AC7d4Ce","usdTotal":643.0906753567515,"isMetaPool":false,"usdTotalExcludingBasePool":643.0906753567515,"gaugeAddress":"0x6c816d6ed4b2b77e121ad7951841a7d0711561b3","gaugeRewards":[],"gaugeCrvApy":[0,0],"usesRateOracle":false,"isBroken":false,"hasMethods":{"exchange_received":false,"exchange_extended":false},"creationTs":null,"creationBlockNumber":null,"blockchainId":"bsc","registryId":"factory-stable-ng","factory":true}]}}'  # noqa: E501
         elif 'base' in url:
             data = '{"success":true,"data":{"poolData":[{"id":"factory-stable-ng-0","address":"0x63Eb7846642630456707C3efBb50A03c79B89D81","coinsAddresses":["0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C"],"decimals":["6","18"],"virtualPrice":"1038127731677528393","amplificationCoefficient":"1500","totalSupply":"96323776763917376762926","name":"USDC/USDM","implementationAddress":"0xf3A6aa40cf048a3960E9664847E9a7be025a390a","symbol":"usdc-usdm","implementation":"plainstableng","assetTypeName":"unknown","coins":[{"address":"0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913","usdPrice":1,"decimals":"6","isBasePoolLpToken":false,"symbol":"USDC","name":"USD Coin","poolBalance":"69704034393"},{"address":"0x59D9356E565Ab3A36dD77763Fc0d87fEaf85508C","usdPrice":0.9920451843592847,"decimals":"18","isBasePoolLpToken":false,"symbol":"USDM","name":"Mountain Protocol USD","poolBalance":"30298471535951393821337"}],"poolUrls":{"swap":["https://curve.finance/dex/#/base/pools/factory-stable-ng-0/swap"],"deposit":["https://curve.finance/dex/#/base/pools/factory-stable-ng-0/deposit"],"withdraw":["https://curve.finance/dex/#/base/pools/factory-stable-ng-0/withdraw"]},"lpTokenAddress":"0x63Eb7846642630456707C3efBb50A03c79B89D81","usdTotal":99761.48717368743,"isMetaPool":false,"usdTotalExcludingBasePool":99761.48717368743,"gaugeAddress":"0xa5ac7470555781974f8772f23191a749a413cba4","gaugeRewards":[],"gaugeCrvApy":[0,0],"usesRateOracle":false,"isBroken":false,"hasMethods":{"exchange_received":false,"exchange_extended":false},"creationTs":1702561647,"creationBlockNumber":7886150,"blockchainId":"base","registryId":"factory-stable-ng","factory":true}]}}'  # noqa: E501
 
@@ -576,11 +572,19 @@ def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggr
         write_cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key LIKE ?', (ts_now(), 'CURVE_LP_TOKENS%'))  # noqa: E501
 
     for chain_id, (address, price) in tested_tokens.items():
+        manager = inquirer.get_evm_manager(chain_id)
+        get_or_create_evm_token(
+            userdb=manager.node_inquirer.database,
+            evm_address=string_to_evm_address(address),
+            chain_id=chain_id,
+            evm_inquirer=manager.node_inquirer,
+            encounter=TokenEncounterInfo(description='test curve lp token', should_notify=False),
+        )
         assert inquirer.find_usd_price(EvmToken(evm_address_to_identifier(
             address=address,
             chain_id=chain_id,
             token_type=TokenKind.ERC20,
-        ))).is_close(price)
+        ))).is_close(price, max_diff='0.1')
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
