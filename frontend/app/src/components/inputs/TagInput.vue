@@ -5,6 +5,7 @@ import TagFormDialog from '@/components/tags/TagFormDialog.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
 import { defaultTag, type Tag } from '@/types/tags';
+import { renameTagInList } from '@/utils/tags';
 
 const modelValue = defineModel<string[]>({ required: true });
 
@@ -73,18 +74,7 @@ function handleTagSaved(tag: Tag, previousName: string): void {
   if (!previousName || previousName === tag.name)
     return;
 
-  const previousLower = previousName.toLowerCase();
-  const updatedTags = get(modelValue).map(item => (item.toLowerCase() === previousLower ? tag.name : item));
-  const dedupedTags: string[] = [];
-  const seen = new Set<string>();
-  for (const item of updatedTags) {
-    if (seen.has(item))
-      continue;
-    seen.add(item);
-    dedupedTags.push(item);
-  }
-
-  set(modelValue, dedupedTags);
+  set(modelValue, renameTagInList(get(modelValue), previousName, tag.name));
 }
 
 function handleCreateNewTag() {
