@@ -20,9 +20,7 @@ from web3.types import BlockIdentifier, FilterParams
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT, SAFE_BASIC_ABI
-from rotkehlchen.chain.ethereum.constants import (
-    ETHEREUM_ETHERSCAN_NODE_NAME,
-)
+from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.ethereum.types import LogIterationCallback
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import (
@@ -343,7 +341,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 if node_info.name in self.failed_to_connect_nodes:
                     continue
 
-                if node_info.name != ETHEREUM_ETHERSCAN_NODE_NAME:
+                if node_info.name != EVM_INDEXERS_NODE_NAME:
                     success, _ = self.attempt_connect(node=node_info)
                     if success is False:
                         self.failed_to_connect_nodes.add(node_info.name)
@@ -415,7 +413,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             return web3.eth.block_number
 
         # else
-        return self.etherscan.get_latest_block_number(chain_id=self.chain_id)
+        return self._try_indexers(func=lambda indexer: indexer.get_latest_block_number(
+            chain_id=self.chain_id,
+        ))
 
     def get_latest_block_number(self, call_order: Sequence[WeightedNode] | None = None) -> int:
         return self._query(
@@ -444,10 +444,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         by web3.eth.get_block().
         """
         if web3 is None:
-            return self.etherscan.get_block_by_number(
+            return self._try_indexers(func=lambda indexer: indexer.get_block_by_number(
                 chain_id=self.chain_id,
                 block_number=num,
-            )
+            ))
 
         block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.get_block(num))  # type: ignore # pylint: disable=no-member
         block_data['hash'] = block_data['hash'].to_0x_hex()
@@ -468,41 +468,42 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         """Gets the deployment bytecode at the given address as a 0x hex string
 
         May raise:
-        - RemoteError if Etherscan is used and there is a problem querying it or
+        - RemoteError if an indexer is used and there is a problem querying it or
         parsing its response
         """
         if web3 is None:
-            return self.etherscan.get_code(chain_id=self.chain_id, account=account)
+            return self._try_indexers(func=lambda indexer: indexer.get_code(
+                chain_id=self.chain_id,
+                account=account,
+            ))
 
         return web3.eth.get_code(account).to_0x_hex()
 
-    def _call_contract_etherscan(
+    def _call_contract_indexers(
             self,
             contract_address: ChecksumEvmAddress,
             abi: ABI,
             method_name: str,
             arguments: list[Any] | None = None,
     ) -> Any:
-        """Performs an eth_call to an evm contract via etherscan
+        """Performs an eth_call to an evm contract via the indexers.
 
         May raise:
-        - RemoteError if there is a problem with
-        reaching etherscan or with the returned result
+        - RemoteError if there is a problem reaching the indexers or with the returned result
         """
         web3 = Web3()
         given_arguments = arguments or []
         contract = web3.eth.contract(address=contract_address, abi=abi)
         input_data = contract.encode_abi(method_name, args=given_arguments)
-        result = self.etherscan.eth_call(
+        if (result := self._try_indexers(func=lambda indexer: indexer.eth_call(
             chain_id=self.chain_id,
             to_address=contract_address,
             input_data=input_data,
-        )
-        if result == '0x':
+        ))) == '0x':
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address} for {method_name} '
                 f'and chain {self.chain_name} with arguments: {arguments!s} '
-                f'via etherscan. Returned 0x result',
+                f'via indexers. Returned 0x result',
             )
 
         fn_abi = contract._find_matching_fn_abi(
@@ -553,7 +554,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         - BlockchainQueryError if web3 is used and there is a VM execution error
         """
         if web3 is None:
-            return self._call_contract_etherscan(
+            return self._call_contract_indexers(
                 contract_address=contract_address,
                 abi=abi,
                 method_name=method_name,
@@ -581,11 +582,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if tx_hash == GENESIS_HASH:
             return FAKE_GENESIS_TX_RECEIPT
         if web3 is None:
-            tx_receipt = self.etherscan.get_transaction_receipt(
+            if (tx_receipt := self._try_indexers(func=lambda indexer: indexer.get_transaction_receipt(  # noqa: E501
                 chain_id=self.chain_id,
                 tx_hash=tx_hash,
-            )
-            if tx_receipt is None:
+            ))) is None:
                 if must_exist:  # fail, so other nodes can be tried
                     raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash!s} returned None')  # noqa: E501
 
@@ -677,10 +677,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             must_exist: bool = False,
     ) -> tuple[EvmTransaction, dict[str, Any]] | None:
         if web3 is None:
-            tx_data = self.etherscan.get_transaction_by_hash(
+            tx_data = self._try_indexers(func=lambda indexer: indexer.get_transaction_by_hash(
                 chain_id=self.chain_id,
                 tx_hash=tx_hash,
-            )
+            ))
         else:
             tx_data = web3.eth.get_transaction(tx_hash)  # type: ignore
         if tx_data is None:
@@ -752,7 +752,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             log_iteration_cb_arguments: 'GnosisWithdrawalsQueryParameters | None' = None,
     ) -> list[dict[str, Any]]:
         if call_order is None:  # Default call order for logs
-            call_order = [self.etherscan_node]
+            call_order = [self.indexers_node]
             if (node_info := self.get_own_node_info()) is not None:
                 call_order.append(
                     WeightedNode(
@@ -829,7 +829,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             )
         else:  # etherscan
             until_block = (
-                self.etherscan.get_latest_block_number(self.chain_id) if to_block == 'latest' else to_block  # noqa: E501
+                self._get_latest_block_number(web3=None) if to_block == 'latest' else to_block
             )
             blocks_step = 300000
             while start_block <= until_block:
@@ -1465,7 +1465,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                         f'API key. {e!s} Removing it from the available indexers for this chain.',
                     )
                     errors.append((indexer.name, e))
-            except RemoteError as e:
+            except (RemoteError, DeserializationError) as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 errors.append((indexer.name, e))
 

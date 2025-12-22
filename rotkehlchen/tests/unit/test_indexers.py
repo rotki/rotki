@@ -16,19 +16,23 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='check_all_indexers', params=[
-    [],  # no patches, uses etherscan
+    [(blockscout_patch := patch(
+        target='rotkehlchen.externalapis.blockscout.Blockscout._query_and_process',
+        side_effect=RemoteError('BOOM'),
+    )), (routescan_patch := patch(
+        target='rotkehlchen.externalapis.routescan.Routescan._query',
+        side_effect=RemoteError('BOOM'),
+    ))],  # blockscout and routescan patched, uses etherscan
     [(etherscan_patch := patch(
         target='rotkehlchen.externalapis.etherscan.Etherscan._query',
         side_effect=RemoteError('BOOM'),
-    ))],  # etherscan patched, uses blockscout
-    [etherscan_patch, patch(
-        target='rotkehlchen.externalapis.blockscout.Blockscout._query_and_process',
-        side_effect=RemoteError('BOOM'),
-    )],  # etherscan and blockscout patched, uses routescan.
+    )), routescan_patch],  # etherscan and routescan patched, uses blockscout
+    [etherscan_patch, blockscout_patch],  # etherscan and blockscout patched, uses routescan.
 ])
 def fixture_check_all_indexers(request: pytest.FixtureRequest) -> Iterator[None]:
     """Run the test once for each indexer (etherscan, blockscout, routescan).
-    Each run patches the previous indexers to fail, forcing fallback to the target indexer.
+    Each run patches the all the other indexers to fail, forcing fallback to the target indexer,
+    and ensuring a failure if the target indexer fails.
     """
     with ExitStack() as stack:
         for indexer_patch in request.param:
@@ -86,3 +90,73 @@ def test_has_activity(
         chain_id=ethereum_inquirer.chain_id,
         account=string_to_evm_address('0x84e8EE8911c147755bD70084b6b4D1a5A8351476'),
     ) == HasChainActivity.NONE
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_get_code(
+        ethereum_inquirer: 'EthereumInquirer',
+        check_all_indexers,
+) -> None:
+    assert ethereum_inquirer.get_code(
+        account=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+    )[:10] == '0x60806040'
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_call_contract(
+        ethereum_inquirer: 'EthereumInquirer',
+        check_all_indexers,
+) -> None:
+    assert ethereum_inquirer._call_contract(
+        web3=None,
+        contract_address=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+        abi=ethereum_inquirer.contracts.erc20_abi,
+        method_name='name',
+    ) == 'USD Coin'
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_get_latest_block_number(
+        ethereum_inquirer: 'EthereumInquirer',
+        check_all_indexers,
+) -> None:
+    assert ethereum_inquirer.get_latest_block_number() == 24069561
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_get_block_by_number(
+        ethereum_inquirer: 'EthereumInquirer',
+        check_all_indexers,
+) -> None:
+    """Check that all indexers properly return block data by block number."""
+    block = ethereum_inquirer.get_block_by_number(num=10304885)
+    assert block['timestamp'] == 1592686213
+    assert block['number'] == 10304885
+    assert block['hash'] == '0xe2217ba1639c6ca2183f40b0f800185b3901faece2462854b3162d4c5077752c'
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_get_transaction_receipt(
+        ethereum_inquirer: 'EthereumInquirer',
+        check_all_indexers,
+) -> None:
+    raw_receipt = ethereum_inquirer.get_transaction_receipt(
+        tx_hash=deserialize_evm_tx_hash('0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89'),
+    )
+    assert raw_receipt['blockNumber'] == 10840714
+    assert raw_receipt['transactionHash'] == '0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89'  # noqa: E501
+    assert len(raw_receipt['logs']) == 2
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_get_transaction_by_hash(
+        ethereum_inquirer: 'EthereumInquirer',
+        check_all_indexers,
+) -> None:
+    tx, _ = ethereum_inquirer.get_transaction_by_hash(
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5b180e3dcc19cd29c918b98c876f19393e07b74c07fd728102eb6241db3c2d5c')),  # noqa: E501
+    )
+    assert tx.tx_hash == tx_hash
+    assert tx.timestamp == 1633128954
+    assert tx.value == 33000000000000000
+    assert tx.gas == 294144

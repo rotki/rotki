@@ -41,7 +41,7 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import set_user_agent
+from rotkehlchen.utils.misc import hexstr_to_int, set_user_agent
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -377,6 +377,49 @@ class EtherscanLikeApi(ABC):
         )
         log.error(msg)
         raise RemoteError(msg)
+
+    @overload
+    def _query_rpc_method(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            method: Literal[
+                'eth_getBlockByNumber',
+                'eth_getTransactionReceipt',
+                'eth_getTransactionByHash',
+            ],
+            options: dict[str, Any],
+    ) -> dict[str, Any]:
+        ...
+
+    @overload
+    def _query_rpc_method(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            method: Literal[
+                'eth_blockNumber',
+                'eth_getCode',
+                'eth_call',
+            ],
+            options: dict[str, Any] | None = None,
+    ) -> str:
+        ...
+
+    def _query_rpc_method(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            method: str,
+            options: dict[str, Any] | None = None,
+    ) -> str | dict[str, Any]:
+        """Queries the indexer for the given RPC method.
+        May be overridden in subclasses to use a different API endpoint if a given service
+        doesn't use the etherscan 'proxy' module.
+        """
+        return self._query(  # type: ignore[call-overload]  # method will be valid due to the overloads here.
+            chain_id=chain_id,
+            module='proxy',
+            action=method,
+            options=options,
+        )
 
     def _process_timestamp_or_blockrange(
             self,
@@ -717,3 +760,88 @@ class EtherscanLikeApi(ABC):
             msg = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
             log.error(f'Failed to get contract creation hash for {address} from {self.name}: {msg}')  # noqa: E501
             return None
+
+    def get_latest_block_number(self, chain_id: SUPPORTED_CHAIN_IDS) -> int:
+        """Gets the latest block number.
+        May raise:
+         - RemoteError if there are problems contacting the indexer
+         - DeserializationError if the indexer returns an invalid response
+        """
+        return hexstr_to_int(self._query_rpc_method(
+            chain_id=chain_id,
+            method='eth_blockNumber',
+        ))
+
+    def get_block_by_number(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            block_number: int,
+    ) -> dict[str, Any]:
+        """Gets block data by block number.
+        May raise:
+         - RemoteError if there are problems contacting the indexer
+         - DeserializationError if the indexer returns an invalid response
+        """
+        if (block_data := self._query_rpc_method(
+            chain_id=chain_id,
+            method='eth_getBlockByNumber',
+            options={'tag': hex(block_number), 'boolean': 'true'},
+        )) is None:
+            raise RemoteError(f'Null response from {self.name} for block {block_number}')
+
+        block_data['timestamp'] = hexstr_to_int(block_data['timestamp'])
+        block_data['number'] = hexstr_to_int(block_data['number'])
+        return block_data
+
+    def get_transaction_by_hash(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            tx_hash: EVMTxHash,
+    ) -> dict[str, Any] | None:
+        """Gets a transaction object by hash.
+        May raise RemoteError if there are problems contacting the indexer.
+        """
+        return self._query_rpc_method(
+            chain_id=chain_id,
+            method='eth_getTransactionByHash',
+            options={'txhash': str(tx_hash)},
+        )
+
+    def get_code(self, chain_id: SUPPORTED_CHAIN_IDS, account: ChecksumEvmAddress) -> str:
+        """Gets the deployment bytecode at the given address
+        May raise RemoteError if there are problems contacting the indexer.
+        """
+        return self._query_rpc_method(
+            chain_id=chain_id,
+            method='eth_getCode',
+            options={'address': account},
+        )
+
+    def get_transaction_receipt(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            tx_hash: EVMTxHash,
+    ) -> dict[str, Any] | None:
+        """Gets the receipt for the given transaction hash.
+        May raise if there are problems contacting the indexer.
+        """
+        return self._query_rpc_method(
+            chain_id=chain_id,
+            method='eth_getTransactionReceipt',
+            options={'txhash': str(tx_hash)},
+        )
+
+    def eth_call(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            to_address: ChecksumEvmAddress,
+            input_data: str,
+    ) -> str:
+        """Performs an eth_call on the given address and the given input data.
+        May raise RemoteError if there are problems contacting the indexer.
+        """
+        return self._query_rpc_method(
+            chain_id=chain_id,
+            method='eth_call',
+            options={'to': to_address, 'data': input_data},
+        )

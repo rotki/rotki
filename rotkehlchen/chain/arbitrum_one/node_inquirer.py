@@ -6,7 +6,7 @@ from web3.types import BlockIdentifier
 
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.chain.ethereum.constants import (
-    ETHEREUM_ETHERSCAN_NODE,
+    EVM_INDEXERS_NODE,
 )
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
 from rotkehlchen.chain.evm.constants import BALANCE_SCANNER_ADDRESS
@@ -94,7 +94,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             return super().multicall(
                 calls=calls,
                 require_success=require_success,
-                call_order=[node for node in call_order if node != ETHEREUM_ETHERSCAN_NODE],
+                call_order=[node for node in call_order if node != EVM_INDEXERS_NODE],
                 block_identifier=block_identifier,
                 calls_chunk_size=calls_chunk_size,
             )
@@ -102,7 +102,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             return super().multicall(
                 calls=calls,
                 require_success=require_success,
-                call_order=[ETHEREUM_ETHERSCAN_NODE],
+                call_order=[EVM_INDEXERS_NODE],
                 block_identifier=block_identifier,
                 calls_chunk_size=3,
             )

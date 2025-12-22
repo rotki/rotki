@@ -10,7 +10,7 @@ import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.decoding.constants import CPT_GAS
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
+from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
@@ -174,7 +174,7 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
     result = assert_proper_sync_response_with_result(response)
     assert len(result) == 7
     for node in result:
-        if node['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
+        if node['name'] != EVM_INDEXERS_NODE_NAME:
             assert node['endpoint'] != ''
         else:
             assert node['identifier'] == 1

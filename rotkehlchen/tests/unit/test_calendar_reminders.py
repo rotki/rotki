@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+import requests
 from freezegun import freeze_time
 
 from rotkehlchen.chain.base.modules.basenames.constants import CPT_BASENAMES
@@ -141,13 +142,27 @@ def test_ens_expiry_calendar_reminders(
     calendar_db = DBCalendar(database)
     all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
     assert all_calendar_entries['entries_total'] == 0
+    original_requests_get = requests.get
 
-    ens_events = [
-        next(x for x in get_decoded_events_of_transaction(  # decode ENS registration/renewal event and get the event with the metadata  # noqa: E501
-            evm_inquirer=ethereum_inquirer if counterparty == CPT_ENS else base_inquirer,
-            tx_hash=ens_tx_hash,
-        )[0] if x.extra_data is not None) for ens_tx_hash in ens_tx_hashes
-    ]
+    def mock_basenames_request_get(url, timeout):
+        """There is a basenames api request that fails and is excluded from the VCR. So force
+        it to fail here to avoid VCR problems.
+        """
+        if 'basenames/metadata/45236693060355741244193735256859290971350174497390063529678304497551635844272' in url:  # noqa: E501
+            raise requests.exceptions.RequestException('BOOM')
+
+        return original_requests_get(url=url, timeout=timeout)
+
+    with patch(
+        target='rotkehlchen.chain.base.modules.basenames.decoder.requests.get',
+        side_effect=mock_basenames_request_get,
+    ):
+        ens_events = [
+            next(x for x in get_decoded_events_of_transaction(  # decode ENS registration/renewal event and get the event with the metadata  # noqa: E501
+                evm_inquirer=ethereum_inquirer if counterparty == CPT_ENS else base_inquirer,
+                tx_hash=ens_tx_hash,
+            )[0] if x.extra_data is not None) for ens_tx_hash in ens_tx_hashes
+        ]
 
     reminder_creator = CalendarReminderCreator(database=database, current_ts=ts_now())
     reminder_creator.maybe_create_ens_reminders()

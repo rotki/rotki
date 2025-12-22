@@ -39,7 +39,7 @@ def uniswap_lp_token_balances(
         call_order = [WeightedNode(node_info=own_node_info, weight=ONE, active=True)]
     else:
         chunks = list(get_chunks(lp_addresses, n=700))
-        call_order = ethereum.default_call_order(skip_etherscan=True)
+        call_order = ethereum.default_call_order(skip_indexers=True)
 
     balances = []
     for chunk in chunks:

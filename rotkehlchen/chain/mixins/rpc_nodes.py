@@ -18,7 +18,7 @@ from web3 import HTTPProvider, Web3
 from web3.exceptions import Web3Exception
 from web3.middleware import ExtraDataToPOAMiddleware
 
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
+from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.solana.constants import SOLANA_GENESIS_BLOCK_HASH
 from rotkehlchen.constants.misc import ONE
@@ -191,7 +191,7 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.etherscan_node = ETHEREUM_ETHERSCAN_NODE
+        self.indexers_node = EVM_INDEXERS_NODE
 
     def determine_capabilities(self, web3: Web3) -> tuple[bool, bool]:
         """This method checks for the capabilities of an rpc node. This includes:
@@ -336,18 +336,18 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
         log.warning(message)
         return False, message
 
-    def default_call_order(self, skip_etherscan: bool = False) -> list['WeightedNode']:
+    def default_call_order(self, skip_indexers: bool = False) -> list['WeightedNode']:
         """Default call order for evm nodes
 
         Own node always has preference. Then all other node types are randomly queried
         in sequence depending on a weighted probability.
 
-        If skip_etherscan is set to True then etherscan is not included in the list of
+        If skip_indexers is set to True then the indexers are not included in the list of
         nodes to query.
         """
         ordered_list = super().default_call_order()
-        if not skip_etherscan:  # explicitly adding at the end to minimize etherscan API queries
-            ordered_list.append(self.etherscan_node)
+        if not skip_indexers:  # explicitly adding at the end to minimize indexer API queries
+            ordered_list.append(self.indexers_node)
 
         return ordered_list
 

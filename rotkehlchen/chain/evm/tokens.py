@@ -138,10 +138,10 @@ def get_chunk_size_call_order(
     """
     if evm_inquirer.connected_to_any_node():
         chunk_size = web3_node_chunk_size
-        call_order = evm_inquirer.default_call_order(skip_etherscan=True)
+        call_order = evm_inquirer.default_call_order(skip_indexers=True)
     else:
         chunk_size = etherscan_chunk_size if evm_inquirer.chain_id != ChainID.ARBITRUM_ONE else arbiscan_chunksize  # noqa: E501
-        call_order = [evm_inquirer.etherscan_node]
+        call_order = [evm_inquirer.indexers_node]
 
     return chunk_size, call_order
 

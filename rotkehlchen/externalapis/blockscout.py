@@ -110,6 +110,7 @@ class Blockscout(EtherscanLikeApi):
             query_str: str,
             params: dict[str, Any] | None = None,
             timeout: tuple[int, int] | None = None,
+            http_method: Literal['get', 'post'] = 'get',
     ) -> dict[str, Any]:
         """Shared logic between v1 and v2 for querying blockscout api"""
         log.debug(f'Querying blockscout API for {query_str} with {params}')
@@ -120,7 +121,12 @@ class Blockscout(EtherscanLikeApi):
 
         while True:
             try:
-                response = self.session.get(query_str, timeout=timeout, params=params)
+                response = self.session.request(
+                    method=http_method,
+                    url=query_str,
+                    timeout=timeout,
+                    **{'params' if http_method == 'get' else 'json': params},  # type: ignore[arg-type]
+                )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
 
@@ -303,6 +309,72 @@ class Blockscout(EtherscanLikeApi):
             query_str=query_str,
             params=extra_args,
         )
+
+    @overload
+    def _query_rpc_method(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            method: Literal[
+                'eth_getBlockByNumber',
+                'eth_getTransactionReceipt',
+                'eth_getTransactionByHash',
+            ],
+            options: dict[str, Any],
+    ) -> dict[str, Any]:
+        ...
+
+    @overload
+    def _query_rpc_method(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            method: Literal[
+                'eth_blockNumber',
+                'eth_getCode',
+                'eth_call',
+            ],
+            options: dict[str, Any] | None = None,
+    ) -> str:
+        ...
+
+    def _query_rpc_method(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            method: str,
+            options: dict[str, Any] | None = None,
+    ) -> str | dict[str, Any]:
+        """Query blockscout rpc endpoints. Blockscout uses a format very similar to actual RPCs
+        instead of a proxy module like etherscan.
+        May raise RemoteError if there is a problem querying blockscout or the response is invalid.
+        """
+        if options is None:
+            params = []
+        elif method == 'eth_getBlockByNumber':
+            # for eth_getBlockByNumber etherscan uses a 'true'/'false' string value for the
+            # `boolean` parameter (specifies whether to return full transactions), while
+            # blockscout requires an actual boolean value.
+            params = [options.get('tag', 'latest'), options.get('boolean', 'true') == 'true']
+        elif method == 'eth_call':
+            tag = options.pop('tag', 'latest')
+            params = [options, tag]
+        elif method == 'eth_getCode':
+            # the tag is required for blockscout, so need to ensure it is present.
+            params = [options.get('address'), options.get('tag', 'latest')]
+        else:
+            params = list(options.values())
+
+        if 'result' not in (response := self._query_and_process(
+            query_str=f'{self._get_url(chain_id=chain_id)}/eth-rpc',
+            params={
+                'id': 0,
+                'jsonrpc': '2.0',
+                'method': method,
+                'params': params,
+            },
+            http_method='post',
+        )):
+            raise RemoteError(f'Blockscout eth-rpc response contains no result: {response}')
+
+        return response['result']
 
     def query_withdrawals(self, address: ChecksumEvmAddress) -> set[int]:
         """Query withdrawals for an ethereum address and save them in the DB.

@@ -102,7 +102,7 @@ def test_decode_given_transactions_custom_indexer(rotkehlchen_api_server: 'APISe
     )
     assert outcome is True
     assert CachedSettings().get_evm_indexers_order_for_chain(ChainID.ETHEREUM) == default_order
-    assert call_order == [custom_indexer]
+    assert all(indexer == custom_indexer for indexer in call_order)
 
     result = requests.put(  # test validation of indexers
         api_url_for(
