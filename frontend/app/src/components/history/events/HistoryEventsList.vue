@@ -130,6 +130,9 @@ watch(() => get(eventGroup), () => {
 
 // Unsupported event detection
 const unsupportedEvent = computed<HistoryEventEntry | null>(() => {
+  if (get(loading))
+    return null;
+
   const events = get(combinedAllEvents);
   if (events.length !== 1)
     return null;
@@ -150,7 +153,7 @@ const unsupportedEvent = computed<HistoryEventEntry | null>(() => {
 
 const showReportDialog = ref<boolean>(false);
 
-const reportTitle = computed<string>(() => t('transactions.events.unsupported.report_title'));
+const reportTitle = computed<string>(() => t('transactions.events.unsupported.title'));
 
 const reportDescription = computed<string>(() => {
   const event = get(unsupportedEvent);

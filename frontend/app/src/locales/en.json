@@ -5231,7 +5231,6 @@
         "placeholder": "[Add more context here]",
         "report_action": "Report Transaction",
         "report_description_intro": "I found a transaction that appears to be unsupported (only gas fee event).",
-        "report_title": "Unsupported Transaction",
         "title": "Unsupported Transaction",
         "tx_hash": "- Tx Hash: {hash}"
       },
