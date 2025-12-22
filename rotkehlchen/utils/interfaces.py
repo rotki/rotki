@@ -32,10 +32,7 @@ class EthereumModule(ABC):
 
     @abstractmethod
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
-        """Actions to run on new ethereum account additions
-
-        Can optionally return a list of asset balances determined by the module
-        """
+        """Actions to run on new ethereum account additions"""
 
     @abstractmethod
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
