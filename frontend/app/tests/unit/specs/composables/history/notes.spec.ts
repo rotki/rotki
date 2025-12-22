@@ -527,4 +527,81 @@ describe('composables::history/notes', () => {
 
     expect(formatted).toMatchObject(expected);
   });
+
+  it('should handle country flag for gnosis pay event notes', () => {
+    const notes = 'Pay 8.5 EUR to Lidl in Berlin :country:DE:';
+
+    const formatted = get(formatNotes({ notes, counterparty: 'gnosis_pay' }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Pay',
+      },
+      {
+        type: NoteType.AMOUNT,
+        amount: bigNumberify(8.5),
+      },
+      {
+        type: NoteType.WORD,
+        word: 'EUR to Lidl in Berlin',
+      },
+      {
+        type: NoteType.FLAG,
+        countryCode: 'de',
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
+
+  it('should handle merchant code for gnosis pay event notes', () => {
+    const notes = 'Pay 8.5 EUR to :merchant_code:5411: Lidl in Berlin :country:DE:';
+
+    const formatted = get(formatNotes({ notes, counterparty: 'gnosis_pay' }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Pay',
+      },
+      {
+        type: NoteType.AMOUNT,
+        amount: bigNumberify(8.5),
+      },
+      {
+        type: NoteType.WORD,
+        word: 'EUR to',
+      },
+      {
+        type: NoteType.MERCHANT_CODE,
+        merchantCode: '5411',
+      },
+      {
+        type: NoteType.WORD,
+        word: 'Lidl in Berlin',
+      },
+      {
+        type: NoteType.FLAG,
+        countryCode: 'de',
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
+
+  it('should not handle country flag or merchant code for non-gnosis_pay counterparty', () => {
+    const notes = 'Pay 8.5 EUR to :merchant_code:5411: Lidl in Berlin :country:DE:';
+
+    const formatted = get(formatNotes({ notes, counterparty: 'other' }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Pay 8.5 EUR to :merchant_code:5411: Lidl in Berlin :country:DE:',
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
 });

@@ -447,7 +447,7 @@ class GnosisPay:
             if transaction.billing_symbol:
                 notes += f' ({transaction.billing_amount} {transaction.billing_symbol})'
 
-        notes += f' {preposition} {transaction.merchant_name}'
+        notes += f' {preposition} :merchant_code:{transaction.mcc}: {transaction.merchant_name}'
         if transaction.merchant_city:
             notes += f' in {transaction.merchant_city}'
 
