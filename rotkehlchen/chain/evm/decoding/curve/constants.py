@@ -11,23 +11,37 @@ CURVE_COUNTERPARTY_DETAILS: Final = CounterpartyDetails(
     label='Curve.fi',
     image='curve.png',
 )
+# For information about different types of pools see https://docs.curve.finance/factory/overview/  # noqa: E501
+# Used by Stableswap https://docs.curve.finance/factory/stableswap/overview/#implementations
 ADD_LIQUIDITY_2_ASSETS: Final = b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\xf0E9\x91\xe9Xs\xf5+\xff\r!\xaf@y\xa7h'  # noqa: E501
 ADD_LIQUIDITY_2_ASSETS_OPTIMIZED: Final = b'q\x96\xcb\xf6=\xf1\xf2\xec c\x8eh>\xbeQ\xd1\x82`\xbeQ\x05\x92\xee\x1e.\xfe?<\xfdL3\xe9'  # in CurveTwocryptoOptimized  # noqa: E501
+# "Genesis Contracts": Stableswap pools that have 3 or 4 assets. The signature changes depending on the number of assets that the pool has  # noqa: E501
+# https://docs.curve.finance/stableswap-exchange/overview/#implementations
 ADD_LIQUIDITY_3_ASSETS: Final = b'B?d\x95\xa0\x8f\xc6RB\\\xf4\xed\r\x1f\x9e7\xe5q\xd9\xb9R\x9b\x1c\x1c#\xcc\xe7\x80\xb2\xe7\xdf\r'  # noqa: E501
 ADD_LIQUIDITY_4_ASSETS: Final = b'?\x19\x15w^\x0c\x9a8\xa5z{\xb7\xf1\xf9\x00_Ho\xb9\x04\xe1\xf8J\xa2\x156MVs\x19\xa5\x8d'  # noqa: E501
+# https://docs.curve.finance/factory/twocrypto-ng/overview/
+ADD_LIQUIDITY_TWO_CRYPTO: Final = b'\x0e\x1f<Y\xf2Z\x02~\x14\xa3\xf5\\h$]"\x08\x9cB\xb1\xdc\xd0\x9f\x12:\x11\xd4\xaf<\ror'  # noqa: E501  # example contract: 0x027B40F5917FCd0eac57d7015e120096A5F92ca9
+# https://docs.curve.finance/factory/tricrypto-ng/overview/
+ADD_LIQUIDITY_TRICRYPTO: Final = b'\xe1\xb6\x04U\xbd\x9e3r\x0bT\x7f`\xe4\xe0\xcf\xbf\x12R\xd0\xf2\xee\x01G\xd50)\x94_9\xfe<\x1a'  # noqa: E501
+
 ADD_LIQUIDITY_EVENTS: Final = {
     ADD_LIQUIDITY_2_ASSETS,
     ADD_LIQUIDITY_2_ASSETS_OPTIMIZED,
     ADD_LIQUIDITY_3_ASSETS,
     ADD_LIQUIDITY_4_ASSETS,
     ADD_LIQUIDITY_DYNAMIC_ASSETS,
+    ADD_LIQUIDITY_TWO_CRYPTO,
+    ADD_LIQUIDITY_TRICRYPTO,
 }
 ADD_LIQUIDITY_TOKEN_COUNTS: Final = {
     ADD_LIQUIDITY_2_ASSETS: 2,
     ADD_LIQUIDITY_2_ASSETS_OPTIMIZED: 2,
     ADD_LIQUIDITY_3_ASSETS: 3,
     ADD_LIQUIDITY_4_ASSETS: 4,
+    ADD_LIQUIDITY_TWO_CRYPTO: 2,
+    ADD_LIQUIDITY_TRICRYPTO: 3,
 }
+# DepositAndStakeZap https://docs.curve.finance/deployments/contract-deployments/#zaps
 ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE = b'T\n\xb3\x85\xf9\xb5\xd4P\xa2t\x04\x17,\xaa\xdeQk;\xa3\xf4\xbe\x88#\x9a\xc5j*\xd1\xde*\x1fZ'  # noqa: E501
 REMOVE_LIQUIDITY_IMBALANCE: Final = {
     b'\xb9d\xb7/s\xf5\xef[\xf0\xfd\xc5Y\xb2\xfa\xb9\xa7\xb1*9\xe4x\x17\xa5G\xf1\xf0\xae\xe4\x7f\xeb\xd6\x02',
@@ -94,12 +108,14 @@ CURVE_METAREGISTRY_METHODS = [
     'get_underlying_coins',
 ]
 # The address provider address is same for all the supported chains
+# https://docs.curve.finance/deployments/contract-deployments/#address-provider
 CURVE_ADDRESS_PROVIDER: Final = string_to_evm_address('0x5ffe7FB82894076ECB99A30D6A32e969e6e35E98')
 # This is used in these evm chains(ethereum, optimism, gnosis, polygon, arbitrum)
 # https://github.com/curvefi/curve-router-ng/blob/1014d3691bd9df935dc06fc5988484b0614d1fd5/v1.0/README.md
 CURVE_SWAP_ROUTER_V1: Final = string_to_evm_address('0xF0d4c12A5768D806021F80a262B4d39d26C58b8D')
 # This is used in gnosis, optimism and polygon
 # https://github.com/curvefi/curve-router-ng/blob/1014d3691bd9df935dc06fc5988484b0614d1fd5/README.md
+# https://docs.curve.finance/deployments/contract-deployments/#exchange-router
 CURVE_SWAP_ROUTERS_NG: Final = {
     CURVE_SWAP_ROUTER_V1,
     string_to_evm_address('0x0DCDED3545D565bA3B19E683431381007245d983'),  # CurveRouter v1.1
