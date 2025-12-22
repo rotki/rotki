@@ -169,3 +169,4 @@ jobs:
         with:
           name: coverage-${{ inputs.os }}-${{ matrix.test-group }}
           path: .coverage.${{ matrix.test-group }}
+          include-hidden-files: true
