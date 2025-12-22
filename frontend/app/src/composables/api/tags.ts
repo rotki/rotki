@@ -5,8 +5,16 @@ import { type Tag, Tags } from '@/types/tags';
 interface UseTagsApiReturn {
   queryTags: () => Promise<Tags>;
   queryAddTag: (tag: Tag) => Promise<Tags>;
-  queryEditTag: (tag: Tag) => Promise<Tags>;
+  queryEditTag: (tag: Tag, originalName: string) => Promise<Tags>;
   queryDeleteTag: (tagName: string) => Promise<Tags>;
+}
+
+interface TagEditPayload {
+  name: string;
+  newName?: string;
+  description: string | null;
+  backgroundColor: string;
+  foregroundColor: string;
 }
 
 export function useTagsApi(): UseTagsApiReturn {
@@ -27,8 +35,18 @@ export function useTagsApi(): UseTagsApiReturn {
     return Tags.parse(data);
   };
 
-  const queryEditTag = async (tag: Tag): Promise<Tags> => {
-    const data = await api.patch<Tags>('/tags', tag, {
+  const queryEditTag = async (tag: Tag, originalName: string): Promise<Tags> => {
+    const payload: TagEditPayload = {
+      backgroundColor: tag.backgroundColor,
+      description: tag.description,
+      foregroundColor: tag.foregroundColor,
+      name: originalName,
+    };
+
+    if (originalName !== tag.name)
+      payload.newName = tag.name;
+
+    const data = await api.patch<Tags>('/tags', payload, {
       skipRootCamelCase: true,
     });
 

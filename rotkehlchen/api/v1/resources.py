@@ -1153,10 +1153,12 @@ class TagsResource(BaseMethodView):
     def put(
             self,
             name: str,
+            new_name: str | None,
             description: str | None,
             background_color: HexColorCode,
             foreground_color: HexColorCode,
     ) -> Response:
+        _ = new_name
         return self.rest_api.add_tag(
             name=name,
             description=description,
@@ -1169,12 +1171,14 @@ class TagsResource(BaseMethodView):
     def patch(
             self,
             name: str,
+            new_name: str | None,
             description: str | None,
             background_color: HexColorCode | None,
             foreground_color: HexColorCode | None,
     ) -> Response:
         return self.rest_api.edit_tag(
             name=name,
+            new_name=new_name,
             description=description,
             background_color=background_color,
             foreground_color=foreground_color,

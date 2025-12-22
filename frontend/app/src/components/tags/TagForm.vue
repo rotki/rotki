@@ -109,7 +109,6 @@ defineExpose({
       data-cy="tag-creator-name"
       :label="t('common.name')"
       :error-messages="toMessages(v$.name)"
-      :disabled="editMode"
     />
     <RuiTextField
       v-model="descriptionModel"

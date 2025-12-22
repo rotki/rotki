@@ -14,6 +14,7 @@ const { t } = useI18n({ useScope: 'global' });
 const tag = ref<Tag | undefined>(undefined);
 const editMode = ref<boolean>(false);
 const search = ref<string>('');
+const originalName = ref<string>('');
 
 const route = useRoute();
 const router = useRouter();
@@ -56,7 +57,8 @@ useRememberTableSorting<Tag>(TableId.TAG_MANAGER, sort, headers);
 
 function editItem(newTag: Tag) {
   set(editMode, true);
-  set(tag, newTag);
+  set(originalName, newTag.name);
+  set(tag, { ...newTag });
 }
 
 function showDeleteConfirmation(selectedTag: Tag) {
@@ -73,6 +75,7 @@ function showDeleteConfirmation(selectedTag: Tag) {
 
 function handleCreateTagClick() {
   set(editMode, false);
+  set(originalName, '');
   set(tag, defaultTag());
 }
 
@@ -138,6 +141,7 @@ onMounted(async () => {
     <TagFormDialog
       v-model="tag"
       :edit-mode="editMode"
+      :original-name="originalName"
     />
   </TablePageLayout>
 </template>

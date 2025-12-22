@@ -11,7 +11,7 @@ export const useTagStore = defineStore('session/tags', () => {
 
   const tags = computed(() => Object.values(get(allTags)));
 
-  const { removeTag } = useBlockchainAccountsStore();
+  const { removeTag, renameTag } = useBlockchainAccountsStore();
   const { setMessage } = useMessageStore();
   const { t } = useI18n({ useScope: 'global' });
   const { queryAddTag, queryDeleteTag, queryEditTag, queryTags } = useTagsApi();
@@ -33,9 +33,11 @@ export const useTagStore = defineStore('session/tags', () => {
     }
   };
 
-  const editTag = async (tag: Tag): Promise<ActionStatus> => {
+  const editTag = async (tag: Tag, originalName: string): Promise<ActionStatus> => {
     try {
-      set(allTags, await queryEditTag(tag));
+      set(allTags, await queryEditTag(tag, originalName));
+      if (originalName !== tag.name)
+        renameTag(originalName, tag.name);
       return { success: true };
     }
     catch (error: any) {
