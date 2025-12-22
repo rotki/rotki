@@ -2,6 +2,7 @@
 import type { ExplorerUrls } from '@/types/asset/asset-urls';
 import { type BigNumber, Blockchain } from '@rotki/common';
 import Flag from '@/components/common/Flag.vue';
+import MerchantIcon from '@/components/common/MerchantIcon.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { type NoteFormat, NoteType, useHistoryEventNote } from '@/composables/history/events/notes';
@@ -71,6 +72,12 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
         <Flag
           :iso="note.countryCode"
           class="mx-1"
+        />
+      </template>
+      <template v-else-if="note.type === NoteType.MERCHANT_CODE && note.merchantCode">
+        <MerchantIcon
+          :code="note.merchantCode"
+          class="mx-0.5"
         />
       </template>
       <template v-else-if="note.type === NoteType.WORD && note.word">

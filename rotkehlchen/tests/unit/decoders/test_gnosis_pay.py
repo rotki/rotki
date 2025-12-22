@@ -198,7 +198,7 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts, rotki_premium_object
         )
 
         expected_events[0].identifier = 1
-        expected_events[0].notes = 'Pay 8.5 EUR to Lidl sagt Danke in Berlin :country:DE:'
+        expected_events[0].notes = 'Pay 8.5 EUR to :merchant_code:5411: Lidl sagt Danke in Berlin :country:DE:'  # noqa: E501
     assert refreshed_events == expected_events
 
 
@@ -259,7 +259,7 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
     with patch.object(gnosis_txs_decoder, 'reload_data', lambda x: None):
         events = gnosis_txs_decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])  # noqa: E501
 
-    expected_events[0].notes = 'Receive refund of 2.35 EUR from Acme Inc. in Sevilla :country:ES:'
+    expected_events[0].notes = 'Receive refund of 2.35 EUR from :merchant_code:6666: Acme Inc. in Sevilla :country:ES:'  # noqa: E501
     assert events == expected_events
 
 
@@ -269,7 +269,7 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
 @pytest.mark.freeze_time('2023-11-14 22:30:00 GMT')
 def test_backfill_missing_gnosis_pay_events(gnosis_inquirer, gnosis_accounts):
     tx_hash, second_tx_hash = make_evm_tx_hash(), make_evm_tx_hash()
-    second_note = 'Pay 1.4 EUR to AUTOPISTA R4 SEITT -2 in MADRID :country:ES:'
+    second_note = 'Pay 1.4 EUR to :merchant_code:4784: AUTOPISTA R4 SEITT -2 in MADRID :country:ES:'  # noqa: E501
     gnosis_transactions = GnosisTransactions(
         gnosis_inquirer=gnosis_inquirer,
         database=gnosis_inquirer.database,
