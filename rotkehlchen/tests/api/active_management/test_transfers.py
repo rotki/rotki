@@ -4,10 +4,17 @@ import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    NodeName,
+    SerializableChainIndexerOrder,
+    WeightedNode,
+    string_to_evm_address,
+)
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -119,6 +126,13 @@ def test_transfers(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_token_balance(rotkehlchen_api_server: APIServer) -> None:
+    rotkehlchen_api_server.rest_api.rotkehlchen.set_settings(
+        settings=ModifiableDBSettings(evm_indexers_order=SerializableChainIndexerOrder(
+            order={chain_id: [EvmIndexer.ETHERSCAN] for chain_id in [ChainID.BASE, ChainID.BINANCE_SC, ChainID.OPTIMISM]},  # noqa: E501
+        )),
+    )
+    # TODO: figure out why the db_settings fixture didn't have any effect when setting the indexer
+    # order here. https://github.com/orgs/rotki/projects/11/views/3?pane=issue&itemId=146524643
     accounts_to_query: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, str]] = [
         (ChainID.ETHEREUM, 'eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
         (ChainID.GNOSIS, 'eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),

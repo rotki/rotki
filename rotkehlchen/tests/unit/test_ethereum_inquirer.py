@@ -7,7 +7,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.accounts import BlockchainAccountData
-from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
+from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE, EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.evm.constants import SWAPPED_TOPIC, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -209,7 +209,7 @@ def test_call_contract(ethereum_inquirer, ethereum_manager_connect_at_start):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE, ETHEREUM_ETHERSCAN_NODE)])  # noqa: E501
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE, EVM_INDEXERS_NODE)])  # noqa: E501
 def test_rpc_request_timeout(
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_manager_connect_at_start: list[WeightedNode],
@@ -453,7 +453,7 @@ def test_ethereum_nodes_prune_and_archive_status(
             assert not web3_node.is_pruned
             assert web3_node.is_archive
 
-    if ethereum_manager_connect_at_start[0].node_info.name == 'etherscan':
+    if ethereum_manager_connect_at_start[0].node_info.name == EVM_INDEXERS_NODE_NAME:
         assert len(ethereum_inquirer.rpc_mapping) == 0  # excluding etherscan
     else:
         assert len(ethereum_inquirer.rpc_mapping) == 1
@@ -526,7 +526,7 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
         side_effect=mock_etherscan_get_tx,
         autospec=True,
     )
-    call_order = pruned_node + [ETHEREUM_ETHERSCAN_NODE]
+    call_order = pruned_node + [EVM_INDEXERS_NODE]
     with etherscan_get_tx_patch, etherscan_get_tx_receipt_patch:
         ethereum_inquirer.maybe_get_transaction_by_hash(txn_hash, call_order)
         ethereum_inquirer.maybe_get_transaction_receipt(txn_hash, call_order)

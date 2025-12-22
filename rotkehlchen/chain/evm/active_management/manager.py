@@ -63,7 +63,7 @@ class ActiveManager:
         """
         return self.node_inquirer._query(
             method=self._create_token_transfer,
-            call_order=self.node_inquirer.default_call_order(skip_etherscan=True),
+            call_order=self.node_inquirer.default_call_order(skip_indexers=True),
             from_address=from_address,
             to_address=to_address,
             token=token,
@@ -99,7 +99,7 @@ class ActiveManager:
         """
         return self.node_inquirer._query(
             method=self._transfer_native_token,
-            call_order=self.node_inquirer.default_call_order(skip_etherscan=True),
+            call_order=self.node_inquirer.default_call_order(skip_indexers=True),
             from_address=from_address,
             to_address=to_address,
             amount=amount,

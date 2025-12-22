@@ -190,7 +190,7 @@ def test_native_token_balance(
     address = polygon_pos_accounts[0]
     sorted_call_order = sorted(blockchain.polygon_pos.node_inquirer.default_call_order())  # type: ignore
 
-    def mock_default_call_order(skip_etherscan: bool = False):  # pylint: disable=unused-argument
+    def mock_default_call_order(skip_indexers: bool = False):  # pylint: disable=unused-argument
         # return sorted_call_order to remove randomness, and thus make it vcr'able
         return sorted_call_order
 

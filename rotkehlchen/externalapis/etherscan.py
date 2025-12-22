@@ -27,7 +27,7 @@ from rotkehlchen.types import (
     ExternalService,
     Timestamp,
 )
-from rotkehlchen.utils.misc import from_gwei, hexstr_to_int, ts_sec_to_ms
+from rotkehlchen.utils.misc import from_gwei, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -139,114 +139,6 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
 
         # else
         raise RemoteError(f'{chain_id} {self.name} returned error response: {json_ret}')
-
-    def get_latest_block_number(self, chain_id: SUPPORTED_CHAIN_IDS) -> int:
-        """Gets the latest block number
-
-        May raise:
-        - RemoteError due to self._query().
-        """
-        result = self._query(
-            chain_id=chain_id,
-            module='proxy',
-            action='eth_blockNumber',
-        )
-        return int(result, 16)
-
-    def get_block_by_number(
-            self,
-            chain_id: SUPPORTED_CHAIN_IDS,
-            block_number: int,
-    ) -> dict[str, Any]:
-        """
-        Gets a block object by block number
-
-        May raise:
-        - RemoteError due to self._query().
-        """
-        options = {'tag': hex(block_number), 'boolean': 'true'}
-        block_data = self._query(
-            chain_id=chain_id,
-            module='proxy',
-            action='eth_getBlockByNumber',
-            options=options,
-        )
-        # We need to convert some data from hex here
-        # https://github.com/PyCQA/pylint/issues/4739
-        block_data['timestamp'] = hexstr_to_int(block_data['timestamp'])
-        block_data['number'] = hexstr_to_int(block_data['number'])
-
-        return block_data
-
-    def get_transaction_by_hash(
-            self,
-            chain_id: SUPPORTED_CHAIN_IDS,
-            tx_hash: EVMTxHash,
-    ) -> dict[str, Any] | None:
-        """
-        Gets a transaction object by hash
-
-        May raise:
-        - RemoteError due to self._query().
-        """
-        options = {'txhash': str(tx_hash)}
-        return self._query(
-            chain_id=chain_id,
-            module='proxy',
-            action='eth_getTransactionByHash',
-            options=options,
-        )
-
-    def get_code(self, chain_id: SUPPORTED_CHAIN_IDS, account: ChecksumEvmAddress) -> str:
-        """Gets the deployment bytecode at the given address
-
-        May raise:
-        - RemoteError if there are any problems with reaching Etherscan or if
-        an unexpected response is returned
-        """
-        return self._query(
-            chain_id=chain_id,
-            module='proxy',
-            action='eth_getCode',
-            options={'address': account},
-        )
-
-    def get_transaction_receipt(
-            self,
-            chain_id: SUPPORTED_CHAIN_IDS,
-            tx_hash: EVMTxHash,
-    ) -> dict[str, Any] | None:
-        """Gets the receipt for the given transaction hash
-
-        May raise:
-        - RemoteError due to self._query().
-        """
-        return self._query(
-            chain_id=chain_id,
-            module='proxy',
-            action='eth_getTransactionReceipt',
-            options={'txhash': str(tx_hash)},
-        )
-
-    def eth_call(
-            self,
-            chain_id: SUPPORTED_CHAIN_IDS,
-            to_address: ChecksumEvmAddress,
-            input_data: str,
-    ) -> str:
-        """Performs an eth_call on the given address and the given input data.
-
-        May raise:
-        - RemoteError if there are any problems with reaching Etherscan or if
-        an unexpected response is returned
-        """
-        options = {'to': to_address, 'data': input_data}
-        return self._query(
-            chain_id=chain_id,
-            module='proxy',
-            action='eth_call',
-            options=options,
-        )
 
     def get_logs(
             self,

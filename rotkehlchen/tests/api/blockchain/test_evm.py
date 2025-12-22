@@ -13,7 +13,7 @@ from eth_utils import to_checksum_address
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.chain.evm.transactions import EvmTransaction
-from rotkehlchen.chain.evm.types import EvmIndexer, string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -400,7 +400,6 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'], allow_playback_repeats=True)
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-@pytest.mark.parametrize('db_settings', [{'default_evm_indexer_order': [EvmIndexer.BLOCKSCOUT]}])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_detect_evm_accounts(
         rotkehlchen_api_server: 'APIServer',
@@ -411,7 +410,8 @@ def test_detect_evm_accounts(
     Test that the endpoint to detect new evm addresses works properly
     and sends the ws messages
 
-    The given account is everywhere.
+    The given account is everywhere. Note that it's not detected in BSC since none of the indexers
+    support that chain with a free API key as of 2025-12-22.
     """
     response = requests.post(api_url_for(
         rotkehlchen_api_server,
@@ -429,7 +429,6 @@ def test_detect_evm_accounts(
         {'chain': SupportedBlockchain.BASE.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.GNOSIS.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.SCROLL.serialize(), 'address': ethereum_accounts[0]},
-        {'chain': SupportedBlockchain.BINANCE_SC.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.ZKSYNC_LITE.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.AVALANCHE.serialize(), 'address': ethereum_accounts[0]},
     ], key=operator.itemgetter('chain', 'address'))
@@ -444,7 +443,6 @@ def test_detect_evm_accounts(
     assert ethereum_accounts[0] in blockchain_accounts.base
     assert ethereum_accounts[0] in blockchain_accounts.gnosis
     assert ethereum_accounts[0] in blockchain_accounts.scroll
-    assert ethereum_accounts[0] in blockchain_accounts.binance_sc
     assert ethereum_accounts[0] in blockchain_accounts.zksync_lite
     assert ethereum_accounts[0] in blockchain_accounts.avax
 

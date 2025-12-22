@@ -120,7 +120,7 @@ def test_missing_data_error(blockscout: Blockscout) -> None:
     """
     with (
         pytest.raises(RemoteError, match='Blockscout is missing data'),
-        patch.object(blockscout.session, 'get', return_value=MockResponse(
+        patch.object(blockscout.session, 'request', return_value=MockResponse(
             status_code=HTTPStatus.OK,
             text='{"message": "Internal transactions for this transaction have not been processed yet","result": [],"status": "2"}',  # noqa: E501
         )),

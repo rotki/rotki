@@ -5,7 +5,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx_hash
 
-ETHEREUM_ETHERSCAN_NODE_NAME: Final = 'etherscan'
+EVM_INDEXERS_NODE_NAME: Final = 'indexers'
 
 ETH2_DEPOSIT_ADDRESS: Final = string_to_evm_address('0x00000000219ab540356cBB839Cbe05303d7705Fa')
 ETHEREUM_GENESIS: Final = Timestamp(1438269973)
@@ -14,9 +14,9 @@ CPT_KRAKEN: Final = 'kraken'
 CPT_POLONIEX: Final = 'poloniex'
 CPT_UPHOLD: Final = 'uphold'
 
-ETHEREUM_ETHERSCAN_NODE: Final = WeightedNode(
+EVM_INDEXERS_NODE: Final = WeightedNode(
     node_info=NodeName(
-        name=ETHEREUM_ETHERSCAN_NODE_NAME,
+        name=EVM_INDEXERS_NODE_NAME,
         endpoint='',
         owned=False,
         blockchain=SupportedBlockchain.ETHEREUM,

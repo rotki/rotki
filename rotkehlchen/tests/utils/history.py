@@ -723,6 +723,7 @@ def mock_history_processing(
 def mock_etherscan_like_transaction_response(
         etherscan_like_api: 'EtherscanLikeApi',
         remote_errors: bool,
+        session_mock_attribute: str = 'get',
 ) -> _patch:
     def mocked_request_dict(url, params, *_args, **_kwargs):
         if remote_errors:
@@ -776,7 +777,11 @@ def mock_etherscan_like_transaction_response(
 
         return MockResponse(200, payload)
 
-    return patch.object(etherscan_like_api.session, 'get', wraps=mocked_request_dict)
+    return patch.object(
+        target=etherscan_like_api.session,
+        attribute=session_mock_attribute,
+        wraps=mocked_request_dict,
+    )
 
 
 class TradesTestSetup(NamedTuple):
@@ -828,6 +833,7 @@ def mock_history_processing_and_exchanges(
         blockscout_patch=mock_etherscan_like_transaction_response(
             etherscan_like_api=rotki.chains_aggregator.ethereum.node_inquirer.blockscout,
             remote_errors=remote_errors,
+            session_mock_attribute='request',  # blockscout uses both post and get via session.request()  # noqa: E501
         ),
         routescan_patch=mock_etherscan_like_transaction_response(
             etherscan_like_api=rotki.chains_aggregator.ethereum.node_inquirer.routescan,

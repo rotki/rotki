@@ -1004,7 +1004,7 @@ def test_extrafi_farm_balances(
 
 
 @pytest.mark.freeze_time
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['uri', 'method', 'body'])
 def test_extrafi_cache(optimism_inquirer: 'OptimismInquirer', freezer):
     """Check that the cache gets populated and timestamp updated if
     we requery again"""
