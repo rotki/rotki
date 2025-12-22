@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.exchanges.manager import ExchangeManager
 
 from .binance import *  # noqa: F403
+from .bit2me import *  # noqa: F403
 from .bitcoinde import *  # noqa: F403
 from .bitfinex import *  # noqa: F403
 from .bitmex import *  # noqa: F403

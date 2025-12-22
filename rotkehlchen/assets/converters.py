@@ -471,22 +471,39 @@ def asset_from_bitcoinde(bitcoinde: str) -> AssetWithOracles:
     ))
 
 
+def asset_from_bit2me(bit2me_name: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(bit2me_name, str):
+        raise DeserializationError(f'Got non-string type {type(bit2me_name)} for Bit2me asset')
+
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BIT2ME,
+        symbol=bit2me_name.upper(),
+        default=bit2me_name,
+    ))
+
+
 LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BINANCE: asset_from_binance,
-    Location.CRYPTOCOM: asset_from_cryptocom,
+    Location.BIT2ME: asset_from_bit2me,
+    Location.BITCOINDE: asset_from_bitcoinde,
     Location.BITPANDA: asset_from_bitpanda,
     Location.BITTREX: asset_from_bittrex,
     Location.COINBASEPRO: asset_from_coinbasepro,
-    Location.FTX: asset_from_ftx,
-    Location.KRAKEN: asset_from_kraken,
-    Location.BITSTAMP: asset_from_bitstamp,
-    Location.GEMINI: asset_from_gemini,
-    Location.POLONIEX: asset_from_poloniex,
-    Location.NEXO: asset_from_nexo,
-    Location.KUCOIN: asset_from_kucoin,
-    Location.OKX: asset_from_okx,
-    Location.WOO: asset_from_woo,
-    Location.HTX: asset_from_htx,
-    Location.BITCOINDE: asset_from_bitcoinde,
+    Location.CRYPTOCOM: asset_from_cryptocom,
     Location.EXTERNAL: asset_from_common_identifier,
+    Location.FTX: asset_from_ftx,
+    Location.GEMINI: asset_from_gemini,
+    Location.HTX: asset_from_htx,
+    Location.KRAKEN: asset_from_kraken,
+    Location.KUCOIN: asset_from_kucoin,
+    Location.NEXO: asset_from_nexo,
+    Location.BITSTAMP: asset_from_bitstamp,
+    Location.OKX: asset_from_okx,
+    Location.POLONIEX: asset_from_poloniex,
+    Location.WOO: asset_from_woo,
 }
