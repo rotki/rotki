@@ -2,10 +2,11 @@
 Changelog
 =========
 
+* :feature:`11198` Users are now able to see the type of merchant icon for Gnosis Pay transactions.
 * :feature:`11021` Users are now able to edit the name of a tag.
 * :feature:`10890` rotki will now properly handle Safe upgrades.
 * :feature:`4609` rotki will now properly handle Superfluid stream transactions and balances.
-* :feature:`10980` Users will now be able to report unsupported events through the history event page.
+* :feature:`10980` Users will now be able to report events if they see any issue with them through the history events page.
 * :feature:`6642` Users will now be able to provide feedback directly though the applications help & support sidebar.
 * :feature:`10854` rotki will now be faster to load assets.
 * :feature:`10869` MintClub claims on Base will now be decoded automatically.
