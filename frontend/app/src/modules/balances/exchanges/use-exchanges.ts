@@ -176,11 +176,13 @@ export function useExchanges(): UseExchangesReturn {
   };
 
   const setupExchange = async (exchange: ExchangeFormData): Promise<boolean> => {
-    const { krakenAccountType, location, mode, newName, okxLocation } = exchange;
+    const { krakenAccountType, krakenFuturesApiKey, krakenFuturesApiSecret, location, mode, newName, okxLocation } = exchange;
 
     const filteredPayload: ExchangeFormData = {
       ...exchange,
       krakenAccountType: location === 'kraken' ? krakenAccountType : undefined,
+      krakenFuturesApiKey: location === 'kraken' ? krakenFuturesApiKey : undefined,
+      krakenFuturesApiSecret: location === 'kraken' ? krakenFuturesApiSecret : undefined,
       okxLocation: location === 'okx' ? okxLocation : undefined,
     };
 

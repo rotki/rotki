@@ -54,6 +54,8 @@ from rotkehlchen.db.constants import (
     EXTRAINTERNALTXPREFIX,
     KDF_ITER,
     KRAKEN_ACCOUNT_TYPE_KEY,
+    KRAKEN_FUTURES_API_KEY_KEY,
+    KRAKEN_FUTURES_API_SECRET_KEY,
     OKX_LOCATION_KEY,
     USER_CREDENTIAL_MAPPING_KEYS,
 )
@@ -1891,6 +1893,8 @@ class DBHandler:
             api_secret: ApiSecret | None,
             passphrase: str | None = None,
             kraken_account_type: KrakenAccountType | None = None,
+            kraken_futures_api_key: ApiKey | None = None,
+            kraken_futures_api_secret: ApiSecret | None = None,
             binance_selected_trade_pairs: list[str] | None = None,
             okx_location: OkxLocation | None = None,
     ) -> None:
@@ -1904,20 +1908,32 @@ class DBHandler:
                 (name, location.serialize_for_db(), api_key, api_secret.decode() if api_secret is not None else None, passphrase),  # noqa: E501
             )
 
-            if location == Location.KRAKEN and kraken_account_type is not None:
-                cursor.execute(
-                    'INSERT INTO user_credentials_mappings '
-                    '(credential_name, credential_location, setting_name, setting_value) '
-                    'VALUES (?, ?, ?, ?)',
-                    (name, location.serialize_for_db(), KRAKEN_ACCOUNT_TYPE_KEY, kraken_account_type.serialize()),  # noqa: E501
-                )
+            if location == Location.KRAKEN:
+                if kraken_account_type is not None:
+                    self._insert_into_credentials_mappings(
+                        cursor=cursor,
+                        name=name,
+                        location=location.serialize_for_db(),
+                        settings={KRAKEN_ACCOUNT_TYPE_KEY: kraken_account_type.serialize()},
+                    )
+
+                if kraken_futures_api_key is not None and kraken_futures_api_secret is not None:
+                    try:
+                        self._insert_into_credentials_mappings(
+                            cursor=cursor,
+                            location=location.serialize_for_db(),
+                            name=name,
+                            settings={kraken_futures_api_key: kraken_futures_api_secret},
+                        )
+                    except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                        raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
             if location == Location.OKX and okx_location is not None:
-                cursor.execute(
-                    'INSERT INTO user_credentials_mappings '
-                    '(credential_name, credential_location, setting_name, setting_value) '
-                    'VALUES (?, ?, ?, ?)',
-                    (name, location.serialize_for_db(), OKX_LOCATION_KEY, okx_location.serialize()),  # noqa: E501
+                self._insert_into_credentials_mappings(
+                    cursor=cursor,
+                    name=name,
+                    location=location.serialize_for_db(),
+                    settings={OKX_LOCATION_KEY: okx_location.serialize()},
                 )
 
             if location in (Location.BINANCE, Location.BINANCEUS) and binance_selected_trade_pairs is not None:  # noqa: E501
@@ -1933,6 +1949,8 @@ class DBHandler:
             api_secret: ApiSecret | None,
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
+            kraken_futures_api_key: ApiKey | None,
+            kraken_futures_api_secret: ApiSecret | None,
             binance_selected_trade_pairs: list[str] | None,
             okx_location: Optional['OkxLocation'],
     ) -> None:
@@ -1967,34 +1985,36 @@ class DBHandler:
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials due to {e!s}') from e
 
-        if location == Location.KRAKEN and kraken_account_type is not None:
-            try:
-                write_cursor.execute(
-                    'INSERT OR REPLACE INTO user_credentials_mappings '
-                    '(credential_name, credential_location, setting_name, setting_value) '
-                    'VALUES (?, ?, ?, ?)',
-                    (
-                        new_name if new_name is not None else name,
-                        location.serialize_for_db(),
-                        KRAKEN_ACCOUNT_TYPE_KEY,
-                        kraken_account_type.serialize(),
-                    ),
+        if location == Location.KRAKEN:
+            if kraken_account_type is not None:
+                try:
+                    self._insert_into_credentials_mappings(
+                        cursor=write_cursor,
+                        name=new_name if new_name is not None else name,
+                        location=location.serialize_for_db(),
+                        settings={KRAKEN_ACCOUNT_TYPE_KEY: kraken_account_type.serialize()},
                 )
-            except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
-                raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
+                except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                    raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
+
+            if kraken_futures_api_key is not None and kraken_futures_api_secret is not None:
+                try:
+                    self._insert_into_credentials_mappings(
+                        cursor=write_cursor,
+                        name=new_name if new_name is not None else name,
+                        location=location.serialize_for_db(),
+                        settings={kraken_futures_api_key: kraken_futures_api_secret},
+                    )
+                except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+                    raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
 
         if location == Location.OKX and okx_location is not None:
             try:
-                write_cursor.execute(
-                    'INSERT OR REPLACE INTO user_credentials_mappings '
-                    '(credential_name, credential_location, setting_name, setting_value) '
-                    'VALUES (?, ?, ?, ?)',
-                    (
-                        new_name if new_name is not None else name,
-                        location.serialize_for_db(),
-                        OKX_LOCATION_KEY,
-                        okx_location.serialize(),
-                    ),
+                self._insert_into_credentials_mappings(
+                    cursor=write_cursor,
+                    name=new_name if new_name is not None else name,
+                    location=location.serialize_for_db(),
+                    settings={OKX_LOCATION_KEY: okx_location.serialize()},
                 )
             except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not update DB user_credentials_mappings due to {e!s}') from e  # noqa: E501
@@ -2136,6 +2156,8 @@ class DBHandler:
                         extras[key] = KrakenAccountType.deserialize(entry[1])
                     except DeserializationError as e:
                         log.error(f'Couldnt deserialize kraken account type from DB. {e!s}')
+                elif key in (KRAKEN_FUTURES_API_KEY_KEY, KRAKEN_FUTURES_API_SECRET_KEY):
+                    extras[key] = entry[1]
                 elif key == OKX_LOCATION_KEY:
                     try:  # type is checked above
                         extras[key] = OkxLocation.deserialize(entry[1])  # type: ignore
@@ -3846,3 +3868,26 @@ class DBHandler:
         with self.conn.read_ctx() as cursor:
             excluded_chains = self.get_settings(cursor).evmchains_to_skip_detection
         return list(set(SUPPORTED_EVM_EVMLIKE_CHAINS) - set(excluded_chains))
+
+    def _insert_into_credentials_mappings(
+            self,
+            cursor: DBCursor,
+            name: str,
+            location: str,
+            settings: dict,
+    ) -> None:
+        """
+        Inserts the provided key-value pairs into the user_credentials_mappings table in the DB
+        """
+        (settings_name, settings_value), = settings.items()
+        cursor.execute(
+            'INSERT OR REPLACE INTO user_credentials_mappings '
+            '(credential_name, credential_location, setting_name, setting_value) '
+            'VALUES (?, ?, ?, ?)',
+            (
+                name,
+                location,
+                settings_name,
+                settings_value,
+            ),
+        )

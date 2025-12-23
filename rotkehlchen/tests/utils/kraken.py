@@ -1,7 +1,7 @@
 import json
 import random
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import RemoteError
@@ -327,6 +327,8 @@ KRAKEN_GENERAL_LEDGER_RESPONSE = """
 }
 """
 
+KRAKEN_FUTURES_BALANCES_RESPONSE = """{"accounts":{"cash":{"balances":{"bch":10.0184941402,"eth":1.5717981686,"eur":4000.0,"gbp":3791.9006,"ltc":52.1910861801,"usd":5000.0,"usd credit":0,"usdc":5000.65008452,"usdt":5003.96313881,"xbt":0.0524990493,"xrp":2213.8685582},"type":"cashAccount"},"fi_bchusd":{"auxiliary":{"af":10.0184941402,"funding":0.0,"pnl":0.0,"pv":10.0184941402,"usd":0},"balances":{"bch":10.0184941402},"currency":"bch","marginRequirements":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"triggerEstimates":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"type":"marginAccount"},"fi_ethusd":{"auxiliary":{"af":1.5717981686,"funding":0.0,"pnl":0.0,"pv":1.5717981686,"usd":0},"balances":{"eth":1.5717981686},"currency":"eth","marginRequirements":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"triggerEstimates":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"type":"marginAccount"},"fi_ltcusd":{"auxiliary":{"af":52.1910861801,"funding":0.0,"pnl":0.0,"pv":52.1910861801,"usd":0},"balances":{"ltc":52.1910861801},"currency":"ltc","marginRequirements":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"triggerEstimates":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"type":"marginAccount"},"fi_xbtusd":{"auxiliary":{"af":0.0524990493,"funding":0.0,"pnl":0.0,"pv":0.0524990493,"usd":0},"balances":{"xbt":0.0524990493},"currency":"xbt","marginRequirements":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"triggerEstimates":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"type":"marginAccount"},"fi_xrpusd":{"auxiliary":{"af":2213.8685582,"funding":0.0,"pnl":0.0,"pv":2213.8685582,"usd":0},"balances":{"xrp":2213.8685582},"currency":"xrp","marginRequirements":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"triggerEstimates":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"type":"marginAccount"},"flex":{"availableMargin":21637.99025058772,"balanceValue":22082.18306965742,"collateralValue":21637.99025058772,"currencies":{"BTC":{"available":0.0524990493,"collateral":4726.015720056976,"quantity":0.0524990493,"value":4822.465020466302},"ETH":{"available":1.5717981686,"collateral":4995.828447848938,"quantity":1.5717981686,"value":5203.98796650931},"EUR":{"available":6000,"collateral":6839.616,"quantity":6000,"value":6979.2},"USD":{"available":5076.53008268181,"collateral":5076.53008268181,"quantity":5076.53008268181,"value":5076.53008268181}},"initialMargin":0,"initialMarginWithOrders":0,"maintenanceMargin":0,"marginEquity":21637.99025058772,"pnl":0,"portfolioValue":22082.18306965742,"totalUnrealized":0,"totalUnrealizedAsMargin":0,"type":"multiCollateralMarginAccount","unrealizedFunding":0},"fv_etheur":{"auxiliary":{"af":5000.0,"funding":0.0,"pnl":0.0,"pv":5000.0,"usd":0},"balances":{"eur":5000.0},"currency":"eur","marginRequirements":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"triggerEstimates":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"type":"marginAccount"},"fv_xbteur":{"auxiliary":{"af":5000.0,"funding":0.0,"pnl":0.0,"pv":5000.0,"usd":0},"balances":{"eur":5000.0},"currency":"eur","marginRequirements":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"triggerEstimates":{"im":0.0,"lt":0.0,"mm":0.0,"tt":0.0},"type":"marginAccount"}},"result":"success","serverTime":"2025-12-10T12:40:02.904Z"}"""  # noqa: E501
+
 
 def get_kraken_assets_from_globaldb() -> list[str]:
     with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -533,7 +535,11 @@ class MockKraken(Kraken):
         dir_path = Path(__file__).resolve().parent.parent
         return jsonloads_dict((dir_path / 'data' / filename).read_text(encoding='utf8'))
 
-    def api_query(self, method: str, req: dict | None = None) -> dict:
+    def api_query(
+            self,
+            method: Literal['Balance', 'TradesHistory', 'Ledgers', 'Assets', 'AssetPairs', 'accounts'],  # noqa: E501
+            req: dict | None = None,
+    ) -> dict:
         # Pretty ugly ... mock a kraken remote error
         if self.remote_errors:
             raise RemoteError('Kraken remote error')
@@ -546,6 +552,8 @@ class MockKraken(Kraken):
                 return generate_random_kraken_balance_response()
             # else
             return self.balance_data_return
+        if method == 'accounts':
+            return jsonloads_dict(KRAKEN_FUTURES_BALANCES_RESPONSE)
         if method == 'TradesHistory':
             assert req, 'Should have given arguments for kraken TradesHistory endpoint call'
             if self.random_trade_data:
@@ -597,4 +605,4 @@ class MockKraken(Kraken):
             response = json.dumps(new_data)
             return jsonloads_dict(response)
         # else
-        return super().api_query(method, req)
+        return super().api_query(method, req)  # type: ignore[unreachable]

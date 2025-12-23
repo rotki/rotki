@@ -442,6 +442,60 @@ def test_binance_api_without_markets_error(rotkehlchen_api_server: 'APIServer') 
     assert_simple_ok_response(response)
 
 
+def test_kraken_futures_only_one_key(rotkehlchen_api_server: 'APIServer') -> None:
+    """
+    Test that adding or editing only one of the 2 required
+    API keys for Kraken Futures returns error
+    """
+    for requests_func in [requests.put, requests.patch]:
+        auth_data = {
+            'location': 'kraken',
+            'name': 'my_kraken',
+            'api_key': 'test_key',
+            'api_secret': 'dGVzdF9zZWNyZXQ=',
+            'kraken_futures_api_key': 'test_futures_key',
+        }
+        # Test that only providing `kraken_futures_api_key` fails
+        with mock_validate_api_key_success(Location.KRAKEN):
+            response = requests_func(
+                (endpoint := api_url_for(rotkehlchen_api_server, 'exchangesresource')),
+                json=auth_data,
+            )
+
+        # Check that we get the expected error message
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        data = response.json()
+        assert 'message' in data
+        # The error message should be flat, not nested JSON
+        expected_msg = 'Both the Kraken Futures API Key and Secret must be provided.'
+        assert expected_msg in data['message']
+
+        # Test that only providing `kraken_futures_api_secret` fails
+        auth_data = {
+            'location': 'kraken',
+            'name': 'my_kraken',
+            'api_key': 'test_key',
+            'api_secret': 'dGVzdF9zZWNyZXQ=',
+            'kraken_futures_api_secret': 'dGVzdF9zZWNyZXQ=',
+        }
+        with mock_validate_api_key_success(Location.KRAKEN):
+            response = requests_func(endpoint, json=auth_data)
+
+        assert response.status_code == HTTPStatus.BAD_REQUEST
+        data = response.json()
+        assert 'message' in data
+        assert expected_msg in data['message']
+
+        # Test that providing both kraken_futures_api_key and kraken_futures_api_secret succeeds
+        with mock_validate_api_key_success(Location.KRAKEN):
+            response = requests_func(
+                endpoint,
+                json=auth_data | {'kraken_futures_api_key': 'test_futures_key'},
+            )
+
+        assert_simple_ok_response(response)
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_remove_exchange(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that removing a setup exchange via the api works"""
