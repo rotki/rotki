@@ -2613,7 +2613,7 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
 class AssetsSearchLevenshteinSchema(Schema):
     value = EmptyAsNoneStringField(load_default=None)
     evm_chain = EvmChainNameField(load_default=None)
-    address = EvmAddressField(load_default=None)
+    address = EmptyAsNoneStringField(load_default=None)
     limit = fields.Integer(required=True)
     search_nfts = fields.Boolean(load_default=False)
     asset_type = SerializableEnumField(enum_class=AssetType, load_default=None)
@@ -2637,11 +2637,20 @@ class AssetsSearchLevenshteinSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
+        if (address := data['address']) is not None and not is_valid_solana_address(address):
+            try:
+                address = to_checksum_address(address)
+            except (ValueError, TypeError) as e:
+                raise ValidationError(
+                    message=f'Given value {address} is not a valid EVM or Solana address',
+                    field_name='address',
+                ) from e
+
         filter_query = LevenshteinFilterQuery.make(
             and_op=True,
             substring_search=data['value'].strip().casefold() if data['value'] else None,
             chain_id=data['evm_chain'],
-            address=data['address'],
+            address=address,
             asset_type=data['asset_type'],
             ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,  # do not check ignored assets at search  # noqa: E501
         )

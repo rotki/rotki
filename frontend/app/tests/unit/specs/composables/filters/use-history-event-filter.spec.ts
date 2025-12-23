@@ -156,8 +156,8 @@ describe('composables::filter/use-history-event-filter - Additional Tests', () =
     expect(validatorMatcher).toBeUndefined();
   });
 
-  describe('send selected location to asset search if it\'s evm chain', () => {
-    it('should pass undefined as second parameter to assetSuggestions when location is not an EVM chain', () => {
+  describe('send selected location to asset search', () => {
+    it('should pass the location string to assetSuggestions for chain sanitization', () => {
       const { matchers, filters } = useHistoryEventFilter({});
       set(filters, { location: 'kraken' });
 
@@ -167,11 +167,11 @@ describe('composables::filter/use-history-event-filter - Additional Tests', () =
 
       expect(assetMatcher).toBeDefined();
 
-      // We expect the second argument to be undefined because "kraken" is not an EVM chain
-      expect(assetSuggestions).toHaveBeenCalledWith(expect.anything(), undefined);
+      // Location is passed through to assetSuggestions, which handles sanitization internally
+      expect(assetSuggestions).toHaveBeenCalledWith(expect.anything(), 'kraken');
     });
 
-    it('should pass the location string as second parameter to assetSuggestions when location is an EVM chain', async () => {
+    it('should pass the EVM chain location string to assetSuggestions', async () => {
       const { matchers, filters } = useHistoryEventFilter({});
       set(filters, { location: 'ethereum' });
 
@@ -182,8 +182,23 @@ describe('composables::filter/use-history-event-filter - Additional Tests', () =
 
       await nextTick();
 
-      // We expect the second argument to be "ethereum"
+      // We expect the location to be passed through
       expect(assetSuggestions).toHaveBeenCalledWith(expect.anything(), 'ethereum');
+    });
+
+    it('should pass the Solana chain location string to assetSuggestions', async () => {
+      const { matchers, filters } = useHistoryEventFilter({});
+      set(filters, { location: 'solana' });
+
+      const computedMatchers = get(matchers);
+      const assetMatcher = computedMatchers.find(m => 'asset' in m && m.asset);
+
+      expect(assetMatcher).toBeDefined();
+
+      await nextTick();
+
+      // We expect the Solana location to be passed through
+      expect(assetSuggestions).toHaveBeenCalledWith(expect.anything(), 'solana');
     });
   });
 });

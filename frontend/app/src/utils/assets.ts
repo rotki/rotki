@@ -1,10 +1,87 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { AssetSearchParams } from '@/composables/api/assets/info';
 import type { AssetNameReturn, AssetSymbolReturn } from '@/composables/assets/retrieval';
-import type { AssetsWithId } from '@/types/asset';
 import type { DateFormat } from '@/types/date-format';
-import { type AssetBalance, type AssetInfoWithId, getAddressFromEvmIdentifier, getTextToken, isEvmIdentifier, isValidEthAddress, type Nullable } from '@rotki/common';
+import {
+  type AssetBalance,
+  type AssetInfoWithId,
+  getAddressFromEvmIdentifier,
+  getAddressFromSolanaIdentifier,
+  getTextToken,
+  isEvmIdentifier,
+  isSolanaTokenIdentifier,
+  isValidEthAddress,
+  isValidSolanaAddress,
+  type Nullable,
+} from '@rotki/common';
+import { useSupportedChains } from '@/composables/info/chains';
+import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
+
+interface ParsedAssetKeyword {
+  value: string;
+  address?: string;
+}
+
+/**
+ * Parses an asset search keyword to extract value and address.
+ * Handles EVM identifiers, Solana addresses, and Ethereum addresses.
+ */
+export function parseAssetSearchKeyword(keyword: string): ParsedAssetKeyword {
+  if (isEvmIdentifier(keyword)) {
+    return {
+      address: getAddressFromEvmIdentifier(keyword),
+      value: '',
+    };
+  }
+
+  if (isSolanaTokenIdentifier(keyword)) {
+    return {
+      address: getAddressFromSolanaIdentifier(keyword),
+      value: '',
+    };
+  }
+
+  if (isValidEthAddress(keyword) || isValidSolanaAddress(keyword)) {
+    return {
+      address: keyword,
+      value: '',
+    };
+  }
+
+  return { value: keyword };
+}
+
+/**
+ * Sanitizes a chain identifier by matching it against supported chains
+ * and returning the appropriate EVM chain name.
+ */
+export function getSanitizedChain(
+  chain: string | undefined,
+  matchChain: (chain: string) => string | undefined,
+  getEvmChainName: (chain: string) => string | undefined,
+): string | undefined {
+  if (!chain) {
+    return undefined;
+  }
+
+  const matchedChain = matchChain(chain);
+  if (!matchedChain) {
+    return undefined;
+  }
+
+  return getEvmChainName(matchedChain) || matchedChain;
+}
+
+/**
+ * Gets asset search parameters based on chain type.
+ */
+export function getAssetSearchTypeParams(usedChain: string | undefined): { assetType?: string; evmChain?: string } {
+  return {
+    assetType: usedChain === SOLANA_CHAIN ? SOLANA_TOKEN : (usedChain ? EVM_TOKEN : undefined),
+    evmChain: usedChain === SOLANA_CHAIN ? undefined : usedChain,
+  };
+}
 
 function levenshtein(a: string, b: string): number {
   let tmp;
@@ -119,10 +196,12 @@ export function assetFilterByKeyword(
   return symbol.includes(keyword) || name.includes(keyword);
 }
 
-export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>, evmChain?: string): (value: string) => Promise<AssetsWithId> {
+export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>, location?: string): (keyword: string) => Promise<AssetsWithId> {
   let pending: AbortController | null = null;
 
-  return useDebounceFn(async (value: string) => {
+  const { getEvmChainName, matchChain } = useSupportedChains();
+
+  return useDebounceFn(async (keyword: string) => {
     if (pending) {
       pending.abort();
       pending = null;
@@ -130,25 +209,15 @@ export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Pro
 
     pending = new AbortController();
 
-    let keyword = value;
-    let address;
-
-    if (isEvmIdentifier(value)) {
-      keyword = '';
-      address = getAddressFromEvmIdentifier(value);
-    }
-
-    else if (isValidEthAddress(value)) {
-      keyword = '';
-      address = value;
-    }
+    const { address, value } = parseAssetSearchKeyword(keyword);
+    const usedChain = getSanitizedChain(location, matchChain, getEvmChainName);
 
     const result = await assetSearch({
       address,
-      evmChain,
+      ...getAssetSearchTypeParams(usedChain),
       limit: 10,
       signal: pending.signal,
-      value: keyword,
+      value,
     });
     pending = null;
     return result;
