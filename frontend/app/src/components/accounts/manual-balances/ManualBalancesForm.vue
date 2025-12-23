@@ -165,6 +165,7 @@ defineExpose({
         :label="t('common.asset')"
         data-cy="manual-balances-form-asset"
         outlined
+        :chain="location"
         :error-messages="toMessages(v$.asset)"
         :disabled="submitting"
         @blur="v$.asset.$touch()"
