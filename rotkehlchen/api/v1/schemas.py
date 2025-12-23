@@ -2639,8 +2639,8 @@ class AssetsSearchLevenshteinSchema(Schema):
     ) -> dict[str, Any]:
         if (address := data['address']) is not None and not is_valid_solana_address(address):
             try:
-                address = to_checksum_address(address)
-            except (ValueError, TypeError) as e:
+                address = deserialize_evm_address(address)
+            except DeserializationError as e:
                 raise ValidationError(
                     message=f'Given value {address} is not a valid EVM or Solana address',
                     field_name='address',
