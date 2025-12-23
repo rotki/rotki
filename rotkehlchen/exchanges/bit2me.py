@@ -194,17 +194,17 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             return None, msg
 
         # Bit2me API returns a list of balances
-        # Each item has: asset, balance, blockedBalance, blockedOutputBalance
+        # Each item has: currency, balance, blockedBalance, blockedOutputBalance
         # response_data is already validated as a list by jsonloads_list
 
         assets_balance: dict[AssetWithOracles, Balance] = {}
 
         for balance_entry in response_data:
             try:
-                # Get asset symbol
-                asset_symbol = balance_entry.get('asset')
+                # Get asset symbol (API field is 'currency')
+                asset_symbol = balance_entry.get('currency')
                 if not asset_symbol:
-                    log.warning(f'Bit2me balance entry missing asset symbol: {balance_entry}')
+                    log.warning(f'Bit2me balance entry missing currency symbol: {balance_entry}')
                     continue
 
                 # Calculate total balance (available + blocked amounts)

@@ -12,12 +12,12 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, Timestamp
 
 # Sample API responses based on real Bit2Me API data
-# Note: The pocket API returns "asset" field for the currency symbol
+# Note: The pocket API returns "currency" field for the currency symbol
 BIT2ME_BALANCES_RESPONSE = """[
   {
     "id": "603177ce-7a00-40d6-adef-3670832c2a51",
     "userId": "test-user-id",
-    "asset": "EUR",
+    "currency": "EUR",
     "balance": "1500.50000000",
     "blockedBalance": "100.00000000",
     "blockedOutputBalance": "0.00000000",
@@ -28,7 +28,7 @@ BIT2ME_BALANCES_RESPONSE = """[
   {
     "id": "339b61c6-df74-409c-85a4-68c421da6382",
     "userId": "test-user-id",
-    "asset": "BTC",
+    "currency": "BTC",
     "balance": "0.50000000",
     "blockedBalance": "0.10000000",
     "blockedOutputBalance": "0.00000000",
@@ -39,7 +39,7 @@ BIT2ME_BALANCES_RESPONSE = """[
   {
     "id": "d12d3a93-eda4-47a4-bdb6-f2168e918c54",
     "userId": "test-user-id",
-    "asset": "ETH",
+    "currency": "ETH",
     "balance": "2.00000000",
     "blockedBalance": "0.00000000",
     "blockedOutputBalance": "0.00000000",
@@ -50,7 +50,7 @@ BIT2ME_BALANCES_RESPONSE = """[
   {
     "id": "zero-balance-wallet",
     "userId": "test-user-id",
-    "asset": "DOGE",
+    "currency": "DOGE",
     "balance": "0.00000000",
     "blockedBalance": "0.00000000",
     "blockedOutputBalance": "0.00000000",
@@ -264,7 +264,7 @@ def test_bit2me_query_balances_unknown_asset(bit2me):
     """Test that if a Bit2me balance query returns unknown asset no exception
     is raised and a warning is logged."""
     response = BIT2ME_BALANCES_RESPONSE.replace(
-        '"asset": "BTC"', '"asset": "UNKNOWN_ASSET_XYZ"',
+        '"currency": "BTC"', '"currency": "UNKNOWN_ASSET_XYZ"',
     )
 
     def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
