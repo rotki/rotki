@@ -3357,7 +3357,11 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'lido_csm_node_operators', 'lido_csm_node_operator_metrics'}
+    assert new_tables == {
+        'lido_csm_node_operators',
+        'lido_csm_node_operator_metrics',
+        'event_metrics',
+    }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -3770,6 +3774,7 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
         ])
         assert not table_exists(cursor=cursor, name='lido_csm_node_operators')
         assert not table_exists(cursor=cursor, name='lido_csm_node_operator_metrics')
+        assert not table_exists(cursor=cursor, name='event_metrics')
         assert cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = 'x'",
         ).fetchone()[0] == 0
@@ -3791,6 +3796,7 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
         ).fetchone()[0].find('UNIQUE(group_identifier, sequence_index)') != -1
         assert table_exists(cursor=cursor, name='lido_csm_node_operators')
         assert table_exists(cursor=cursor, name='lido_csm_node_operator_metrics')
+        assert table_exists(cursor=cursor, name='event_metrics')
         assert cursor.execute(
             "SELECT COUNT(*) FROM location WHERE location = 'x' AND seq = 56",
         ).fetchone()[0] == 1

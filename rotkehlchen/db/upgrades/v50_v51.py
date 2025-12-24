@@ -53,9 +53,13 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         )
         write_cursor.switch_foreign_keys('ON')
 
-    @progress_step(description='Create Lido CSM support tables.')
-    def _create_lido_csm_tables(write_cursor: 'DBCursor') -> None:
-        """Create Lido CSM specific tables."""
+    @progress_step(description='Create new tables.')
+    def _add_new_tables(write_cursor: 'DBCursor') -> None:
+        """Add new tables
+        - lido_csm_node_operators
+        - lido_csm_node_operator_metrics
+        - event_metrics
+        """
         write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS lido_csm_node_operators (
             node_operator_id INTEGER NOT NULL PRIMARY KEY,
@@ -81,5 +85,27 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 ON UPDATE CASCADE ON DELETE CASCADE
         );
         """)
+        write_cursor.execute("""
+        CREATE TABLE IF NOT EXISTS event_metrics (
+            id INTEGER NOT NULL PRIMARY KEY,
+            event_identifier INTEGER NOT NULL REFERENCES history_events(identifier) ON DELETE CASCADE,
+            protocol TEXT,
+            metric_key TEXT NOT NULL,
+            metric_value TEXT NOT NULL,
+            UNIQUE(event_identifier, protocol, metric_key)
+        );
+        """)  # noqa: E501
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_event_metrics_event '
+            'ON event_metrics(event_identifier);',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_event_metrics_protocol '
+            'ON event_metrics(protocol);',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key '
+            'ON event_metrics(metric_key);',
+        )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
