@@ -45,6 +45,8 @@ class AssetMovementExtraData(TypedDict):
     # blockchain where the transaction happened. We use string since
     # it can be a non supported blockchain
     blockchain: NotRequired[str]
+    # Used when an asset movement is matched with another asset movement in exchange to exchange transfers.  # noqa: E501
+    matched_asset_movement: NotRequired[dict[str, Any]]
 
 
 class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):

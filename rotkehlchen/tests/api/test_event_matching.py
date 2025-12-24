@@ -17,7 +17,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_simple_ok_response,
 )
-from rotkehlchen.tests.utils.factories import make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import Location, TimestampMS
 
 if TYPE_CHECKING:
@@ -50,6 +50,7 @@ def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
                 amount=FVal('0.1'),
+                location_label=(user_address := make_evm_address()),
             ))],
         )
 
@@ -70,10 +71,10 @@ def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         )
 
     # Check that the matched event was properly updated
-    matched_event.event_type = HistoryEventType.WITHDRAWAL
-    matched_event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+    matched_event.event_type = HistoryEventType.DEPOSIT
+    matched_event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
     matched_event.counterparty = 'kraken'
-    matched_event.notes = 'Withdraw 0.1 ETH from Kraken 1'
+    matched_event.notes = f'Deposit 0.1 ETH to {user_address} from Kraken 1'
     matched_event.extra_data = {'matched_asset_movement': {
         'group_identifier': asset_movement.group_identifier,
         'exchange': 'kraken',

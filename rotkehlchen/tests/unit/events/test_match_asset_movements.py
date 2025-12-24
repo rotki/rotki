@@ -6,19 +6,25 @@ import pytest
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_USD, A_USDC
-from rotkehlchen.db.filtering import (
-    HistoryEventFilterQuery,
-    HistoryEventWithCounterpartyFilterQuery,
-)
+from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    AssetMovementExtraData,
+)
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.events import match_asset_movements
 from rotkehlchen.tests.fixtures import MockedWsMessage
-from rotkehlchen.tests.utils.factories import make_evm_tx_hash, make_solana_signature
+from rotkehlchen.tests.utils.factories import (
+    make_evm_address,
+    make_evm_tx_hash,
+    make_solana_address,
+    make_solana_signature,
+)
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
@@ -64,6 +70,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_ETH,
                 amount=FVal('0.1'),
+                location_label=(deposit2_user_address := make_evm_address()),
             ), (deposit_2_wrong_ref_event := EvmEvent(  # deposit2 similar event, wrong tx ref
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
@@ -90,6 +97,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
                 asset=A_USDC,
                 amount=FVal('0.2'),
+                location_label=(withdrawal1_user_address := make_evm_address()),
             ), (withdrawal1_wrong_amount_event := EvmEvent(  # similar to withdrawal1's matched event, but the amount is wrong  # noqa: E501
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
@@ -168,31 +176,51 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 event_subtype=HistoryEventSubType.NONE,
                 asset=A_USDC,
                 amount=FVal('100'),
-            )],
+                location_label=(deposit3_user_address := make_solana_address()),
+            ), (withdrawal4 := AssetMovement(  # withdrawal4, with another asset movement for the matched event  # noqa: E501
+                location=Location.BITSTAMP,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=TimestampMS(1560000000000),
+                asset=A_USDC,
+                amount=FVal('0.3'),
+                unique_id='7',
+                location_label='Bitstamp 1',
+            )), (withdrawal4_matched_event := AssetMovement(  # withdrawal4's matched event
+                location=Location.KUCOIN,
+                event_type=HistoryEventType.DEPOSIT,
+                timestamp=TimestampMS(1560000000001),
+                asset=A_USDC,
+                amount=FVal('0.3'),
+                unique_id='8',
+                location_label='Kucoin 1',
+            ))],
         )
 
     match_asset_movements(database=database)
 
     with database.conn.read_ctx() as cursor:
-        events = events_db.get_history_events_internal(
+        all_events = events_db.get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventWithCounterpartyFilterQuery.make(),
+            filter_query=HistoryEventFilterQuery.make(),
         )
+
+    asset_movements = [event for event in all_events if isinstance(event, AssetMovement)]
+    events = [event for event in all_events if isinstance(event, OnchainEvent)]
 
     assert len(events) == 8
     # Corresponding event for deposit2
-    assert (deposit2_matched_event := events[0]).event_type == HistoryEventType.DEPOSIT
-    assert deposit2_matched_event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
-    assert deposit2_matched_event.notes == 'Deposit 0.1 ETH to Gemini 2'
+    assert (deposit2_matched_event := events[0]).event_type == HistoryEventType.WITHDRAWAL
+    assert deposit2_matched_event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+    assert deposit2_matched_event.notes == f'Withdraw 0.1 ETH from {deposit2_user_address} to Gemini 2'  # noqa: E501
     assert deposit2_matched_event.counterparty == Location.GEMINI.name.lower()
     # Second event matching deposit2 but with the wrong ref. Unmodified.
     # (except for identifier since its from the db here)
     deposit_2_wrong_ref_event.identifier = events[1].identifier
     assert events[1] == deposit_2_wrong_ref_event
     # Corresponding event for withdrawal1
-    assert (withdrawal1_matched_event := events[2]).event_type == HistoryEventType.WITHDRAWAL
-    assert withdrawal1_matched_event.event_subtype == HistoryEventSubType.REMOVE_ASSET
-    assert withdrawal1_matched_event.notes == 'Withdraw 0.2 USDC from Coinbase 1'
+    assert (withdrawal1_matched_event := events[2]).event_type == HistoryEventType.DEPOSIT
+    assert withdrawal1_matched_event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+    assert withdrawal1_matched_event.notes == f'Deposit 0.2 USDC to {withdrawal1_user_address} from Coinbase 1'  # noqa: E501
     assert withdrawal1_matched_event.counterparty == Location.COINBASE.name.lower()
     # Second event matching withdrawal1 but with the wrong amount. Unmodified.
     withdrawal1_wrong_amount_event.identifier = events[3].identifier
@@ -204,10 +232,18 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
     # but neither are modified since both match.
     assert all(event.notes is None for event in events[5:7])
     # Corresponding event for deposit3
-    assert (deposit3_matched_event := events[7]).event_type == HistoryEventType.DEPOSIT
-    assert deposit3_matched_event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
-    assert deposit3_matched_event.notes == 'Deposit 100 USDC to Bybit 1'
+    assert (deposit3_matched_event := events[7]).event_type == HistoryEventType.WITHDRAWAL
+    assert deposit3_matched_event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+    assert deposit3_matched_event.notes == f'Withdraw 100 USDC from {deposit3_user_address} to Bybit 1'  # noqa: E501
     assert deposit3_matched_event.counterparty == Location.BYBIT.name.lower()
+
+    withdrawal4_matched_event.identifier = asset_movements[-1].identifier
+    withdrawal4_matched_event.extra_data = AssetMovementExtraData(matched_asset_movement={
+        'group_identifier': withdrawal4.group_identifier,
+        'exchange': 'bitstamp',
+        'exchange_name': 'Bitstamp 1',
+    })
+    assert asset_movements[-1] == withdrawal4_matched_event
 
     # Check that matches have been cached and that the cached identifiers
     # refer to the correct asset movements
@@ -219,20 +255,34 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
             (f'matched_asset_movement_{deposit2_matched_event.identifier}', str(deposit_2_identifier := 2)),  # noqa: E501
             (f'matched_asset_movement_{withdrawal1_matched_event.identifier}', str(withdrawal_1_identifier := 5)),  # noqa: E501
             (f'matched_asset_movement_{deposit3_matched_event.identifier}', str(deposit_3_identifier := 13)),  # noqa: E501
+            (f'matched_asset_movement_{withdrawal4_matched_event.identifier}', str(withdrawal4_identifier := 16)),  # noqa: E501
+            (f'matched_asset_movement_{withdrawal4_identifier}', str(withdrawal4_matched_event.identifier)),  # noqa: E501
         ]
         matched_asset_movements = events_db.get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(
-                identifiers=[deposit_2_identifier, withdrawal_1_identifier, deposit_3_identifier],
-            ),
+            filter_query=HistoryEventFilterQuery.make(identifiers=[
+                deposit_2_identifier,
+                withdrawal_1_identifier,
+                deposit_3_identifier,
+                withdrawal4_identifier,
+            ]),
         )
-    assert len(matched_asset_movements) == 3
+    assert len(matched_asset_movements) == 4
     deposit2.identifier = deposit_2_identifier
     assert matched_asset_movements[0] == deposit2
     withdrawal1.identifier = withdrawal_1_identifier
     assert matched_asset_movements[1] == withdrawal1
     deposit3.identifier = deposit_3_identifier
     assert matched_asset_movements[2] == deposit3
+    # since withdrawal4 is part of an exchange to exchange movement, it is also the matched event
+    # for the other asset movement and has the matched_asset_movement extra data.
+    withdrawal4.extra_data = AssetMovementExtraData(matched_asset_movement={
+        'group_identifier': withdrawal4_matched_event.group_identifier,
+        'exchange': 'kucoin',
+        'exchange_name': 'Kucoin 1',
+    })
+    withdrawal4.identifier = withdrawal4_identifier
+    assert matched_asset_movements[3] == withdrawal4
 
     # Check that the unmatched movements ws message was sent
     assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(  # type: ignore  # pop_message will be present since it's a MockRotkiNotifier
