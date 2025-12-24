@@ -291,7 +291,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
     )
 
     # Check that the matching logic is now only run for unmatched asset movements
-    with patch('rotkehlchen.tasks.events._find_asset_movement_match', return_value=None) as find_match_mock:  # noqa: E501
+    with patch('rotkehlchen.tasks.events.find_asset_movement_matches', return_value=[]) as find_match_mock:  # noqa: E501
         match_asset_movements(database=database)
 
     assert find_match_mock.call_count == 2

@@ -67,6 +67,7 @@ from rotkehlchen.balances.manual import (
 )
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubManager
+from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops, fetch_airdrops_metadata
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
@@ -253,6 +254,7 @@ from rotkehlchen.tasks.assets import (
     update_spark_underlying_assets,
 )
 from rotkehlchen.tasks.events import (
+    find_asset_movement_matches,
     get_unmatched_asset_movements,
     update_asset_movement_matched_event,
 )
@@ -4992,15 +4994,14 @@ class RestAPI:
         )
 
     def get_counterparties_details(self) -> Response:
-        """Collect the counterparties from decoders in the different EVM chains and Solana,
-        combining them and removing duplicates.
-        """
+        """Collect the counterparties from exchanges and EVM/Solana protocol decoders"""
+        counterparties = [CounterpartyDetails(
+            identifier=x.name.lower(),
+            label=x.name.capitalize(),
+        ) for x in ALL_SUPPORTED_EXCHANGES]
+        counterparties.extend(list(self.rotkehlchen.chains_aggregator.get_all_counterparties()))
         return api_response(
-            result=process_result(
-                _wrap_in_ok_result(
-                    result=list(self.rotkehlchen.chains_aggregator.get_all_counterparties()),
-                ),
-            ),
+            result=process_result(_wrap_in_ok_result(result=counterparties)),
             status_code=HTTPStatus.OK,
         )
 
@@ -6376,3 +6377,53 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(
             result=list({event.group_identifier for event in asset_movements}),
         ))
+
+    def get_matches_for_asset_movement(
+            self,
+            asset_movement_group_identifier: str,
+            time_range: int,
+    ) -> Response:
+        events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
+        asset_movement = fee_event = None
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            for event in events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(group_identifiers=[asset_movement_group_identifier]),
+            ):
+                if isinstance(event, AssetMovement):
+                    if event.event_subtype == HistoryEventSubType.FEE:
+                        fee_event = event
+                    else:
+                        asset_movement = event
+
+        if asset_movement is None:
+            return api_response(wrap_in_fail_result(
+                message=f'No asset movement event found in the DB for group identifier {asset_movement_group_identifier}',  # noqa: E501
+            ), HTTPStatus.BAD_REQUEST)
+
+        close_match_identifiers = [x.identifier for x in find_asset_movement_matches(
+            events_db=events_db,
+            asset_movement=asset_movement,
+            is_deposit=asset_movement.event_type == HistoryEventType.DEPOSIT,
+            fee_event=fee_event,
+            match_window=time_range,
+        )]
+
+        asset_movement_timestamp = ts_ms_to_sec(asset_movement.timestamp)
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            other_events = events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(
+                    from_ts=Timestamp(asset_movement_timestamp - time_range),
+                    to_ts=Timestamp(asset_movement_timestamp + time_range),
+                    ignored_ids=[
+                        str(asset_movement.identifier),
+                        *[str(x) for x in close_match_identifiers],
+                    ],
+                ),
+            )
+
+        return api_response(_wrap_in_ok_result(result={
+            'close_matches': close_match_identifiers,
+            'other_events': [x.identifier for x in other_events],
+        }))
