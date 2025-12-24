@@ -1,12 +1,18 @@
 <script setup lang="ts">
 import type { NftAsset } from '@/types/nfts';
-import { assert, type AssetInfoWithId, getValidSelectorFromEvmAddress, transformCase } from '@rotki/common';
+import {
+  assert,
+  type AssetInfoWithId,
+  getValidSelectorFromEvmAddress,
+  transformCase,
+} from '@rotki/common';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { isAbortError } from '@/utils';
+import { getAssetSearchTypeParams, getSanitizedChain, parseAssetSearchKeyword } from '@/utils/assets';
 import { uniqueObjects } from '@/utils/data';
 
 defineOptions({
@@ -58,6 +64,7 @@ defineSlots<{
 
 const { errorMessages, excludes, includeNfts, items, showIgnored } = toRefs(props);
 const { useIsAssetIgnored } = useIgnoredAssetsStore();
+const { getEvmChainName, matchChain } = useSupportedChains();
 
 const search = ref<string>('');
 const assets = ref<(AssetInfoWithId | NftAsset)[]>([]);
@@ -104,14 +111,16 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
 async function searchAssets(keyword: string, signal: AbortSignal): Promise<void> {
   set(loading, true);
   try {
-    const chain = props.chain;
+    const { address, value } = parseAssetSearchKeyword(keyword);
+    const usedChain = getSanitizedChain(props.chain, matchChain, getEvmChainName);
+
     const fetchedAssets = await assetSearch({
-      assetType: chain === SOLANA_CHAIN ? SOLANA_TOKEN : (chain ? EVM_TOKEN : undefined),
-      evmChain: chain === SOLANA_CHAIN ? undefined : chain,
+      address,
+      ...getAssetSearchTypeParams(usedChain),
       limit: 50,
       searchNfts: get(includeNfts),
       signal,
-      value: keyword,
+      value,
     });
     if (get(modelValue))
       await retainSelectedValueInOptions(fetchedAssets);

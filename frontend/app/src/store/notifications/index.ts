@@ -13,8 +13,14 @@ import { orderBy } from 'es-toolkit';
 import { createNotification } from '@/utils/notifications';
 
 const DESERIALIZATION_ERROR_PREFIX = 'Could not deserialize';
+const BEACONCHAIN_RATE_LIMITED_PREFIX = 'Beaconcha.in is rate limited';
 const NOTIFICATION_COOLDOWN_MS = 60_000;
 const NOTIFICATION_MAX_SIZE = 200;
+
+interface BeaconchainRateLimitedExtras extends Record<string, unknown> {
+  endpoints: string[];
+  until?: string;
+}
 
 const DEFAULT_NOTIFICATION: NotificationPayload = {
   category: NotificationCategory.DEFAULT,
@@ -114,6 +120,68 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
   }
 
+  function extractBeaconchainRateLimitUntil(message: string): string {
+    const match = message.match(/Beaconcha\.in is rate limited until ([^.]+)\./);
+    return match?.[1] ?? '';
+  }
+
+  function formatUntil(until: string | undefined): string {
+    return until ? ` until ${until}` : '';
+  }
+
+  function isBeaconchainRateLimitedExtras(extras: Record<string, unknown>): extras is BeaconchainRateLimitedExtras {
+    return Array.isArray(extras.endpoints) && extras.endpoints.every(item => typeof item === 'string');
+  }
+
+  function handleBeaconchainRateLimitError(dataList: NotificationData[], newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
+    const index = dataList.findIndex(notification => notification.group === NotificationGroup.BEACONCHAIN_RATE_LIMITED);
+    const newUntil = extractBeaconchainRateLimitUntil(newData.message);
+    const endpoint = newData.title;
+
+    if (index >= 0) {
+      const existing = dataList[index];
+
+      assert(existing.groupCount !== undefined, 'groupCount should be defined when group is set');
+      assert(existing.extras !== undefined && isBeaconchainRateLimitedExtras(existing.extras), 'extras should be defined for beaconchain rate limit group');
+
+      const { endpoints: existingEndpoints, until: existingUntil } = existing.extras;
+
+      if (existingEndpoints.includes(endpoint)) {
+        return;
+      }
+
+      const endpoints = [...existingEndpoints, endpoint];
+      const groupCount = endpoints.length;
+      const until = newUntil || existingUntil;
+
+      dataList[index] = {
+        ...existing,
+        date: new Date(),
+        display: true,
+        extras: { endpoints, until },
+        groupCount,
+        message: t('notification_messages.beaconchain_rate_limited.message', { count: groupCount, endpoints: endpoints.map(item => `- ${item}`).join('\n'), until: formatUntil(until) }),
+      };
+
+      set(data, dataList);
+    }
+    else {
+      const endpoints = [endpoint];
+      const extras: BeaconchainRateLimitedExtras = { endpoints, until: newUntil || undefined };
+      addNotifications([
+        createNotification(get(nextId), Object.assign(notificationDefaults(), {
+          ...newData,
+          display: true,
+          extras,
+          group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
+          groupCount: 1,
+          message: t('notification_messages.beaconchain_rate_limited.message', { count: 1, endpoints: `- ${endpoint}`, until: formatUntil(newUntil) }),
+          title: t('notification_messages.beaconchain_rate_limited.title'),
+        })),
+      ]);
+    }
+  }
+
   const notify = (newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void => {
     const notifications = [...get(data)];
     const dataList = take(notifications, NOTIFICATION_MAX_SIZE - 1);
@@ -132,6 +200,11 @@ export const useNotificationsStore = defineStore('notifications', () => {
         handleDeserializationError(dataList, newData);
         return;
       }
+    }
+
+    if (newData.message.includes(BEACONCHAIN_RATE_LIMITED_PREFIX)) {
+      handleBeaconchainRateLimitError(dataList, newData);
+      return;
     }
 
     const groupToFind = newData.group;

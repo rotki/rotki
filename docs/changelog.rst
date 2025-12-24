@@ -17,6 +17,7 @@ Changelog
 * :feature:`-` Jito tip payment events on Solana will now be properly decoded.
 * :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
+* :bug:`11208` Users will now be able to use contract addresses to filter assets in asset selection fields.
 
 * :release:`1.41.3 <2025-12-19>`
 * :bug:`11166` Date time picker quick options will now work cumulatively, allowing users to go further back in time with multiple clicks.

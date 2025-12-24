@@ -28,32 +28,37 @@ export function useManualBalanceFilter(locations: MaybeRef<string[]>): FilterSch
   const { t } = useI18n({ useScope: 'global' });
   const { assetInfo, assetSearch } = useAssetInfoRetrieval();
 
-  const matchers = computed<Matcher[]>(() => [
-    {
-      description: t('common.location'),
-      key: ManualBalanceFilterKeys.LOCATION,
-      keyValue: ManualBalanceFilterValueKeys.LOCATION,
-      string: true,
-      suggestions: (): string[] => get(locations),
-      validate: (location): boolean => get(locations).includes(location),
-    },
-    {
-      description: t('common.label'),
-      key: ManualBalanceFilterKeys.LABEL,
-      keyValue: ManualBalanceFilterValueKeys.LABEL,
-      string: true,
-      suggestions: (): string[] => [],
-      validate: (type: string): boolean => !!type,
-    },
-    {
-      asset: true,
-      description: t('common.asset'),
-      deserializer: assetDeserializer(assetInfo),
-      key: ManualBalanceFilterKeys.ASSET,
-      keyValue: ManualBalanceFilterValueKeys.ASSET,
-      suggestions: assetSuggestions(assetSearch),
-    },
-  ]);
+  const matchers = computed<Matcher[]>(() => {
+    const selectedLocation = get(filters)?.location;
+    const locationString = (Array.isArray(selectedLocation) ? selectedLocation[0] : selectedLocation)?.toString();
+
+    return [
+      {
+        description: t('common.location'),
+        key: ManualBalanceFilterKeys.LOCATION,
+        keyValue: ManualBalanceFilterValueKeys.LOCATION,
+        string: true,
+        suggestions: (): string[] => get(locations),
+        validate: (location): boolean => get(locations).includes(location),
+      },
+      {
+        description: t('common.label'),
+        key: ManualBalanceFilterKeys.LABEL,
+        keyValue: ManualBalanceFilterValueKeys.LABEL,
+        string: true,
+        suggestions: (): string[] => [],
+        validate: (type: string): boolean => !!type,
+      },
+      {
+        asset: true,
+        description: t('common.asset'),
+        deserializer: assetDeserializer(assetInfo),
+        key: ManualBalanceFilterKeys.ASSET,
+        keyValue: ManualBalanceFilterValueKeys.ASSET,
+        suggestions: assetSuggestions(assetSearch, locationString),
+      },
+    ];
+  });
 
   const RouteFilterSchema = z.object({
     [ManualBalanceFilterValueKeys.ASSET]: z.string().optional(),

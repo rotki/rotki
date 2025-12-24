@@ -871,13 +871,21 @@ def test_search_assets(rotkehlchen_api_server: 'APIServer') -> None:
 def test_search_assets_with_levenshtein(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that searching for assets using a keyword works(levenshtein approach)."""
     globaldb = GlobalDBHandler()
-    # search by address
+    # search by EVM address
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
         json={'address': '0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83', 'limit': 10},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result) == 1 and result[0]['identifier'] == 'eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'  # noqa: E501  # USDC on gnosis
+
+    # search by Solana address
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'address': '4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R', 'limit': 10},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result) == 1 and result[0]['identifier'] == 'solana/token:4k3Dyjzvzp8eMZWUXbBCjEvwSkkk59S5iCNLY3QrkX6R'  # noqa: E501  # RAY token
 
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
