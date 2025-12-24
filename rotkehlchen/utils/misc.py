@@ -207,7 +207,7 @@ def convert_to_int(
         accept_only_exact: bool = True,
 ) -> int:
     """Try to convert to an int. Either from an FVal or a string. If it's a float
-    and it's not whole (like 42.0) and accept_only_exact is False then raise
+    and it's not whole (like 42.0) and accept_only_exact is True then raise
 
     Raises:
         ConversionError: If either the given value is not an exact number or its
