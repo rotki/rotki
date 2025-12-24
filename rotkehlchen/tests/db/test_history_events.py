@@ -11,6 +11,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USDC, A_USDT
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import (
@@ -602,3 +603,131 @@ def test_match_exact_events(database: 'DBHandler', start_with_valid_premium: boo
         assert result_match_grouped[0][0] == 2 and result_no_match_grouped[0][0] == 4
         assert result_match_grouped[0][1].asset == A_DAI
         assert result_match_grouped[0][1].asset == A_DAI
+
+
+def test_event_modification_tracks_earliest_timestamp(database: 'DBHandler') -> None:
+    db = DBHistoryEvents(database)
+    cache_key = DBCacheStatic.STALE_BALANCES_FROM_TS.value
+
+    with database.conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?', (cache_key,),
+        ).fetchone()
+        assert result is None
+
+    with database.user_write() as write_cursor:
+        db.add_history_events(
+            write_cursor=write_cursor,
+            history=[(eth_event := HistoryEvent(
+                group_identifier='TEST1',
+                sequence_index=1,
+                timestamp=TimestampMS(3000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            )), HistoryEvent(
+                group_identifier='TEST2',
+                sequence_index=1,
+                timestamp=(ts_2000 := TimestampMS(2000)),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_BTC,
+                amount=ONE,
+            )],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?', (cache_key,),
+        ).fetchone()
+        assert result[0] == str(ts_2000)  # global minimum across all assets
+
+    with database.user_write() as write_cursor:
+        db.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='TEST3',
+                sequence_index=1,
+                timestamp=(ts_1000 := TimestampMS(1000)),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            ),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?', (cache_key,),
+        ).fetchone()
+        assert result[0] == str(ts_1000)  # updated to earlier timestamp
+
+    # add event at later timestamp 5000 and cache should remain at 1000
+    with database.user_write() as write_cursor:
+        db.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='TEST4',
+                sequence_index=1,
+                timestamp=TimestampMS(5000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            ),
+        )
+
+    with database.conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?', (cache_key,),
+        ).fetchone()
+        assert result[0] == str(ts_1000)  # remains at minimum
+
+    # edit notes only and _mark_events_modified should NOT be called
+    with (
+        patch.object(db, '_mark_events_modified') as mock_mark,
+        database.user_write() as write_cursor,
+    ):
+        eth_event.identifier = 1
+        eth_event.notes = 'Updated notes'
+        db.edit_history_event(write_cursor=write_cursor, event=eth_event)
+        mock_mark.assert_not_called()
+
+    # edit asset and should update cache
+    with database.user_write() as write_cursor:
+        eth_event.asset = A_DAI
+        db.edit_history_event(write_cursor=write_cursor, event=eth_event)
+
+    with database.conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?', (cache_key,),
+        ).fetchone()
+        assert result[0] == str(ts_1000)  # still the global minimum
+
+    # test purge_exchange_data updates cache via delete_events_and_track
+    with database.user_write() as write_cursor:
+        db.add_history_event(
+            write_cursor=write_cursor,
+            event=HistoryEvent(
+                group_identifier='KRAKEN1',
+                sequence_index=1,
+                timestamp=(ts_500 := TimestampMS(500)),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=ONE,
+            ),
+        )
+        database.purge_exchange_data(write_cursor=write_cursor, location=Location.KRAKEN)
+
+    with database.conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?', (cache_key,),
+        ).fetchone()
+        assert result[0] == str(ts_500)  # updated to deleted event's timestamp

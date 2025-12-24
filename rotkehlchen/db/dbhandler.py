@@ -1284,8 +1284,11 @@ class DBHandler:
 
     def purge_exchange_data(self, write_cursor: 'DBCursor', location: Location) -> None:
         self.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)
-        serialized_location = location.serialize_for_db()
-        write_cursor.execute('DELETE FROM history_events WHERE location = ?;', (serialized_location,))  # noqa: E501
+        DBHistoryEvents(database=self).delete_events_and_track(
+            write_cursor=write_cursor,
+            where_clause='WHERE location = ?',
+            where_bindings=(location.serialize_for_db(),),
+        )
 
     def update_used_query_range(self, write_cursor: 'DBCursor', name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501
         write_cursor.execute(
@@ -2035,9 +2038,12 @@ class DBHandler:
             )
 
             # also update the name of the events related to this exchange
-            write_cursor.execute(
-                'UPDATE history_events SET location_label=? WHERE location=? AND location_label=?',
-                (new_name, location.serialize_for_db(), name),
+            DBHistoryEvents(database=self).update_events_and_track(
+                write_cursor=write_cursor,
+                where_clause='WHERE location=? AND location_label=?',
+                where_bindings=(location.serialize_for_db(), name),
+                set_clause='SET location_label=?',
+                set_bindings=(new_name,),
             )
 
     def remove_exchange(self, write_cursor: 'DBCursor', name: str, location: Location) -> None:
@@ -2444,18 +2450,17 @@ class DBHandler:
             x[0] for x in write_cursor
             if x[1] not in other_addresses and x[2] not in other_addresses  # pylint: disable=unsupported-membership-test
         ]
+        db_history_events = DBHistoryEvents(database=self)
         for hashes_chunk in get_chunks(hashes_to_remove, n=1000):  # limit num of hashes in a query
+            placeholders = ', '.join(['?'] * len(hashes_chunk))
             write_cursor.execute(  # delete transactions themselves
-                f'DELETE FROM zksynclite_transactions WHERE tx_hash IN '
-                f'({",".join("?" * len(hashes_chunk))})',
+                f'DELETE FROM zksynclite_transactions WHERE tx_hash IN ({placeholders})',
                 hashes_chunk,
             )
-            write_cursor.execute(
-                f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier '
-                f'FROM history_events H INNER JOIN chain_events_info C '
-                f'ON H.identifier=C.identifier AND C.tx_ref IN '
-                f'({", ".join(["?"] * len(hashes_chunk))}) AND H.location=?)',
-                hashes_chunk + [Location.ZKSYNC_LITE.serialize_for_db()],
+            db_history_events.delete_events_and_track(
+                write_cursor=write_cursor,
+                where_clause=f'WHERE identifier IN (SELECT H.identifier FROM history_events H INNER JOIN chain_events_info C ON H.identifier=C.identifier AND C.tx_ref IN ({placeholders}) AND H.location=?)',  # noqa: E501
+                where_bindings=tuple(hashes_chunk) + (Location.ZKSYNC_LITE.serialize_for_db(),),
             )
 
     def delete_data_for_bitcoin_address(

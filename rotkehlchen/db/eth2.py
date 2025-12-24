@@ -291,11 +291,16 @@ class DBEth2:
 
             # Delete from the events table, all staking events except for deposits.
             # We keep deposits since they are associated with the address and are EVM transactions
-            cursor.execute(
-                f'DELETE FROM history_events WHERE identifier in (SELECT S.identifier '
-                f'FROM eth_staking_events_info S WHERE S.validator_index IN '
-                f'({",".join(question_marks)})) AND entry_type != ?',
-                (*validator_indices, HistoryBaseEntryType.ETH_DEPOSIT_EVENT.serialize_for_db()),
+            DBHistoryEvents(self.db).delete_events_and_track(
+                write_cursor=cursor,
+                where_clause=(
+                    f'WHERE identifier IN (SELECT S.identifier FROM eth_staking_events_info S '
+                    f'WHERE S.validator_index IN ({",".join(question_marks)})) AND entry_type != ?'
+                ),
+                where_bindings=(
+                    *validator_indices,
+                    HistoryBaseEntryType.ETH_DEPOSIT_EVENT.serialize_for_db(),
+                ),
             )
 
             # Delete cached timestamps
@@ -770,24 +775,29 @@ class DBEth2:
                 (HistoryEventType.STAKING, 'IN'),
                 (HistoryEventType.INFORMATIONAL, 'NOT IN'),
             ):
-                query = (
-                    'UPDATE history_events SET type=? WHERE entry_type=? AND subtype=? '
+                where_clause = (
+                    f"WHERE entry_type=? AND subtype=? "
                     f"AND location_label {operation} ({','.join('?' * len(tracked_addresses))})"
                 )
-                bindings = [
-                    event_type.serialize(),
+                where_bindings: list = [
                     HistoryBaseEntryType.ETH_BLOCK_EVENT.value,
                     HistoryEventSubType.BLOCK_PRODUCTION.serialize(),
                     *tracked_addresses,
                 ]
                 if block_numbers is not None and len(block_numbers) > 0:
-                    query += (
+                    where_clause += (
                         ' AND identifier IN (SELECT identifier FROM eth_staking_events_info '
                         f"WHERE is_exit_or_blocknumber IN ({','.join('?' * len(block_numbers))}))"
                     )
-                    bindings += block_numbers
+                    where_bindings += block_numbers
 
-                write_cursor.execute(query, bindings)
+                DBHistoryEvents(self.db).update_events_and_track(
+                    write_cursor=write_cursor,
+                    where_clause=where_clause,
+                    where_bindings=tuple(where_bindings),
+                    set_clause='SET type=?',
+                    set_bindings=(event_type.serialize(),),
+                )
 
         self.combine_block_with_tx_events(block_numbers=block_numbers)
 

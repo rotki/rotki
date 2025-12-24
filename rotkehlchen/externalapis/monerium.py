@@ -221,15 +221,13 @@ class Monerium:
             if self.is_monerium_event_edited(event_notes=(event := events[0]).notes):
                 continue  # skip if the event is already edited
 
-            querystr = 'UPDATE history_events SET notes=? '
-            bindings: list[Any] = [new_notes]
-            if new_type:
-                querystr = 'UPDATE history_events SET notes=?, type=?, subtype=? '
-                bindings.extend([new_type.serialize(), new_subtype.serialize()])  # type: ignore  # both type/subtype are set
-            querystr += 'WHERE identifier=?'
-            bindings.append(event.identifier)
             with self.database.user_write() as write_cursor:
-                write_cursor.execute(querystr, bindings)
+                event.notes = new_notes
+                if new_type:
+                    event.event_type = new_type
+                    event.event_subtype = new_subtype  # type: ignore  # both type/subtype are set
+
+                dbevents.edit_history_event(write_cursor=write_cursor, event=event)
 
     def update_events(self, events: list['EvmEvent']) -> None:
         """Query and update the event txs individually.

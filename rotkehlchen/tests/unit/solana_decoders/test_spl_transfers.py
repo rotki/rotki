@@ -51,7 +51,7 @@ def test_spl_token_transfer(
         address=SolanaAddress('GabwTHe1P9wLKCqqBNBnAPgD71K8j8Dp4Uk4L6EyFUnK'),
     )]
     with solana_inquirer.database.conn.read_ctx() as cursor:
-        assert cursor.execute('SELECT * FROM key_value_cache').fetchall() == [
+        assert cursor.execute('SELECT * FROM key_value_cache WHERE name LIKE "solana%"').fetchall() == [  # noqa: E501
             ('solana_token_account_BKHLvZxmSGUJRMX9WPPLFTQvRTktctpL6At2yWnxbLtV', 'GabwTHe1P9wLKCqqBNBnAPgD71K8j8Dp4Uk4L6EyFUnK,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),  # noqa: E501
             ('solana_token_account_EHF3dReNcLKmop3j2EhZuABtq7hnEzyS6VFBqsTsz5Mt', '54r6W445JsjDf5UGzmVtcczsPpgg3B3J16USuNcu1EY,EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),  # noqa: E501
         ]
