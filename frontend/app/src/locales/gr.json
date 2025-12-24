@@ -790,7 +790,6 @@
       "delete_error": "Δεν κατέστη δυνατή η διαγραφή της αντιστοίχισης: {message}",
       "edit_error": "Δεν ήταν δυνατή η επεξεργασία της αντιστοίχισης: {message}",
       "edit_title": "Επεξεργασία της χαρτογράφησης",
-      "exchange": "Exchange",
       "filter_by_exchange": "Φιλτράρισμα με βάση την ανταλλαγή",
       "filter_by_location_symbol": "Φίλτρο ανά σύμβολο περιουσιακού στοιχείου",
       "form": {
@@ -1138,6 +1137,7 @@
     "details": "Details",
     "entry_type": "Τύπος εισόδου",
     "events": "Events",
+    "exchange": "Exchange",
     "here": "here",
     "ignored_in_accounting": "Ignored in Accounting",
     "important_notice": "Important notice:",
@@ -1601,7 +1601,6 @@
       "activate_tooltip": "Edit the api keys for the exchange.",
       "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."
     },
-    "exchange": "Exchange",
     "name": {
       "non_empty": "The name field cannot be empty."
     }

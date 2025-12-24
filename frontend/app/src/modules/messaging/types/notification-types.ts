@@ -31,3 +31,9 @@ export const SolanaTokensMigrationData = z.object({
 });
 
 export type SolanaTokensMigrationData = z.infer<typeof SolanaTokensMigrationData>;
+
+export const UnmatchedAssetMovementsData = z.object({
+  count: z.number(),
+});
+
+export type UnmatchedAssetMovementsData = z.infer<typeof UnmatchedAssetMovementsData>;

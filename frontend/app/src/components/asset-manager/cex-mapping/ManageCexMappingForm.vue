@@ -113,7 +113,7 @@ defineExpose({
     </RuiSwitch>
     <ExchangeInput
       v-model="locationModel"
-      :label="t('asset_management.cex_mapping.exchange')"
+      :label="t('common.exchange')"
       :disabled="editMode || forAllExchanges"
       :excludes="EXCLUDED_EXCHANGES"
       clearable

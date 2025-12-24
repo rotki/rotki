@@ -45,6 +45,7 @@ function createSettingsResponse(overrides: Record<string, unknown> = {}): Action
       ssf_graph_multiplier: 0,
       last_data_migration: 13,
       non_syncing_exchanges: [],
+      events_processing_frequency: 86400,
       evmchains_to_skip_detection: [],
       cost_basis_method: 'fifo',
       treat_eth2_as_eth: true,

@@ -60,6 +60,8 @@ interface UseHistoryEventsApiReturn {
   deleteStakeEvents: (entryType: string) => Promise<boolean>;
   pullAndRecodeEthBlockEventRequest: (payload: PullEthBlockEventPayload) => Promise<PendingTask>;
   getTransactionStatusSummary: () => Promise<TransactionStatus>;
+  getUnmatchedAssetMovements: () => Promise<string[]>;
+  matchAssetMovements: (assetMovement: number, matchedEvent: number) => Promise<boolean>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
@@ -278,6 +280,15 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return TransactionStatusSchema.parse(response);
   };
 
+  const getUnmatchedAssetMovements = async (): Promise<string[]> =>
+    api.get<string[]>('/history/events/match/asset_movements');
+
+  const matchAssetMovements = async (assetMovement: number, matchedEvent: number): Promise<boolean> =>
+    api.post<boolean>('/history/events/match/asset_movements', {
+      assetMovement,
+      matchedEvent,
+    });
+
   return {
     addHistoryEvent,
     addTransactionHash,
@@ -295,6 +306,8 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     getTransactionStatusSummary,
     getTransactionTypeMappings,
     getUndecodedTransactionsBreakdown,
+    getUnmatchedAssetMovements,
+    matchAssetMovements,
     pullAndRecodeEthBlockEventRequest,
     pullAndRecodeTransactionRequest,
     queryExchangeEvents,

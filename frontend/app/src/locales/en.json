@@ -277,6 +277,20 @@
         "title": "Adding validator: {id}"
       }
     },
+    "asset_movement_matching": {
+      "error": {
+        "description": "Failed to match asset movement: {message}",
+        "title": "Asset Movement Matching"
+      },
+      "fetch_error": {
+        "description": "Failed to fetch unmatched asset movements: {message}",
+        "title": "Fetching Unmatched Asset Movements"
+      },
+      "success": {
+        "description": "Asset movement successfully matched to blockchain event.",
+        "title": "Asset Movement Matched"
+      }
+    },
     "assets": {
       "erc20": {
         "error": {
@@ -1123,7 +1137,6 @@
       "delete_error": "Could not delete the mapping: {message}",
       "edit_error": "Could not edit the mapping: {message}",
       "edit_title": "Edit the mapping",
-      "exchange": "Exchange",
       "filter_by_exchange": "Filter by exchange",
       "filter_by_location_symbol": "Filter by asset symbol",
       "form": {
@@ -1176,6 +1189,27 @@
     "error": {
       "message": "Failed to retrieve the asset mappings for the following identifiers {identifiers} ({message})",
       "title": "Caching asset mappings"
+    }
+  },
+  "asset_movement_matching": {
+    "banner": {
+      "action": "Match Now",
+      "message": "There are {count} unmatched asset movements that require manual matching."
+    },
+    "dialog": {
+      "check_unmatched": "Check Unmatched Asset Movements",
+      "confirm_match": "Confirm Match",
+      "description": "Select an unmatched asset movement and find a matching blockchain transaction to link them together.",
+      "find_match": "Find Match",
+      "matching_for": "Matching for:",
+      "no_matches_found": "No potential matches found. Try adjusting the time range.",
+      "no_unmatched": "All asset movements have been matched.",
+      "search_description": "Search for on-chain events within the specified time range:",
+      "select": "Select",
+      "select_match_title": "Select Matching Event",
+      "selected": "Selected",
+      "time_range_hours": "Time range (hours)",
+      "title": "Match Asset Movements"
     }
   },
   "asset_search": {
@@ -1715,6 +1749,7 @@
     "details": "Details",
     "entry_type": "Entry Type",
     "events": "Events",
+    "exchange": "Exchange",
     "external_link_confirmation": {
       "message": "You are about to open an external link. Please verify the URL carefully and be cautious of phishing attempts.",
       "title": "Open External Link?"
@@ -2394,7 +2429,6 @@
       "activate_tooltip": "Edit the api keys for the exchange.",
       "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."
     },
-    "exchange": "Exchange",
     "name": {
       "non_empty": "The name field cannot be empty."
     },
@@ -2846,6 +2880,17 @@
       "title": "CSV Export",
       "validation": {
         "error": "Error setting the display date in local time setting"
+      }
+    },
+    "events_processing_frequency": {
+      "label": "Frequency in hours",
+      "subtitle": "How often the background task runs to automatically match exchange deposit/withdrawal events with on-chain transactions.",
+      "title": "Asset movement matching frequency",
+      "validation": {
+        "error": "Error setting asset movement matching frequency",
+        "invalid_frequency": "Frequency must be between {start} and {end} hours",
+        "non_empty": "Please enter the number of hours",
+        "success": "Asset movement matching frequency set to {frequency} hours"
       }
     },
     "evm_chains": {
@@ -3892,6 +3937,11 @@
     "unknown_asset_mapping": {
       "message": "We could not find a mapping for {groupCount} exchange assets",
       "title": "Missing mappings for some exchanges"
+    },
+    "unmatched_asset_movements": {
+      "action": "Review",
+      "message": "{count} asset movement could not be automatically matched with a corresponding on-chain event. Please review and match manually.|{count} asset movements could not be automatically matched with corresponding on-chain events. Please review and match them manually.",
+      "title": "Unmatched Asset Movement|Unmatched Asset Movements"
     }
   },
   "notification_popup": {
@@ -5355,15 +5405,10 @@
     },
     "refresh_tooltip": "Fetch latest events",
     "repulling": {
-      "account_type": {
-        "blockchain": "Blockchain",
-        "exchange": "Exchange"
-      },
       "action": "Re-Pull Events",
       "add_account_link": "add a blockchain account",
       "add_exchange_link": "add an exchange",
       "address_hint": "Leave it empty to re-pull transactions from all addresses",
-      "exchange": "Exchange",
       "finished": "Repulling events finished",
       "no_accounts": "You don't have any blockchain accounts registered. Please {link} first.",
       "no_exchanges": "You don't have any exchanges connected. Please {link} first.",

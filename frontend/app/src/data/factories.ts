@@ -21,6 +21,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     defaultEvmIndexerOrder: [],
     displayDateInLocaltime: Defaults.DISPLAY_DATE_IN_LOCALTIME,
     dotRpcEndpoint: Defaults.DOT_RPC_ENDPOINT,
+    eventsProcessingFrequency: Defaults.DEFAULT_EVENTS_PROCESSING_FREQUENCY,
     evmchainsToSkipDetection: [],
     evmIndexersOrder: {},
     historicalPriceOracles: [],

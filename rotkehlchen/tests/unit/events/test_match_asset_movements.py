@@ -246,17 +246,21 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
     assert asset_movements[-1] == withdrawal4_matched_event
 
     # Check that matches have been cached and that the cached identifiers
-    # refer to the correct asset movements
+    # refer to the correct asset movements (ordered by timestamp descending)
+    deposit_2_identifier = 2
+    withdrawal_1_identifier = 5
+    deposit_3_identifier = 13
+    withdrawal4_identifier = 16
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT * FROM key_value_cache WHERE name LIKE ?',
             ('matched_asset_movement_%',),
         ).fetchall() == [
-            (f'matched_asset_movement_{deposit2_matched_event.identifier}', str(deposit_2_identifier := 2)),  # noqa: E501
-            (f'matched_asset_movement_{withdrawal1_matched_event.identifier}', str(withdrawal_1_identifier := 5)),  # noqa: E501
-            (f'matched_asset_movement_{deposit3_matched_event.identifier}', str(deposit_3_identifier := 13)),  # noqa: E501
-            (f'matched_asset_movement_{withdrawal4_matched_event.identifier}', str(withdrawal4_identifier := 16)),  # noqa: E501
             (f'matched_asset_movement_{withdrawal4_identifier}', str(withdrawal4_matched_event.identifier)),  # noqa: E501
+            (f'matched_asset_movement_{withdrawal4_matched_event.identifier}', str(withdrawal4_identifier)),  # noqa: E501
+            (f'matched_asset_movement_{deposit3_matched_event.identifier}', str(deposit_3_identifier)),  # noqa: E501
+            (f'matched_asset_movement_{withdrawal1_matched_event.identifier}', str(withdrawal_1_identifier)),  # noqa: E501
+            (f'matched_asset_movement_{deposit2_matched_event.identifier}', str(deposit_2_identifier)),  # noqa: E501
         ]
         matched_asset_movements = events_db.get_history_events_internal(
             cursor=cursor,

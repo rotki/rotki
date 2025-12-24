@@ -67,6 +67,9 @@ export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
         });
         break;
       }
+      case DIALOG_TYPES.MATCH_ASSET_MOVEMENTS:
+        openDialog({ data: undefined, type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+        break;
       default:
         break;
     }

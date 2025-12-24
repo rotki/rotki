@@ -105,13 +105,14 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
     />
     <div
       v-else
-      class="flex items-center "
-      :class="dense ? 'pl-0.5 gap-2' : 'py-[5.5px] gap-3'"
+      class="flex items-center gap-2"
+      :class="{ 'py-[5px]': !dense }"
     >
       <LocationIcon
         :item="item.location"
-        horizontal
-        :size="dense ? '1rem' : '1.25rem'"
+        class="overflow-hidden rounded-sm"
+        :class="dense ? '!size-4' : '!size-6'"
+        :size="dense ? '0.875rem' : '1.25rem'"
         icon
       />
       {{ item.locationLabel }}
