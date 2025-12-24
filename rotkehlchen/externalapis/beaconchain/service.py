@@ -147,9 +147,10 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                     retry_after_secs = int(retry_after)
                     if retry_after_secs > MAX_WAIT_SECS:
                         msg = (
-                            f'Beaconchain API request {response.url} got rate limited. Would '
-                            f'need to wait for {retry_after} seconds which is more than the '
-                            f'wait limit of {MAX_WAIT_SECS} seconds. Bailing out.'
+                            f'Beaconcha.in is rate limited when processing API request '
+                            f'{response.url}. Would need to wait for {retry_after} seconds '
+                            f'which is more than the wait limit of {MAX_WAIT_SECS} seconds. '
+                            f'Bailing out.'
                         )
                         log.debug(
                             f'{msg} minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
@@ -165,7 +166,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                     sleep_seconds = backoff_in_seconds * (retries_num - times + 1)
                 times -= 1
                 log.debug(
-                    f'Beaconchain API request {response.url} got rate limited. Sleeping '
+                    f'Beaconcha.in is rate limited for API request {response.url}. Sleeping '
                     f'for {sleep_seconds}. We have {times} tries left.'
                     f'minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
                     f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '

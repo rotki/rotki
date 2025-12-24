@@ -3764,6 +3764,10 @@
     "backend": {
       "title": "Backend"
     },
+    "beaconchain_rate_limited": {
+      "message": "Beaconcha.in is rate limited{until}. The following query failed:\n{endpoints}\nCheck logs for more details.|Beaconcha.in is rate limited{until}. The following {count} queries failed:\n{endpoints}\n\nCheck logs for more details.",
+      "title": "Beaconcha.in Rate Limited"
+    },
     "binance_pairs_missing": {
       "action": "Configure pairs",
       "message": "Your Binance API key \"{name}\" is missing required market pairs configuration. This may cause rate limiting issues. Please configure the pairs you want to track.",
