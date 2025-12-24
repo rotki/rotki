@@ -236,6 +236,55 @@ describe('store::notifications/index', () => {
     });
   });
 
+  it('should group beaconcha.in rate limit notifications and list failed endpoints', () => {
+    const notificationsStore = useNotificationsStore();
+    const { notify } = notificationsStore;
+
+    const getMessage = (endpoint: string): NotificationPayload => ({
+      message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs for more details',
+      title: endpoint,
+      severity: Severity.WARNING,
+      category: NotificationCategory.DEFAULT,
+    });
+
+    notify(getMessage('Endpoint 1'));
+    notify(getMessage('Endpoint 2'));
+    notify(getMessage('Endpoint 3'));
+
+    expect(notificationsStore.data).toHaveLength(1);
+    expect(notificationsStore.data[0]).toMatchObject({
+      group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
+      groupCount: 3,
+      extras: { endpoints: ['Endpoint 1', 'Endpoint 2', 'Endpoint 3'], until: '2025-01-15T12:00:00Z' },
+      title: 'notification_messages.beaconchain_rate_limited.title',
+    });
+    expect(notificationsStore.data[0].message).toContain('notification_messages.beaconchain_rate_limited.message');
+  });
+
+  it('should not add duplicate endpoints to beaconcha.in rate limit notification', () => {
+    const notificationsStore = useNotificationsStore();
+    const { notify } = notificationsStore;
+
+    const getMessage = (endpoint: string): NotificationPayload => ({
+      message: 'Beaconcha.in is rate limited until 2025-01-15T12:00:00Z. Check logs for more details',
+      title: endpoint,
+      severity: Severity.WARNING,
+      category: NotificationCategory.DEFAULT,
+    });
+
+    notify(getMessage('Endpoint 1'));
+    notify(getMessage('Endpoint 1'));
+    notify(getMessage('Endpoint 2'));
+    notify(getMessage('Endpoint 1'));
+
+    expect(notificationsStore.data).toHaveLength(1);
+    expect(notificationsStore.data[0]).toMatchObject({
+      group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
+      groupCount: 2,
+      extras: { endpoints: ['Endpoint 1', 'Endpoint 2'], until: '2025-01-15T12:00:00Z' },
+    });
+  });
+
   it('should not keep more than 200 notifications stored', () => {
     const notificationsStore = useNotificationsStore();
     const { notify } = notificationsStore;
