@@ -1178,7 +1178,8 @@
     }
   },
   "asset_select": {
-    "no_results": "No assets matching your search"
+    "no_results": "No assets matching your search",
+    "placeholder": "Search by asset symbol, name, or the contract address."
   },
   "asset_table": {
     "copy_identifier": {

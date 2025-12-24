@@ -242,6 +242,7 @@ onUnmounted(() => {
     :hint="hint"
     :label="label"
     :clearable="clearable"
+    :placeholder="t('asset_select.placeholder')"
     :required="required"
     :success-messages="successMessages"
     :error-messages="errors"

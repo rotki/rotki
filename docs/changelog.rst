@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11197` rotki will now group the notifications for Beaconcha.in rate-limited messages to avoid annoying users.
 * :bug:`11208` Users will now be able to use contract addresses to filter assets in asset selection fields.
 * :release:`1.41.3 <2025-12-19>`
 * :bug:`11166` Date time picker quick options will now work cumulatively, allowing users to go further back in time with multiple clicks.
