@@ -2,9 +2,11 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SPAM_PROTOCOL, ChainID, TokenKind
 
@@ -86,3 +88,23 @@ def update_spam_assets(db: 'DBHandler', assets_info: list[dict[str, Any]]) -> in
             [('ignored_asset', x.identifier) for x in spam_tokens if x.identifier not in ignored_asset_ids],  # noqa: E501
         )
         return write_cursor.rowcount
+
+
+def check_token_impersonates_base_currency(token: 'EvmToken', native_token_symbol: str) -> None:
+    """
+    Mark a token as spam when it appears to impersonate the chain's native
+    base currency. When triggered, this function sets the token's protocol to spam.
+    """
+    if (
+        token.protocol != SPAM_PROTOCOL and
+        token.symbol == native_token_symbol and
+        token.started is None  # this is to prevent flaging a token that we have added since the started we are the only ones setting it.  # noqa: E501
+    ):
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            set_token_spam_protocol(
+                write_cursor=write_cursor,
+                token=token,
+                is_spam=True,
+            )
+        AssetResolver.clean_memory_cache(token.identifier)
+        log.debug(f'Flagged {token} as spam trying to impersonate {native_token_symbol}')
