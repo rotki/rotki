@@ -18,7 +18,8 @@ interface PotentialMatchRow {
   amount: BigNumber;
   location: string;
   timestamp: number;
-  txRef: string;
+  txRef?: string;
+  isCloseMatch: boolean;
 }
 
 const selectedMatchId = defineModel<number | undefined>('selectedMatchId', { required: true });
@@ -64,6 +65,10 @@ const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => [
 function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
   const events = Array.isArray(row) ? row : [row];
   return events[0];
+}
+
+function isSelected(row: PotentialMatchRow): boolean {
+  return get(selectedMatchId) === row.identifier;
 }
 
 const movementEntry = computed(() => getEventEntry(props.movement.events).entry);
@@ -160,10 +165,19 @@ const movementEntry = computed(() => getEventEntry(props.movement.events).entry)
             :item="row.location"
           />
           <HashLink
+            v-if="row.txRef"
             :text="row.txRef"
             type="transaction"
             :location="row.location"
           />
+          <span v-else>-</span>
+          <RuiChip
+            v-if="row.isCloseMatch"
+            size="sm"
+            color="success"
+          >
+            {{ t('asset_movement_matching.dialog.recommended') }}
+          </RuiChip>
         </div>
       </template>
       <template #item.asset="{ row }">
@@ -181,12 +195,12 @@ const movementEntry = computed(() => getEventEntry(props.movement.events).entry)
       <template #item.actions="{ row }">
         <RuiButton
           size="sm"
-          :color="selectedMatchId === row.identifier ? 'success' : 'primary'"
-          :variant="selectedMatchId === row.identifier ? 'default' : 'outlined'"
+          :color="isSelected(row) ? 'success' : 'primary'"
+          :variant="isSelected(row) ? 'default' : 'outlined'"
           @click="selectedMatchId = row.identifier"
         >
           <template
-            v-if="selectedMatchId === row.identifier"
+            v-if="isSelected(row)"
             #prepend
           >
             <RuiIcon
@@ -194,7 +208,7 @@ const movementEntry = computed(() => getEventEntry(props.movement.events).entry)
               size="12"
             />
           </template>
-          {{ selectedMatchId === row.identifier
+          {{ isSelected(row)
             ? t('asset_movement_matching.dialog.selected')
             : t('asset_movement_matching.dialog.select')
           }}

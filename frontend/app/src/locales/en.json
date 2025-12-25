@@ -1204,6 +1204,7 @@
       "matching_for": "Matching for:",
       "no_matches_found": "No potential matches found. Try adjusting the time range.",
       "no_unmatched": "All asset movements have been matched.",
+      "recommended": "Recommended",
       "search_description": "Search for on-chain events within the specified time range:",
       "select": "Select",
       "select_match_title": "Select Matching Event",

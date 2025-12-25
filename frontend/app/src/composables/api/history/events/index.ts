@@ -37,6 +37,11 @@ const TransactionStatusSchema = z.object({
 
 export type TransactionStatus = z.infer<typeof TransactionStatusSchema>;
 
+export interface AssetMovementMatchSuggestions {
+  closeMatches: number[];
+  otherEvents: number[];
+}
+
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
   deleteTransactions: (chain: string, txRef?: string) => Promise<boolean>;
@@ -61,6 +66,7 @@ interface UseHistoryEventsApiReturn {
   pullAndRecodeEthBlockEventRequest: (payload: PullEthBlockEventPayload) => Promise<PendingTask>;
   getTransactionStatusSummary: () => Promise<TransactionStatus>;
   getUnmatchedAssetMovements: () => Promise<string[]>;
+  getAssetMovementMatches: (assetMovement: string, timeRange: number) => Promise<AssetMovementMatchSuggestions>;
   matchAssetMovements: (assetMovement: number, matchedEvent: number) => Promise<boolean>;
 }
 
@@ -283,8 +289,14 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   const getUnmatchedAssetMovements = async (): Promise<string[]> =>
     api.get<string[]>('/history/events/match/asset_movements');
 
+  const getAssetMovementMatches = async (assetMovement: string, timeRange: number): Promise<AssetMovementMatchSuggestions> =>
+    api.post<AssetMovementMatchSuggestions>('/history/events/match/asset_movements', {
+      assetMovement,
+      timeRange,
+    });
+
   const matchAssetMovements = async (assetMovement: number, matchedEvent: number): Promise<boolean> =>
-    api.post<boolean>('/history/events/match/asset_movements', {
+    api.put<boolean>('/history/events/match/asset_movements', {
       assetMovement,
       matchedEvent,
     });
@@ -301,6 +313,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     exportHistoryEventsCSV,
     fetchHistoryEvents,
     fetchTransactionsTask,
+    getAssetMovementMatches,
     getEventDetails,
     getHistoryEventCounterpartiesData,
     getTransactionStatusSummary,

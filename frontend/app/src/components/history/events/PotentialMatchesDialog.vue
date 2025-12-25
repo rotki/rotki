@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
+import type { BigNumber } from '@rotki/common';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
-import { type BigNumber, HistoryEventEntryType } from '@rotki/common';
 import PotentialMatchesList from '@/components/history/events/PotentialMatchesList.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
@@ -9,15 +8,15 @@ import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
 } from '@/composables/history/events/use-unmatched-asset-movements';
-import { isEvmEvent, isSolanaEvent } from '@/utils/history/events';
 
-interface PotentialMatchRow {
+export interface PotentialMatchRow {
   identifier: number;
   asset: string;
   amount: BigNumber;
   location: string;
   timestamp: number;
-  txRef: string;
+  txRef?: string;
+  isCloseMatch: boolean;
 }
 
 const modelValue = defineModel<boolean>({ required: true });
@@ -37,7 +36,7 @@ const {
   refreshAfterMatch,
 } = useUnmatchedAssetMovements();
 
-const { fetchHistoryEvents } = useHistoryEventsApi();
+const { fetchHistoryEvents, getAssetMovementMatches } = useHistoryEventsApi();
 
 const searchLoading = ref<boolean>(false);
 const matchingLoading = ref<boolean>(false);
@@ -50,22 +49,19 @@ function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMet
   return events[0];
 }
 
-function transformToMatchRow(row: HistoryEventCollectionRow): PotentialMatchRow | undefined {
+function transformToMatchRow(row: HistoryEventCollectionRow, isCloseMatch: boolean): PotentialMatchRow {
   const eventData = getEventEntry(row);
   const entry = eventData.entry;
 
-  if (isEvmEvent(entry) || isSolanaEvent(entry)) {
-    return {
-      amount: entry.amount,
-      asset: entry.asset,
-      identifier: entry.identifier,
-      location: entry.location,
-      timestamp: entry.timestamp,
-      txRef: entry.txRef,
-    };
-  }
-
-  return undefined;
+  return {
+    amount: entry.amount,
+    asset: entry.asset,
+    identifier: entry.identifier,
+    isCloseMatch,
+    location: entry.location,
+    timestamp: entry.timestamp,
+    txRef: 'txRef' in entry ? entry.txRef : undefined,
+  };
 }
 
 async function searchPotentialMatches(): Promise<void> {
@@ -73,28 +69,40 @@ async function searchPotentialMatches(): Promise<void> {
   set(potentialMatches, []);
 
   try {
-    const eventEntry = getEventEntry(props.movement.events);
-    const timestampMs = eventEntry.entry.timestamp;
-    const timestampSec = Math.floor(timestampMs / 1000);
+    const groupIdentifier = props.movement.groupIdentifier;
+
     const hours = Number.parseInt(get(searchTimeRange), 10) || 24;
-    const hoursInSec = hours * 60 * 60;
+    const timeRangeInSeconds = hours * 60 * 60;
 
-    const payload: HistoryEventRequestPayload = {
+    // Get match suggestions from backend
+    const suggestions = await getAssetMovementMatches(groupIdentifier, timeRangeInSeconds);
+    const allIdentifiers = [...suggestions.closeMatches, ...suggestions.otherEvents];
+
+    if (allIdentifiers.length === 0) {
+      set(potentialMatches, []);
+      return;
+    }
+
+    // Fetch the actual events using the identifiers
+    const response = await fetchHistoryEvents({
       aggregateByGroupIds: false,
-      ascending: [false],
-      entryTypes: { values: [HistoryEventEntryType.EVM_EVENT, HistoryEventEntryType.SOLANA_EVENT] },
-      eventTypes: ['spend', 'receive'],
-      fromTimestamp: Math.max(0, timestampSec - hoursInSec),
-      limit: 50,
+      identifiers: allIdentifiers.map(String),
+      limit: -1,
       offset: 0,
-      orderByAttributes: ['timestamp'],
-      toTimestamp: timestampSec + hoursInSec,
-    };
+    });
 
-    const response = await fetchHistoryEvents(payload);
+    // Transform and mark close matches
+    const closeMatchSet = new Set(suggestions.closeMatches);
     const matches = response.entries
-      .map(transformToMatchRow)
-      .filter((row): row is PotentialMatchRow => row !== undefined);
+      .map(row => transformToMatchRow(row, closeMatchSet.has(getEventEntry(row).entry.identifier)));
+
+    // Sort: close matches first, then by timestamp descending
+    matches.sort((a, b) => {
+      if (a.isCloseMatch !== b.isCloseMatch)
+        return a.isCloseMatch ? -1 : 1;
+      return b.timestamp - a.timestamp;
+    });
+
     set(potentialMatches, matches);
   }
   catch (error) {

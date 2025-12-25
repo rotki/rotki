@@ -299,7 +299,8 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
         match_asset_movements(database=database)
 
     assert find_match_mock.call_count == 2
-    withdrawal2.identifier = 9
-    assert find_match_mock.call_args_list[0].kwargs['asset_movement'] == withdrawal2
+    # With timestamp descending order, withdrawal3 (later) comes before withdrawal2
     withdrawal3.identifier = 12
-    assert find_match_mock.call_args_list[1].kwargs['asset_movement'] == withdrawal3
+    assert find_match_mock.call_args_list[0].kwargs['asset_movement'] == withdrawal3
+    withdrawal2.identifier = 9
+    assert find_match_mock.call_args_list[1].kwargs['asset_movement'] == withdrawal2
