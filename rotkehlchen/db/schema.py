@@ -848,6 +848,22 @@ CREATE TABLE IF NOT EXISTS lido_csm_node_operator_metrics (
 );
 """
 
+# Stores metrics for history events including balance, pnl, and cost_basis data.
+# Each row represents a metric for a specific bucket after the event is applied.
+# Bucket = (location, location_label, protocol, asset) where:
+# - protocol is NULL for wallet, or protocol name for DeFi positions (e.g., 'aave_v3', 'lido')
+# - metric_key is the type of metric ('balance', 'pnl', 'cost_basis', etc.)
+DB_CREATE_EVENT_METRICS = """
+CREATE TABLE IF NOT EXISTS event_metrics (
+    id INTEGER NOT NULL PRIMARY KEY,
+    event_identifier INTEGER NOT NULL REFERENCES history_events(identifier) ON DELETE CASCADE,
+    protocol TEXT,
+    metric_key TEXT NOT NULL,
+    metric_value TEXT NOT NULL,
+    UNIQUE(event_identifier, protocol, metric_key)
+);
+"""
+
 # The history_events indexes significantly improve performance when filtering history events in large DBs.  # noqa: E501
 # Shown below are before/after query speeds we observed for each index:
 # idx_history_events_entry_type: Before: 12951ms, After: 0ms
@@ -868,6 +884,9 @@ CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);
 CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);
 CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
 CREATE UNIQUE INDEX IF NOT EXISTS unique_generic_accounting_rules ON accounting_rules(type, subtype, counterparty) WHERE is_event_specific = 0;
+CREATE INDEX IF NOT EXISTS idx_event_metrics_event ON event_metrics(event_identifier);
+CREATE INDEX IF NOT EXISTS idx_event_metrics_protocol ON event_metrics(protocol);
+CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key ON event_metrics(metric_key);
 """  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""
@@ -934,6 +953,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_SOLANA_TX_MAPPINGS}
 {DB_CREATE_LIDO_CSM_NODE_OPERATORS}
 {DB_CREATE_LIDO_CSM_NODE_OPERATOR_METRICS}
+{DB_CREATE_EVENT_METRICS}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

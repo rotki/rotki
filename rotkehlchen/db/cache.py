@@ -32,6 +32,7 @@ class DBCacheStatic(Enum):
     # Earliest timestamp from which balance caches are stale due to event modifications.
     # When events are added/edited/deleted, balances must be recalculated from this point.
     STALE_BALANCES_FROM_TS: Final = 'stale_balances_from_ts'
+    LAST_HISTORICAL_BALANCE_PROCESSING_TS: Final = 'last_historical_balance_processing_ts'
 
 
 class LabeledLocationArgsType(TypedDict):

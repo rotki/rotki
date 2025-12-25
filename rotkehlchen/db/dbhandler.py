@@ -699,6 +699,8 @@ class DBHandler:
                 DBCacheStatic.LAST_GNOSISPAY_QUERY_TS,
                 DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
                 DBCacheStatic.LAST_DB_UPGRADE,
+                DBCacheStatic.STALE_BALANCES_FROM_TS,
+                DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
             ],
     ) -> Timestamp | None:
         ...
