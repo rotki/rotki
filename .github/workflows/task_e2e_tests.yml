@@ -228,3 +228,42 @@ jobs:
         with:
           name: backend-logs-${{ runner.os }}-${{ matrix.group }}
           path: ./frontend/app/.e2e/logs/*.log
+
+      - name: Annotate backend log errors
+        if: always()
+        shell: bash
+        run: |
+          # Sanitize content to prevent log injection and annotation spoofing
+          sanitize() {
+            printf '%s' "$1" | tr '\n\r' ' ' | sed 's/^::/: :/g; s/|::/|: :/g'
+          }
+
+          shopt -s nullglob
+          for logfile in ./frontend/app/.e2e/logs/*.log; do
+            [[ -f "$logfile" ]] || continue
+            filename=$(basename "$logfile")
+
+            # Find Python tracebacks - capture the line number and extract the error type from following lines
+            while IFS=: read -r linenum _; do
+              # Get the traceback context (next 50 lines) to find the actual error
+              error_line=$(tail -n +"$linenum" "$logfile" | head -n 50 | grep -m 1 -E "^\w+Error:|^\w+Exception:|^\w+Warning:" | head -c 200)
+              if [[ -n "$error_line" ]]; then
+                error_line=$(sanitize "$error_line")
+                echo "::error file=$filename,line=$linenum::Python Traceback: $error_line"
+              else
+                echo "::error file=$filename,line=$linenum::Python Traceback found - check backend-logs-${{ runner.os }}-${{ matrix.group }} artifact"
+              fi
+            done < <(grep -n "Traceback (most recent call last)" "$logfile" 2>/dev/null || true)
+
+            # Find ERROR level log messages (common Python logging format)
+            while IFS=: read -r linenum content; do
+              short_content=$(sanitize "$(echo "$content" | head -c 250)")
+              echo "::error file=$filename,line=$linenum::$short_content"
+            done < <(grep -n -E " ERROR " "$logfile" 2>/dev/null | head -n 20 || true)
+
+            # Find CRITICAL level log messages
+            while IFS=: read -r linenum content; do
+              short_content=$(sanitize "$(echo "$content" | head -c 250)")
+              echo "::error file=$filename,line=$linenum::$short_content"
+            done < <(grep -n -E " CRITICAL " "$logfile" 2>/dev/null | head -n 10 || true)
+          done
