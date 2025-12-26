@@ -122,9 +122,7 @@ const isIgnoredAsset = useIsAssetIgnored(eventAsset);
       '!opacity-50': isIgnoredAsset,
     }"
   >
-    <div
-      class="transition-all duration-300 ease-in-out flex items-center"
-    >
+    <div class="transition-all duration-300 ease-in-out flex items-center">
       <RuiCheckbox
         v-if="showCheckbox"
         v-model="isSelected"
@@ -136,7 +134,6 @@ const isIgnoredAsset = useIsAssetIgnored(eventAsset);
         class="transition-all duration-300 ease-in-out flex-1"
         :class="{
           'grid md:grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-center py-3 px-0 md:pl-3': !compact,
-          'py-2 md:py-2': compact,
           '!md:pl-0': showCheckbox,
         }"
       >
