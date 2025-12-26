@@ -22,9 +22,7 @@ const { getBlockchainRedirectLink, getChainName } = useSupportedChains();
 const chain = useRefMap(total, ({ chain }) => chain);
 const name = getChainName(chain);
 
-const navTarget = computed<RouteLocationRaw>(() => ({
-  path: getBlockchainRedirectLink(props.total.chain),
-}));
+const navTarget = computed<RouteLocationRaw>(() => getBlockchainRedirectLink(props.total.chain));
 </script>
 
 <template>

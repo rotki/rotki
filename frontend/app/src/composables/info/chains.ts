@@ -234,7 +234,12 @@ export const useSupportedChains = createSharedComposable(() => {
     }
 
     const target = getChainAccountType(chain) ?? 'evm';
-    return `${Routes.ACCOUNTS.toString()}/${target}`;
+    const basePath = `${Routes.ACCOUNTS.toString()}/${target}`;
+    // Only EVM route has the optional tab parameter that requires explicit path
+    if (target === 'evm') {
+      return `${basePath}/accounts?chain=${chain}`;
+    }
+    return `${basePath}?chain=${chain}`;
   };
 
   return {

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`11231` Users can now click a location in the blockchain balance summary on the dashboard to filter by that chain.
 * :feature:`10467` Users are now able to manually match asset movements with corresponding on-chain transactions.
 * :feature:`11198` Users are now able to see the type of merchant icon for Gnosis Pay transactions.
 * :feature:`11021` Users are now able to edit the name of a tag.
