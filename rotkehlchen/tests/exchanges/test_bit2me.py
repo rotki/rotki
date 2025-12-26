@@ -524,3 +524,57 @@ def test_asset_from_bit2me_unknown():
     """Test that unknown assets raise proper exception."""
     with pytest.raises(UnknownAsset):
         asset_from_bit2me('COMPLETELY_UNKNOWN_ASSET_12345')
+
+
+def test_bit2me_query_earn_movements(bit2me):
+    """Test querying EARN (staking) movements from Bit2me."""
+
+    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+        return MockResponse(200, BIT2ME_EARN_TRANSACTIONS_RESPONSE)
+
+    with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
+        earn_events = bit2me._query_earn_movements(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1800000000),
+        )
+
+    # Should have 3 EARN movements: 2 deposits (to earn) + 1 withdrawal (from earn)
+    assert len(earn_events) == 3
+
+    # Find deposit events (DEPOSIT_ASSET)
+    deposit_events = [
+        e for e in earn_events
+        if e.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+    ]
+    assert len(deposit_events) == 2
+
+    # Find withdrawal events (REMOVE_ASSET)
+    withdrawal_events = [
+        e for e in earn_events
+        if e.event_subtype == HistoryEventSubType.REMOVE_ASSET
+    ]
+    assert len(withdrawal_events) == 1
+
+    # Check BTC deposit to EARN
+    btc_deposit = next(
+        (e for e in deposit_events if e.asset == A_BTC), None,
+    )
+    assert btc_deposit is not None
+    assert btc_deposit.event_type == HistoryEventType.STAKING
+    assert btc_deposit.amount == FVal('0.5')
+    assert 'Deposit to Bit2Me Earn' in btc_deposit.notes
+
+    # Check ETH deposit to EARN
+    eth_deposit = next(
+        (e for e in deposit_events if e.asset == A_ETH), None,
+    )
+    assert eth_deposit is not None
+    assert eth_deposit.event_type == HistoryEventType.STAKING
+    assert eth_deposit.amount == FVal('1.0')
+
+    # Check BTC withdrawal from EARN
+    btc_withdrawal = withdrawal_events[0]
+    assert btc_withdrawal.event_type == HistoryEventType.STAKING
+    assert btc_withdrawal.asset == A_BTC
+    assert btc_withdrawal.amount == FVal('0.1')
+    assert 'Withdrawal from Bit2Me Earn' in btc_withdrawal.notes
