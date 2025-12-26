@@ -2,9 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
-from rotkehlchen.assets.asset import UnderlyingToken
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
-from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CPT_CURVE,
@@ -17,10 +15,8 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import maybe_notify_cache_query_status
-from rotkehlchen.constants import ONE
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.misc import (
-    NotERC20Conformant,
     RemoteError,
     UnableToDecryptRemoteData,
 )
@@ -43,7 +39,6 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Timestamp,
-    TokenKind,
 )
 from rotkehlchen.utils.network import request_get_dict
 
@@ -104,186 +99,6 @@ def read_curve_pools_and_gauges(chain_id: ChainID) -> tuple[dict[ChecksumEvmAddr
             )
 
     return curve_pools, curve_gauges
-
-
-def _ensure_single_pool_curve_tokens_existence(
-        evm_inquirer: 'EvmNodeInquirer',
-        pool: CurvePoolData,
-) -> CurvePoolData | None:
-    encounter = TokenEncounterInfo(
-        description=f'Querying curve pools for {evm_inquirer.chain_name}',
-        should_notify=False,
-    )
-    # Ensure pool coins exist in the globaldb.
-    # We have to create underlying tokens only if pool utilizes them.
-    underlying_token_names = []
-    if pool.underlying_coins is None:
-        # If underlying coins is None, it means that pool doesn't utilize them.
-        # If underlying coins list is equal to coins then there are no underlying coins as well.  # noqa: E501
-        for token_address in pool.coins:
-            if token_address == ETH_SPECIAL_ADDRESS:
-                underlying_token_names.append('ETH')
-                continue
-
-            try:  # ensure token exists
-                underlying_token_names.append(get_or_create_evm_token(
-                    userdb=evm_inquirer.database,
-                    evm_address=token_address,
-                    chain_id=evm_inquirer.chain_id,
-                    evm_inquirer=evm_inquirer,
-                    encounter=encounter,
-                ).symbol)
-            except NotERC20Conformant as e:
-                log.error(
-                    f'Skipping pool {pool} because {token_address} is not a '
-                    f'valid ERC20 token. {e}',
-                )
-                continue
-
-    elif len(pool.coins) == len(pool.underlying_coins):
-        # Coins and underlying coins lists represent a
-        # mapping of coin -> underlying coin (each coin always has one underlying coin).
-        for token_address, underlying_token_address in zip(pool.coins, pool.underlying_coins, strict=True):  # noqa: E501
-            if token_address == ETH_SPECIAL_ADDRESS:
-                underlying_token_names.append('ETH')
-                continue
-
-            try:  # ensure underlying token exists
-                get_or_create_evm_token(
-                    userdb=evm_inquirer.database,
-                    evm_address=underlying_token_address,
-                    chain_id=evm_inquirer.chain_id,
-                    evm_inquirer=evm_inquirer,
-                    encounter=encounter,
-                )
-            except NotERC20Conformant as e:
-                log.error(
-                    f'Skipping pool {pool} because {underlying_token_address} is not a '
-                    f'valid ERC20 token. {e}',
-                )
-                continue
-
-            if underlying_token_address == token_address:  # they are the same token. Stop here
-                continue  # can happen for a pool to have token's underlying token as itself
-
-            try:  # and ensure token exists
-                underlying_token_names.append(get_or_create_evm_token(
-                    userdb=evm_inquirer.database,
-                    evm_address=token_address,
-                    chain_id=evm_inquirer.chain_id,
-                    evm_inquirer=evm_inquirer,
-                    underlying_tokens=[UnderlyingToken(
-                        address=underlying_token_address,
-                        token_kind=TokenKind.ERC20,
-                        weight=ONE,
-                    )],
-                    encounter=encounter,
-                ).symbol)
-            except NotERC20Conformant as e:
-                log.error(
-                    f'Skipping pool {pool} because {token_address} is not a '
-                    f'valid ERC20 token. {e}',
-                )
-                continue
-
-    else:  # Otherwise just ensure that coins and underlying coins exist in our assets database  # noqa: E501
-        for token_address in set(pool.coins + pool.underlying_coins):
-            if token_address == ETH_SPECIAL_ADDRESS:
-                underlying_token_names.append('ETH')
-                continue
-
-            try:
-                underlying_token_names.append(get_or_create_evm_token(
-                    userdb=evm_inquirer.database,
-                    evm_address=token_address,
-                    chain_id=evm_inquirer.chain_id,
-                    evm_inquirer=evm_inquirer,
-                    encounter=encounter,
-                ).symbol)
-            except NotERC20Conformant as e:
-                log.error(
-                    f'Skipping coin {token_address} because it is not a '
-                    f'valid ERC20 token. {e}',
-                )
-                continue
-
-    if pool.pool_name is None:
-        pool.pool_name = '/'.join(underlying_token_names)
-
-    # finally ensure lp token and gauge token exists in the globaldb. Since they are created
-    # by curve, they should always be an ERC20
-    try:
-        pool_lp_token = get_or_create_evm_token(
-            userdb=evm_inquirer.database,
-            evm_address=pool.lp_token_address,
-            chain_id=evm_inquirer.chain_id,
-            evm_inquirer=evm_inquirer,
-            protocol=CPT_CURVE,
-            encounter=encounter,
-        )
-    except NotERC20Conformant as e:
-        log.error(  # should only fail if the node is not up to date
-            f'Failed to check integrity of the curve pool {pool.lp_token_address} '
-            f'due to {e}. Skipping',
-        )
-        return None
-
-    if pool.gauge_address is not None:
-        try:
-            # Old gauges don't have the name/symbol/decimals methods. They use 18 decimals but
-            # the name and symbol differ and in the latest versions it is configurable. To be
-            # in sync with the onchain name we use the contract values and only
-            # if they are missing we resort to the fallback name and symbol.
-            get_or_create_evm_token(
-                userdb=evm_inquirer.database,
-                evm_address=pool.gauge_address,
-                chain_id=evm_inquirer.chain_id,
-                evm_inquirer=evm_inquirer,
-                encounter=encounter,
-                underlying_tokens=[UnderlyingToken(
-                    address=pool.lp_token_address,
-                    token_kind=TokenKind.ERC20,
-                    weight=ONE,
-                )],
-                fallback_decimals=18,  # all gauges have 18 decimals https://t.me/curvefi/654915  # noqa: E501
-                fallback_name=f'{pool_lp_token.name} Gauge Deposit',
-                fallback_symbol=f'{pool_lp_token.symbol}-gauge',
-            )
-        except NotERC20Conformant:
-            log.warning(f'Curve gauge {pool.gauge_address} is not a valid ERC20 token.')
-
-    return pool
-
-
-def _ensure_curve_tokens_existence(
-        evm_inquirer: 'EvmNodeInquirer',
-        all_pools: list[CurvePoolData],
-        msg_aggregator: 'MessagesAggregator',
-) -> list[CurvePoolData]:
-    """This function receives data about curve pools and ensures that lp tokens and pool coins
-    exist in rotki's database.
-
-    Since is possible that a pool has an invalid token we keep a mapping of the valid ones
-    and return it.
-    """
-    verified_pools, last_notified_ts, all_pools_length = [], Timestamp(0), len(all_pools)
-
-    for idx, pool in enumerate(all_pools):
-        last_notified_ts = maybe_notify_cache_query_status(
-            msg_aggregator=msg_aggregator,
-            last_notified_ts=last_notified_ts,
-            protocol=CPT_CURVE,
-            chain=evm_inquirer.chain_id,
-            processed=idx + 1,
-            total=all_pools_length,
-        )
-        if (verified_pool := _ensure_single_pool_curve_tokens_existence(
-            evm_inquirer=evm_inquirer,
-            pool=pool,
-        )) is not None:
-            verified_pools.append(verified_pool)
-
-    return verified_pools
 
 
 def _save_curve_data_to_cache(
@@ -397,12 +212,7 @@ def _query_curve_data_from_api(
             )
 
     if len(processed_new_pools) > 0:
-        verified_pools = _ensure_curve_tokens_existence(
-            evm_inquirer=evm_inquirer,
-            all_pools=processed_new_pools,
-            msg_aggregator=evm_inquirer.database.msg_aggregator,
-        )
-        _save_curve_data_to_cache(evm_inquirer=evm_inquirer, new_data=verified_pools)
+        _save_curve_data_to_cache(evm_inquirer=evm_inquirer, new_data=processed_new_pools)
 
     return processed_new_pools
 
@@ -530,19 +340,16 @@ def _query_curve_data_from_chain(
             )
             continue
 
-        if (pool := _ensure_single_pool_curve_tokens_existence(
-            evm_inquirer=evm_inquirer,
-            pool=CurvePoolData(
-                pool_address=pool_address,
-                pool_name=pool_name,
-                lp_token_address=lp_token_address,
-                gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
-                coins=coins,
-                underlying_coins=underlying_coins,
-            ),
-        )) is not None:
-            _save_curve_data_to_cache(evm_inquirer=evm_inquirer, new_data=[pool])
-            new_pools.append(pool)
+        pool = CurvePoolData(
+            pool_address=pool_address,
+            pool_name=pool_name,
+            lp_token_address=lp_token_address,
+            gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
+            coins=coins,
+            underlying_coins=underlying_coins,
+        )
+        _save_curve_data_to_cache(evm_inquirer=evm_inquirer, new_data=[pool])
+        new_pools.append(pool)
 
     return new_pools
 
@@ -617,3 +424,20 @@ def get_lp_and_gauge_token_addresses(
                 addresses.add(gauge_address)
 
     return addresses
+
+
+def get_curve_pool_lp_token_address(
+        pool_address: ChecksumEvmAddress,
+        chain_id: ChainID,
+) -> ChecksumEvmAddress | None:
+    """Reads the db to get the lp token address for the given pool address"""
+    chain_id_str = str(chain_id.serialize_for_db())
+    cache_prefix = compute_cache_key((CacheType.CURVE_POOL_ADDRESS, chain_id_str))
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        if (key := cursor.execute(
+            'SELECT key FROM unique_cache WHERE value = ? AND key LIKE ?',
+            (pool_address, f'{cache_prefix}%'),
+        ).fetchone()) is None:
+            return None
+
+        return string_to_evm_address(key[0][-42:])

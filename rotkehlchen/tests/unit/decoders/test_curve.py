@@ -1,10 +1,11 @@
 from typing import TYPE_CHECKING, Final, cast
+from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.binance_sc.modules.curve.constants import (
     CURVE_SWAP_ROUTER_NG as CURVE_SWAP_ROUTER_NG_BSC,
 )
@@ -46,6 +47,7 @@ from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.unit.decoders.test_zerox import A_POLYGON_POS_USDT
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
     ChainID,
     EvmInternalTransaction,
@@ -91,6 +93,50 @@ def _populate_arb_eure_cache(globaldb: 'GlobalDBHandler') -> None:
                 ('CURVE_GAUGE_ADDRESS421610x590f7e2b211Fa5Ff7840Dd3c425B543363797701', '0x576673a39CCa0F0E4333aC0617638acEbF15536E', 1742925941),  # noqa: E501
             ],
         )
+
+
+def test_ensure_curve_pool_token(ethereum_transaction_decoder) -> None:
+    """Check the logic to query pool tokens from cached addresses"""
+    curve_decoder = ethereum_transaction_decoder.decoders['Curve']
+    with (
+        patch(
+            'rotkehlchen.chain.evm.decoding.curve.decoder.get_curve_pool_lp_token_address',
+            return_value=(lp_token_address := make_evm_address()),
+        ) as mock_get_lp,
+        patch('rotkehlchen.chain.evm.decoding.curve.decoder.get_or_create_evm_token') as mock_get_or_create,  # noqa: E501
+    ):
+        curve_decoder._ensure_curve_pool_token(
+            pool_address=(pool_address := make_evm_address()),
+            encounter=(encounter := TokenEncounterInfo(description='test pool token', should_notify=False)),  # noqa: E501
+        )
+
+    mock_get_lp.assert_called_once_with(
+        pool_address=pool_address,
+        chain_id=ethereum_transaction_decoder.evm_inquirer.chain_id,
+    )
+    mock_get_or_create.assert_called_once_with(
+        userdb=curve_decoder.base.database,
+        evm_address=lp_token_address,
+        chain_id=ethereum_transaction_decoder.evm_inquirer.chain_id,
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        protocol=CPT_CURVE,
+        encounter=encounter,
+    )
+
+
+def test_ensure_curve_gauge_token(ethereum_transaction_decoder) -> None:
+    """Check the logic to query gauge tokens from cached addresses"""
+    curve_decoder = ethereum_transaction_decoder.decoders['Curve']
+    with patch.object(curve_decoder.base, 'get_or_create_evm_token') as mock_get_or_create:
+        curve_decoder._ensure_curve_gauge_token(
+            gauge_address=(gauge_address := make_evm_address()),
+            encounter=(encounter := TokenEncounterInfo(description='test gauge token', should_notify=False)),  # noqa: E501
+        )
+
+    mock_get_or_create.assert_called_once_with(
+        address=gauge_address,
+        encounter=encounter,
+    )
 
 
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])

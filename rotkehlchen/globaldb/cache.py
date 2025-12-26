@@ -33,7 +33,11 @@ def compute_cache_key(key_parts: Iterable[str | CacheType]) -> str:
 def base_pool_tokens_key_length(chain_id: ChainID) -> int:
     """Returns the length of the base pool tokens cache key for the given chain id.
     Using any random address here, since length of all addresses is the same."""
-    return len(compute_cache_key([CacheType.CURVE_POOL_TOKENS, str(chain_id.serialize_for_db()), ZERO_ADDRESS]))  # noqa: E501
+    return len(compute_cache_key([
+        CacheType.CURVE_POOL_TOKENS,
+        str(chain_id.serialize_for_db()),
+        ZERO_ADDRESS,
+    ]))
 
 
 def globaldb_set_general_cache_values_at_ts(
@@ -257,8 +261,12 @@ def read_curve_pool_tokens(
         key_parts=(CacheType.CURVE_POOL_TOKENS, str(chain_id.serialize_for_db()), pool_address),
     )
     found_tokens: list[tuple[int, ChecksumEvmAddress]] = []
+    base_key_length = base_pool_tokens_key_length(chain_id)
     for key, address in tokens_data:
-        index = int(key[base_pool_tokens_key_length(chain_id):])  # len(key) > base_pool_tokens_key_length(chain_id)  # noqa: E501
+        remainder = key[base_key_length:]
+        if remainder.startswith('underlying'):
+            continue
+        index = int(remainder)  # len(key) > base_pool_tokens_key_length(chain_id)
         found_tokens.append((index, string_to_evm_address(address)))
 
     found_tokens.sort(key=operator.itemgetter(0))
