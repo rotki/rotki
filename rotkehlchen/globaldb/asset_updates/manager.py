@@ -108,8 +108,10 @@ def _replace_assets_from_db_cursor(
             f'INSERT INTO {table} SELECT * FROM other_db.{table};',
         ])
     script_parts.extend([
-        f"INSERT OR REPLACE INTO settings(name, value) VALUES('{ASSETS_VERSION_KEY}',"
-        f"(SELECT value FROM other_db.settings WHERE name='{ASSETS_VERSION_KEY}'));",
+        (
+            f"INSERT OR REPLACE INTO settings(name, value) VALUES('{ASSETS_VERSION_KEY}',"
+            f"(SELECT value FROM other_db.settings WHERE name='{ASSETS_VERSION_KEY}'));"
+        ),
         'PRAGMA foreign_keys = ON;',
         "DETACH DATABASE 'other_db';",
     ])

@@ -64,7 +64,7 @@ def test_db_persistence_after_search(messages_aggregator):
             'uv',
             'run',
             'python',
-            '-m'
+            '-m',
             'rotkehlchen.tests.utils.crash_test',
         ],
         stdout=subprocess.PIPE,

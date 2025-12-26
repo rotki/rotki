@@ -156,13 +156,12 @@ def test_adding_user_tokens(
         ),
         json=serialized_token,
     )
-    expected_msg = (
-        f'Ethereum token with address {initial_tokens[1].evm_address} already '
-        f'exists in the DB',
-    )
     assert_error_response(
         response=response,
-        contained_in_msg=expected_msg,
+        contained_in_msg=[
+            'Failed to add evm token Custom 2 since it already exists',
+            f'{initial_tokens[1].evm_address}',
+        ],
         status_code=HTTPStatus.CONFLICT,
     )
 
@@ -202,13 +201,12 @@ def test_adding_user_tokens(
         ),
         json=serialized_token,
     )
-    expected_msg = (
-        f'The sum of underlying token weights for {bad_token.evm_address} is '
-        f'121.1000 and exceeds 100%',
-    )
     assert_error_response(
         response=response,
-        contained_in_msg=expected_msg,
+        contained_in_msg=(
+            f'The sum of underlying token weights for {bad_token.evm_address} is '
+            f'121.1000 and exceeds 100%'
+        ),
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # and test that adding a token with underlying tokens adding up to less than 100% is caught
@@ -234,13 +232,12 @@ def test_adding_user_tokens(
         ),
         json=serialized_token,
     )
-    expected_msg = (
-        f'The sum of underlying token weights for {bad_token.evm_address} is '
-        f'31.1000 and does not add up to 100%',
-    )
     assert_error_response(
         response=response,
-        contained_in_msg=expected_msg,
+        contained_in_msg=(
+            f'The sum of underlying token weights for {bad_token.evm_address} is '
+            f'31.1000 and does not add up to 100%'
+        ),
         status_code=HTTPStatus.BAD_REQUEST,
     )
     # and test that adding a token with empty list of underlying tokens and not null is an error
@@ -373,10 +370,10 @@ def test_editing_user_tokens(
         ),
         json=non_existing_token,
     )
-    expected_msg = (
-        f'Tried to edit non existing ethereum token with '
-        f'address {non_existing_address}',
-    )
+    expected_msg = [
+        'Tried to edit non existing ethereum token with ',
+        f'{non_existing_address}',
+    ]
     assert_error_response(
         response=response,
         contained_in_msg=expected_msg,

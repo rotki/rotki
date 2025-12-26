@@ -482,7 +482,7 @@ class Coinbaseprime(ExchangeInterface):
                     for balance_key in (
                         'amount',  # The `amount` field includes the amount in the `holds` field
                         'bonded_amount',
-                        'reserved_amount'  # Amount that must remain in the wallet due to the protocol, in whole units  # noqa: E501
+                        'reserved_amount',  # Amount that must remain in the wallet due to the protocol, in whole units  # noqa: E501
                         'unbonding_amount',
                         'unvested_amount',
                         'pending_rewards_amount',

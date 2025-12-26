@@ -1230,7 +1230,7 @@ def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer: EthereumInqui
         'LPBalancer.xyz',  # simple url with
         '$ BonusUSDC.com - Visit to claim bonus',
         'https://dydx2.pro to claim reward',
-        'Visit https://afcoc.xyz to claim rewards.'
+        'Visit https://afcoc.xyz to claim rewards.',
         'https://www.apitrade.pro/vipinvite.htm',
         'DAIBonus.com <- Visit to claim bonus',
         '$ https://agbonus.fun to receive reward.',
