@@ -191,7 +191,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         return events, end_ts
 
     @protect_with_lock()
-    def query_balances(self) -> ExchangeQueryBalances:
+    def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         """Query Bit2me balances for all assets."""
         try:
             response = self._api_query('balances')
