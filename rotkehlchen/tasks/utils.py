@@ -28,6 +28,7 @@ def should_run_periodic_task(
             DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS,
             DBCacheStatic.LAST_GNOSISPAY_QUERY_TS,
             DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
+            DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
         ],
         refresh_period: int,
 ) -> bool:

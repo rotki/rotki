@@ -30,6 +30,7 @@ from rotkehlchen.constants.timing import (
     DATA_UPDATES_REFRESH,
     DAY_IN_SECONDS,
     EVMLIKE_ACCOUNTS_DETECTION_REFRESH,
+    HISTORICAL_BALANCE_PROCESSING_REFRESH,
     HOUR_IN_SECONDS,
     OWNED_ASSETS_UPDATE,
     SPAM_ASSETS_DETECTION_REFRESH,
@@ -78,6 +79,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 from .events import process_events
+from .historical_balances import process_historical_balances
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -194,6 +196,7 @@ class TaskManager:
             self._maybe_sync_google_calendar,
             self._maybe_query_graph_delegated_tokens,
             self._maybe_update_pendle_cache,
+            self._maybe_process_historical_balances,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -740,6 +743,38 @@ class TaskManager:
             for chain in PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM | {ChainID.ETHEREUM}
             if should_update_protocol_cache(self.database, CacheType.PENDLE_YIELD_TOKENS, (str(chain.serialize()),)) is True  # noqa: E501
         ]
+
+    def _maybe_process_historical_balances(self) -> Optional[list[gevent.Greenlet]]:
+        """Schedule historical balance processing if enough time has passed.
+
+        Processes history events to compute and store pre-computed balance metrics
+        in the event_metrics table.
+        """
+        # TODO: Prevent this from running concurrently with tasks that add or modify events,
+        # such as transaction queries, exchange history sync, decoding, and event processing.
+        if should_run_periodic_task(
+            database=self.database,
+            key_name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+            refresh_period=HISTORICAL_BALANCE_PROCESSING_REFRESH,
+        ) is False:
+            return None
+
+        with self.database.conn.read_ctx() as cursor:
+            stale_from_ts = self.database.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+            )
+
+        log.debug('Scheduling task for historical balance processing')
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Process historical balances',
+            exception_is_error=True,
+            method=process_historical_balances,
+            database=self.database,
+            msg_aggregator=self.msg_aggregator,
+            from_ts=stale_from_ts,
+        )]
 
     def _maybe_update_aura_pools(self) -> Optional[list[gevent.Greenlet]]:
         with self.database.conn.read_ctx() as cursor:

@@ -21,7 +21,7 @@ from rotkehlchen.history.events.structures.types import (
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Timestamp
-from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_ms_to_sec
+from rotkehlchen.utils.misc import timestamp_to_daystart_timestamp, ts_ms_to_sec, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
@@ -46,21 +46,41 @@ class HistoricalBalancesManager:
     def get_balances(self, timestamp: Timestamp) -> dict[Asset, HistoricalBalance]:
         """Get historical balances for all assets at a given timestamp
 
+        Uses pre-computed balances from event_metrics table. For each bucket
+        (location, location_label, protocol, asset), gets the latest balance
+        at or before the timestamp, then aggregates by asset.
+
         May raise:
         - NotFoundError if balance for the given timestamp does not exist.
-        - DeserializationError if there is a problem deserializing an event from DB.
         """
-        events, main_currency = self._get_events_and_currency(to_ts=timestamp)
-        if len(events) == 0:
+        asset_balances: dict[Asset, FVal] = defaultdict(FVal)
+
+        with self.db.conn.read_ctx() as cursor:
+            main_currency = self.db.get_setting(cursor=cursor, name='main_currency')
+            cursor.execute(
+                """
+                SELECT he.location, he.location_label, em.protocol, he.asset, em.metric_value
+                FROM event_metrics em
+                INNER JOIN history_events he ON em.event_identifier = he.identifier
+                WHERE em.metric_key = 'balance' AND he.timestamp <= ?
+                ORDER BY he.timestamp DESC, he.sequence_index DESC
+                """,
+                (ts_sec_to_ms(timestamp),),
+            )
+            seen_buckets: set[tuple[str, str | None, str | None, str]] = set()
+            for row in cursor:
+                bucket = (row[0], row[1], row[2], row[3])
+                if bucket not in seen_buckets:
+                    seen_buckets.add(bucket)
+                    asset_id = row[3]
+                    balance = FVal(row[4])
+                    asset_balances[Asset(asset_id)] += balance
+
+        if len(asset_balances) == 0:
             raise NotFoundError('No historical data found until the given timestamp.')
 
-        current_balances: dict[Asset, FVal] = defaultdict(FVal)
-        for event in events:
-            if self._update_balances(event=event, current_balances=current_balances) is not None:
-                break
-
         result: dict[Asset, HistoricalBalance] = {}
-        for asset, amount in current_balances.items():
+        for asset, amount in asset_balances.items():
             try:
                 price = PriceHistorian.query_historical_price(
                     from_asset=asset,
