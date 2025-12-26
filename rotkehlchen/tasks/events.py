@@ -233,7 +233,7 @@ def find_asset_movement_matches(
 
     if len(close_matches) == 0:
         log.debug(f'No close matches found for asset movement {asset_movement.group_identifier}')
-        return []
+        return close_matches
 
     if len(close_matches) > 1:  # Multiple close matches
         if (  # Maybe match by tx ref

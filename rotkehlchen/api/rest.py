@@ -115,6 +115,7 @@ from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
 from rotkehlchen.constants.limits import (
     FREE_USER_NOTES_LIMIT,
 )
+from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.constants.misc import (
     AIRDROPS_TOLERANCE,
     AVATARIMAGESDIR_NAME,
@@ -4995,13 +4996,16 @@ class RestAPI:
 
     def get_counterparties_details(self) -> Response:
         """Collect the counterparties from exchanges and EVM/Solana protocol decoders"""
-        counterparties = [CounterpartyDetails(
-            identifier=x.name.lower(),
-            label=x.name.capitalize(),
-        ) for x in ALL_SUPPORTED_EXCHANGES]
-        counterparties.extend(list(self.rotkehlchen.chains_aggregator.get_all_counterparties()))
+        counterparties = {(exchange_id := x.name.lower()): CounterpartyDetails(
+            identifier=exchange_id,
+            label=LOCATION_DETAILS[x].get('label', x.name.capitalize()),
+            image=LOCATION_DETAILS[x].get('image'),
+        ) for x in ALL_SUPPORTED_EXCHANGES}
+        for counterparty in self.rotkehlchen.chains_aggregator.get_all_counterparties():
+            counterparties.setdefault(counterparty.identifier, counterparty)
+
         return api_response(
-            result=process_result(_wrap_in_ok_result(result=counterparties)),
+            result=process_result(_wrap_in_ok_result(result=list(counterparties.values()))),
             status_code=HTTPStatus.OK,
         )
 
@@ -6388,13 +6392,15 @@ class RestAPI:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             for event in events_db.get_history_events_internal(
                 cursor=cursor,
-                filter_query=HistoryEventFilterQuery.make(group_identifiers=[asset_movement_group_identifier]),
+                filter_query=HistoryEventFilterQuery.make(
+                    group_identifiers=[asset_movement_group_identifier],
+                    entry_types=IncludeExcludeFilterData([HistoryBaseEntryType.ASSET_MOVEMENT_EVENT]),
+                ),
             ):
-                if isinstance(event, AssetMovement):
-                    if event.event_subtype == HistoryEventSubType.FEE:
-                        fee_event = event
-                    else:
-                        asset_movement = event
+                if event.event_subtype == HistoryEventSubType.FEE:
+                    fee_event = event
+                else:  # deposit or withdrawal
+                    asset_movement = event
 
         if asset_movement is None:
             return api_response(wrap_in_fail_result(
@@ -6403,9 +6409,9 @@ class RestAPI:
 
         close_match_identifiers = [x.identifier for x in find_asset_movement_matches(
             events_db=events_db,
-            asset_movement=asset_movement,
+            asset_movement=asset_movement,  # type: ignore  # filtered by entry_types
             is_deposit=asset_movement.event_type == HistoryEventType.DEPOSIT,
-            fee_event=fee_event,
+            fee_event=fee_event,  # type: ignore  # filtered by entry_types
             match_window=time_range,
         )]
 
@@ -6416,10 +6422,7 @@ class RestAPI:
                 filter_query=HistoryEventFilterQuery.make(
                     from_ts=Timestamp(asset_movement_timestamp - time_range),
                     to_ts=Timestamp(asset_movement_timestamp + time_range),
-                    ignored_ids=[
-                        str(asset_movement.identifier),
-                        *[str(x) for x in close_match_identifiers],
-                    ],
+                    ignored_ids=[str(x) for x in close_match_identifiers] + [str(asset_movement.identifier)],  # noqa: E501
                 ),
             )
 
