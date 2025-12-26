@@ -82,14 +82,13 @@ const uiClasses = {
 
 <template>
   <div
-    class="relative flex [&>*]:!-my-px"
+    class="relative flex [&>*]:!-my-px [&_input:focus+label]:!leading-7 [&_input:not(:placeholder-shown)+label]:!leading-7"
     :class="{
-      'flex-col-reverse': get(reversed),
-      'flex-col': !get(reversed),
+      'flex-col-reverse': reversed,
+      'flex-col': !reversed,
       '[&_label]:border-dotted [&_label]:!border-rui-grey-400 dark:[&_label]:!border-rui-grey-700': disabled,
       '[&_label]:!border-rui-primary [&_label]:!border-2': focused,
       '[&_label]:!border-rui-error [&_label]:!border-2': hasError,
-
     }"
     v-bind="$attrs"
   >

@@ -218,7 +218,7 @@ watch(shouldExpand, () => {
           <LazyLoader
             v-if="!shouldExpand && eventIndex === 0 && usedEvents.length > 1"
             key="swap-arrow"
-            class="flex items-center px-2 @md:pl-0 h-14 col-start-5"
+            class="flex items-center px-2 @md:pl-0 !h-14 col-start-5"
           >
             <RuiIcon
               class="text-rui-grey-400 dark:text-rui-grey-600"
