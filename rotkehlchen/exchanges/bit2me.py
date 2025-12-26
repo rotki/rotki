@@ -25,12 +25,16 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
 )
+from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.swap import (
     SwapEvent,
     create_swap_events,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -157,11 +161,11 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         end_ts: Timestamp,
         force_refresh: bool = False,  # pylint: disable=unused-argument
     ) -> tuple['Sequence[HistoryBaseEntry]', Timestamp]:
-        """Query all history events from Bit2me (trades + deposits/withdrawals + brokerage).
+        """Query all history events from Bit2me.
 
         This method combines trade history, asset movements (deposits/withdrawals),
-        and brokerage transactions (purchases/sales) into a single list of history
-        events that will be stored in the database.
+        brokerage transactions (purchases/sales), and EARN (staking) movements
+        into a single list of history events that will be stored in the database.
         """
         events: list[HistoryBaseEntry] = []
 
@@ -172,6 +176,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         # Get brokerage trades from /v2/wallet/transaction (type=transfer, subtype=purchase)
         brokerage_trades = self._query_brokerage_trades(start_ts, end_ts)
         events.extend(brokerage_trades)
+
+        # Get EARN (staking) movements from /v2/wallet/transaction (subtype=earn)
+        earn_movements = self._query_earn_movements(start_ts, end_ts)
+        events.extend(earn_movements)
 
         # Get exchange trades from /v1/trading/trade
         trades, _ = self.query_online_trade_history(start_ts, end_ts)
@@ -823,6 +831,162 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 f'Price oracle will be used instead.',
             )
 
+    def _deserialize_earn_movement(
+        self,
+        raw_movement: dict[str, Any],
+    ) -> HistoryEvent | None:
+        """Deserialize an EARN (staking) movement from Bit2Me API response.
+
+        EARN movements are internal transfers between pocket and earn program.
+        The API naming is confusing:
+        - type="withdrawal" with destination.class="earn" → DEPOSIT to EARN
+        - type="deposit" with origin.class="earn" → WITHDRAWAL from EARN
+
+        We use origin.class and destination.class to determine the actual direction.
+
+        Args:
+            raw_movement: Raw movement data from API
+
+        Returns:
+            HistoryEvent for the staking operation or None if not an EARN movement
+        """
+        try:
+            subtype = raw_movement.get('subtype', '')
+            if subtype != 'earn':
+                return None
+
+            # Get origin and destination info
+            origin = raw_movement.get('origin', {})
+            destination = raw_movement.get('destination', {})
+            origin_class = origin.get('class', '')
+            dest_class = destination.get('class', '')
+
+            # Determine direction based on class, not type
+            # destination.class == "earn" means money goes INTO earn → DEPOSIT_ASSET
+            # origin.class == "earn" means money comes FROM earn → REMOVE_ASSET
+            if dest_class == 'earn':
+                event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                asset_symbol = origin.get('currency', destination.get('currency', ''))
+                amount = deserialize_fval(
+                    origin.get('amount', destination.get('amount', '0')),
+                )
+                notes = f'Deposit to Bit2Me Earn: {amount} {asset_symbol}'
+            elif origin_class == 'earn':
+                event_subtype = HistoryEventSubType.REMOVE_ASSET
+                asset_symbol = destination.get('currency', origin.get('currency', ''))
+                amount = deserialize_fval(
+                    destination.get('amount', origin.get('amount', '0')),
+                )
+                notes = f'Withdrawal from Bit2Me Earn: {amount} {asset_symbol}'
+            else:
+                # Unknown earn movement pattern
+                log.warning(f'Unknown EARN movement pattern: {raw_movement}')
+                return None
+
+            # Parse timestamp from ISO format
+            timestamp_str = raw_movement['date']
+            from datetime import datetime
+
+            timestamp_str_clean = (
+                timestamp_str[:-1] + '+00:00' if timestamp_str.endswith('Z') else timestamp_str
+            )
+            dt = datetime.fromisoformat(timestamp_str_clean)
+            timestamp_ms = TimestampMS(int(dt.timestamp() * 1000))
+
+            # Resolve asset
+            asset = asset_from_bit2me(asset_symbol)
+
+            # Create staking event
+            movement_id = raw_movement['id']
+
+            return HistoryEvent(
+                group_identifier=create_group_identifier_from_unique_id(
+                    self.location, movement_id,
+                ),
+                sequence_index=0,
+                timestamp=timestamp_ms,
+                location=self.location,
+                location_label=self.name,
+                asset=asset,
+                amount=amount,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=event_subtype,
+                notes=notes,
+                extra_data={'counterparty': 'bit2me_earn'},
+            )
+
+        except (KeyError, DeserializationError, UnknownAsset, UnsupportedAsset) as e:
+            log.warning(f'Failed to deserialize EARN movement: {e}. Movement: {raw_movement}')
+            return None
+
+    def _query_earn_movements(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> list[HistoryEvent]:
+        """Query and process EARN (staking) movements from Bit2Me.
+
+        Returns:
+            List of HistoryEvent representing staking deposits/withdrawals
+        """
+        log.debug(
+            f'Querying {self.name} EARN movements',
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+
+        earn_events: list[HistoryEvent] = []
+        options = {'limit': API_TRANSACTIONS_MAX_LIMIT}
+
+        try:
+            response = self._api_query('transactions', options=options)
+        except RemoteError as e:
+            log.error(f'Failed to query Bit2Me transactions for EARN: {e}')
+            return earn_events
+
+        try:
+            response_data = jsonloads_dict(response.text)
+        except JSONDecodeError as e:
+            log.error(f'{self.name} returned invalid JSON for EARN transactions: {e}')
+            return earn_events
+
+        # Extract transactions list
+        if isinstance(response_data, dict) and 'data' in response_data:
+            transactions_list = response_data['data']
+        elif isinstance(response_data, list):
+            transactions_list = response_data
+        else:
+            log.error(f'Unexpected Bit2me transactions response format: {response_data}')
+            return earn_events
+
+        for raw_transaction in transactions_list:
+            try:
+                subtype = raw_transaction.get('subtype', '')
+                if subtype != 'earn':
+                    continue
+
+                status = raw_transaction.get('status', '')
+                if status != 'completed':
+                    continue
+
+                earn_event = self._deserialize_earn_movement(raw_transaction)
+                if earn_event is None:
+                    continue
+
+                # Filter by time range
+                timestamp = ts_ms_to_sec(earn_event.timestamp)
+                if timestamp < start_ts or timestamp > end_ts:
+                    continue
+
+                earn_events.append(earn_event)
+
+            except (DeserializationError, UnknownAsset, UnsupportedAsset) as e:
+                log.warning(f'Failed to process EARN transaction: {e}')
+                continue
+
+        log.debug(f'Found {len(earn_events)} EARN movements from {self.name}')
+        return earn_events
+
     def _deserialize_brokerage_trade(
         self,
         raw_transaction: dict[str, Any],
@@ -979,6 +1143,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 else:
                     # Skip other internal transfers (pocket to pocket within Bit2me)
                     return None
+
+            # Skip EARN movements - they are handled by _deserialize_earn_movement
+            if subtype == 'earn':
+                return None
 
             # Determine if it's a deposit or withdrawal
             # Bit2Me v2 API has two formats: flat (origin_currency) or nested (origin.currency)
