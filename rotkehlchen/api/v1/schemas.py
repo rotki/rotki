@@ -122,6 +122,7 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_evm_address,
     deserialize_solana_address,
 )
+from rotkehlchen.tasks.events import ASSET_MOVEMENT_MATCH_WINDOW
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     CHAINS_WITH_TRANSACTION_DECODERS,
@@ -4539,3 +4540,8 @@ class ConfigurationUpdateSchema(Schema):
 class MatchAssetMovementsSchema(Schema):
     asset_movement = fields.Integer(required=True)
     matched_event = fields.Integer(required=True)
+
+
+class FindPossibleMatchesSchema(Schema):
+    asset_movement = fields.String(required=True)
+    time_range = fields.Integer(required=False, load_default=ASSET_MOVEMENT_MATCH_WINDOW)

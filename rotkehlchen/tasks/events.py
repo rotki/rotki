@@ -56,16 +56,16 @@ def match_asset_movements(database: 'DBHandler') -> None:
     asset_movements, fee_events = get_unmatched_asset_movements(database)
     unmatched_asset_movements = []
     for asset_movement in asset_movements:
-        if (matched_event := _find_asset_movement_match(
+        if len(matched_events := find_asset_movement_matches(
             events_db=events_db,
             asset_movement=asset_movement,
             is_deposit=(is_deposit := asset_movement.event_type == HistoryEventType.DEPOSIT),
             fee_event=fee_events.get(asset_movement.group_identifier),
-        )) is not None:
+        )) == 1:
             success, error_msg = update_asset_movement_matched_event(
                 events_db=events_db,
                 asset_movement=asset_movement,
-                matched_event=matched_event,
+                matched_event=matched_events[0],
                 is_deposit=is_deposit,
             )
             if success:
@@ -178,34 +178,41 @@ def update_asset_movement_matched_event(
     return True, ''
 
 
-def _find_asset_movement_match(
+def find_asset_movement_matches(
         events_db: DBHistoryEvents,
         asset_movement: AssetMovement,
         is_deposit: bool,
         fee_event: AssetMovement | None,
-) -> HistoryBaseEntry | None:
-    """Find an event that matches the given asset movement.
-    Returns the matching event or None if no match is found.
+        match_window: int = ASSET_MOVEMENT_MATCH_WINDOW,
+) -> list[HistoryBaseEntry]:
+    """Find events that closely match what the corresponding event for the given asset movement
+    should look like. Returns a list of events that match.
     """
     with events_db.db.conn.read_ctx() as cursor:
         asset_movement_timestamp = ts_ms_to_sec(asset_movement.timestamp)
         possible_matches = events_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
-                type_and_subtype_combinations=[
-                    (HistoryEventType.SPEND, HistoryEventSubType.NONE),
-                    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
-                ] if is_deposit else [
-                    (HistoryEventType.RECEIVE, HistoryEventSubType.NONE),
-                    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
-                ],
                 assets=(asset_movement.asset,),
-                from_ts=Timestamp(asset_movement_timestamp - ASSET_MOVEMENT_MATCH_WINDOW),
-                to_ts=Timestamp(asset_movement_timestamp + ASSET_MOVEMENT_MATCH_WINDOW),
+                **{  # type: ignore[arg-type]
+                    'type_and_subtype_combinations': [
+                        (HistoryEventType.SPEND, HistoryEventSubType.NONE),
+                        (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
+                    ],
+                    'from_ts': Timestamp(asset_movement_timestamp - match_window),
+                    'to_ts': Timestamp(asset_movement_timestamp),
+                } if is_deposit else {
+                    'type_and_subtype_combinations': [
+                        (HistoryEventType.RECEIVE, HistoryEventSubType.NONE),
+                        (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+                    ],
+                    'from_ts': Timestamp(asset_movement_timestamp),
+                    'to_ts': Timestamp(asset_movement_timestamp + match_window),
+                },
             ),
         )
 
-    close_matches = []
+    close_matches: list[HistoryBaseEntry] = []
     for event in possible_matches:
         # Check for matching amount, or matching amount + fee for deposits. The fee doesn't need
         # to be included for withdrawals since the onchain event will happen after the fee is
@@ -226,22 +233,20 @@ def _find_asset_movement_match(
 
     if len(close_matches) == 0:
         log.debug(f'No close matches found for asset movement {asset_movement.group_identifier}')
-        return None
+        return close_matches
 
     if len(close_matches) > 1:  # Multiple close matches
         if (  # Maybe match by tx ref
             asset_movement.extra_data is not None and
             (tx_ref := asset_movement.extra_data.get('transaction_id')) is not None
         ):
-            for event in close_matches:
-                if isinstance(event, OnchainEvent) and str(event.tx_ref) == tx_ref:
-                    return event
+            for match in close_matches:
+                if isinstance(match, OnchainEvent) and str(match.tx_ref) == tx_ref:
+                    return [match]
 
         log.debug(
             f'Multiple close matches found for '
             f'asset movement {asset_movement.group_identifier}.',
         )
-        # TODO: add to a list of events that need user input and send a WS message to notify user.
-        return None
 
-    return close_matches[0]  # Only found one close match.
+    return close_matches

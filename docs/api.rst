@@ -6271,7 +6271,7 @@ Re-querying exchange history events in a range
 Match exchange asset movements with onchain events
 ==================================================
 
-.. http:post:: /api/(version)/history/events/match/asset_movements
+.. http:put:: /api/(version)/history/events/match/asset_movements
 
    Matches exchange asset movement events with corresponding onchain events.
 
@@ -6279,7 +6279,7 @@ Match exchange asset movements with onchain events
 
    .. http:example:: curl wget httpie python-requests
 
-      POST /api/1/history/events/match/asset_movements HTTP/1.1
+      PUT /api/1/history/events/match/asset_movements HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
@@ -6340,6 +6340,49 @@ Match exchange asset movements with onchain events
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: List of group identifiers returned successfully
    :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 409: No user is logged in or failure
+   :statuscode 500: Internal rotki error
+
+.. http:post:: /api/(version)/history/events/match/asset_movements
+
+   Find possible matching events for an unmatched asset movement.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/match/asset_movements HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "asset_movement": "ef2fcd9d69e358f184e5aae29f74b39e7613a13eaaae00717bde70a165cfd69f",
+          "time_range": 7200
+      }
+
+   :reqjson string asset_movement: Group identifier of the asset movement to find matches for.
+   :reqjson int time_range: Optional. Time range in seconds to search for matches. Defaults to 7200 (2 hours).
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "close_matches": [3, 4],
+              "other_events": [2, 5]
+          },
+          "message": ""
+      }
+
+   :resjson list close_matches: List of event identifiers that closely match the asset movement criteria.
+   :resjson list other_events: List of other event identifiers within the time range.
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Possible matches returned successfully
+   :statuscode 400: Provided JSON is in some way malformed or asset movement not found
    :statuscode 409: No user is logged in or failure
    :statuscode 500: Internal rotki error
 

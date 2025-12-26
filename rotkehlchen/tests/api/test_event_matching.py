@@ -11,6 +11,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.test_eth2 import HOUR_IN_MILLISECONDS
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -54,7 +55,7 @@ def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
             ))],
         )
 
-    assert_simple_ok_response(requests.post(
+    assert_simple_ok_response(requests.put(
         url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
         json={'asset_movement': 1, 'matched_event': 2},
     ))
@@ -86,7 +87,7 @@ def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
 def test_match_asset_movements_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test error cases when matching asset movements."""
     assert_error_response(
-        response=requests.post(
+        response=requests.put(
             url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
             json={'asset_movement': 1, 'matched_event': 2},
         ),
@@ -112,7 +113,7 @@ def test_match_asset_movements_errors(rotkehlchen_api_server: 'APIServer') -> No
         )
 
     assert_error_response(
-        response=requests.post(
+        response=requests.put(
             url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
             json={'asset_movement': 1, 'matched_event': 2},
         ),
@@ -159,3 +160,50 @@ def test_get_unmatched_asset_movements(rotkehlchen_api_server: 'APIServer') -> N
         rotkehlchen_api_server=rotkehlchen_api_server,
     )
     assert result == [unmatched_movement.group_identifier]
+
+
+def test_get_possible_matches(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test getting possible matches for an asset movement"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+
+    matched_movement = AssetMovement(
+        identifier=1,
+        location=Location.KRAKEN,
+        event_type=HistoryEventType.WITHDRAWAL,
+        timestamp=TimestampMS(1510000000000),
+        asset=A_ETH,
+        amount=FVal('0.1'),
+    )
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=[matched_movement, *[EvmEvent(
+                identifier=idx,
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(timestamp),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal(amount),
+            ) for idx, (timestamp, amount) in enumerate([
+                (matched_movement.timestamp - 1, '0.1'),  # ID 2 - Before the movement. Not a close match.  # noqa: E501
+                (matched_movement.timestamp + 1, '0.1'),  # ID 3 - After the movement, within the time range. Close Match.  # noqa: E501
+                (matched_movement.timestamp + 2, '0.1'),  # ID 4 - After the movement, within the time range. Second close Match.  # noqa: E501
+                (matched_movement.timestamp + 3, '0.5'),  # ID 5 - Wrong amount, not a match.
+                (matched_movement.timestamp + HOUR_IN_MILLISECONDS * 2, '0.1'),  # ID 6 - Outside the time range, not matched or included in the other events list.  # noqa: E501
+            ], start=2)]],
+        )
+
+    assert assert_proper_response_with_result(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+            json={'asset_movement': matched_movement.group_identifier},
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    ) == {  # Returns DB identifiers. These ids are set above with the enumeration index.
+        'close_matches': [3, 4],
+        'other_events': [2, 5],
+    }

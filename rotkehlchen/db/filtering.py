@@ -848,7 +848,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             filters.append(
                 DBIgnoreValuesFilter(
                     and_op=True,
-                    column='identifier',
+                    column='history_events_identifier',
                     values=ignored_ids,
                 ),
             )
