@@ -325,7 +325,7 @@ const HistoryEventEntryWithMeta = z.object({
   ...HistoryEventMeta.shape,
 });
 
-type HistoryEventEntryWithMeta = z.infer<typeof HistoryEventEntryWithMeta>;
+export type HistoryEventEntryWithMeta = z.infer<typeof HistoryEventEntryWithMeta>;
 
 const HistoryEventCollectionRowSchema = z.array(HistoryEventEntryWithMeta.or(z.array(HistoryEventEntryWithMeta)));
 

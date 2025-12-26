@@ -24,6 +24,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const ssfGraphMultiplier = useComputedRef(settings, 'ssfGraphMultiplier');
   const inferZeroTimedBalances = useComputedRef(settings, 'inferZeroTimedBalances');
   const nonSyncingExchanges = useComputedRef(settings, 'nonSyncingExchanges');
+  const eventsProcessingFrequency = useComputedRef(settings, 'eventsProcessingFrequency');
   const evmchainsToSkipDetection = useComputedRef(settings, 'evmchainsToSkipDetection');
   const evmIndexersOrder = useComputedRef(settings, 'evmIndexersOrder');
   const defaultEvmIndexerOrder = useComputedRef(settings, 'defaultEvmIndexerOrder');
@@ -72,6 +73,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     defaultEvmIndexerOrder,
     displayDateInLocaltime,
     dotRpcEndpoint,
+    eventsProcessingFrequency,
     evmchainsToSkipDetection,
     evmIndexersOrder,
     floatingPrecision: uiFloatingPrecision,

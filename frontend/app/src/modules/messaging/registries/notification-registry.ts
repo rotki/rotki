@@ -6,6 +6,7 @@ import { createMissingApiKeyHandler } from '../handlers/missing-api-key';
 import { createPremiumStatusHandler } from '../handlers/premium-status';
 import { createSnapshotErrorHandler } from '../handlers/snapshot-error';
 import { createSolanaTokensHandler } from '../handlers/solana-tokens-migration';
+import { createUnmatchedAssetMovementsHandler } from '../handlers/unmatched-asset-movements';
 import { SocketMessageType } from '../types/base';
 
 export function createNotificationRegistry(
@@ -23,5 +24,6 @@ export function createNotificationRegistry(
     [SocketMessageType.MISSING_API_KEY]: missingApiKeyHandler,
     [SocketMessageType.PREMIUM_STATUS_UPDATE]: createPremiumStatusHandler(t),
     [SocketMessageType.SOLANA_TOKENS_MIGRATION]: createSolanaTokensHandler(t, router),
+    [SocketMessageType.UNMATCHED_ASSET_MOVEMENTS]: createUnmatchedAssetMovementsHandler(t, router),
   };
 }

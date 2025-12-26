@@ -100,7 +100,7 @@ def get_unmatched_asset_movements(
                 'LEFT JOIN chain_events_info ON history_events.identifier=chain_events_info.identifier '  # noqa: E501
                 'WHERE history_events.entry_type=? AND history_events.identifier NOT IN '
                 '(SELECT value FROM key_value_cache WHERE name LIKE ?) '
-                'ORDER BY timestamp, sequence_index',
+                'ORDER BY timestamp DESC, sequence_index',
                 (HistoryBaseEntryType.ASSET_MOVEMENT_EVENT.value, 'matched_asset_movement_%'),
         ):
             if (asset_movement := AssetMovement.deserialize_from_db(entry[1:])).asset.is_fiat():

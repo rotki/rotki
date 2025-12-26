@@ -69,6 +69,12 @@ const AccountingRuleFormDialog = defineAsyncComponent({
   loadingComponent: DialogLoadingComponent,
 });
 
+const MatchAssetMovementsDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/components/history/events/MatchAssetMovementsDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
 const {
   closeDialog,
   currentDialog,
@@ -177,6 +183,12 @@ defineExpose({
       v-model="accountingRuleToEdit"
       :event-ids="selectedEventIds"
       @refresh="emit('accounting-rule-refresh')"
+    />
+
+    <MatchAssetMovementsDialog
+      v-if="currentDialog.type === DIALOG_TYPES.MATCH_ASSET_MOVEMENTS"
+      v-model="dialogIsOpen"
+      @refresh="eventHandlers.onHistoryEventSaved?.()"
     />
   </div>
 </template>

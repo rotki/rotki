@@ -911,7 +911,6 @@
       "delete_error": "Impossible de supprimer la cartographie : {message}",
       "edit_error": "Impossible de modifier la correspondance : {message}",
       "edit_title": "Modifier le mappage",
-      "exchange": "Échanger",
       "filter_by_exchange": "Filtrer par échange",
       "filter_by_location_symbol": "Filtrer par symbole d'actif",
       "form": {
@@ -1308,6 +1307,7 @@
     "details": "Détails",
     "entry_type": "Type d'entrée",
     "events": "Événements",
+    "exchange": "Plateforme d'Échange",
     "fee": "Frais",
     "filter": {
       "date_hint": "format {format} HH:mm:ss (les secondes sont facultatives)",
@@ -1819,7 +1819,6 @@
       "activate_tooltip": "Modifier les clés API pour la plateforme d'échange.",
       "deactivate_tooltip": "Annuler la modification des clés API pour la plateforme d'échange."
     },
-    "exchange": "Plateforme d'Échange",
     "name": {
       "non_empty": "Le champ Nom ne peut être vide."
     }

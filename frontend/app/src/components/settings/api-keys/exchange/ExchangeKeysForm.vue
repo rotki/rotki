@@ -277,7 +277,7 @@ defineExpose({
       <ExchangeInput
         show-with-key-only
         :model-value="modelValue.location"
-        :label="t('exchange_keys_form.exchange')"
+        :label="t('common.exchange')"
         data-cy="exchange"
         :disabled="editMode"
         @update:model-value="onExchangeChange($event)"

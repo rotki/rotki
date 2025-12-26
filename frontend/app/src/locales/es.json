@@ -780,7 +780,6 @@
       "delete_error": "No se ha podido eliminar la asignación: {message}",
       "edit_error": "No se ha podido editar la asignación: {message}",
       "edit_title": "Editar la asignación",
-      "exchange": "Intercambio",
       "filter_by_exchange": "Filtrar por bolsa",
       "filter_by_location_symbol": "Filtrar por símbolo de activo",
       "form": {
@@ -1121,6 +1120,7 @@
     "details": "Detalles",
     "entry_type": "Tipo de entrada",
     "events": "Eventos",
+    "exchange": "Intercambio",
     "fee": "Fee",
     "here": "here",
     "ignored_in_accounting": "Ignored in Accounting",
@@ -1585,7 +1585,6 @@
       "activate_tooltip": "Edit the api keys for the exchange.",
       "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."
     },
-    "exchange": "Exchange",
     "name": {
       "non_empty": "The name field cannot be empty."
     }

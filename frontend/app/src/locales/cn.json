@@ -788,7 +788,6 @@
       "delete_error": "无法删除映射： {message}",
       "edit_error": "无法编辑映射： {message}",
       "edit_title": "编辑映射",
-      "exchange": "交换",
       "filter_by_exchange": "按交易所筛选",
       "filter_by_location_symbol": "按资产符号筛选",
       "form": {
@@ -1158,6 +1157,7 @@
     "details": "细节",
     "entry_type": "输入类型",
     "events": "事件",
+    "exchange": "交易所",
     "fee": "费用",
     "filter": {
       "date_hint": "format {format} HH:mm:ss(时间/秒可选)",
@@ -1649,7 +1649,6 @@
       "activate_tooltip": "编辑交易所的 api 密钥。",
       "deactivate_tooltip": "取消对交易所 api 密钥的编辑。"
     },
-    "exchange": "交换",
     "name": {
       "non_empty": "名称字段不能为空。"
     }

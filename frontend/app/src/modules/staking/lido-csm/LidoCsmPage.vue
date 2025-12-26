@@ -4,6 +4,7 @@ import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts
 import type { LidoCsmNodeOperator, LidoCsmNodeOperatorPayload } from '@/types/staking';
 import { BigNumber, bigNumberify, Blockchain } from '@rotki/common';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import TableEmptyState from '@/components/display/TableEmptyState.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
@@ -16,7 +17,6 @@ defineOptions({
 });
 
 const { t } = useI18n({ useScope: 'global' });
-const { isDark } = useRotkiTheme();
 
 const STETH_IDENTIFIER = 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84';
 
@@ -350,17 +350,10 @@ defineExpose({
             class="h-12"
           />
         </div>
-        <div
+        <TableEmptyState
           v-else-if="!hasEntries"
-          class="flex flex-col items-center text-center text-rui-text-secondary py-8"
-        >
-          <img
-            :src="isDark ? '/assets/images/placeholder/table_no_data_placeholder_dark.svg' : '/assets/images/placeholder/table_no_data_placeholder.svg'"
-            :alt="t('staking_page.lido_csm.table.empty')"
-            class="h-32"
-          />
-          {{ t('staking_page.lido_csm.table.empty') }}
-        </div>
+          :text="t('staking_page.lido_csm.table.empty')"
+        />
         <div
           v-else
           class="space-y-4 overflow-x-auto"

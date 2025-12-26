@@ -7,7 +7,7 @@ import useVuelidate from '@vuelidate/core';
 import { required } from '@vuelidate/validators';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
 import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -48,8 +48,8 @@ const { decodableTxChainsInfo, getChain } = useSupportedChains();
 const decodableTxChains = useArrayMap(decodableTxChainsInfo, x => x.id);
 
 const accountTypeOptions = computed<{ text: string; value: AccountType }[]>(() => [
-  { text: t('transactions.repulling.account_type.blockchain'), value: 'blockchain' },
-  { text: t('transactions.repulling.account_type.exchange'), value: 'exchange' },
+  { text: t('common.blockchain'), value: 'blockchain' },
+  { text: t('common.exchange'), value: 'exchange' },
 ]);
 
 const chainOptions = computed(() => {
@@ -276,7 +276,7 @@ defineExpose({
         v-else
         v-model="exchange"
         :options="connectedExchanges"
-        :label="t('transactions.repulling.exchange')"
+        :label="t('common.exchange')"
         variant="outlined"
         auto-select-first
         :item-height="48"
@@ -284,23 +284,20 @@ defineExpose({
         :error-messages="toMessages(v$.exchange)"
       >
         <template #selection="{ item }">
-          <div class="flex items-center gap-2">
-            <LocationDisplay
-              horizontal
+          <div class="flex items-center gap-2 pl-1">
+            <LocationIcon
               icon
-              :open-details="false"
-              :identifier="item.location"
+              size="20px"
+              :item="item.location"
             />
             {{ item.name }}
           </div>
         </template>
         <template #item="{ item }">
           <div class="flex items-center gap-2">
-            <LocationDisplay
+            <LocationIcon
               icon
-              horizontal
-              :open-details="false"
-              :identifier="item.location"
+              :item="item.location"
             />
             {{ item.name }}
           </div>

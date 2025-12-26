@@ -6379,7 +6379,7 @@ class RestAPI:
         """Get the group identifiers of all unmatched asset movements."""
         asset_movements, _ = get_unmatched_asset_movements(database=self.rotkehlchen.data.db)
         return api_response(_wrap_in_ok_result(
-            result=list({event.group_identifier for event in asset_movements}),
+            result=list(dict.fromkeys(event.group_identifier for event in asset_movements)),
         ))
 
     def get_matches_for_asset_movement(

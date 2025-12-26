@@ -31,7 +31,7 @@ const cols = computed<DataTableColumn<CexMapping>[]>(() => [{
   align: 'center',
   cellClass: 'py-3',
   key: 'location',
-  label: t('asset_management.cex_mapping.exchange'),
+  label: t('common.exchange'),
 }, {
   align: 'center',
   cellClass: 'py-3',

@@ -14,6 +14,7 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
 import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
+import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
 import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
 import { useHistoryEventsSelectionActions } from '@/modules/history/events/composables/use-history-events-selection-actions';
@@ -86,6 +87,11 @@ const {
   sectionLoading,
   shouldFetchEventsRegularly,
 } = useHistoryEventsStatus();
+
+const {
+  fetchUnmatchedAssetMovements,
+  unmatchedCount,
+} = useUnmatchedAssetMovements();
 
 const usedTitle = computed<string>(() => get(sectionTitle) || t('transactions.title'));
 
@@ -187,6 +193,16 @@ watch(processing, async (isLoading, wasLoading) => {
 watchDebounced(route, async () => {
   await actions.refresh.all();
 }, { debounce: 500, immediate: true, once: true });
+
+function openMatchAssetMovementsDialog(): void {
+  get(dialogContainer)?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+}
+
+onMounted(async () => {
+  if (get(mainPage)) {
+    await fetchUnmatchedAssetMovements();
+  }
+});
 </script>
 
 <template>
@@ -206,6 +222,23 @@ watchDebounced(route, async () => {
     </template>
 
     <div>
+      <RuiAlert
+        v-if="mainPage && unmatchedCount > 0"
+        type="warning"
+        class="mb-4 [&>div]:items-center"
+      >
+        <div class="flex items-center gap-4">
+          {{ t('asset_movement_matching.banner.message', { count: unmatchedCount }) }}
+          <RuiButton
+            size="sm"
+            color="warning"
+            @click="openMatchAssetMovementsDialog()"
+          >
+            {{ t('asset_movement_matching.banner.action') }}
+          </RuiButton>
+        </div>
+      </RuiAlert>
+
       <RuiCard>
         <template
           v-if="!mainPage"
