@@ -1037,6 +1037,28 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             # Resolve asset
             asset = asset_from_bit2me(asset_symbol)
 
+            # Store historical price if available in denomination.rate
+            # This allows rotki to use the actual exchange rate instead of oracles
+            denomination = raw_transaction.get('denomination', {})
+            denom_rate = denomination.get('rate', {})
+            if denom_rate and denom_rate.get('value'):
+                rate_value = deserialize_fval(denom_rate['value'])
+                if rate_value > ZERO:
+                    # Get the quote asset (e.g., EUR from BTC/EUR)
+                    pair = denom_rate.get('pair', {})
+                    quote_symbol = pair.get('quote', '')
+                    if quote_symbol:
+                        try:
+                            quote_asset = asset_from_bit2me(quote_symbol)
+                            self._store_historical_price(
+                                from_asset=asset,
+                                to_asset=quote_asset,
+                                price=rate_value,
+                                timestamp=ts_ms_to_sec(timestamp_ms),
+                            )
+                        except (UnknownAsset, UnsupportedAsset) as e:
+                            log.debug(f'Could not store airdrop price, unknown quote asset: {e}')
+
             # Get sender info for notes
             sender = origin.get('fullName', 'Bit2Me')
             method = raw_transaction.get('method', 'email')
