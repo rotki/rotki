@@ -41,21 +41,22 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
+    deserialize_timestamp_from_date,
     deserialize_timestamp_ms_from_intms,
 )
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    ExchangeAuthCredentials,
     Location,
     Price,
     Timestamp,
     TimestampMS,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms
-from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms, ts_sec_to_ms
+
+# cache_response_timewise not needed per review; remove usage
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
@@ -119,19 +120,15 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         )
         self.nonce_lock = Semaphore()
 
-    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
-        """Edit the exchange credentials."""
-        # Headers are set per request, no need to update session headers
-        return super().edit_exchange_credentials(credentials)
+    # edit_exchange_credentials override is unnecessary; rely on base implementation
 
     def first_connection(self) -> None:
         """No-op first connection hook for Bit2Me.
 
         Bit2Me does not require prefetching markets or metadata before use.
         """
-        if self.first_connection_made:
-            return
-        self.first_connection_made = True
+        if not self.first_connection_made:
+            self.first_connection_made = True
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validate Bit2Me API credentials by hitting a minimal private endpoint.
@@ -192,7 +189,6 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         return events, end_ts
 
     @protect_with_lock()
-    @cache_response_timewise()
     def query_balances(self) -> ExchangeQueryBalances:
         """Query Bit2me balances for all assets."""
         try:
@@ -887,15 +883,11 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 log.warning(f'Unknown EARN movement pattern: {raw_movement}')
                 return None
 
-            # Parse timestamp from ISO format
-            timestamp_str = raw_movement['date']
-            from datetime import datetime
-
-            timestamp_str_clean = (
-                timestamp_str[:-1] + '+00:00' if timestamp_str.endswith('Z') else timestamp_str
+            # Parse timestamp from ISO format using shared utility
+            timestamp_sec = deserialize_timestamp_from_date(
+                raw_movement['date'], 'iso8601', 'bit2me',
             )
-            dt = datetime.fromisoformat(timestamp_str_clean)
-            timestamp_ms = TimestampMS(int(dt.timestamp() * 1000))
+            timestamp_ms = TimestampMS(ts_sec_to_ms(timestamp_sec))
 
             # Resolve asset
             asset = asset_from_bit2me(asset_symbol)
@@ -1024,15 +1016,11 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             if amount <= ZERO:
                 return None
 
-            # Parse timestamp from ISO format
-            timestamp_str = raw_transaction['date']
-            from datetime import datetime
-
-            timestamp_str_clean = (
-                timestamp_str[:-1] + '+00:00' if timestamp_str.endswith('Z') else timestamp_str
+            # Parse timestamp from ISO format using shared utility
+            timestamp_sec = deserialize_timestamp_from_date(
+                raw_transaction['date'], 'iso8601', 'bit2me',
             )
-            dt = datetime.fromisoformat(timestamp_str_clean)
-            timestamp_ms = TimestampMS(int(dt.timestamp() * 1000))
+            timestamp_ms = TimestampMS(ts_sec_to_ms(timestamp_sec))
 
             # Resolve asset
             asset = asset_from_bit2me(asset_symbol)
@@ -1203,15 +1191,11 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             # Extract transaction ID
             trade_id = str(raw_transaction['id'])
 
-            # Parse timestamp from ISO format
-            timestamp_str = raw_transaction['date']
-            from datetime import datetime
-
-            timestamp_str_clean = (
-                timestamp_str[:-1] + '+00:00' if timestamp_str.endswith('Z') else timestamp_str
+            # Parse timestamp from ISO format using shared utility
+            timestamp_sec = deserialize_timestamp_from_date(
+                raw_transaction['date'], 'iso8601', 'bit2me',
             )
-            dt = datetime.fromisoformat(timestamp_str_clean)
-            timestamp_ms = TimestampMS(int(dt.timestamp() * 1000))
+            timestamp_ms = TimestampMS(ts_sec_to_ms(timestamp_sec))
 
             # Extract origin (what was spent) and destination (what was received)
             origin = raw_transaction['origin']
@@ -1370,17 +1354,11 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                     f'Raw movement: {raw_movement}',
                 )
 
-            # Parse timestamp from ISO format
-            timestamp_str = raw_movement['date']
-            # Convert ISO datetime to timestamp
-            from datetime import datetime
-
-            # Replace Z with +00:00 for Python's fromisoformat
-            timestamp_str_clean = (
-                timestamp_str[:-1] + '+00:00' if timestamp_str.endswith('Z') else timestamp_str
+            # Parse timestamp from ISO format using shared utility
+            timestamp_sec = deserialize_timestamp_from_date(
+                raw_movement['date'], 'iso8601', 'bit2me',
             )
-            dt = datetime.fromisoformat(timestamp_str_clean)
-            timestamp_ms = TimestampMS(int(dt.timestamp() * 1000))
+            timestamp_ms = TimestampMS(ts_sec_to_ms(timestamp_sec))
 
             # Resolve asset
             asset = asset_from_bit2me(asset_symbol)
