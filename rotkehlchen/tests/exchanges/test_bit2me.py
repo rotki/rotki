@@ -277,7 +277,11 @@ BIT2ME_AIRDROP_RESPONSE = """{
       "status": "completed",
       "denomination": {
         "amount": "0.00016907",
-        "currency": "BTC"
+        "currency": "BTC",
+        "rate": {
+          "value": "88722.80000000",
+          "pair": { "base": "BTC", "quote": "EUR" }
+        }
       },
       "frequency": "punctual",
       "isInitialRecurringOrder": false,
