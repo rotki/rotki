@@ -262,6 +262,41 @@ BIT2ME_EARN_TRANSACTIONS_RESPONSE = """{
   ]
 }"""
 
+BIT2ME_AIRDROP_RESPONSE = """{
+  "total": 1,
+  "data": [
+    {
+      "id": "431e921e-7f65-4548-a8d3-b2f6af9acd71",
+      "date": "2025-11-09T13:42:09.983Z",
+      "completedAt": "2025-11-09T13:42:12.295Z",
+      "canceledAt": null,
+      "concept": "",
+      "type": "transfer",
+      "subtype": "social-pay",
+      "method": "email",
+      "status": "completed",
+      "denomination": {
+        "amount": "0.00016907",
+        "currency": "BTC"
+      },
+      "frequency": "punctual",
+      "isInitialRecurringOrder": false,
+      "origin": {
+        "amount": "0.00016907",
+        "currency": "BTC",
+        "fullName": "Bit2Me",
+        "class": "email"
+      },
+      "destination": {
+        "pocketId": "339b61c6-df74-409c-85a4-68c421da6382",
+        "amount": "0.00016907",
+        "currency": "BTC",
+        "class": "pocket"
+      }
+    }
+  ]
+}"""
+
 BIT2ME_TRADES_RESPONSE = """{
   "trades": []
 }"""
@@ -578,3 +613,33 @@ def test_bit2me_query_earn_movements(bit2me):
     assert btc_withdrawal.asset == A_BTC
     assert btc_withdrawal.amount == FVal('0.1')
     assert 'Withdrawal from Bit2Me Earn' in btc_withdrawal.notes
+
+
+def test_bit2me_query_airdrops(bit2me):
+    """Test querying airdrops (social-pay) from Bit2me."""
+
+    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+        return MockResponse(200, BIT2ME_AIRDROP_RESPONSE)
+
+    with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
+        airdrop_events = bit2me._query_airdrops(
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(1800000000),
+        )
+
+    # Should have 1 airdrop
+    assert len(airdrop_events) == 1
+
+    airdrop = airdrop_events[0]
+
+    # Check event type is RECEIVE/AIRDROP
+    assert airdrop.event_type == HistoryEventType.RECEIVE
+    assert airdrop.event_subtype == HistoryEventSubType.AIRDROP
+
+    # Check asset and amount
+    assert airdrop.asset == A_BTC
+    assert airdrop.amount == FVal('0.00016907')
+
+    # Check notes mention airdrop from Bit2Me
+    assert 'Airdrop from Bit2Me' in airdrop.notes
+    assert '0.00016907' in airdrop.notes
