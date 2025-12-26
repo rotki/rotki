@@ -25,6 +25,13 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         INSERT OR IGNORE INTO location(location, seq) VALUES ('x', 56);
         """)
 
+    @progress_step(description='Adding Bit2me location to the DB.')
+    def _add_bit2me_location(write_cursor: 'DBCursor') -> None:
+        write_cursor.executescript("""
+        /* Bit2me */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('y', 57);
+        """)
+
     @progress_step(description='Rename event_identifier column to group_identifier in history_events table.')  # noqa: E501
     def _rename_event_identifier_to_group_identifier(write_cursor: 'DBCursor') -> None:
         """Rename event_identifier column to group_identifier in history_events table."""

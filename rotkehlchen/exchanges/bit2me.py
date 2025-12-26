@@ -1,4 +1,5 @@
 import hashlib
+import json
 import logging
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -23,6 +24,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
+    AssetMovementExtraData,
     create_asset_movement_with_fee,
 )
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -94,12 +96,12 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
     """
 
     def __init__(
-        self,
-        name: str,
-        api_key: ApiKey,
-        secret: ApiSecret,
-        database: 'DBHandler',
-        msg_aggregator: MessagesAggregator,
+            self,
+            name: str,
+            api_key: ApiKey,
+            secret: ApiSecret,
+            database: 'DBHandler',
+            msg_aggregator: MessagesAggregator,
     ):
         super().__init__(
             name=name,
@@ -145,18 +147,18 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         return True, ''
 
     def query_online_margin_history(
-        self,
-        start_ts: Timestamp,  # pylint: disable=unused-argument
-        end_ts: Timestamp,  # pylint: disable=unused-argument
+            self,
+            start_ts: Timestamp,  # pylint: disable=unused-argument
+            end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> list[MarginPosition]:
         """Bit2Me does not provide margin positions; return empty list."""
         return []
 
     def query_online_history_events(
-        self,
-        start_ts: Timestamp,
-        end_ts: Timestamp,
-        force_refresh: bool = False,  # pylint: disable=unused-argument
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            force_refresh: bool = False,  # pylint: disable=unused-argument
     ) -> tuple['Sequence[HistoryBaseEntry]', Timestamp]:
         """Query all history events from Bit2me.
 
@@ -349,9 +351,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         return result
 
     def query_online_trade_history(
-        self,
-        start_ts: Timestamp,
-        end_ts: Timestamp,
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
     ) -> tuple[list[SwapEvent], tuple[Timestamp, Timestamp]]:
         """Query Bit2me trade history within a time range."""
         log.debug(
@@ -409,9 +411,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         return trades, (start_ts, end_ts)
 
     def query_online_deposits_withdrawals(
-        self,
-        start_ts: Timestamp,
-        end_ts: Timestamp,
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
     ) -> list[AssetMovement]:
         """Query Bit2me deposits and withdrawals within a time range.
 
@@ -440,7 +442,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             return movements
 
         try:
-            response_data = jsonloads_dict(response.text)
+            response_data: dict[str, Any] | list[Any] = json.loads(response.text)
         except JSONDecodeError as e:
             msg = f'{self.name} returned invalid JSON for transactions. {e!s}'
             log.error(msg)
@@ -485,9 +487,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         return movements
 
     def _query_brokerage_trades(
-        self,
-        start_ts: Timestamp,
-        end_ts: Timestamp,
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
     ) -> list[SwapEvent]:
         """Query Bit2me brokerage trades (purchases/sales) within a time range.
 
@@ -516,7 +518,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             return brokerage_trades
 
         try:
-            response_data = jsonloads_dict(response.text)
+            response_data: dict[str, Any] | list[Any] = json.loads(response.text)
         except JSONDecodeError as e:
             msg = f'{self.name} returned invalid JSON for brokerage transactions. {e!s}'
             log.error(msg)
@@ -565,9 +567,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         return brokerage_trades
 
     def _generate_signature(
-        self,
-        path: str,
-        body: dict[str, Any] | None = None,
+            self,
+            path: str,
+            body: dict[str, Any] | None = None,
     ) -> tuple[str, str]:
         """Generate authentication signature for Bit2me API.
 
@@ -589,8 +591,6 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
 
         if body is not None and len(body) > 0:
             # Use compact JSON (no spaces) as in official sample
-            import json
-
             body_json = json.dumps(body, separators=(',', ':'))
             message = f'{nonce}:{path}:{body_json}'
         else:
@@ -607,14 +607,14 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         return nonce, signature
 
     def _api_query(
-        self,
-        endpoint: Literal[
+            self,
+            endpoint: Literal[
             'balances',
             'trades',
             'orders',
             'transactions',
         ],
-        options: dict[str, Any] | None = None,
+            options: dict[str, Any] | None = None,
     ) -> requests.Response:
         """Request a Bit2me API endpoint.
 
@@ -794,11 +794,11 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             ) from e
 
     def _store_historical_price(
-        self,
-        from_asset: AssetWithOracles,
-        to_asset: AssetWithOracles,
-        price: 'FVal',
-        timestamp: Timestamp,
+            self,
+            from_asset: AssetWithOracles,
+            to_asset: AssetWithOracles,
+            price: 'FVal',
+            timestamp: Timestamp,
     ) -> None:
         """Store a historical price from Bit2Me in the global database.
 
@@ -832,8 +832,8 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             )
 
     def _deserialize_earn_movement(
-        self,
-        raw_movement: dict[str, Any],
+            self,
+            raw_movement: dict[str, Any],
     ) -> HistoryEvent | None:
         """Deserialize an EARN (staking) movement from Bit2Me API response.
 
@@ -916,9 +916,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             return None
 
     def _query_earn_movements(
-        self,
-        start_ts: Timestamp,
-        end_ts: Timestamp,
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
     ) -> list[HistoryEvent]:
         """Query and process EARN (staking) movements from Bit2Me.
 
@@ -941,7 +941,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             return earn_events
 
         try:
-            response_data = jsonloads_dict(response.text)
+            response_data: dict[str, Any] | list[Any] = json.loads(response.text)
         except JSONDecodeError as e:
             log.error(f'{self.name} returned invalid JSON for EARN transactions: {e}')
             return earn_events
@@ -984,8 +984,8 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         return earn_events
 
     def _deserialize_airdrop(
-        self,
-        raw_transaction: dict[str, Any],
+            self,
+            raw_transaction: dict[str, Any],
     ) -> HistoryEvent | None:
         """Deserialize an airdrop/gift (social-pay) from Bit2Me API response.
 
@@ -1076,9 +1076,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             return None
 
     def _query_airdrops(
-        self,
-        start_ts: Timestamp,
-        end_ts: Timestamp,
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
     ) -> list[HistoryEvent]:
         """Query and process airdrops/gifts (social-pay) from Bit2Me.
 
@@ -1101,7 +1101,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             return airdrop_events
 
         try:
-            response_data = jsonloads_dict(response.text)
+            response_data: dict[str, Any] | list[Any] = json.loads(response.text)
         except JSONDecodeError as e:
             log.error(f'{self.name} returned invalid JSON for airdrops: {e}')
             return airdrop_events
@@ -1145,8 +1145,8 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         return airdrop_events
 
     def _deserialize_brokerage_trade(
-        self,
-        raw_transaction: dict[str, Any],
+            self,
+            raw_transaction: dict[str, Any],
     ) -> list[SwapEvent]:
         """Deserialize a brokerage purchase/sale from Bit2me transaction API.
 
@@ -1202,13 +1202,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             destination = raw_transaction['destination']
 
             spend_amount = deserialize_fval(origin['amount'])
-            spend_symbol = origin['currency']
+            spend_asset = asset_from_bit2me(origin['currency'])
             receive_amount = deserialize_fval(destination['amount'])
-            receive_symbol = destination['currency']
-
-            # Resolve assets
-            spend_asset = asset_from_bit2me(spend_symbol)
-            receive_asset = asset_from_bit2me(receive_symbol)
+            receive_asset = asset_from_bit2me(destination['currency'])
 
             # Calculate fee from the exchange rate if available.
             # The fee is: spend_amount - (receive_amount * rate)
@@ -1254,8 +1250,8 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             ) from e
 
     def _deserialize_asset_movement(
-        self,
-        raw_movement: dict[str, Any],
+            self,
+            raw_movement: dict[str, Any],
     ) -> list[AssetMovement] | None:
         """Deserialize an asset movement from Bit2me API response.
 
@@ -1269,17 +1265,6 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         - social-pay: Airdrops/gifts (handled by _deserialize_airdrop)
         - earn: Staking movements (handled by _deserialize_earn_movement)
         - Other transfers: Ignored (internal pocket-to-pocket)
-
-        Args:
-            raw_movement: Raw movement data from API
-
-        Returns:
-            List of AssetMovement events (movement + optional fee) or None if should be skipped
-
-        Raises:
-            DeserializationError: If deserialization fails
-            UnknownAsset: If asset cannot be resolved
-            UnsupportedAsset: If asset is not supported
         """
         try:
             # Extract transaction type and subtype
@@ -1305,6 +1290,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             # Determine if it's a deposit or withdrawal
             # Bit2Me v2 API has two formats: flat (origin_currency) or nested (origin.currency)
             # Try nested format first, fall back to flat
+            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
             if transaction_type == 'deposit':
                 event_type = HistoryEventType.DEPOSIT
                 # For deposits, use destination data
@@ -1365,20 +1351,14 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
 
             # Extract transaction ID and method
             movement_id = raw_movement['id']
-            method = raw_movement.get('method', '')
 
-            # Build extra data
-            extra_data = {
-                'method': method,
-                'transaction_type': transaction_type,
-            }
-
-            # Add blockchain address/txid if available
+            # Build extra data with address if available
+            extra_data: AssetMovementExtraData | None = None
             if address and address != 'null' and address is not None:
                 extra_data = maybe_set_transaction_extra_data(
                     address=address,
                     transaction_id=None,  # Bit2me doesn't provide txid in this endpoint
-                    extra_data=extra_data,
+                    extra_data=None,
                 )
 
             return create_asset_movement_with_fee(
