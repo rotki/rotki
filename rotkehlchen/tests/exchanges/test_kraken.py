@@ -1,4 +1,6 @@
+import binascii
 import warnings as test_warnings
+from collections import defaultdict
 from contextlib import ExitStack
 from http import HTTPStatus
 from pathlib import Path
@@ -18,6 +20,7 @@ from rotkehlchen.assets.asset import Asset, CustomAsset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
+    A_BCH,
     A_BTC,
     A_DOT,
     A_ETH,
@@ -53,6 +56,9 @@ from rotkehlchen.tests.utils.constants import (
     A_ADA,
     A_DAO,
     A_EUR,
+    A_GBP,
+    A_LTC,
+    A_XRP,
     TEST_PREMIUM_HISTORY_EVENTS_LIMIT,
 )
 from rotkehlchen.tests.utils.exchanges import (
@@ -64,6 +70,7 @@ from rotkehlchen.tests.utils.kraken import KRAKEN_DELISTED, MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import AssetAmount, Location, Timestamp, TimestampMS
+from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -1255,3 +1262,62 @@ def test_margin_trading_events(rotkehlchen_api_server_with_exchanges: 'APIServer
         location_label='mockkraken',
         notes='Margin settlement',
     )]
+
+
+def test_kraken_validate_key(kraken):
+    """Test that validate api key works for a correct api key"""
+    result, msg = kraken._validate_single_api_key_action('accounts')
+    assert result is True
+    assert msg == ''
+
+
+def test_kraken_futures_wrong_formatting_on_secret(kraken):
+    """Test that giving wrong api secret is detected"""
+    with pytest.raises(binascii.Error) as exc_info:
+        kraken.set_futures_api_key('Qjqs', b'Wqz')
+    assert 'Incorrect padding' in str(exc_info.value)
+
+
+def test_querying_futures_balances(kraken):
+    """Test that querying futures balances works. Uses a mocked futures response"""
+    kraken.set_futures_api_key('QjqM', b'Wqdz')
+    balances, _ = kraken.query_balances()
+    assert isinstance(balances, dict)
+    for asset, entry in balances.items():
+        assert isinstance(asset, Asset)
+        assert isinstance(entry, Balance)
+
+    assert balances[A_USD].amount == FVal('10076.53008268181')
+    assert balances[A_EUR].amount == FVal('10000')
+    assert balances[A_GBP].amount == FVal('3791.9006')
+    assert balances[A_ETH].amount == FVal('4.7153945058')
+    assert balances[A_LTC].amount == FVal('104.3821723602')
+    assert balances[A_BTC].amount == FVal('0.1574971479')
+    assert balances[A_BCH].amount == FVal('20.0369882804')
+    assert balances[A_XRP].amount == FVal('4427.7371164')
+    assert balances[A_USDC.identifier].amount == FVal('5000.65008452')
+    assert balances[A_USDT.identifier].amount == FVal('5003.96313881')
+
+
+def test_parse_single_collateral_futures_margin(kraken):
+    no_bch_future = jsonloads_dict("""{"cash": "unrelated_field"}""")
+    assert kraken._parse_single_collateral_futures_margin(no_bch_future) == defaultdict()
+
+    no_currency_under_future = jsonloads_dict("""{"fi_bchusd":{"balances":{"bch":10.0184941402}}}""")  # noqa: E501
+    assert kraken._parse_single_collateral_futures_margin(
+        no_currency_under_future,
+    ) == defaultdict()
+
+    balances_missing = jsonloads_dict("""{"fi_bchusd":{"currency":"bch"}}""")
+    assert kraken._parse_single_collateral_futures_margin(balances_missing) == defaultdict()
+
+    buggy_response_currency_mismatch = jsonloads_dict("""{"fi_bchusd":{"balances":{"btc":10.0184941402},"currency":"bch"}}""")  # noqa: E501
+    assert kraken._parse_single_collateral_futures_margin(
+        buggy_response_currency_mismatch,
+    ) == defaultdict()
+
+    proper_kraken_futures_balances_response = jsonloads_dict("""{"fi_bchusd":{"balances":{"bch":10.0184941402},"currency":"bch"}}""")  # noqa: E501
+    parsed_margin = kraken._parse_single_collateral_futures_margin(
+        proper_kraken_futures_balances_response,
+    )
+    assert parsed_margin == {'bch': 10.0184941402}

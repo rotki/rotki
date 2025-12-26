@@ -558,6 +558,8 @@ class ExchangesResource(BaseMethodView):
             api_secret: ApiSecret | None,
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
+            kraken_futures_api_key: ApiKey | None,
+            kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
             okx_location: Optional['OkxLocation'],
     ) -> Response:
@@ -568,6 +570,8 @@ class ExchangesResource(BaseMethodView):
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            kraken_futures_api_key=kraken_futures_api_key,
+            kraken_futures_api_secret=kraken_futures_api_secret,
             binance_markets=binance_markets,
             okx_location=okx_location,
         )
@@ -583,6 +587,8 @@ class ExchangesResource(BaseMethodView):
             api_secret: ApiSecret | None,
             passphrase: str | None,
             kraken_account_type: Optional['KrakenAccountType'],
+            kraken_futures_api_key: ApiKey | None,
+            kraken_futures_api_secret: ApiSecret | None,
             binance_markets: list[str] | None,
             okx_location: Optional['OkxLocation'],
     ) -> Response:
@@ -594,6 +600,8 @@ class ExchangesResource(BaseMethodView):
             api_secret=api_secret,
             passphrase=passphrase,
             kraken_account_type=kraken_account_type,
+            kraken_futures_api_key=kraken_futures_api_key,
+            kraken_futures_api_secret=kraken_futures_api_secret,
             binance_markets=binance_markets,
             okx_location=okx_location,
         )

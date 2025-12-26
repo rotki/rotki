@@ -14,7 +14,7 @@ import { useRefMap } from '@/composables/utils/useRefMap';
 import { useLocationStore } from '@/store/locations';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { type ExchangeFormData, KrakenAccountType, OkxLocation } from '@/types/exchanges';
-import { useRefPropVModel } from '@/utils/model';
+import { refOptional, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<ExchangeFormData>({ required: true });
@@ -23,6 +23,7 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
 const errorMessages = defineModel<ValidationErrors>('errorMessages', { default: () => ({}) });
 
 const editKeys = ref<boolean>(false);
+const editFuturesKeys = ref<boolean>(false);
 
 const locationStore = useLocationStore();
 const { exchangesWithoutApiSecret, exchangesWithPassphrase } = storeToRefs(locationStore);
@@ -103,6 +104,8 @@ const apiSecretModel = refWithAsterisk(apiSecret);
 
 const passphrase = useRefPropVModel(modelValue, 'passphrase');
 const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
+const krakenFuturesApiKey = useRefPropVModel(modelValue, 'krakenFuturesApiKey');
+const krakenFuturesApiSecret = useRefPropVModel(modelValue, 'krakenFuturesApiSecret');
 const binanceMarkets = useRefPropVModel(modelValue, 'binanceMarkets');
 const okxLocation = useRefPropVModel(modelValue, 'okxLocation');
 
@@ -120,11 +123,40 @@ const name = computed<string>({
   },
 });
 
+function refWithAsteriskOptional(comp: WritableComputedRef<string>): WritableComputedRef<string> {
+  return computed({
+    get() {
+      if (get(editMode) && !get(editFuturesKeys)) {
+        return asteriskPlaceholder;
+      }
+      return get(comp);
+    },
+    set(value: string) {
+      set(comp, value);
+    },
+  });
+}
+
+const krakenFuturesApiKeyComputed = refOptional(krakenFuturesApiKey, '');
+const krakenFuturesApiSecretComputed = refOptional(krakenFuturesApiSecret, '');
+
+const futuresSensitiveInputComponent = computed(() => {
+  if (!get(editMode) || get(editFuturesKeys)) {
+    return RuiRevealableTextField;
+  }
+  return RuiTextField;
+});
+
+const krakenFuturesApiKeyModel = refWithAsteriskOptional(krakenFuturesApiKeyComputed);
+const krakenFuturesApiSecretModel = refWithAsteriskOptional(krakenFuturesApiSecretComputed);
+
 useFormStateWatcher({
   apiKey,
   apiSecret,
   binanceMarkets,
   krakenAccountType,
+  krakenFuturesApiKey,
+  krakenFuturesApiSecret,
   name,
   okxLocation,
   passphrase,
@@ -144,6 +176,17 @@ function toggleEdit() {
       ...get(modelValue),
       apiKey: '',
       apiSecret: '',
+    });
+  }
+}
+
+function toggleFuturesEdit() {
+  set(editFuturesKeys, !get(editFuturesKeys));
+  if (!get(editFuturesKeys)) {
+    set(modelValue, {
+      ...get(modelValue),
+      krakenFuturesApiKey: '',
+      krakenFuturesApiSecret: '',
     });
   }
 }
@@ -183,6 +226,10 @@ const v$ = useVuelidate({
       requiredIf(logicAnd(sensitiveFieldEditable, requiresApiSecret)),
     ),
   },
+  krakenFuturesApiKey: {
+  },
+  krakenFuturesApiSecret: {
+  },
   binanceMarkets: {
     required: helpers.withMessage(
       t('exchange_keys_form.validation.non_empty'),
@@ -216,6 +263,8 @@ const v$ = useVuelidate({
 }, {
   apiKey,
   apiSecret,
+  krakenFuturesApiKey,
+  krakenFuturesApiSecret,
   binanceMarkets,
   name: nameProp,
   newName: newNameProp,
@@ -230,6 +279,8 @@ function onExchangeChange(exchange?: string) {
     apiSecret: '',
     binanceMarkets: undefined,
     krakenAccountType: name === 'kraken' ? 'starter' : undefined,
+    krakenFuturesApiKey: name === 'kraken' ? '' : undefined,
+    krakenFuturesApiSecret: name === 'kraken' ? '' : undefined,
     location: name,
     mode: get(modelValue, 'mode'),
     name: suggestedName(name),
@@ -416,6 +467,57 @@ defineExpose({
     >
       {{ t('exchange_keys_form.binance_markets_required') }}
     </RuiAlert>
+    <template v-if="isKraken">
+      <div
+        class="flex items-center gap-2 text-subtitle-2 pb-4"
+      >
+        {{ t('exchange_settings.inputs.kraken_futures_keys') }}
+        <RuiTooltip
+          v-if="editMode"
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
+        >
+          <template #activator>
+            <RuiButton
+              variant="text"
+              class="!p-2"
+              icon
+              @click="toggleFuturesEdit()"
+            >
+              <RuiIcon
+                size="20"
+                :name="!editFuturesKeys ? 'lu-pencil' : 'lu-x'"
+              />
+            </RuiButton>
+          </template>
+          {{
+            !editFuturesKeys ? t('exchange_keys_form.edit.activate_tooltip') : t('exchange_keys_form.edit.deactivate_tooltip')
+          }}
+        </RuiTooltip>
+      </div>
+      <Component
+        :is="futuresSensitiveInputComponent"
+        v-model.trim="krakenFuturesApiKeyModel"
+        variant="outlined"
+        color="primary"
+        :disabled="editMode && !editFuturesKeys"
+        :error-messages="toMessages(v$.krakenFuturesApiKey)"
+        data-cy="kraken-futures-api-key"
+        prepend-icon="lu-key"
+        label="Futures API Key"
+      />
+      <Component
+        :is="futuresSensitiveInputComponent"
+        v-model.trim="krakenFuturesApiSecretModel"
+        variant="outlined"
+        color="primary"
+        :disabled="editMode && !editFuturesKeys"
+        :error-messages="toMessages(v$.krakenFuturesApiSecret)"
+        data-cy="kraken-futures-api-secret"
+        prepend-icon="lu-lock-keyhole"
+        label="Futures API Secret"
+      />
+    </template>
 
     <BinancePairsSelector
       v-if="isBinance"

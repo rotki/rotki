@@ -2469,6 +2469,7 @@
       "experimental": "The integration for this exchange is experimental, and you may find some imperfections. Please let us know if you encounter any issues.",
       "id": "ID",
       "kraken_account": "Select the type of your Kraken account",
+      "kraken_futures_keys": "Futures Keys",
       "passphrase": "Passphrase",
       "private_key": "Private Key",
       "secret": "Secret",

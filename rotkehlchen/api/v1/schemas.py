@@ -1877,9 +1877,30 @@ class BinanceMarketsSchemaMixin(Schema):
                 'Please choose the trading pairs you want to monitor before adding the API key.',
                 field_name='binance_markets',
             )
+        if hasattr(super(), 'validate_schema'):
+            super().validate_schema(data, **_kwargs)  # type: ignore[misc]
 
 
-class ExchangesResourceEditSchema(BinanceMarketsSchemaMixin):
+class KrakenFutureKeysSchemaMixin(Schema):
+    """Additional logic for adding/editing Kraken Futures credentials"""
+    kraken_futures_api_key = ApiKeyField(load_default=None)
+    kraken_futures_api_secret = ApiSecretField(load_default=None)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        kraken_futures_api_key = data['kraken_futures_api_key']
+        kraken_futures_api_secret = data['kraken_futures_api_secret']
+        if (kraken_futures_api_key is None) ^ (kraken_futures_api_secret is None):
+            raise ValidationError(
+                'Both the Kraken Futures API Key and Secret must be provided.',
+            )
+
+
+class ExchangesResourceEditSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSchemaMixin):
     name = NonEmptyStringField(required=True)
     new_name = EmptyAsNoneStringField(load_default=None)
     api_key = ApiKeyField(load_default=None)
@@ -1889,7 +1910,7 @@ class ExchangesResourceEditSchema(BinanceMarketsSchemaMixin):
     okx_location = SerializableEnumField(enum_class=OkxLocation, load_default=None)
 
 
-class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin):
+class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSchemaMixin):
     name = NonEmptyStringField(required=True)
     api_key = ApiKeyField(required=True)
     api_secret = ApiSecretField(load_default=None)

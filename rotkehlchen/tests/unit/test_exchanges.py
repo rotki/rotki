@@ -135,6 +135,8 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
             api_secret=TEST_CREDENTIALS_2.api_secret,
             passphrase=TEST_CREDENTIALS_2.passphrase,
             kraken_account_type=None,
+            kraken_futures_api_key=None,
+            kraken_futures_api_secret=None,
             binance_selected_trade_pairs=None,
             okx_location=None,
         )
@@ -156,6 +158,8 @@ def test_change_credentials(rotkehlchen_api_server: APIServer) -> None:
             api_secret=TEST_CREDENTIALS_3.api_secret,
             passphrase=TEST_CREDENTIALS_3.passphrase,
             kraken_account_type=None,
+            kraken_futures_api_key=None,
+            kraken_futures_api_secret=None,
             binance_selected_trade_pairs=None,
             okx_location=None,
         )
