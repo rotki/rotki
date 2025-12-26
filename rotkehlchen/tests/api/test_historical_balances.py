@@ -22,6 +22,7 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
+from rotkehlchen.tasks.historical_balances import process_historical_balances
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -101,6 +102,13 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
             write_cursor=write_cursor,
             history=events,
         )
+
+    # Process events to populate event_metrics table
+    msg_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator
+    process_historical_balances(
+        database=db,
+        msg_aggregator=msg_aggregator,
+    )
 
 
 @pytest.mark.vcr(filter_query_parameters=['api_key'])

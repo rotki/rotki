@@ -32,6 +32,7 @@ class WSMessageType(StrEnum):
     DATABASE_UPLOAD_PROGRESS = auto()
     BINANCE_PAIRS_MISSING = auto()
     UNMATCHED_ASSET_MOVEMENTS = auto()
+    HISTORICAL_BALANCE_PROCESSING = auto()
 
 
 class ProgressUpdateSubType(StrEnum):
@@ -42,6 +43,7 @@ class ProgressUpdateSubType(StrEnum):
     MULTIPLE_PRICES_QUERY_STATUS = auto()
     STATS_PRICE_QUERY = auto()
     LIQUITY_STAKING_QUERY = auto()
+    HISTORICAL_BALANCE_PROCESSING = auto()
 
 
 class TransactionStatusStep(StrEnum):
