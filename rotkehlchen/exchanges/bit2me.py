@@ -934,25 +934,28 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 fee_amount = abs(origin_amount - amount) if origin_amount > ZERO else ZERO
             elif transaction_type == 'withdrawal':
                 event_type = HistoryEventType.WITHDRAWAL
-                # For withdrawals, use origin data
+                # For withdrawals, use destination amount as the actual withdrawn amount
+                # and calculate fee as the difference between origin and destination
                 if 'origin' in raw_movement and isinstance(raw_movement['origin'], dict):
                     # Nested format (newer API response)
                     origin = raw_movement['origin']
-                    asset_symbol = origin['currency']
-                    amount = deserialize_fval(origin['amount'])
                     destination = raw_movement.get('destination', {})
-                    address = destination.get('address')
+                    asset_symbol = origin['currency']
+                    origin_amount = deserialize_fval(origin['amount'])
                     destination_amount = deserialize_fval(destination.get('amount', '0'))
+                    address = destination.get('address')
                 else:
                     # Flat format (older API response)
                     asset_symbol = raw_movement['origin_currency']
-                    amount = deserialize_fval(raw_movement['origin_amount'])
-                    address = raw_movement.get('destination_address')
+                    origin_amount = deserialize_fval(raw_movement['origin_amount'])
                     destination_amount = deserialize_fval(
                         raw_movement.get('destination_amount', '0'),
                     )
+                    address = raw_movement.get('destination_address')
+                # amount is what actually arrives at destination, fee is the difference
+                amount = destination_amount if destination_amount > ZERO else origin_amount
                 fee_amount = (
-                    abs(amount - destination_amount) if destination_amount > ZERO else ZERO
+                    abs(origin_amount - destination_amount) if destination_amount > ZERO else ZERO
                 )
             else:
                 raise DeserializationError(
