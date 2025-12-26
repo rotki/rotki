@@ -19,6 +19,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
@@ -31,6 +32,7 @@ from rotkehlchen.history.events.structures.swap import (
 )
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
+from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -43,6 +45,7 @@ from rotkehlchen.types import (
     AssetAmount,
     ExchangeAuthCredentials,
     Location,
+    Price,
     Timestamp,
     TimestampMS,
 )
@@ -56,6 +59,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
 logger = logging.getLogger(__name__)
@@ -781,6 +785,44 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 f'Missing key in Bit2me trade: {e}. Raw trade: {raw_trade}',
             ) from e
 
+    def _store_historical_price(
+        self,
+        from_asset: AssetWithOracles,
+        to_asset: AssetWithOracles,
+        price: 'FVal',
+        timestamp: Timestamp,
+    ) -> None:
+        """Store a historical price from Bit2Me in the global database.
+
+        This allows rotki to use the actual exchange rate from the transaction
+        instead of relying on price oracles. Manual prices have priority over
+        oracle prices in rotki's price lookup.
+
+        Args:
+            from_asset: The base asset (e.g., BTC)
+            to_asset: The quote asset (e.g., EUR)
+            price: The exchange rate (e.g., 89831.698 for BTC/EUR)
+            timestamp: The timestamp of the transaction
+        """
+        try:
+            historical_price = HistoricalPrice(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                source=HistoricalPriceOracle.MANUAL,
+                timestamp=timestamp,
+                price=Price(price),
+            )
+            GlobalDBHandler.add_single_historical_price(historical_price)
+            log.debug(
+                f'Stored Bit2Me historical price: {from_asset} -> {to_asset} = {price} '
+                f'at {timestamp}',
+            )
+        except Exception as e:  # pylint: disable=broad-except
+            log.warning(
+                f'Failed to store Bit2Me historical price: {e}. '
+                f'Price oracle will be used instead.',
+            )
+
     def _deserialize_brokerage_trade(
         self,
         raw_transaction: dict[str, Any],
@@ -864,6 +906,16 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                     fee_amount = spend_amount - received_value_in_spend_currency
                     if fee_amount > ZERO:
                         fee = AssetAmount(asset=spend_asset, amount=fee_amount)
+
+                    # Store the historical price from Bit2Me as a manual price.
+                    # This allows rotki to use the actual exchange rate instead of oracles.
+                    # Rate is base/quote (e.g., BTC/EUR=89831.698 means 1 BTC = 89831.698 EUR)
+                    self._store_historical_price(
+                        from_asset=receive_asset,
+                        to_asset=spend_asset,
+                        price=rate_value,
+                        timestamp=ts_ms_to_sec(timestamp_ms),
+                    )
 
             # Create spend/receive tuples
             spend = AssetAmount(asset=spend_asset, amount=spend_amount)
