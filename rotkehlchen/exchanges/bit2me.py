@@ -790,6 +790,9 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         Brokerage transactions have type="transfer" and subtype="purchase".
         They represent direct crypto purchases with fiat or crypto-to-crypto swaps.
 
+        The fee is calculated as the difference between what was spent and
+        the value of what was received at the given exchange rate.
+
         Expected structure:
         {
             "id": "transaction_id",
@@ -802,7 +805,11 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             },
             "destination": {
                 "amount": "0.00122130",
-                "currency": "BTC"
+                "currency": "BTC",
+                "rate": {
+                    "value": "89831.698",
+                    "pair": {"base": "BTC", "quote": "EUR"}
+                }
             }
         }
 
@@ -844,13 +851,23 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             spend_asset = asset_from_bit2me(spend_symbol)
             receive_asset = asset_from_bit2me(receive_symbol)
 
+            # Calculate fee from the exchange rate if available.
+            # The fee is: spend_amount - (receive_amount * rate)
+            # Example: 101 EUR - (0.00111364 BTC * 89831.698 EUR/BTC) = 0.9595 EUR
+            fee: AssetAmount | None = None
+            dest_rate = destination.get('rate', {})
+            if dest_rate and dest_rate.get('value'):
+                rate_value = deserialize_fval(dest_rate['value'])
+                if rate_value > ZERO:
+                    # Calculate the value of received amount in spend currency
+                    received_value_in_spend_currency = receive_amount * rate_value
+                    fee_amount = spend_amount - received_value_in_spend_currency
+                    if fee_amount > ZERO:
+                        fee = AssetAmount(asset=spend_asset, amount=fee_amount)
+
             # Create spend/receive tuples
             spend = AssetAmount(asset=spend_asset, amount=spend_amount)
             receive = AssetAmount(asset=receive_asset, amount=receive_amount)
-
-            # Brokerage transactions typically include fees in the amounts
-            # (you pay X EUR and receive Y BTC, fee is built into the rate)
-            # So we don't add a separate fee event
 
             return create_swap_events(
                 spend=spend,
@@ -858,7 +875,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 timestamp=timestamp_ms,
                 location=self.location,
                 location_label=self.name,
-                fee=None,  # Fee is included in the exchange rate
+                fee=fee,  # Fee calculated from exchange rate
                 group_identifier=create_group_identifier_from_unique_id(self.location, trade_id),
             )
 

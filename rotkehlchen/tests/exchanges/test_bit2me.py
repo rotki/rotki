@@ -139,7 +139,7 @@ BIT2ME_TRANSACTIONS_RESPONSE = """{
       "method": "pocket",
       "status": "completed",
       "denomination": {
-        "amount": "100.00000000",
+        "amount": "101.00000000",
         "currency": "EUR"
       },
       "frequency": "punctual",
@@ -147,16 +147,24 @@ BIT2ME_TRANSACTIONS_RESPONSE = """{
       "origin": {
         "pocketName": "",
         "pocketId": "603177ce-7a00-40d6-adef-3670832c2a51",
-        "amount": "100.00000000",
+        "amount": "101.00000000",
         "currency": "EUR",
         "class": "pocket"
       },
       "destination": {
         "pocketName": "",
         "pocketId": "339b61c6-df74-409c-85a4-68c421da6382",
-        "amount": "0.00122130",
+        "amount": "0.00111364",
         "currency": "BTC",
-        "class": "pocket"
+        "class": "pocket",
+        "rate": {
+          "value": "89831.698000000000",
+          "extraDecimals": "4",
+          "pair": {
+            "base": "BTC",
+            "quote": "EUR"
+          }
+        }
       },
       "instantId": "390ab3d9-20c4-4087-a170-4a7ef51ab1a4"
     },
@@ -415,27 +423,36 @@ def test_bit2me_query_brokerage_trades(bit2me):
             end_ts=Timestamp(1800000000),
         )
 
-    # Should have swap events for the purchase (spend EUR, receive BTC)
-    assert len(trades) == 2  # spend + receive events
+    # Should have swap events for the purchase (spend EUR, receive BTC) + fee
+    assert len(trades) == 3  # spend + receive + fee events
 
-    # Find spend and receive events
+    # Find spend, receive, and fee events
     spend_event = next(
         (t for t in trades if t.event_subtype == HistoryEventSubType.SPEND), None,
     )
     receive_event = next(
         (t for t in trades if t.event_subtype == HistoryEventSubType.RECEIVE), None,
     )
+    fee_event = next(
+        (t for t in trades if t.event_subtype == HistoryEventSubType.FEE), None,
+    )
 
     assert spend_event is not None
     assert receive_event is not None
+    assert fee_event is not None
 
-    # Check spend (100 EUR)
+    # Check spend (101 EUR)
     assert spend_event.asset == A_EUR
-    assert spend_event.amount == FVal('100')
+    assert spend_event.amount == FVal('101')
 
-    # Check receive (0.00122130 BTC)
+    # Check receive (0.00111364 BTC)
     assert receive_event.asset == A_BTC
-    assert receive_event.amount == FVal('0.00122130')
+    assert receive_event.amount == FVal('0.00111364')
+
+    # Check fee: 101 EUR - (0.00111364 BTC * 89831.698 EUR/BTC) = ~0.9595 EUR
+    assert fee_event.asset == A_EUR
+    expected_fee = FVal('101') - (FVal('0.00111364') * FVal('89831.698'))
+    assert fee_event.amount == expected_fee
 
 
 def test_bit2me_query_history_events(bit2me):
