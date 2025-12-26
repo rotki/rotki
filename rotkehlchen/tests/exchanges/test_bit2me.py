@@ -396,9 +396,11 @@ def test_bit2me_query_deposits_withdrawals(bit2me):
     assert len(deposit_events) == 1  # deposit only (no fee for bank transfer)
 
     # Check withdrawal details
+    # The amount should be what arrives at destination (0.499), not what was debited
+    # from origin (0.5). The fee (0.001 ETH) is tracked separately
     withdrawal = next(e for e in withdrawal_events if e.event_subtype != HistoryEventSubType.FEE)
     assert withdrawal.asset == A_ETH
-    assert withdrawal.amount == FVal('0.5')
+    assert withdrawal.amount == FVal('0.499')
 
 
 def test_bit2me_query_brokerage_trades(bit2me):
