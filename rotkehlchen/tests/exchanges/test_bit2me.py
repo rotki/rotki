@@ -194,6 +194,66 @@ BIT2ME_TRANSACTIONS_RESPONSE = """{
   ]
 }"""
 
+BIT2ME_EARN_TRANSACTIONS_RESPONSE = """{
+  "total": 3,
+  "data": [
+    {
+      "id": "earn-deposit-btc-001",
+      "date": "2025-12-24T07:42:21.068Z",
+      "type": "withdrawal",
+      "subtype": "earn",
+      "status": "completed",
+      "origin": {
+        "pocketId": "339b61c6-df74-409c-85a4-68c421da6382",
+        "amount": "0.50000000",
+        "currency": "BTC",
+        "class": "pocket"
+      },
+      "destination": {
+        "amount": "0.50000000",
+        "currency": "BTC",
+        "class": "earn"
+      }
+    },
+    {
+      "id": "earn-withdrawal-btc-001",
+      "date": "2025-12-25T10:00:00.000Z",
+      "type": "deposit",
+      "subtype": "earn",
+      "status": "completed",
+      "origin": {
+        "amount": "0.10000000",
+        "currency": "BTC",
+        "class": "earn"
+      },
+      "destination": {
+        "pocketId": "339b61c6-df74-409c-85a4-68c421da6382",
+        "amount": "0.10000000",
+        "currency": "BTC",
+        "class": "pocket"
+      }
+    },
+    {
+      "id": "earn-deposit-eth-001",
+      "date": "2025-12-20T12:00:00.000Z",
+      "type": "withdrawal",
+      "subtype": "earn",
+      "status": "completed",
+      "origin": {
+        "pocketId": "d12d3a93-eda4-47a4-bdb6-f2168e918c54",
+        "amount": "1.00000000",
+        "currency": "ETH",
+        "class": "pocket"
+      },
+      "destination": {
+        "amount": "1.00000000",
+        "currency": "ETH",
+        "class": "earn"
+      }
+    }
+  ]
+}"""
+
 BIT2ME_TRADES_RESPONSE = """{
   "trades": []
 }"""
@@ -278,6 +338,37 @@ def test_bit2me_query_balances_unknown_asset(bit2me):
     assert len(balances) == 2
     assert A_EUR in balances
     assert A_ETH in balances
+
+
+def test_bit2me_query_balances_with_earn(bit2me):
+    """Test that EARN balances are included in the total balance.
+
+    EARN balances are calculated from earn transactions:
+    - withdrawal/earn with dest_class=earn = deposit TO earn (adds)
+    - deposit/earn with dest_class=pocket = withdrawal FROM earn (subtracts)
+    """
+
+    def mock_api_return(method, url, **kwargs):  # pylint: disable=unused-argument
+        if 'transaction' in url:
+            return MockResponse(200, BIT2ME_EARN_TRANSACTIONS_RESPONSE)
+        return MockResponse(200, BIT2ME_BALANCES_RESPONSE)
+
+    with patch.object(bit2me.session, 'request', side_effect=mock_api_return):
+        balances, msg = bit2me.query_balances()
+
+    assert msg == ''
+
+    # BTC: pocket (0.5 + 0.1 blocked) + earn (0.5 deposited - 0.1 withdrawn) = 1.0
+    assert A_BTC in balances
+    assert balances[A_BTC].amount == FVal('1.0')
+
+    # ETH: pocket (2.0) + earn (1.0 deposited) = 3.0
+    assert A_ETH in balances
+    assert balances[A_ETH].amount == FVal('3.0')
+
+    # EUR should still be just pocket balance
+    assert A_EUR in balances
+    assert balances[A_EUR].amount == FVal('1600.50')
 
 
 def test_bit2me_query_deposits_withdrawals(bit2me):

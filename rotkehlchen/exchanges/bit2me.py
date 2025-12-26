@@ -9,6 +9,7 @@ import requests
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_bit2me
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
@@ -54,7 +55,6 @@ from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
-    from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
@@ -250,7 +250,91 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                 )
                 continue
 
+        # Add EARN balances (staking positions)
+        earn_balances = self._query_earn_balances()
+        for asset, earn_balance in earn_balances.items():
+            if asset in assets_balance:
+                # Add to existing balance
+                assets_balance[asset] = Balance(
+                    amount=assets_balance[asset].amount + earn_balance.amount,
+                )
+            elif earn_balance.amount > ZERO:
+                assets_balance[asset] = earn_balance
+
         return assets_balance, ''
+
+    def _query_earn_balances(self) -> dict[AssetWithOracles, Balance]:
+        """Calculate EARN balances by summing earn transactions.
+
+        EARN balances are not directly queryable via API. We calculate them by:
+        - withdrawal/earn (dest_class=earn) = deposit TO earn (adds to balance)
+        - deposit/earn (dest_class=pocket) = withdrawal FROM earn (subtracts from balance)
+        """
+        # Use a dict to accumulate amounts by currency symbol
+        earn_amounts: dict = {}  # currency -> FVal amount
+
+        try:
+            options = {'limit': API_TRANSACTIONS_MAX_LIMIT}
+            response = self._api_query('transactions', options=options)
+        except RemoteError as e:
+            log.warning(f'Failed to query Bit2me transactions for EARN balances: {e!s}')
+            return {}
+
+        try:
+            response_data = jsonloads_dict(response.text)
+        except JSONDecodeError:
+            log.warning('Bit2me returned invalid JSON for EARN balance query')
+            return {}
+
+        transactions = response_data.get('data', [])
+
+        for tx in transactions:
+            try:
+                subtype = tx.get('subtype', '')
+                if subtype != 'earn':
+                    continue
+
+                tx_type = tx.get('type', '')
+                destination = tx.get('destination', {})
+                origin = tx.get('origin', {})
+                dest_class = destination.get('class', '')
+
+                # Determine if this is a deposit TO earn or withdrawal FROM earn
+                if tx_type == 'withdrawal' and dest_class == 'earn':
+                    # Money going INTO earn (we consider origin amount and currency)
+                    amount_str = origin.get('amount', '0')
+                    currency = origin.get('currency', '')
+                    amount = deserialize_fval(amount_str, 'earn_amount', 'bit2me')
+                elif tx_type == 'deposit' and dest_class == 'pocket':
+                    # Money coming OUT of earn (negative)
+                    amount_str = destination.get('amount', '0')
+                    currency = destination.get('currency', '')
+                    amount = -deserialize_fval(amount_str, 'earn_amount', 'bit2me')
+                else:
+                    continue
+
+                if not currency:
+                    continue
+
+                if currency not in earn_amounts:
+                    earn_amounts[currency] = ZERO
+                earn_amounts[currency] += amount
+
+            except (KeyError, DeserializationError) as e:
+                log.debug(f'Skipping earn transaction due to error: {e!s}')
+                continue
+
+        # Convert to Balance objects, only include positive balances
+        result: dict[AssetWithOracles, Balance] = {}
+        for currency, amount in earn_amounts.items():
+            if amount > ZERO:
+                try:
+                    asset = asset_from_bit2me(currency)
+                    result[asset] = Balance(amount=amount)
+                except (UnknownAsset, UnsupportedAsset):
+                    continue
+
+        return result
 
     def query_online_trade_history(
         self,
