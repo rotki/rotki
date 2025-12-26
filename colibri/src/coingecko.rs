@@ -23,8 +23,7 @@ impl Coingecko {
     }
 
     /// Queries the asset image of the given asset id from coingecko
-    /// and if it finds it then it saves it in the proper directory
-    /// and returns its contents
+    /// and returns its contents if found
     pub async fn query_asset_image(&self, asset_id: &str) -> Option<Bytes> {
         let coingecko_id = match self.globaldb.get_coingecko_id(asset_id).await {
             Err(e) => {
