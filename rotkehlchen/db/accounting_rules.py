@@ -540,15 +540,19 @@ def _events_to_consume(
         cache_identifier = event.get_accounting_rule_key()
     else:  # if no event-specific rule found, try type-based rules
         queries = [(  # 2. Type-based rule with counterparty
-            'SELECT accounting_treatment FROM accounting_rules '
-            'WHERE type=? AND subtype=? AND counterparty=? AND is_event_specific=0',
+            (
+                'SELECT accounting_treatment FROM accounting_rules '
+                'WHERE type=? AND subtype=? AND counterparty=? AND is_event_specific=0'
+            ),
             (event_type, event_subtype, NO_ACCOUNTING_COUNTERPARTY if counterparty is None else counterparty),  # noqa: E501
         )]
 
         if counterparty is not None:
             queries.append((  # 3. Type-based rule without counterparty
-                'SELECT accounting_treatment FROM accounting_rules '
-                'WHERE type=? AND subtype=? AND counterparty=? AND is_event_specific=0',
+                (
+                    'SELECT accounting_treatment FROM accounting_rules '
+                    'WHERE type=? AND subtype=? AND counterparty=? AND is_event_specific=0'
+                ),
                 (event_type, event_subtype, NO_ACCOUNTING_COUNTERPARTY),
             ))
 

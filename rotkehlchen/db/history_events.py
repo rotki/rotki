@@ -556,8 +556,10 @@ class DBHistoryEvents:
                 order_by = ''
 
             return (
-                f'{prefix} FROM (SELECT {base_suffix} WHERE group_identifier IN '
-                f'(SELECT group_identifier FROM (SELECT {suffix}) {filters}) {order_by})',
+                (
+                    f'{prefix} FROM (SELECT {base_suffix} WHERE group_identifier IN '
+                    f'(SELECT group_identifier FROM (SELECT {suffix}) {filters}) {order_by})'
+                ),
                 limit + query_bindings,
             )
 

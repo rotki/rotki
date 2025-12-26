@@ -189,7 +189,7 @@ def test_cryptocompare_asset_support(cryptocompare):
         'eip155:43114/erc20:0xeA6887e4a9CdA1B77E70129E5Fba830CdB5cdDef',  # Impermax but another IMX in CC  # noqa: E501
         strethaddress_to_identifier('0x47481c1b44F2A1c0135c45AA402CE4F4dDE4D30e'),  # Meetple but another MPT in CC  # noqa: E501
         'eip155:56/erc20:0xE4FAE3Faa8300810C835970b9187c268f55D998F',  # catecoin but another CATE in CC  # noqa: E501
-        'eip155:56/erc20:0x20de22029ab63cf9A7Cf5fEB2b737Ca1eE4c82A6'  # tranchess but another CHESS in CC  # noqa: E501
+        'eip155:56/erc20:0x20de22029ab63cf9A7Cf5fEB2b737Ca1eE4c82A6',  # tranchess but another CHESS in CC  # noqa: E501
         'BNC',  # Bifrost but another BNC in CC
         'eip155:56/erc20:0x8C851d1a123Ff703BD1f9dabe631b69902Df5f97',  # BinaryX but another BNX in CC  # noqa: E501
         'eip155:56/erc20:0x23CE9e926048273eF83be0A3A8Ba9Cb6D45cd978',  # Mines of Dalarnia but a different DAR in CC  # noqa: E501

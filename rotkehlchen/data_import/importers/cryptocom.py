@@ -163,10 +163,8 @@ class CryptocomImporter(BaseExchangeImporter):
             'airdrop_to_exchange_transfer',
             'mco_stake_reward',
             'crypto_payment_refund',
-            'pay_checkout_reward'
-            'transfer_cashback',
-            'rewards_platform_deposit_credited',
             'pay_checkout_reward',
+            'rewards_platform_deposit_credited',
             'transfer_cashback',
             'supercharger_reward_to_app_credited',
             'referral_card_cashback',

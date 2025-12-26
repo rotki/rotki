@@ -66,7 +66,7 @@ def attempt_connect_test_nodes(
         except (requests.exceptions.RequestException, SubstrateRequestException) as e:
             message = (
                 f'Substrate tests failed to connect to {node} node at '
-                f'endpoint: {node.endpoint()}. Connection error: {e!s}.',
+                f'endpoint: {node.endpoint()}. Connection error: {e!s}.'
             )
             log.error(message)
             return node, None

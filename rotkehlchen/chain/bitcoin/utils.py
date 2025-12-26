@@ -153,8 +153,7 @@ def is_valid_derivation_path(path: Any) -> tuple[bool, str]:
         if "'" in node:
             return (
                 False,
-                'Derivation paths accepted by rotki should have no hardened '
-                "nodes. Meaning no nodes with a '",
+                "Derivation paths accepted by rotki should have no hardened nodes. Meaning no nodes with a '",  # noqa: E501
             )
 
         try:

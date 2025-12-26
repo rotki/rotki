@@ -409,7 +409,7 @@ def test_user_creation_errors(
             ),
             contained_in_msg=(
                 'Data dir for user john/doe is not in the users directory. '
-                'Usernames may not contain path separators.',
+                'Usernames may not contain path separators.'
             ),
             status_code=HTTPStatus.CONFLICT,
         )
