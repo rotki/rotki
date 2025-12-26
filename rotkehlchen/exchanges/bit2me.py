@@ -164,8 +164,8 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         """Query all history events from Bit2me.
 
         This method combines trade history, asset movements (deposits/withdrawals),
-        brokerage transactions (purchases/sales), and EARN (staking) movements
-        into a single list of history events that will be stored in the database.
+        brokerage transactions (purchases/sales), EARN (staking) movements,
+        and airdrops into a single list of history events.
         """
         events: list[HistoryBaseEntry] = []
 
@@ -180,6 +180,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         # Get EARN (staking) movements from /v2/wallet/transaction (subtype=earn)
         earn_movements = self._query_earn_movements(start_ts, end_ts)
         events.extend(earn_movements)
+
+        # Get airdrops from /v2/wallet/transaction (type=transfer, subtype=social-pay)
+        airdrops = self._query_airdrops(start_ts, end_ts)
+        events.extend(airdrops)
 
         # Get exchange trades from /v1/trading/trade
         trades, _ = self.query_online_trade_history(start_ts, end_ts)
@@ -987,6 +991,149 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         log.debug(f'Found {len(earn_events)} EARN movements from {self.name}')
         return earn_events
 
+    def _deserialize_airdrop(
+        self,
+        raw_transaction: dict[str, Any],
+    ) -> HistoryEvent | None:
+        """Deserialize an airdrop/gift (social-pay) from Bit2Me API response.
+
+        Social-pay transactions are gifts/airdrops sent via email from Bit2Me.
+        They have type="transfer", subtype="social-pay", and origin.class="email".
+
+        Args:
+            raw_transaction: Raw transaction data from API
+
+        Returns:
+            HistoryEvent for the airdrop or None if not valid
+        """
+        try:
+            subtype = raw_transaction.get('subtype', '')
+            if subtype != 'social-pay':
+                return None
+
+            # Get destination info (where the airdrop lands)
+            destination = raw_transaction.get('destination', {})
+            origin = raw_transaction.get('origin', {})
+
+            # Get amount and currency from destination
+            asset_symbol = destination.get('currency', origin.get('currency', ''))
+            amount = deserialize_fval(
+                destination.get('amount', origin.get('amount', '0')),
+            )
+
+            if amount <= ZERO:
+                return None
+
+            # Parse timestamp from ISO format
+            timestamp_str = raw_transaction['date']
+            from datetime import datetime
+
+            timestamp_str_clean = (
+                timestamp_str[:-1] + '+00:00' if timestamp_str.endswith('Z') else timestamp_str
+            )
+            dt = datetime.fromisoformat(timestamp_str_clean)
+            timestamp_ms = TimestampMS(int(dt.timestamp() * 1000))
+
+            # Resolve asset
+            asset = asset_from_bit2me(asset_symbol)
+
+            # Get sender info for notes
+            sender = origin.get('fullName', 'Bit2Me')
+            method = raw_transaction.get('method', 'email')
+
+            # Create airdrop event
+            transaction_id = raw_transaction['id']
+            notes = f'Airdrop from {sender}: {amount} {asset_symbol} via {method}'
+
+            return HistoryEvent(
+                group_identifier=create_group_identifier_from_unique_id(
+                    self.location, transaction_id,
+                ),
+                sequence_index=0,
+                timestamp=timestamp_ms,
+                location=self.location,
+                location_label=self.name,
+                asset=asset,
+                amount=amount,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.AIRDROP,
+                notes=notes,
+                extra_data={'counterparty': 'bit2me'},
+            )
+
+        except (KeyError, DeserializationError, UnknownAsset, UnsupportedAsset) as e:
+            log.warning(f'Failed to deserialize airdrop: {e}. Transaction: {raw_transaction}')
+            return None
+
+    def _query_airdrops(
+        self,
+        start_ts: Timestamp,
+        end_ts: Timestamp,
+    ) -> list[HistoryEvent]:
+        """Query and process airdrops/gifts (social-pay) from Bit2Me.
+
+        Returns:
+            List of HistoryEvent representing airdrops received
+        """
+        log.debug(
+            f'Querying {self.name} airdrops',
+            start_ts=start_ts,
+            end_ts=end_ts,
+        )
+
+        airdrop_events: list[HistoryEvent] = []
+        options = {'limit': API_TRANSACTIONS_MAX_LIMIT}
+
+        try:
+            response = self._api_query('transactions', options=options)
+        except RemoteError as e:
+            log.error(f'Failed to query Bit2Me transactions for airdrops: {e}')
+            return airdrop_events
+
+        try:
+            response_data = jsonloads_dict(response.text)
+        except JSONDecodeError as e:
+            log.error(f'{self.name} returned invalid JSON for airdrops: {e}')
+            return airdrop_events
+
+        # Extract transactions list
+        if isinstance(response_data, dict) and 'data' in response_data:
+            transactions_list = response_data['data']
+        elif isinstance(response_data, list):
+            transactions_list = response_data
+        else:
+            log.error(f'Unexpected Bit2me transactions response format: {response_data}')
+            return airdrop_events
+
+        for raw_transaction in transactions_list:
+            try:
+                transaction_type = raw_transaction.get('type', '')
+                subtype = raw_transaction.get('subtype', '')
+                if transaction_type != 'transfer' or subtype != 'social-pay':
+                    continue
+
+                status = raw_transaction.get('status', '')
+                if status != 'completed':
+                    continue
+
+                airdrop_event = self._deserialize_airdrop(raw_transaction)
+                if airdrop_event is None:
+                    continue
+
+                # Filter by time range
+                timestamp = ts_ms_to_sec(airdrop_event.timestamp)
+                if timestamp < start_ts or timestamp > end_ts:
+                    continue
+
+                airdrop_events.append(airdrop_event)
+
+            except (DeserializationError, UnknownAsset, UnsupportedAsset) as e:
+                log.warning(f'Failed to process airdrop transaction: {e}')
+                continue
+
+        log.debug(f'Found {len(airdrop_events)} airdrops from {self.name}')
+        return airdrop_events
+
     def _deserialize_brokerage_trade(
         self,
         raw_transaction: dict[str, Any],
@@ -1109,11 +1256,12 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         Bit2me transaction types:
         - deposit: Incoming funds (blockchain, bank-transfer, pocket)
         - withdrawal: Outgoing funds (blockchain, pocket)
-        - transfer: Can be internal exchange, purchases, or social-pay (gifts)
+        - transfer: Can be internal exchange, purchases, or social-pay (airdrops)
 
-        Transfer subtypes handled specially:
-        - purchase: Brokerage buy/sell (handled as trades in _deserialize_brokerage_trade)
-        - social-pay: Gifts received (handled as deposits)
+        Transfer subtypes handled elsewhere:
+        - purchase: Brokerage buy/sell (handled by _deserialize_brokerage_trade)
+        - social-pay: Airdrops/gifts (handled by _deserialize_airdrop)
+        - earn: Staking movements (handled by _deserialize_earn_movement)
         - Other transfers: Ignored (internal pocket-to-pocket)
 
         Args:
@@ -1138,8 +1286,8 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                     # Purchase/sale transactions are handled as trades, not movements
                     return None
                 elif subtype == 'social-pay':
-                    # Social-pay (gifts) should be treated as deposits
-                    transaction_type = 'deposit'
+                    # Social-pay (airdrops/gifts) are handled by _deserialize_airdrop
+                    return None
                 else:
                     # Skip other internal transfers (pocket to pocket within Bit2me)
                     return None
