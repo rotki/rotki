@@ -20,6 +20,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import MarginPosition
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
 from rotkehlchen.exchanges.utils import SignatureGeneratorMixin
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.history.events.structures.asset_movement import (
@@ -254,7 +255,20 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                     )
                     continue
 
-                assets_balance[asset] = Balance(amount=total_amount)
+                # Get USD price for the asset
+                try:
+                    usd_price = Inquirer.find_usd_price(asset)
+                except RemoteError as e:
+                    self.msg_aggregator.add_error(
+                        f'Error processing Bit2me balance entry for {asset_symbol} due to '
+                        f'inability to query USD price: {e!s}. Skipping balance entry',
+                    )
+                    continue
+
+                assets_balance[asset] = Balance(
+                    amount=total_amount,
+                    usd_value=total_amount * usd_price,
+                )
 
             except DeserializationError as e:
                 msg = f'Error processing Bit2me balance entry {balance_entry}. {e!s}'
@@ -268,9 +282,12 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
         earn_balances = self._query_earn_balances()
         for asset, earn_balance in earn_balances.items():
             if asset in assets_balance:
-                # Add to existing balance
+                # Add to existing balance - combine amounts and USD values
+                new_amount = assets_balance[asset].amount + earn_balance.amount
+                new_usd_value = assets_balance[asset].usd_value + earn_balance.usd_value
                 assets_balance[asset] = Balance(
-                    amount=assets_balance[asset].amount + earn_balance.amount,
+                    amount=new_amount,
+                    usd_value=new_usd_value,
                 )
             elif earn_balance.amount > ZERO:
                 assets_balance[asset] = earn_balance
@@ -344,7 +361,13 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             if amount > ZERO:
                 try:
                     asset = asset_from_bit2me(currency)
-                    result[asset] = Balance(amount=amount)
+                    # Get USD price for the asset
+                    try:
+                        usd_price = Inquirer.find_usd_price(asset)
+                    except RemoteError:
+                        log.debug(f'Could not get USD price for EARN asset {currency}')
+                        usd_price = ZERO
+                    result[asset] = Balance(amount=amount, usd_value=amount * usd_price)
                 except (UnknownAsset, UnsupportedAsset):
                     continue
 
