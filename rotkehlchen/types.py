@@ -790,6 +790,7 @@ class Location(DBCharEnumMixIn):
     BINANCE_SC = 54  # on-chain Binance Smart Chain events
     SOLANA = 55
     AVALANCHE = 56  # on-chain Avalanche events
+    BIT2ME = 57
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
