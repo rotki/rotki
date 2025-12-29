@@ -2435,6 +2435,7 @@
     },
     "region": "Region",
     "validation": {
+      "futures_both_required": "Both Futures API Key and Secret must be provided together.",
       "non_empty": "This field cannot be empty."
     },
     "waiting_time_warning": "If you have just created an API key from this exchange for use in rotki keep in mind that it may take up to few hours for the key to be active."
@@ -2467,6 +2468,8 @@
       "api_key_name": "API Key Name",
       "api_secret": "API Secret",
       "experimental": "The integration for this exchange is experimental, and you may find some imperfections. Please let us know if you encounter any issues.",
+      "futures_api_key": "Futures API Key",
+      "futures_api_secret": "Futures API Secret",
       "id": "ID",
       "kraken_account": "Select the type of your Kraken account",
       "kraken_futures_keys": "Futures Keys",

@@ -85,10 +85,10 @@ const apiSecret = useRefPropVModel(modelValue, 'apiSecret', {
 
 const asteriskPlaceholder = '*'.repeat(30);
 
-function refWithAsterisk(comp: WritableComputedRef<string>): WritableComputedRef<string> {
+function createRefWithAsterisk(comp: WritableComputedRef<string>, editFlag: Ref<boolean>): WritableComputedRef<string> {
   return computed({
     get() {
-      if (get(editMode) && !get(editKeys)) {
+      if (get(editMode) && !get(editFlag)) {
         return asteriskPlaceholder;
       }
       return get(comp);
@@ -99,8 +99,18 @@ function refWithAsterisk(comp: WritableComputedRef<string>): WritableComputedRef
   });
 }
 
-const apiKeyModel = refWithAsterisk(apiKey);
-const apiSecretModel = refWithAsterisk(apiSecret);
+function createSensitiveInputComponent(editFlag: Ref<boolean>) {
+  return computed(() => {
+    if (!get(editMode) || get(editFlag)) {
+      return RuiRevealableTextField;
+    }
+    return RuiTextField;
+  });
+}
+
+const apiKeyModel = createRefWithAsterisk(apiKey, editKeys);
+const apiSecretModel = createRefWithAsterisk(apiSecret, editKeys);
+const sensitiveInputComponent = createSensitiveInputComponent(editKeys);
 
 const passphrase = useRefPropVModel(modelValue, 'passphrase');
 const krakenAccountType = useRefPropVModel(modelValue, 'krakenAccountType');
@@ -123,32 +133,12 @@ const name = computed<string>({
   },
 });
 
-function refWithAsteriskOptional(comp: WritableComputedRef<string>): WritableComputedRef<string> {
-  return computed({
-    get() {
-      if (get(editMode) && !get(editFuturesKeys)) {
-        return asteriskPlaceholder;
-      }
-      return get(comp);
-    },
-    set(value: string) {
-      set(comp, value);
-    },
-  });
-}
-
 const krakenFuturesApiKeyComputed = refOptional(krakenFuturesApiKey, '');
 const krakenFuturesApiSecretComputed = refOptional(krakenFuturesApiSecret, '');
 
-const futuresSensitiveInputComponent = computed(() => {
-  if (!get(editMode) || get(editFuturesKeys)) {
-    return RuiRevealableTextField;
-  }
-  return RuiTextField;
-});
-
-const krakenFuturesApiKeyModel = refWithAsteriskOptional(krakenFuturesApiKeyComputed);
-const krakenFuturesApiSecretModel = refWithAsteriskOptional(krakenFuturesApiSecretComputed);
+const krakenFuturesApiKeyModel = createRefWithAsterisk(krakenFuturesApiKeyComputed, editFuturesKeys);
+const krakenFuturesApiSecretModel = createRefWithAsterisk(krakenFuturesApiSecretComputed, editFuturesKeys);
+const futuresSensitiveInputComponent = createSensitiveInputComponent(editFuturesKeys);
 
 useFormStateWatcher({
   apiKey,
@@ -212,6 +202,9 @@ const okxLocations = OkxLocation.options.map((item) => {
 });
 
 const sensitiveFieldEditable = logicOr(logicNot(editMode), editKeys);
+const futuresFieldEditable = logicOr(logicNot(editMode), editFuturesKeys);
+const hasFuturesApiKey = computed<boolean>(() => !!get(krakenFuturesApiKey));
+const hasFuturesApiSecret = computed<boolean>(() => !!get(krakenFuturesApiSecret));
 
 const v$ = useVuelidate({
   apiKey: {
@@ -227,8 +220,16 @@ const v$ = useVuelidate({
     ),
   },
   krakenFuturesApiKey: {
+    required: helpers.withMessage(
+      t('exchange_keys_form.validation.futures_both_required'),
+      requiredIf(logicAnd(futuresFieldEditable, hasFuturesApiSecret)),
+    ),
   },
   krakenFuturesApiSecret: {
+    required: helpers.withMessage(
+      t('exchange_keys_form.validation.futures_both_required'),
+      requiredIf(logicAnd(futuresFieldEditable, hasFuturesApiKey)),
+    ),
   },
   binanceMarkets: {
     required: helpers.withMessage(
@@ -274,13 +275,15 @@ const v$ = useVuelidate({
 
 function onExchangeChange(exchange?: string) {
   const name = exchange ?? '';
+  const isKraken = name === 'kraken';
+
   set(modelValue, {
     apiKey: '',
     apiSecret: '',
     binanceMarkets: undefined,
-    krakenAccountType: name === 'kraken' ? 'starter' : undefined,
-    krakenFuturesApiKey: name === 'kraken' ? '' : undefined,
-    krakenFuturesApiSecret: name === 'kraken' ? '' : undefined,
+    krakenAccountType: isKraken ? 'starter' : undefined,
+    krakenFuturesApiKey: isKraken ? '' : undefined,
+    krakenFuturesApiSecret: isKraken ? '' : undefined,
     location: name,
     mode: get(modelValue, 'mode'),
     name: suggestedName(name),
@@ -305,13 +308,6 @@ onMounted(() => {
     ...model,
     name: suggestedName(model.location),
   });
-});
-
-const sensitiveInputComponent = computed(() => {
-  if (!get(editMode) || get(editKeys)) {
-    return RuiRevealableTextField;
-  }
-  return RuiTextField;
 });
 
 defineExpose({
@@ -504,7 +500,7 @@ defineExpose({
         :error-messages="toMessages(v$.krakenFuturesApiKey)"
         data-cy="kraken-futures-api-key"
         prepend-icon="lu-key"
-        label="Futures API Key"
+        :label="t('exchange_settings.inputs.futures_api_key')"
       />
       <Component
         :is="futuresSensitiveInputComponent"
@@ -515,7 +511,7 @@ defineExpose({
         :error-messages="toMessages(v$.krakenFuturesApiSecret)"
         data-cy="kraken-futures-api-secret"
         prepend-icon="lu-lock-keyhole"
-        label="Futures API Secret"
+        :label="t('exchange_settings.inputs.futures_api_secret')"
       />
     </template>
 
