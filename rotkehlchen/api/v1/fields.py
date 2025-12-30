@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Mapping, Sequence
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Generic, Literal
+from typing import Any, Generic, Literal, TypeVar
 
 import webargs
 from eth_utils import to_checksum_address
@@ -82,10 +82,22 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _validate_include_exclude_dict(value: dict[str, Any]) -> tuple[Any, Literal['IN', 'NOT IN']]:
-    """Validate and extract values and operator from an include/exclude dict.
+def _get_include_exclude_operator(
+        is_single_value: bool,
+        behaviour: Literal['include', 'exclude'] = 'include',
+) -> Literal['IN', 'NOT IN', '=', '!=']:
+    """Get the operator to use for include/exclude filtering by the specified behaviour and
+    whether the field is single or multi value."""
+    if is_single_value:
+        return '=' if behaviour == 'include' else '!='
+    else:
+        return 'IN' if behaviour == 'include' else 'NOT IN'
 
-    Returns a tuple of (raw_values, operator).
+
+def _validate_include_exclude_dict(
+        value: dict[str, Any],
+) -> tuple[Any, Literal['include', 'exclude']]:
+    """Validate an include/exclude dict, returning a tuple of (raw_values, behavior).
     Raises ValidationError if the dict is invalid.
     """
     if 'values' not in value:
@@ -103,35 +115,7 @@ def _validate_include_exclude_dict(value: dict[str, Any]) -> tuple[Any, Literal[
             field_name='behaviour',
         )
 
-    operator: Literal['IN', 'NOT IN'] = 'IN' if behaviour == 'include' else 'NOT IN'
-    return values, operator
-
-
-def _validate_include_exclude_single_dict(
-        value: dict[str, Any],
-) -> tuple[Any, Literal['=', '!=']]:
-    """Validate and extract value and operator from an include/exclude dict for single values.
-
-    Returns a tuple of (raw_value, operator).
-    Raises ValidationError if the dict is invalid.
-    """
-    if 'values' not in value:
-        raise ValidationError(message="'values' key is missing.", field_name='values')
-
-    if 'behaviour' not in value:
-        value['behaviour'] = 'include'
-
-    single_value = value['values']
-    behaviour = value['behaviour']
-
-    if behaviour not in {'include', 'exclude'}:
-        raise ValidationError(
-            message="Behaviour must be either 'include' or 'exclude'.",
-            field_name='behaviour',
-        )
-
-    operator: Literal['=', '!='] = '=' if behaviour == 'include' else '!='
-    return single_value, operator
+    return values, behaviour
 
 
 def _serialize_value_to_string(v: Any) -> str:
@@ -143,8 +127,13 @@ def _serialize_value_to_string(v: Any) -> str:
     return str(v)
 
 
-class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):
-    """ A field that accepts an object like the following and deserializes it to the proper types.
+T_FilterData = TypeVar('T_FilterData')
+T_OperatorType = TypeVar('T_OperatorType', bound=Literal['IN', 'NOT IN', '=', '!='])
+
+
+class BaseIncludeExcludeField(fields.Field[T_FilterData], ABC, Generic[T_FilterData, T_OperatorType]):  # noqa: E501
+    """Base class for include/exclude fields with common validation logic.
+    It accepts an object like the following and deserializes it to the proper types.
     {
         "values": [val1, val2, val3],
         "behaviour": "exclude"
@@ -155,190 +144,115 @@ class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):
     """
     def __init__(
             self,
-            values_field: 'SerializableEnumField',
-            *args: Any,
+            filter_data_cls: type[T_FilterData],
+            is_single_value_field: bool = False,
             **kwargs: Any,
     ) -> None:
-        super().__init__(*args, **kwargs)
-        self.values_field = values_field
+        self.filter_data_cls = filter_data_cls
+        self.is_single_value_field = is_single_value_field
+        super().__init__(**kwargs)
+
+    @abstractmethod
+    def _deserialize_values(self, value: Any) -> Any:
+        """Deserialize the values according to the field type."""
 
     def _deserialize(
             self,
-            value: dict[str, list | str],
+            value: dict[str, Any] | list | str,
             attr: str | None,
             data: Any,
             **kwargs: Any,
-    ) -> IncludeExcludeFilterData:
-        values, operator = _validate_include_exclude_dict(value)
+    ) -> T_FilterData:
+        if not isinstance(value, dict):  # backward compatible - treat non-dict as `include` value
+            raw_value = value
+            behavior: Literal['include', 'exclude'] = 'include'
+        else:
+            raw_value, behavior = _validate_include_exclude_dict(value)
 
         try:
-            deserialized_values = DelimitedOrNormalList(self.values_field).deserialize(values)
+            deserialized = self._deserialize_values(raw_value)
         except DeserializationError as e:
             raise ValidationError(message=str(e), field_name='values') from e
 
-        return IncludeExcludeFilterData(
-            values=deserialized_values,  # it should be a history event
-            operator=operator,
-        )
+        return self.filter_data_cls(deserialized, _get_include_exclude_operator(  # type: ignore[call-arg]
+            is_single_value=self.is_single_value_field,
+            behaviour=behavior,
+        ))
 
 
-class IncludeExcludeStringListField(fields.Field[IncludeExcludeStringFilterData]):
-    """A field that accepts an object with string values and include/exclude behaviour.
-    {
-        "values": ["val1", "val2", "val3"],
-        "behaviour": "exclude"
-    }
-    Also accepts the old format (just a list) for backward compatibility.
-    """
+class IncludeExcludeListField(BaseIncludeExcludeField[IncludeExcludeFilterData, Literal['IN', 'NOT IN']]):  # noqa: E501
+    """A field for enum list values with include/exclude behaviour."""
+
+    def __init__(
+            self,
+            values_field: 'SerializableEnumField',
+            **kwargs: Any,
+    ) -> None:
+        super().__init__(filter_data_cls=IncludeExcludeFilterData, **kwargs)
+        self.values_field = values_field
+
+    def _deserialize_values(self, value: Any) -> list:
+        return DelimitedOrNormalList(self.values_field).deserialize(value)
+
+
+class IncludeExcludeStringListField(BaseIncludeExcludeField[IncludeExcludeStringFilterData, Literal['IN', 'NOT IN']]):  # noqa: E501
+    """A field for string list values with include/exclude behaviour."""
+
     def __init__(
             self,
             values_field: fields.Field,
-            *args: Any,
             **kwargs: Any,
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(filter_data_cls=IncludeExcludeStringFilterData, **kwargs)
         self.values_field = values_field
 
-    def _deserialize(
-            self,
-            value: dict[str, list | str] | list | str,
-            attr: str | None,
-            data: Any,
-            **kwargs: Any,
-    ) -> IncludeExcludeStringFilterData:
-        # Handle backward compatibility: if value is just a list/string, treat as 'include'
-        if not isinstance(value, dict):
-            try:
-                deserialized_values: list[Any] = DelimitedOrNormalList(self.values_field).deserialize(value)  # noqa: E501
-            except DeserializationError as e:
-                raise ValidationError(message=str(e), field_name='values') from e
-            filtered_values: list[str] = [
-                _serialize_value_to_string(v) for v in deserialized_values
-            ]
-            return IncludeExcludeStringFilterData(values=filtered_values, operator='IN')
-
-        values, operator = _validate_include_exclude_dict(value)
-
-        try:
-            deserialized_values = DelimitedOrNormalList(self.values_field).deserialize(values)
-        except DeserializationError as e:
-            raise ValidationError(message=str(e), field_name='values') from e
-
-        filtered_values = [_serialize_value_to_string(v) for v in deserialized_values]
-        return IncludeExcludeStringFilterData(values=filtered_values, operator=operator)
+    def _deserialize_values(self, value: Any) -> list[str]:
+        deserialized: list[Any] = DelimitedOrNormalList(self.values_field).deserialize(value)
+        return [_serialize_value_to_string(v) for v in deserialized]
 
 
-class IncludeExcludeIntegerListField(fields.Field[IncludeExcludeIntegerFilterData]):
-    """A field that accepts an object with integer values and include/exclude behaviour.
-    {
-        "values": [1, 2, 3],
-        "behaviour": "exclude"
-    }
-    Also accepts the old format (just a list) for backward compatibility.
-    """
-    def _deserialize(
-            self,
-            value: dict[str, list | str] | list | str,
-            attr: str | None,
-            data: Any,
-            **kwargs: Any,
-    ) -> IncludeExcludeIntegerFilterData:
-        # Handle backward compatibility: if value is just a list/string, treat as 'include'
-        if not isinstance(value, dict):
-            try:
-                deserialized_values: list[Any] = DelimitedOrNormalList(fields.Integer()).deserialize(value)  # noqa: E501
-            except DeserializationError as e:
-                raise ValidationError(message=str(e), field_name='values') from e
-            filtered_values: list[int] = [v for v in deserialized_values if v is not None]
-            return IncludeExcludeIntegerFilterData(values=filtered_values, operator='IN')
+class IncludeExcludeIntegerListField(BaseIncludeExcludeField[IncludeExcludeIntegerFilterData, Literal['IN', 'NOT IN']]):  # noqa: E501
+    """A field for integer list values with include/exclude behaviour."""
 
-        values, operator = _validate_include_exclude_dict(value)
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(filter_data_cls=IncludeExcludeIntegerFilterData, **kwargs)
 
-        try:
-            deserialized_values = DelimitedOrNormalList(fields.Integer()).deserialize(values)
-        except DeserializationError as e:
-            raise ValidationError(message=str(e), field_name='values') from e
-
-        filtered_values = [v for v in deserialized_values if v is not None]
-        return IncludeExcludeIntegerFilterData(values=filtered_values, operator=operator)
+    def _deserialize_values(self, value: Any) -> list[int]:
+        deserialized: list[Any] = DelimitedOrNormalList(fields.Integer()).deserialize(value)
+        return [v for v in deserialized if v is not None]
 
 
-class IncludeExcludeSingleStringField(fields.Field[IncludeExcludeSingleStringFilterData]):
-    """A field that accepts an object with a single string value and include/exclude behaviour.
-    {
-        "values": "some_value",
-        "behaviour": "exclude"
-    }
-    Also accepts the old format (just a string) for backward compatibility.
-    Note: Uses 'values' key for consistency with other IncludeExclude fields and frontend.
-    """
+class IncludeExcludeSingleStringField(BaseIncludeExcludeField[IncludeExcludeSingleStringFilterData, Literal['=', '!=']]):  # noqa: E501
+    """A field for single string value with include/exclude behaviour."""
+
     def __init__(
             self,
             value_field: fields.Field,
-            *args: Any,
             **kwargs: Any,
     ) -> None:
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            filter_data_cls=IncludeExcludeSingleStringFilterData,
+            is_single_value_field=True,
+            **kwargs,
+        )
         self.value_field = value_field
 
-    def _deserialize(
-            self,
-            value: dict[str, str] | str,
-            attr: str | None,
-            data: Any,
-            **kwargs: Any,
-    ) -> IncludeExcludeSingleStringFilterData:
-        # Handle backward compatibility: if value is just a string, treat as 'include'
-        if not isinstance(value, dict):
-            try:
-                deserialized_value = self.value_field.deserialize(value)
-            except DeserializationError as e:
-                raise ValidationError(message=str(e), field_name='values') from e
-            return IncludeExcludeSingleStringFilterData(value=deserialized_value, operator='=')
-
-        single_value, operator = _validate_include_exclude_single_dict(value)
-
-        try:
-            deserialized_value = self.value_field.deserialize(single_value)
-        except DeserializationError as e:
-            raise ValidationError(message=str(e), field_name='values') from e
-
-        return IncludeExcludeSingleStringFilterData(value=deserialized_value, operator=operator)
+    def _deserialize_values(self, value: Any) -> str:
+        return self.value_field.deserialize(value)
 
 
-class IncludeExcludeSingleLocationField(fields.Field):
-    """A field for handling a single location value with include/exclude behaviour.
-    Accepts:
-    {
-        "values": "ethereum",
-        "behaviour": "exclude"
-    }
-    Also accepts the old format (just a string) for backward compatibility.
-    Note: Uses 'values' key for consistency with other IncludeExclude fields and frontend.
-    """
-    def _deserialize(
-            self,
-            value: dict[str, str] | str,
-            attr: str | None,
-            data: Any,
-            **kwargs: Any,
-    ) -> IncludeExcludeSingleLocationFilterData:
-        # Handle backward compatibility: if value is just a string, treat as 'include'
-        if not isinstance(value, dict):
-            try:
-                deserialized_value = Location.deserialize(value)
-            except DeserializationError as e:
-                raise ValidationError(message=str(e), field_name='values') from e
-            return IncludeExcludeSingleLocationFilterData(value=deserialized_value, operator='=')
+class IncludeExcludeSingleLocationField(BaseIncludeExcludeField[IncludeExcludeSingleLocationFilterData, Literal['=', '!=']]):  # noqa: E501
+    """A field for single location value with include/exclude behaviour."""
 
-        single_value, operator = _validate_include_exclude_single_dict(value)
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(
+            filter_data_cls=IncludeExcludeSingleLocationFilterData,
+            is_single_value_field=True,
+            **kwargs,
+        )
 
-        try:
-            deserialized_value = Location.deserialize(single_value)
-        except DeserializationError as e:
-            raise ValidationError(message=str(e), field_name='values') from e
-
-        return IncludeExcludeSingleLocationFilterData(value=deserialized_value, operator=operator)
+    def _deserialize_values(self, value: Any) -> Location:
+        return Location.deserialize(value)
 
 
 class DelimitedOrNormalList(webargs.fields.DelimitedList):
