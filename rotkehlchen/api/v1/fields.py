@@ -82,6 +82,67 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def _validate_include_exclude_dict(value: dict[str, Any]) -> tuple[Any, Literal['IN', 'NOT IN']]:
+    """Validate and extract values and operator from an include/exclude dict.
+
+    Returns a tuple of (raw_values, operator).
+    Raises ValidationError if the dict is invalid.
+    """
+    if 'values' not in value:
+        raise ValidationError(message="'values' key is missing.", field_name='values')
+
+    if 'behaviour' not in value:
+        value['behaviour'] = 'include'
+
+    values = value['values']
+    behaviour = value['behaviour']
+
+    if behaviour not in {'include', 'exclude'}:
+        raise ValidationError(
+            message="Behaviour must be either 'include' or 'exclude'.",
+            field_name='behaviour',
+        )
+
+    operator: Literal['IN', 'NOT IN'] = 'IN' if behaviour == 'include' else 'NOT IN'
+    return values, operator
+
+
+def _validate_include_exclude_single_dict(
+        value: dict[str, Any],
+) -> tuple[Any, Literal['=', '!=']]:
+    """Validate and extract value and operator from an include/exclude dict for single values.
+
+    Returns a tuple of (raw_value, operator).
+    Raises ValidationError if the dict is invalid.
+    """
+    if 'values' not in value:
+        raise ValidationError(message="'values' key is missing.", field_name='values')
+
+    if 'behaviour' not in value:
+        value['behaviour'] = 'include'
+
+    single_value = value['values']
+    behaviour = value['behaviour']
+
+    if behaviour not in {'include', 'exclude'}:
+        raise ValidationError(
+            message="Behaviour must be either 'include' or 'exclude'.",
+            field_name='behaviour',
+        )
+
+    operator: Literal['=', '!='] = '=' if behaviour == 'include' else '!='
+    return single_value, operator
+
+
+def _serialize_value_to_string(v: Any) -> str:
+    """Serialize a value to string. Handles enums, None, and regular strings."""
+    if v is None:
+        return 'NONE'
+    if hasattr(v, 'serialize'):
+        return v.serialize()
+    return str(v)
+
+
 class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):
     """ A field that accepts an object like the following and deserializes it to the proper types.
     {
@@ -108,32 +169,16 @@ class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):
             data: Any,
             **kwargs: Any,
     ) -> IncludeExcludeFilterData:
-
-        if 'values' not in value:
-            raise ValidationError(message="'values' key is missing.", field_name='values')
-
-        if 'behaviour' not in value:
-            # If for any reason the behaviour key is not given, we use the default behaviour.
-            value['behaviour'] = 'include'
-
-        values = value['values']
-        behaviour = value['behaviour']
-
-        if behaviour not in {'include', 'exclude'}:
-            raise ValidationError(
-                message="Behaviour must be either 'include' or 'exclude'.",
-                field_name='behaviour',
-            )
+        values, operator = _validate_include_exclude_dict(value)
 
         try:
             deserialized_values = DelimitedOrNormalList(self.values_field).deserialize(values)
         except DeserializationError as e:
             raise ValidationError(message=str(e), field_name='values') from e
 
-        deserialized_behaviour = 'IN' if behaviour == 'include' else 'NOT IN'
         return IncludeExcludeFilterData(
-            values=deserialized_values,  # type: ignore[arg-type] #  it should be a history event
-            operator=deserialized_behaviour,  # type: ignore[arg-type]
+            values=deserialized_values,  # it should be a history event
+            operator=operator,
         )
 
 
@@ -154,15 +199,6 @@ class IncludeExcludeStringListField(fields.Field[IncludeExcludeStringFilterData]
         super().__init__(*args, **kwargs)
         self.values_field = values_field
 
-    @staticmethod
-    def _serialize_value(v: Any) -> str:
-        """Serialize a value to string. Handles enums, None, and regular strings."""
-        if v is None:
-            return 'NONE'
-        if hasattr(v, 'serialize'):
-            return v.serialize()
-        return str(v)
-
     def _deserialize(
             self,
             value: dict[str, list | str] | list | str,
@@ -173,44 +209,23 @@ class IncludeExcludeStringListField(fields.Field[IncludeExcludeStringFilterData]
         # Handle backward compatibility: if value is just a list/string, treat as 'include'
         if not isinstance(value, dict):
             try:
-                deserialized_values = DelimitedOrNormalList(self.values_field).deserialize(value)
+                deserialized_values: list[Any] = DelimitedOrNormalList(self.values_field).deserialize(value)  # noqa: E501
             except DeserializationError as e:
                 raise ValidationError(message=str(e), field_name='values') from e
-            # Serialize enum values back to strings, convert None to 'NONE'
             filtered_values: list[str] = [
-                self._serialize_value(v) for v in deserialized_values
+                _serialize_value_to_string(v) for v in deserialized_values
             ]
             return IncludeExcludeStringFilterData(values=filtered_values, operator='IN')
 
-        if 'values' not in value:
-            raise ValidationError(message="'values' key is missing.", field_name='values')
-
-        if 'behaviour' not in value:
-            value['behaviour'] = 'include'
-
-        values = value['values']
-        behaviour = value['behaviour']
-
-        if behaviour not in {'include', 'exclude'}:
-            raise ValidationError(
-                message="Behaviour must be either 'include' or 'exclude'.",
-                field_name='behaviour',
-            )
+        values, operator = _validate_include_exclude_dict(value)
 
         try:
             deserialized_values = DelimitedOrNormalList(self.values_field).deserialize(values)
         except DeserializationError as e:
             raise ValidationError(message=str(e), field_name='values') from e
 
-        deserialized_behaviour = 'IN' if behaviour == 'include' else 'NOT IN'
-        # Serialize enum values back to strings, convert None to 'NONE'
-        filtered_values = [
-            self._serialize_value(v) for v in deserialized_values
-        ]
-        return IncludeExcludeStringFilterData(
-            values=filtered_values,
-            operator=deserialized_behaviour,  # type: ignore[arg-type]
-        )
+        filtered_values = [_serialize_value_to_string(v) for v in deserialized_values]
+        return IncludeExcludeStringFilterData(values=filtered_values, operator=operator)
 
 
 class IncludeExcludeIntegerListField(fields.Field[IncludeExcludeIntegerFilterData]):
@@ -231,38 +246,21 @@ class IncludeExcludeIntegerListField(fields.Field[IncludeExcludeIntegerFilterDat
         # Handle backward compatibility: if value is just a list/string, treat as 'include'
         if not isinstance(value, dict):
             try:
-                deserialized_values = DelimitedOrNormalList(fields.Integer()).deserialize(value)
+                deserialized_values: list[Any] = DelimitedOrNormalList(fields.Integer()).deserialize(value)  # noqa: E501
             except DeserializationError as e:
                 raise ValidationError(message=str(e), field_name='values') from e
             filtered_values: list[int] = [v for v in deserialized_values if v is not None]
             return IncludeExcludeIntegerFilterData(values=filtered_values, operator='IN')
 
-        if 'values' not in value:
-            raise ValidationError(message="'values' key is missing.", field_name='values')
-
-        if 'behaviour' not in value:
-            value['behaviour'] = 'include'
-
-        values = value['values']
-        behaviour = value['behaviour']
-
-        if behaviour not in {'include', 'exclude'}:
-            raise ValidationError(
-                message="Behaviour must be either 'include' or 'exclude'.",
-                field_name='behaviour',
-            )
+        values, operator = _validate_include_exclude_dict(value)
 
         try:
             deserialized_values = DelimitedOrNormalList(fields.Integer()).deserialize(values)
         except DeserializationError as e:
             raise ValidationError(message=str(e), field_name='values') from e
 
-        deserialized_behaviour = 'IN' if behaviour == 'include' else 'NOT IN'
         filtered_values = [v for v in deserialized_values if v is not None]
-        return IncludeExcludeIntegerFilterData(
-            values=filtered_values,
-            operator=deserialized_behaviour,  # type: ignore[arg-type]
-        )
+        return IncludeExcludeIntegerFilterData(values=filtered_values, operator=operator)
 
 
 class IncludeExcludeSingleStringField(fields.Field[IncludeExcludeSingleStringFilterData]):
@@ -298,31 +296,14 @@ class IncludeExcludeSingleStringField(fields.Field[IncludeExcludeSingleStringFil
                 raise ValidationError(message=str(e), field_name='values') from e
             return IncludeExcludeSingleStringFilterData(value=deserialized_value, operator='=')
 
-        if 'values' not in value:
-            raise ValidationError(message="'values' key is missing.", field_name='values')
-
-        if 'behaviour' not in value:
-            value['behaviour'] = 'include'
-
-        single_value = value['values']
-        behaviour = value['behaviour']
-
-        if behaviour not in {'include', 'exclude'}:
-            raise ValidationError(
-                message="Behaviour must be either 'include' or 'exclude'.",
-                field_name='behaviour',
-            )
+        single_value, operator = _validate_include_exclude_single_dict(value)
 
         try:
             deserialized_value = self.value_field.deserialize(single_value)
         except DeserializationError as e:
             raise ValidationError(message=str(e), field_name='values') from e
 
-        deserialized_behaviour = '=' if behaviour == 'include' else '!='
-        return IncludeExcludeSingleStringFilterData(
-            value=deserialized_value,
-            operator=deserialized_behaviour,  # type: ignore[arg-type]
-        )
+        return IncludeExcludeSingleStringFilterData(value=deserialized_value, operator=operator)
 
 
 class IncludeExcludeSingleLocationField(fields.Field):
@@ -350,31 +331,14 @@ class IncludeExcludeSingleLocationField(fields.Field):
                 raise ValidationError(message=str(e), field_name='values') from e
             return IncludeExcludeSingleLocationFilterData(value=deserialized_value, operator='=')
 
-        if 'values' not in value:
-            raise ValidationError(message="'values' key is missing.", field_name='values')
-
-        if 'behaviour' not in value:
-            value['behaviour'] = 'include'
-
-        single_value = value['values']
-        behaviour = value['behaviour']
-
-        if behaviour not in {'include', 'exclude'}:
-            raise ValidationError(
-                message="Behaviour must be either 'include' or 'exclude'.",
-                field_name='behaviour',
-            )
+        single_value, operator = _validate_include_exclude_single_dict(value)
 
         try:
             deserialized_value = Location.deserialize(single_value)
         except DeserializationError as e:
             raise ValidationError(message=str(e), field_name='values') from e
 
-        deserialized_behaviour = '=' if behaviour == 'include' else '!='
-        return IncludeExcludeSingleLocationFilterData(
-            value=deserialized_value,
-            operator=deserialized_behaviour,  # type: ignore[arg-type]
-        )
+        return IncludeExcludeSingleLocationFilterData(value=deserialized_value, operator=operator)
 
 
 class DelimitedOrNormalList(webargs.fields.DelimitedList):
