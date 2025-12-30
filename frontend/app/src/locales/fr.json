@@ -3362,8 +3362,7 @@
   },
   "table_filter": {
     "exclusion": {
-      "description": "Utiliser l'opérateur `!=` pour filtrer l'option, par exemple.",
-      "example": "type != evm event"
+      "description": "Utiliser l'opérateur `!=` pour filtrer l'option, par exemple."
     },
     "hint": {
       "description": "Tapez le filtre puis appuyez sur entrée, par exemple.",

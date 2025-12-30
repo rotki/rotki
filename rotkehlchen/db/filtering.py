@@ -9,7 +9,12 @@ from eth_utils import is_hex_address
 from solders.solders import Signature
 
 from rotkehlchen.accounting.types import SchemaEventType
-from rotkehlchen.api.v1.types import IncludeExcludeFilterData
+from rotkehlchen.api.v1.types import (
+    IncludeExcludeFilterData,
+    IncludeExcludeIntegerFilterData,
+    IncludeExcludeSingleLocationFilterData,
+    IncludeExcludeStringFilterData,
+)
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
@@ -739,11 +744,11 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-            event_types: list[HistoryEventType] | None = None,
-            event_subtypes: list[HistoryEventSubType] | None = None,
+            event_types: list[HistoryEventType] | IncludeExcludeStringFilterData | None = None,
+            event_subtypes: list[HistoryEventSubType] | IncludeExcludeStringFilterData | None = None,  # noqa: E501
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: Location | IncludeExcludeSingleLocationFilterData | None = None,
             location_labels: list[str] | None = None,
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
@@ -794,19 +799,35 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                 operator=entry_types.operator,
             ))
         if event_types is not None:
-            filters.append(DBMultiStringFilter(
-                and_op=True,
-                column='type',
-                values=[x.serialize() for x in event_types],
-                operator='IN',
-            ))
+            if isinstance(event_types, IncludeExcludeStringFilterData):
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='type',
+                    values=event_types.values,
+                    operator=event_types.operator,
+                ))
+            else:  # list[HistoryEventType] - backward compatibility
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='type',
+                    values=[x.serialize() for x in event_types],
+                    operator='IN',
+                ))
         if event_subtypes is not None:
-            filters.append(DBMultiStringFilter(
-                and_op=True,
-                column='subtype',
-                values=[x.serialize() for x in event_subtypes],
-                operator='IN',
-            ))
+            if isinstance(event_subtypes, IncludeExcludeStringFilterData):
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='subtype',
+                    values=event_subtypes.values,
+                    operator=event_subtypes.operator,
+                ))
+            else:  # list[HistoryEventSubType] - backward compatibility
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='subtype',
+                    values=[x.serialize() for x in event_subtypes],
+                    operator='IN',
+                ))
         if type_and_subtype_combinations is not None:
             filters.append(DBNestedFilter(and_op=False, filters=[
                 DBNestedFilter(
@@ -832,8 +853,22 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                 operator='NOT IN',
             ))
         if location is not None:
-            filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
-            filters.append(filter_query.location_filter)
+            if isinstance(location, IncludeExcludeSingleLocationFilterData):
+                if location.operator == '=':
+                    filter_query.location_filter = DBLocationFilter(
+                        and_op=True,
+                        location=location.value,
+                    )
+                    filters.append(filter_query.location_filter)
+                else:  # operator == '!='
+                    filters.append(DBNotEqualFilter(
+                        and_op=True,
+                        column='location',
+                        value=location.value.serialize_for_db(),
+                    ))
+            else:  # Location - backward compatibility
+                filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
+                filters.append(filter_query.location_filter)
         if excluded_locations is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
@@ -949,11 +984,11 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-            event_types: list[HistoryEventType] | None = None,
-            event_subtypes: list[HistoryEventSubType] | None = None,
+            event_types: list[HistoryEventType] | IncludeExcludeStringFilterData | None = None,
+            event_subtypes: list[HistoryEventSubType] | IncludeExcludeStringFilterData | None = None,  # noqa: E501
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: Location | IncludeExcludeSingleLocationFilterData | None = None,
             location_labels: list[str] | None = None,
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
@@ -1076,11 +1111,11 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-            event_types: list[HistoryEventType] | None = None,
-            event_subtypes: list[HistoryEventSubType] | None = None,
+            event_types: list[HistoryEventType] | IncludeExcludeStringFilterData | None = None,
+            event_subtypes: list[HistoryEventSubType] | IncludeExcludeStringFilterData | None = None,  # noqa: E501
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: Location | IncludeExcludeSingleLocationFilterData | None = None,
             location_labels: list[str] | None = None,
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
@@ -1092,7 +1127,7 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             customized_events_only: bool = False,
             notes_substring: str | None = None,
             tx_refs: list[EVMTxHash | BTCTxId | Signature] | None = None,
-            counterparties: list[str] | None = None,
+            counterparties: list[str] | IncludeExcludeStringFilterData | None = None,
             addresses: list[ChecksumEvmAddress | SolanaAddress] | None = None,
     ) -> Self:
         if entry_types is None:
@@ -1128,13 +1163,22 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             notes_substring=notes_substring,
             tx_refs=tx_refs,
         )
-        if counterparties is not None and len(counterparties) > 0:
-            filter_query.filters.append(DBMultiStringFilter(
-                and_op=True,
-                column='counterparty',
-                values=counterparties,
-                operator='IN',
-            ))
+        if counterparties is not None:
+            if isinstance(counterparties, IncludeExcludeStringFilterData):
+                if len(counterparties.values) > 0:
+                    filter_query.filters.append(DBMultiStringFilter(
+                        and_op=True,
+                        column='counterparty',
+                        values=counterparties.values,
+                        operator=counterparties.operator,
+                    ))
+            elif len(counterparties) > 0:  # list[str] - backward compatibility
+                filter_query.filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='counterparty',
+                    values=counterparties,
+                    operator='IN',
+                ))
 
         if addresses is not None and len(addresses) > 0:
             filter_query.filters.append(DBMultiStringFilter(
@@ -1158,11 +1202,11 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-            event_types: list[HistoryEventType] | None = None,
-            event_subtypes: list[HistoryEventSubType] | None = None,
+            event_types: list[HistoryEventType] | IncludeExcludeStringFilterData | None = None,
+            event_subtypes: list[HistoryEventSubType] | IncludeExcludeStringFilterData | None = None,  # noqa: E501
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: Location | IncludeExcludeSingleLocationFilterData | None = None,
             location_labels: list[str] | None = None,
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
@@ -1174,7 +1218,7 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             customized_events_only: bool = False,
             notes_substring: str | None = None,
             signatures: list[Signature] | None = None,
-            counterparties: list[str] | None = None,
+            counterparties: list[str] | IncludeExcludeStringFilterData | None = None,
             addresses: list[SolanaAddress] | None = None,
     ) -> Self:
         if entry_types is None:
@@ -1267,11 +1311,11 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-            event_types: list[HistoryEventType] | None = None,
-            event_subtypes: list[HistoryEventSubType] | None = None,
+            event_types: list[HistoryEventType] | IncludeExcludeStringFilterData | None = None,
+            event_subtypes: list[HistoryEventSubType] | IncludeExcludeStringFilterData | None = None,  # noqa: E501
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: Location | IncludeExcludeSingleLocationFilterData | None = None,
             location_labels: list[str] | None = None,
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
@@ -1283,7 +1327,7 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             customized_events_only: bool = False,
             notes_substring: str | None = None,
             tx_hashes: list[EVMTxHash] | None = None,
-            counterparties: list[str] | None = None,
+            counterparties: list[str] | IncludeExcludeStringFilterData | None = None,
             addresses: list[ChecksumEvmAddress] | None = None,
             excluded_addresses: list[ChecksumEvmAddress] | None = None,
     ) -> Self:
@@ -1384,11 +1428,11 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-            event_types: list[HistoryEventType] | None = None,
-            event_subtypes: list[HistoryEventSubType] | None = None,
+            event_types: list[HistoryEventType] | IncludeExcludeStringFilterData | None = None,
+            event_subtypes: list[HistoryEventSubType] | IncludeExcludeStringFilterData | None = None,  # noqa: E501
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: Location | IncludeExcludeSingleLocationFilterData | None = None,
             location_labels: list[str] | None = None,
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
@@ -1399,7 +1443,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
             notes_substring: str | None = None,
-            validator_indices: list[int] | None = None,
+            validator_indices: list[int] | IncludeExcludeIntegerFilterData | None = None,
     ) -> Self:
         if entry_types is None:
             entry_type_values = [HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT, HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_DEPOSIT_EVENT]  # noqa: E501
@@ -1430,12 +1474,20 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             notes_substring=notes_substring,
         )
         if validator_indices is not None:
-            filter_query.filters.append(DBMultiIntegerFilter(
-                and_op=True,
-                column='validator_index',
-                values=validator_indices,
-                operator='IN',
-            ))
+            if isinstance(validator_indices, IncludeExcludeIntegerFilterData):
+                filter_query.filters.append(DBMultiIntegerFilter(
+                    and_op=True,
+                    column='validator_index',
+                    values=validator_indices.values,
+                    operator=validator_indices.operator,
+                ))
+            else:  # list[int] - backward compatibility
+                filter_query.filters.append(DBMultiIntegerFilter(
+                    and_op=True,
+                    column='validator_index',
+                    values=validator_indices,
+                    operator='IN',
+                ))
 
         return filter_query
 
@@ -1466,11 +1518,11 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-            event_types: list[HistoryEventType] | None = None,
-            event_subtypes: list[HistoryEventSubType] | None = None,
+            event_types: list[HistoryEventType] | IncludeExcludeStringFilterData | None = None,
+            event_subtypes: list[HistoryEventSubType] | IncludeExcludeStringFilterData | None = None,  # noqa: E501
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: Location | IncludeExcludeSingleLocationFilterData | None = None,
             location_labels: list[str] | None = None,
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
@@ -1481,7 +1533,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
             notes_substring: str | None = None,
-            validator_indices: list[int] | None = None,
+            validator_indices: list[int] | IncludeExcludeIntegerFilterData | None = None,
             withdrawal_types_filter: WithdrawalTypesFilter = WithdrawalTypesFilter.ALL,
     ) -> 'EthWithdrawalFilterQuery':
         if entry_types is None:
@@ -1546,11 +1598,11 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             from_ts: Timestamp | None = None,
             to_ts: Timestamp | None = None,
             assets: tuple[Asset, ...] | None = None,
-            event_types: list[HistoryEventType] | None = None,
-            event_subtypes: list[HistoryEventSubType] | None = None,
+            event_types: list[HistoryEventType] | IncludeExcludeStringFilterData | None = None,
+            event_subtypes: list[HistoryEventSubType] | IncludeExcludeStringFilterData | None = None,  # noqa: E501
             type_and_subtype_combinations: Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None = None,  # noqa: E501
             exclude_subtypes: list[HistoryEventSubType] | None = None,
-            location: Location | None = None,
+            location: Location | IncludeExcludeSingleLocationFilterData | None = None,
             location_labels: list[str] | None = None,
             excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
@@ -1561,7 +1613,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             exclude_ignored_assets: bool = False,
             customized_events_only: bool = False,
             tx_hashes: list[EVMTxHash] | None = None,
-            validator_indices: list[int] | None = None,
+            validator_indices: list[int] | IncludeExcludeIntegerFilterData | None = None,
     ) -> 'EthDepositEventFilterQuery':
         if entry_types is None:
             entry_type_values = [HistoryBaseEntryType.ETH_DEPOSIT_EVENT]
@@ -1592,12 +1644,20 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             customized_events_only=customized_events_only,
         )
         if validator_indices is not None:
-            filter_query.filters.append(DBMultiIntegerFilter(
-                and_op=True,
-                column='validator_index',
-                values=validator_indices,
-                operator='IN',
-            ))
+            if isinstance(validator_indices, IncludeExcludeIntegerFilterData):
+                filter_query.filters.append(DBMultiIntegerFilter(
+                    and_op=True,
+                    column='validator_index',
+                    values=validator_indices.values,
+                    operator=validator_indices.operator,
+                ))
+            else:  # list[int] - backward compatibility
+                filter_query.filters.append(DBMultiIntegerFilter(
+                    and_op=True,
+                    column='validator_index',
+                    values=validator_indices,
+                    operator='IN',
+                ))
 
         return filter_query  # type: ignore  # we are creating an EthDepositEventFilterQuery
 
@@ -2249,9 +2309,9 @@ class AccountingRulesFilterQuery(DBFilterQuery):
             order_by_rules: list[tuple[str, bool]] | None = None,
             limit: int | None = None,
             offset: int | None = None,
-            event_types: list[HistoryEventType] | None = None,
-            event_subtypes: list[HistoryEventSubType] | None = None,
-            counterparties: list[str | None] | None = None,
+            event_types: list[HistoryEventType] | IncludeExcludeStringFilterData | None = None,
+            event_subtypes: list[HistoryEventSubType] | IncludeExcludeStringFilterData | None = None,  # noqa: E501
+            counterparties: list[str | None] | IncludeExcludeStringFilterData | None = None,
             identifiers: list[int] | None = None,
             custom_rule_handling: Literal['all', 'only', 'exclude'] = 'all',
             event_ids: list[int] | None = None,
@@ -2267,37 +2327,63 @@ class AccountingRulesFilterQuery(DBFilterQuery):
         )
         filters: list[DBFilter] = []
         if event_types is not None:
-            filters.append(DBMultiStringFilter(
-                and_op=True,
-                column='type',
-                values=[x.serialize() for x in event_types],
-                operator='IN',
-            ))
-        if event_subtypes is not None:
-            filters.append(DBMultiStringFilter(
-                and_op=True,
-                column='subtype',
-                values=[x.serialize() for x in event_subtypes],
-                operator='IN',
-            ))
-        if counterparties is not None:
-            non_null_counterparties = []
-            has_null = False
-            for counterparty in counterparties:
-                if counterparty is None:
-                    has_null = True
-                    continue
-                non_null_counterparties.append(counterparty)
-
-            if has_null:
-                non_null_counterparties.append('NONE')
-            if len(non_null_counterparties) != 0:
+            if isinstance(event_types, IncludeExcludeStringFilterData):
                 filters.append(DBMultiStringFilter(
                     and_op=True,
-                    column='counterparty',
-                    values=non_null_counterparties,
+                    column='type',
+                    values=event_types.values,
+                    operator=event_types.operator,
+                ))
+            else:
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='type',
+                    values=[x.serialize() for x in event_types],
                     operator='IN',
                 ))
+        if event_subtypes is not None:
+            if isinstance(event_subtypes, IncludeExcludeStringFilterData):
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='subtype',
+                    values=event_subtypes.values,
+                    operator=event_subtypes.operator,
+                ))
+            else:
+                filters.append(DBMultiStringFilter(
+                    and_op=True,
+                    column='subtype',
+                    values=[x.serialize() for x in event_subtypes],
+                    operator='IN',
+                ))
+        if counterparties is not None:
+            if isinstance(counterparties, IncludeExcludeStringFilterData):
+                # Note: None values are already converted to 'NONE' by the schema field
+                if len(counterparties.values) > 0:
+                    filters.append(DBMultiStringFilter(
+                        and_op=True,
+                        column='counterparty',
+                        values=counterparties.values,
+                        operator=counterparties.operator,
+                    ))
+            else:
+                non_null_counterparties = []
+                has_null = False
+                for counterparty in counterparties:
+                    if counterparty is None:
+                        has_null = True
+                        continue
+                    non_null_counterparties.append(counterparty)
+
+                if has_null:
+                    non_null_counterparties.append('NONE')
+                if len(non_null_counterparties) != 0:
+                    filters.append(DBMultiStringFilter(
+                        and_op=True,
+                        column='counterparty',
+                        values=non_null_counterparties,
+                        operator='IN',
+                    ))
         if identifiers is not None:
             filters.append(DBMultiIntegerFilter(
                 and_op=True,

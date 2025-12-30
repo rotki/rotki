@@ -141,6 +141,23 @@ watch(selectedSuggestion, async () => {
 });
 
 const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
+
+const exclusionExample = computed<string>(() => {
+  const matcher = get(selectedMatcher);
+  if (!matcher)
+    return '';
+
+  const key = matcher.key;
+  let exampleValue = 'xxx';
+
+  if ('string' in matcher) {
+    const suggestions = matcher.suggestions();
+    if (suggestions.length > 0)
+      exampleValue = suggestions[0];
+  }
+
+  return `${key} != ${exampleValue}`;
+});
 </script>
 
 <template>
@@ -196,7 +213,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
       >
         {{ t('table_filter.exclusion.description') }}
         <span class="font-medium">
-          {{ t('table_filter.exclusion.example') }}
+          {{ exclusionExample }}
         </span>
       </div>
 

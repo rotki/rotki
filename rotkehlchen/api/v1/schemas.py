@@ -187,7 +187,10 @@ from .fields import (
     FileField,
     FloatingPercentageField,
     HistoricalPriceOracleField,
+    IncludeExcludeIntegerListField,
     IncludeExcludeListField,
+    IncludeExcludeSingleLocationField,
+    IncludeExcludeStringListField,
     LocationField,
     MaybeAssetField,
     NonEmptyList,
@@ -204,7 +207,11 @@ from .fields import (
     TimestampUntilNowField,
     XpubField,
 )
-from .types import IncludeExcludeFilterData, ModuleWithBalances, ModuleWithStats
+from .types import (
+    IncludeExcludeFilterData,
+    ModuleWithBalances,
+    ModuleWithStats,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -584,15 +591,15 @@ class StakingQuerySchema(BaseStakingQuerySchema):
 
 
 class TypesAndCounterpatiesFiltersSchema(Schema):
-    event_types = DelimitedOrNormalList(
+    event_types = IncludeExcludeStringListField(
         SerializableEnumField(enum_class=HistoryEventType),
         load_default=None,
     )
-    event_subtypes = DelimitedOrNormalList(
+    event_subtypes = IncludeExcludeStringListField(
         SerializableEnumField(enum_class=HistoryEventSubType),
         load_default=None,
     )
-    counterparties = DelimitedOrNormalList(
+    counterparties = IncludeExcludeStringListField(
         EmptyAsNoneStringField(load_default=None),
         load_default=None,
     )
@@ -608,7 +615,7 @@ class HistoryEventSchema(
     exclude_ignored_assets = fields.Boolean(load_default=True)
     aggregate_by_group_ids = fields.Boolean(load_default=False)
     group_identifiers = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
-    location = SerializableEnumField(Location, load_default=None)
+    location = IncludeExcludeSingleLocationField(load_default=None)
     location_labels = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     asset = AssetField(expected_type=Asset, load_default=None)
     entry_types = IncludeExcludeListField(
@@ -633,7 +640,7 @@ class HistoryEventSchema(
     addresses = DelimitedOrNormalList(NonEmptyStringField(), load_default=None)
 
     # EthStakingEvent only
-    validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
+    validator_indices = IncludeExcludeIntegerListField(load_default=None)
 
     @validates_schema
     def validate_history_event_schema(
@@ -666,8 +673,9 @@ class HistoryEventSchema(
         addresses = data['addresses']
         counterparties = data['counterparties']
         entry_types = data['entry_types']
-        if counterparties is not None and CPT_ETH2 in counterparties:
-            if len(counterparties) != 1:
+        counterparties_values = counterparties.values if counterparties is not None else None
+        if counterparties_values is not None and CPT_ETH2 in counterparties_values:
+            if len(counterparties_values) != 1:
                 raise ValidationError(
                     message='Filtering by counterparty ETH2 does not work in combination with other counterparties',  # noqa: E501
                     field_name='counterparties',
@@ -785,7 +793,7 @@ class HistoryEventSchema(
                 addresses=addresses,
             )
         elif (
-            (counterparties is not None and len(counterparties) != 0) or
+            (counterparties_values is not None and len(counterparties_values) != 0) or
             (addresses is not None and len(addresses) != 0)
         ):
             filter_query = HistoryEventWithCounterpartyFilterQuery.make(

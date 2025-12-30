@@ -186,7 +186,10 @@ describe('composables::history/filter-paginate', () => {
       assertType<number>(get(state).found);
 
       expect(get(pageParams).locationLabels).toEqual(get(accounts)[0].address);
-      expect(get(pageParams).location).toEqual('ethereum');
+      expect(get(pageParams).location).toEqual({
+        behaviour: FilterBehaviour.INCLUDE,
+        values: 'ethereum',
+      });
 
       expect(get(state).data).toHaveLength(6);
       expect(get(state).found).toEqual(6);

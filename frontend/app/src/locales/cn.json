@@ -3088,8 +3088,7 @@
   },
   "table_filter": {
     "exclusion": {
-      "description": "使用运算符 `!=` 过滤掉选项，例如",
-      "example": "type != evm event"
+      "description": "使用运算符 `!=` 过滤掉选项，例如"
     },
     "hint": {
       "description": "输入过滤器，然后按回车键，例如。",

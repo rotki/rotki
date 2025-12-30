@@ -2948,8 +2948,7 @@
   },
   "table_filter": {
     "exclusion": {
-      "description": "Use operator `!=` to filter out option, e.g.",
-      "example": "type != evm event"
+      "description": "Use operator `!=` to filter out option, e.g."
     },
     "hint": {
       "description": "Type the filter and then press enter e.g.",

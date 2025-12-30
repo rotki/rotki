@@ -153,6 +153,8 @@ export function useHistoryEventFilter(
     if (!disabled?.protocols && transactionEventsIncluded) {
       const counterpartiesVal = get(counterparties);
       data.push({
+        allowExclusion: true,
+        behaviourRequired: true,
         description: t('transactions.filter.protocol'),
         key: HistoryEventFilterKeys.PROTOCOL,
         keyValue: HistoryEventFilterValueKeys.PROTOCOL,
@@ -165,12 +167,14 @@ export function useHistoryEventFilter(
 
     if (!disabled?.locations) {
       data.push({
+        allowExclusion: true,
+        behaviourRequired: true,
         description: t('transactions.filter.location'),
         key: HistoryEventFilterKeys.LOCATION,
         keyValue: HistoryEventFilterValueKeys.LOCATION,
         string: true,
         suggestions: () => get(associatedLocations),
-        validate: location => !!location,
+        validate: location => !!location && get(associatedLocations).includes(location),
       });
     }
 
@@ -191,6 +195,8 @@ export function useHistoryEventFilter(
     if (evmOrOnlineEventsIncluded) {
       if (!disabled.eventTypes) {
         data.push({
+          allowExclusion: true,
+          behaviourRequired: true,
           description: t('transactions.filter.event_type'),
           key: HistoryEventFilterKeys.EVENT_TYPE,
           keyValue: HistoryEventFilterValueKeys.EVENT_TYPE,
@@ -238,6 +244,8 @@ export function useHistoryEventFilter(
         }
 
         data.push({
+          allowExclusion: true,
+          behaviourRequired: true,
           description: t('transactions.filter.event_subtype'),
           key: HistoryEventFilterKeys.EVENT_SUBTYPE,
           keyValue: HistoryEventFilterValueKeys.EVENT_SUBTYPE,
@@ -275,6 +283,8 @@ export function useHistoryEventFilter(
 
     if (eventsWithValidatorIndexIncluded && !disabled?.validators) {
       data.push({
+        allowExclusion: true,
+        behaviourRequired: true,
         description: t('transactions.filter.validator_index'),
         key: HistoryEventFilterKeys.VALIDATOR_INDICES,
         keyValue: HistoryEventFilterValueKeys.VALIDATOR_INDICES,
