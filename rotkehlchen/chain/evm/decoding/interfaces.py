@@ -549,7 +549,7 @@ class CommonGrantsDecoderMixin(EvmDecoderInterface, ABC):
         coded per contract and we have a hard coded list it's best to not ask the chain
         and do an extra network query since this is immutable.
 
-        The caller should confirm that the topic[0] matces the required topic hash.
+        The caller should confirm that the topic[0] matches the required topic hash.
         """
         if not self.base.any_tracked([claimee := bytes_to_address(claimee_raw), context.transaction.from_address]):  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT

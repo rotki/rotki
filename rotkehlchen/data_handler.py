@@ -201,12 +201,10 @@ class DataHandler:
             data={'type': str(DBUploadStatusStep.COMPRESSING)},
         )
         compressor = zlib.compressobj(level=9)
-        source_data = bytearray()
         compressed_data = bytearray()
         with open(tempdbpath, 'rb') as src_f:
             block = src_f.read(BUFFERSIZE)
             while block:
-                source_data += block
                 compressed_data += compressor.compress(block)
                 block = src_f.read(BUFFERSIZE)
 
