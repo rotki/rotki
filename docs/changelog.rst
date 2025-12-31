@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users can now add smart contract addresses to all EVM chains at once. Contracts are automatically detected and tagged with a reserved "Contract" system tag.
 * :feature:`1606` Users can now query their Kraken Futures balances by providing Futures API keys in the exchange settings.
 * :bug:`11240` Failed backend startups will now surface a clear error in the UI without showing raw errors.
 * :feature:`11231` Users can now click a location in the blockchain balance summary on the dashboard to filter by that chain.

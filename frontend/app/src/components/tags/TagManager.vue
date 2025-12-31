@@ -7,7 +7,7 @@ import TagIcon from '@/components/tags/TagIcon.vue';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useTagStore } from '@/store/session/tags';
-import { defaultTag, type Tag } from '@/types/tags';
+import { defaultTag, isReservedTag, type Tag } from '@/types/tags';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -131,9 +131,16 @@ onMounted(async () => {
         </template>
         <template #item.action="{ row }">
           <RowActions
+            v-if="!isReservedTag(row.name)"
             @edit-click="editItem(row)"
             @delete-click="showDeleteConfirmation(row)"
           />
+          <span
+            v-else
+            class="text-rui-text-secondary"
+          >
+            -
+          </span>
         </template>
       </RuiDataTable>
     </RuiCard>

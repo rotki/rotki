@@ -8,6 +8,7 @@ import { useAccountAdditionNotifications } from '@/composables/blockchain/use-ac
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
+import { useTagStore } from '@/store/session/tags';
 import { useSettingsStore } from '@/store/settings';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
@@ -79,6 +80,7 @@ interface UseAccountAdditionServiceReturn {
 export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const { addAccount, addEvmAccount } = useBlockchainAccounts();
   const { fetchDetected } = useBlockchainTokensStore();
+  const { fetchTags } = useTagStore();
   const { enableModule } = useSettingsStore();
   const { evmChains, supportedChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();
@@ -107,6 +109,8 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
       modulesToEnable,
     } = params;
 
+    // Refresh tags first in case new system tags (like 'Contract') were created
+    await fetchTags();
     await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
     const chains = chain ? [chain] : get(supportedChains).map(chain => chain.id);
     // Sort accounts by chain, so they are called in order
