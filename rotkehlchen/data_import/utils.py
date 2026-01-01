@@ -217,11 +217,12 @@ def detect_duplicate_event(
     importer.flush_all(write_cursor)  # flush so that the DB check later can work and not miss unwritten events  # noqa: E501
     with importer.db.conn.read_ctx() as read_cursor:
         read_cursor.execute(
-            f"SELECT COUNT(*) FROM history_events WHERE "
-            f"event_identifier LIKE '{event_prefix}%' "
-            "AND asset=? AND amount=? AND timestamp=? AND location=? "
-            "AND type=? AND subtype=?",
-            (asset.identifier, str(amount), timestamp_ms, location.serialize_for_db(),
+            'SELECT COUNT(*) FROM history_events WHERE '
+            'substr(event_identifier, 1, ?) = ? '
+            'AND asset=? AND amount=? AND timestamp=? AND location=? '
+            'AND type=? AND subtype=?',
+            (len(event_prefix), event_prefix, asset.identifier,
+             str(amount), timestamp_ms, location.serialize_for_db(),
              event_type.serialize(), event_subtype.serialize()),
         )
         return read_cursor.fetchone()[0] != 0
