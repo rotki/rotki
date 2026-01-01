@@ -248,6 +248,7 @@ function getIcon(action: NotificationAction): RuiIcons {
             color ? 'dark:to-[#363636]' : 'dark:to-[#1E1E1E]',
           ]"
           class="!p-0.5 w-full bg-gradient-to-b from-transparent to-white rounded-none !bg-transparent"
+          hide-focus-indicator
           @click.stop="buttonClicked()"
         >
           <RuiIcon

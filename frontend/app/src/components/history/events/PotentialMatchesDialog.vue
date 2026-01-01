@@ -40,11 +40,13 @@ const {
 
 const { fetchHistoryEvents, getAssetMovementMatches } = useHistoryEventsApi();
 
+const DEFAULT_HOUR_RANGE = 4;
+
 const searchLoading = ref<boolean>(false);
 const matchingLoading = ref<boolean>(false);
 const potentialMatches = ref<PotentialMatchRow[]>([]);
 const selectedMatchId = ref<number>();
-const searchTimeRange = ref<string>('1');
+const searchTimeRange = ref<string>(DEFAULT_HOUR_RANGE.toString());
 const onlyExpectedAssets = ref<boolean>(true);
 
 function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
@@ -76,7 +78,7 @@ async function searchPotentialMatches(): Promise<void> {
   try {
     const groupIdentifier = props.movement.groupIdentifier;
 
-    const hours = Number.parseInt(get(searchTimeRange), 10) || 1;
+    const hours = Number.parseInt(get(searchTimeRange), 10) || DEFAULT_HOUR_RANGE;
     const timeRangeInSeconds = hours * 60 * 60;
 
     // Get match suggestions from backend
@@ -96,10 +98,18 @@ async function searchPotentialMatches(): Promise<void> {
       offset: 0,
     });
 
-    // Transform and mark close matches (order is already handled by backend)
+    // Transform and mark close matches
     const closeMatchSet = new Set(suggestions.closeMatches);
     const matches = response.entries
       .map(row => transformToMatchRow(row, closeMatchSet.has(getEventEntry(row).entry.identifier)));
+
+    // Reorder matches to follow the order of allIdentifiers from backend
+    const identifierOrderMap = new Map(allIdentifiers.map((id, index) => [id, index]));
+    matches.sort((a, b) => {
+      const orderA = identifierOrderMap.get(a.identifier) ?? Number.MAX_SAFE_INTEGER;
+      const orderB = identifierOrderMap.get(b.identifier) ?? Number.MAX_SAFE_INTEGER;
+      return orderA - orderB;
+    });
 
     set(potentialMatches, matches);
   }
@@ -147,7 +157,7 @@ watch(modelValue, async (isOpen) => {
   if (isOpen) {
     set(potentialMatches, []);
     set(selectedMatchId, undefined);
-    set(searchTimeRange, '1');
+    set(searchTimeRange, DEFAULT_HOUR_RANGE.toString());
     set(onlyExpectedAssets, true);
     await searchPotentialMatches();
   }

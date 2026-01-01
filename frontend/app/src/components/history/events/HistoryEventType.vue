@@ -24,6 +24,7 @@ const props = defineProps<{
   chain: Blockchain;
   icon?: RuiIcons;
   highlight?: boolean;
+  hideCustomizedChip?: boolean;
 }>();
 
 const { event } = toRefs(props);
@@ -91,7 +92,7 @@ const isInformational = computed(() => get(event).eventType === 'informational')
         />
       </div>
       <RuiChip
-        v-if="event.customized"
+        v-if="event.customized && !hideCustomizedChip"
         class="mt-1"
         size="sm"
         color="primary"

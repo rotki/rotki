@@ -5,7 +5,7 @@ import type { HistoryEventEditData } from '@/modules/history/management/forms/fo
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import { flatten } from 'es-toolkit';
 import HistoryEventsListItem from '@/components/history/events/HistoryEventsListItem.vue';
-import HistoryEventsListSwap from '@/components/history/events/HistoryEventsListSwap.vue';
+import HistoryEventsListSubgroup from '@/components/history/events/HistoryEventsListSubgroup.vue';
 
 interface HistoryEventsListTableProps {
   allEvents: HistoryEventRow[];
@@ -44,10 +44,11 @@ function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEnt
   <div class="@container">
     <template v-if="total > 0">
       <template v-for="(item, index) in events">
-        <HistoryEventsListSwap
+        <HistoryEventsListSubgroup
           v-if="Array.isArray(item)"
-          :key="`swap-${index}`"
+          :key="`subgroup-${index}`"
           :events="item"
+          :is-last="index === events.length - 1"
           :all-events="findAllEventsFromArrayItem(item) || item"
           :hide-actions="hideActions"
           :highlighted-identifiers="highlightedIdentifiers"

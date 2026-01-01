@@ -282,6 +282,7 @@ function openMatchAssetMovementsDialog(): void {
           :identifiers="identifiers"
           :highlighted-identifiers="highlightedIdentifiers"
           :selection="selectionMode"
+          :match-exact-events="toggles.matchExactEvents"
           @show:dialog="dialogContainer?.show($event)"
           @refresh="actions.fetch.dataAndRedecode($event)"
           @refresh:block-event="actions.redecode.blocks($event)"

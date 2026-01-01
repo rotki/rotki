@@ -20,6 +20,7 @@ const props = withDefaults(defineProps<{
   hideActions?: boolean;
   highlightedIdentifiers?: string[];
   selection?: UseHistoryEventsSelectionModeReturn;
+  matchExactEvents?: boolean;
 }>(), {
   loading: false,
 });
@@ -44,6 +45,7 @@ const {
   hasIgnoredEvent,
   highlightedIdentifiers,
   loading,
+  matchExactEvents,
 } = toRefs(props);
 
 function combineEvents(events: HistoryEventRow[], group: HistoryEventEntry): HistoryEventRow[] {
@@ -130,10 +132,25 @@ watch(() => get(eventGroup), () => {
 
 // Unsupported event detection
 const unsupportedEvent = computed<HistoryEventEntry | null>(() => {
-  if (get(loading))
+  if (get(loading) || get(matchExactEvents))
     return null;
 
   const events = get(combinedAllEvents);
+
+  // Flatten all events to check for incomplete trades
+  const flatEvents = events.flatMap(event => (Array.isArray(event) ? event : [event]));
+
+  // Check for incomplete trade events (receive without spend or vice versa)
+  const tradeReceive = flatEvents.find(e => e.eventType === 'trade' && e.eventSubtype === 'receive');
+  const tradeSpend = flatEvents.find(e => e.eventType === 'trade' && e.eventSubtype === 'spend');
+
+  if (tradeReceive && !tradeSpend)
+    return tradeReceive;
+
+  if (tradeSpend && !tradeReceive)
+    return tradeSpend;
+
+  // Check for gas-fee-only transaction
   if (events.length !== 1)
     return null;
 

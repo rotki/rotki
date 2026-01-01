@@ -1,4 +1,5 @@
 <script lang="ts" setup>
+import type { RuiIcons } from '@rotki/ui-library';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
@@ -9,7 +10,9 @@ import HistoryEventsListItem from '@/components/history/events/HistoryEventsList
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useSupportedChains } from '@/composables/info/chains';
+import { isSwapTypeEvent } from '@/modules/history/management/forms/form-guards';
 
 const props = defineProps<{
   events: HistoryEventEntry[];
@@ -17,6 +20,7 @@ const props = defineProps<{
   highlightedIdentifiers?: string[];
   selection?: UseHistoryEventsSelectionModeReturn;
   hideActions?: boolean;
+  isLast: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -32,12 +36,29 @@ const expanded = ref<boolean>(false);
 const { t } = useI18n({ useScope: 'global' });
 const { getChain } = useSupportedChains();
 const { getAssetSymbol } = useAssetInfoRetrieval();
+const { getEventTypeData } = useHistoryEventMappings();
 
-const shouldExpand = computed(() => get(expanded) || (props.selection && get(props.selection.isSelectionMode)));
+const shouldExpand = computed<boolean>(() => get(expanded) || !!(props.selection && get(props.selection.isSelectionMode)));
 
-const usedEvents = computed(() => {
+const isSwapGroup = computed<boolean>(() => props.events.length > 0 && isSwapTypeEvent(props.events[0].entryType));
+
+const subgroupIcon = computed<RuiIcons | undefined>(() => {
+  if (get(isSwapGroup))
+    return 'lu-arrow-right-left';
+
+  // For asset movements, use the icon from the first event's type data
+  return get(getEventTypeData(props.events[0])).icon;
+});
+
+const usedEvents = computed<HistoryEventEntry[]>(() => {
   if (get(shouldExpand)) {
     return props.events;
+  }
+
+  // For non-swap groups (like asset movements), show only the deposit event
+  if (!get(isSwapGroup)) {
+    const depositEvent = props.events.find(item => item.eventType === 'deposit');
+    return depositEvent ? [depositEvent] : [props.events[0]];
   }
 
   const filtered = props.events.filter(item => item.eventSubtype !== 'fee');
@@ -72,13 +93,31 @@ const usedEvents = computed(() => {
   return alternating;
 });
 
-function getCompactNotes(events: HistoryEventEntry[]): string | undefined {
-  const spend = events.filter(item => item.eventSubtype === 'spend');
-  const receive = events.filter(item => item.eventSubtype === 'receive');
+function appendFeeNotes(notes: string | undefined): string | undefined {
+  const fee = props.events.filter(item => item.eventSubtype === 'fee');
+  if (fee.length === 0)
+    return notes;
 
-  if (spend.length === 0 || receive.length === 0) {
-    return undefined;
+  const feeText = fee.map(item => `${item.amount} ${getAssetSymbol(item.asset, { collectionParent: false })}`).join('; ');
+  return t('history_events_list_swap.fee_description', { feeText, notes });
+}
+
+const compactNotes = computed<string | undefined>(() => {
+  // For non-swap groups, show user notes with fee if present
+  if (!get(isSwapGroup)) {
+    const firstEvent = props.events[0];
+    if (!firstEvent)
+      return undefined;
+
+    return appendFeeNotes(firstEvent.userNotes);
   }
+
+  // Swap-specific compact notes
+  const spend = props.events.filter(item => item.eventSubtype === 'spend');
+  const receive = props.events.filter(item => item.eventSubtype === 'receive');
+
+  if (spend.length === 0 || receive.length === 0)
+    return undefined;
 
   const options = { collectionParent: false };
 
@@ -102,22 +141,13 @@ function getCompactNotes(events: HistoryEventEntry[]): string | undefined {
         spendAsset: 'asset',
       };
 
-  let notes = t('history_events_list_swap.swap_description', {
+  const notes = t('history_events_list_swap.swap_description', {
     ...receiveNotes,
     ...spendNotes,
   });
 
-  const fee = props.events.filter(item => item.eventSubtype === 'fee');
-  if (fee.length > 0) {
-    const feeText = fee.map(item => `${item.amount} ${getAssetSymbol(item.asset, options)}`).join('; ');
-    notes = t('history_events_list_swap.fee_description', {
-      feeText,
-      notes,
-    });
-  }
-
-  return notes;
-}
+  return appendFeeNotes(notes);
+});
 
 watch(shouldExpand, () => {
   if (!get(isInitialRender)) {
@@ -128,7 +158,12 @@ watch(shouldExpand, () => {
 </script>
 
 <template>
-  <div class="flex items-start">
+  <div
+    class="flex items-start border-default"
+    :class="{
+      'border-b': !isLast,
+    }"
+  >
     <TransitionGroup
       tag="div"
       name="list"
@@ -161,18 +196,21 @@ watch(shouldExpand, () => {
           <span class="group-hover:hidden">{{ events.length }}</span>
         </RuiButton>
         <HistoryEventType
-          icon="lu-arrow-right-left"
+          :icon="subgroupIcon"
           :event="events[0]"
           highlight
           :chain="getChain(events[0].location)"
+          hide-customized-chip
         />
       </LazyLoader>
 
       <div
         key="history-event-assets"
-        class="flex flex-col col-span-10 md:col-span-6 @5xl:!col-span-8 relative"
+        class="flex flex-col col-span-10 md:col-span-6 relative"
         :class="{
           'md:py-2 grid grid-cols-10': !shouldExpand,
+          '@5xl:!col-span-8': isSwapGroup,
+          '@5xl:!col-span-4': !isSwapGroup,
         }"
       >
         <RuiButton
@@ -218,7 +256,11 @@ watch(shouldExpand, () => {
           <LazyLoader
             v-if="!shouldExpand && eventIndex === 0 && usedEvents.length > 1"
             key="swap-arrow"
-            class="flex items-center px-2 @md:pl-0 !h-14 col-start-5"
+            class="flex items-center px-2 @md:pl-0 !h-14"
+            :class="{
+              'col-start-5': isSwapGroup,
+              'col-start-4': !isSwapGroup,
+            }"
           >
             <RuiIcon
               class="text-rui-grey-400 dark:text-rui-grey-600"
@@ -233,11 +275,16 @@ watch(shouldExpand, () => {
         v-if="!shouldExpand"
         key="history-event-notes"
         class="py-2 pt-4 md:pl-0 @5xl:!pl-0 @5xl:pt-4 col-span-10 @md:col-span-7 @5xl:!col-span-4"
+        :class="{
+          '@5xl:!col-span-4': isSwapGroup,
+          '@5xl:!col-span-8': !isSwapGroup,
+        }"
         min-height="80"
       >
         <HistoryEventNote
-          v-if="getCompactNotes(events)"
-          :notes="getCompactNotes(events)"
+          v-if="compactNotes"
+          :notes="compactNotes"
+          :chain="getChain(events[0].location)"
           :amount="events.map(item => item.amount)"
         />
       </LazyLoader>
