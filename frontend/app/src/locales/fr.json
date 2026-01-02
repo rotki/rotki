@@ -3284,7 +3284,6 @@
     "force_save": "Forcer l'enregistrement",
     "ignore_errors_label": "Ignorer les erreurs",
     "ignore_errors_tooltip": "Enregistrer l'instantané de solde en ignorant les erreurs sur les API externes. Cela peut entraîner un snapshot incomplet.",
-    "menu_tooltip": "Voir la date du dernier snapshot de solde",
     "messages": {
       "failed_description": "L'importation de l'instantané a échoué : {message}",
       "success_description": "Instantané de solde importé avec succès. Vous serez déconnecté maintenant.",

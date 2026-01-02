@@ -4,27 +4,25 @@ import type { AllBalancePayload } from '@/types/blockchain/accounts';
 import { startPromise } from '@shared/utils';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
 import { useBalances } from '@/composables/balances';
 import { useInterop } from '@/composables/electron-interop';
-import { usePremium } from '@/composables/premium';
 import { useLogout } from '@/modules/account/use-logout';
 import { useMessageStore } from '@/store/message';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
 
+const visible = defineModel<boolean>({ default: false });
+
 const ignoreErrors = ref<boolean>(false);
-const visible = ref<boolean>(false);
 const balanceSnapshotFile = ref<File>();
 const locationDataSnapshotFile = ref<File>();
 const importSnapshotLoading = ref<boolean>(false);
 const importSnapshotDialog = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
-const premium = usePremium();
 const { logout } = useLogout();
 const { lastBalanceSave } = storeToRefs(usePeriodicStore());
 const { fetchBalances } = useBalances();
@@ -34,7 +32,7 @@ const { setMessage } = useMessageStore();
 const { importBalancesSnapshot, uploadBalancesSnapshot } = useSnapshotApi();
 const { ignoreSnapshotError } = storeToRefs(useFrontendSettingsStore());
 
-async function refreshAllAndSave() {
+async function refreshAllAndSave(): Promise<void> {
   set(visible, false);
   const payload: Writeable<Partial<AllBalancePayload>> = {
     ignoreCache: true,
@@ -47,7 +45,7 @@ async function refreshAllAndSave() {
   await fetchNetValue();
 }
 
-async function importSnapshot() {
+async function importSnapshot(): Promise<void> {
   if (!(isDefined(balanceSnapshotFile) && isDefined(locationDataSnapshotFile)))
     return;
 
@@ -108,20 +106,23 @@ watchImmediate(ignoreSnapshotError, (ignoreSnapshotError) => {
   <RuiMenu
     id="snapshot-action-menu"
     v-model="visible"
-    :popper="{ placement: 'bottom-end' }"
+    :popper="{ placement: 'left-start' }"
     :persistent="importSnapshotDialog"
+    class="w-full"
+    :close-on-content-click="false"
+    wrapper-class="w-full"
   >
     <template #activator="{ attrs }">
-      <MenuTooltipButton
-        :tooltip="t('snapshot_action_button.menu_tooltip', premium ? 2 : 1)"
-        variant="default"
-        size="sm"
-        custom-color
+      <RuiButton
+        variant="list"
         v-bind="attrs"
-        class="!p-2"
+        class="w-full"
       >
-        <RuiIcon name="lu-git-commit-vertical" />
-      </MenuTooltipButton>
+        <template #prepend>
+          <RuiIcon name="lu-git-commit-vertical" />
+        </template>
+        {{ t('overall_balances.snapshot_action') }}
+      </RuiButton>
     </template>
     <div class="p-4 md:w-[16rem] w-full">
       <div class="font-medium">

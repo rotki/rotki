@@ -2874,7 +2874,6 @@
     "force_save": "Forzar guardado",
     "ignore_errors_label": "Ignorar errores",
     "ignore_errors_tooltip": "Save the balance snapshot ignoring any errors on external APIs. This can cause the snapshot to be incomplete.",
-    "menu_tooltip": "View the date of the last balances snapshot",
     "messages": {
       "failed_description": "Importing snapshot failed: {message}",
       "success_description": "Snapshot successfully imported. You will be logged out now.",

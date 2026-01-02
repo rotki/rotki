@@ -3009,7 +3009,6 @@
     "force_save": "强制保存",
     "ignore_errors_label": "忽略错误",
     "ignore_errors_tooltip": "保存余额快照，忽略外部 API 上的任何错误。这可能导致快照不完整。",
-    "menu_tooltip": "查看上次余额快照的日期",
     "messages": {
       "failed_description": "导入快照失败: {message}",
       "success_description": "快照导入成功。您现在将退出。",

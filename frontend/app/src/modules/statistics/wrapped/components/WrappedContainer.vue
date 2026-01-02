@@ -31,7 +31,6 @@ const {
 } = useWrappedDateRange();
 
 const {
-  isFirstLoad,
   refreshing,
 } = useWrappedHistoryEvents(start);
 
@@ -73,7 +72,6 @@ defineExpose({
     />
 
     <WrappedAlerts
-      :is-first-load="isFirstLoad()"
       :refreshing="refreshing"
       :premium="premium"
     />

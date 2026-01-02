@@ -3211,6 +3211,18 @@
     "hint_zero": "All the assets without price will be hidden",
     "lt": "<"
   },
+  "historical_balances_dialog": {
+    "asset_hint": "Leave empty to show all assets",
+    "fetch_button": "Get Historical Balances",
+    "hint": "View your asset balances at a specific point in time, calculated from your historical events.",
+    "no_data": "No historical data found for the selected timestamp",
+    "premium_required": "Historical balances is a premium feature. Please upgrade to access this functionality.",
+    "timestamp_label": "Date and Time",
+    "title": "Historical Balances"
+  },
+  "history_events_alert": {
+    "nudge": "History events need to be queried and decoded. Navigate to {link} view to ensure your data is up to date."
+  },
   "history_events_list_swap": {
     "fee_description": "{notes} with fee: {feeText}",
     "swap_description": "Swap {spendAmount} {spendAsset} for {receiveAmount} {receiveAsset}"
@@ -4033,8 +4045,11 @@
     "uniswap_v3": "Uniswap V3"
   },
   "overall_balances": {
+    "actions_menu_tooltip": "Balance actions",
+    "historical_balances": "Historical Balances",
     "loading": "LOADING",
     "premium_hint": "Get the full experience by upgrading to rotki premium",
+    "snapshot_action": "Snapshot",
     "total_balance": "Total Balance"
   },
   "page_not_found": {
@@ -4682,7 +4697,6 @@
     "force_save": "Force save",
     "ignore_errors_label": "Ignore Errors",
     "ignore_errors_tooltip": "Save the balance snapshot ignoring any errors on external APIs. This can cause the snapshot to be incomplete.",
-    "menu_tooltip": "View the date of the last balances snapshot",
     "messages": {
       "failed_description": "Importing snapshot failed: {message}",
       "success_description": "Snapshot successfully imported. You will be logged out now.",
@@ -5536,7 +5550,6 @@
     "get_data": "Get data",
     "get_rotki_premium": "Get rotki premium",
     "gnosis_payments": "Gnosis Pay top single payments by currency",
-    "history_events_nudge": "History events need to be queried and decoded. Navigate to {link} view to ensure your data is up to date.",
     "loading": "Hang on, we are refreshing your history events to make sure your wrapped data is up to date.",
     "premium_nudge": "Unlock all the rotki potential with premium",
     "protocol_activity": "Number of transactions by protocol",

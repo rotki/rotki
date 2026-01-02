@@ -41,3 +41,19 @@ export interface EthDetectedTokensInfo {
   total: number;
   timestamp: number | null;
 }
+
+export const HistoricalAssetBalance = z.object({
+  amount: z.string(),
+  price: z.string(),
+});
+
+export type HistoricalAssetBalance = z.infer<typeof HistoricalAssetBalance>;
+
+export const HistoricalBalancesResponse = z.record(z.string(), HistoricalAssetBalance);
+
+export type HistoricalBalancesResponse = z.infer<typeof HistoricalBalancesResponse>;
+
+export interface HistoricalBalancesPayload {
+  timestamp: number;
+  asset?: string;
+}

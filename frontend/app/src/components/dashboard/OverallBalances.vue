@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { assert, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
 import dayjs from 'dayjs';
-import SnapshotActionButton from '@/components/dashboard/SnapshotActionButton.vue';
+import BalanceActionsMenu from '@/components/dashboard/BalanceActionsMenu.vue';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
@@ -163,7 +163,8 @@ onMounted(() => {
           :visible-timeframes="visibleTimeframes"
           @update:model-value="setTimeframe($event)"
         />
-        <SnapshotActionButton />
+
+        <BalanceActionsMenu />
       </div>
       <div class="relative">
         <NetWorthChart :chart-data="timeframeData" />

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import { Routes } from '@/router/routes';
+import HistoryEventsAlert from '@/components/history/HistoryEventsAlert.vue';
 
 defineProps<{
-  isFirstLoad: boolean;
   refreshing: boolean;
   premium: boolean;
 }>();
@@ -13,23 +12,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <div class="flex flex-col gap-4">
-    <RuiAlert
-      v-if="isFirstLoad"
-      type="info"
-    >
-      <i18n-t
-        scope="global"
-        keypath="wrapped.history_events_nudge"
-      >
-        <template #link>
-          <RouterLink
-            :to="Routes.HISTORY"
-          >
-            <span class="underline">{{ t('transactions.title') }}</span>
-          </RouterLink>
-        </template>
-      </i18n-t>
-    </RuiAlert>
+    <HistoryEventsAlert />
 
     <RuiAlert
       v-if="refreshing"
