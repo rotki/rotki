@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
-import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import { get, set } from '@vueuse/core';
@@ -29,6 +29,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'unlink-event': [data: HistoryEventUnlinkPayload];
   'refresh': [];
 }>();
 
@@ -232,6 +233,7 @@ const reportDescription = computed<string>(() => {
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
       @edit-event="emit('edit-event', $event)"
+      @unlink-event="emit('unlink-event', $event)"
       @refresh="emit('refresh')"
     />
 

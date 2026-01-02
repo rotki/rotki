@@ -1196,9 +1196,20 @@
     }
   },
   "asset_movement_matching": {
+    "actions": {
+      "ignore_all": "Ignore All",
+      "ignore_all_confirm": "Are you sure you want to ignore all {count} unmatched asset movements? This action marks them as having no corresponding on-chain event.",
+      "ignore_fiat": "Ignore All Fiat",
+      "ignore_fiat_confirm": "Are you sure you want to ignore all {count} fiat currency movements? Fiat movements typically don't have corresponding on-chain events.",
+      "ignore_fiat_tooltip": "Ignore all fiat currency movements (e.g., USD, EUR). These typically don't have corresponding on-chain events."
+    },
     "banner": {
       "action": "Match Now",
       "message": "There are {count} unmatched asset movements that require manual matching."
+    },
+    "compact_notes": {
+      "deposit": "Deposit {amount} {asset} to {locationLabel} from {address}",
+      "withdraw": "Withdraw {amount} {asset} from {locationLabel} to {address}"
     },
     "dialog": {
       "check_unmatched": "Check Unmatched Asset Movements",
@@ -1208,17 +1219,28 @@
       "ignore": "Ignore",
       "ignore_tooltip": "Mark this asset movement as having no corresponding on-chain event.",
       "matching_for": "Matching for:",
+      "no_ignored": "No ignored asset movements.",
       "no_matches_found": "No potential matches found. Try adjusting the time range.",
       "no_unmatched": "All asset movements have been matched.",
       "only_expected_assets": "Only show same assets",
       "only_expected_assets_hint": "When enabled, only show events that are from or to addresses that belong to your tracked accounts, with matching amounts and timestamps.",
       "recommended": "Recommended",
+      "restore": "Restore",
+      "restore_tooltip": "Restore this asset movement to the unmatched list.",
       "search_description": "Search for on-chain events within the specified time range:",
       "select": "Select",
       "select_match_title": "Select Matching Event",
       "selected": "Selected",
       "time_range_hours": "Time range (hours)",
       "title": "Match Asset Movements"
+    },
+    "fiat_hint": {
+      "label": "Fiat",
+      "tooltip": "This is a fiat currency movement. Fiat movements typically don't have a corresponding on-chain event and can usually be safely ignored."
+    },
+    "tabs": {
+      "ignored": "Ignored",
+      "unmatched": "Unmatched"
     }
   },
   "asset_search": {
@@ -5053,7 +5075,8 @@
       },
       "actions": {
         "delete": "Delete event",
-        "edit": "Edit event"
+        "edit": "Edit event",
+        "unlink": "Unlink matched events"
       },
       "confirmation": {
         "delete": {
@@ -5085,6 +5108,10 @@
             "keep_custom_events": "Don't remove my custom events",
             "remove_custom_events": "Remove custom events and redecode the transaction"
           }
+        },
+        "unlink": {
+          "message": "Are you sure you want to unlink these matched events? The matched event may need manual attention after unlinking.",
+          "title": "Unlink Matched Events"
         }
       },
       "customized_event": "Customized event",
@@ -5312,6 +5339,7 @@
           }
         }
       },
+      "unlink_error": "Failed to unlink asset movement",
       "unsupported": {
         "description": "This transaction only contains a gas fee with no other events. This typically means the protocol is not yet supported.",
         "location": "- Location: {location}",

@@ -4,6 +4,7 @@ import { CollectionCommonFields } from '@/types/collection';
 import { EntryMeta } from '@/types/history/meta';
 
 const CommonHistoryEvent = z.object({
+  actualGroupIdentifier: z.string().optional(),
   amount: NumericString,
   asset: z.string(),
   autoNotes: z.string().optional(),

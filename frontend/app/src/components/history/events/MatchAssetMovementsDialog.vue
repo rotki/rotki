@@ -4,10 +4,12 @@ import PotentialMatchesDialog from '@/components/history/events/PotentialMatches
 import UnmatchedMovementsList from '@/components/history/events/UnmatchedMovementsList.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
 } from '@/composables/history/events/use-unmatched-asset-movements';
+import { useConfirmStore } from '@/store/confirm';
 
 const modelValue = defineModel<boolean>({ required: true });
 
@@ -19,12 +21,17 @@ const { t } = useI18n({ useScope: 'global' });
 
 const {
   fetchUnmatchedAssetMovements,
+  ignoredLoading,
+  ignoredMovements,
   loading,
   unmatchedMovements,
 } = useUnmatchedAssetMovements();
 
-const { matchAssetMovements } = useHistoryEventsApi();
+const { matchAssetMovements, unlinkAssetMovement } = useHistoryEventsApi();
+const { assetInfo } = useAssetInfoRetrieval();
+const { show } = useConfirmStore();
 
+const activeTab = ref<number>(0);
 const selectedMovement = ref<UnmatchedAssetMovement>();
 const showPotentialMatchesDialog = ref<boolean>(false);
 const ignoreLoading = ref<boolean>(false);
@@ -33,6 +40,16 @@ function getEventEntry(movement: UnmatchedAssetMovement): HistoryEventEntryWithM
   const events = Array.isArray(movement.events) ? movement.events : [movement.events];
   return events[0];
 }
+
+function isFiatMovement(movement: UnmatchedAssetMovement): boolean {
+  const eventEntry = getEventEntry(movement);
+  const info = get(assetInfo(eventEntry.entry.asset));
+  return info?.assetType === 'fiat';
+}
+
+const fiatMovements = computed<UnmatchedAssetMovement[]>(() =>
+  get(unmatchedMovements).filter(movement => isFiatMovement(movement)),
+);
 
 function selectMovement(movement: UnmatchedAssetMovement): void {
   set(selectedMovement, movement);
@@ -45,6 +62,21 @@ async function ignoreMovement(movement: UnmatchedAssetMovement): Promise<void> {
     const eventEntry = getEventEntry(movement);
     await matchAssetMovements(eventEntry.entry.identifier);
     await fetchUnmatchedAssetMovements();
+    await fetchUnmatchedAssetMovements(true);
+    emit('refresh');
+  }
+  finally {
+    set(ignoreLoading, false);
+  }
+}
+
+async function restoreMovement(movement: UnmatchedAssetMovement): Promise<void> {
+  set(ignoreLoading, true);
+  try {
+    const eventEntry = getEventEntry(movement);
+    await unlinkAssetMovement(eventEntry.entry.identifier);
+    await fetchUnmatchedAssetMovements();
+    await fetchUnmatchedAssetMovements(true);
     emit('refresh');
   }
   finally {
@@ -61,8 +93,45 @@ function closeDialog(): void {
   set(modelValue, false);
 }
 
+async function ignoreAllMovements(movements: UnmatchedAssetMovement[]): Promise<void> {
+  set(ignoreLoading, true);
+  try {
+    for (const movement of movements) {
+      const eventEntry = getEventEntry(movement);
+      await matchAssetMovements(eventEntry.entry.identifier);
+    }
+    await fetchUnmatchedAssetMovements();
+    await fetchUnmatchedAssetMovements(true);
+    emit('refresh');
+  }
+  finally {
+    set(ignoreLoading, false);
+  }
+}
+
+function confirmIgnoreAll(): void {
+  const count = get(unmatchedMovements).length;
+  show({
+    message: t('asset_movement_matching.actions.ignore_all_confirm', { count }),
+    primaryAction: t('common.actions.confirm'),
+    title: t('asset_movement_matching.actions.ignore_all'),
+  }, async () => ignoreAllMovements(get(unmatchedMovements)));
+}
+
+function confirmIgnoreAllFiat(): void {
+  const count = get(fiatMovements).length;
+  show({
+    message: t('asset_movement_matching.actions.ignore_fiat_confirm', { count }),
+    primaryAction: t('common.actions.confirm'),
+    title: t('asset_movement_matching.actions.ignore_fiat'),
+  }, async () => ignoreAllMovements(get(fiatMovements)));
+}
+
 onMounted(async () => {
-  await fetchUnmatchedAssetMovements();
+  await Promise.all([
+    fetchUnmatchedAssetMovements(),
+    fetchUnmatchedAssetMovements(true),
+  ]);
 });
 </script>
 
@@ -71,9 +140,12 @@ onMounted(async () => {
     v-model="modelValue"
     max-width="900"
   >
-    <RuiCard content-class="!py-0 max-h-[calc(100vh-250px)]">
+    <RuiCard
+      content-class="!py-0"
+      divide
+    >
       <template #custom-header>
-        <div class="flex items-center justify-between w-full px-4 pt-2">
+        <div class="flex items-center justify-between w-full px-4 py-2">
           <CardTitle>
             {{ t('asset_movement_matching.dialog.title') }}
           </CardTitle>
@@ -87,26 +159,112 @@ onMounted(async () => {
         </div>
       </template>
 
-      <div
-        v-if="loading"
-        class="flex items-center justify-center p-8"
+      <RuiTabs
+        v-model="activeTab"
+        class="border-b border-default"
+        color="primary"
       >
-        <RuiProgress
-          circular
-          variant="indeterminate"
-        />
-      </div>
+        <RuiTab>
+          {{ t('asset_movement_matching.tabs.unmatched') }}
+          <RuiChip
+            v-if="unmatchedMovements.length > 0"
+            color="primary"
+            size="sm"
+            class="ml-2 !px-0.5 !py-0"
+          >
+            {{ unmatchedMovements.length }}
+          </RuiChip>
+        </RuiTab>
+        <RuiTab>
+          {{ t('asset_movement_matching.tabs.ignored') }}
+          <RuiChip
+            v-if="ignoredMovements.length > 0"
+            color="secondary"
+            size="sm"
+            class="ml-2 !px-0.5 !py-0"
+          >
+            {{ ignoredMovements.length }}
+          </RuiChip>
+        </RuiTab>
+      </RuiTabs>
 
-      <UnmatchedMovementsList
-        v-else
-        :movements="unmatchedMovements"
-        :ignore-loading="ignoreLoading"
-        @ignore="ignoreMovement($event)"
-        @select="selectMovement($event)"
-      />
+      <RuiTabItems
+        v-model="activeTab"
+        class="my-4"
+      >
+        <RuiTabItem>
+          <div
+            v-if="loading"
+            class="flex items-center justify-center p-8"
+          >
+            <RuiProgress
+              circular
+              variant="indeterminate"
+            />
+          </div>
+          <UnmatchedMovementsList
+            v-else
+            :movements="unmatchedMovements"
+            :ignore-loading="ignoreLoading"
+            @ignore="ignoreMovement($event)"
+            @select="selectMovement($event)"
+          />
+        </RuiTabItem>
+        <RuiTabItem>
+          <div
+            v-if="ignoredLoading"
+            class="flex items-center justify-center p-8"
+          >
+            <RuiProgress
+              circular
+              variant="indeterminate"
+            />
+          </div>
+          <UnmatchedMovementsList
+            v-else
+            :movements="ignoredMovements"
+            :ignore-loading="ignoreLoading"
+            show-restore
+            @restore="restoreMovement($event)"
+          />
+        </RuiTabItem>
+      </RuiTabItems>
 
       <template #footer>
-        <div class="w-full flex justify-end gap-2">
+        <div class="w-full flex justify-between gap-2 pt-2">
+          <div
+            v-if="activeTab === 0"
+            class="flex gap-2"
+          >
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              :disabled="unmatchedMovements.length === 0 || ignoreLoading"
+              :loading="ignoreLoading"
+              @click="confirmIgnoreAll()"
+            >
+              {{ t('asset_movement_matching.actions.ignore_all') }}
+            </RuiButton>
+            <RuiTooltip
+              :open-delay="400"
+              :popper="{ placement: 'top' }"
+              tooltip-class="max-w-80"
+            >
+              <template #activator>
+                <RuiButton
+                  variant="outlined"
+                  color="warning"
+                  :disabled="fiatMovements.length === 0 || ignoreLoading"
+                  :loading="ignoreLoading"
+                  @click="confirmIgnoreAllFiat()"
+                >
+                  {{ t('asset_movement_matching.actions.ignore_fiat') }}
+                </RuiButton>
+              </template>
+              {{ t('asset_movement_matching.actions.ignore_fiat_tooltip') }}
+            </RuiTooltip>
+          </div>
+          <div v-else />
           <RuiButton
             variant="text"
             @click="closeDialog()"

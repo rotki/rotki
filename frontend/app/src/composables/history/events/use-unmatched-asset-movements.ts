@@ -13,15 +13,20 @@ export interface UnmatchedAssetMovement {
 
 interface UseUnmatchedAssetMovementsReturn {
   unmatchedMovements: Ref<UnmatchedAssetMovement[]>;
+  ignoredMovements: Ref<UnmatchedAssetMovement[]>;
   unmatchedCount: ComputedRef<number>;
+  ignoredCount: ComputedRef<number>;
   loading: Ref<boolean>;
-  fetchUnmatchedAssetMovements: () => Promise<void>;
+  ignoredLoading: Ref<boolean>;
+  fetchUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<void>;
   matchAssetMovement: (assetMovementId: number, matchedEventId: number) => Promise<ActionStatus>;
   refreshAfterMatch: () => Promise<void>;
 }
 
 const unmatchedMovements = ref<UnmatchedAssetMovement[]>([]);
+const ignoredMovements = ref<UnmatchedAssetMovement[]>([]);
 const loading = ref<boolean>(false);
+const ignoredLoading = ref<boolean>(false);
 
 export function useUnmatchedAssetMovements(): UseUnmatchedAssetMovementsReturn {
   const { t } = useI18n({ useScope: 'global' });
@@ -34,14 +39,19 @@ export function useUnmatchedAssetMovements(): UseUnmatchedAssetMovementsReturn {
   } = useHistoryEventsApi();
 
   const unmatchedCount = computed<number>(() => get(unmatchedMovements).length);
+  const ignoredCount = computed<number>(() => get(ignoredMovements).length);
 
-  const fetchUnmatchedAssetMovements = async (): Promise<void> => {
-    set(loading, true);
+  const fetchUnmatchedAssetMovements = async (onlyIgnored?: boolean): Promise<void> => {
+    const isIgnored = onlyIgnored === true;
+    const loadingRef = isIgnored ? ignoredLoading : loading;
+    const movementsRef = isIgnored ? ignoredMovements : unmatchedMovements;
+
+    set(loadingRef, true);
     try {
-      const groupIdentifiers = await getUnmatchedAssetMovements();
+      const groupIdentifiers = await getUnmatchedAssetMovements(onlyIgnored);
 
       if (groupIdentifiers.length === 0) {
-        set(unmatchedMovements, []);
+        set(movementsRef, []);
         return;
       }
 
@@ -70,7 +80,7 @@ export function useUnmatchedAssetMovements(): UseUnmatchedAssetMovementsReturn {
         }
       }
 
-      set(unmatchedMovements, movements);
+      set(movementsRef, movements);
     }
     catch (error: any) {
       logger.error('Failed to fetch unmatched asset movements:', error);
@@ -81,7 +91,7 @@ export function useUnmatchedAssetMovements(): UseUnmatchedAssetMovementsReturn {
       });
     }
     finally {
-      set(loading, false);
+      set(loadingRef, false);
     }
   };
 
@@ -120,6 +130,9 @@ export function useUnmatchedAssetMovements(): UseUnmatchedAssetMovementsReturn {
 
   return {
     fetchUnmatchedAssetMovements,
+    ignoredCount,
+    ignoredLoading,
+    ignoredMovements,
     loading,
     matchAssetMovement,
     refreshAfterMatch,

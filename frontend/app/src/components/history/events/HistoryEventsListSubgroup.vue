@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import type { RuiIcons } from '@rotki/ui-library';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
-import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import { HistoryEventEntryType } from '@rotki/common';
 import LazyLoader from '@/components/helper/LazyLoader.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItem from '@/components/history/events/HistoryEventsListItem.vue';
@@ -27,6 +28,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'unlink-event': [data: HistoryEventUnlinkPayload];
   'refresh': [];
 }>();
 
@@ -42,12 +44,22 @@ const shouldExpand = computed<boolean>(() => get(expanded) || !!(props.selection
 
 const isSwapGroup = computed<boolean>(() => props.events.length > 0 && isSwapTypeEvent(props.events[0].entryType));
 
+const primaryEvent = computed<HistoryEventEntry>(() => {
+  if (get(isSwapGroup))
+    return props.events[0];
+
+  // For asset movements, use the first non-fee asset movement event
+  const assetMovementEvent = props.events.find(
+    item => item.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT && item.eventSubtype !== 'fee',
+  );
+  return assetMovementEvent ?? props.events[0];
+});
+
 const subgroupIcon = computed<RuiIcons | undefined>(() => {
   if (get(isSwapGroup))
     return 'lu-arrow-right-left';
 
-  // For asset movements, use the icon from the first event's type data
-  return get(getEventTypeData(props.events[0])).icon;
+  return get(getEventTypeData(get(primaryEvent))).icon;
 });
 
 const usedEvents = computed<HistoryEventEntry[]>(() => {
@@ -55,10 +67,9 @@ const usedEvents = computed<HistoryEventEntry[]>(() => {
     return props.events;
   }
 
-  // For non-swap groups (like asset movements), show only the deposit event
+  // For non-swap groups (like asset movements), show only the primary event
   if (!get(isSwapGroup)) {
-    const depositEvent = props.events.find(item => item.eventType === 'deposit');
-    return depositEvent ? [depositEvent] : [props.events[0]];
+    return [get(primaryEvent)];
   }
 
   const filtered = props.events.filter(item => item.eventSubtype !== 'fee');
@@ -103,13 +114,25 @@ function appendFeeNotes(notes: string | undefined): string | undefined {
 }
 
 const compactNotes = computed<string | undefined>(() => {
-  // For non-swap groups, show user notes with fee if present
+  // For non-swap groups (asset movements), build notes from primary and secondary events
   if (!get(isSwapGroup)) {
-    const firstEvent = props.events[0];
-    if (!firstEvent)
-      return undefined;
+    const primary = get(primaryEvent);
+    // Secondary event is the one that's NOT an asset movement event (e.g., EVM event)
+    const secondary = props.events.find(
+      item => item.entryType !== HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
+    );
 
-    return appendFeeNotes(firstEvent.userNotes);
+    const options = { collectionParent: false };
+    const amount = primary.amount;
+    const asset = getAssetSymbol(primary.asset, options);
+    const locationLabel = primary.locationLabel ?? '';
+    const address = secondary?.locationLabel ?? '';
+
+    const notes = primary.eventType === 'deposit'
+      ? t('asset_movement_matching.compact_notes.deposit', { address, amount, asset, locationLabel })
+      : t('asset_movement_matching.compact_notes.withdraw', { address, amount, asset, locationLabel });
+
+    return appendFeeNotes(notes);
   }
 
   // Swap-specific compact notes
@@ -197,9 +220,9 @@ watch(shouldExpand, () => {
         </RuiButton>
         <HistoryEventType
           :icon="subgroupIcon"
-          :event="events[0]"
+          :event="primaryEvent"
           highlight
-          :chain="getChain(events[0].location)"
+          :chain="getChain(primaryEvent.location)"
           hide-customized-chip
         />
       </LazyLoader>

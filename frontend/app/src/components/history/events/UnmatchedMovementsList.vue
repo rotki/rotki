@@ -8,6 +8,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 
 interface UnmatchedMovementRow {
   groupIdentifier: string;
@@ -22,14 +23,22 @@ interface UnmatchedMovementRow {
 const props = defineProps<{
   movements: UnmatchedAssetMovement[];
   ignoreLoading?: boolean;
+  showRestore?: boolean;
 }>();
 
 const emit = defineEmits<{
   ignore: [movement: UnmatchedAssetMovement];
+  restore: [movement: UnmatchedAssetMovement];
   select: [movement: UnmatchedAssetMovement];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const { assetInfo } = useAssetInfoRetrieval();
+
+function isFiatAsset(asset: string): boolean {
+  const info = get(assetInfo(asset));
+  return info?.assetType === 'fiat';
+}
 
 const columns = computed<DataTableColumn<UnmatchedMovementRow>[]>(() => [
   {
@@ -79,11 +88,20 @@ const rows = computed<UnmatchedMovementRow[]>(() =>
     };
   }),
 );
+
+const emptyDescription = computed<string>(() =>
+  props.showRestore
+    ? t('asset_movement_matching.dialog.no_ignored')
+    : t('asset_movement_matching.dialog.no_unmatched'),
+);
 </script>
 
 <template>
   <div>
-    <p class="text-body-2 text-rui-text-secondary mb-4">
+    <p
+      v-if="!showRestore"
+      class="text-body-2 text-rui-text-secondary mb-4"
+    >
       {{ t('asset_movement_matching.dialog.description') }}
     </p>
 
@@ -94,11 +112,28 @@ const rows = computed<UnmatchedMovementRow[]>(() =>
       outlined
       sticky-header
       dense
-      class="table-inside-dialog"
-      :empty="{ description: t('asset_movement_matching.dialog.no_unmatched') }"
+      class="table-inside-dialog max-h-[calc(100vh-23rem)]"
+      :empty="{ description: emptyDescription }"
     >
       <template #item.asset="{ row }">
-        <AssetDetails :asset="row.asset" />
+        <div class="flex items-center gap-2">
+          <AssetDetails :asset="row.asset" />
+          <RuiTooltip
+            v-if="isFiatAsset(row.asset)"
+            :open-delay="400"
+            :popper="{ placement: 'top' }"
+          >
+            <template #activator>
+              <RuiChip
+                size="sm"
+                color="warning"
+              >
+                {{ t('asset_movement_matching.fiat_hint.label') }}
+              </RuiChip>
+            </template>
+            {{ t('asset_movement_matching.fiat_hint.tooltip') }}
+          </RuiTooltip>
+        </div>
       </template>
       <template #item.amount="{ row }">
         <AmountDisplay :value="row.amount" />
@@ -119,29 +154,49 @@ const rows = computed<UnmatchedMovementRow[]>(() =>
       </template>
       <template #item.actions="{ row }">
         <div class="flex gap-2">
-          <RuiButton
-            size="sm"
-            color="primary"
-            @click="emit('select', row.original)"
-          >
-            {{ t('asset_movement_matching.dialog.find_match') }}
-          </RuiButton>
-          <RuiTooltip
-            :open-delay="400"
-            :popper="{ placement: 'top' }"
-          >
-            <template #activator>
-              <RuiButton
-                size="sm"
-                variant="outlined"
-                :loading="props.ignoreLoading"
-                @click="emit('ignore', row.original)"
-              >
-                {{ t('asset_movement_matching.dialog.ignore') }}
-              </RuiButton>
-            </template>
-            {{ t('asset_movement_matching.dialog.ignore_tooltip') }}
-          </RuiTooltip>
+          <template v-if="showRestore">
+            <RuiTooltip
+              :open-delay="400"
+              :popper="{ placement: 'top' }"
+            >
+              <template #activator>
+                <RuiButton
+                  size="sm"
+                  color="primary"
+                  :loading="ignoreLoading"
+                  @click="emit('restore', row.original)"
+                >
+                  {{ t('asset_movement_matching.dialog.restore') }}
+                </RuiButton>
+              </template>
+              {{ t('asset_movement_matching.dialog.restore_tooltip') }}
+            </RuiTooltip>
+          </template>
+          <template v-else>
+            <RuiButton
+              size="sm"
+              color="primary"
+              @click="emit('select', row.original)"
+            >
+              {{ t('asset_movement_matching.dialog.find_match') }}
+            </RuiButton>
+            <RuiTooltip
+              :open-delay="400"
+              :popper="{ placement: 'top' }"
+            >
+              <template #activator>
+                <RuiButton
+                  size="sm"
+                  variant="outlined"
+                  :loading="ignoreLoading"
+                  @click="emit('ignore', row.original)"
+                >
+                  {{ t('asset_movement_matching.dialog.ignore') }}
+                </RuiButton>
+              </template>
+              {{ t('asset_movement_matching.dialog.ignore_tooltip') }}
+            </RuiTooltip>
+          </template>
         </div>
       </template>
     </RuiDataTable>

@@ -81,6 +81,7 @@ const {
   confirmDelete,
   confirmRedecode,
   confirmTxAndEventsDelete,
+  confirmUnlink,
   getItemClass,
   hasCustomEvents,
   redecode,
@@ -198,12 +199,14 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
       <LazyLoader>
         <HistoryEventsAction
           :event="row"
+          :events="allEventsMapped[row.groupIdentifier]"
           :loading="eventsLoading"
           @add-event="addEvent($event, row);"
           @toggle-ignore="toggle($event)"
           @redecode="redecode($event, row.groupIdentifier)"
           @redecode-with-options="redecodeWithOptions($event, row.groupIdentifier)"
           @delete-tx="confirmTxAndEventsDelete($event)"
+          @unlink="confirmUnlink({ eventId: $event })"
         />
       </LazyLoader>
     </template>
@@ -224,6 +227,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
         @edit-event="editEvent($event, row);"
         @delete-event="confirmDelete($event)"
         @show:missing-rule-action="addMissingRule($event, row);"
+        @unlink-event="confirmUnlink($event)"
         @refresh="emit('refresh')"
       />
     </template>

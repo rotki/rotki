@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
-import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import { flatten } from 'es-toolkit';
@@ -24,6 +24,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'unlink-event': [data: HistoryEventUnlinkPayload];
   'refresh': [];
 }>();
 
@@ -56,6 +57,7 @@ function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEnt
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+          @unlink-event="emit('unlink-event', $event)"
           @refresh="emit('refresh')"
         />
         <HistoryEventsListItem

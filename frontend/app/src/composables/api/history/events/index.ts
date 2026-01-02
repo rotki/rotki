@@ -3,6 +3,7 @@ import type { CollectionResponse } from '@/types/collection';
 import type { QueryExchangeEventsPayload } from '@/types/exchanges';
 import { omit } from 'es-toolkit';
 import { z } from 'zod/v4';
+import { snakeCaseTransformer } from '@/modules/api';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_TASK_STATUS, VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
 import { type ActionDataEntry, ActionDataEntryArraySchema, type ActionStatus } from '@/types/action';
@@ -65,9 +66,10 @@ interface UseHistoryEventsApiReturn {
   deleteStakeEvents: (entryType: string) => Promise<boolean>;
   pullAndRecodeEthBlockEventRequest: (payload: PullEthBlockEventPayload) => Promise<PendingTask>;
   getTransactionStatusSummary: () => Promise<TransactionStatus>;
-  getUnmatchedAssetMovements: () => Promise<string[]>;
+  getUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<string[]>;
   getAssetMovementMatches: (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean) => Promise<AssetMovementMatchSuggestions>;
   matchAssetMovements: (assetMovement: number, matchedEvent?: number | null) => Promise<boolean>;
+  unlinkAssetMovement: (assetMovement: number) => Promise<boolean>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
@@ -286,8 +288,10 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return TransactionStatusSchema.parse(response);
   };
 
-  const getUnmatchedAssetMovements = async (): Promise<string[]> =>
-    api.get<string[]>('/history/events/match/asset_movements');
+  const getUnmatchedAssetMovements = async (onlyIgnored?: boolean): Promise<string[]> =>
+    api.get<string[]>('/history/events/match/asset_movements', {
+      params: onlyIgnored !== undefined ? snakeCaseTransformer({ onlyIgnored }) : undefined,
+    });
 
   const getAssetMovementMatches = async (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean): Promise<AssetMovementMatchSuggestions> =>
     api.post<AssetMovementMatchSuggestions>('/history/events/match/asset_movements', {
@@ -300,6 +304,11 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     api.put<boolean>('/history/events/match/asset_movements', {
       assetMovement,
       ...(matchedEvent != null && { matchedEvent }),
+    });
+
+  const unlinkAssetMovement = async (assetMovement: number): Promise<boolean> =>
+    api.delete<boolean>('/history/events/match/asset_movements', {
+      body: { assetMovement },
     });
 
   return {
@@ -323,6 +332,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     getUnmatchedAssetMovements,
     matchAssetMovements,
     pullAndRecodeEthBlockEventRequest,
+    unlinkAssetMovement,
     pullAndRecodeTransactionRequest,
     queryExchangeEvents,
     queryOnlineHistoryEvents,
