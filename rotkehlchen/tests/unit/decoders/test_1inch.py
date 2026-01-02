@@ -1052,6 +1052,55 @@ def test_1inch_swap_via_pancake(arbitrum_one_inquirer, arbitrum_one_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
+def test_1inch_limit_order_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xd4b65b099928142f9ad8dad41f8de1e8c2ca4cd6551b930828eda5a8b72392db')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=tx_hash,
+    )
+    spend_address, pendle, cbbtc = string_to_evm_address('0xde9e4FE32B049f821c7f3e9802381aa470FFCA73'), Asset('eip155:42161/erc20:0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8'), Asset('eip155:42161/erc20:0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf')  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=(timestamp := TimestampMS(1737540373000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=pendle,
+        amount=ZERO,
+        location_label=(user := arbitrum_one_accounts[0]),
+        notes=f'Revoke PENDLE spending approval of {user} by {ONEINCH_V6_ROUTER}',
+        address=ONEINCH_V6_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=pendle,
+        amount=FVal(spend_amount := '143.756192438165803975'),
+        location_label=user,
+        notes=f'Swap {spend_amount} PENDLE in a 1inch limit order',
+        counterparty=CPT_ONEINCH_V6,
+        address=spend_address,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=cbbtc,
+        amount=FVal(receive_amount := '0.00503188'),
+        location_label=user,
+        notes=f'Receive {receive_amount} cbBTC as the result of a 1inch limit order',
+        counterparty=CPT_ONEINCH_V6,
+        address=spend_address,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_limit_order_swap(
         gnosis_inquirer: 'GnosisInquirer',
@@ -1075,7 +1124,7 @@ def test_limit_order_swap(
         address=string_to_evm_address('0x111111125421cA6dc452d289314280a0f8842A65'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
-        sequence_index=11,
+        sequence_index=51,
         timestamp=timestamp,
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.SPEND,
@@ -1087,7 +1136,7 @@ def test_limit_order_swap(
         address=string_to_evm_address('0x3Ea8d8E835fA597D9AB64E10f4fA33EC9Bc261f9'),
     ), EvmSwapEvent(
         tx_ref=tx_hash,
-        sequence_index=12,
+        sequence_index=52,
         timestamp=timestamp,
         location=Location.GNOSIS,
         event_subtype=HistoryEventSubType.RECEIVE,

@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -77,6 +78,11 @@ class Oneinchv6Decoder(Oneinchv3n4DecoderBase):
             event.counterparty = self.counterparty
             event.event_subtype = new_event_subtype
             event.event_type = HistoryEventType.TRADE
+
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events,
+        )
 
         return EvmDecodingOutput(process_swaps=True)
 
