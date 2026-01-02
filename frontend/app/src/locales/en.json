@@ -3217,8 +3217,14 @@
     "hint": "View your asset balances at a specific point in time, calculated from your historical events.",
     "no_data": "No historical data found for the selected timestamp",
     "premium_required": "Historical balances is a premium feature. Please upgrade to access this functionality.",
+    "processing_description": "Processing historical events to calculate balances",
+    "processing_failed": "Processing completed but data is still not available. Please try again.",
+    "task_description_all": "Calculating balances for all assets at {timestamp}",
+    "task_description_asset": "Calculating balance for {asset} at {timestamp}",
+    "task_running_hint": "The task is running. You can leave this page and will be notified when the historical balances processing is done.",
     "timestamp_label": "Date and Time",
-    "title": "Historical Balances"
+    "title": "Historical Balances",
+    "view_results": "View Results"
   },
   "history_events_alert": {
     "nudge": "History events need to be queried and decoded. Navigate to {link} view to ensure your data is up to date."

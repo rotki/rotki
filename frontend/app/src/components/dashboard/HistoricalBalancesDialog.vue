@@ -1,125 +1,33 @@
 <script setup lang="ts">
-import type { HistoricalAssetBalance, HistoricalBalancesResponse } from '@/types/balances';
-import { type AssetBalanceWithPrice, bigNumberify, NoPrice } from '@rotki/common';
-import dayjs from 'dayjs';
 import AssetBalances from '@/components/AssetBalances.vue';
 import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
 import HistoryEventsAlert from '@/components/history/HistoryEventsAlert.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import { useHistoricalBalancesApi } from '@/composables/api/balances/historical-balances-api';
-import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
+import { useHistoricalBalances } from '@/composables/balances/historical';
 import { usePremium } from '@/composables/premium';
-import { useCollectionInfo } from '@/modules/assets/use-collection-info';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-
-const model = defineModel<boolean>({ required: true });
 
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 
-const timestamp = ref<number>(dayjs().unix());
-const selectedAsset = ref<string>();
-const loading = ref<boolean>(false);
-const errorMessage = ref<string>();
-const balances = ref<AssetBalanceWithPrice[]>([]);
-
-const { fetchHistoricalBalances } = useHistoricalBalancesApi();
-const { isAssetIgnored } = useIgnoredAssetsStore();
-const { useCollectionId, useCollectionMainAsset } = useCollectionInfo();
-
-const hasResults = computed<boolean>(() => get(balances).length > 0);
-
-function transformToAssetBalances(response: HistoricalBalancesResponse): AssetBalanceWithPrice[] {
-  const sources: Record<string, Record<string, { amount: ReturnType<typeof bigNumberify>; value: ReturnType<typeof bigNumberify> }>> = {};
-
-  for (const [asset, balance] of Object.entries(response)) {
-    const amount = bigNumberify(balance.amount);
-    const price = bigNumberify(balance.price);
-    const value = amount.multipliedBy(price);
-
-    sources[asset] = {
-      historical: { amount, value },
-    };
-  }
-
-  return summarizeAssetProtocols(
-    {
-      associatedAssets: {},
-      sources: { historical: sources },
-    },
-    {
-      hideIgnored: false,
-      isAssetIgnored,
-    },
-    {
-      getAssetPrice: (asset: string) => {
-        const balance = response[asset];
-        return balance ? bigNumberify(balance.price) : NoPrice;
-      },
-      noPrice: NoPrice,
-    },
-    {
-      groupCollections: true,
-      useCollectionId,
-      useCollectionMainAsset,
-    },
-  );
-}
-
-async function fetchBalances(): Promise<void> {
-  set(loading, true);
-  set(errorMessage, undefined);
-  set(balances, []);
-
-  try {
-    const asset = get(selectedAsset);
-    const payload = {
-      timestamp: get(timestamp),
-      ...(asset ? { asset } : {}),
-    };
-
-    const response = await fetchHistoricalBalances(payload);
-
-    let responseAsRecord: HistoricalBalancesResponse;
-    if (asset) {
-      responseAsRecord = { [asset]: response as HistoricalAssetBalance };
-    }
-    else {
-      responseAsRecord = response as HistoricalBalancesResponse;
-    }
-
-    const transformedBalances = transformToAssetBalances(responseAsRecord);
-    set(balances, transformedBalances);
-  }
-  catch (error: any) {
-    if (error.message?.includes('404') || error.message?.includes('No historical data'))
-      set(errorMessage, t('historical_balances_dialog.no_data'));
-    else
-      set(errorMessage, error.message);
-  }
-  finally {
-    set(loading, false);
-  }
-}
-
-function reset(): void {
-  set(timestamp, dayjs().unix());
-  set(selectedAsset, undefined);
-  set(balances, []);
-  set(errorMessage, undefined);
-}
-
-watch(model, (value) => {
-  if (!value)
-    reset();
-});
+const {
+  dialogOpen,
+  timestamp,
+  selectedAsset,
+  balances,
+  loading,
+  errorMessage,
+  hasResults,
+  fetchBalances,
+  closeDialog,
+} = useHistoricalBalances();
 </script>
 
 <template>
   <RuiDialog
-    v-model="model"
+    v-model="dialogOpen"
     max-width="800"
+    @closed="closeDialog()"
   >
     <RuiCard>
       <template #header>
@@ -172,6 +80,13 @@ watch(model, (value) => {
             {{ t('historical_balances_dialog.fetch_button') }}
           </RuiButton>
 
+          <div
+            v-if="loading"
+            class="text-rui-text-secondary text-body-2 -mt-2"
+          >
+            {{ t('historical_balances_dialog.task_running_hint') }}
+          </div>
+
           <RuiAlert
             v-if="errorMessage"
             type="error"
@@ -198,7 +113,7 @@ watch(model, (value) => {
         <RuiButton
           color="primary"
           variant="text"
-          @click="model = false"
+          @click="dialogOpen = false"
         >
           {{ t('common.actions.close') }}
         </RuiButton>

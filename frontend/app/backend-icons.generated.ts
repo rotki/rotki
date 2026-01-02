@@ -53,6 +53,7 @@ export const backendIcons: string[] = [
   'lu-redo-2',
   'lu-refresh-cw',
   'lu-refund',
+  'lu-repeat-2',
   'lu-rocket',
   'lu-scale',
   'lu-send-to-back',
