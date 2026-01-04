@@ -25,6 +25,7 @@ export class ManualBalancesPage {
       await tagsField.locator('[data-id=activator]').click();
       await tagsInput.fill(tag);
       await tagsInput.press('Enter');
+      await tagsField.locator('[data-id=activator] > button + span').click();
     }
 
     // Handle location field as autocomplete

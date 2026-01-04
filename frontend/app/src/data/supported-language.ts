@@ -31,4 +31,9 @@ export const supportedLanguages = [
     identifier: SupportedLanguage.FR,
     label: 'French (Français)',
   },
+  {
+    countries: ['ru'],
+    identifier: SupportedLanguage.RU,
+    label: 'Russian (Русский)',
+  },
 ];
