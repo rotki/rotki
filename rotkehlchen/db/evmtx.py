@@ -29,6 +29,7 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -407,31 +408,42 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
 
         cursor.execute(
             'SELECT identifier, log_index, data, address from evmtx_receipt_logs WHERE tx_id=?',
-            (tx_id,))
-        with self.db.conn.read_ctx() as other_cursor:
-            for result in cursor:
-                tx_receipt_log = EvmTxReceiptLog(
-                    log_index=result[1],
-                    data=result[2],
-                    address=result[3],
-                )
-                other_cursor.execute(
-                    'SELECT topic from evmtx_receipt_log_topics '
-                    'WHERE log=? ORDER BY topic_index ASC',
-                    (result[0],),
-                )
-                tx_receipt_log.topics = [x[0] for x in other_cursor]
-                if (
-                    len(tx_receipt_log.topics) == 0 and
-                    tx_receipt_log.address not in (
-                        CONSOLIDATION_REQUEST_CONTRACT,
-                        WITHDRAWAL_REQUEST_CONTRACT,
-                    )
-                ):  # skip anonymous logs unless they are from specific addresses whose decoders properly handle it.  # noqa: E501
-                    log.debug(f'Ignoring anonymous tx log in {tx_hash!s} at {chain_id}')
-                    continue
+            (tx_id,),
+        )
+        log_rows, log_ids = [], []
+        for row in cursor:
+            log_rows.append(row)
+            log_ids.append(row[0])
 
-                tx_receipt.logs.append(tx_receipt_log)
+        topics_by_log: dict[int, list[bytes]] = {log_id: [] for log_id in log_ids}
+        if log_ids:
+            with self.db.conn.read_ctx() as other_cursor:
+                for bindings, placeholders in get_query_chunks(log_ids):
+                    for log_id, topic in other_cursor.execute(
+                        'SELECT log, topic from evmtx_receipt_log_topics '
+                        f'WHERE log IN ({placeholders}) ORDER BY log, topic_index ASC',
+                        bindings,
+                    ):
+                        topics_by_log[log_id].append(topic)
+
+        for log_id, log_index, data, address in log_rows:
+            tx_receipt_log = EvmTxReceiptLog(
+                log_index=log_index,
+                data=data,
+                address=address,
+            )
+            tx_receipt_log.topics = topics_by_log.get(log_id, [])
+            if (
+                len(tx_receipt_log.topics) == 0 and
+                tx_receipt_log.address not in (
+                    CONSOLIDATION_REQUEST_CONTRACT,
+                    WITHDRAWAL_REQUEST_CONTRACT,
+                )
+            ):  # skip anonymous logs unless they are from specific addresses whose decoders properly handle it.  # noqa: E501
+                log.debug(f'Ignoring anonymous tx log in {tx_hash!s} at {chain_id}')
+                continue
+
+            tx_receipt.logs.append(tx_receipt_log)
 
         return tx_receipt
 
