@@ -4,11 +4,15 @@ import AppImage from '@/components/common/AppImage.vue';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   counterparty: string;
-}>();
+  icon?: boolean;
+  size?: string;
+}>(), {
+  size: '20px',
+});
 
-const { counterparty } = toRefs(props);
+const { counterparty, size } = toRefs(props);
 
 const { getCounterpartyData } = useHistoryEventCounterpartyMappings();
 
@@ -45,17 +49,20 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
         v-if="data.icon"
         :name="data.icon"
         :color="data.color || 'secondary'"
-        size="20px"
+        :size="size"
       />
 
       <AppImage
         v-else-if="counterpartyImageSrc"
         :src="counterpartyImageSrc"
         contain
-        size="20px"
+        :size="size"
       />
     </div>
-    <div class="uppercase text-sm">
+    <div
+      v-if="!icon"
+      class="uppercase text-sm"
+    >
       {{ toHumanReadable(data.label, 'sentence') }}
     </div>
   </div>

@@ -71,6 +71,7 @@ export const AssetInfo = z.object({
   mainAsset: z.string().optional(),
   name: z.string().nullish(),
   symbol: z.string().nullish(),
+  protocol: z.string().nullish(),
 });
 
 export const AssetInfoWithTransformer = AssetInfo.transform(data => ({

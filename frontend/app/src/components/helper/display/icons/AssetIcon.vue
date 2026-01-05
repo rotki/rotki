@@ -3,6 +3,7 @@ import { getAddressFromEvmIdentifier, getIdentifierFromSymbolMap, isEvmIdentifie
 import AppImage from '@/components/common/AppImage.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
+import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useCopy } from '@/composables/copy';
 import { useAssetIconStore } from '@/store/assets/icon';
@@ -86,6 +87,7 @@ const chain = computed(() => {
 });
 const symbol = computed(() => get(asset)?.symbol);
 const name = computed(() => get(asset)?.name);
+const protocol = computed<string | undefined>(() => get(asset)?.protocol ?? undefined);
 
 const displayAsset = computed<string>(() => {
   const currencySymbol = get(currency);
@@ -121,6 +123,7 @@ const tooltip = computed(() => {
 });
 
 const usedChainIconSize = computed(() => get(chainIconSize) || `${(Number.parseInt(get(size)) * 50) / 100}px`);
+const usedProtocolIconSize = computed(() => get(chainIconSize) || `${(Number.parseInt(get(size)) * 40) / 100}px`);
 
 const chainIconMargin = computed(() => `-${get(usedChainIconSize)}`);
 
@@ -177,6 +180,17 @@ const { copied, copy } = useCopy(identifier);
           <EvmChainIcon
             :chain="chain"
             :size="usedChainIconSize"
+          />
+        </div>
+
+        <div
+          v-if="protocol"
+          class="z-[1] absolute -top-1 -left-1 border border-rui-grey-300 dark:border-rui-grey-900 rounded-md bg-white"
+        >
+          <CounterpartyDisplay
+            :counterparty="protocol"
+            :size="usedProtocolIconSize"
+            icon
           />
         </div>
 

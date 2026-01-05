@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users will now see the protocol icon on assets that belong to a specific protocol (e.g., Aave, Compound).
 * :bug:`11245` Users will now be able to select February in the date picker when the current date's day is greater than 28.
 * :feature:`-` rotki is now available in Russian.
 * :feature:`11253` Premium users can now view their historical asset balances at any point in time, calculated from their transaction history.
