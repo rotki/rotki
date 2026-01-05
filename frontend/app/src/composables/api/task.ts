@@ -8,12 +8,15 @@ import { VALID_TASK_STATUS } from '@/modules/api/utils';
 import { ApiValidationError } from '@/types/api/errors';
 import { HTTPStatus } from '@/types/api/http';
 import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/types/login';
-import { TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/types/task';
+import { type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/types/task';
+
+export type TriggerTaskType = 'historical_balance_processing' | 'asset_movement_matching';
 
 interface UseTaskApiReturn {
   queryTasks: () => Promise<TaskStatus>;
   queryTaskResult: <T>(id: number) => Promise<ActionResult<T>>;
   cancelAsyncTask: (id: number) => Promise<boolean>;
+  triggerTask: (task: TriggerTaskType) => Promise<PendingTask>;
 }
 
 export function useTaskApi(): UseTaskApiReturn {
@@ -105,9 +108,23 @@ export function useTaskApi(): UseTaskApiReturn {
     return data.result;
   };
 
+  /**
+   * Triggers a specific task type.
+   * @param task - The type of task to trigger
+   * @returns PendingTask with task ID
+   */
+  const triggerTask = async (task: TriggerTaskType): Promise<PendingTask> => {
+    const response = await api.post<PendingTask>('/tasks/trigger', {
+      asyncQuery: true,
+      task,
+    });
+    return PendingTaskSchema.parse(response);
+  };
+
   return {
     cancelAsyncTask,
     queryTaskResult,
     queryTasks,
+    triggerTask,
   };
 }

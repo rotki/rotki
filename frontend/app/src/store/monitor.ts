@@ -1,11 +1,14 @@
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
+import { useTaskApi } from '@/composables/api/task';
 import { useBalances } from '@/composables/balances';
+import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useAutoLogin } from '@/composables/user/account';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { useUnifiedProgress } from '@/modules/dashboard/progress/composables/use-unified-progress';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useMessageHandling } from '@/modules/messaging';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -34,6 +37,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { check } = usePeriodicStore();
   const { consume } = useMessageHandling();
   const { monitor } = useTaskStore();
+  const { triggerTask } = useTaskApi();
   const { autoRefresh } = useBalances();
   const { fetchManualBalances } = useManualBalances();
   const { fetchConnectedExchangeBalances } = useExchanges();
@@ -41,6 +45,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { removeIgnoredAssets } = useBalancesStore();
   const { processing } = useHistoryEventsStatus();
   const { fetchTransactionStatusSummary } = useHistoryStore();
+  const { fetchUnmatchedAssetMovements } = useUnmatchedAssetMovements();
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
   const frontendStore = useFrontendSettingsStore();
@@ -187,9 +192,20 @@ export const useMonitorStore = defineStore('monitor', () => {
     }
   });
 
+  const { showIdleMessage, longQuery, hasUndecodedTransactions } = useUnifiedProgress();
+
+  const historyEventsUnfinished = debouncedRef(logicOr(processing, showIdleMessage, longQuery, hasUndecodedTransactions), 500);
+
   watch([processing, connectedExchanges], async ([currentProcessing, connectedExchanges], [previousProcessing, previousConnectedExchanges]) => {
     if (currentProcessing !== previousProcessing || !isEqual(connectedExchanges, previousConnectedExchanges)) {
       await fetchTransactionStatusSummary();
+    }
+  });
+
+  watch(historyEventsUnfinished, async (isUnfinished, wasUnfinished) => {
+    if (!isUnfinished && wasUnfinished) {
+      await triggerTask('asset_movement_matching');
+      await fetchUnmatchedAssetMovements();
     }
   });
 

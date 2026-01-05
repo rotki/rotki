@@ -4,6 +4,7 @@ import PotentialMatchesDialog from '@/components/history/events/PotentialMatches
 import UnmatchedMovementsList from '@/components/history/events/UnmatchedMovementsList.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useTaskApi } from '@/composables/api/task';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import {
   type UnmatchedAssetMovement,
@@ -28,6 +29,7 @@ const {
 } = useUnmatchedAssetMovements();
 
 const { matchAssetMovements, unlinkAssetMovement } = useHistoryEventsApi();
+const { triggerTask } = useTaskApi();
 const { assetInfo } = useAssetInfoRetrieval();
 const { show } = useConfirmStore();
 
@@ -35,6 +37,7 @@ const activeTab = ref<number>(0);
 const selectedMovement = ref<UnmatchedAssetMovement>();
 const showPotentialMatchesDialog = ref<boolean>(false);
 const ignoreLoading = ref<boolean>(false);
+const autoMatchLoading = ref<boolean>(false);
 
 function getEventEntry(movement: UnmatchedAssetMovement): HistoryEventEntryWithMeta {
   const events = Array.isArray(movement.events) ? movement.events : [movement.events];
@@ -125,6 +128,19 @@ function confirmIgnoreAllFiat(): void {
     primaryAction: t('common.actions.confirm'),
     title: t('asset_movement_matching.actions.ignore_fiat'),
   }, async () => ignoreAllMovements(get(fiatMovements)));
+}
+
+async function triggerAutoMatch(): Promise<void> {
+  set(autoMatchLoading, true);
+  try {
+    await triggerTask('asset_movement_matching');
+    await fetchUnmatchedAssetMovements();
+    await fetchUnmatchedAssetMovements(true);
+    emit('refresh');
+  }
+  finally {
+    set(autoMatchLoading, false);
+  }
 }
 
 onMounted(async () => {
@@ -262,6 +278,24 @@ onMounted(async () => {
                 </RuiButton>
               </template>
               {{ t('asset_movement_matching.actions.ignore_fiat_tooltip') }}
+            </RuiTooltip>
+            <RuiTooltip
+              :open-delay="400"
+              :popper="{ placement: 'top' }"
+              tooltip-class="max-w-80"
+              class="border-l border-default pl-2"
+            >
+              <template #activator>
+                <RuiButton
+                  color="primary"
+                  :disabled="unmatchedMovements.length === 0 || autoMatchLoading"
+                  :loading="autoMatchLoading"
+                  @click="triggerAutoMatch()"
+                >
+                  {{ t('asset_movement_matching.actions.auto_match') }}
+                </RuiButton>
+              </template>
+              {{ t('asset_movement_matching.actions.auto_match_tooltip') }}
             </RuiTooltip>
           </div>
           <div v-else />
