@@ -5,7 +5,6 @@ import UnmatchedMovementsList from '@/components/history/events/UnmatchedMovemen
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useTaskApi } from '@/composables/api/task';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
@@ -30,7 +29,6 @@ const {
 
 const { matchAssetMovements, unlinkAssetMovement } = useHistoryEventsApi();
 const { triggerTask } = useTaskApi();
-const { assetInfo } = useAssetInfoRetrieval();
 const { show } = useConfirmStore();
 
 const activeTab = ref<number>(0);
@@ -44,14 +42,8 @@ function getEventEntry(movement: UnmatchedAssetMovement): HistoryEventEntryWithM
   return events[0];
 }
 
-function isFiatMovement(movement: UnmatchedAssetMovement): boolean {
-  const eventEntry = getEventEntry(movement);
-  const info = get(assetInfo(eventEntry.entry.asset));
-  return info?.assetType === 'fiat';
-}
-
 const fiatMovements = computed<UnmatchedAssetMovement[]>(() =>
-  get(unmatchedMovements).filter(movement => isFiatMovement(movement)),
+  get(unmatchedMovements).filter(movement => movement.isFiat),
 );
 
 function selectMovement(movement: UnmatchedAssetMovement): void {
@@ -154,7 +146,7 @@ onMounted(async () => {
 <template>
   <RuiDialog
     v-model="modelValue"
-    max-width="900"
+    max-width="1000"
   >
     <RuiCard
       content-class="!py-0"

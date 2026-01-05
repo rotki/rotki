@@ -185,13 +185,14 @@ watchImmediate(route, async (route) => {
 
 const debouncedProcessing = debouncedRef(processing, 200);
 
-watchImmediate(debouncedProcessing, async (isLoading, wasLoading) => {
-  if (!isLoading && (wasLoading || !isDefined(wasLoading))) {
+watch(debouncedProcessing, async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading)
     await actions.fetch.dataAndLocations();
+});
 
-    if (get(mainPage)) {
-      await fetchUnmatchedAssetMovements();
-    }
+watch(logicOr(debouncedProcessing, groupLoading), async (loading) => {
+  if (!loading && get(mainPage)) {
+    await fetchUnmatchedAssetMovements();
   }
 });
 

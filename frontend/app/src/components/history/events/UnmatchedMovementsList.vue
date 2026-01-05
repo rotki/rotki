@@ -8,13 +8,13 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 
 interface UnmatchedMovementRow {
   groupIdentifier: string;
   asset: string;
   amount: BigNumber;
   eventType: string;
+  isFiat: boolean;
   location: string;
   timestamp: number;
   original: UnmatchedAssetMovement;
@@ -33,12 +33,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { assetInfo } = useAssetInfoRetrieval();
-
-function isFiatAsset(asset: string): boolean {
-  const info = get(assetInfo(asset));
-  return info?.assetType === 'fiat';
-}
 
 const columns = computed<DataTableColumn<UnmatchedMovementRow>[]>(() => [
   {
@@ -82,6 +76,7 @@ const rows = computed<UnmatchedMovementRow[]>(() =>
       asset: entry.asset,
       eventType: entry.eventType,
       groupIdentifier: movement.groupIdentifier,
+      isFiat: movement.isFiat,
       location: entry.location,
       original: movement,
       timestamp: entry.timestamp,
@@ -119,9 +114,10 @@ const emptyDescription = computed<string>(() =>
         <div class="flex items-center gap-2">
           <AssetDetails :asset="row.asset" />
           <RuiTooltip
-            v-if="isFiatAsset(row.asset)"
+            v-if="row.isFiat"
             :open-delay="400"
             :popper="{ placement: 'top' }"
+            tooltip-class="max-w-80"
           >
             <template #activator>
               <RuiChip

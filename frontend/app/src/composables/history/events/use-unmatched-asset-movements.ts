@@ -3,17 +3,23 @@ import type { ActionStatus } from '@/types/action';
 import type { HistoryEventCollectionRow } from '@/types/history/events/schemas';
 import { Severity } from '@rotki/common';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useNotificationsStore } from '@/store/notifications';
 import { logger } from '@/utils/logging';
 
-export interface UnmatchedAssetMovement {
+interface RawUnmatchedAssetMovement {
   groupIdentifier: string;
   events: HistoryEventCollectionRow;
+  asset: string;
+}
+
+export interface UnmatchedAssetMovement extends RawUnmatchedAssetMovement {
+  isFiat: boolean;
 }
 
 interface UseUnmatchedAssetMovementsReturn {
-  unmatchedMovements: Ref<UnmatchedAssetMovement[]>;
-  ignoredMovements: Ref<UnmatchedAssetMovement[]>;
+  unmatchedMovements: ComputedRef<UnmatchedAssetMovement[]>;
+  ignoredMovements: ComputedRef<UnmatchedAssetMovement[]>;
   unmatchedCount: ComputedRef<number>;
   ignoredCount: ComputedRef<number>;
   loading: Ref<boolean>;
@@ -23,14 +29,15 @@ interface UseUnmatchedAssetMovementsReturn {
   refreshAfterMatch: () => Promise<void>;
 }
 
-const unmatchedMovements = ref<UnmatchedAssetMovement[]>([]);
-const ignoredMovements = ref<UnmatchedAssetMovement[]>([]);
+const rawUnmatchedMovements = ref<RawUnmatchedAssetMovement[]>([]);
+const rawIgnoredMovements = ref<RawUnmatchedAssetMovement[]>([]);
 const loading = ref<boolean>(false);
 const ignoredLoading = ref<boolean>(false);
 
-export function useUnmatchedAssetMovements(): UseUnmatchedAssetMovementsReturn {
+export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatchedAssetMovementsReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
+  const { assetInfo } = useAssetInfoRetrieval();
 
   const {
     fetchHistoryEvents,
@@ -38,13 +45,23 @@ export function useUnmatchedAssetMovements(): UseUnmatchedAssetMovementsReturn {
     matchAssetMovements: matchAssetMovementsApi,
   } = useHistoryEventsApi();
 
+  function addIsFiat(movements: RawUnmatchedAssetMovement[]): UnmatchedAssetMovement[] {
+    return movements.map(movement => ({
+      ...movement,
+      isFiat: get(assetInfo(movement.asset))?.assetType === 'fiat',
+    }));
+  }
+
+  const unmatchedMovements = computed<UnmatchedAssetMovement[]>(() => addIsFiat(get(rawUnmatchedMovements)));
+  const ignoredMovements = computed<UnmatchedAssetMovement[]>(() => addIsFiat(get(rawIgnoredMovements)));
+
   const unmatchedCount = computed<number>(() => get(unmatchedMovements).length);
   const ignoredCount = computed<number>(() => get(ignoredMovements).length);
 
   const fetchUnmatchedAssetMovements = async (onlyIgnored?: boolean): Promise<void> => {
     const isIgnored = onlyIgnored === true;
     const loadingRef = isIgnored ? ignoredLoading : loading;
-    const movementsRef = isIgnored ? ignoredMovements : unmatchedMovements;
+    const movementsRef = isIgnored ? rawIgnoredMovements : rawUnmatchedMovements;
 
     set(loadingRef, true);
     try {
@@ -64,7 +81,7 @@ export function useUnmatchedAssetMovements(): UseUnmatchedAssetMovementsReturn {
         ascending: [false],
       });
 
-      const movements: UnmatchedAssetMovement[] = [];
+      const movements: RawUnmatchedAssetMovement[] = [];
 
       for (const groupId of groupIdentifiers) {
         const eventsForGroup = response.entries.filter((row) => {
@@ -73,8 +90,13 @@ export function useUnmatchedAssetMovements(): UseUnmatchedAssetMovementsReturn {
         });
 
         if (eventsForGroup.length > 0) {
+          const eventRow = eventsForGroup[0];
+          const events = Array.isArray(eventRow) ? eventRow : [eventRow];
+          const asset = events[0]?.entry.asset ?? '';
+
           movements.push({
-            events: eventsForGroup[0],
+            asset,
+            events: eventRow,
             groupIdentifier: groupId,
           });
         }
@@ -139,4 +161,4 @@ export function useUnmatchedAssetMovements(): UseUnmatchedAssetMovementsReturn {
     unmatchedCount,
     unmatchedMovements,
   };
-}
+});
