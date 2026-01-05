@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
-import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
+import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
@@ -31,12 +31,20 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'unlink-event': [data: HistoryEventUnlinkPayload];
   'refresh': [];
 }>();
 
 const { item } = toRefs(props);
 
 const { getChain } = useSupportedChains();
+
+const canUnlink = computed<boolean>(() => {
+  const event = get(item);
+  return event.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT
+    && event.eventSubtype !== 'fee'
+    && !!event.actualGroupIdentifier;
+});
 
 function isNoTxRef(item: HistoryEventEntry) {
   return (
@@ -169,9 +177,11 @@ const isIgnoredAsset = useIsAssetIgnored(eventAsset);
           :item="item"
           :index="index"
           :events="events"
+          :can-unlink="canUnlink"
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+          @unlink-event="emit('unlink-event', { groupIdentifier: item.groupIdentifier })"
         />
       </div>
     </div>

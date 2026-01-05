@@ -51,7 +51,7 @@ watch(showNotificationBar, (showNotificationBar) => {
     v-model="visibleNotification.display"
     :timeout="visibleNotification.duration"
     width="400px"
-    class="top-[3.5rem]"
+    class="top-[3.5rem] z-[10000]"
     @update:model-value="displayed([visibleNotification.id])"
   >
     <Notification

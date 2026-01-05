@@ -24,6 +24,7 @@ const props = defineProps<{
   movements: UnmatchedAssetMovement[];
   ignoreLoading?: boolean;
   showRestore?: boolean;
+  loading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -107,6 +108,7 @@ const emptyDescription = computed<string>(() =>
       outlined
       sticky-header
       dense
+      :loading="loading"
       class="table-inside-dialog max-h-[calc(100vh-23rem)]"
       :empty="{ description: emptyDescription }"
     >

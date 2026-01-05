@@ -9,7 +9,6 @@ import type {
   EvmSwapEvent,
   HistoryEvent,
   HistoryEventEntry,
-  HistoryEventRow,
   SolanaEvent,
   SolanaSwapEvent,
   StandaloneEditableEvents,
@@ -33,7 +32,6 @@ import {
 
 const props = defineProps<{
   event: HistoryEventEntry;
-  events?: HistoryEventRow[];
   loading: boolean;
 }>();
 
@@ -43,7 +41,6 @@ const emit = defineEmits<{
   'redecode': [event: PullEventPayload];
   'redecode-with-options': [event: PullEventPayload];
   'delete-tx': [data: LocationAndTxRef];
-  'unlink': [];
 }>();
 
 const {
@@ -106,18 +103,6 @@ const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>
 const blockEvent = isEthBlockEventRef(event);
 
 const { t } = useI18n({ useScope: 'global' });
-
-const flattenedEvents = computed<HistoryEventEntry[]>(() => {
-  if (!props.events)
-    return [];
-  return props.events.flatMap(e => (Array.isArray(e) ? e : [e]));
-});
-
-const canUnlink = computed<boolean>(() => get(flattenedEvents).some(e => !!e.actualGroupIdentifier));
-
-function unlinkEvent(): void {
-  emit('unlink');
-}
 
 function addEvent(event: HistoryEvent) {
   if (isGroupEditableHistoryEvent(event)) {
@@ -217,16 +202,6 @@ const reportDescription = computed<string>(() => {
             <RuiIcon :name="event.ignoredInAccounting ? 'lu-eye' : 'lu-eye-off'" />
           </template>
           {{ event.ignoredInAccounting ? t('transactions.unignore') : t('transactions.ignore') }}
-        </RuiButton>
-        <RuiButton
-          v-if="canUnlink"
-          variant="list"
-          @click="unlinkEvent()"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-unlink" />
-          </template>
-          {{ t('transactions.events.actions.unlink') }}
         </RuiButton>
         <template v-if="blockEvent">
           <RuiButton

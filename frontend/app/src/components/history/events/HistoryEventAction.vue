@@ -3,6 +3,11 @@ import type { HistoryEventEntry } from '@/types/history/events/schemas';
 
 const props = defineProps<{
   event: HistoryEventEntry;
+  canUnlink?: boolean;
+}>();
+
+const emit = defineEmits<{
+  unlink: [];
 }>();
 
 const vueRouter = useRouter();
@@ -63,6 +68,19 @@ function onEditRule() {
             />
           </template>
           {{ t('accounting_settings.rule.edit') }}
+        </RuiButton>
+        <RuiButton
+          v-if="canUnlink"
+          variant="list"
+          @click="emit('unlink')"
+        >
+          <template #prepend>
+            <RuiIcon
+              class="text-rui-text-secondary"
+              name="lu-unlink"
+            />
+          </template>
+          {{ t('transactions.events.actions.unlink') }}
         </RuiButton>
       </div>
     </RuiMenu>

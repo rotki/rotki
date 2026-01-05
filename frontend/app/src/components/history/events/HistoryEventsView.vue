@@ -88,7 +88,7 @@ const {
 } = useHistoryEventsStatus();
 
 const {
-  fetchUnmatchedAssetMovements,
+  refreshUnmatchedAssetMovements,
   unmatchedCount,
 } = useUnmatchedAssetMovements();
 
@@ -192,7 +192,7 @@ watch(debouncedProcessing, async (isLoading, wasLoading) => {
 
 watch(logicOr(debouncedProcessing, groupLoading), async (loading) => {
   if (!loading && get(mainPage)) {
-    await fetchUnmatchedAssetMovements();
+    await refreshUnmatchedAssetMovements();
   }
 });
 

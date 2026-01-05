@@ -84,6 +84,10 @@ function isSelected(row: PotentialMatchRow): boolean {
 }
 
 const movementEntry = computed(() => getEventEntry(props.movement.events).entry);
+
+watchDebounced(onlyExpectedAssets, () => {
+  emit('search');
+}, { debounce: 200 });
 </script>
 
 <template>

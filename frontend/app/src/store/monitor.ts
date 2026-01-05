@@ -1,6 +1,5 @@
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
-import { useTaskApi } from '@/composables/api/task';
 import { useBalances } from '@/composables/balances';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useAutoLogin } from '@/composables/user/account';
@@ -37,7 +36,6 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { check } = usePeriodicStore();
   const { consume } = useMessageHandling();
   const { monitor } = useTaskStore();
-  const { triggerTask } = useTaskApi();
   const { autoRefresh } = useBalances();
   const { fetchManualBalances } = useManualBalances();
   const { fetchConnectedExchangeBalances } = useExchanges();
@@ -45,7 +43,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { removeIgnoredAssets } = useBalancesStore();
   const { processing } = useHistoryEventsStatus();
   const { fetchTransactionStatusSummary } = useHistoryStore();
-  const { fetchUnmatchedAssetMovements } = useUnmatchedAssetMovements();
+  const { triggerAutoMatch } = useUnmatchedAssetMovements();
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
   const frontendStore = useFrontendSettingsStore();
@@ -204,8 +202,7 @@ export const useMonitorStore = defineStore('monitor', () => {
 
   watch(historyEventsUnfinished, async (isUnfinished, wasUnfinished) => {
     if (!isUnfinished && wasUnfinished) {
-      await triggerTask('asset_movement_matching');
-      await fetchUnmatchedAssetMovements();
+      await triggerAutoMatch();
     }
   });
 

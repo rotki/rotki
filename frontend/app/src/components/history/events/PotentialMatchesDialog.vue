@@ -35,7 +35,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const {
   matchAssetMovement,
-  refreshAfterMatch,
+  refreshUnmatchedAssetMovements,
 } = useUnmatchedAssetMovements();
 
 const { fetchHistoryEvents, getAssetMovementMatches } = useHistoryEventsApi();
@@ -139,7 +139,7 @@ async function confirmMatch(): Promise<void> {
     const result = await matchAssetMovement(assetMovementId, matchId);
 
     if (result.success) {
-      await refreshAfterMatch();
+      await refreshUnmatchedAssetMovements(true);
       set(modelValue, false);
       emit('matched');
     }

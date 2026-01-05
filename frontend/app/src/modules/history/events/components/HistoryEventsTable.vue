@@ -199,14 +199,12 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
       <LazyLoader>
         <HistoryEventsAction
           :event="row"
-          :events="allEventsMapped[row.groupIdentifier]"
           :loading="eventsLoading"
           @add-event="addEvent($event, row);"
           @toggle-ignore="toggle($event)"
           @redecode="redecode($event, row.groupIdentifier)"
           @redecode-with-options="redecodeWithOptions($event, row.groupIdentifier)"
           @delete-tx="confirmTxAndEventsDelete($event)"
-          @unlink="confirmUnlink({ groupIdentifier: row.groupIdentifier })"
         />
       </LazyLoader>
     </template>

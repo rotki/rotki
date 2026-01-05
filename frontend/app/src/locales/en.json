@@ -1205,6 +1205,11 @@
       "ignore_fiat_confirm": "Are you sure you want to ignore all {count} fiat currency movements? Fiat movements typically don't have corresponding on-chain events.",
       "ignore_fiat_tooltip": "Ignore all fiat currency movements (e.g., USD, EUR). These typically don't have corresponding on-chain events."
     },
+    "auto_match": {
+      "error": "Failed to run automatic matching: {error}",
+      "error_title": "Auto Match Failed",
+      "task_title": "Matching asset movements"
+    },
     "banner": {
       "action": "Match Now",
       "message": "There are {count} unmatched asset movements that require manual matching."

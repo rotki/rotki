@@ -6,6 +6,7 @@ import type {
   HistoryEvent,
   HistoryEventEntry,
 } from '@/types/history/events/schemas';
+import { HistoryEventEntryType } from '@rotki/common';
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
 import {
@@ -22,12 +23,15 @@ const props = defineProps<{
   item: HistoryEventEntry;
   index: number;
   events: HistoryEventEntry[];
+  canUnlink?: boolean;
+  collapsed?: boolean;
 }>();
 
 const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'unlink-event': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -39,9 +43,16 @@ function hideActions(item: HistoryEventEntry, index: number): boolean {
 }
 
 function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
-  if (isGroupEditableHistoryEvent(item) || isSwapTypeEvent(item.entryType)) {
+  if (isSwapTypeEvent(item.entryType)) {
     return {
       eventsInGroup: props.events as GroupEditableHistoryEvents[],
+      type: 'edit-group',
+    };
+  }
+
+  if (isGroupEditableHistoryEvent(item)) {
+    return {
+      eventsInGroup: props.events.filter(e => e.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT) as GroupEditableHistoryEvents[],
       type: 'edit-group',
     };
   }
@@ -83,7 +94,26 @@ function deleteEvent(item: HistoryEventEntry) {
     @delete-click="deleteEvent(item)"
   >
     <RuiTooltip
-      v-if="isEventMissingAccountingRule(item)"
+      v-if="canUnlink && collapsed"
+      :popper="{ placement: 'top', offsetDistance: 0 }"
+      :open-delay="400"
+    >
+      <template #activator>
+        <RuiButton
+          variant="text"
+          icon
+          @click="emit('unlink-event')"
+        >
+          <RuiIcon
+            size="16"
+            name="lu-unlink"
+          />
+        </RuiButton>
+      </template>
+      {{ t('transactions.events.actions.unlink') }}
+    </RuiTooltip>
+    <RuiTooltip
+      v-else-if="isEventMissingAccountingRule(item)"
       :popper="{ placement: 'top', offsetDistance: 0 }"
       :open-delay="400"
     >
@@ -105,6 +135,8 @@ function deleteEvent(item: HistoryEventEntry) {
     <HistoryEventAction
       v-else
       :event="item"
+      :can-unlink="canUnlink"
+      @unlink="emit('unlink-event')"
     />
   </RowActions>
 </template>

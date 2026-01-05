@@ -55,6 +55,8 @@ const primaryEvent = computed<HistoryEventEntry>(() => {
   return assetMovementEvent ?? props.events[0];
 });
 
+const canUnlink = computed<boolean>(() => !!get(primaryEvent).actualGroupIdentifier);
+
 const subgroupIcon = computed<RuiIcons | undefined>(() => {
   if (get(isSwapGroup))
     return 'lu-arrow-right-left';
@@ -273,6 +275,7 @@ watch(shouldExpand, () => {
             @edit-event="emit('edit-event', $event)"
             @delete-event="emit('delete-event', $event)"
             @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+            @unlink-event="emit('unlink-event', $event)"
             @refresh="emit('refresh')"
           />
 
@@ -319,12 +322,15 @@ watch(shouldExpand, () => {
         min-height="40"
       >
         <HistoryEventsListItemAction
-          :item="events[0]"
+          :item="primaryEvent"
           :index="0"
           :events="allEvents"
+          :can-unlink="canUnlink"
+          :collapsed="!shouldExpand"
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+          @unlink-event="emit('unlink-event', { groupIdentifier: primaryEvent.groupIdentifier })"
         />
       </LazyLoader>
     </TransitionGroup>

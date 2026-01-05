@@ -4,7 +4,6 @@ import PotentialMatchesDialog from '@/components/history/events/PotentialMatches
 import UnmatchedMovementsList from '@/components/history/events/UnmatchedMovementsList.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useTaskApi } from '@/composables/api/task';
 import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
@@ -20,22 +19,22 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const {
-  fetchUnmatchedAssetMovements,
+  autoMatchLoading,
   ignoredLoading,
   ignoredMovements,
   loading,
   unmatchedMovements,
+  refreshUnmatchedAssetMovements,
+  triggerAutoMatch,
 } = useUnmatchedAssetMovements();
 
 const { matchAssetMovements, unlinkAssetMovement } = useHistoryEventsApi();
-const { triggerTask } = useTaskApi();
 const { show } = useConfirmStore();
 
 const activeTab = ref<number>(0);
 const selectedMovement = ref<UnmatchedAssetMovement>();
 const showPotentialMatchesDialog = ref<boolean>(false);
 const ignoreLoading = ref<boolean>(false);
-const autoMatchLoading = ref<boolean>(false);
 
 function getEventEntry(movement: UnmatchedAssetMovement): HistoryEventEntryWithMeta {
   const events = Array.isArray(movement.events) ? movement.events : [movement.events];
@@ -56,9 +55,7 @@ async function ignoreMovement(movement: UnmatchedAssetMovement): Promise<void> {
   try {
     const eventEntry = getEventEntry(movement);
     await matchAssetMovements(eventEntry.entry.identifier);
-    await fetchUnmatchedAssetMovements();
-    await fetchUnmatchedAssetMovements(true);
-    emit('refresh');
+    await refreshUnmatchedAssetMovements();
   }
   finally {
     set(ignoreLoading, false);
@@ -70,9 +67,7 @@ async function restoreMovement(movement: UnmatchedAssetMovement): Promise<void> 
   try {
     const eventEntry = getEventEntry(movement);
     await unlinkAssetMovement(eventEntry.entry.identifier);
-    await fetchUnmatchedAssetMovements();
-    await fetchUnmatchedAssetMovements(true);
-    emit('refresh');
+    await refreshUnmatchedAssetMovements();
   }
   finally {
     set(ignoreLoading, false);
@@ -95,9 +90,7 @@ async function ignoreAllMovements(movements: UnmatchedAssetMovement[]): Promise<
       const eventEntry = getEventEntry(movement);
       await matchAssetMovements(eventEntry.entry.identifier);
     }
-    await fetchUnmatchedAssetMovements();
-    await fetchUnmatchedAssetMovements(true);
-    emit('refresh');
+    await refreshUnmatchedAssetMovements();
   }
   finally {
     set(ignoreLoading, false);
@@ -122,24 +115,8 @@ function confirmIgnoreAllFiat(): void {
   }, async () => ignoreAllMovements(get(fiatMovements)));
 }
 
-async function triggerAutoMatch(): Promise<void> {
-  set(autoMatchLoading, true);
-  try {
-    await triggerTask('asset_movement_matching');
-    await fetchUnmatchedAssetMovements();
-    await fetchUnmatchedAssetMovements(true);
-    emit('refresh');
-  }
-  finally {
-    set(autoMatchLoading, false);
-  }
-}
-
 onMounted(async () => {
-  await Promise.all([
-    fetchUnmatchedAssetMovements(),
-    fetchUnmatchedAssetMovements(true),
-  ]);
+  await refreshUnmatchedAssetMovements();
 });
 </script>
 
@@ -201,36 +178,18 @@ onMounted(async () => {
         class="my-4"
       >
         <RuiTabItem>
-          <div
-            v-if="loading"
-            class="flex items-center justify-center p-8"
-          >
-            <RuiProgress
-              circular
-              variant="indeterminate"
-            />
-          </div>
           <UnmatchedMovementsList
-            v-else
             :movements="unmatchedMovements"
             :ignore-loading="ignoreLoading"
+            :loading="loading"
             @ignore="ignoreMovement($event)"
             @select="selectMovement($event)"
           />
         </RuiTabItem>
         <RuiTabItem>
-          <div
-            v-if="ignoredLoading"
-            class="flex items-center justify-center p-8"
-          >
-            <RuiProgress
-              circular
-              variant="indeterminate"
-            />
-          </div>
           <UnmatchedMovementsList
-            v-else
             :movements="ignoredMovements"
+            :loading="ignoredLoading"
             :ignore-loading="ignoreLoading"
             show-restore
             @restore="restoreMovement($event)"
