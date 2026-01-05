@@ -267,7 +267,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
 
                 assets_balance[asset] = Balance(
                     amount=total_amount,
-                    usd_value=total_amount * usd_price,
+                    value=total_amount * usd_price,
                 )
 
             except DeserializationError as e:
@@ -284,10 +284,10 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
             if asset in assets_balance:
                 # Add to existing balance - combine amounts and USD values
                 new_amount = assets_balance[asset].amount + earn_balance.amount
-                new_usd_value = assets_balance[asset].usd_value + earn_balance.usd_value
+                new_value = assets_balance[asset].value + earn_balance.value
                 assets_balance[asset] = Balance(
                     amount=new_amount,
-                    usd_value=new_usd_value,
+                    value=new_value,
                 )
             elif earn_balance.amount > ZERO:
                 assets_balance[asset] = earn_balance
@@ -367,7 +367,7 @@ class Bit2me(ExchangeInterface, SignatureGeneratorMixin):
                     except RemoteError:
                         log.debug(f'Could not get USD price for EARN asset {currency}')
                         usd_price = ZERO
-                    result[asset] = Balance(amount=amount, usd_value=amount * usd_price)
+                    result[asset] = Balance(amount=amount, value=amount * usd_price)
                 except (UnknownAsset, UnsupportedAsset):
                     continue
 
