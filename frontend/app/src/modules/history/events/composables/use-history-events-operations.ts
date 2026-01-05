@@ -112,7 +112,22 @@ export function useHistoryEventsOperations(
 
   async function onConfirmUnlink(payload: HistoryEventUnlinkPayload): Promise<void> {
     try {
-      await unlinkAssetMovement(payload.eventId);
+      const groupedEvents = get(allEventsMapped)[payload.groupIdentifier] || [];
+      const childEvents = flatten(groupedEvents);
+      const assetMovementEvent = childEvents.find(
+        e => e.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT && e.eventSubtype !== 'fee',
+      );
+
+      if (!assetMovementEvent) {
+        notify({
+          display: true,
+          message: t('transactions.events.unlink_no_asset_movement'),
+          title: t('transactions.events.unlink_error'),
+        });
+        return;
+      }
+
+      await unlinkAssetMovement(assetMovementEvent.identifier);
       emit('refresh');
     }
     catch (error: any) {

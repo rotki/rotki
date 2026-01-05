@@ -206,7 +206,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
           @redecode="redecode($event, row.groupIdentifier)"
           @redecode-with-options="redecodeWithOptions($event, row.groupIdentifier)"
           @delete-tx="confirmTxAndEventsDelete($event)"
-          @unlink="confirmUnlink({ eventId: $event })"
+          @unlink="confirmUnlink({ groupIdentifier: row.groupIdentifier })"
         />
       </LazyLoader>
     </template>

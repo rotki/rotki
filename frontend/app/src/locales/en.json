@@ -5342,6 +5342,7 @@
         }
       },
       "unlink_error": "Failed to unlink asset movement",
+      "unlink_no_asset_movement": "No asset movement event found in this group",
       "unsupported": {
         "description": "This transaction only contains a gas fee with no other events. This typically means the protocol is not yet supported.",
         "location": "- Location: {location}",

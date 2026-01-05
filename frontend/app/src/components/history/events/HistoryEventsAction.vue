@@ -43,7 +43,7 @@ const emit = defineEmits<{
   'redecode': [event: PullEventPayload];
   'redecode-with-options': [event: PullEventPayload];
   'delete-tx': [data: LocationAndTxRef];
-  'unlink': [eventId: number];
+  'unlink': [];
 }>();
 
 const {
@@ -116,10 +116,7 @@ const flattenedEvents = computed<HistoryEventEntry[]>(() => {
 const canUnlink = computed<boolean>(() => get(flattenedEvents).some(e => !!e.actualGroupIdentifier));
 
 function unlinkEvent(): void {
-  const eventWithActualGroupId = get(flattenedEvents).find(e => !!e.actualGroupIdentifier);
-  if (eventWithActualGroupId) {
-    emit('unlink', eventWithActualGroupId.identifier);
-  }
+  emit('unlink');
 }
 
 function addEvent(event: HistoryEvent) {
