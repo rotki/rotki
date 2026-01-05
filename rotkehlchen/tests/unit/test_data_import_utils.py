@@ -19,7 +19,7 @@ def test_detect_duplicate_event_escapes_like(database) -> None:
     assert database is not None
     history_db = DBHistoryEvents(database)
     event = HistoryEvent(
-        event_identifier='ABCXYZ',
+        group_identifier='ABCXYZ',
         sequence_index=0,
         timestamp=TimestampMS(1700000000000),
         location=Location.BINANCE,
