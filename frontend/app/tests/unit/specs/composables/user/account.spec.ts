@@ -31,6 +31,18 @@ vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue(mockInterop),
 }));
 
+vi.mock('@/composables/backend', () => ({
+  useBackendManagement: vi.fn().mockReturnValue({
+    resetSessionBackend: vi.fn(),
+  }),
+}));
+
+vi.mock('@/modules/onchain/use-wallet-store', () => ({
+  useWalletStore: vi.fn().mockReturnValue({
+    disconnect: vi.fn(),
+  }),
+}));
+
 const REMEMBER_PASSWORD_KEY = 'rotki.remember_password';
 
 describe('composables::user/account', () => {

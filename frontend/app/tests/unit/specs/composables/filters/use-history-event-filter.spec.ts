@@ -19,9 +19,35 @@ vi.mock('@/utils/assets', async () => {
   };
 });
 
+const mockCounterpartyMappings = vi.hoisted(() => ({
+  useHistoryEventCounterpartyMappings: vi.fn(),
+}));
+
+const mockEventMappings = vi.hoisted(() => ({
+  useHistoryEventMappings: vi.fn(),
+}));
+
+vi.mock('@/composables/history/events/mapping/counterparty', () => mockCounterpartyMappings);
+vi.mock('@/composables/history/events/mapping', () => mockEventMappings);
+
 describe('composables::filter/use-history-event-filter - Additional Tests', () => {
   beforeAll(async () => {
     setActivePinia(createPinia());
+
+    mockCounterpartyMappings.useHistoryEventCounterpartyMappings.mockReturnValue({
+      counterparties: ref([]),
+      fetchCounterparties: vi.fn(),
+      getBaseCounterpartyData: vi.fn(),
+      getCounterpartyData: vi.fn().mockReturnValue(computed(() => ({}))),
+      getEventCounterpartyData: vi.fn().mockReturnValue(computed(() => undefined)),
+    });
+
+    mockEventMappings.useHistoryEventMappings.mockReturnValue({
+      eventTypeData: ref({}),
+      eventTypes: ref([]),
+      eventSubTypes: ref([]),
+      getEventTypeData: vi.fn().mockReturnValue(computed(() => undefined)),
+    });
     const { connected } = storeToRefs(useMainStore());
     set(connected, true);
     useSupportedChains();
