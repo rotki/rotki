@@ -453,7 +453,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
           'text-rui-success': pnl && displayValue.gt(0),
           'text-rui-error': pnl && displayValue.lt(0),
           'text-[2rem] leading-[3rem] sm:text-[3rem] sm:leading-[4rem]': xl,
-          'skeleton min-w-[3.5rem] max-w-[4rem] after:content-[\'\\200B\']': anyLoading,
+          'skeleton min-h-5 min-w-[3.5rem] max-w-[4rem] after:content-[\'\\200B\']': anyLoading,
         },
       ]"
       class="inline-flex items-center gap-1 transition duration-200 rounded-lg max-w-full"
