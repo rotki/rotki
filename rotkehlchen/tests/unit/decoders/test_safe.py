@@ -424,7 +424,7 @@ def test_safe_vesting_claim(ethereum_inquirer, ethereum_accounts):
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.REWARD,
             asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
             amount=FVal(amount),
             location_label=multisig_address,
@@ -678,6 +678,59 @@ def test_safepass_start_vesting_claim(ethereum_inquirer, ethereum_accounts):
             amount=ZERO,
             location_label=user_address,
             notes=f'Successfully executed safe transaction 0x8e01ca76365b063a7628f0072527f51579660103276990ab4f2b97e2de26e04b for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xe27b39aFeb8FeAE954195881a2BB13E5363393cD',
+    '0x8E755608d135D2e7a6e99f6CD4eECdBED85542DF',
+]])
+def test_safepass_vesting_claim(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x26eb93c73ca61ab2a8df16ce5ce861142fb21b67e5aa466a13c4a0ca7744fe5c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1765106423000), '0.000143501926752041', '829'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas),
+            location_label=user_address,
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=56,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            amount=FVal(amount),
+            location_label=multisig_address,
+            notes=f'Claim {amount} SAFE from vesting',
+            counterparty=CPT_SAFE,
+            address=SAFEPASS_AIRDROP,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=57,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x38e5a008a2813b7b49406e126850f088e4c084ed40ebded661a9510f16d93931 for multisig {multisig_address}',  # noqa: E501
             counterparty=CPT_SAFE_MULTISIG,
             address=multisig_address,
         ),

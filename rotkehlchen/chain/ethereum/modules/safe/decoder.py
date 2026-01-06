@@ -60,6 +60,9 @@ class SafeDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] != CLAIMED_VESTING:
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        return self._decode_claimed_vesting(context)
+
+    def _decode_claimed_vesting(self, context: DecoderContext) -> EvmDecodingOutput:
         account = bytes_to_address(context.tx_log.topics[2])
         beneficiary = bytes_to_address(context.tx_log.topics[3])
         if not self.base.any_tracked((account, beneficiary)):
@@ -75,8 +78,9 @@ class SafeDecoder(EvmDecoderInterface):
                 from_event_subtype=HistoryEventSubType.NONE,
                 asset=self.safe_token,
                 to_notes=notes,
+                to_event_subtype=HistoryEventSubType.REWARD,
                 to_counterparty=CPT_SAFE,
-                to_address=SAFE_VESTING,
+                to_address=context.tx_log.address,
             )],
         )
 
@@ -163,6 +167,8 @@ class SafeDecoder(EvmDecoderInterface):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_safpass_claim(self, context: DecoderContext) -> EvmDecodingOutput:
+        if context.tx_log.topics[0] == CLAIMED_VESTING:
+            return self._decode_claimed_vesting(context)
         if context.tx_log.topics[0] != ADDED_VESTING:
             return DEFAULT_EVM_DECODING_OUTPUT
 
