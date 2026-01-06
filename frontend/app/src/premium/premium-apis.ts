@@ -18,6 +18,7 @@ import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { useHistoricalPriceFetcher } from '@/modules/prices/use-historical-price-fetcher';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
@@ -47,7 +48,8 @@ export function assetsApi(): AssetsApi {
 export function statisticsApi(): StatisticsApi {
   const { useIsAssetIgnored } = useIgnoredAssetsStore();
 
-  const { fetchHistoricalAssetPrice, fetchNetValue, getNetValue } = useStatisticsStore();
+  const { fetchNetValue, getNetValue } = useStatisticsStore();
+  const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
   const { failedDailyPrices, historicalDailyPriceStatus } = storeToRefs(useHistoricCachePriceStore());
   const {
     queryLatestAssetValueDistribution,

@@ -1,26 +1,19 @@
 import type { MaybeRef } from '@vueuse/core';
-import type { TaskMeta } from '@/types/task';
-import { type AssetBalanceWithPriceAndChains, type BigNumber, type HistoricalAssetPricePayload, HistoricalAssetPriceResponse, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
+import { type AssetBalanceWithPriceAndChains, type BigNumber, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { usePremium } from '@/composables/premium';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useNotificationsStore } from '@/store/notifications';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { useTaskStore } from '@/store/tasks';
 import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { millisecondsToSeconds } from '@/utils/date';
-import { logger } from '@/utils/logging';
 
 function defaultNetValue(): NetValue {
   return {
@@ -44,12 +37,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { t } = useI18n({ useScope: 'global' });
 
   const { nftsInNetValue, scrambleData, scrambleMultiplier: scrambleMultiplierRef, shouldShowAmount, valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
-  const { notify } = useNotificationsStore();
+  const notificationsStore = useNotificationsStore();
+  const { notify } = notificationsStore;
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { useExchangeRate } = usePriceUtils();
-  const { assetName } = useAssetInfoRetrieval();
 
   const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? 1);
 
@@ -58,12 +51,11 @@ export const useStatisticsStore = defineStore('statistics', () => {
     if (newValue !== undefined)
       set(scrambleMultiplier, newValue);
   });
-  const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
+
   const premium = usePremium();
 
   const api = useStatisticsApi();
   const { balances, liabilities } = useAggregatedBalances();
-  const { awaitTask } = useTaskStore();
   const { logged } = storeToRefs(useSessionAuthStore());
 
   /**
@@ -203,86 +195,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
   };
 
-  const resetFailedStates = (asset: string, parsed: HistoricalAssetPriceResponse, excludeTimestamps: number[]): void => {
-    const { noPricesTimestamps, rateLimitedPricesTimestamps } = parsed;
-
-    const failedState = { ...get(failedDailyPrices) };
-    const resolvedState = { ...get(resolvedFailedDailyPrices) };
-
-    if ((noPricesTimestamps.length === 0 && excludeTimestamps.length === 0) && rateLimitedPricesTimestamps.length === 0) {
-      if (failedState[asset]) {
-        const updatedFailedPrices = { ...failedState };
-        delete updatedFailedPrices[asset];
-        set(failedDailyPrices, updatedFailedPrices);
-      }
-      if (resolvedState[asset]) {
-        delete resolvedState[asset];
-        set(resolvedFailedDailyPrices, resolvedState);
-      }
-    }
-    else {
-      set(failedDailyPrices, {
-        ...failedState,
-        [asset]: {
-          noPricesTimestamps: noPricesTimestamps.length > 0 ? noPricesTimestamps : excludeTimestamps,
-          rateLimitedPricesTimestamps,
-        },
-      });
-    }
-  };
-
-  const fetchHistoricalAssetPrice = async (payload: HistoricalAssetPricePayload): Promise<HistoricalAssetPriceResponse> => {
-    try {
-      const asset = payload.asset;
-      const failedState = { ...get(failedDailyPrices) };
-      const resolvedState = { ...get(resolvedFailedDailyPrices) };
-      const failedTimestamps = failedState[asset]?.noPricesTimestamps || [];
-      const resolvedTimestamps = resolvedState[asset] || [];
-
-      const excludeTimestamps
-        = failedTimestamps.filter(timestamp => !resolvedTimestamps.includes(timestamp));
-
-      const taskType = TaskType.FETCH_DAILY_HISTORIC_PRICE;
-      const { taskId } = await api.queryHistoricalAssetPrices({
-        ...payload,
-        excludeTimestamps,
-      });
-      const { result } = await awaitTask<HistoricalAssetPriceResponse, TaskMeta>(taskId, taskType, {
-        description: t('actions.balances.historic_fetch_price.daily.task.detail', {
-          asset: get(assetName(payload.asset)),
-        }),
-        title: t('actions.balances.historic_fetch_price.daily.task.title'),
-      });
-
-      const parsed = HistoricalAssetPriceResponse.parse(result);
-      resetFailedStates(asset, parsed, excludeTimestamps);
-      return parsed;
-    }
-    catch (error: any) {
-      logger.error(error);
-      if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.balances.historic_fetch_price.daily.error.message'),
-          title: t('actions.balances.historic_fetch_price.daily.task.title'),
-        });
-      }
-
-      return {
-        noPricesTimestamps: [],
-        prices: {},
-        rateLimitedPricesTimestamps: [],
-      };
-    }
-  };
-
   watch(premium, async () => {
     if (get(logged))
       await fetchNetValue();
   });
 
   return {
-    fetchHistoricalAssetPrice,
     fetchNetValue,
     getNetValue,
     netValue,
