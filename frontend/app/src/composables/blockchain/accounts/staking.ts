@@ -1,21 +1,16 @@
 import type { ComputedRef } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { Eth2Validator } from '@/types/balances';
-import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accounts';
-import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { TaskMeta } from '@/types/task';
-import { type BigNumber, bigNumberify, Blockchain, type EthValidatorFilter } from '@rotki/common';
+import { type BigNumber, Blockchain, type EthValidatorFilter } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useMessageStore } from '@/store/message';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
@@ -37,21 +32,16 @@ export function useEthStaking(): UseEthStakingReturn {
     editEth2Validator: editEth2ValidatorCaller,
   } = useBlockchainAccountsApi();
   const { getAccounts, updateAccounts } = useBlockchainAccountsStore();
-  const balancesStore = useBalancesStore();
-  const { balances } = storeToRefs(balancesStore);
-  const { updateBalances } = balancesStore;
 
   const blockchainValidatorsStore = useBlockchainValidatorsStore();
   const { ethStakingValidators, stakingValidatorsLimits } = storeToRefs(blockchainValidatorsStore);
-  const { fetchEthStakingValidators } = blockchainValidatorsStore;
-  const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  const { fetchEthStakingValidators, isEth2Enabled, updateEthStakingOwnership } = blockchainValidatorsStore;
+
   const premium = usePremium();
   const { awaitTask } = useTaskStore();
   const { setMessage } = useMessageStore();
   const { t } = useI18n({ useScope: 'global' });
   const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
-
-  const isEth2Enabled = (): boolean => get(activeModules).includes(Module.ETH2);
 
   const addEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {
     if (!isEth2Enabled()) {
@@ -145,75 +135,6 @@ export function useEthStaking(): UseEthStakingReturn {
       });
       return false;
     }
-  };
-
-  /**
-   * Adjusts the balances for an ethereum staking validator based on the percentage of ownership.
-   *
-   * @param publicKey the validator's public key is used to identify the balance
-   * @param newOwnershipPercentage the ownership percentage of the validator after the edit
-   */
-  const updateEthStakingOwnership = (publicKey: string, newOwnershipPercentage: BigNumber): void => {
-    const isValidator = (x: BlockchainAccount): x is BlockchainAccount<ValidatorData> => x.data.type === 'validator';
-    const validators = [...getAccounts(Blockchain.ETH2).filter(isValidator)];
-    const validatorIndex = validators.findIndex(validator => validator.data.publicKey === publicKey);
-    const [validator] = validators.splice(validatorIndex, 1);
-    const oldOwnershipPercentage = bigNumberify(validator.data.ownershipPercentage || 100);
-    validators.push({
-      ...validator,
-      data: {
-        ...validator.data,
-        ownershipPercentage: newOwnershipPercentage.isEqualTo(100) ? undefined : newOwnershipPercentage.toString(),
-      },
-    });
-
-    updateAccounts(Blockchain.ETH2, validators);
-
-    const eth2 = get(balances)[Blockchain.ETH2];
-    if (!eth2[publicKey])
-      return;
-
-    const ETH2_ASSET = Blockchain.ETH2.toUpperCase();
-
-    const { amount, value } = eth2[publicKey].assets[ETH2_ASSET].address;
-
-    // we should not need to update anything if amount and value are zero
-    if (amount.isZero() && value.isZero())
-      return;
-
-    const calc = (val: BigNumber, oldPercentage: BigNumber, newPercentage: BigNumber): BigNumber =>
-      val.dividedBy(oldPercentage).multipliedBy(newPercentage);
-
-    const newAmount = calc(amount, oldOwnershipPercentage, newOwnershipPercentage);
-
-    const newValue = calc(value, oldOwnershipPercentage, newOwnershipPercentage);
-
-    const updatedBalance: BlockchainAssetBalances = {
-      [publicKey]: {
-        assets: {
-          [ETH2_ASSET]: {
-            address: {
-              amount: newAmount,
-              value: newValue,
-            },
-          },
-        },
-        liabilities: {},
-      },
-    };
-
-    updateBalances(Blockchain.ETH2, {
-      perAccount: {
-        [Blockchain.ETH2]: {
-          ...eth2,
-          ...updatedBalance,
-        },
-      },
-      totals: {
-        assets: {},
-        liabilities: {},
-      },
-    });
   };
 
   const validatorsLimitInfo = computed(() => {

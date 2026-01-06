@@ -1,10 +1,13 @@
 import type { MaybeRef } from '@vueuse/core';
 import type {
+  BlockchainAccount,
   EthereumValidator,
   EthereumValidatorRequestPayload,
+  ValidatorData,
 } from '@/types/blockchain/accounts';
+import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
-import { assert, type Balance, Blockchain, type EthValidatorFilter, Zero } from '@rotki/common';
+import { assert, type Balance, type BigNumber, bigNumberify, Blockchain, type EthValidatorFilter, Zero } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePremium } from '@/composables/premium';
@@ -23,7 +26,9 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
   const blockchainAccountsStore = useBlockchainAccountsStore();
   const { accounts } = storeToRefs(blockchainAccountsStore);
   const { updateAccounts } = blockchainAccountsStore;
-  const { balances } = storeToRefs(useBalancesStore());
+  const balancesStore = useBalancesStore();
+  const { balances } = storeToRefs(balancesStore);
+  const { updateBalances } = balancesStore;
 
   const { getEth2Validators } = useBlockchainAccountsApi();
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
@@ -113,10 +118,81 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
     }
   });
 
+  /**
+   * Adjusts the balances for an ethereum staking validator based on the percentage of ownership.
+   *
+   * @param publicKey the validator's public key is used to identify the balance
+   * @param newOwnershipPercentage the ownership percentage of the validator after the edit
+   */
+  const updateEthStakingOwnership = (publicKey: string, newOwnershipPercentage: BigNumber): void => {
+    const isValidator = (x: BlockchainAccount): x is BlockchainAccount<ValidatorData> => x.data.type === 'validator';
+    const validators = [...get(accounts)[Blockchain.ETH2]?.filter(isValidator) ?? []];
+    const validatorIndex = validators.findIndex(validator => validator.data.publicKey === publicKey);
+    const [validator] = validators.splice(validatorIndex, 1);
+    const oldOwnershipPercentage = bigNumberify(validator.data.ownershipPercentage || 100);
+    validators.push({
+      ...validator,
+      data: {
+        ...validator.data,
+        ownershipPercentage: newOwnershipPercentage.isEqualTo(100) ? undefined : newOwnershipPercentage.toString(),
+      },
+    });
+
+    updateAccounts(Blockchain.ETH2, validators);
+
+    const eth2 = get(balances)[Blockchain.ETH2];
+    if (!eth2[publicKey])
+      return;
+
+    const ETH2_ASSET = Blockchain.ETH2.toUpperCase();
+
+    const { amount, value } = eth2[publicKey].assets[ETH2_ASSET].address;
+
+    // we should not need to update anything if amount and value are zero
+    if (amount.isZero() && value.isZero())
+      return;
+
+    const calc = (val: BigNumber, oldPercentage: BigNumber, newPercentage: BigNumber): BigNumber =>
+      val.dividedBy(oldPercentage).multipliedBy(newPercentage);
+
+    const newAmount = calc(amount, oldOwnershipPercentage, newOwnershipPercentage);
+
+    const newValue = calc(value, oldOwnershipPercentage, newOwnershipPercentage);
+
+    const updatedBalance: BlockchainAssetBalances = {
+      [publicKey]: {
+        assets: {
+          [ETH2_ASSET]: {
+            address: {
+              amount: newAmount,
+              value: newValue,
+            },
+          },
+        },
+        liabilities: {},
+      },
+    };
+
+    updateBalances(Blockchain.ETH2, {
+      perAccount: {
+        [Blockchain.ETH2]: {
+          ...eth2,
+          ...updatedBalance,
+        },
+      },
+      totals: {
+        assets: {},
+        liabilities: {},
+      },
+    });
+  };
+
   return {
     ethStakingValidators,
     fetchEthStakingValidators,
     fetchValidators,
+    isEth2Enabled,
     stakingValidatorsLimits,
+    updateEthStakingOwnership,
   };
 });

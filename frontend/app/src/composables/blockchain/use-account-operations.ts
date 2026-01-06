@@ -15,7 +15,6 @@ import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { arrayify } from '@/utils/array';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
@@ -53,7 +52,9 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   };
 
   const fetchAccounts = async (blockchain?: string | string[], refreshEns: boolean = false): Promise<void> => {
-    const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
+    const chains = blockchain
+      ? (Array.isArray(blockchain) ? blockchain : [blockchain])
+      : get(supportedChains).map(chain => chain.id);
     await awaitParallelExecution(chains, chain => chain, fetch, 2);
 
     const namesPayload: AddressBookSimplePayload[] = [];
