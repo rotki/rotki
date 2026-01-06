@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11245` Users will now be able to select February in the date picker when the current date's day is greater than 28.
 * :feature:`-` rotki is now available in Russian.
 * :feature:`11253` Premium users can now view their historical asset balances at any point in time, calculated from their transaction history.
 * :feature:`-` Users can now add smart contract addresses to all EVM chains at once. Contracts are automatically detected and tagged with a reserved "Contract" system tag.
