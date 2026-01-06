@@ -381,4 +381,35 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     expect(wrapper.find('[data-cy=amount] .details').exists()).toBe(true);
     expect(wrapper.find('[data-cy=asset] .details').exists()).toBe(true);
   });
+
+  describe('actualGroupIdentifier', () => {
+    const eventWithActualGroupIdentifier: OnlineHistoryEvent = {
+      ...event,
+      actualGroupIdentifier: 'ACTUAL123',
+      groupIdentifier: 'LINKED456',
+    };
+
+    it('should use actualGroupIdentifier when present and disable the field', async () => {
+      wrapper = createWrapper({
+        props: { data: { event: eventWithActualGroupIdentifier, nextSequenceId: '1', type: 'edit' } },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
+      expect(groupIdentifierInput.element.disabled).toBe(true);
+    });
+
+    it('should use groupIdentifier when actualGroupIdentifier is not present', async () => {
+      wrapper = createWrapper({
+        props: { data: { event, nextSequenceId: '1', type: 'edit' } },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
+      // Note: groupIdentifier is always disabled in edit mode for this form (data.type !== 'add')
+      expect(groupIdentifierInput.element.disabled).toBe(true);
+    });
+  });
 });

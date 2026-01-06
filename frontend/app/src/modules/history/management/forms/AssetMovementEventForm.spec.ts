@@ -393,4 +393,34 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     expect(wrapper.findAll('[data-cy=eventType] .selections span')).toHaveLength(2);
   });
+
+  describe('actualGroupIdentifier', () => {
+    const eventWithActualGroupIdentifier: AssetMovementEvent = {
+      ...event,
+      actualGroupIdentifier: 'ACTUAL123',
+      groupIdentifier: 'LINKED456',
+    };
+
+    it('should use actualGroupIdentifier when present and disable the field', async () => {
+      wrapper = createWrapper({
+        props: { data: { eventsInGroup: [eventWithActualGroupIdentifier], type: 'edit-group' } },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
+      expect(groupIdentifierInput.element.disabled).toBe(true);
+    });
+
+    it('should use groupIdentifier when actualGroupIdentifier is not present', async () => {
+      wrapper = createWrapper({
+        props: { data: { eventsInGroup: [event], type: 'edit-group' } },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
+      expect(groupIdentifierInput.element.disabled).toBe(false);
+    });
+  });
 });

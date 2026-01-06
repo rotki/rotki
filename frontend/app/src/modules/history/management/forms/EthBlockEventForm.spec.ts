@@ -287,4 +287,40 @@ describe('forms/EthBlockEventForm.vue', () => {
     expect(wrapper.find('[data-cy=blockNumber] .details').exists()).toBe(true);
     expect(wrapper.find('[data-cy=validatorIndex] .details').exists()).toBe(true);
   });
+
+  describe('actualGroupIdentifier', () => {
+    const eventWithActualGroupIdentifier: EthBlockEvent = {
+      ...event,
+      actualGroupIdentifier: 'ACTUAL123',
+      groupIdentifier: 'LINKED456',
+    };
+
+    it('should use actualGroupIdentifier when present and disable the field', async () => {
+      wrapper = createWrapper({
+        props: { data: { event: eventWithActualGroupIdentifier, nextSequenceId: '1', type: 'edit' } },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-cy=eth-block-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
+      expect(groupIdentifierInput.element.disabled).toBe(true);
+    });
+
+    it('should use groupIdentifier when actualGroupIdentifier is not present', async () => {
+      wrapper = createWrapper({
+        props: { data: { event, nextSequenceId: '1', type: 'edit' } },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-cy=eth-block-event-form__advance] [data-accordion-trigger]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      expect(groupIdentifierInput.element.value).toBe(event.groupIdentifier);
+      expect(groupIdentifierInput.element.disabled).toBe(false);
+    });
+  });
 });

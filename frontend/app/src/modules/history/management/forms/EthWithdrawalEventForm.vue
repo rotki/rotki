@@ -32,6 +32,7 @@ const { data } = toRefs(props);
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const groupIdentifier = ref<string>('');
+const hasActualGroupIdentifier = ref<boolean>(false);
 const timestamp = ref<number>(0);
 const amount = ref<string>('');
 const validatorIndex = ref<string>('');
@@ -80,6 +81,7 @@ const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH)
 
 function reset() {
   set(groupIdentifier, null);
+  set(hasActualGroupIdentifier, false);
   set(timestamp, dayjs().valueOf());
   set(amount, '0');
   set(validatorIndex, '');
@@ -91,7 +93,9 @@ function reset() {
 }
 
 function applyEditableData(entry: EthWithdrawalEvent) {
-  set(groupIdentifier, entry.groupIdentifier);
+  const hasActual = !!entry.actualGroupIdentifier;
+  set(hasActualGroupIdentifier, hasActual);
+  set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
   set(timestamp, entry.timestamp);
   set(amount, entry.amount.toFixed());
   set(validatorIndex, entry.validatorIndex.toString());
@@ -243,6 +247,7 @@ defineExpose({
             variant="outlined"
             color="primary"
             data-cy="groupIdentifier"
+            :disabled="hasActualGroupIdentifier"
             :label="t('transactions.events.form.event_identifier.label')"
             :error-messages="toMessages(v$.groupIdentifier)"
             @blur="v$.groupIdentifier.$touch()"

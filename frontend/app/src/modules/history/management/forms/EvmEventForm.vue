@@ -37,6 +37,7 @@ const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPrice
 
 const txRef = ref<string>('');
 const groupIdentifier = ref<string>('');
+const hasActualGroupIdentifier = ref<boolean>(false);
 const sequenceIndex = ref<string>('');
 const timestamp = ref<number>(0);
 const location = ref<string>('');
@@ -101,6 +102,7 @@ function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(txRef, '');
   set(groupIdentifier, null);
+  set(hasActualGroupIdentifier, false);
   set(timestamp, dayjs().valueOf());
   set(location, get(lastLocation));
   set(address, '');
@@ -120,7 +122,9 @@ function reset() {
 function applyEditableData(entry: EvmHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txRef, entry.txRef);
-  set(groupIdentifier, entry.groupIdentifier);
+  const hasActual = !!entry.actualGroupIdentifier;
+  set(hasActualGroupIdentifier, hasActual);
+  set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
   set(timestamp, entry.timestamp);
   set(location, entry.location);
   set(eventType, entry.eventType);
@@ -331,6 +335,7 @@ defineExpose({
             variant="outlined"
             color="primary"
             data-cy="groupIdentifier"
+            :disabled="hasActualGroupIdentifier"
             :label="t('transactions.events.form.event_identifier.label')"
             :error-messages="toMessages(v$.groupIdentifier)"
             @blur="v$.groupIdentifier.$touch()"

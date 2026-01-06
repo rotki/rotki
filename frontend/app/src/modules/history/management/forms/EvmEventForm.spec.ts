@@ -393,4 +393,34 @@ describe('forms/EvmEventForm.vue', () => {
     expect(wrapper.find('[data-cy=amount] .details').exists()).toBe(true);
     expect(wrapper.find('[data-cy=asset] .details').exists()).toBe(true);
   });
+
+  describe('actualGroupIdentifier', () => {
+    const eventWithActualGroupIdentifier: EvmHistoryEvent = {
+      ...group,
+      actualGroupIdentifier: 'ACTUAL123',
+      groupIdentifier: 'LINKED456',
+    };
+
+    it('should use actualGroupIdentifier when present and disable the field', async () => {
+      wrapper = createWrapper({
+        props: { data: { event: eventWithActualGroupIdentifier, nextSequenceId: '10', type: 'edit' } },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      expect(groupIdentifierInput.element.value).toBe('ACTUAL123');
+      expect(groupIdentifierInput.element.disabled).toBe(true);
+    });
+
+    it('should use groupIdentifier when actualGroupIdentifier is not present', async () => {
+      wrapper = createWrapper({
+        props: { data: { event: group, nextSequenceId: '10', type: 'edit' } },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      const groupIdentifierInput = wrapper.find<HTMLInputElement>('[data-cy=groupIdentifier] input');
+      expect(groupIdentifierInput.element.value).toBe(group.groupIdentifier);
+      expect(groupIdentifierInput.element.disabled).toBe(false);
+    });
+  });
 });

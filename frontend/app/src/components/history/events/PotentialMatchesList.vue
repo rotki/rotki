@@ -202,15 +202,6 @@ watchDebounced(onlyExpectedAssets, () => {
           />
           <span v-else>-</span>
         </div>
-        <RuiChip
-          v-if="row.isCloseMatch"
-          size="sm"
-          color="success"
-          class="mt-1.5 -ml-0.5 !px-0.5 !py-0.25"
-          content-class="!text-xs"
-        >
-          {{ t('asset_movement_matching.dialog.recommended') }}
-        </RuiChip>
       </template>
       <template #item.asset="{ row }">
         <AssetDetails :asset="row.asset" />
@@ -229,26 +220,42 @@ watchDebounced(onlyExpectedAssets, () => {
         />
       </template>
       <template #item.actions="{ row }">
-        <RuiButton
-          size="sm"
-          :color="isSelected(row) ? 'success' : 'primary'"
-          :variant="isSelected(row) ? 'default' : 'outlined'"
-          @click="selectedMatchId = row.identifier"
-        >
-          <template
-            v-if="isSelected(row)"
-            #prepend
+        <div class="flex items-center justify-end gap-4">
+          <RuiTooltip
+            v-if="row.isCloseMatch"
+            :open-delay="200"
           >
-            <RuiIcon
-              name="lu-check"
-              size="12"
-            />
-          </template>
-          {{ isSelected(row)
-            ? t('asset_movement_matching.dialog.selected')
-            : t('asset_movement_matching.dialog.select')
-          }}
-        </RuiButton>
+            <template #activator>
+              <RuiIcon
+                name="lu-thumbs-up"
+                size="16"
+                color="success"
+              />
+            </template>
+            {{ t('asset_movement_matching.dialog.recommended') }}
+          </RuiTooltip>
+          <RuiButton
+            size="sm"
+            :color="isSelected(row) ? 'success' : 'primary'"
+            :variant="isSelected(row) ? 'default' : 'outlined'"
+            class="min-w-24"
+            @click="selectedMatchId = row.identifier"
+          >
+            <template
+              v-if="isSelected(row)"
+              #prepend
+            >
+              <RuiIcon
+                name="lu-check"
+                size="12"
+              />
+            </template>
+            {{ isSelected(row)
+              ? t('asset_movement_matching.dialog.selected')
+              : t('asset_movement_matching.dialog.select')
+            }}
+          </RuiButton>
+        </div>
       </template>
     </RuiDataTable>
   </div>

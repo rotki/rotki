@@ -55,6 +55,7 @@ const feeAsset = ref<string>('');
 const uniqueId = ref<string>('');
 const transactionId = ref<string>('');
 const blockchain = ref<string>('');
+const hasActualGroupIdentifier = ref<boolean>(false);
 
 const errorMessages = ref<Record<string, string[]>>({});
 
@@ -126,6 +127,7 @@ function reset() {
   set(uniqueId, '');
   set(blockchain, '');
   set(transactionId, '');
+  set(hasActualGroupIdentifier, false);
 
   get(assetPriceForm)?.reset();
 }
@@ -133,7 +135,10 @@ function reset() {
 function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEvent) {
   const eventNotes = entry.userNotes ?? '';
 
-  set(groupIdentifier, entry.groupIdentifier);
+  // Use actualGroupIdentifier if it exists (linked event), otherwise use groupIdentifier
+  const hasActual = !!entry.actualGroupIdentifier;
+  set(hasActualGroupIdentifier, hasActual);
+  set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
   set(timestamp, entry.timestamp);
   set(location, entry.location);
   set(locationLabel, entry.locationLabel ?? '');
@@ -397,6 +402,7 @@ defineExpose({
             variant="outlined"
             color="primary"
             data-cy="groupIdentifier"
+            :disabled="hasActualGroupIdentifier"
             :label="t('transactions.events.form.event_identifier.label')"
             :error-messages="toMessages(v$.groupIdentifier)"
             @blur="v$.groupIdentifier.$touch()"

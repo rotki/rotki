@@ -33,6 +33,7 @@ const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCAT
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
 const groupIdentifier = ref<string>('');
+const hasActualGroupIdentifier = ref<boolean>(false);
 const sequenceIndex = ref<string>('');
 const timestamp = ref<number>(0);
 const location = ref<string>('');
@@ -100,6 +101,7 @@ const locationLabelSuggestions = computed(() =>
 function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
   set(groupIdentifier, '');
+  set(hasActualGroupIdentifier, false);
   set(timestamp, dayjs().valueOf());
   set(location, get(lastLocation));
   set(locationLabel, '');
@@ -115,7 +117,9 @@ function reset() {
 
 function applyEditableData(entry: OnlineHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
-  set(groupIdentifier, entry.groupIdentifier);
+  const hasActual = !!entry.actualGroupIdentifier;
+  set(hasActualGroupIdentifier, hasActual);
+  set(groupIdentifier, hasActual ? entry.actualGroupIdentifier! : entry.groupIdentifier);
   set(timestamp, entry.timestamp);
   set(location, entry.location);
   set(eventType, entry.eventType);
@@ -238,7 +242,7 @@ defineExpose({
       v-model="groupIdentifier"
       variant="outlined"
       color="primary"
-      :disabled="data.type !== 'add'"
+      :disabled="data.type !== 'add' || hasActualGroupIdentifier"
       data-cy="groupIdentifier"
       :label="t('transactions.events.form.event_identifier.label')"
       :required="data.type === 'edit'"
