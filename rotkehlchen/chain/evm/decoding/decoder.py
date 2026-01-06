@@ -1110,7 +1110,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
                         (action_item.amount is None or action_item.amount == transfer.amount) or
                         (
                             action_item.amount_error_tolerance is not None and
-                            action_item.amount is not None and
                             abs(action_item.amount - transfer.amount) < action_item.amount_error_tolerance  # noqa: E501
                         )
                     ) and

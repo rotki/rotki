@@ -621,9 +621,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'due to {msg}. Check logs for details',
                 ) from e
 
-            if must_exist and tx_receipt is None:  # fail, so other nodes can be tried
-                raise RemoteError(f'Querying for {self.chain_name} receipt {tx_hash!s} returned None')  # noqa: E501
-
             return tx_receipt
 
         # Can raise TransactionNotFound if the user's node is pruned and transaction is old

@@ -520,7 +520,7 @@ class EvmToken(CryptoAsset):
     token_kind: EVM_TOKEN_KINDS_TYPE = field(init=False)
     decimals: int | None = field(init=False)
     protocol: str | None = field(init=False)
-    underlying_tokens: list[UnderlyingToken] = field(init=False)
+    underlying_tokens: list[UnderlyingToken] | None = field(init=False)
 
     def __post_init__(self, direct_field_initialization: bool) -> None:
         super().__post_init__(direct_field_initialization)

@@ -202,7 +202,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         fee_amount = deserialize_fval(csv_row['Fee']) if csv_row['Fee'] else ZERO
         fee_asset = (
             asset_resolver(csv_row['FeeCurrency'])
-            if csv_row['FeeCurrency'] and fee_amount is not None else None
+            if csv_row['FeeCurrency'] else None
         )
         action = csv_row['Action']
         memo = f"Imported description from bitcoin tax: {csv_row['Memo']}" if csv_row['Memo'] else ''  # noqa: E501

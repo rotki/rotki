@@ -98,13 +98,12 @@ def save_gearbox_data_to_cache(
                     key_parts=(CacheType.GEARBOX_POOL_FARMING_TOKEN, pool.pool_address, str_chain_id),  # noqa: E501
                     value=pool.farming_pool_token,
                 )
-            if pool.lp_tokens is not None:
-                for idx, lp_token in enumerate(pool.lp_tokens):
-                    globaldb_set_general_cache_values(
-                        write_cursor=write_cursor,
-                        key_parts=(CacheType.GEARBOX_POOL_LP_TOKENS, pool.pool_address, str_chain_id, str(idx)),  # noqa: E501
-                        values=[lp_token],
-                    )
+            for idx, lp_token in enumerate(pool.lp_tokens):
+                globaldb_set_general_cache_values(
+                    write_cursor=write_cursor,
+                    key_parts=(CacheType.GEARBOX_POOL_LP_TOKENS, pool.pool_address, str_chain_id, str(idx)),  # noqa: E501
+                    values=[lp_token],
+                )
 
 
 def read_gearbox_data_from_cache(chain_id: ChainID | None) -> tuple[dict[ChecksumEvmAddress, Any]]:

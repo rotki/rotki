@@ -1141,11 +1141,11 @@ class EvmCounterpartyField(fields.Field):
 
     def _deserialize(
             self,
-            value: str,
+            value: str | None,
             attr: str | None,  # pylint: disable=unused-argument
             data: Mapping[str, Any] | None,
             **_kwargs: Any,
-    ) -> str:
+    ) -> str | None:
         assert self.counterparties is not None, 'Set of counterparties not provided in EvmCounterpartyField'  # noqa: E501
         if value is not None and value not in self.counterparties:
             raise ValidationError(f'Unknown counterparty {value} provided')

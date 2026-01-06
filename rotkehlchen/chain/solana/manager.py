@@ -75,7 +75,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
         for account, entry in self.node_inquirer.get_raw_accounts_info(
             pubkeys=[Pubkey.from_string(addr) for addr in accounts],
         ).items():
-            if entry is None or entry.lamports == 0:
+            if entry.lamports == 0:
                 log.debug(f'Found no account entry in balances for solana account {account}. Skipping')  # noqa: E501
                 result[account] = ZERO
             else:

@@ -207,10 +207,11 @@ class SushiswapDecoder(EvmDecoderInterface):
         """
         fee, fee_event = ZERO, None
         if asset_address == ETH_SPECIAL_ADDRESS:
-            if (internal_txs := DBEvmTx(self.node_inquirer.database).get_evm_internal_transactions(
+            internal_txs = DBEvmTx(self.node_inquirer.database).get_evm_internal_transactions(
                 parent_tx_hash=transaction.tx_hash,
                 blockchain=self.node_inquirer.blockchain,
-            )) == 0:
+            )
+            if len(internal_txs) == 0:
                 return fee, fee_event
 
             for internal_tx in internal_txs:

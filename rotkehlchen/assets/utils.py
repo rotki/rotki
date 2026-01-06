@@ -380,11 +380,11 @@ def get_or_create_solana_token(
     else:  # Attempt to load either a token or nft with this address from the db
         for kind in (TokenKind.SPL_TOKEN, TokenKind.SPL_NFT):
             try:
-                if Asset(identifier := solana_address_to_identifier(
+                Asset(identifier := solana_address_to_identifier(
                     address=address,
                     token_type=kind,
-                )).check_existence() is not None:
-                    break
+                )).check_existence()
+                break
             except UnknownAsset:
                 continue
         else:  # Otherwise we don't know if this is a token or nft without querying the chain and can't say what the identifier is.  # noqa: E501
@@ -535,9 +535,11 @@ def _get_or_create_token(
                 )
             except (UnknownAsset, DeserializationError):
                 try:  # It can happen that the asset exists but is missing basic information.
-                    asset_exists = Asset(identifier).check_existence() is not None
+                    Asset(identifier).check_existence()
                 except UnknownAsset:
                     asset_exists = False
+                else:
+                    asset_exists = True
             else:
                 return token
         else:

@@ -85,10 +85,18 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         Deposit: https://github.com/stake-dao/contracts-monorepo/blob/main/packages/strategies/src/RewardVault.sol#L300
         Withdraw: https://github.com/stake-dao/contracts-monorepo/blob/main/packages/strategies/src/RewardVault.sol#L395
         """
+        if (vault_token := self.base.get_evm_token(address=context.tx_log.address)) is None:
+            log.error(
+                f'StakeDAO v2 vault token for transaction {context.transaction} '
+                f'is missing or has invalid underlying tokens.',
+            )
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        underlying_tokens = vault_token.underlying_tokens
         if (
-            (vault_token := self.base.get_evm_token(address=context.tx_log.address)) is None or
-            len(vault_token.underlying_tokens) != 1 or
-            (underlying_token := self.base.get_evm_token(address=vault_token.underlying_tokens[0].address)) is None  # noqa: E501
+            underlying_tokens is None or
+            len(underlying_tokens) != 1 or
+            (underlying_token := self.base.get_evm_token(address=underlying_tokens[0].address)) is None  # noqa: E501
         ):
             log.error(
                 f'StakeDAO v2 vault token for transaction {context.transaction} '

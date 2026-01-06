@@ -108,8 +108,6 @@ class CryptocomImporter(BaseExchangeImporter):
                 # trades (fiat, crypto) to (crypto, fiat)
                 base_asset = asset_from_cryptocom(to_currency)
                 quote_asset = asset_from_cryptocom(currency)
-                if quote_asset is None:
-                    raise DeserializationError('Got a trade entry with an empty quote asset')
                 base_amount_bought = deserialize_fval(to_amount)
                 quote_amount_sold = deserialize_fval(amount)
             elif row_type == 'card_top_up':

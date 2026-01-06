@@ -98,8 +98,6 @@ class ResourceReadingParser(FlaskParser):
         """
         req = req if req is not None else self.get_default_request()
         location = location or self.location
-        if req is None:
-            raise ValueError('Must pass req object')
         data = None
         validators = _ensure_list_of_callables(validate)
         schema = self._get_schema(argmap, resource_object)

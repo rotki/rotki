@@ -79,8 +79,10 @@ def test_morpho_vaults_api(database: 'DBHandler') -> None:
     assert token.name == 'Anzen Boosted USDC'
     assert token.symbol == 'AnzenUSDC'
     assert token.protocol == CPT_MORPHO
-    assert len(token.underlying_tokens) == 1
-    assert token.underlying_tokens[0].address == '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    underlying_tokens = token.underlying_tokens
+    assert underlying_tokens is not None
+    assert len(underlying_tokens) == 1
+    assert underlying_tokens[0].address == '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
 
     check_new_query_updates_timestamp(
         query_patch=query_patch,

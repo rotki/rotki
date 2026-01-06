@@ -57,8 +57,10 @@ def test_curve_lend_api(database: 'DBHandler') -> None:
     assert token.name == 'Borrow crvUSD (WETH collateral)'
     assert token.symbol == 'cvcrvUSD'
     assert token.protocol == CPT_CURVE
-    assert len(token.underlying_tokens) == 1
-    assert token.underlying_tokens[0].address == '0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5'
+    underlying_tokens = token.underlying_tokens
+    assert underlying_tokens is not None
+    assert len(underlying_tokens) == 1
+    assert underlying_tokens[0].address == '0x498Bf2B1e120FeD3ad3D42EA2165E9b73f99C1e5'
 
     # check that the gauge was added properly
     assert (gauge_token := GlobalDBHandler.get_evm_token(

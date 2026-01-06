@@ -360,10 +360,8 @@ class SolanaInquirer(SolanaRPCMixin):
         - RemoteError if there is a problem with querying the external service.
         - DeserializationError if there is a problem deserializing the table data.
         """
-        if (
-            (account_info := self.get_raw_account_info(pubkey=alt.account_key)) is None or
-            len(account_info) <= LOOKUP_TABLE_META_SIZE  # ensure the table data is at least as large as the lookup table meta data size  # noqa: E501
-        ):
+        account_info = self.get_raw_account_info(pubkey=alt.account_key)
+        if len(account_info) <= LOOKUP_TABLE_META_SIZE:  # ensure the table data is at least as large as the lookup table meta data size  # noqa: E501
             raise DeserializationError(f'Invalid solana address lookup table account data for {alt.account_key}')  # noqa: E501
 
         table_data = account_info[LOOKUP_TABLE_META_SIZE:]
@@ -444,7 +442,7 @@ class SolanaInquirer(SolanaRPCMixin):
                     continue
 
                 for token_balance in token_balances:
-                    if token_balance.owner is None or token_balance.mint is None:
+                    if token_balance.owner is None:
                         log.warning(
                             f'Solana transaction {raw_tx.transaction.transaction.signatures[0]} has '  # noqa: E501
                             f'token account {account_keys[token_balance.account_index]} without an owner. Skipping.',  # noqa: E501

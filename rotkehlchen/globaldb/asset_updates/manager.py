@@ -350,8 +350,7 @@ class AssetsUpdater:
                     )
                 return  # fail or succeed continue to next entry
 
-            if local_asset is not None:
-                AssetResolver().clean_memory_cache(local_asset.identifier.lower())
+            AssetResolver().clean_memory_cache(local_asset.identifier.lower())
 
             # otherwise asset is known, so it's a conflict. Check if we can resolve
             try:

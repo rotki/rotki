@@ -287,9 +287,9 @@ class DBHandler:
 
     def logout(self) -> None:
         self.password = ''
-        if self.conn is not None:
+        if self.conn is not None:  # pyright: ignore[reportUnnecessaryComparison]  # Can be None before/after connect.
             self.disconnect(conn_attribute='conn')
-        if self.conn_transient is not None:
+        if self.conn_transient is not None:  # pyright: ignore[reportUnnecessaryComparison]  # Can be None before/after connect.
             self.disconnect(conn_attribute='conn_transient')
         try:
             dbinfo = {'sqlcipher_version': self.sqlcipher_version, 'md5_hash': self.get_md5hash()}
@@ -1566,7 +1566,7 @@ class DBHandler:
             log.warning(f'Unsupported blockchain {chain_str} found in DB. Ignoring...')
             return None
 
-        if blockchain is None or is_valid_db_blockchain_account(blockchain=blockchain, account=account) is False:  # noqa: E501
+        if is_valid_db_blockchain_account(blockchain=blockchain, account=account) is False:
             self.msg_aggregator.add_warning(
                 f'Invalid {chain_str} account in DB: {account}. '
                 f'This should not happen unless the DB was manually modified. '

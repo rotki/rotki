@@ -15,7 +15,7 @@ from websocket import WebSocketException
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.manager import ChainManager
-from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
+from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
@@ -325,15 +325,11 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
             result=result,
         )
 
-        balance = ZERO
-        if result is not None:
-            account_data = result.value['data']
-            balance = (
-                FVal(account_data['free'] + account_data['reserved']) /
-                FVal('10') ** self.chain_properties.token_decimals
-            )
-
-        return balance
+        account_data = result.value['data']
+        return (
+            FVal(account_data['free'] + account_data['reserved']) /
+            FVal('10') ** self.chain_properties.token_decimals
+        )
 
     def _get_chain_id(self, node_interface: SubstrateInterface) -> str:
         """Return the chain identifier (name for substrate chains)"""
@@ -400,7 +396,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
             last_block = node_interface.get_block_number(
                 block_hash=node_interface.get_chain_head(),
             )
-            if last_block is None:  # For some reason a node can rarely return None as last block
+            if last_block is None:  # pyright: ignore[reportUnnecessaryComparison]  # Some nodes can return None.
                 raise SubstrateRequestException(
                     f'{self.chain} node failed to request last block. Returned None',
                 )

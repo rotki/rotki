@@ -417,7 +417,7 @@ class EthBlockEvent(EthStakingEvent):
             fee_recipient=fee_recipient,
             fee_recipient_tracked=fee_recipient_tracked,
             block_number=block_number,
-            is_mev_reward=base_data['event_subtype'] == HistoryEventSubType.MEV_REWARD.serialize(),
+            is_mev_reward=base_data['event_subtype'] == HistoryEventSubType.MEV_REWARD,
         )
 
     # -- Methods of AccountingEventMixin

@@ -171,8 +171,10 @@ def test_process_staked_vaults(
         query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
 
     token = EvmToken('eip155:1/erc20:0x7Fd8Af959B54A677a1D8F92265Bd0714274C56a3')
-    assert len(token.underlying_tokens) == 1
-    assert token.underlying_tokens[0].address == string_to_evm_address('0x790a60024bC3aea28385b60480f15a0771f26D09')  # noqa: E501
+    underlying_tokens = token.underlying_tokens
+    assert underlying_tokens is not None
+    assert len(underlying_tokens) == 1
+    assert underlying_tokens[0].address == string_to_evm_address('0x790a60024bC3aea28385b60480f15a0771f26D09')  # noqa: E501
     assert token.protocol == CPT_YEARN_STAKING
     with patch.object(evm_manager, 'assure_curve_cache_is_queried_and_decoder_updated'):
         assert inquirer_defi.find_usd_price(token).is_close(FVal('8776.098257'), max_diff='1e6')

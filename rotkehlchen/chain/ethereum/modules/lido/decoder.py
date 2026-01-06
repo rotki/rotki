@@ -88,9 +88,8 @@ class LidoDecoder(EvmDecoderInterface):
             )
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        action_items = []  # also create an action item for the reception of the stETH tokens
-        if paired_event is not None and action_from_event_type is not None:
-            action_items.append(ActionItem(
+        return EvmDecodingOutput(
+            action_items=[ActionItem(
                 action='transform',
                 from_event_type=action_from_event_type,
                 from_event_subtype=HistoryEventSubType.NONE,
@@ -102,9 +101,9 @@ class LidoDecoder(EvmDecoderInterface):
                 to_counterparty=CPT_LIDO,
                 paired_events_data=((paired_event,), True),
                 extra_data={'staked_eth': str(collateral_amount)},
-            ))
-
-        return EvmDecodingOutput(action_items=action_items, matched_counterparty=CPT_LIDO)
+            )],  # also create an action item for the reception of the stETH tokens
+            matched_counterparty=CPT_LIDO,
+        )
 
     def _decode_steth_wsteth_wrap_unwrap(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes steth/wsteth wrap/unwrap transactions."""

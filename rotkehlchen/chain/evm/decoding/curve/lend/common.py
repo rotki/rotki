@@ -201,7 +201,7 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 event.extra_data = {'controller_address': context.tx_log.address}
                 in_event = event
 
-                if out_event is not None and in_event is not None:
+                if out_event is not None:
                     maybe_reshuffle_events(
                         ordered_events=[out_event, in_event],
                         events_list=context.decoded_events,

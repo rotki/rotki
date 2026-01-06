@@ -797,7 +797,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 if a1.event_subtype == HistoryEventSubType.SPEND and a2.event_subtype == HistoryEventSubType.RECEIVE:  # noqa: E501
                     spend_event = a1
                     receive_event = a2
-                elif a2.event_subtype == HistoryEventSubType.SPEND and a2.event_subtype == HistoryEventSubType.RECEIVE:  # noqa: E501
+                elif a2.event_subtype == HistoryEventSubType.SPEND and a1.event_subtype == HistoryEventSubType.RECEIVE:  # noqa: E501
                     spend_event = a2
                     receive_event = a1
                 else:

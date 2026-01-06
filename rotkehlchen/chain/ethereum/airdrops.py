@@ -123,8 +123,7 @@ def _enrich_user_airdrop_data(
     if airdrop_data.icon_url is not None:
         user_data[protocol_name]['icon_url'] = airdrop_data.icon_url
 
-    if airdrop_data.icon is not None:
-        user_data[protocol_name]['icon'] = airdrop_data.icon
+    user_data[protocol_name]['icon'] = airdrop_data.icon
 
 
 def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dict[str, Airdrop]:

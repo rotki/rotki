@@ -41,5 +41,11 @@ def get_umami_vault_token_price(
         token_amount=price_per_share,
         token_decimals=vault_token.decimals,
     )
-    underlying_price = inquirer.find_usd_price(Asset(vault_token.underlying_tokens[0].get_identifier(evm_inquirer.chain_id)))  # noqa: E501
+    if not vault_token.underlying_tokens:
+        log.error(f'Umami vault token {vault_token.evm_address} missing underlying tokens')
+        return ZERO_PRICE
+
+    underlying_price = inquirer.find_usd_price(Asset(
+        vault_token.underlying_tokens[0].get_identifier(evm_inquirer.chain_id),
+    ))
     return Price(underlying_price * formatted_pps)

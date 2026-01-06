@@ -526,6 +526,7 @@ reportOverlappingOverload = false
 reportTypedDictNotRequiredAccess = "error"
 reportOptionalContextManager = false
 reportAssignmentType = false
+reportUnnecessaryComparison = true
 
 exclude = ["**/tests"]
 pythonVersion = "3.11"

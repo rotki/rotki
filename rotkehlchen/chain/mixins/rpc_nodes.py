@@ -123,10 +123,12 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
         with self.database.conn.read_ctx() as cursor:
             accounts = self.database.get_blockchain_accounts(cursor)
 
+        tracked_accounts_num = len(accounts.get(self.blockchain))
         if (
-            (tracked_accounts_num := len(accounts.get(self.blockchain)) != 0 and when_tracked_accounts) or  # noqa: E501
-            (tracked_accounts_num == 0 and
-            (when_tracked_accounts is False or self.blockchain == SupportedBlockchain.ETHEREUM))
+            (tracked_accounts_num != 0 and when_tracked_accounts) or
+            (tracked_accounts_num == 0 and (
+                when_tracked_accounts is False or self.blockchain == SupportedBlockchain.ETHEREUM
+            ))
         ):
             rpc_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
             self.connect_to_multiple_nodes(rpc_nodes)

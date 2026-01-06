@@ -407,7 +407,7 @@ class DBConnection:
 
         if self.savepoint_greenlet_id is not None:
             # savepoints exist but in other greenlet
-            while self.savepoint_greenlet_id is not None and current_id != self.savepoint_greenlet_id:  # noqa: E501
+            while self.savepoint_greenlet_id is not None and current_id != self.savepoint_greenlet_id:  # noqa: E501  # pyright: ignore[reportUnnecessaryComparison]  # Another greenlet can clear it.
                 gevent.sleep(CONTEXT_SWITCH_WAIT)  # wait until no other savepoint exists
         if savepoint_name in self.savepoints:
             raise ContextError(

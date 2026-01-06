@@ -42,8 +42,6 @@ def _scrape_xratescom_exchange_rates(url: str) -> dict[FiatAsset, Price]:
         'html.parser',
         parse_only=SoupStrainer('table', {'class': 'tablesorter ratesTable'}),
     )
-    if soup is None:
-        raise RemoteError('Could not find <table> while parsing x-rates stats page')
 
     try:
         tr = soup.table.tbody.tr  # type: ignore  # we catch it with the AttributeError

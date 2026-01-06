@@ -1097,7 +1097,9 @@ def test_importing_user_assets_list(
     assert_proper_sync_response_with_result(response)
     stinch = EvmToken('eip155:1/erc20:0xA0446D8804611944F1B527eCD37d7dcbE442caba')
     assert stinch.symbol == 'st1INCH'
-    assert len(stinch.underlying_tokens) == 1
+    underlying_tokens = stinch.underlying_tokens
+    assert underlying_tokens is not None
+    assert len(underlying_tokens) == 1
     assert stinch.decimals == 18
 
 

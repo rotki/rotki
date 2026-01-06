@@ -285,10 +285,7 @@ class EtherscanLikeApi(ABC):
         an unexpected response is returned. Also in the case of exhausting the backoff time.
         """
         result = None
-        if (
-            (api_key := self._get_api_key_for_chain(chain_id)) is None and
-            self.default_api_key is not None
-        ):
+        if (api_key := self._get_api_key_for_chain(chain_id)) is None:
             api_key = self.default_api_key
             log.debug(f'Using default {self.name} key')
 
@@ -784,7 +781,7 @@ class EtherscanLikeApi(ABC):
          - RemoteError if there are problems contacting the indexer
          - DeserializationError if the indexer returns an invalid response
         """
-        if (block_data := self._query_rpc_method(
+        if (block_data := self._query_rpc_method(  # pyright: ignore[reportUnnecessaryComparison]  # indexer can return None.
             chain_id=chain_id,
             method='eth_getBlockByNumber',
             options={'tag': hex(block_number), 'boolean': 'true'},
