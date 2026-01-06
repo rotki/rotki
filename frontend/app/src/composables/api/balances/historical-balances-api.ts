@@ -1,4 +1,4 @@
-import type { HistoricalBalancesPayload } from '@/types/balances';
+import type { HistoricalBalancesPayload } from '@/modules/history/balances/types';
 import { useTaskApi } from '@/composables/api/task';
 import { api } from '@/modules/api/rotki-api';
 import { type PendingTask, PendingTaskSchema } from '@/types/task';

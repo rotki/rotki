@@ -29,6 +29,8 @@ interface Props {
   timestamp?: Timestamp;
   /** Format options */
   format?: FormatOptions;
+  /** Loading state */
+  loading?: boolean;
   /** How to display the currency: 'symbol' (default, e.g. €), 'ticker' (e.g. EUR), or 'none' */
   symbol?: SymbolDisplay;
 }
@@ -44,7 +46,7 @@ const props = withDefaults(defineProps<Props>(), {
   timestamp: undefined,
 });
 
-const { asset, price: knownPrice, timestamp } = toRefs(props);
+const { asset, price: knownPrice, timestamp, loading: loadingProp } = toRefs(props);
 
 // Get price for 1 unit of the asset
 const { loading, value: priceValue } = useAssetValue({
@@ -80,7 +82,7 @@ const displaySymbol = computed<string>(() => {
     <AmountDisplayBase
       :value="priceValue"
       :symbol="displaySymbol"
-      :loading="loading"
+      :loading="loading || loadingProp"
       :format="format"
       v-bind="$attrs"
     >

@@ -21,6 +21,7 @@ import {
   DbUpgradeStatusData,
   HistoryEventsQueryData,
   MigratedAddresses,
+  NegativeBalanceDetectedData,
   ProgressUpdateResultData,
   UnifiedTransactionStatusData,
 } from './types/status-types';
@@ -73,6 +74,11 @@ const NewTokenDetectedMessage = z.object({
 const MissingApiKeyMessage = z.object({
   data: MissingApiKey,
   type: z.literal(SocketMessageType.MISSING_API_KEY),
+});
+
+const NegativeBalanceDetectedMessage = z.object({
+  data: NegativeBalanceDetectedData,
+  type: z.literal(SocketMessageType.NEGATIVE_BALANCE_DETECTED),
 });
 
 const RefreshBalancesMessage = z.object({
@@ -141,6 +147,7 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   MigratedAccountsMessage,
   NewTokenDetectedMessage,
   MissingApiKeyMessage,
+  NegativeBalanceDetectedMessage,
   RefreshBalancesMessage,
   DbUploadResultMessage,
   AccountingRuleConflictMessage,

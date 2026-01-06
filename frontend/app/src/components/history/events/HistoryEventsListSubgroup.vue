@@ -192,6 +192,7 @@ watch(shouldExpand, () => {
     class="flex items-start border-default"
     :class="{
       'border-b': !isLast,
+      'px-4': !shouldExpand,
     }"
   >
     <TransitionGroup
@@ -248,7 +249,7 @@ watch(shouldExpand, () => {
           size="sm"
           icon
           color="primary"
-          class="absolute top-3 -left-2 md:left-1.5 size-5 z-[6]"
+          class="absolute top-3 left-3 md:left-4 size-5 z-[6]"
           @click="expanded = !expanded"
         >
           <RuiIcon

@@ -34,6 +34,8 @@ interface Props {
   format?: FormatOptions;
   /** Apply PnL coloring (green positive, red negative) */
   pnl?: boolean;
+  /** Loading state */
+  loading?: boolean;
   /** How to display the currency: 'symbol' (default, e.g. €), 'ticker' (e.g. EUR), or 'none' */
   symbol?: SymbolDisplay;
   /** Disable truncation on currency symbol */
@@ -53,7 +55,7 @@ const props = withDefaults(defineProps<Props>(), {
   timestamp: undefined,
 });
 
-const { from, timestamp, value } = toRefs(props);
+const { from, timestamp, value, loading: loadingProp } = toRefs(props);
 
 // Composables
 const { converted, loading } = useFiatConversion({
@@ -82,7 +84,7 @@ const displaySymbol = computed<string>(() => {
   <AmountDisplayBase
     :value="scrambledValue"
     :symbol="displaySymbol"
-    :loading="loading"
+    :loading="loading || loadingProp"
     :pnl="pnl"
     :format="format"
     :no-truncate="noTruncate"

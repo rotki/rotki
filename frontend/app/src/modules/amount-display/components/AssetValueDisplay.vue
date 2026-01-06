@@ -37,6 +37,8 @@ interface Props {
   format?: FormatOptions;
   /** Apply PnL coloring (green positive, red negative) */
   pnl?: boolean;
+  /** Loading state */
+  loading?: boolean;
   /** How to display the currency: 'symbol' (default, e.g. €), 'ticker' (e.g. EUR), or 'none' */
   symbol?: SymbolDisplay;
 }
@@ -55,7 +57,7 @@ const props = withDefaults(defineProps<Props>(), {
   value: undefined,
 });
 
-const { amount, asset, price: knownPrice, timestamp, value: providedValue } = toRefs(props);
+const { amount, asset, price: knownPrice, timestamp, value: providedValue, loading: loadingProp } = toRefs(props);
 
 // Composables
 const { loading: calculationLoading, value: calculatedValue } = useAssetValue({
@@ -111,7 +113,7 @@ const { scrambledValue } = useScrambledValue({ value: displayValue });
     <AmountDisplayBase
       :value="scrambledValue"
       :symbol="displaySymbol"
-      :loading="loading"
+      :loading="loading || loadingProp"
       :pnl="pnl"
       :format="format"
       v-bind="$attrs"

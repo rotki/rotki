@@ -19,7 +19,7 @@ const showAlert = computed<boolean>(() => isFirstLoad());
       keypath="history_events_alert.nudge"
     >
       <template #link>
-        <RouterLink :to="Routes.HISTORY">
+        <RouterLink :to="Routes.HISTORY_EVENTS">
           <span class="underline">{{ t('transactions.title') }}</span>
         </RouterLink>
       </template>

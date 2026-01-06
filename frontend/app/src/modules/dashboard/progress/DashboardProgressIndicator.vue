@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { useRefWithDebounce } from '@/composables/ref';
 import BalanceQuerySection from '@/modules/dashboard/progress/components/BalanceQuerySection.vue';
+import HistoricalBalanceProcessingSection from '@/modules/dashboard/progress/components/HistoricalBalanceProcessingSection.vue';
 import HistoryQuerySection from '@/modules/dashboard/progress/components/HistoryQuerySection.vue';
 import IdleQuerySection from '@/modules/dashboard/progress/components/IdleQuerySection.vue';
 import { useUnifiedProgress } from '@/modules/dashboard/progress/composables/use-unified-progress';
+import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
 import { useMainStore } from '@/store/main';
 import { isMajorOrMinorUpdate } from '@/utils/version';
 
@@ -12,6 +14,7 @@ const { t } = useI18n({ useScope: 'global' });
 const justUpdated = ref<boolean>(false);
 
 const { appVersion } = storeToRefs(useMainStore());
+const { isProcessing: isHistoricalBalanceProcessing, processingPercentage: historicalBalancePercentage, processingProgress: historicalBalanceProgress } = storeToRefs(useHistoricalBalancesStore());
 
 const {
   balanceProgress,
@@ -81,9 +84,12 @@ const showBalanceProgress = logicAnd(
   logicNot(balanceStatusDismissedRecently),
 );
 
+const showHistoricalBalanceProgress = useRefWithDebounce(isHistoricalBalanceProcessing, 300);
+
 const showSection = logicOr(
   showHistoryProgress,
   showBalanceProgress,
+  showHistoricalBalanceProgress,
 );
 
 onMounted(async () => {
@@ -144,6 +150,13 @@ onMounted(async () => {
           :progress="historyProgress"
           :processing-message="processingMessage"
           :processing-percentage="processingPercentage"
+        />
+
+        <!-- Historical Balance Processing Section -->
+        <HistoricalBalanceProcessingSection
+          v-else-if="showHistoricalBalanceProgress && historicalBalanceProgress"
+          :progress="historicalBalanceProgress"
+          :percentage="historicalBalancePercentage"
         />
 
         <!-- Idle State Section -->

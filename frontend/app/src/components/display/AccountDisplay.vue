@@ -9,13 +9,13 @@ import { truncateAddress } from '@/utils/truncate';
 const props = withDefaults(defineProps<{
   account: Account;
   useAliasName?: boolean;
-  truncate?: boolean;
+  noTruncate?: boolean;
   hideChainIcon?: boolean;
   size?: string;
 }>(), {
   hideChainIcon: false,
   size: '24px',
-  truncate: true,
+  noTruncate: false,
   useAliasName: true,
 });
 
@@ -49,7 +49,7 @@ const aliasName = computed<string | null>(() => {
   <RuiTooltip
     :popper="{ placement: 'top' }"
     :open-delay="400"
-    :disabled="!truncate"
+    :disabled="noTruncate && !aliasName"
     class="flex items-center flex-nowrap gap-2"
     tooltip-class="[&_*]:font-mono"
   >
@@ -96,7 +96,7 @@ const aliasName = computed<string | null>(() => {
           {{ aliasName }}
         </div>
         <div v-else>
-          {{ truncate ? truncateAddress(address, 6) : address }}
+          {{ !noTruncate ? truncateAddress(address, 6) : address }}
         </div>
       </div>
     </template>

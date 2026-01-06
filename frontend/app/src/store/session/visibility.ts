@@ -5,7 +5,6 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
   const showAbout = ref<boolean>(false);
   const pinned = ref<Nullable<Pinned>>(null);
   const showDrawer = ref<boolean>(false);
-  const showHistoricalBalancesDialog = ref<boolean>(false);
   const showNotificationBar = ref<boolean>(false);
   const showHelpBar = ref<boolean>(false);
   const showNotesSidebar = ref<boolean>(false);
@@ -33,7 +32,6 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
     showAbout,
     showDrawer,
     showHelpBar,
-    showHistoricalBalancesDialog,
     showNotesSidebar,
     showNotificationBar,
     showPinned,

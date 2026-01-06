@@ -3240,20 +3240,34 @@
     "hint_zero": "All the assets without price will be hidden",
     "lt": "<"
   },
-  "historical_balances_dialog": {
+  "historical_balances": {
     "asset_hint": "Leave empty to show all assets",
     "fetch_button": "Get Historical Balances",
     "hint": "View your asset balances at a specific point in time, calculated from your historical events.",
+    "location_hint": "Leave empty to show all locations",
+    "location_label": "Account",
+    "location_label_hint": "Leave empty to show all accounts",
+    "negative_balances": {
+      "asset": "Asset",
+      "balance_before": "Balance Before",
+      "button_label": "Detected Negative Balances",
+      "dialog_title": "Negative Balances Detected",
+      "last_run": "Processing started at:",
+      "view_event": "View Event",
+      "view_event_tooltip": "The negative balance was detected at this event, but it doesn't necessarily mean this event is the cause. The issue might originate from an earlier event during processing."
+    },
     "no_data": "No historical data found for the selected timestamp",
+    "no_location_labels": "No accounts available",
     "premium_required": "Historical balances is a premium feature. Please upgrade to access this functionality.",
     "processing_description": "Processing historical events to calculate balances",
-    "processing_failed": "Processing completed but data is still not available. Please try again.",
+    "processing_progress": "Processing: {processed} / {total}",
+    "protocol_hint": "Leave empty to show all protocols",
+    "results_timestamp": "Showing balances as of",
     "task_description_all": "Calculating balances for all assets at {timestamp}",
     "task_description_asset": "Calculating balance for {asset} at {timestamp}",
-    "task_running_hint": "The task is running. You can leave this page and will be notified when the historical balances processing is done.",
     "timestamp_label": "Date and Time",
     "title": "Historical Balances",
-    "view_results": "View Results"
+    "trigger_processing": "Process Events"
   },
   "history_events_alert": {
     "nudge": "History events need to be queried and decoded. Navigate to {link} view to ensure your data is up to date."
@@ -3795,6 +3809,10 @@
       "airdrops": "Airdrops"
     },
     "history": "History",
+    "history_sub": {
+      "balances": "Balances",
+      "events": "Events"
+    },
     "import_data": "Import Data",
     "locations": "Locations",
     "manage_address_book": "Manage Address Book",
@@ -4080,11 +4098,8 @@
     "uniswap_v3": "Uniswap V3"
   },
   "overall_balances": {
-    "actions_menu_tooltip": "Balance actions",
-    "historical_balances": "Historical Balances",
     "loading": "LOADING",
     "premium_hint": "Get the full experience by upgrading to rotki premium",
-    "snapshot_action": "Snapshot",
     "total_balance": "Total Balance"
   },
   "page_not_found": {
@@ -4733,6 +4748,7 @@
     "force_save": "Force save",
     "ignore_errors_label": "Ignore Errors",
     "ignore_errors_tooltip": "Save the balance snapshot ignoring any errors on external APIs. This can cause the snapshot to be incomplete.",
+    "menu_tooltip": "View the date of the last balances snapshot",
     "messages": {
       "failed_description": "Importing snapshot failed: {message}",
       "success_description": "Snapshot successfully imported. You will be logged out now.",
@@ -5357,7 +5373,7 @@
         "unignore": "Unignore in accounting"
       },
       "show_missing_acquisition": "Showing event for missing acquisition",
-      "show_negative_balance": "Showing event that cause negative balance",
+      "show_negative_balance": "Showing event where negative balances detected",
       "skipped": {
         "csv_export_error": "There was an error with export",
         "download_failed": "Download of CSV is not possible",

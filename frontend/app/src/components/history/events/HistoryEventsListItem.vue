@@ -123,7 +123,7 @@ const isIgnoredAsset = useIsAssetIgnored(eventAsset);
 <template>
   <LazyLoader
     min-height="5rem"
-    class="border-default"
+    class="border-default px-4"
     :class="{
       'bg-rui-error/[0.05]': isHighlighted,
       'border-b': !isLast && !compact,

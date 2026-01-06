@@ -187,6 +187,7 @@ const fiatSymbol = computed<'symbol' | 'ticker' | 'none'>(() => {
     :timestamp="timestampValue"
     :format="formatOptions"
     :class="xlClass"
+    :loading="loading"
   />
 
   <!-- Mode 2: Asset Value Display (uses provided value or calculates amount × price) -->
@@ -197,6 +198,7 @@ const fiatSymbol = computed<'symbol' | 'ticker' | 'none'>(() => {
     :value="displayValue"
     :price="priceOfAsset"
     :timestamp="timestampValue"
+    :loading="loading"
     :format="formatOptions"
     :pnl="pnl"
     :class="xlClass"
@@ -212,6 +214,7 @@ const fiatSymbol = computed<'symbol' | 'ticker' | 'none'>(() => {
     :pnl="pnl"
     :symbol="fiatSymbol"
     :class="xlClass"
+    :loading="loading"
   />
 
   <!-- Mode 4: Asset Amount Display (shows amount with asset symbol) -->

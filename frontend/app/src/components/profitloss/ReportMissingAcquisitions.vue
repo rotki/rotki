@@ -147,7 +147,7 @@ async function showInHistoryEvent(identifier: number) {
   emit('pin');
 
   await router.push({
-    path: Routes.HISTORY.toString(),
+    path: Routes.HISTORY_EVENTS.toString(),
     query: {
       identifiers: identifier.toString(),
     },

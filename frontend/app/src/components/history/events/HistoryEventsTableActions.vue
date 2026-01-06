@@ -245,6 +245,10 @@ function handleToggleAll(): void {
       <LocationLabelSelector
         v-if="!hideAccountSelector"
         v-model="locationLabels"
+        class="w-[18rem]"
+        hide-details
+        dense
+        chips
       />
     </template>
   </HistoryTableActions>

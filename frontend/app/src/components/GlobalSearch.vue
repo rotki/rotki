@@ -132,7 +132,10 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
       texts: [Routes.ONCHAIN.text, Routes.ONCHAIN_SEND.text],
     },
     { ...Routes.NFTS },
-    { ...Routes.HISTORY },
+    {
+      ...Routes.HISTORY,
+      texts: [Routes.HISTORY_EVENTS.text, Routes.HISTORY_BALANCES.text],
+    },
     { ...Routes.AIRDROPS },
     { ...Routes.STATISTICS },
     { ...Routes.STAKING },

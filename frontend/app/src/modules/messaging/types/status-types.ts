@@ -1,4 +1,4 @@
-import { CommonQueryStatusData } from '@rotki/common';
+import { CommonQueryStatusData, NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
 import { EvmChainLikeAddress } from '@/types/history/events';
 import { SocketMessageProgressUpdateSubType } from './base';
@@ -164,10 +164,32 @@ const ProtocolCacheUpdatesDataWithSubtype = ProtocolCacheUpdatesData.extend({
   subtype: z.literal(SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES),
 });
 
+export const HistoricalBalanceProcessingData = z.object({
+  processed: z.number(),
+  total: z.number(),
+});
+
+export type HistoricalBalanceProcessingData = z.infer<typeof HistoricalBalanceProcessingData>;
+
+export const NegativeBalanceDetectedData = z.object({
+  asset: z.string(),
+  balanceBefore: NumericString,
+  eventIdentifier: z.number(),
+  groupIdentifier: z.string(),
+  lastRunTs: z.number().nullable(),
+});
+
+export type NegativeBalanceDetectedData = z.infer<typeof NegativeBalanceDetectedData>;
+
+const HistoricalBalanceProcessingDataWithSubtype = HistoricalBalanceProcessingData.extend({
+  subtype: z.literal(SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING),
+});
+
 export const ProgressUpdateResultData = z.discriminatedUnion('subtype', [
   EvmUnDecodedTransactionsDataWithSubtype,
   ProtocolCacheUpdatesDataWithSubtype,
   HistoricalPriceQueryStatusDataWithSubtype,
+  HistoricalBalanceProcessingDataWithSubtype,
   CsvImportResultWithSubtype,
   LiquityStakingQueryDataWithSubtype,
   StatsPriceQueryDataWithSubtype,

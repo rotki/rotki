@@ -37,14 +37,23 @@ function removeGroupIdentifierParam(): void {
     v-if="route.query.groupIdentifiers"
     class="mb-4"
   >
-    <RuiChip
-      closeable
-      color="primary"
-      size="sm"
-      variant="outlined"
-      @click:close="removeGroupIdentifierParam()"
+    <RuiTooltip
+      :popper="{ placement: 'bottom' }"
+      :open-delay="400"
+      tooltip-class="max-w-80"
     >
-      {{ t('transactions.events.show_negative_balance') }}
-    </RuiChip>
+      <template #activator>
+        <RuiChip
+          closeable
+          color="primary"
+          size="sm"
+          variant="outlined"
+          @click:close="removeGroupIdentifierParam()"
+        >
+          {{ t('transactions.events.show_negative_balance') }}
+        </RuiChip>
+      </template>
+      {{ t('historical_balances.negative_balances.view_event_tooltip') }}
+    </RuiTooltip>
   </div>
 </template>

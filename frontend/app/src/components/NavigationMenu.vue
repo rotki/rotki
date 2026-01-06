@@ -101,8 +101,20 @@ const navItems: MenuItem[] = [
   },
   {
     class: 'history',
-    type: 'item',
+    type: 'group',
     ...Routes.HISTORY,
+    items: [
+      {
+        class: 'history-events',
+        type: 'item',
+        ...Routes.HISTORY_EVENTS,
+      },
+      {
+        class: 'history-balances',
+        type: 'item',
+        ...Routes.HISTORY_BALANCES,
+      },
+    ],
   },
   {
     class: 'onchain',
