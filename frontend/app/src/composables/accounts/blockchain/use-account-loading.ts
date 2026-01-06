@@ -13,6 +13,7 @@ interface UseBlockchainAccountLoadingReturn {
   deleteDisabled: ComputedRef<boolean>;
   isSectionLoading: ComputedRef<boolean>;
   operationRunning: ComputedRef<boolean>;
+  isLoadingActive: ComputedRef<boolean>;
 }
 
 export function useBlockchainAccountLoading(category: MaybeRef<string> = ''): UseBlockchainAccountLoadingReturn {
@@ -51,6 +52,7 @@ export function useBlockchainAccountLoading(category: MaybeRef<string> = ''): Us
   const operationRunning = logicOr(useIsTaskRunning(TaskType.ADD_ACCOUNT), useIsTaskRunning(TaskType.REMOVE_ACCOUNT));
   const refreshDisabled = logicOr(isSectionLoading, isDetectingTokens);
   const deleteDisabled = logicOr(isAnyBalancesFetching, operationRunning);
+  const isLoadingActive = logicOr(isDetectingTokens, isSectionLoading, operationRunning);
 
   return {
     deleteDisabled,
@@ -58,5 +60,6 @@ export function useBlockchainAccountLoading(category: MaybeRef<string> = ''): Us
     isSectionLoading,
     operationRunning,
     refreshDisabled,
+    isLoadingActive,
   };
 }
