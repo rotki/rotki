@@ -14,7 +14,6 @@ from rotkehlchen.chain.substrate.types import (
     NodeName,
     NodeNameAttributes,
 )
-from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SupportedBlockchain
 
@@ -40,7 +39,7 @@ KUSAMA_TEST_NODES = (
 
 KUSAMA_SS58_FORMAT = 2
 POLKADOT_SS58_FORMAT = 2
-KUSAMA_MAIN_ASSET_DECIMALS = FVal(12)
+KUSAMA_MAIN_ASSET_DECIMALS = 12
 KUSAMA_DEFAULT_OWN_RPC_ENDPOINT = 'http://localhost:9933'
 KUSAMA_TEST_RPC_ENDPOINT = 'https://assethub-kusama.api.onfinality.io/rpc?apikey=4f8b5736-9951-4a54-b789-0a384c50c4ed'  # made byq lef for testing # noqa: E501
 

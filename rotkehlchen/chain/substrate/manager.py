@@ -62,7 +62,7 @@ class SubstrateChainProperties(NamedTuple):
     """
     ss58_format: int
     token: CryptoAsset
-    token_decimals: FVal
+    token_decimals: int
 
 
 def request_available_nodes(func: Callable) -> Callable:
@@ -328,7 +328,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         account_data = result.value['data']
         return (
             FVal(account_data['free'] + account_data['reserved']) /
-            FVal('10') ** self.chain_properties.token_decimals
+            FVal(10 ** self.chain_properties.token_decimals)
         )
 
     def _get_chain_id(self, node_interface: SubstrateInterface) -> str:
@@ -376,7 +376,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
             chain_properties = SubstrateChainProperties(
                 ss58_format=properties['ss58Format'],
                 token=CryptoAsset(properties['tokenSymbol']),
-                token_decimals=FVal(properties['tokenDecimals']),
+                token_decimals=int(properties['tokenDecimals']),
             )
         except (KeyError, UnknownAsset) as e:
             message = f'{self.chain} failed to deserialize properties due to: {e!s}.'
