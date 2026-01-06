@@ -1,26 +1,16 @@
 <script setup lang="ts">
-import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
-import type { TaskMeta } from '@/types/task';
-import { type Message, Priority, Severity } from '@rotki/common';
 import ErrorScreen from '@/components/error/ErrorScreen.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import ReportGenerator from '@/components/profitloss/ReportGenerator.vue';
 import ReportsTable from '@/components/profitloss/ReportsTable.vue';
-import { useReportsApi } from '@/composables/api/reports';
 import { useInterop } from '@/composables/electron-interop';
-import { displayDateFormatter } from '@/data/date-formatter';
+import { useReportsPageActions } from '@/pages/reports/use-reports-page-actions';
 import { Routes } from '@/router/routes';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
 import { useReportsStore } from '@/store/reports';
-import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { NoteLocation } from '@/types/notes';
 import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
-import { downloadFileByTextContent } from '@/utils/download';
 
 definePage({
   meta: {
@@ -28,56 +18,23 @@ definePage({
   },
 });
 
-const { awaitTask, useIsTaskRunning } = useTaskStore();
+const { useIsTaskRunning } = useTaskStore();
 const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
-const { clearError, exportReportData, fetchReports, generateReport } = reportsStore;
+const { clearError } = reportsStore;
 const isRunning = useIsTaskRunning(TaskType.TRADE_HISTORY);
 const importDataDialog = ref<boolean>(false);
 const reportDebugData = ref<File>();
-const importDataLoading = ref<boolean>(false);
 const reportDebugDataUploader = ref<InstanceType<typeof FileUpload>>();
 
 const router = useRouter();
 const route = useRoute();
 
 const { t } = useI18n({ useScope: 'global' });
-const { appSession, getPath, openDirectory } = useInterop();
+const { getPath } = useInterop();
 
-onMounted(async () => {
-  const query = get(route).query;
-  if (query.regenerate) {
-    const start: string = (query.start as string) || '';
-    const end: string = (query.end as string) || '';
-
-    if (start && end) {
-      const period = {
-        end: Number.parseInt(end),
-        start: Number.parseInt(start),
-      };
-
-      await router.replace({ query: {} });
-      await generate(period);
-    }
-  }
-});
-
-const { pinned } = storeToRefs(useAreaVisibilityStore());
-
-const { notify } = useNotificationsStore();
-
-const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
-
-async function generate(period: ProfitLossReportPeriod) {
-  if (get(pinned)?.name === 'report-actionable-card')
-    set(pinned, null);
-
-  const formatDate = (timestamp: number) =>
-    displayDateFormatter.format(new Date(timestamp * 1000), get(dateDisplayFormat));
-
-  const reportId = await generateReport(period);
-
-  const action = () => {
+function navigateToReport(reportId: number): void {
+  if (route.path === Routes.PROFIT_LOSS_REPORTS) {
     router.push({
       name: '/reports/[id]',
       params: {
@@ -87,128 +44,36 @@ async function generate(period: ProfitLossReportPeriod) {
         openReportActionable: 'true',
       },
     });
-  };
-
-  if (reportId > 0) {
-    if (route.path === Routes.PROFIT_LOSS_REPORTS) {
-      action();
-      return;
-    }
-    notify({
-      action: {
-        action,
-        label: t('profit_loss_reports.notification.action'),
-      },
-      display: true,
-      message: t('profit_loss_reports.notification.message', {
-        end: formatDate(period.end),
-        start: formatDate(period.start),
-      }),
-      priority: Priority.ACTION,
-      severity: Severity.INFO,
-      title: t('profit_loss_reports.notification.title'),
-    });
   }
 }
 
-const { setMessage } = useMessageStore();
+const { exportData, generate, importData, importDataLoading } = useReportsPageActions({
+  getPath,
+  onNavigateToReport: navigateToReport,
+  reportDebugData,
+});
 
-async function exportData({ end, start }: ProfitLossReportPeriod) {
-  const payload: ProfitLossReportDebugPayload = {
-    fromTimestamp: start,
-    toTimestamp: end,
-  };
-
-  let message: Message | null = null;
-
-  try {
-    if (appSession) {
-      const directoryPath = await openDirectory(t('common.select_directory'));
-      if (!directoryPath)
-        return;
-
-      payload.directoryPath = directoryPath;
-    }
-
-    const result = await exportReportData(payload);
-
-    if (appSession) {
-      message = {
-        description: result
-          ? t('profit_loss_reports.debug.export_message.success')
-          : t('profit_loss_reports.debug.export_message.failure'),
-        success: !!result,
-        title: t('profit_loss_reports.debug.export_message.title'),
-      };
-    }
-    else {
-      downloadFileByTextContent(JSON.stringify(result, null, 2), 'pnl_debug.json', 'application/json');
-    }
-  }
-  catch (error: any) {
-    message = {
-      description: error.message,
-      success: false,
-      title: t('profit_loss_reports.debug.export_message.title'),
-    };
-  }
-
-  if (message)
-    setMessage(message);
-}
-
-const { importReportData, uploadReportData } = useReportsApi();
-
-async function importData() {
-  if (!isDefined(reportDebugData))
+onMounted(async () => {
+  const query = get(route).query;
+  if (!query.regenerate) {
     return;
-
-  set(importDataLoading, true);
-
-  let success: boolean;
-  let message = '';
-
-  const taskType = TaskType.IMPORT_PNL_REPORT_DATA;
-
-  const file = get(reportDebugData);
-
-  try {
-    const path = getPath(file);
-    const { taskId } = path
-      ? await importReportData(path)
-      : await uploadReportData(file);
-
-    const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-      title: t('profit_loss_reports.debug.import_message.title'),
-    });
-    success = result;
-  }
-  catch (error: any) {
-    if (isTaskCancelled(error))
-      return fetchReports();
-
-    message = error.message;
-    success = false;
   }
 
-  if (!success) {
-    setMessage({
-      description: t('profit_loss_reports.debug.import_message.failure', {
-        message,
-      }),
-      title: t('profit_loss_reports.debug.import_message.title'),
-    });
+  const start: string = (query.start as string) || '';
+  const end: string = (query.end as string) || '';
+  if (!(start && end)) {
+    return;
   }
-  else {
-    setMessage({
-      description: t('profit_loss_reports.debug.import_message.success'),
-      success: true,
-      title: t('profit_loss_reports.debug.import_message.title'),
-    });
-    await fetchReports();
-  }
+  const period = {
+    end: Number.parseInt(end),
+    start: Number.parseInt(start),
+  };
+  await router.replace({ query: {} });
+  await generate(period);
+});
 
-  set(importDataLoading, false);
+async function handleImportComplete(): Promise<void> {
+  await importData();
   set(importDataDialog, false);
   get(reportDebugDataUploader)?.removeFile();
   set(reportDebugData, undefined);
@@ -290,7 +155,7 @@ const progress = computed(() => reportsStore.progress);
             color="primary"
             :disabled="!reportDebugData"
             :loading="importDataLoading"
-            @click="importData()"
+            @click="handleImportComplete()"
           >
             {{ t('common.actions.import') }}
           </RuiButton>

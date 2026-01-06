@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
-import { type BigNumber, Blockchain, toSentenceCase } from '@rotki/common';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import { type BigNumber, Blockchain } from '@rotki/common';
+import { type AssetLocation, useAssetLocationsData } from '@/components/assets/use-asset-locations-data';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
@@ -10,24 +11,8 @@ import LocationSelector from '@/components/helper/LocationSelector.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
-import { isBlockchain } from '@/types/blockchain/chains';
 import { CURRENCY_USD } from '@/types/currencies';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
-
-type AssetLocations = AssetLocation[];
-
-interface AssetLocation extends AssetBreakdown {
-  readonly account?: BlockchainAccount;
-  readonly label: string;
-}
 
 const props = defineProps<{ identifier: string }>();
 
@@ -49,53 +34,17 @@ const onlyTags = ref<string[]>([]);
 const locationFilter = ref<string>('');
 const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { getAccountByAddress } = useBlockchainAccountsStore();
-const { detailsLoading } = storeToRefs(useStatusStore());
-const { assetPriceInfo } = useAggregatedBalances();
-const { useAssetBreakdown } = useAssetBalancesBreakdown();
-const { addressNameSelector } = useAddressesNamesStore();
-const { getChainName, matchChain } = useSupportedChains();
-
-const totalValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).value);
-
-const assetLocations = computed<AssetLocations>(() => {
-  const breakdowns = get(useAssetBreakdown(get(identifier)));
-  return breakdowns.map((item: AssetBreakdown) => {
-    const account = item.address ? getAccountByAddress(item.address, item.location) : undefined;
-    return {
-      ...item,
-      account,
-      label: account?.label ?? '',
-    };
-  });
-});
-
-const visibleAssetLocations = computed<AssetLocations>(() => {
-  const locations = get(assetLocations).map(item => ({
-    ...item,
-    label:
-      (isBlockchain(item.location) ? get(addressNameSelector(item.address, item.location)) : null)
-      || item.label
-      || item.address,
-  }));
-
-  const tagsFilter = get(onlyTags);
-  const location = get(locationFilter);
-  const accounts = get(selectedAccounts);
-
-  return locations.filter((assetLocation) => {
-    const tags = assetLocation.tags ?? [];
-    const includedInTags = tagsFilter.every(tag => tags.includes(tag));
-    const currentLocation = assetLocation.location;
-    const locationToCheck = get(getChainName(currentLocation));
-    const locationMatches = !location || locationToCheck === toSentenceCase(location);
-    const accountMatches = accounts.length === 0 || accounts.some(account =>
-      getAccountAddress(account) === assetLocation.address,
-    );
-
-    return includedInTags && locationMatches && accountMatches;
-  });
+const {
+  currencySymbol,
+  detailsLoading,
+  matchChain,
+  totalValue,
+  visibleAssetLocations,
+} = useAssetLocationsData({
+  identifier,
+  locationFilter,
+  onlyTags,
+  selectedAccounts,
 });
 
 function getPercentage(value: BigNumber): string {

@@ -4,18 +4,16 @@ import type { SelectOption } from '@/types/common';
 import {
   EvmTokenKind,
   isValidEthAddress,
-  isValidSolanaAddress,
   onlyIfTruthy,
   type SupportedAsset,
   toSentenceCase,
   type UnderlyingToken,
 } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
-import useVuelidate from '@vuelidate/core';
-import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { omit, pick } from 'es-toolkit';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
+import { useManagedAssetFormValidation } from '@/components/asset-manager/managed/use-managed-asset-form-validation';
 import UnderlyingTokenManager from '@/components/asset-manager/UnderlyingTokenManager.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import HelpLink from '@/components/helper/HelpLink.vue';
@@ -23,12 +21,10 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
 import { CUSTOM_ASSET, EVM_TOKEN, SOLANA_TOKEN } from '@/types/asset';
 import { evmTokenKindsData, solanaTokenKindsData } from '@/types/blockchain/chains';
 import { refOptional, useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<SupportedAsset>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
@@ -94,8 +90,6 @@ const isNft = computed<boolean>(() => get(tokenKind) === EvmTokenKind.ERC721);
 
 const isTokenRequiresAddress = logicOr(isEvmToken, isSolanaToken);
 
-const externalServerValidation = () => true;
-
 const states = {
   address,
   assetType,
@@ -113,32 +107,15 @@ const states = {
   tokenKind,
 };
 
-const v$ = useVuelidate({
-  address: {
-    required: requiredIf(isTokenRequiresAddress),
-    validated: helpers.withMessage(
-      t('asset_form.validation.valid_address'),
-      (v: string) => !get(isTokenRequiresAddress) || (get(isEvmToken) && isValidEthAddress(v)) || (get(isSolanaToken) && isValidSolanaAddress(v)),
-    ),
-  },
-  assetType: { required },
-  coingecko: { externalServerValidation },
-  collectibleId: {
-    required: requiredIf(isNft),
-  },
-  cryptocompare: { externalServerValidation },
-  decimals: { externalServerValidation },
-  evmChain: { externalServerValidation },
-  forked: { externalServerValidation },
-  name: { externalServerValidation },
-  protocol: { externalServerValidation },
-  started: { externalServerValidation },
-  swappedFor: { externalServerValidation },
-  symbol: { externalServerValidation },
-  tokenKind: { externalServerValidation },
-}, states, { $autoDirty: true, $externalResults: errors });
-
-useFormStateWatcher(states, stateUpdated);
+const { toMessages, v$ } = useManagedAssetFormValidation({
+  errors,
+  isEvmToken,
+  isNft,
+  isSolanaToken,
+  isTokenRequiresAddress,
+  states,
+  stateUpdated,
+});
 
 function parseDecimals(value?: string): number | null {
   if (!value)

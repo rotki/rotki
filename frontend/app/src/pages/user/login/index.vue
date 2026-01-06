@@ -12,14 +12,11 @@ import RotkiLogo from '@/components/common/RotkiLogo.vue';
 import AssetUpdate from '@/components/status/update/AssetUpdate.vue';
 import { useBackendManagement } from '@/composables/backend';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
-import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
 import { useUpdateMessage } from '@/composables/update-message';
 import { useAccountManagement } from '@/composables/user/account';
-import { useUpdateChecker } from '@/modules/session/use-update-checker';
-import { useMonitorStore } from '@/store/monitor';
+import { useLoginInitialChecks } from '@/pages/user/login/use-login-initial-checks';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { useWebsocketStore } from '@/store/websocket';
 
 definePage({
   meta: {
@@ -29,18 +26,16 @@ definePage({
 
 const { t } = useI18n({ useScope: 'global' });
 const { navigateToDashboard, navigateToUserCreation } = useAppNavigation();
-const { canRequestData, checkForAssetUpdate, upgradeVisible } = storeToRefs(useSessionAuthStore());
+const { canRequestData } = storeToRefs(useSessionAuthStore());
 const { backendChanged } = useBackendManagement();
 const { errors, loading, userLogin } = useAccountManagement();
-const { checkForUpdate } = useUpdateChecker();
-const { isPackaged } = useInterop();
-const { connect } = useWebsocketStore();
-const { startTaskMonitoring } = useMonitorStore();
 
-const initialChecksDone = ref<boolean>(false);
-const performingInitialChecks = ref<boolean>(false);
-
-const showUpgradeProgress = computed<boolean>(() => get(upgradeVisible) && get(errors).length === 0);
+const {
+  checkForAssetUpdate,
+  performingInitialChecks,
+  performInitialChecks,
+  showUpgradeProgress,
+} = useLoginInitialChecks(errors);
 
 const isDocker = import.meta.env.VITE_DOCKER;
 
@@ -61,32 +56,8 @@ async function handleLogin(credentials: LoginCredentials) {
   await userLogin(credentials);
 }
 
-function skipInitialAssetUpdate() {
+function skipInitialAssetUpdate(): void {
   set(checkForAssetUpdate, false);
-}
-
-async function performInitialChecks() {
-  set(performingInitialChecks, true);
-
-  try {
-    // Check for app updates before showing login form
-    if (isPackaged)
-      await checkForUpdate();
-
-    // Connect to backend and start monitoring before showing asset update UI
-    await connect();
-    startTaskMonitoring(false);
-
-    // Set checkForAssetUpdate to true first, so AssetUpdate component will be shown and can run its check
-    set(checkForAssetUpdate, true);
-
-    // Mark initial checks as done after setting checkForAssetUpdate
-    // This ensures AssetUpdate component is shown with the flag already set
-    set(initialChecksDone, true);
-  }
-  finally {
-    set(performingInitialChecks, false);
-  }
 }
 
 const { logged } = storeToRefs(useSessionAuthStore());

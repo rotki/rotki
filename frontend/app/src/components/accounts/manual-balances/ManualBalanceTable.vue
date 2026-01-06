@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
-import { isEqual, omit } from 'es-toolkit';
+import { isEqual } from 'es-toolkit';
 import ManualBalanceMissingAssetWarning
   from '@/components/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
+import { useManualBalanceTableActions } from '@/components/accounts/manual-balances/use-manual-balance-table-actions';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
@@ -15,13 +16,9 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanceFilter } from '@/composables/filters/manual-balances';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
-import { Section } from '@/types/status';
 
 const props = defineProps<{
   title: string;
@@ -40,10 +37,8 @@ const { t } = useI18n({ useScope: 'global' });
 const tags = ref<string[]>([]);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { deleteManualBalance, fetchManualBalances } = useManualBalances();
 const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(type);
-const { isLoading } = useStatusStore();
-const refreshing = isLoading(Section.MANUAL_BALANCES);
+const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
 
 const {
   fetchData,
@@ -77,19 +72,8 @@ const {
   },
 });
 
-async function refresh() {
-  await fetchManualBalances(true);
-}
-
-function edit(balance: ManualBalanceWithPrice) {
-  emit('edit', {
-    ...omit(balance, [
-      'value',
-      'usdPrice',
-      'assetIsMissing',
-    ]),
-    asset: balance.assetIsMissing ? '' : balance.asset,
-  });
+function edit(balance: ManualBalanceWithPrice): void {
+  emit('edit', prepareForEdit(balance));
 }
 
 function getRowClass(item: ManualBalance) {
@@ -140,18 +124,6 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
 
 useRememberTableSorting<ManualBalanceWithPrice>(TableId.MANUAL_BALANCES, sort, cols);
 
-const { show } = useConfirmStore();
-
-function showDeleteConfirmation(id: number) {
-  show(
-    {
-      message: t('manual_balances_table.delete_dialog.message'),
-      title: t('manual_balances_table.delete_dialog.title'),
-    },
-    () => deleteManualBalance(id),
-  );
-}
-
 watchImmediate(dataSource, async (newBalances, oldBalances) => {
   if (isEqual(newBalances, oldBalances))
     return;
@@ -160,7 +132,7 @@ watchImmediate(dataSource, async (newBalances, oldBalances) => {
 });
 
 watchDebounced(
-  isLoading(Section.PRICES),
+  pricesLoading,
   async (isLoading, wasLoading) => {
     if (!isLoading && wasLoading)
       await fetchData();

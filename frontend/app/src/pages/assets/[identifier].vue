@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { RouteLocationRaw } from 'vue-router';
 import { externalLinks } from '@shared/external-links';
 import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
@@ -12,13 +11,11 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useSpamAsset } from '@/composables/assets/spam';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { usePremium } from '@/composables/premium';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { useAssetPageActions } from '@/pages/assets/use-asset-page-actions';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
 import { getPublicServiceImagePath } from '@/utils/file';
@@ -47,17 +44,11 @@ const route = useRoute();
 
 const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 
-const { ignoreAssetWithConfirmation, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
-const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
-const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 const { assetContractInfo, assetInfo, assetName, assetSymbol, refetchAssetInfo } = useAssetInfoRetrieval();
 const premium = usePremium();
 const { balances } = useAggregatedBalances();
 
 const aggregatedBalances = balances();
-
-const isIgnored = useIsAssetIgnored(identifier);
-const isWhitelisted = isAssetWhitelisted(identifier);
 
 const isCollectionParent = computed<boolean>(() => {
   const currentRoute = get(route);
@@ -75,6 +66,20 @@ const symbol = assetSymbol(identifier, assetRetrievalOption);
 const asset = assetInfo(identifier, assetRetrievalOption);
 const contractInfo = assetContractInfo(identifier, assetRetrievalOption);
 
+const {
+  isIgnored,
+  isSpam,
+  toggleIgnoreAsset,
+  toggleSpam,
+  toggleWhitelistAsset,
+} = useAssetPageActions({
+  asset,
+  identifier,
+  name,
+  refetchAssetInfo,
+  symbol,
+});
+
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
 
 const collectionId = computed<number | undefined>(() => {
@@ -85,7 +90,7 @@ const collectionId = computed<number | undefined>(() => {
   return (collectionId && parseInt(collectionId)) || undefined;
 });
 
-const editRoute = computed<RouteLocationRaw>(() => ({
+const editRoute = computed(() => ({
   path: get(isCustomAsset) ? '/asset-manager/custom' : '/asset-manager/managed',
   query: {
     id: get(identifier),
@@ -115,40 +120,8 @@ const collectionAssetWithPrice = computed<string | undefined>(() => {
   return collectionBalanceVal[0].asset;
 });
 
-const isSpam = computed(() => get(asset)?.isSpam || false);
-
-function goToEdit() {
+function goToEdit(): void {
   router.push(get(editRoute));
-}
-
-async function toggleSpam() {
-  const id = get(identifier);
-  if (get(isSpam))
-    await removeAssetFromSpamList(id);
-  else
-    await markAssetsAsSpam([id]);
-
-  refetchAssetInfo(id);
-}
-
-async function toggleIgnoreAsset() {
-  const id = get(identifier);
-  if (get(isIgnored)) {
-    await unignoreAsset(id);
-  }
-  else {
-    await ignoreAssetWithConfirmation(id, get(symbol) || get(name));
-  }
-}
-
-async function toggleWhitelistAsset() {
-  const id = get(identifier);
-  if (get(isWhitelisted))
-    await unWhitelistAsset(id);
-  else
-    await whitelistAsset(id);
-
-  refetchAssetInfo(id);
 }
 </script>
 

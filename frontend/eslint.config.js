@@ -19,7 +19,7 @@ export default rotki({
   },
   imports: {
     overrides: {
-      '@rotki/max-dependencies': ['warn', { max: 20 }],
+      '@rotki/max-dependencies': ['error', { max: 20 }],
     },
   },
   vueI18n: {
