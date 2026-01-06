@@ -2,25 +2,20 @@
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { EvmHistoryEvent, NewEvmHistoryEventPayload } from '@/types/history/events/schemas';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
-import { isEmpty } from 'es-toolkit/compat';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
 import JsonInput from '@/components/inputs/JsonInput.vue';
-import { useFormStateWatcher } from '@/composables/form';
-import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useSupportedChains } from '@/composables/info/chains';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
 import EvmLocation from '@/modules/history/management/forms/common/EvmLocation.vue';
+import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
-import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { toMessages } from '@/utils/validation';
 
 interface HistoryEventFormProps {
   data: StandaloneEventData<EvmHistoryEvent>;
@@ -57,32 +52,12 @@ const extraData = ref<object>({});
 
 const errorMessages = ref<Record<string, string[]>>({});
 
-const { createCommonRules } = useEventFormValidation();
-const commonRules = createCommonRules();
-
-const isInformationalEvent = computed(() => get(eventType) === 'informational');
-
-const rules = {
-  address: commonRules.createValidEthAddressRule(),
-  amount: commonRules.createRequiredAmountRule(),
-  asset: commonRules.createRequiredAssetRule(),
-  counterparty: commonRules.createValidCounterpartyRule(counterparties),
-  eventSubtype: commonRules.createRequiredEventSubtypeRule(),
-  eventType: commonRules.createRequiredEventTypeRule(),
-  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
-  location: commonRules.createRequiredLocationRule(),
-  locationLabel: commonRules.createExternalValidationRule(),
-  notes: commonRules.createExternalValidationRule(),
-  sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-  timestamp: commonRules.createExternalValidationRule(),
-  txRef: commonRules.createValidTxHashRule(),
-};
+const isInformationalEvent = computed<boolean>(() => get(eventType) === 'informational');
 
 const numericAmount = bigNumberifyFromRef(amount);
 
 const { saveHistoryEventHandler } = useHistoryEventsForm();
 const { txChainsToLocation } = useSupportedChains();
-const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
 
 const states = {
   address,
@@ -101,15 +76,26 @@ const states = {
   txRef,
 };
 
-const v$ = useVuelidate(
-  rules,
+const { v$, captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEventFormBase({
+  rules: commonRules => ({
+    address: commonRules.createValidEthAddressRule(),
+    amount: commonRules.createRequiredAmountRule(),
+    asset: commonRules.createRequiredAssetRule(),
+    counterparty: commonRules.createValidCounterpartyRule(counterparties),
+    eventSubtype: commonRules.createRequiredEventSubtypeRule(),
+    eventType: commonRules.createRequiredEventTypeRule(),
+    groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
+    location: commonRules.createRequiredLocationRule(),
+    locationLabel: commonRules.createExternalValidationRule(),
+    notes: commonRules.createExternalValidationRule(),
+    sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
+    timestamp: commonRules.createExternalValidationRule(),
+    txRef: commonRules.createValidTxHashRule(),
+  }),
   states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
-useFormStateWatcher(states, stateUpdated);
+  errorMessages,
+  stateUpdated,
+});
 
 function reset() {
   set(sequenceIndex, get(data)?.nextSequenceId || '0');
@@ -160,11 +146,6 @@ function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(txRef, entry.txRef);
   set(timestamp, entry.timestamp);
 }
-
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
-});
 
 async function save(): Promise<boolean> {
   if (!(await get(v$).$validate())) {

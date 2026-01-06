@@ -2,27 +2,22 @@
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events/schemas';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
 import { requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { isEqual } from 'es-toolkit';
-import { isEmpty } from 'es-toolkit/compat';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import { useFormStateWatcher } from '@/composables/form';
-import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { refIsTruthy } from '@/composables/ref';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
-import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { toMessages } from '@/utils/validation';
 
 interface AssetMovementEventFormProps {
   data: GroupEventData<AssetMovementEvent>;
@@ -63,30 +58,6 @@ const blockchain = ref<string>('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
-const { createCommonRules } = useEventFormValidation();
-const commonRules = createCommonRules();
-
-const rules = {
-  amount: commonRules.createRequiredAmountRule(),
-  asset: commonRules.createRequiredAssetRule(),
-  blockchain: commonRules.createExternalValidationRule(),
-  eventType: commonRules.createRequiredEventTypeRule(),
-  fee: commonRules.createRequiredFeeRule(requiredIf(logicAnd(hasFee, refIsTruthy(feeAsset)))),
-  feeAsset: commonRules.createRequiredFeeAssetRule(requiredIf(logicAnd(hasFee, refIsTruthy(fee)))),
-  groupIdentifier: commonRules.createExternalValidationRule(),
-  location: commonRules.createRequiredLocationRule(),
-  locationLabel: commonRules.createExternalValidationRule(),
-  notes: commonRules.createExternalValidationRule(),
-  timestamp: commonRules.createExternalValidationRule(),
-  transactionId: commonRules.createExternalValidationRule(),
-  uniqueId: commonRules.createExternalValidationRule(),
-};
-
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { saveHistoryEventHandler } = useHistoryEventsForm();
-
-const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
-
 const states = {
   amount,
   asset,
@@ -104,15 +75,29 @@ const states = {
   uniqueId,
 };
 
-const v$ = useVuelidate(
-  rules,
+const { v$, captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEventFormBase({
+  rules: commonRules => ({
+    amount: commonRules.createRequiredAmountRule(),
+    asset: commonRules.createRequiredAssetRule(),
+    blockchain: commonRules.createExternalValidationRule(),
+    eventType: commonRules.createRequiredEventTypeRule(),
+    fee: commonRules.createRequiredFeeRule(requiredIf(logicAnd(hasFee, refIsTruthy(feeAsset)))),
+    feeAsset: commonRules.createRequiredFeeAssetRule(requiredIf(logicAnd(hasFee, refIsTruthy(fee)))),
+    groupIdentifier: commonRules.createExternalValidationRule(),
+    location: commonRules.createRequiredLocationRule(),
+    locationLabel: commonRules.createExternalValidationRule(),
+    notes: commonRules.createExternalValidationRule(),
+    timestamp: commonRules.createExternalValidationRule(),
+    transactionId: commonRules.createExternalValidationRule(),
+    uniqueId: commonRules.createExternalValidationRule(),
+  }),
   states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
-useFormStateWatcher(states, stateUpdated);
+  errorMessages,
+  stateUpdated,
+});
+
+const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const { saveHistoryEventHandler } = useHistoryEventsForm();
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 const numericAmount = bigNumberifyFromRef(amount);
@@ -261,11 +246,6 @@ watch(hasFee, (hasFee: boolean) => {
   else {
     set(notes, [get(notes)[0], '']);
   }
-});
-
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
 });
 
 defineExpose({

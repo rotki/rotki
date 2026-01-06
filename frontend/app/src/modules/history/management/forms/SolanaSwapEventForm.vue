@@ -1,36 +1,24 @@
 <script lang="ts" setup>
 import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { SolanaSwapFormData } from '@/modules/history/management/forms/solana-swap-event-form';
-import type { ValidationErrors } from '@/types/api/errors';
-import type { AddSolanaSwapEventPayload, SolanaEvent, SolanaSwapEvent, SwapSubEventModel } from '@/types/history/events/schemas';
+import type { AddSolanaSwapEventPayload, SolanaEvent, SolanaSwapEvent } from '@/types/history/events/schemas';
 import { assert, HistoryEventEntryType } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
-import { isEmpty } from 'es-toolkit/compat';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
-import { useFormStateWatcher } from '@/composables/form';
-import { useHistoryEvents } from '@/composables/history/events';
-import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
+import { useSwapEventForm } from '@/modules/history/management/forms/composables/use-swap-event-form';
 import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
-import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { toSubEvent } from '@/modules/history/management/forms/utils';
-import { useMessageStore } from '@/store/message';
 import { SOLANA_CHAIN } from '@/types/asset';
 import { useRefPropVModel } from '@/utils/model';
-import { toMessages } from '@/utils/validation';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const props = defineProps<{ data: StandaloneEventData<SolanaEvent> | GroupEventData<SolanaSwapEvent> }>();
 
-function emptySubEvent(): SwapSubEventModel {
-  return {
-    amount: '',
-    asset: '',
-  };
-}
+const { emptySubEvent, handleValidationErrors, submitAllPrices, addHistoryEvent, editHistoryEvent } = useSwapEventForm();
 
 function emptyEvent(): SolanaSwapFormData {
   return {
@@ -59,68 +47,24 @@ const feeListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('feeLis
 const timestamp = useRefPropVModel(states, 'timestamp');
 
 const { t } = useI18n({ useScope: 'global' });
-const { createCommonRules } = useEventFormValidation();
-const commonRules = createCommonRules();
 
-const rules = computed(() => ({
-  address: commonRules.createValidSolanaAddressRule(),
-  counterparty: commonRules.createExternalValidationRule(),
-  fee: get(hasFee) ? commonRules.createRequiredAtLeastOne() : {},
-  location: commonRules.createExternalValidationRule(),
-  receive: commonRules.createRequiredAtLeastOne(),
-  sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-  spend: commonRules.createRequiredAtLeastOne(),
-  timestamp: commonRules.createExternalValidationRule(),
-  txRef: commonRules.createValidSolanaSignatureRule(),
-}));
-
-const v$ = useVuelidate(
-  rules,
-  computed(() => ({ ...get(states), location: get(location) })),
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
-
-useFormStateWatcher(states, stateUpdated);
-const { setMessage } = useMessageStore();
-const { addHistoryEvent, editHistoryEvent } = useHistoryEvents();
-const { captureEditModeState, shouldSkipSave } = useEditModeStateTracker();
-
-function handleValidationErrors(message: ValidationErrors | string) {
-  if (typeof message === 'string') {
-    setMessage({
-      description: message,
-    });
-  }
-  else {
-    set(errorMessages, message);
-  }
-}
-
-async function submitAllPrices(): Promise<boolean> {
-  const lists = [
-    get(spendListRef),
-    get(receiveListRef),
-    get(feeListRef),
-  ].filter(Boolean);
-
-  for (const list of lists) {
-    if (!list)
-      continue;
-    const subEvents = list.getSubEventRefs();
-    for (const subEvent of subEvents) {
-      const result = await subEvent.submitPrice();
-      if (result && !result.success) {
-        handleValidationErrors(result.message || t('transactions.events.form.asset_price.failed'));
-        return false;
-      }
-    }
-  }
-
-  return true;
-}
+const { v$, captureEditModeState, shouldSkipSave } = useEventFormBase({
+  rules: commonRules => computed(() => ({
+    address: commonRules.createValidSolanaAddressRule(),
+    counterparty: commonRules.createExternalValidationRule(),
+    fee: get(hasFee) ? commonRules.createRequiredAtLeastOne() : {},
+    location: commonRules.createExternalValidationRule(),
+    receive: commonRules.createRequiredAtLeastOne(),
+    sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
+    spend: commonRules.createRequiredAtLeastOne(),
+    timestamp: commonRules.createExternalValidationRule(),
+    txRef: commonRules.createValidSolanaSignatureRule(),
+  })),
+  states: computed(() => ({ ...get(states), location: get(location) })),
+  errorMessages,
+  stateUpdated,
+  formStates: { states },
+});
 
 async function save(): Promise<boolean> {
   if (!(await get(v$).$validate())) {
@@ -130,7 +74,7 @@ async function save(): Promise<boolean> {
   const isEditMode = get(identifiers).length > 0;
 
   // Submit prices from all nested HistoryEventAssetPriceForm components
-  const pricesSubmitted = await submitAllPrices();
+  const pricesSubmitted = await submitAllPrices({ spendListRef, receiveListRef, feeListRef });
   if (!pricesSubmitted) {
     return false;
   }
@@ -167,6 +111,7 @@ async function save(): Promise<boolean> {
     const message = result.message;
     if (message) {
       handleValidationErrors(message);
+      set(errorMessages, typeof message === 'string' ? {} : message);
     }
   }
 
@@ -214,11 +159,6 @@ watchImmediate(() => props.data, (data) => {
 
 watch(hasFee, (hasFee) => {
   set(states, { ...get(states), fee: hasFee ? [emptySubEvent()] : [] });
-});
-
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
 });
 
 defineExpose({
