@@ -71,7 +71,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
   const api = useSettingsApi();
 
-  function update(update: FrontendSettings): void {
+  function update(update: Partial<FrontendSettings>): void {
     set(settings, {
       ...get(settings),
       ...update,

@@ -73,6 +73,7 @@ function settings(): SettingsApi {
 }
 
 export function usePremiumApi(): PremiumInterface {
+  const COMPONENTS_VERSION = 27;
   return {
     api: (): PremiumApi => ({
       data: data(),
@@ -84,6 +85,6 @@ export function usePremiumApi(): PremiumInterface {
       settings: settings(),
     }),
     useHostComponents: true,
-    version: 26,
+    version: COMPONENTS_VERSION,
   };
 }

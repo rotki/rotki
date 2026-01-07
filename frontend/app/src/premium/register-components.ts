@@ -47,6 +47,13 @@ import AssetBalanceStatisticSourceSetting from '@/components/settings/AssetBalan
 import StatisticsGraphSettings from '@/components/settings/StatisticsGraphSettings.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import {
+  AssetAmountDisplay,
+  AssetPriceDisplay,
+  AssetValueDisplay,
+  FiatDisplay,
+  ValueDisplay,
+} from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { logger } from '@/utils/logging';
 
@@ -133,6 +140,14 @@ export function registerComponents(app: App): void {
   app.component('MissingDailyPrices', MissingDailyPrices);
 
   app.component('NewGraphTooltipWrapper', NewGraphTooltipWrapper);
+
+  // Version 27 - Amount display components
+  app.component('FiatDisplay', FiatDisplay);
+  app.component('AssetValueDisplay', AssetValueDisplay);
+  app.component('AssetPriceDisplay', AssetPriceDisplay);
+  app.component('AssetAmountDisplay', AssetAmountDisplay);
+  app.component('ValueDisplay', ValueDisplay);
+
   ruiRegister(app);
   logger.info('Components registered');
 }
