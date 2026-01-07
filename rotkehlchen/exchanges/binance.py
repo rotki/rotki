@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 from uuid import uuid4
 
-import gevent
 import requests
 from rsqlite import IntegrityError
 
@@ -77,6 +76,14 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    inverse_backoff_seconds,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -324,105 +331,32 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         call_options = options.copy() if options else {}
         timeout = (cached_settings := CachedSettings()).get_timeout_tuple()
         tries_left = cached_settings.get_query_retry_limit()
-        while True:
-            if 'signature' in call_options:
-                del call_options['signature']
+        result = retry_with_backoff(
+            retries=tries_left,
+            backoff_state=None,
+            call=lambda: self._binance_request(
+                api_type=api_type,
+                method=method,
+                request_method=request_method,
+                request_options_key=request_options_key,
+                call_options=call_options,
+                timeout=timeout,
+            ),
+            on_result=lambda response, retries_left_current, _backoff: self._handle_binance_response(  # noqa: E501
+                response=response,
+                method=method,
+                options=options,
+                retries_left=retries_left_current,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(f'{self.name} API request failed due to {error!s}'),
+            ),
+        )
 
-            is_v3_api_method = api_type == 'api' and method in V3_METHODS
-            is_new_futures_api = api_type in {'fapi', 'dapi'}
-            api_version = 3  # public methods are v3
-            if method not in PUBLIC_METHODS:  # api call needs signature
-                if api_type in {'sapi', 'dapi'}:
-                    api_version = 1
-                elif api_type == 'fapi':
-                    api_version = 2
-                elif is_v3_api_method:
-                    api_version = 3
-                else:
-                    raise AssertionError(
-                        f'Should never get to signed binance api call for '
-                        f'api_type: {api_type} and method {method}',
-                    )
+        if isinstance(result, list):
+            return result
 
-                # Recommended recvWindows is 5000 but we get timeouts with it
-                call_options['recvWindow'] = 10000
-                call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
-                signature = self.generate_hmac_signature(urlencode(call_options))
-                call_options['signature'] = signature
-
-            api_subdomain = api_type if is_new_futures_api else 'api'
-            request_url = (
-                f'https://{api_subdomain}.{self.uri}{api_type}/v{api_version!s}/{method}'
-            )
-            log.debug(f'{self.name} API request', request_url=request_url)
-            try:
-                response = self.session.request(  # type: ignore[misc]  # keyword is a string as typed above
-                    method=request_method,
-                    url=request_url,
-                    timeout=timeout,
-                    **{request_options_key: call_options},  # type: ignore[arg-type]  # types are correctly set
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(
-                    f'{self.name} API request failed due to {e!s}',
-                ) from e
-
-            if response.status_code not in {200, 418, 429}:
-                code = 'no code found'
-                msg = 'no message found'
-                with suppress(JSONDecodeError):
-                    result = json.loads(response.text)
-                    if isinstance(result, dict):
-                        code = result.get('code', code)
-                        msg = result.get('msg', msg)
-
-                if 'Invalid symbol' in msg and method == 'myTrades':
-                    assert options, 'We always provide options for myTrades call'
-                    symbol = options.get('symbol', 'no symbol given')
-                    # Binance does not return trades for delisted markets. It also may
-                    # return a delisted market in the active market endpoints, so we
-                    # need to handle it here.
-                    log.debug(f'Couldnt query {self.name} trades for {symbol} since its delisted')
-                    return []
-
-                exception_class: type[RemoteError | BinancePermissionError]
-                if response.status_code == 401 and code == REJECTED_MBX_KEY:
-                    # Either API key permission error or if futures/dapi then not enabled yet
-                    exception_class = BinancePermissionError
-                else:
-                    exception_class = RemoteError
-
-                raise exception_class(
-                    f'{self.name} API request {response.url} for {method} failed with HTTP status '
-                    f'code: {response.status_code}, error code: {code} and error message: {msg}')
-
-            if response.status_code in {418, 429}:
-                # Binance has limits and if we hit them we should backoff.
-                # A Retry-After header is sent with a 418 or 429 responses and
-                # will give the number of seconds required to wait, in the case
-                # of a 429, to prevent a ban, or, in the case of a 418, until
-                # the ban is over.
-                # https://developers.binance.com/docs/binance-spot-api-docs/rest-api/limits
-                # the Retry-After header is returned but it is always 0. We implement our own
-                # backoff logic.
-                log.debug(
-                    'Rate limited request from binance answered with status code '
-                    f'{response.status_code} and headers {response.headers}. '
-                    f'Retries left: {tries_left}',
-                )
-                if tries_left >= 1:
-                    backoff_seconds = 10 / tries_left
-                    gevent.sleep(backoff_seconds)
-                    tries_left -= 1
-                    continue
-
-                raise RemoteError(
-                    f'{self.name} API request {response.url} for {method} failed with '
-                    f'HTTP status code: {response.status_code} after exhausting the retries.',
-                )
-
-            # else success
-            break
+        response = result
 
         try:
             json_ret = json.loads(response.text)
@@ -431,6 +365,113 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 f'{self.name} returned invalid JSON response: {response.text}',
             ) from e
         return json_ret
+
+    def _binance_request(
+            self,
+            api_type: BINANCE_API_TYPE,
+            method: str,
+            request_method: Literal['GET', 'POST'],
+            request_options_key: Literal['params', 'data'],
+            call_options: dict[str, str | int],
+            timeout: tuple[int, int],
+    ) -> requests.Response:
+        call_options.pop('signature', None)
+
+        is_v3_api_method = api_type == 'api' and method in V3_METHODS
+        is_new_futures_api = api_type in {'fapi', 'dapi'}
+        api_version = 3  # public methods are v3
+        if method not in PUBLIC_METHODS:  # api call needs signature
+            if api_type in {'sapi', 'dapi'}:
+                api_version = 1
+            elif api_type == 'fapi':
+                api_version = 2
+            elif is_v3_api_method:
+                api_version = 3
+            else:
+                raise AssertionError(
+                    f'Should never get to signed binance api call for '
+                    f'api_type: {api_type} and method {method}',
+                )
+
+            # Recommended recvWindows is 5000 but we get timeouts with it
+            call_options['recvWindow'] = 10000
+            call_options['timestamp'] = str(ts_now_in_ms() + self.offset_ms)
+            signature = self.generate_hmac_signature(urlencode(call_options))
+            call_options['signature'] = signature
+
+        api_subdomain = api_type if is_new_futures_api else 'api'
+        request_url = (
+            f'https://{api_subdomain}.{self.uri}{api_type}/v{api_version!s}/{method}'
+        )
+        log.debug(f'{self.name} API request', request_url=request_url)
+        return self.session.request(  # type: ignore[misc]  # keyword is a string as typed above
+            method=request_method,
+            url=request_url,
+            timeout=timeout,
+            **{request_options_key: call_options},  # type: ignore[arg-type]  # types are correctly set
+        )
+
+    def _handle_binance_response(
+            self,
+            response: requests.Response,
+            method: str,
+            options: dict[str, str | int] | None,
+            retries_left: int,
+    ) -> RetryDecision:
+        if response.status_code not in {200, 418, 429}:
+            code = 'no code found'
+            msg = 'no message found'
+            with suppress(JSONDecodeError):
+                result = json.loads(response.text)
+                if isinstance(result, dict):
+                    code = result.get('code', code)
+                    msg = result.get('msg', msg)
+
+            if 'Invalid symbol' in msg and method == 'myTrades':
+                assert options, 'We always provide options for myTrades call'
+                symbol = options.get('symbol', 'no symbol given')
+                # Binance does not return trades for delisted markets. It also may
+                # return a delisted market in the active market endpoints, so we
+                # need to handle it here.
+                log.debug(f'Couldnt query {self.name} trades for {symbol} since its delisted')
+                return retry_decision_success([])
+
+            exception_class: type[RemoteError | BinancePermissionError]
+            if response.status_code == 401 and code == REJECTED_MBX_KEY:
+                # Either API key permission error or if futures/dapi then not enabled yet
+                exception_class = BinancePermissionError
+            else:
+                exception_class = RemoteError
+
+            return retry_decision_fail(exception_class(
+                f'{self.name} API request {response.url} for {method} failed with HTTP status '
+                f'code: {response.status_code}, error code: {code} and error message: {msg}',
+            ))
+
+        if response.status_code in {418, 429}:
+            # Binance has limits and if we hit them we should backoff.
+            # A Retry-After header is sent with a 418 or 429 responses and
+            # will give the number of seconds required to wait, in the case
+            # of a 429, to prevent a ban, or, in the case of a 418, until
+            # the ban is over.
+            # https://developers.binance.com/docs/binance-spot-api-docs/rest-api/limits
+            # the Retry-After header is returned but it is always 0. We implement our own
+            # backoff logic.
+            log.debug(
+                'Rate limited request from binance answered with status code '
+                f'{response.status_code} and headers {response.headers}. '
+                f'Retries left: {retries_left}',
+            )
+            if retries_left >= 1:
+                backoff_seconds = inverse_backoff_seconds(10, retries_left)
+                return retry_decision_retry(backoff_seconds)
+
+            return retry_decision_fail(RemoteError(
+                f'{self.name} API request {response.url} for {method} failed with '
+                f'HTTP status code: {response.status_code} after exhausting the retries.',
+            ))
+
+        return retry_decision_success(response)
 
     def api_query_dict(
             self,

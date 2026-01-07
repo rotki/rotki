@@ -6,7 +6,6 @@ from collections.abc import Sequence
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -48,6 +47,14 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_iso8601, ts_sec_to_ms
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    inverse_backoff_seconds,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -167,65 +174,24 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
         url = f'{self.uri}/{method_type}/{path}'
         timeout = CachedSettings().get_timeout_tuple()
         tries = CachedSettings().get_query_retry_limit()
-        while True:
-            data = None
-            log.debug(
-                'IndependentReserve API Query',
+        response = retry_with_backoff(
+            retries=tries,
+            backoff_state=None,
+            call=lambda: self._independentreserve_request(
                 verb=verb,
+                method_type=method_type,
                 url=url,
                 options=options,
-            )
-            if method_type == 'Private':
-                nonce = int(time.time() * 1000)
-                call_options = OrderedDict(options.copy()) if options else OrderedDict()
-                call_options.update({
-                    'nonce': nonce,
-                    'apiKey': self.api_key,
-                })
-                # Make sure dict starts with apiKey, nonce
-                call_options.move_to_end('nonce', last=False)
-                call_options.move_to_end('apiKey', last=False)
-                keys = [url] + [f'{k}={v}' for k, v in call_options.items()]
-                message = ','.join(keys)
-                signature = self.generate_hmac_signature(message).upper()
-                # Make sure dict starts with apiKey, nonce, signature
-                call_options['signature'] = str(signature)
-                call_options.move_to_end('signature', last=False)
-                call_options.move_to_end('nonce', last=False)
-                call_options.move_to_end('apiKey', last=False)
-                data = json.dumps(call_options, sort_keys=False)
-            try:
-                response = self.session.request(
-                    method=verb,
-                    url=url,
-                    data=data,
-                    timeout=timeout,
+                timeout=timeout,
+            ),
+            on_result=(
+                lambda result, retries_left, _backoff: self._handle_independentreserve_response(
+                    result=result,
+                    retries_left=retries_left,
                 )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'IndependentReserve API request failed due to {e!s}') from e
-
-            if response.status_code not in {200, 429}:
-                raise RemoteError(
-                    f'IndependentReserve api request for {response.url} failed with HTTP status '
-                    f'code {response.status_code} and response {response.text}',
-                )
-
-            if response.status_code == 429:
-                if tries >= 1:
-                    backoff_seconds = 10 / tries
-                    log.debug(
-                        f'Got a 429 from IndependentReserve. Backing off for {backoff_seconds}')
-                    gevent.sleep(backoff_seconds)
-                    tries -= 1
-                    continue
-
-                # else
-                raise RemoteError(
-                    f'IndependentReserve api request for {response.url} failed with HTTP '
-                    f'status code {response.status_code} and response {response.text}',
-                )
-
-            break  # else all good, we can break off the retry loop
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(error),
+        )
 
         try:
             json_ret = json.loads(response.text)
@@ -233,6 +199,75 @@ class Independentreserve(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError('IndependentReserve returned invalid JSON response') from e
 
         return json_ret
+
+    def _independentreserve_request(
+            self,
+            verb: Literal['get', 'post'],
+            method_type: Literal['Public', 'Private'],
+            url: str,
+            options: dict | None,
+            timeout: tuple[int, int],
+    ) -> requests.Response:
+        data = None
+        log.debug(
+            'IndependentReserve API Query',
+            verb=verb,
+            url=url,
+            options=options,
+        )
+        if method_type == 'Private':
+            nonce = int(time.time() * 1000)
+            call_options = OrderedDict(options.copy()) if options else OrderedDict()
+            call_options.update({
+                'nonce': nonce,
+                'apiKey': self.api_key,
+            })
+            # Make sure dict starts with apiKey, nonce
+            call_options.move_to_end('nonce', last=False)
+            call_options.move_to_end('apiKey', last=False)
+            keys = [url] + [f'{k}={v}' for k, v in call_options.items()]
+            message = ','.join(keys)
+            signature = self.generate_hmac_signature(message).upper()
+            # Make sure dict starts with apiKey, nonce, signature
+            call_options['signature'] = str(signature)
+            call_options.move_to_end('signature', last=False)
+            call_options.move_to_end('nonce', last=False)
+            call_options.move_to_end('apiKey', last=False)
+            data = json.dumps(call_options, sort_keys=False)
+        try:
+            return self.session.request(
+                method=verb,
+                url=url,
+                data=data,
+                timeout=timeout,
+            )
+        except requests.exceptions.RequestException as e:
+            raise RemoteError(f'IndependentReserve API request failed due to {e!s}') from e
+
+    def _handle_independentreserve_response(
+            self,
+            result: requests.Response,
+            retries_left: int,
+    ) -> RetryDecision:
+        if result.status_code not in {200, 429}:
+            return retry_decision_fail(RemoteError(
+                f'IndependentReserve api request for {result.url} failed with HTTP status '
+                f'code {result.status_code} and response {result.text}',
+            ))
+
+        if result.status_code == 429:
+            if retries_left >= 1:
+                backoff_seconds = inverse_backoff_seconds(10, retries_left)
+                log.debug(
+                    f'Got a 429 from IndependentReserve. Backing off for {backoff_seconds}')
+                return retry_decision_retry(backoff_seconds)
+
+            return retry_decision_fail(RemoteError(
+                f'IndependentReserve api request for {result.url} failed with HTTP '
+                f'status code {result.status_code} and response {result.text}',
+            ))
+
+        return retry_decision_success(result)
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the IndependentReserve API key is good for usage in rotki"""

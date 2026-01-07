@@ -1,8 +1,11 @@
 import json
 import logging
-from collections.abc import Callable
+import operator
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from enum import StrEnum
 from http import HTTPStatus
-from typing import Any, Literal, overload
+from typing import Any, Literal, TypeVar, overload
 
 import gevent
 import requests
@@ -16,6 +19,8 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+T = TypeVar('T')
 
 
 def create_session(max_backoff_secs: float = 30) -> requests.Session:
@@ -165,7 +170,7 @@ def retry_calls(
                     f'In retry_call for {location}-{method_name}. Got 429. Backing off for '
                     f'{backoff_in_seconds} seconds',
                 )
-                gevent.sleep(backoff_in_seconds)
+                sleep_for_backoff(backoff_in_seconds)
                 tries -= 1
                 continue
 
@@ -180,6 +185,152 @@ def retry_calls(
             if tries == 0:
                 raise RemoteError(
                     f'{location} query for {method_name} failed after {times} tries. Reason: {e}') from e  # noqa: E501
+
+
+def parse_retry_after(headers: Mapping[str, str]) -> int | None:
+    """Parse a Retry-After header from a response headers mapping."""
+    retry_after = headers.get('retry-after')
+    if retry_after is None:
+        return None
+
+    try:
+        return int(retry_after)
+    except (TypeError, ValueError):
+        return None
+
+
+def exponential_backoff_seconds(
+        current_backoff: float,
+        multiplier: float,
+        max_backoff: float | None = None,
+) -> tuple[float, float, bool]:
+    """Return (sleep_seconds, next_backoff, exceeded_limit) for exponential backoff."""
+    sleep_seconds = current_backoff
+    next_backoff = current_backoff * multiplier
+    exceeded_limit = max_backoff is not None and next_backoff >= max_backoff
+    return sleep_seconds, next_backoff, exceeded_limit
+
+
+def linear_backoff_seconds(step: float, attempt: int) -> float:
+    """Return a linear backoff in seconds for a given step and attempt number."""
+    if attempt <= 0:
+        return 0
+
+    return float(operator.mul(step, attempt))
+
+
+def inverse_backoff_seconds(dividend: float, tries_left: int) -> float:
+    """Return an inverse backoff (dividend / tries_left), guarding for zero."""
+    if tries_left <= 0:
+        return dividend
+
+    return dividend / tries_left
+
+
+def sleep_for_backoff(seconds: float) -> None:
+    """Sleep for the given backoff duration (seconds)."""
+    gevent.sleep(seconds)
+
+
+@dataclass
+class BackoffState:
+    """Mutable exponential backoff state used for retry loops."""
+    current: float
+    multiplier: float
+    max_backoff: float | None = None
+
+
+class RetryAction(StrEnum):
+    """Supported retry actions for RetryDecision."""
+    RETRY = 'retry'
+    SUCCESS = 'success'
+    FAIL = 'fail'
+
+
+@dataclass(frozen=True)
+class RetryDecision:
+    """Outcome decision for retry_with_backoff handlers."""
+    action: RetryAction
+    result: Any | None = None
+    error: Exception | None = None
+    sleep_seconds: float | None = None
+
+
+def retry_decision_retry(
+        sleep_seconds: float | None = None,
+        error: Exception | None = None,
+) -> RetryDecision:
+    """Create a retry decision, optionally specifying a sleep duration and failure error."""
+    return RetryDecision(action=RetryAction.RETRY, sleep_seconds=sleep_seconds, error=error)
+
+
+def retry_decision_success(result: T) -> RetryDecision:
+    """Create a success decision carrying a result."""
+    return RetryDecision(action=RetryAction.SUCCESS, result=result)
+
+
+def retry_decision_fail(error: Exception) -> RetryDecision:
+    """Create a failure decision carrying an exception to raise."""
+    return RetryDecision(action=RetryAction.FAIL, error=error)
+
+
+def retry_with_backoff(
+        *,
+        retries: int,
+        backoff_state: BackoffState | None,
+        call: Callable[[], T],
+        on_result: Callable[[T, int, BackoffState | None], RetryDecision],
+        on_exception: Callable[[Exception, int, BackoffState | None], RetryDecision],
+) -> T:
+    """Run a call with retry/backoff driven by result/exception handlers."""
+    retries_left = retries
+    while True:
+        try:
+            result = call()
+        except Exception as exc:
+            decision = on_exception(exc, retries_left, backoff_state)
+        else:
+            decision = on_result(result, retries_left, backoff_state)
+
+        if decision.action == RetryAction.SUCCESS:
+            return decision.result  # type: ignore[return-value]
+        if decision.action == RetryAction.FAIL:
+            assert decision.error is not None
+            raise decision.error
+
+        if retries_left <= 0:
+            if decision.error is not None:
+                raise decision.error
+            raise RemoteError('Retry backoff exhausted without a failure decision')
+
+        retries_left -= 1
+        if decision.sleep_seconds is not None:
+            sleep_for_backoff(decision.sleep_seconds)
+            continue
+
+        if backoff_state is None:
+            raise RemoteError('Retry backoff requested without a backoff state')
+
+        _, backoff_state.current, _ = sleep_exponential_backoff(
+            current_backoff=backoff_state.current,
+            multiplier=backoff_state.multiplier,
+            max_backoff=backoff_state.max_backoff,
+        )
+
+
+def sleep_exponential_backoff(
+        current_backoff: float,
+        multiplier: float,
+        max_backoff: float | None = None,
+) -> tuple[float, float, bool]:
+    """Sleep for the current backoff and return (sleep_seconds, next_backoff, exceeded_limit)."""
+    sleep_seconds, next_backoff, exceeded_limit = exponential_backoff_seconds(
+        current_backoff=current_backoff,
+        multiplier=multiplier,
+        max_backoff=max_backoff,
+    )
+    sleep_for_backoff(sleep_seconds)
+    return sleep_seconds, next_backoff, exceeded_limit
 
 
 @overload

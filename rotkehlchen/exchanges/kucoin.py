@@ -8,7 +8,6 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from requests.adapters import Response
 
@@ -59,6 +58,14 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.network import (
+    BackoffState,
+    RetryDecision,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -195,6 +202,8 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
         May raise RemoteError
         """
         call_options = options.copy() if options else {}
+        for header in ('KC-API-SIGN', 'KC-API-TIMESTAMP', 'KC-API-PASSPHRASE'):
+            self.session.headers.pop(header, None)
 
         if case == KucoinCase.BALANCES:
             api_path = 'api/v1/accounts'
@@ -220,60 +229,89 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             raise AssertionError(f'Unexpected case: {case}')
 
         retries_left = API_REQUEST_RETRY_TIMES
-        retries_after_seconds = API_REQUEST_RETRIES_AFTER_SECONDS
+        backoff_state = BackoffState(
+            current=API_REQUEST_RETRIES_AFTER_SECONDS,
+            multiplier=2,
+        )
         timeout = CachedSettings().get_timeout_tuple()
-        while retries_left >= 0:
-            timestamp = str(ts_now_in_ms())
-            method = 'GET'
-            request_url = f'{self.base_uri}/{api_path}'
-            message = f'{timestamp}{method}/{api_path}'
-            if case in PAGINATED_CASES and call_options != {}:
-                urlencoded_options = urlencode(call_options)
-                request_url = f'{request_url}?{urlencoded_options}'
-                message = f'{message}?{urlencoded_options}'
+        return retry_with_backoff(
+            retries=retries_left,
+            backoff_state=backoff_state,
+            call=lambda: self._kucoin_request(
+                api_path=api_path,
+                case=case,
+                call_options=call_options,
+                timeout=timeout,
+            ),
+            on_result=lambda result, current_retries_left, current_backoff: self._handle_kucoin_response(  # noqa: E501
+                result=result,
+                case=case,
+                call_options=call_options,
+                retries_left=current_retries_left,
+                backoff_state=current_backoff or backoff_state,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(
+                    f'Kucoin GET request at {self.base_uri}/{api_path} '
+                    f'connection error: {error!s}.',
+                ),
+            ),
+        )  # pyright: ignore  # we get in the loop at least once
 
-            signature = self.generate_hmac_b64_signature(message)
-            passphrase = self.generate_hmac_b64_signature(self.api_passphrase)
-            headers = {
-                'KC-API-SIGN': signature,
-                'KC-API-TIMESTAMP': timestamp,
-                'KC-API-PASSPHRASE': passphrase,
-            }
-            log.debug('Kucoin API request', request_url=request_url)
-            try:
-                response = self.session.get(url=request_url, timeout=timeout, headers=headers)
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(
-                    f'Kucoin {method} request at {request_url} connection error: {e!s}.',
-                ) from e
+    def _kucoin_request(
+            self,
+            api_path: str,
+            case: KucoinCase,
+            call_options: dict[str, Any],
+            timeout: tuple[int, int],
+    ) -> requests.Response:
+        timestamp = str(ts_now_in_ms())
+        method = 'GET'
+        request_url = f'{self.base_uri}/{api_path}'
+        message = f'{timestamp}{method}/{api_path}'
+        if case in PAGINATED_CASES and call_options != {}:
+            urlencoded_options = urlencode(call_options)
+            request_url = f'{request_url}?{urlencoded_options}'
+            message = f'{message}?{urlencoded_options}'
 
-            log.debug('Kucoin API response', text=response.text)
-            # Check request rate limit
-            if response.status_code in (HTTPStatus.FORBIDDEN, HTTPStatus.TOO_MANY_REQUESTS):
-                if retries_left == 0:
-                    msg = (
-                        f'Kucoin {case} request failed after retrying '
-                        f'{API_REQUEST_RETRY_TIMES} times.'
-                    )
-                    self.msg_aggregator.add_error(
-                        f'Got remote error while querying kucoin {case}: {msg}',
-                    )
-                    return response
+        signature = self.generate_hmac_b64_signature(message)
+        passphrase = self.generate_hmac_b64_signature(self.api_passphrase)
+        self.session.headers.update({
+            'KC-API-SIGN': signature,
+            'KC-API-TIMESTAMP': timestamp,
+            'KC-API-PASSPHRASE': passphrase,
+        })
+        log.debug('Kucoin API request', request_url=request_url)
+        return self.session.get(url=request_url, timeout=timeout)
 
-                # Trigger retry
-                log.debug(
-                    f'Kucoin {case} request reached the rate limits. Backing off',
-                    seconds=retries_after_seconds,
-                    options=call_options,
+    def _handle_kucoin_response(
+            self,
+            result: requests.Response,
+            case: KucoinCase,
+            call_options: dict[str, Any],
+            retries_left: int,
+            backoff_state: BackoffState,
+    ) -> RetryDecision:
+        log.debug('Kucoin API response', text=result.text)
+        if result.status_code in (HTTPStatus.FORBIDDEN, HTTPStatus.TOO_MANY_REQUESTS):
+            if retries_left == 0:
+                msg = (
+                    f'Kucoin {case} request failed after retrying '
+                    f'{API_REQUEST_RETRY_TIMES} times.'
                 )
-                retries_left -= 1
-                gevent.sleep(retries_after_seconds)
-                retries_after_seconds *= 2
-                continue
+                self.msg_aggregator.add_error(
+                    f'Got remote error while querying kucoin {case}: {msg}',
+                )
+                return retry_decision_success(result)
 
-            break
+            log.debug(
+                f'Kucoin {case} request reached the rate limits. Backing off',
+                seconds=backoff_state.current,
+                options=call_options,
+            )
+            return retry_decision_retry()
 
-        return response  # pyright: ignore  # we get in the loop at least once
+        return retry_decision_success(result)
 
     @overload
     def _api_query_paginated(

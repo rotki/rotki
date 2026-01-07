@@ -6,7 +6,6 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from pysqlcipher3.dbapi2 import IntegrityError
 
@@ -43,7 +42,15 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
-from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.network import (
+    BackoffState,
+    RetryDecision,
+    create_session,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -117,56 +124,72 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
         if options:
             query_str += f'?{urlencode(options)}'
 
-        backoff = 1
-        backoff_limit = 33
         timeout = timeout or CachedSettings().get_timeout_tuple()
-        while backoff < backoff_limit:
-            log.debug(f'Querying zksync lite: {query_str}')
-            try:
-                response = self.session.get(query_str, timeout=timeout)
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'ZKSync Lite API request failed due to {e!s}') from e
+        backoff_limit = 33
+        backoff_state = BackoffState(current=1, multiplier=2, max_backoff=backoff_limit)
+        max_attempts = 0
+        attempt_backoff = backoff_state.current
+        while attempt_backoff < backoff_limit:
+            max_attempts += 1
+            attempt_backoff *= backoff_state.multiplier
 
-            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                if backoff >= backoff_limit:
-                    raise RemoteError(
-                        'Getting zksync lite too many requests error '
-                        'even after we incrementally backed off',
-                    )
+        response = retry_with_backoff(
+            retries=max(max_attempts - 1, 0),
+            backoff_state=backoff_state,
+            call=lambda: self.session.get(query_str, timeout=timeout),
+            on_result=lambda result, retries_left, current_backoff: self._handle_zksync_response(
+                result=result,
+                retries_left=retries_left,
+                backoff_state=current_backoff or backoff_state,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(f'ZKSync Lite API request failed due to {error!s}'),
+            ),
+        )
 
-                log.debug(
-                    f'Got too many requests error from zksync lite. Will '
-                    f'backoff for {backoff} seconds.',
-                )
-                gevent.sleep(backoff)
-                backoff *= 2
-                continue
+        try:
+            json_ret = jsonloads_dict(response.text)
+        except JSONDecodeError as e:
+            raise RemoteError(
+                f'ZKSync Lite API request {response.url} returned invalid '
+                f'JSON response: {response.text}',
+            ) from e
 
-            if response.status_code != HTTPStatus.OK:
-                raise RemoteError(
-                    f'ZKSync Lite API request {response.url} failed '
-                    f'with HTTP status code {response.status_code} and text '
-                    f'{response.text}',
-                )
-
-            try:
-                json_ret = jsonloads_dict(response.text)
-            except JSONDecodeError as e:
-                raise RemoteError(
-                    f'ZKSync Lite API request {response.url} returned invalid '
-                    f'JSON response: {response.text}',
-                ) from e
-
-            if (result := json_ret.get('result')) is None:  # type: ignore  # this if checks None
-                raise RemoteError(
-                    f'Unexpected format of ZKSync lite response for request {response.url}. '
-                    f'Missing a result in response. Response was: {response.text}',
-                )
-
-            # success, break out of the loop and return result
-            return result
+        if (result := json_ret.get('result')) is None:  # type: ignore  # this if checks None
+            raise RemoteError(
+                f'Unexpected format of ZKSync lite response for request {response.url}. '
+                f'Missing a result in response. Response was: {response.text}',
+            )
 
         return result
+
+    def _handle_zksync_response(
+            self,
+            result: requests.Response,
+            retries_left: int,
+            backoff_state: BackoffState,
+    ) -> RetryDecision:
+        if result.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            if retries_left <= 0:
+                return retry_decision_fail(RemoteError(
+                    'Getting zksync lite too many requests error '
+                    'even after we incrementally backed off',
+                ))
+
+            log.debug(
+                f'Got too many requests error from zksync lite. Will '
+                f'backoff for {backoff_state.current} seconds.',
+            )
+            return retry_decision_retry()
+
+        if result.status_code != HTTPStatus.OK:
+            return retry_decision_fail(RemoteError(
+                f'ZKSync Lite API request {result.url} failed '
+                f'with HTTP status code {result.status_code} and text '
+                f'{result.text}',
+            ))
+
+        return retry_decision_success(result)
 
     def _query_and_save_transactions_from_hash(
             self,

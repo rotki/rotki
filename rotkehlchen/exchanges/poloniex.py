@@ -7,7 +7,6 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -63,6 +62,14 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    inverse_backoff_seconds,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
@@ -265,29 +272,25 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             post_data=req,
         )
 
-        tries, response = CachedSettings().get_query_retry_limit(), None
-        while tries >= 0:
-            try:
-                response = self._single_query(command, req)
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Poloniex API request failed due to {e!s}') from e
-
-            if response is None and tries >= 1:
-                backoff_seconds = 20 / tries
-                log.debug(
-                    f'Got a recoverable poloniex error. '
-                    f'Backing off for {backoff_seconds}',
-                )
-                gevent.sleep(backoff_seconds)
-                tries -= 1
-            else:
-                break
+        tries = CachedSettings().get_query_retry_limit()
+        response = retry_with_backoff(
+            retries=tries,
+            backoff_state=None,
+            call=lambda: self._single_query(command, req),
+            on_result=lambda result, retries_left, _backoff: self._handle_poloniex_response(
+                result=result,
+                retries_left=retries_left,
+                retries_num=tries,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(f'Poloniex API request failed due to {error!s}'),
+            ),
+        )
 
         if response is None:
             raise RemoteError(
                 f'Got a recoverable poloniex error and did not manage to get a '
-                f'request through even after {CachedSettings().get_query_retry_limit()} '
-                f'incremental backoff retries',
+                f'request through even after {tries} incremental backoff retries',
             )
 
         result: dict | list
@@ -304,6 +307,29 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 ))
 
         return result
+
+    def _handle_poloniex_response(
+            self,
+            result: requests.Response | None,
+            retries_left: int,
+            retries_num: int,
+    ) -> RetryDecision:
+        if result is None:
+            if retries_left >= 1:
+                backoff_seconds = inverse_backoff_seconds(20, retries_left)
+                log.debug(
+                    f'Got a recoverable poloniex error. '
+                    f'Backing off for {backoff_seconds}',
+                )
+                return retry_decision_retry(backoff_seconds)
+
+            return retry_decision_fail(RemoteError(
+                f'Got a recoverable poloniex error and did not manage to get a '
+                f'request through even after {retries_num} '
+                f'incremental backoff retries',
+            ))
+
+        return retry_decision_success(result)
 
     def return_fee_info(self) -> dict:
         return self.api_query_dict('/feeinfo')

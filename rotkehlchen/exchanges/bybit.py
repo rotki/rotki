@@ -6,7 +6,6 @@ from collections.abc import Sequence
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final, Literal
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -49,6 +48,14 @@ from rotkehlchen.types import (
     TimestampMS,
 )
 from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now, ts_now_in_ms, ts_sec_to_ms
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    inverse_backoff_seconds,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -195,62 +202,24 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         timeout = CachedSettings().get_timeout_tuple()
         tries = CachedSettings().get_query_retry_limit()
         requires_auth = path in self.authenticated_methods
-        headers = None
 
-        while True:
-            log.debug('Bybit API Query', url=url, options=options)
-            if requires_auth:
-                timestamp = ts_now_in_ms()
-                # the order in this string is defined by the api
-                param_str = str(timestamp) + self.api_key + RECEIVE_WINDOW
-                if options is not None:
-                    options = dict(sorted(options.items()))
-                    param_str += '&'.join(  # params need to be sorted to be correctly validated
-                        [
-                            str(k) + '=' + urllib.parse.quote_plus(str(v))  # need to use the quoted string since cursors have `=` and it breaks signatures  # noqa: E501
-                            for k, v in sorted(options.items())
-                            if v is not None
-                        ],
-                    )
-
-                signature = self.generate_hmac_signature(param_str)
-                headers = {
-                    'X-BAPI-TIMESTAMP': str(timestamp),
-                    'X-BAPI-SIGN': signature,
-                }
-
-            try:
-                response = self.session.request(
-                    method='get',
-                    url=url,
-                    params=options,
-                    timeout=timeout,
-                    headers=headers,
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Bybit API request failed due to {e}') from e
-
-            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                if tries >= 1:
-                    backoff_seconds = 10 / tries
-                    log.debug(f'Got a 429 from Bybit. Backing off for {backoff_seconds}')
-                    gevent.sleep(backoff_seconds)
-                    tries -= 1
-                    continue
-
-                # else
-                raise RemoteError(
-                    f'Bybit api request for {response.url} failed with HTTP '
-                    f'status code {response.status_code} and response {response.text}',
-                )
-
-            if response.status_code != HTTPStatus.OK:
-                raise RemoteError(
-                    f'Bybit api request for {response.url} failed with HTTP status '
-                    f'code {response.status_code} and response {response.text}',
-                )
-
-            break  # else all good, we can break off the retry loop
+        response = retry_with_backoff(
+            retries=tries,
+            backoff_state=None,
+            call=lambda: self._bybit_request(
+                requires_auth=requires_auth,
+                url=url,
+                options=options,
+                timeout=timeout,
+            ),
+            on_result=lambda result, retries_left, _backoff: self._handle_bybit_response(
+                result=result,
+                retries_left=retries_left,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(f'Bybit API request failed due to {error}'),
+            ),
+        )
 
         log.debug(f'ByBit api response: {response.text}')
         try:
@@ -265,6 +234,67 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
             raise RemoteError(f'Bybit returned error in request {json_ret}')
 
         return result
+
+    def _bybit_request(
+            self,
+            requires_auth: bool,
+            url: str,
+            options: dict[str, Any] | None,
+            timeout: tuple[int, int],
+    ) -> requests.Response:
+        log.debug('Bybit API Query', url=url, options=options)
+        headers = None
+        if requires_auth:
+            timestamp = ts_now_in_ms()
+            # the order in this string is defined by the api
+            param_str = str(timestamp) + self.api_key + RECEIVE_WINDOW
+            if options is not None:
+                options = dict(sorted(options.items()))
+                param_str += '&'.join(  # params need to be sorted to be correctly validated
+                    [
+                        str(k) + '=' + urllib.parse.quote_plus(str(v))  # need to use the quoted string since cursors have `=` and it breaks signatures  # noqa: E501
+                        for k, v in sorted(options.items())
+                        if v is not None
+                    ],
+                )
+
+            signature = self.generate_hmac_signature(param_str)
+            headers = {
+                'X-BAPI-TIMESTAMP': str(timestamp),
+                'X-BAPI-SIGN': signature,
+            }
+
+        return self.session.request(
+            method='get',
+            url=url,
+            params=options,
+            timeout=timeout,
+            headers=headers,
+        )
+
+    def _handle_bybit_response(
+            self,
+            result: requests.Response,
+            retries_left: int,
+    ) -> RetryDecision:
+        if result.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            if retries_left >= 1:
+                backoff_seconds = inverse_backoff_seconds(10, retries_left)
+                log.debug(f'Got a 429 from Bybit. Backing off for {backoff_seconds}')
+                return retry_decision_retry(backoff_seconds)
+
+            return retry_decision_fail(RemoteError(
+                f'Bybit api request for {result.url} failed with HTTP '
+                f'status code {result.status_code} and response {result.text}',
+            ))
+
+        if result.status_code != HTTPStatus.OK:
+            return retry_decision_fail(RemoteError(
+                f'Bybit api request for {result.url} failed with HTTP status '
+                f'code {result.status_code} and response {result.text}',
+            ))
+
+        return retry_decision_success(result)
 
     def _paginated_api_query(
             self,

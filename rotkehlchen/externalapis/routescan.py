@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Final
 
-import gevent
 from requests import Response
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
@@ -19,6 +18,7 @@ from rotkehlchen.types import (
     EVMTxHash,
     ExternalService,
 )
+from rotkehlchen.utils.network import sleep_for_backoff
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -107,7 +107,7 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
                     f'while max backoff is {backoff_limit} seconds.',
                 )
             else:
-                gevent.sleep(time_until_reset)
+                sleep_for_backoff(time_until_reset)
                 return time_until_reset
 
         # If the ratelimit headers are missing or still have requests remaining (shouldn't happen),

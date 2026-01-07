@@ -6,7 +6,6 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal, overload
 from urllib.parse import urlencode
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -48,6 +47,14 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    inverse_backoff_seconds,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -353,38 +360,21 @@ class Bitpanda(ExchangeWithoutApiSecret):
         timeout = CachedSettings().get_timeout_tuple()
         if options is not None:
             request_url += '?' + urlencode(options)
-        while retries_left > 0:
-            log.debug(
-                'Bitpanda API query',
-                request_url=request_url,
-                options=options,
-            )
-            try:
-                response = self.session.get(request_url, timeout=timeout)
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Bitpanda API request failed due to {e!s}') from e
-
-            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                backoff_in_seconds = int(20 / retries_left)
-                retries_left -= 1
-                log.debug(
-                    f'Got a 429 from Bitpanda query of {request_url}. Will backoff '
-                    f'for {backoff_in_seconds} seconds. {retries_left} retries left',
+        response = retry_with_backoff(
+            retries=retries_left,
+            backoff_state=None,
+            call=lambda: self.session.get(request_url, timeout=timeout),
+            on_result=(
+                lambda result, current_retries_left, _backoff: self._handle_bitpanda_response(
+                    result=result,
+                    request_url=request_url,
+                    retries_left=current_retries_left,
                 )
-                gevent.sleep(backoff_in_seconds)
-                continue
-
-            if response.status_code != HTTPStatus.OK:
-                raise RemoteError(
-                    f'Bitpanda API request failed with response: {response.text} '
-                    f'and status code: {response.status_code}',
-                )
-
-            # we got it, so break
-            break
-
-        else:  # retries left are zero
-            raise RemoteError(f'Ran out of retries for Bitpanda query of {request_url}')
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(f'Bitpanda API request failed due to {error!s}'),
+            ),
+        )
 
         try:
             decoded_json = jsonloads_dict(response.text)
@@ -398,6 +388,32 @@ class Bitpanda(ExchangeWithoutApiSecret):
 
         log.debug(f'Got Bitpanda response: {decoded_json}')
         return decoded_json['data'], decoded_json.get('meta'), decoded_json.get('links')
+
+    def _handle_bitpanda_response(
+            self,
+            result: requests.Response,
+            request_url: str,
+            retries_left: int,
+    ) -> RetryDecision:
+        if result.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            if retries_left <= 0:
+                return retry_decision_fail(RemoteError(
+                    f'Ran out of retries for Bitpanda query of {request_url}',
+                ))
+            backoff_in_seconds = int(inverse_backoff_seconds(20, retries_left))
+            log.debug(
+                f'Got a 429 from Bitpanda query of {request_url}. Will backoff '
+                f'for {backoff_in_seconds} seconds. {retries_left - 1} retries left',
+            )
+            return retry_decision_retry(backoff_in_seconds)
+
+        if result.status_code != HTTPStatus.OK:
+            return retry_decision_fail(RemoteError(
+                f'Bitpanda API request failed with response: {result.text} '
+                f'and status code: {result.status_code}',
+            ))
+
+        return retry_decision_success(result)
 
     def _query_endpoint_until_end(
             self,

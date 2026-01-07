@@ -4,7 +4,6 @@ import re
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple
 
-import gevent
 import requests
 from eth_utils import to_checksum_address
 
@@ -31,7 +30,15 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, ExternalService, TokenKind
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.network import (
+    BackoffState,
+    RetryDecision,
+    create_session,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -169,43 +176,33 @@ class Opensea(ExternalServiceWithApiKey):
         else:
             query_str = f'https://api.opensea.io/api/v2/chain/ethereum/account/{options["address"]}/nfts'  # type: ignore
 
-        backoff = 1
-        backoff_limit = 33
         timeout = timeout or CachedSettings().get_timeout_tuple()
-        response = None
-        while backoff < backoff_limit:
-            log.debug(f'Querying opensea: {query_str}')
-            try:
-                response = self.session.get(
-                    query_str,
-                    params=options,
-                    timeout=timeout,
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(
-                    f'Opensea API request {query_str} failed due to {e!s}',
-                ) from e
-
-            if response.status_code != 200:
-                if api_key is None and self.backup_key is None:
-                    self.backup_key = '04ea654d84cd4b2b8da25ec41ca1a9a4'
-                    self.session.headers.update({'X-API-KEY': self.backup_key})
-
-                log.debug(
-                    f'Got {response.status_code} response from opensea. Will backoff for {backoff} seconds',  # noqa: E501
-                )
-                gevent.sleep(backoff)
-                backoff *= 2
-                if backoff >= backoff_limit:
-                    raise RemoteError(
-                        f'Reached opensea backoff limit after we incrementally backed off '
-                        f'for {response.url}',
-                    )
-                continue
-
-            break  # else we found response so let's break off the loop
-
-        assert response is not None  # if we get here response is populated
+        backoff_limit = 33
+        backoff_state = BackoffState(current=1, multiplier=2, max_backoff=backoff_limit)
+        max_attempts = 0
+        attempt_backoff = backoff_state.current
+        while attempt_backoff < backoff_limit:
+            max_attempts += 1
+            attempt_backoff *= backoff_state.multiplier
+        response = retry_with_backoff(
+            retries=max(max_attempts - 1, 0),
+            backoff_state=backoff_state,
+            call=lambda: self.session.get(
+                query_str,
+                params=options,
+                timeout=timeout,
+            ),
+            on_result=lambda result, retries_left, current_backoff: self._handle_opensea_response(
+                result=result,
+                query_str=query_str,
+                api_key=api_key,
+                retries_left=retries_left,
+                backoff_state=current_backoff or backoff_state,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(f'Opensea API request {query_str} failed due to {error!s}'),
+            ),
+        )
         if response.status_code != 200:
             raise RemoteError(
                 f'Opensea API request {response.url} failed '
@@ -222,6 +219,33 @@ class Opensea(ExternalServiceWithApiKey):
             ) from e
 
         return json_ret
+
+    def _handle_opensea_response(
+            self,
+            result: requests.Response,
+            query_str: str,
+            api_key: str | None,
+            retries_left: int,
+            backoff_state: BackoffState,
+    ) -> RetryDecision:
+        if result.status_code == 200:
+            return retry_decision_success(result)
+
+        if api_key is None and self.backup_key is None:
+            self.backup_key = '04ea654d84cd4b2b8da25ec41ca1a9a4'
+            self.session.headers.update({'X-API-KEY': self.backup_key})
+
+        log.debug(
+            f'Got {result.status_code} response from opensea. Will backoff for '
+            f'{backoff_state.current} seconds',
+        )
+        error = None
+        if retries_left <= 1 and backoff_state.max_backoff is not None:
+            error = RemoteError(
+                f'Reached opensea backoff limit after we incrementally backed off '
+                f'for {result.url}',
+            )
+        return retry_decision_retry(error=error)
 
     def _deserialize_nft(
             self,

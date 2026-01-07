@@ -9,7 +9,6 @@ from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
-import gevent
 import requests
 from requests import Response
 
@@ -44,7 +43,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import hexstr_to_int, set_user_agent
-from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.network import create_session, sleep_exponential_backoff
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -154,8 +153,11 @@ class EtherscanLikeApi(ABC):
             f'Got too many requests error from {chain_id} {self.name}. Will '
             f'backoff for {current_backoff} seconds.',
         )
-        gevent.sleep(current_backoff)
-        return current_backoff * 2
+        _, next_backoff, _ = sleep_exponential_backoff(
+            current_backoff=current_backoff,
+            multiplier=2,
+        )
+        return int(next_backoff)
 
     def _additional_json_response_handling(
             self,
