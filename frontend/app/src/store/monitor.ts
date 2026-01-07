@@ -1,24 +1,14 @@
 import { startPromise } from '@shared/utils';
-import { isEqual } from 'es-toolkit';
 import { useBalances } from '@/composables/balances';
-import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
+import { useMonitorWatchers } from '@/composables/monitor/use-monitor-watchers';
 import { useAutoLogin } from '@/composables/user/account';
-import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
-import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
-import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { useUnifiedProgress } from '@/modules/dashboard/progress/composables/use-unified-progress';
-import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useMessageHandling } from '@/modules/messaging';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useHistoryStore } from '@/store/history';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import { useWebsocketStore } from '@/store/websocket';
-import { BalanceSource } from '@/types/settings/frontend-settings';
 import { logger } from '@/utils/logging';
 
 const PERIODIC = 'periodic';
@@ -37,21 +27,16 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { consume } = useMessageHandling();
   const { monitor } = useTaskStore();
   const { autoRefresh } = useBalances();
-  const { fetchManualBalances } = useManualBalances();
-  const { fetchConnectedExchangeBalances } = useExchanges();
-  const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { removeIgnoredAssets } = useBalancesStore();
-  const { processing } = useHistoryEventsStatus();
   const { fetchTransactionStatusSummary } = useHistoryStore();
-  const { triggerAutoMatch } = useUnmatchedAssetMovements();
-  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
   const frontendStore = useFrontendSettingsStore();
-  const { balanceValueThreshold, queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
+  const { queryPeriod, refreshPeriod } = storeToRefs(frontendStore);
 
   const ws = useWebsocketStore();
   const { connected } = storeToRefs(ws);
   const { connect, disconnect } = ws;
+
+  useMonitorWatchers();
 
   const fetch = (): void => {
     if (get(canRequestData))
@@ -161,50 +146,6 @@ export const useMonitorStore = defineStore('monitor', () => {
     stop();
     start(true);
   };
-
-  watch(balanceValueThreshold, (current, old) => {
-    if (!isEqual(current[BalanceSource.MANUAL], old[BalanceSource.MANUAL])) {
-      startPromise(fetchManualBalances(true));
-    }
-
-    if (!isEqual(current[BalanceSource.EXCHANGES], old[BalanceSource.EXCHANGES])) {
-      startPromise(fetchConnectedExchangeBalances(false));
-    }
-
-    if (!isEqual(current[BalanceSource.BLOCKCHAIN], old[BalanceSource.BLOCKCHAIN])) {
-      startPromise(fetchBlockchainBalances());
-    }
-  });
-
-  const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
-
-  watch(ignoredAssets, (curr, prev) => {
-    const removedAssets = prev.filter(asset => !curr.includes(asset));
-    if (removedAssets.length > 0) {
-      startPromise(fetchBlockchainBalances());
-    }
-
-    const addedAssets = curr.filter(asset => !prev.includes(asset));
-    if (addedAssets.length > 0) {
-      removeIgnoredAssets(curr);
-    }
-  });
-
-  const { showIdleMessage, longQuery, hasUndecodedTransactions } = useUnifiedProgress();
-
-  const historyEventsUnfinished = debouncedRef(logicOr(processing, showIdleMessage, longQuery, hasUndecodedTransactions), 500);
-
-  watch([processing, connectedExchanges], async ([currentProcessing, connectedExchanges], [previousProcessing, previousConnectedExchanges]) => {
-    if (currentProcessing !== previousProcessing || !isEqual(connectedExchanges, previousConnectedExchanges)) {
-      await fetchTransactionStatusSummary();
-    }
-  });
-
-  watch(historyEventsUnfinished, async (isUnfinished, wasUnfinished) => {
-    if (!isUnfinished && wasUnfinished) {
-      await triggerAutoMatch();
-    }
-  });
 
   return {
     restart,
