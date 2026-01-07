@@ -130,6 +130,7 @@ def update_cached_vaults(
     Args:
         database (DBHandler): Database to be used when processing vaults.
         display_name (str): Name to use when logging errors.
+        chain (ChainID): The chain ID for the vaults being processed.
         cache_key (Iterable[str | UniqueCacheType]): Cache keys used to store vault data.
         query_vaults (Callable): Function to fetch vault data from API or chain.
             Returns a list of vault data dicts or None on error.
