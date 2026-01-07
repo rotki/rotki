@@ -169,14 +169,22 @@ def make_ethereum_event(
 def generate_events_response(
         data: list['HistoryBaseEntry'],
         accounting_status: EventAccountingRuleStatus = EventAccountingRuleStatus.PROCESSED,
+        has_ignored_assets: list[bool] | None = None,
 ) -> list:
+    if not has_ignored_assets:
+        processed_ignored_list = [False] * len(data)
+    else:
+        assert len(has_ignored_assets) == len(data)
+        processed_ignored_list = has_ignored_assets
+
     return [
         x.serialize_for_api(
             customized_event_ids=[],
             ignored_ids=set(),
             hidden_event_ids=[],
             event_accounting_rule_status=accounting_status,
-        ) for x in data
+            has_ignored_assets=processed_ignored_list[idx],
+        ) for idx, x in enumerate(data)
     ]
 
 

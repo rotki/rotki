@@ -4105,6 +4105,7 @@ class RestAPI:
             ignored_ids: set[str],
             hidden_event_ids: list[int],
             joined_group_ids: dict[str, str],
+            group_has_ignored_assets: set[str],
     ) -> list[dict[str, Any] | list[dict[str, Any]]]:
         """Serialize and group history events for the api.
         Groups onchain swaps, multi trades, and matched asset movement events into sub-lists.
@@ -4123,6 +4124,7 @@ class RestAPI:
         - joined_group_ids: dict mapping group_identifiers to replacement group_identifiers. Used
            to join groups that are separate in the DB for accounting purposes but need to be shown
            in the frontend as a single unit, such as asset movements with their matched events.
+        - group_has_ignored_assets: set of group identifiers that contain ignored assets.
 
         Returns a list of serialized events with grouped events in sub-lists.
         """
@@ -4137,12 +4139,16 @@ class RestAPI:
             grouped_events_nums,
             strict=False,  # guaranteed to have same length. event_accounting_rule_statuses and grouped_events_nums are created directly from the events list.  # noqa: E501
         ):
+            replacement_group_id = joined_group_ids.get(event.group_identifier)
             serialized = event.serialize_for_api(
                 customized_event_ids=customized_event_ids,
                 ignored_ids=ignored_ids,
                 hidden_event_ids=hidden_event_ids,
                 event_accounting_rule_status=event_accounting_rule_status,
                 grouped_events_num=grouped_events_num,
+                has_ignored_assets=(
+                    (replacement_group_id or event.group_identifier) in group_has_ignored_assets
+                ),
             )
             if aggregate_by_group_ids:
                 # no need to group into lists when aggregating by group_identifier since only
@@ -4150,7 +4156,7 @@ class RestAPI:
                 entries.append(serialized)
                 continue
 
-            if (replacement_group_id := joined_group_ids.get(event.group_identifier)) is not None:
+            if replacement_group_id is not None:
                 serialized['entry']['group_identifier'] = replacement_group_id
                 serialized['entry']['actual_group_identifier'] = event.group_identifier
 
@@ -4227,13 +4233,16 @@ class RestAPI:
         )
 
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            events_result, entries_found, entries_with_limit = dbevents.get_history_events_and_limit_info(  # noqa: E501
+            events_result_info = dbevents.get_history_events_and_limit_info(
                 cursor=cursor,
                 filter_query=filter_query,
                 entries_limit=entries_limit,
                 aggregate_by_group_ids=aggregate_by_group_ids,
                 match_exact_events=True,  # set to True since the frontend requests the group_identifiers manually in their second call to this endpoint. https://github.com/orgs/rotki/projects/11?pane=issue&itemId=110464193  # noqa: E501
             )
+            events_result = events_result_info.events
+            entries_found = events_result_info.entries_found
+            entries_with_limit = events_result_info.entries_with_limit
             entries_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,
                 entries_table='history_events',
@@ -4245,14 +4254,19 @@ class RestAPI:
             )
             hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
             ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor=cursor)
-            processed_events_result, joined_group_ids, entries_found, entries_with_limit, entries_total = dbevents.process_matched_asset_movements(  # noqa: E501
+            processed_events_result, joined_group_ids, entries_found, entries_with_limit, entries_total, ignored_group_identifiers = dbevents.process_matched_asset_movements(  # noqa: E501
                 cursor=cursor,
                 aggregate_by_group_ids=aggregate_by_group_ids,
                 events_result=events_result,
                 entries_found=entries_found,
                 entries_with_limit=entries_with_limit,
                 entries_total=entries_total,
+                ignored_group_identifiers=set(events_result_info.ignored_group_identifiers),
             )
+            group_has_ignored_assets = {
+                joined_group_ids.get(group_identifier, group_identifier)
+                for group_identifier in ignored_group_identifiers
+            }
 
         accountant_pot = AccountingPot(
             database=self.rotkehlchen.data.db,
@@ -4283,6 +4297,7 @@ class RestAPI:
                 ignored_ids=ignored_ids,
                 hidden_event_ids=hidden_event_ids,
                 joined_group_ids=joined_group_ids,
+                group_has_ignored_assets=group_has_ignored_assets,
             ),
             'entries_found': entries_with_limit,
             'entries_limit': entries_limit,
@@ -5351,12 +5366,14 @@ class RestAPI:
             limit_type=UserLimitType.HISTORY_EVENTS,
         )
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            history_events, _, _ = dbevents.get_history_events_and_limit_info(
+            events_result = dbevents.get_history_events_and_limit_info(
                 cursor=cursor,
                 filter_query=filter_query,
                 match_exact_events=match_exact_events,
                 entries_limit=entries_limit,
+                aggregate_by_group_ids=False,
             )
+            history_events: list[HistoryBaseEntry] = events_result.events  # type: ignore[assignment]  # aggregate_by_group_ids=False in call.
 
         if len(history_events) == 0:
             return wrap_in_fail_result(

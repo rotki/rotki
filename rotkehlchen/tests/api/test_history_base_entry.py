@@ -1558,6 +1558,50 @@ def test_event_grouping(rotkehlchen_api_server: 'APIServer') -> None:
         assert entries[3][4]['entry']['event_subtype'] == 'fee'
 
 
+def test_group_has_ignored_assets_flag(rotkehlchen_api_server: 'APIServer') -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+    tx_hash = deserialize_evm_tx_hash(
+        '0x8d822b87407698dd869e830699782291155d0276c5a7e5179cb173608554e41a',
+    )
+    timestamp = TimestampMS(1569924575000)
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        rotki.data.db.add_to_ignored_assets(write_cursor, A_WBTC)
+        db.add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                EvmSwapEvent(
+                    sequence_index=1,
+                    timestamp=timestamp,
+                    location=Location.ETHEREUM,
+                    event_subtype=HistoryEventSubType.SPEND,
+                    asset=A_ETH,
+                    amount=FVal('0.16'),
+                    tx_ref=tx_hash,
+                ),
+                EvmSwapEvent(
+                    sequence_index=2,
+                    timestamp=timestamp,
+                    location=Location.ETHEREUM,
+                    event_subtype=HistoryEventSubType.RECEIVE,
+                    asset=A_WBTC,
+                    amount=FVal('0.003'),
+                    tx_ref=tx_hash,
+                ),
+            ],
+        )
+
+    result = assert_proper_sync_response_with_result(
+        response=requests.post(api_url_for(rotkehlchen_api_server, 'historyeventresource')),
+    )
+    assert result['entries_found'] == 1
+    assert len(entries := result['entries']) == 1
+    assert isinstance(entries[0], list)
+    assert len(entries[0]) == 1
+    assert entries[0][0]['entry']['event_subtype'] == 'spend'
+    assert 'has_ignored_assets' not in entries[0][0]
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_add_edit_delete_solana_events(rotkehlchen_api_server: 'APIServer') -> None:
     """test that adding, editing, filtering, and deleting solana events works correctly"""

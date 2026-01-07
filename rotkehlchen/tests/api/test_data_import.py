@@ -346,12 +346,12 @@ def test_data_import_errors(
     )
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     with database.conn.read_ctx() as cursor:
-        _, history_events_count, _ = DBHistoryEvents(database).get_history_events_and_limit_info(
+        events_result = DBHistoryEvents(database).get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
             entries_limit=None,
         )
-    assert history_events_count == 0
+    assert events_result.entries_found == 0
 
     filepath = dir_path / 'data' / 'cointracking_trades_list.csv'
 

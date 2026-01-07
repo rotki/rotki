@@ -8,7 +8,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_USDC, A_USDT, A_WBTC
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
@@ -22,7 +22,11 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
+from rotkehlchen.history.events.structures.base import (
+    HistoryBaseEntry,
+    HistoryBaseEntryType,
+    HistoryEvent,
+)
 from rotkehlchen.history.events.structures.eth2 import EthDepositEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -502,6 +506,61 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
                 for free_event in free_result:
                     assert free_event.identifier is not None
                     assert free_event.identifier > 3, 'Free sub-events should be from the latest 3 event groups'  # noqa: E501
+
+
+def test_history_events_with_ignored_groups_excluding_assets(database: 'DBHandler') -> None:
+    db = DBHistoryEvents(database)
+    group_identifier = 'group_with_ignored_asset'
+    timestamp = TimestampMS(1)
+    with database.user_write() as write_cursor:
+        db.add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                HistoryEvent(
+                    group_identifier=group_identifier,
+                    sequence_index=1,
+                    timestamp=timestamp,
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.TRADE,
+                    event_subtype=HistoryEventSubType.SPEND,
+                    asset=A_ETH,
+                    amount=ONE,
+                ),
+                HistoryEvent(
+                    group_identifier=group_identifier,
+                    sequence_index=2,
+                    timestamp=timestamp,
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.TRADE,
+                    event_subtype=HistoryEventSubType.RECEIVE,
+                    asset=A_WBTC,
+                    amount=ONE,
+                ),
+            ],
+        )
+        database.add_to_ignored_assets(write_cursor, A_WBTC)
+
+    with database.conn.read_ctx() as cursor:
+        events_result_excluding = db.get_history_events_and_limit_info(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(exclude_ignored_assets=True),
+            entries_limit=None,
+            match_exact_events=True,
+            aggregate_by_group_ids=False,
+        )
+        events_result_including = db.get_history_events_and_limit_info(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(exclude_ignored_assets=False),
+            entries_limit=None,
+            match_exact_events=True,
+            aggregate_by_group_ids=False,
+        )
+
+    events_excluding: list[HistoryBaseEntry] = events_result_excluding.events  # type: ignore[assignment]  # filter uses aggregate_by_group_ids=False.
+    assert len(events_excluding) == 1
+    assert events_excluding[0].asset == A_ETH
+    assert events_result_excluding.ignored_group_identifiers == set()
+    assert events_result_including.ignored_group_identifiers == {group_identifier}
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True, False])

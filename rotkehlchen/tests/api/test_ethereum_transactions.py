@@ -1208,7 +1208,7 @@ def test_ignored_assets(
         expected_totals_with_grouping=3,
         entries_limit=1000,
     )
-    expected = generate_events_response([event4, event1, event2, event3])
+    expected = generate_events_response([event4, event1, event2, event3], has_ignored_assets=[True, True, True, False])  # noqa: E501
     assert returned_events == expected
 
     returned_events = query_events(
