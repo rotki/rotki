@@ -55,6 +55,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.upgrades import UpgradeRecord
 
+# Needs on-disk globaldb files for upgrade paths and backups.
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?
 ASSETS_IN_V2_GLOBALDB: Final = 3095
 YEARN_V1_ASSETS_IN_V3: Final = 32
@@ -94,6 +95,7 @@ def _count_sql_file_sentences(file_name: str, skip_statements: int = 0):
 @pytest.mark.parametrize('reload_user_assets', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v2_v3(globaldb: GlobalDBHandler, messages_aggregator):
     """Test globalDB upgrade v2->v3"""
     # Check the state before upgrading
@@ -212,6 +214,7 @@ def test_upgrade_v2_v3(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v3_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [3])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v3_v4(globaldb: GlobalDBHandler, messages_aggregator):
     """Test the global DB upgrade from v3 to v4"""
     # Check the state before upgrading
@@ -326,6 +329,7 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('target_globaldb_version', [4])
 @pytest.mark.parametrize('reload_user_assets', [False])
 @freeze_time('2023-03-20')  # freezing time just to make sure comparisons of timestamps won't fail
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v4_v5(globaldb: GlobalDBHandler, messages_aggregator):
     """Test the global DB upgrade from v4 to v5"""
     # Check the state before upgrading
@@ -406,6 +410,7 @@ def test_upgrade_v4_v5(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v5_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [5])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v5_v6(globaldb: GlobalDBHandler, messages_aggregator):
     """Test the global DB upgrade from v5 to v6"""
     # Check the state before upgrading
@@ -533,6 +538,7 @@ def test_upgrade_v5_v6(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v6_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [6])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v6_v7(globaldb: GlobalDBHandler, messages_aggregator):
     """Test the global DB upgrade from v6 to v7"""
     # Check the state before upgrading
@@ -626,6 +632,7 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v7_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [7])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator, database):
     """Test the global DB upgrade from v7 to v8"""
     # Check the state before upgrading
@@ -780,6 +787,7 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler, messages_aggregator, database)
 @pytest.mark.parametrize('custom_globaldb', ['v8_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [8])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v8_v9(globaldb: GlobalDBHandler, messages_aggregator):
     """We use version 8 of the globaldb at 1.34.3 and we set the
     target_globaldb_version to version 8 to avoid an automatic update of the globaldb
@@ -866,6 +874,7 @@ def test_upgrade_v8_v9(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v9_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [9])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v9_v10(globaldb: GlobalDBHandler, messages_aggregator):
     """Test upgrade from v9 to v10 which adds main_asset column to asset_collections"""
     with globaldb.conn.read_ctx() as cursor:
@@ -918,6 +927,7 @@ def test_upgrade_v9_v10(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v10_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [10])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v10_v11(globaldb: GlobalDBHandler, messages_aggregator):
     with globaldb.conn.read_ctx() as cursor:
         cursor.execute('SELECT COUNT(*) FROM price_history_source_types WHERE seq = 9')
@@ -971,6 +981,7 @@ def test_upgrade_v10_v11(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v11_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [11])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -1067,6 +1078,7 @@ def test_upgrade_v11_v12(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v12_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [12])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
     with globaldb.conn.read_ctx() as cursor:
         assert table_exists(cursor=cursor, name='solana_tokens') is False
@@ -1306,6 +1318,7 @@ def test_upgrade_v12_v13(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
     assert globaldb.used_backup is False
     globaldb.add_setting_value(  # Pretend that an upgrade was started
@@ -1343,6 +1356,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v13_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [13])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
     """Test the global DB upgrade from v13 to v14 (SOL-2 to SOL migration)"""
     # Check the state before upgrading
@@ -1465,6 +1479,7 @@ def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
 @pytest.mark.parametrize('custom_globaldb', ['v14_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [14])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_upgrade_v14_v15(
         globaldb: GlobalDBHandler,
         messages_aggregator: MessagesAggregator,
@@ -1506,6 +1521,7 @@ def test_upgrade_v14_v15(
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_applying_all_upgrade(globaldb: GlobalDBHandler, messages_aggregator):
     """Test globalDB upgrade from v2 to latest"""
     # Check the state before upgrading
@@ -1524,6 +1540,7 @@ def test_applying_all_upgrade(globaldb: GlobalDBHandler, messages_aggregator):
 @requires_env([TestEnvironment.STANDARD])  # skip in nightlies due to github api rate limits
 @pytest.mark.parametrize('target_globaldb_version', [4])
 @pytest.mark.parametrize('reload_user_assets', [False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_assets_updates_applied_before_v10_change(globaldb, messages_aggregator):
     """Test that asset updates v17-31 are applied before db schema v10.
 
@@ -1564,6 +1581,7 @@ def test_assets_updates_applied_before_v10_change(globaldb, messages_aggregator)
         assert cursor.execute('SELECT COUNT(*) FROM assets WHERE identifier IN (?, ?, ?)', (rocket_pool_asset, compound_usdt_asset, morpho_asset)).fetchone()[0] == 3  # noqa: E501
 
 
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_foreign_keys_enabled_without_assets_update(tmp_path, messages_aggregator):
     """Ensure DB upgrades enable PRAGMAs even when asset updates are skipped."""
     root_dir = Path(__file__).resolve().parent.parent.parent.parent
@@ -1640,6 +1658,7 @@ def test_foreign_keys_enabled_without_assets_update(tmp_path, messages_aggregato
         connection.close()
 
 
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_asset_upgrade_only_run_on_breaking_version(tmp_path, messages_aggregator):
     """Ensure that the asset upgrade is only run when the actual globaldb version is a
     breaking version. Regression test for a bug where it was always run.
