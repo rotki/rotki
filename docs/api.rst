@@ -14103,8 +14103,50 @@ Historical Balance Queries
         "asset": "BTC"
       }
 
+    **Example Request (Filtered by Location):**
+
+      .. http:example:: curl wget httpie python-requests
+
+      PUT /api/(version)/balances/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "timestamp": 1672531200,
+        "location": "ethereum"
+      }
+
+    **Example Request (Filtered by Location Label):**
+
+      .. http:example:: curl wget httpie python-requests
+
+      PUT /api/(version)/balances/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "timestamp": 1672531200,
+        "location_label": "0x1234567890abcdef1234567890abcdef12345678"
+      }
+
+    **Example Request (Filtered by Protocol):**
+
+      .. http:example:: curl wget httpie python-requests
+
+      PUT /api/(version)/balances/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "timestamp": 1672531200,
+        "protocol": "aave"
+      }
+
       :reqjsonarr integer timestamp: The timestamp to query the balance for
       :reqjsonarr string asset: (Optional) The asset identifier to query balance for. If not provided, returns balances for all assets.
+      :reqjsonarr string location: (Optional) Filter balances by location (e.g., "ethereum", "kraken", "binance"). If not provided, returns balances across all locations.
+      :reqjsonarr string location_label: (Optional) Filter balances by location label (e.g., a specific wallet address). If not provided, returns balances across all location labels.
+      :reqjsonarr string protocol: (Optional) Filter balances by protocol (e.g., "aave", "uniswap-v2"). If not provided, returns balances across all protocols.
 
     **Example Response (All Assets - data available):**
 

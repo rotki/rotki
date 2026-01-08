@@ -128,6 +128,7 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance(
         rotkehlchen_api_server: 'APIServer',
         setup_historical_data: None,
@@ -169,6 +170,7 @@ def test_get_historical_balance(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_asset_balance(
         rotkehlchen_api_server: 'APIServer',
         setup_historical_data: None,
@@ -204,6 +206,142 @@ def test_get_historical_asset_balance(
     result = assert_proper_sync_response_with_result(response)
     assert result['processing_required'] is False
     assert result['entries']['BTC'] == '2.7'  # 2 - 0.5 + 1 (exchange deposit) + 0.2 (swap)
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
+def test_get_historical_balance_with_filters(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Test that the historical balance endpoint correctly filters by location, location_label, and protocol."""  # noqa: E501
+    db = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    addr1, addr2 = make_evm_address(), make_evm_address()
+    day2_ts, day3_ts = Timestamp(START_TS + DAY_IN_SECONDS), Timestamp(START_TS + DAY_IN_SECONDS * 2)  # noqa: E501
+    with db.user_write() as write_cursor:
+        DBHistoryEvents(database=db).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(  # Day 1: Receive ETH on Ethereum (address 1)
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(START_TS),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('5'),
+                location_label=addr1,
+                address=addr1,
+            ), EvmEvent(  # Day 1: Receive ETH on Ethereum (address 2)
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(START_TS),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('4'),
+                location_label=addr2,
+                address=addr2,
+            ), EvmEvent(  # Day 1: Receive ETH on Base (address 1)
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(START_TS),
+                location=Location.BASE,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('3'),
+                location_label=addr1,
+                address=addr1,
+            ), EvmEvent(  # Day 1: Receive wrapped token from Aave (address 1)
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(START_TS),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                asset=A_ETH,
+                amount=FVal('10'),
+                location_label=addr1,
+                address=addr1,
+                counterparty='aave',
+            ), EvmEvent(  # Day 2: Receive more ETH on Ethereum (address 1)
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(day2_ts),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('2'),
+                location_label=addr1,
+                address=addr1,
+            ), EvmEvent(  # Day 2: Receive wrapped from Compound (address 1)
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(day2_ts),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                asset=A_ETH,
+                amount=FVal('6'),
+                location_label=addr1,
+                address=addr1,
+                counterparty='compound',
+            ), EvmEvent(  # Day 3: Spend ETH on Base (address 1)
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=ts_sec_to_ms(day3_ts),
+                location=Location.BASE,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=FVal('1'),
+                location_label=addr1,
+                address=addr1,
+            )],
+        )
+
+    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
+
+    for filters, expected_eth in (
+        # Location filters
+        ({'timestamp': START_TS, 'location': 'ethereum'}, '19'),  # 5 + 4 + 10 (aave)
+        ({'timestamp': START_TS, 'location': 'base'}, '3'),
+        # Location label filters
+        ({'timestamp': START_TS, 'location_label': addr1}, '18'),  # 5 + 3 + 10 (aave)
+        ({'timestamp': START_TS, 'location_label': addr2}, '4'),
+        ({'timestamp': START_TS, 'location': 'ethereum', 'location_label': addr1}, '15'),  # 5 + 10
+        # Protocol filters
+        ({'timestamp': START_TS, 'protocol': 'aave'}, '10'),
+        ({'timestamp': day2_ts, 'protocol': 'aave'}, '10'),
+        ({'timestamp': day2_ts, 'protocol': 'compound'}, '6'),
+        ({'timestamp': day2_ts, 'protocol': 'aave', 'location_label': addr1}, '10'),
+        # Combined filters
+        ({'timestamp': START_TS}, '22'),  # 5 + 4 + 3 + 10 (aave)
+        ({'timestamp': day2_ts, 'location_label': addr1}, '26'),  # 5 + 2 + 3 + 10 + 6
+        ({'timestamp': day3_ts, 'location': 'base', 'location_label': addr1}, '2'),  # 3 - 1
+        ({'timestamp': day3_ts}, '29'),  # 7 + 4 + 2 + 10 + 6
+        ({'timestamp': day3_ts, 'asset': 'ETH', 'location': 'ethereum', 'location_label': addr1}, '23'),  # 7 + 10 + 6  # noqa: E501
+    ):
+        result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
+            json=filters,
+        ))
+        assert result['processing_required'] is False, f'Failed for filters: {filters}'
+        assert result['entries']['ETH'] == expected_eth, f'Failed for filters: {filters}'
+
+    for filters, error_msg in (  # test validation errors
+        ({'timestamp': START_TS, 'location_label': make_evm_address()}, 'Unknown location label'),
+        ({'timestamp': START_TS, 'protocol': 'idontexist'}, 'Unknown protocol'),
+    ):
+        assert_error_response(
+            response=requests.post(
+                api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
+                json=filters,
+            ),
+            contained_in_msg=error_msg,
+        )
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -386,6 +524,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance_before_first_event(
         rotkehlchen_api_server: 'APIServer',
         setup_historical_data: None,
@@ -405,6 +544,7 @@ def test_get_historical_balance_before_first_event(
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance_unknown_asset(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.post(
         api_url_for(
@@ -424,6 +564,7 @@ def test_get_historical_balance_unknown_asset(rotkehlchen_api_server: 'APIServer
     )
 
 
+@pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_asset_balance_without_premium(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.post(
         api_url_for(

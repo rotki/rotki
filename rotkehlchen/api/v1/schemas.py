@@ -66,6 +66,7 @@ from rotkehlchen.db.filtering import (
     CustomAssetsFilterQuery,
     EthStakingEventFilterQuery,
     EvmEventFilterQuery,
+    HistoricalBalancesFilterQuery,
     HistoryEventFilterQuery,
     HistoryEventWithCounterpartyFilterQuery,
     HistoryEventWithTxRefFilterQuery,
@@ -4395,6 +4396,58 @@ class UpdateCalendarReminderSchema(NewCalendarReminderSchema, IntegerIdentifierS
 
 class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryArgumentSchema):
     asset = AssetField(expected_type=Asset, load_default=None)
+    location = LocationField(load_default=None)
+    location_label = EmptyAsNoneStringField(load_default=None)
+    protocol = EmptyAsNoneStringField(load_default=None)
+
+    def __init__(self, db: 'DBHandler', known_counterparties: set[str]) -> None:
+        super().__init__()
+        self.db = db
+        self.known_counterparties = known_counterparties
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if (
+                (protocol := data['protocol']) is not None and
+                protocol not in self.known_counterparties
+        ):
+            raise ValidationError(
+                message=f'Unknown protocol "{protocol}" provided',
+                field_name='protocol',
+            )
+
+        if (location_label := data['location_label']) is not None:
+            with self.db.conn.read_ctx() as cursor:
+                if cursor.execute(
+                    'SELECT COUNT(*) FROM history_events WHERE location_label = ?',
+                    (location_label,),
+                ).fetchone()[0] == 0:
+                    raise ValidationError(
+                        message=f'Unknown location label "{location_label}" provided',
+                        field_name='location_label',
+                    )
+
+    @post_load
+    def make_historical_balance_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        filter_query = HistoricalBalancesFilterQuery.make(
+            timestamp=data['timestamp'],
+            asset=data['asset'],
+            location=data['location'],
+            location_label=data['location_label'],
+            protocol=data['protocol'],
+        )
+        return {
+            'async_query': data['async_query'],
+            'filter_query': filter_query,
+        }
 
 
 class HistoricalPricesPerAssetSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):

@@ -87,6 +87,7 @@ from rotkehlchen.db.filtering import (
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
+    HistoricalBalancesFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
     LevenshteinFilterQuery,
@@ -3045,13 +3046,16 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(result=stats, status_code=HTTPStatus.OK))
 
     @async_api_call()
-    def get_historical_balance(self, timestamp: Timestamp) -> dict[str, Any]:
+    def get_historical_balance(
+            self,
+            filter_query: HistoricalBalancesFilterQuery,
+    ) -> dict[str, Any]:
         """Query historical balances for all assets at a given timestamp
         by processing historical events
         """
         processing_required, balances = HistoricalBalancesManager(
             self.rotkehlchen.data.db,
-        ).get_balances(timestamp)
+        ).get_balances(filter_query=filter_query)
 
         result: dict[str, Any] = {'processing_required': processing_required}
         if balances is not None:
@@ -3061,21 +3065,6 @@ class RestAPI:
             }
 
         return _wrap_in_ok_result(result=result, status_code=HTTPStatus.OK)
-
-    @async_api_call()
-    def get_historical_asset_balance(self, asset: Asset, timestamp: Timestamp) -> dict[str, Any]:
-        """Query historical balance of a specific asset at a given timestamp
-        by processing historical events
-        """
-        processing_required, amount = HistoricalBalancesManager(
-            self.rotkehlchen.data.db,
-        ).get_asset_balance(asset=asset, timestamp=timestamp)
-
-        result: dict[str, Any] = {'processing_required': processing_required}
-        if amount is not None:
-            result['entries'] = {asset.identifier: str(amount)}
-
-        return _wrap_in_ok_result(result=result)
 
     def get_historical_asset_amounts(
             self,

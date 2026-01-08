@@ -228,6 +228,7 @@ from rotkehlchen.db.filtering import (
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
+    HistoricalBalancesFilterQuery,
     HistoryBaseEntryFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
@@ -3473,25 +3474,21 @@ class EventsAnalysisResource(BaseMethodView):
 
 class TimestampHistoricalBalanceResource(BaseMethodView):
 
-    post_schema = HistoricalPerAssetBalanceSchema()
+    def make_post_schema(self) -> HistoricalPerAssetBalanceSchema:
+        return HistoricalPerAssetBalanceSchema(
+            db=self.rest_api.rotkehlchen.data.db,
+            known_counterparties={cpt.identifier for cpt in self.rest_api.rotkehlchen.chains_aggregator.get_all_counterparties()},  # noqa: E501
+        )
 
     @require_premium_user(active_check=False)
-    @use_kwargs(post_schema, location='json')
+    @resource_parser.use_kwargs(make_post_schema, location='json')
     def post(
             self,
             async_query: bool,
-            timestamp: Timestamp,
-            asset: Asset | None = None,
+            filter_query: HistoricalBalancesFilterQuery,
     ) -> Response:
-        if asset is None:
-            return self.rest_api.get_historical_balance(
-                timestamp=timestamp,
-                async_query=async_query,
-            )
-
-        return self.rest_api.get_historical_asset_balance(
-            asset=asset,
-            timestamp=timestamp,
+        return self.rest_api.get_historical_balance(
+            filter_query=filter_query,
             async_query=async_query,
         )
 

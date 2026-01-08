@@ -9,7 +9,10 @@ from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import DAY_IN_MILLISECONDS, ZERO
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.filtering import (
+    HistoricalBalancesFilterQuery,
+    HistoryEventFilterQuery,
+)
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import NotFoundError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -44,7 +47,7 @@ class HistoricalBalancesManager:
 
     def get_balances(
             self,
-            timestamp: Timestamp,
+            filter_query: HistoricalBalancesFilterQuery,
     ) -> tuple[bool, dict[Asset, FVal] | None]:
         """Get historical balances for all assets at a given timestamp.
 
@@ -57,18 +60,19 @@ class HistoricalBalancesManager:
         - balances: Dict of asset to amount, or None if no data available
         """
         asset_balances_by_id: dict[str, FVal] = {}
-        timestamp_ms = ts_sec_to_ms(timestamp)
+        filter_str, filter_bindings = filter_query.prepare()
+        query_bindings: list = [EventMetricKey.BALANCE.serialize(), *filter_bindings]
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
-                """SELECT asset, SUM(metric_value) FROM (
+                f"""SELECT asset, SUM(metric_value) FROM (
                     SELECT he.asset, em.metric_value, MAX(he.timestamp + he.sequence_index)
                     FROM event_metrics em
                     INNER JOIN history_events he ON em.event_identifier = he.identifier
-                    WHERE he.ignored = 0 AND em.metric_key = ? AND he.timestamp <= ?
+                    WHERE he.ignored = 0 AND em.metric_key = ? {filter_str}
                     GROUP BY he.location, he.location_label, em.protocol, he.asset
                 ) GROUP BY asset
                 """,
-                (EventMetricKey.BALANCE.serialize(), timestamp_ms),
+                query_bindings,
             )
             for asset_id, total in cursor:
                 asset_balances_by_id[asset_id] = FVal(total)
@@ -79,8 +83,8 @@ class HistoricalBalancesManager:
         } if len(asset_balances_by_id) != 0 else None
 
         return self._has_unprocessed_events(
-            where_clause='timestamp <= ?',
-            bindings=[timestamp_ms],
+            where_clause=filter_query.unprocessed_where_clause,
+            bindings=filter_query.unprocessed_bindings,
         ), data
 
     def get_erc721_tokens_balances(
@@ -106,39 +110,6 @@ class HistoricalBalancesManager:
             self._update_balances(event=event, current_balances=current_balances)
 
         return {asset.resolve_to_evm_token(): balance for asset, balance in current_balances.items() if balance > ZERO}  # noqa: E501
-
-    def get_asset_balance(
-            self,
-            asset: Asset,
-            timestamp: Timestamp,
-    ) -> tuple[bool, FVal | None]:
-        """Get historical balance for a single asset at a given timestamp.
-
-        The inner query gets the latest balance per bucket via MAX(timestamp + sequence_index),
-        relying on SQLite's bare column behavior to return non-aggregated columns from that row.
-        See https://www.sqlite.org/lang_select.html#bareagg
-
-        Returns a tuple of (processing_required, balance):
-        - processing_required: True if events exist but haven't been processed yet
-        - balance: Amount as FVal, or None if no data available
-        """
-        data, timestamp_ms = None, ts_sec_to_ms(timestamp)
-        with self.db.conn.read_ctx() as cursor:
-            if (total_amount := cursor.execute(
-                """SELECT SUM(metric_value) FROM (SELECT em.metric_value, MAX(he.timestamp + he.sequence_index)
-                    FROM event_metrics em
-                    INNER JOIN history_events he ON em.event_identifier = he.identifier
-                    WHERE em.metric_key = ? AND he.timestamp <= ? AND he.asset = ?
-                    GROUP BY he.location, he.location_label, em.protocol
-                )""",  # noqa: E501
-                (EventMetricKey.BALANCE.serialize(), timestamp_ms, asset.identifier),
-            ).fetchone()[0]) is not None:
-                data = FVal(total_amount)
-
-        return self._has_unprocessed_events(
-            where_clause='asset = ? AND timestamp <= ?',
-            bindings=[asset.identifier, timestamp_ms],
-        ), data
 
     def get_assets_amounts(
             self,

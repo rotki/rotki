@@ -2391,3 +2391,111 @@ class SolanaTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
         filter_query.filters = filters
         return filter_query
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
+    """Filter query for historical balances that join event_metrics with history_events."""
+
+    unprocessed_where_clause: str = ''
+    unprocessed_bindings: list[Any] = field(default_factory=list)
+
+    @classmethod
+    def make(
+            cls,
+            and_op: bool = True,
+            timestamp: Timestamp | None = None,
+            asset: 'Asset | None' = None,
+            location: Location | None = None,
+            location_label: str | None = None,
+            protocol: str | None = None,
+    ) -> Self:
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=None,
+            offset=None,
+        )
+        filters: list[DBFilter] = []
+        unprocessed_clauses: list[str] = []
+        unprocessed_bindings: list[Any] = []
+
+        filter_query.timestamp_filter = DBTimestampFilter(
+            and_op=True,
+            to_ts=timestamp,
+            scaling_factor=(scaling_factor := FVal(1000)),  # timestamps are in MS
+            timestamp_field='he.timestamp',
+        )
+        filters.append(filter_query.timestamp_filter)
+        if timestamp is not None:
+            unprocessed_clauses.append('timestamp <= ?')
+            unprocessed_bindings.append(timestamp * scaling_factor)
+
+        if asset is not None:
+            asset_filter = DBEqualsFilter(
+                and_op=True,
+                column='asset',
+                value=asset.identifier,
+                alias='he',
+            )
+            filters.append(asset_filter)
+            unprocessed_clauses.append('asset = ?')
+            unprocessed_bindings.append(asset.identifier)
+
+        if location is not None:
+            location_filter = DBEqualsFilter(
+                and_op=True,
+                column='location',
+                value=(location_value := location.serialize_for_db()),
+                alias='he',
+            )
+            filters.append(location_filter)
+            unprocessed_clauses.append('location = ?')
+            unprocessed_bindings.append(location_value)
+
+        if location_label is not None:
+            label_filter = DBEqualsFilter(
+                and_op=True,
+                column='location_label',
+                value=location_label,
+                alias='he',
+            )
+            filters.append(label_filter)
+            unprocessed_clauses.append('location_label = ?')
+            unprocessed_bindings.append(location_label)
+
+        # protocol filter only goes in main query, not in unprocessed check
+        if protocol is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='protocol',
+                value=protocol,
+                alias='em',
+            ))
+
+        filter_query.filters = filters
+        filter_query.unprocessed_where_clause = ' AND '.join(unprocessed_clauses)
+        filter_query.unprocessed_bindings = unprocessed_bindings
+        return filter_query
+
+    def prepare(
+            self,
+            with_pagination: bool = False,
+            with_order: bool = False,
+            with_group_by: bool = False,
+            without_ignored_asset_filter: bool = False,
+    ) -> tuple[str, list[Any]]:
+        """Prepare filters for the joined event_metrics/history_events query.
+
+        Overrides parent to return filter string with AND (not WHERE) since the query
+        already has a WHERE clause.
+        """
+        filter_str, bindings = super().prepare(
+            with_pagination=with_pagination,
+            with_order=with_order,
+            with_group_by=with_group_by,
+            without_ignored_asset_filter=without_ignored_asset_filter,
+        )
+        if filter_str.startswith('WHERE '):
+            filter_str = 'AND ' + filter_str[6:]
+
+        return filter_str, bindings
