@@ -48,6 +48,7 @@ const mockHistoryTransactionDecoding = {
 };
 
 const mockHistoryStore = {
+  resetDecodingSyncProgress: vi.fn(),
   resetUndecodedTransactionsStatus: vi.fn(),
 };
 
@@ -189,6 +190,7 @@ describe('useRefreshTransactions', () => {
 
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalledWith(
         specificAccounts,
+        true, // shouldShowSyncProgress is true because isFirstLoad() returns true
       );
     });
 
@@ -384,6 +386,7 @@ describe('useRefreshTransactions', () => {
           expect.objectContaining({ chain: 'eth' }),
           expect.objectContaining({ chain: 'optimism' }),
         ]),
+        true, // shouldShowSyncProgress is true because isFirstLoad() returns true
       );
     });
 
@@ -396,6 +399,7 @@ describe('useRefreshTransactions', () => {
         expect.arrayContaining([
           expect.objectContaining({ chain: 'btc' }),
         ]),
+        true, // shouldShowSyncProgress is true because isFirstLoad() returns true
       );
     });
 

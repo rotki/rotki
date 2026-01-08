@@ -23,7 +23,7 @@ export function useQueryStatusStore<T>(isStatusFinished: (item: T) => boolean, c
 
   const removeQueryStatus = (key: string): void => {
     const statuses = { ...get(queryStatus) };
-    set(queryStatus, Object.fromEntries(Object.entries(statuses).filter(([_, status]) => createKey(status) === key)));
+    set(queryStatus, Object.fromEntries(Object.entries(statuses).filter(([_, status]) => createKey(status) !== key)));
   };
 
   return {

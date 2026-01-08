@@ -4849,6 +4849,39 @@
       "uploading": "Загрузка базы данных..."
     }
   },
+  "sync_progress": {
+    "chains_label": "сеть | сетей",
+    "complete": "Синхронизация завершена",
+    "completed_chains": "{count} сеть завершена | {count} сетей завершено",
+    "completed_decoding": "{count} сеть декодирована | {count} сетей декодировано",
+    "completed_locations": "{count} местоположение завершено | {count} местоположений завершено",
+    "completed_protocol_cache": "{count} протокол обновлен | {count} протоколов обновлено",
+    "decoding": "Декодирование",
+    "decoding_label": "сетей декодировано",
+    "decoding_progress": "{processed}/{total} txns",
+    "events": "События",
+    "locations_label": "местоположение | местоположений",
+    "period": {
+      "beginning": "Начало"
+    },
+    "protocol_cache": "Кэш протокола",
+    "protocol_cache_label": "протоколов обновлено",
+    "protocol_cache_progress": "{processed}/{total} пулов",
+    "show_more": "Показать еще {count}...",
+    "status": {
+      "complete": "Завершено",
+      "decoding": "Декодирование",
+      "pending": "Ожидание",
+      "querying": "Запрос",
+      "querying_event_type": "Запрос {type}",
+      "querying_internal": "Запрос внутренних txs",
+      "querying_tokens": "Запрос переводов токенов",
+      "querying_transactions": "Запрос транзакций",
+      "refreshing": "Обновление"
+    },
+    "title": "Синхронизация истории",
+    "transactions": "Транзакции"
+  },
   "table_filter": {
     "asset_suggestion": "Введите символ актива или адрес для поиска.",
     "exclusion": {
@@ -5023,9 +5056,6 @@
       "redecode_events": "Повторно декодировать события",
       "redecode_page": "Страница передекодирования",
       "redecode_with_options": "Повторно декодировать с опциями"
-    },
-    "cache_refresh": {
-      "refreshing": "Обновление кэш-данных протокола"
     },
     "dialog": {
       "add_tx": "Добавить транзакцию по tx hash",
@@ -5333,10 +5363,7 @@
         "true": "Все транзакции обработаны."
       },
       "decoding": {
-        "all": "Повторное декодирование транзакций",
-        "all_done": "Повторное декодирование завершено",
         "done": "Декодирована {count} транзакция | Декодировано {count} транзакции",
-        "eth_block_events": "Повторное декодирование событий блоков ETH",
         "pending": "{count} Недекодированная транзакция | {count} Недекодированные транзакции",
         "processing": "Декодирование {count} транзакции | Декодирование {count} из {total} транзакций"
       },
@@ -5393,54 +5420,14 @@
       "refreshing": "Обновление кэша протокола",
       "title": "Статус обновлений кэша протокола"
     },
-    "query_all": {
-      "done_group": "Завершен запрос всех событий и транзакций",
-      "group": "Запрос событий и транзакций",
-      "modal_title": "Статус запроса"
-    },
-    "query_status": {
-      "date_range": "Запрос {status} для {address} между {start} и {end}",
-      "done_date_range": "Завершен запрос всех транзакций для {address} между {start} и {end}",
-      "done_end_date": "Завершен запрос всех транзакций для {address} до {end}",
-      "done_group": "Завершен запрос информации о всех транзакциях для {count} адреса | Завершен запрос информации о всех транзакциях для {count} адресов",
-      "done_querying": "Завершен запрос всех транзакций для {address}",
-      "end_date": "Запрос {status} для {address} до {end}",
-      "group": "Запрос информации о транзакциях для {count} адреса | Запрос информации о транзакциях для {count} адресов",
-      "latest_period_date_range": "Последний успешно запрошенный период между {start} и {end}",
-      "latest_period_end_date": "Последний успешно запрошенный период до {end}",
-      "start_decoding": "Декодирование транзакций для {address}",
-      "start_querying": "Запрос транзакций для {address}",
-      "statuses": {
-        "pending": "в ожидании",
-        "querying_evm_tokens_transactions": "транзакции токенов evm",
-        "querying_finished": "завершено",
-        "querying_internal_transactions": "внутренние транзакции evm",
-        "querying_started": "начато",
-        "querying_transactions": "транзакции evm"
-      },
-      "title": "Статус запроса транзакций"
-    },
-    "query_status_events": {
-      "date_range": "Запрос событий для {name} между {start} и {end}",
-      "done_date_range": "Завершен запрос всех событий для {name} между {start} и {end}",
-      "done_end_date": "Завершен запрос всех событий для {name} до {end}",
-      "done_group": "Завершен запрос всех событий для {count} местоположения | Завершен запрос всех событий для {count} местоположений",
-      "end_date": "Запрос событий для {name} до {end}",
-      "group": "Запрос событий для {count} местоположения | Запрос событий для {count} местоположений",
-      "latest_period_date_range": "Последний успешно запрошенный период между {start} и {end}",
-      "latest_period_end_date": "Последний успешно запрошенный период до {end}",
-      "title": "Статус запроса событий истории"
-    },
     "refresh_tooltip": "Получить последние события",
     "repulling": {
       "action": "Перезапросить события",
       "add_account_link": "добавить блокчейн аккаунт",
       "add_exchange_link": "добавить биржу",
       "address_hint": "Оставьте пустым, чтобы перезапросить транзакции со всех адресов",
-      "finished": "Перезапрос событий завершен",
       "no_accounts": "У вас нет зарегистрированных блокчейн аккаунтов. Пожалуйста, сначала {link}.",
-      "no_exchanges": "У вас нет подключенных бирж. Пожалуйста, сначала {link}.",
-      "repulling": "Перезапрос событий"
+      "no_exchanges": "У вас нет подключенных бирж. Пожалуйста, сначала {link}."
     },
     "title": "События истории",
     "unignore": "Не игнорировать события в учете"

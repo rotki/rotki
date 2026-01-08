@@ -7,7 +7,6 @@ import HistoryEventsDialogContainer from '@/components/history/events/HistoryEve
 import HistoryEventsFiltersChips from '@/components/history/events/HistoryEventsFiltersChips.vue';
 import HistoryEventsTableActions from '@/components/history/events/HistoryEventsTableActions.vue';
 import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsViewButtons.vue';
-import HistoryQueryStatus from '@/components/history/events/HistoryQueryStatus.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
@@ -20,7 +19,7 @@ import { useHistoryEventsSelectionActions } from '@/modules/history/events/compo
 import { useHistoryEventsSelectionMode } from '@/modules/history/events/composables/use-selection-mode';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 
-type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
+defineOptions({ inheritAttrs: false });
 
 const props = withDefaults(defineProps<{
   location?: string;
@@ -49,6 +48,10 @@ const props = withDefaults(defineProps<{
   useExternalAccountFilter: undefined,
   validators: undefined,
 });
+
+const SyncProgressPanel = defineAsyncComponent(() => import('@/modules/sync-progress/components/SyncProgressPanel.vue'));
+
+type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
@@ -103,7 +106,6 @@ const {
   identifiers,
   includes,
   locationLabels,
-  locations,
   matchers,
   onLocationLabelsChanged,
   pageParams,
@@ -207,113 +209,109 @@ function openMatchAssetMovementsDialog(): void {
 </script>
 
 <template>
-  <TablePageLayout
-    :hide-header="!mainPage"
-    :child="!mainPage"
-    :title="[t('navigation_menu.history'), usedTitle]"
-  >
-    <template #buttons>
-      <HistoryEventsViewButtons
-        :processing="processing"
-        :loading="anyEventsDecoding"
-        :include-evm-events="includes.evmEvents"
-        @refresh="actions.refresh.all(true, $event)"
-        @show:dialog="dialogContainer?.show($event)"
-      />
-    </template>
-
-    <div>
-      <RuiAlert
-        v-if="!debouncedProcessing && mainPage && unmatchedCount > 0"
-        type="warning"
-        class="mb-4 [&>div]:items-center"
-      >
-        <div class="flex items-center gap-4">
-          {{ t('asset_movement_matching.banner.message', { count: unmatchedCount }) }}
-          <RuiButton
-            size="sm"
-            color="warning"
-            @click="openMatchAssetMovementsDialog()"
-          >
-            {{ t('asset_movement_matching.banner.action') }}
-          </RuiButton>
-        </div>
-      </RuiAlert>
-
-      <RuiCard>
-        <template
-          v-if="!mainPage"
-          #header
-        >
-          <CardTitle>
-            <RefreshButton
-              :disabled="refreshing"
-              :tooltip="t('transactions.refresh_tooltip')"
-              @refresh="actions.refresh.all(true)"
-            />
-            {{ usedTitle }}
-          </CardTitle>
-        </template>
-
-        <HistoryEventsTableActions
-          v-model:filters="filters"
-          v-model:toggles="toggles"
-          :location-labels="locationLabels"
+  <div>
+    <SyncProgressPanel
+      v-if="mainPage"
+      class="-mt-6 mb-4"
+    />
+    <TablePageLayout
+      :hide-header="!mainPage"
+      :child="!mainPage"
+      :title="[t('navigation_menu.history'), usedTitle]"
+      v-bind="$attrs"
+    >
+      <template #buttons>
+        <HistoryEventsViewButtons
           :processing="processing"
-          :matchers="matchers"
-          :export-params="pageParams"
-          :hide-redecode-buttons="!mainPage"
-          :hide-account-selector="useExternalAccountFilter"
-          :selection="selectionMode.state.value"
-          :ignore-status="ignoreStatus"
-          @update:location-labels="onLocationLabelsChanged($event)"
-          @redecode="actions.redecode.by($event)"
-          @selection:action="handleSelectionAction($event)"
-        />
-
-        <HistoryEventsFiltersChips />
-
-        <HistoryEventsTable
-          v-model:sort="sort"
-          v-model:pagination="pagination"
-          :group-loading="groupLoading"
-          :groups="groups"
-          :page-params="toggles.matchExactEvents ? pageParams : undefined"
-          :exclude-ignored="!toggles.showIgnoredAssets"
-          :identifiers="identifiers"
-          :highlighted-identifiers="highlightedIdentifiers"
-          :selection="selectionMode"
-          :match-exact-events="toggles.matchExactEvents"
+          :loading="anyEventsDecoding"
+          :include-evm-events="includes.evmEvents"
+          @refresh="actions.refresh.all(true, $event)"
           @show:dialog="dialogContainer?.show($event)"
-          @refresh="actions.fetch.dataAndRedecode($event)"
-          @refresh:block-event="actions.redecode.blocks($event)"
-          @set-page="setPage($event)"
-          @update-event-ids="handleUpdateEventIds($event)"
-        >
-          <template #query-status="{ colspan }">
-            <HistoryQueryStatus
-              v-model:current-action="currentAction"
-              :only-chains="onlyChains"
-              :locations="locations"
-              :colspan="colspan"
-              :loading="processing"
-              @show:dialog="dialogContainer?.show($event)"
-            />
-          </template>
-        </HistoryEventsTable>
-      </RuiCard>
+        />
+      </template>
 
-      <HistoryEventsDialogContainer
-        ref="dialogContainer"
-        v-model:accounting-rule-to-edit="accountingRuleToEdit"
-        v-model:current-action="currentAction"
-        :loading="processing"
-        :refreshing="refreshing"
-        :section-loading="sectionLoading"
-        :event-handlers="actions.dialogHandlers"
-        :selected-event-ids="selectedEventIds"
-        @accounting-rule-refresh="handleAccountingRuleRefresh()"
-      />
-    </div>
-  </TablePageLayout>
+      <div>
+        <RuiAlert
+          v-if="!debouncedProcessing && mainPage && unmatchedCount > 0"
+          type="warning"
+          class="mb-4 [&>div]:items-center"
+        >
+          <div class="flex items-center gap-4">
+            {{ t('asset_movement_matching.banner.message', { count: unmatchedCount }) }}
+            <RuiButton
+              size="sm"
+              color="warning"
+              @click="openMatchAssetMovementsDialog()"
+            >
+              {{ t('asset_movement_matching.banner.action') }}
+            </RuiButton>
+          </div>
+        </RuiAlert>
+
+        <RuiCard>
+          <template
+            v-if="!mainPage"
+            #header
+          >
+            <CardTitle>
+              <RefreshButton
+                :disabled="refreshing"
+                :tooltip="t('transactions.refresh_tooltip')"
+                @refresh="actions.refresh.all(true)"
+              />
+              {{ usedTitle }}
+            </CardTitle>
+          </template>
+
+          <HistoryEventsTableActions
+            v-model:filters="filters"
+            v-model:toggles="toggles"
+            :location-labels="locationLabels"
+            :processing="processing"
+            :matchers="matchers"
+            :export-params="pageParams"
+            :hide-redecode-buttons="!mainPage"
+            :hide-account-selector="useExternalAccountFilter"
+            :selection="selectionMode.state.value"
+            :ignore-status="ignoreStatus"
+            @update:location-labels="onLocationLabelsChanged($event)"
+            @redecode="actions.redecode.by($event)"
+            @selection:action="handleSelectionAction($event)"
+          />
+
+          <HistoryEventsFiltersChips />
+
+          <HistoryEventsTable
+            v-model:sort="sort"
+            v-model:pagination="pagination"
+            :group-loading="groupLoading"
+            :groups="groups"
+            :page-params="toggles.matchExactEvents ? pageParams : undefined"
+            :exclude-ignored="!toggles.showIgnoredAssets"
+            :identifiers="identifiers"
+            :highlighted-identifiers="highlightedIdentifiers"
+            :selection="selectionMode"
+            :match-exact-events="toggles.matchExactEvents"
+            @show:dialog="dialogContainer?.show($event)"
+            @refresh="actions.fetch.dataAndRedecode($event)"
+            @refresh:block-event="actions.redecode.blocks($event)"
+            @set-page="setPage($event)"
+            @update-event-ids="handleUpdateEventIds($event)"
+          />
+        </RuiCard>
+
+        <HistoryEventsDialogContainer
+          ref="dialogContainer"
+          v-model:accounting-rule-to-edit="accountingRuleToEdit"
+          v-model:current-action="currentAction"
+          :loading="processing"
+          :refreshing="refreshing"
+          :section-loading="sectionLoading"
+          :event-handlers="actions.dialogHandlers"
+          :selected-event-ids="selectedEventIds"
+          @accounting-rule-refresh="handleAccountingRuleRefresh()"
+        />
+      </div>
+    </TablePageLayout>
+  </div>
 </template>

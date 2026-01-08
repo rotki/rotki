@@ -3085,6 +3085,39 @@
       "title": "强制推 | 强制拉"
     }
   },
+  "sync_progress": {
+    "chains_label": "链 | 链",
+    "complete": "同步完成",
+    "completed_chains": "{count} 条链已完成 | {count} 条链已完成",
+    "completed_decoding": "{count} 条链已解码 | {count} 条链已解码",
+    "completed_locations": "{count} 个位置已完成 | {count} 个位置已完成",
+    "completed_protocol_cache": "{count} 个协议已刷新 | {count} 个协议已刷新",
+    "decoding": "解码中",
+    "decoding_label": "链已解码",
+    "decoding_progress": "{processed}/{total} 交易",
+    "events": "事件",
+    "locations_label": "位置 | 位置",
+    "period": {
+      "beginning": "开始"
+    },
+    "protocol_cache": "协议缓存",
+    "protocol_cache_label": "协议已刷新",
+    "protocol_cache_progress": "{processed}/{total} 池",
+    "show_more": "显示更多 {count} 个...",
+    "status": {
+      "complete": "完成",
+      "decoding": "解码中",
+      "pending": "等待中",
+      "querying": "查询中",
+      "querying_event_type": "查询 {type}",
+      "querying_internal": "查询内部交易",
+      "querying_tokens": "查询代币转账",
+      "querying_transactions": "查询交易",
+      "refreshing": "刷新中"
+    },
+    "title": "同步历史记录",
+    "transactions": "交易"
+  },
   "table_filter": {
     "exclusion": {
       "description": "使用运算符 `!=` 过滤掉选项，例如",
@@ -3285,38 +3318,6 @@
       "validator_index": "按 validator_index(s) 过滤"
     },
     "ignore": "在会计中忽略 Tx",
-    "query_all": {
-      "done_group": "完成查询所有事件和事务",
-      "group": "查询事件和事务",
-      "modal_title": "查询状态"
-    },
-    "query_status": {
-      "date_range": "在 {start} 和 {end} 之间查询 {address} 的 {status}",
-      "done_date_range": "完成查询 {address} 在 {start} 和 {end} 之间的所有交易",
-      "done_end_date": "完成查询 {address} 的所有交易直到 {end}",
-      "done_group": "完成查询 {count} 地址的所有交易信息 | 完成查询 {count} 地址的所有交易信息",
-      "end_date": "查询 {address} 的 {status} 直到 {end}",
-      "group": "查询 {count} 地址的事务信息 | 查询 {count} 地址的 evm 事务信息",
-      "latest_period_date_range": "最近成功查询的时间段在 {start} 和 {end} 之间",
-      "latest_period_end_date": "最近成功查询的时间段到 {end}",
-      "statuses": {
-        "querying_evm_tokens_transactions": "evm 代币交易",
-        "querying_internal_transactions": "evm 内部交易",
-        "querying_transactions": "evm 交易"
-      },
-      "title": "交易查询状态"
-    },
-    "query_status_events": {
-      "date_range": "查询 {start} 和 {end} 之间 {name} 的事件",
-      "done_date_range": "完成查询{start}和{end}之间{name}的所有事件",
-      "done_end_date": "查询完 {name} 的所有事件，直到 {end} 结束",
-      "done_group": "完成查询 {count} 位置的所有事件 | 完成查询 {count} 位置的所有事件",
-      "end_date": "查询 {name} 至 {end} 的事件",
-      "group": "查询 {count} 位置的事件 | 查询 {count} 位置的事件",
-      "latest_period_date_range": "最近一次成功查询的时间段介于 {start} 和 {end} 之间",
-      "latest_period_end_date": "最近一次成功查询的时间段截至 {end}。",
-      "title": "历史事件 查询状态"
-    },
     "refresh_tooltip": "获取最新事件",
     "title": "历史事件",
     "unignore": "在会计中忽略交易"

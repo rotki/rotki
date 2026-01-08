@@ -3359,6 +3359,39 @@
       "title": "Forcer la poussée | Forcer le tirage"
     }
   },
+  "sync_progress": {
+    "chains_label": "chaîne | chaînes",
+    "complete": "Synchronisation terminée",
+    "completed_chains": "{count} chaîne terminée | {count} chaînes terminées",
+    "completed_decoding": "{count} chaîne décodée | {count} chaînes décodées",
+    "completed_locations": "{count} emplacement terminé | {count} emplacements terminés",
+    "completed_protocol_cache": "{count} protocole actualisé | {count} protocoles actualisés",
+    "decoding": "Décodage",
+    "decoding_label": "chaînes décodées",
+    "decoding_progress": "{processed}/{total} txns",
+    "events": "Événements",
+    "locations_label": "emplacement | emplacements",
+    "period": {
+      "beginning": "Début"
+    },
+    "protocol_cache": "Cache de Protocole",
+    "protocol_cache_label": "protocoles actualisés",
+    "protocol_cache_progress": "{processed}/{total} pools",
+    "show_more": "Afficher {count} de plus...",
+    "status": {
+      "complete": "Terminé",
+      "decoding": "Décodage",
+      "pending": "En attente",
+      "querying": "Interrogation",
+      "querying_event_type": "Interrogation {type}",
+      "querying_internal": "Interrogation txs internes",
+      "querying_tokens": "Interrogation transferts de jetons",
+      "querying_transactions": "Interrogation transactions",
+      "refreshing": "Actualisation"
+    },
+    "title": "Synchronisation de l'historique",
+    "transactions": "Transactions"
+  },
   "table_filter": {
     "exclusion": {
       "description": "Utiliser l'opérateur `!=` pour filtrer l'option, par exemple.",
@@ -3636,8 +3669,6 @@
         "true": "Tous les transactions ont été recodés."
       },
       "decoding": {
-        "all": "Redécodage des transactions EVM",
-        "all_done": "Redécodage des transactions EVM terminé",
         "done": "Transaction décodé {count} | Transactions décodés {count}",
         "pending": "{count} Transactions non décodé | {count} Transactions non décodés",
         "processing": "Décodage de {count} transaction | Décodage de {count} de {total} transactions"
@@ -3679,38 +3710,6 @@
       }
     },
     "ignore": "Ignorer les événements dans le compte",
-    "query_all": {
-      "done_group": "Requête terminée sur tous les événements et toutes les transactions",
-      "group": "Recherche d'événements et de transactions",
-      "modal_title": "Statut de la requête"
-    },
-    "query_status": {
-      "date_range": "Requête {status} pour {address} entre {start} et {end}",
-      "done_date_range": "Requête terminée pour toutes les transactions pour {address} entre {start} et {end}",
-      "done_end_date": "Requête terminée pour toutes les transactions pour {address} jusqu'à {end}",
-      "done_group": "Requête terminée pour toutes les informations de transaction pour {count} adresse | Requête terminée pour toutes les informations de transaction pour {count} adresses",
-      "end_date": "Requête {status} pour {address} jusqu'à {end}",
-      "group": "Requête d'informations de transaction pour {count} adresse | Requête d'informations de transaction EVM pour {count} adresses",
-      "latest_period_date_range": "Période de requête réussie la plus récente est entre {start} et {end}",
-      "latest_period_end_date": "Période de requête réussie la plus récente est jusqu'à {end}",
-      "statuses": {
-        "querying_evm_tokens_transactions": "transactions d'actifs EVM",
-        "querying_internal_transactions": "transactions internes EVM",
-        "querying_transactions": "transactions EVM"
-      },
-      "title": "Statut de la requête de transactions"
-    },
-    "query_status_events": {
-      "date_range": "Requête d'événements pour {name} entre {start} et {end}",
-      "done_date_range": "Requête terminée pour tous les événements pour {name} entre {start} et {end}",
-      "done_end_date": "Requête terminée pour tous les événements pour {name} jusqu'à {end}",
-      "done_group": "Requête terminée pour tous les événements pour {count} emplacement | Requête terminée pour tous les événements pour {count} emplacements",
-      "end_date": "Requête d'événements pour {name} jusqu'à {end}",
-      "group": "Requête d'événements pour {count} emplacement | Requête d'événements pour {count} emplacements",
-      "latest_period_date_range": "Période de requête réussie la plus récente est entre {start} et {end}",
-      "latest_period_end_date": "Période de requête réussie la plus récente est jusqu'à {end}",
-      "title": "Statut de la requête d'historique des événements"
-    },
     "refresh_tooltip": "Récupérer les événements les plus récents",
     "title": "Historique des événements",
     "unignore": "Annuler l'ignorance des événements dans le compte"

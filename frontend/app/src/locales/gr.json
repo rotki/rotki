@@ -2960,6 +2960,39 @@
       "title": "Force Push | Force Pull"
     }
   },
+  "sync_progress": {
+    "chains_label": "αλυσίδα | αλυσίδες",
+    "complete": "Συγχρονισμός Ολοκληρώθηκε",
+    "completed_chains": "{count} αλυσίδα ολοκληρώθηκε | {count} αλυσίδες ολοκληρώθηκαν",
+    "completed_decoding": "{count} αλυσίδα αποκωδικοποιήθηκε | {count} αλυσίδες αποκωδικοποιήθηκαν",
+    "completed_locations": "{count} τοποθεσία ολοκληρώθηκε | {count} τοποθεσίες ολοκληρώθηκαν",
+    "completed_protocol_cache": "{count} πρωτόκολλο ανανεώθηκε | {count} πρωτόκολλα ανανεώθηκαν",
+    "decoding": "Αποκωδικοποίηση",
+    "decoding_label": "αλυσίδες αποκωδικοποιημένες",
+    "decoding_progress": "{processed}/{total} txns",
+    "events": "Συμβάντα",
+    "locations_label": "τοποθεσία | τοποθεσίες",
+    "period": {
+      "beginning": "Αρχή"
+    },
+    "protocol_cache": "Κρυφή Μνήμη Πρωτοκόλλου",
+    "protocol_cache_label": "πρωτόκολλα ανανεώθηκαν",
+    "protocol_cache_progress": "{processed}/{total} pools",
+    "show_more": "Εμφάνιση {count} περισσότερων...",
+    "status": {
+      "complete": "Ολοκληρώθηκε",
+      "decoding": "Αποκωδικοποίηση",
+      "pending": "Σε αναμονή",
+      "querying": "Αναζήτηση",
+      "querying_event_type": "Αναζήτηση {type}",
+      "querying_internal": "Αναζήτηση εσωτερικών txs",
+      "querying_tokens": "Αναζήτηση μεταφορών token",
+      "querying_transactions": "Αναζήτηση συναλλαγών",
+      "refreshing": "Ανανέωση"
+    },
+    "title": "Συγχρονισμός Ιστορικού",
+    "transactions": "Συναλλαγές"
+  },
   "table_filter": {
     "exclusion": {
       "description": "Use operator `!=` to filter out option, e.g.",
@@ -3154,38 +3187,6 @@
       "validator_index": "filter by validator index(es)"
     },
     "ignore": "Ignore Tx in Accounting",
-    "query_all": {
-      "done_group": "Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων και των συναλλαγών",
-      "group": "Διερεύνηση συμβάντων και συναλλαγών",
-      "modal_title": "Κατάσταση ερώτησης"
-    },
-    "query_status": {
-      "date_range": "Querying {status} for {address} between {start} and {end}",
-      "done_date_range": "Done querying all transactions for {address} between {start} and {end}",
-      "done_end_date": "Done querying all transactions for {address} until {end}",
-      "done_group": "Done querying all transactions information for {count} address | Done querying all transactions information for {count} addresses",
-      "end_date": "Querying {status} for {address} until {end}",
-      "group": "Querying transactions information for {count} address | Querying evm transactions information for {count} addresses",
-      "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
-      "latest_period_end_date": "Latest successfully queried period is until {end}",
-      "statuses": {
-        "querying_evm_tokens_transactions": "evm tokens transactions",
-        "querying_internal_transactions": "evm internal transactions",
-        "querying_transactions": "evm transactions"
-      },
-      "title": "Transactions Κατάσταση ερωτήματος"
-    },
-    "query_status_events": {
-      "date_range": "Αναζήτηση συμβάντων για {name} μεταξύ {start} και {end}",
-      "done_date_range": "Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων για {name} μεταξύ {start} και {end}",
-      "done_end_date": "Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων για {name} μέχρι {end}",
-      "done_group": "Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων για την τοποθεσία {count} | Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων για τις τοποθεσίες {count}",
-      "end_date": "Αναζήτηση συμβάντων για {name} μέχρι {end}",
-      "group": "Ερώτηση συμβάντων για την τοποθεσία {count} | Ερώτηση συμβάντων για τοποθεσίες {count}",
-      "latest_period_date_range": "Η τελευταία περίοδος που ζητήθηκε επιτυχώς είναι μεταξύ {start} και {end}",
-      "latest_period_end_date": "Η τελευταία περίοδος που ζητήθηκε επιτυχώς είναι μέχρι το {end}",
-      "title": "Ιστορικό Γεγονότα Κατάσταση ερώτησης"
-    },
     "refresh_tooltip": "Fetch latest events",
     "title": "History Events",
     "unignore": "Unignore Tx in Accounting"

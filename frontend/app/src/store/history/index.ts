@@ -14,6 +14,10 @@ export const useHistoryStore = defineStore('history', () => {
   const protocolCacheUpdateStatus = ref<Record<string, ProtocolCacheUpdatesData>>({});
   const transactionStatusSummary = ref<TransactionStatus>();
 
+  // Separate state for sync progress indicator - only updated by websocket messages,
+  // not reset by fetchUndecodedTransactionsBreakdown
+  const decodingSyncProgress = ref<Record<string, EvmUnDecodedTransactionsData>>({});
+
   const receivingProtocolCacheStatus = ref<boolean>(false);
 
   const { useIsTaskRunning } = useTaskStore();
@@ -21,6 +25,11 @@ export const useHistoryStore = defineStore('history', () => {
 
   const decodingStatus = computed<EvmUnDecodedTransactionsData[]>(() =>
     Object.values(get(undecodedTransactionsStatus)).filter(status => status.total > 0),
+  );
+
+  // Computed for sync progress indicator - uses the separate sync progress state
+  const decodingSyncStatus = computed<EvmUnDecodedTransactionsData[]>(() =>
+    Object.values(get(decodingSyncProgress)).filter(status => status.total > 0),
   );
 
   const protocolCacheStatus = computed<ProtocolCacheUpdatesData[]>(() =>
@@ -33,6 +42,11 @@ export const useHistoryStore = defineStore('history', () => {
       ...get(undecodedTransactionsStatus),
       [data.chain]: data,
     });
+    // Also update sync progress state (used by sync progress indicator)
+    set(decodingSyncProgress, {
+      ...get(decodingSyncProgress),
+      [data.chain]: data,
+    });
   };
 
   const updateUndecodedTransactionsStatus = (data: Record<string, EvmUnDecodedTransactionsData>): void => {
@@ -40,6 +54,26 @@ export const useHistoryStore = defineStore('history', () => {
       ...get(undecodedTransactionsStatus),
       ...data,
     });
+
+    // Also update sync progress, but only if:
+    // 1. The chain doesn't exist in sync progress yet (initialization), OR
+    // 2. The new data has equal or higher processed count (progress update, not reset)
+    const currentSyncProgress = get(decodingSyncProgress);
+    const updatedSyncProgress = { ...currentSyncProgress };
+    let hasChanges = false;
+
+    for (const [chain, status] of Object.entries(data)) {
+      const existing = currentSyncProgress[chain];
+      // Initialize if not exists, or update if not a reset (processed going backwards)
+      if (!existing || status.processed >= existing.processed) {
+        updatedSyncProgress[chain] = status;
+        hasChanges = true;
+      }
+    }
+
+    if (hasChanges) {
+      set(decodingSyncProgress, updatedSyncProgress);
+    }
   };
 
   const refreshProtocolCacheTaskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
@@ -69,6 +103,10 @@ export const useHistoryStore = defineStore('history', () => {
 
   const clearUndecodedTransactionsNumbers = (): void => {
     set(undecodedTransactionsStatus, {});
+  };
+
+  const resetDecodingSyncProgress = (): void => {
+    set(decodingSyncProgress, {});
   };
 
   const resetProtocolCacheUpdatesStatus = (): void => {
@@ -133,6 +171,8 @@ export const useHistoryStore = defineStore('history', () => {
     associatedLocations,
     clearUndecodedTransactionsNumbers,
     decodingStatus,
+    decodingSyncProgress,
+    decodingSyncStatus,
     fetchAssociatedLocations,
     fetchLocationLabels,
     fetchTransactionStatusSummary,
@@ -140,6 +180,7 @@ export const useHistoryStore = defineStore('history', () => {
     locationLabels,
     protocolCacheStatus,
     receivingProtocolCacheStatus,
+    resetDecodingSyncProgress,
     resetProtocolCacheUpdatesStatus,
     resetUndecodedTransactionsStatus,
     setProtocolCacheStatus,
