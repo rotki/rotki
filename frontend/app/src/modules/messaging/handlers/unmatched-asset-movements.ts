@@ -33,7 +33,7 @@ export function createUnmatchedAssetMovementsHandler(t: ReturnType<typeof useI18
         message: t('notification_messages.unmatched_asset_movements.message', { count: data.count }),
         priority: Priority.ACTION,
         severity: Severity.WARNING,
-        title: t('notification_messages.unmatched_asset_movements.title'),
+        title: t('notification_messages.unmatched_asset_movements.title', data.count),
       };
     },
   };

@@ -3184,7 +3184,7 @@
           "github": "GitHub",
           "google_form": "Google Form",
           "open_gmail": "Open Gmail",
-          "privacy_note": "GitHub and Google Form submissions are public. Use Email for private reports.",
+          "privacy_note": "GitHub issues are publicly visible. For private matters, use Google Form or Email instead.",
           "title": "Submit via"
         },
         "tips": {
