@@ -217,6 +217,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
         :displayed-events="displayedEventsMapped[row.groupIdentifier] || []"
         :event-group="row"
         :hide-actions="hideActions"
+        :hide-ignored-assets="excludeIgnored"
         :loading="sectionLoading || eventsLoading"
         :has-ignored-event="hasIgnoredEvent"
         :highlighted-identifiers="highlightedIdentifiers"

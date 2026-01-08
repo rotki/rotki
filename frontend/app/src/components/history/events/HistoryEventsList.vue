@@ -16,6 +16,7 @@ const props = withDefaults(defineProps<{
   allEvents: HistoryEventRow[];
   displayedEvents: HistoryEventRow[];
   hasIgnoredEvent?: boolean;
+  hideIgnoredAssets?: boolean;
   loading?: boolean;
   hideActions?: boolean;
   highlightedIdentifiers?: string[];
@@ -44,6 +45,7 @@ const {
   displayedEvents,
   eventGroup,
   hasIgnoredEvent,
+  hideIgnoredAssets,
   highlightedIdentifiers,
   loading,
   matchExactEvents,
@@ -189,6 +191,12 @@ const reportDescription = computed<string>(() => {
     t('transactions.events.unsupported.placeholder'),
   ].filter(Boolean).join('\n');
 });
+
+// Show warning when group has hidden ignored assets
+const showIgnoredAssetsWarning = computed<boolean>(() => {
+  const group = get(eventGroup);
+  return !!get(hideIgnoredAssets) && !!group.hasIgnoredAssets;
+});
 </script>
 
 <template>
@@ -220,6 +228,20 @@ const reportDescription = computed<string>(() => {
       </RuiButton>
     </div>
 
+    <div
+      v-if="showIgnoredAssetsWarning"
+      class="flex items-center gap-2 px-2 py-1.5 mt-3 md:mx-3 bg-rui-info-lighter/20 rounded"
+    >
+      <RuiIcon
+        name="lu-eye-off"
+        class="text-rui-info shrink-0"
+        size="16"
+      />
+      <span class="text-xs text-rui-text-secondary">
+        {{ t('transactions.events.ignored_assets_hidden') }}
+      </span>
+    </div>
+
     <HistoryEventsListTable
       :key="eventGroup.groupIdentifier"
       :event-group="eventGroup"
@@ -228,6 +250,7 @@ const reportDescription = computed<string>(() => {
       :total="totalBlocks"
       :loading="loading"
       :hide-actions="hideActions"
+      :hide-ignored-assets="hideIgnoredAssets"
       :highlighted-identifiers="highlightedIdentifiers"
       :selection="selection"
       @delete-event="emit('delete-event', $event)"

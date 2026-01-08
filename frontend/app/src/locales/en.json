@@ -5310,6 +5310,7 @@
         "success": "{count} transaction ignored successfully | {count} transactions ignored successfully",
         "title": "Ignore Transactions"
       },
+      "ignored_assets_hidden": "Some events in this group are hidden because they contain ignored assets.",
       "loading": "Loading events...",
       "no_data": "Events are hidden because they contain ignored assets",
       "note": {

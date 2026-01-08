@@ -89,33 +89,40 @@ function handleToggleAll(): void {
       v-if="!selection.isActive"
       #filter
     >
-      <TableStatusFilter>
-        <div class="py-1 max-w-[16rem]">
-          <RuiSwitch
-            v-model="customizedEventsOnly"
-            color="primary"
-            class="p-4"
-            hide-details
-            :label="t('transactions.filter.customized_only')"
-          />
-          <RuiDivider />
-          <RuiSwitch
-            v-model="showIgnoredAssets"
-            color="primary"
-            class="p-4"
-            hide-details
-            :label="t('transactions.filter.show_ignored_assets')"
-          />
-          <RuiDivider />
-          <RuiSwitch
-            v-model="matchExactEvents"
-            color="primary"
-            class="p-4"
-            :label="t('transactions.filter.match_exact_filter')"
-            :hint="t('transactions.filter.match_exact_filter_hint')"
-          />
-        </div>
-      </TableStatusFilter>
+      <RuiBadge
+        dot
+        :model-value="customizedEventsOnly || showIgnoredAssets || matchExactEvents"
+        offset-y="10"
+        offset-x="-8"
+      >
+        <TableStatusFilter>
+          <div class="py-1 max-w-[16rem]">
+            <RuiSwitch
+              v-model="customizedEventsOnly"
+              color="primary"
+              class="p-4"
+              hide-details
+              :label="t('transactions.filter.customized_only')"
+            />
+            <RuiDivider />
+            <RuiSwitch
+              v-model="showIgnoredAssets"
+              color="primary"
+              class="p-4"
+              hide-details
+              :label="t('transactions.filter.show_ignored_assets')"
+            />
+            <RuiDivider />
+            <RuiSwitch
+              v-model="matchExactEvents"
+              color="primary"
+              class="p-4"
+              :label="t('transactions.filter.match_exact_filter')"
+              :hint="t('transactions.filter.match_exact_filter_hint')"
+            />
+          </div>
+        </TableStatusFilter>
+      </RuiBadge>
       <TableFilter
         v-model:matches="filters"
         class="min-w-[12rem] md:min-w-[24rem]"

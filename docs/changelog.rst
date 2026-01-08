@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users will now see a warning when viewing event groups that have some events hidden because they contain ignored assets.
 * :feature:`-` Users will now see the protocol icon on assets that belong to a specific protocol (e.g., Aave, Compound).
 * :bug:`11245` Users will now be able to select February in the date picker when the current date's day is greater than 28.
 * :feature:`-` rotki is now available in Russian.

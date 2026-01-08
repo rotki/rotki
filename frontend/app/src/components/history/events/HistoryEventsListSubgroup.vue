@@ -21,7 +21,9 @@ const props = defineProps<{
   highlightedIdentifiers?: string[];
   selection?: UseHistoryEventsSelectionModeReturn;
   hideActions?: boolean;
+  hideIgnoredAssets?: boolean;
   isLast: boolean;
+  hasIgnoredAssets?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -40,7 +42,10 @@ const { getChain } = useSupportedChains();
 const { getAssetSymbol } = useAssetInfoRetrieval();
 const { getEventTypeData } = useHistoryEventMappings();
 
-const shouldExpand = computed<boolean>(() => get(expanded) || !!(props.selection && get(props.selection.isSelectionMode)));
+// Force expansion when the group has hidden ignored assets (to prevent broken swap display)
+const hasHiddenIgnoredAssets = computed<boolean>(() => !!props.hasIgnoredAssets && !!props.hideIgnoredAssets);
+
+const shouldExpand = computed<boolean>(() => get(expanded) || !!(props.selection && get(props.selection.isSelectionMode)) || get(hasHiddenIgnoredAssets));
 
 const isSwapGroup = computed<boolean>(() => props.events.length > 0 && isSwapTypeEvent(props.events[0].entryType));
 
@@ -206,7 +211,7 @@ watch(shouldExpand, () => {
         class="col-span-10 md:col-span-4 @5xl:!col-span-5 py-4 lg:py-4.5 relative"
       >
         <RuiButton
-          v-if="!selection?.isSelectionMode.value"
+          v-if="!selection?.isSelectionMode.value && !hasHiddenIgnoredAssets"
           size="sm"
           icon
           color="primary"
@@ -239,7 +244,7 @@ watch(shouldExpand, () => {
         }"
       >
         <RuiButton
-          v-if="shouldExpand && !selection?.isSelectionMode.value"
+          v-if="shouldExpand && !selection?.isSelectionMode.value && !hasHiddenIgnoredAssets"
           size="sm"
           icon
           color="primary"
@@ -265,7 +270,7 @@ watch(shouldExpand, () => {
             :item="event"
             :index="eventIndex"
             :data-subtype="event.eventSubtype"
-            :events="usedEvents"
+            :events="allEvents"
             :compact="!shouldExpand"
             :event-group="events[0]"
             :hide-actions="hideActions"
