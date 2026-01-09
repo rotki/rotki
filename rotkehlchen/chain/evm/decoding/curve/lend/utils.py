@@ -124,9 +124,10 @@ def query_curve_lending_vaults(database: 'DBHandler', chain_id: ChainID) -> None
     """Query list of Curve lending vaults and add the vault tokens to the global database."""
     update_cached_vaults(
         database=database,
-        cache_key=(CacheType.CURVE_LENDING_VAULTS,),
         display_name='Curve lending',
+        counterparty=CPT_CURVE,
         chain=chain_id,
+        cache_key=(CacheType.CURVE_LENDING_VAULTS,),
         query_vaults=_query_curve_lending_vaults_api,
         process_vault=_process_curve_lending_vault,
     )

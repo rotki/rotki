@@ -129,6 +129,7 @@ def _update_cache_vault_count(
 def update_cached_vaults(
         database: 'DBHandler',
         display_name: str,
+        counterparty: str,
         chain: ChainID,
         cache_key: Iterable[str | UniqueCacheType],
         query_vaults: Callable[..., list[dict[str, Any]] | None],
@@ -138,6 +139,7 @@ def update_cached_vaults(
     Args:
         database (DBHandler): Database to be used when processing vaults.
         display_name (str): Name to use when logging errors.
+        counterparty (str): Counterparty identifier to use when notifying the frontend.
         cache_key (Iterable[str | UniqueCacheType]): Cache keys used to store vault data.
         query_vaults (Callable): Function to fetch vault data from API or chain.
             Returns a list of vault data dicts or None on error.
@@ -184,7 +186,7 @@ def update_cached_vaults(
         last_notified_ts = maybe_notify_cache_query_status(
             msg_aggregator=database.msg_aggregator,
             last_notified_ts=last_notified_ts,
-            protocol=display_name,
+            protocol=counterparty,
             chain=chain,
             processed=idx + 1,
             total=len(vault_list),

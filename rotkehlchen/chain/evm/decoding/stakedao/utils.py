@@ -43,7 +43,7 @@ def query_stakedao_gauges(evm_inquirer: 'EvmNodeInquirer') -> None:
         return maybe_notify_cache_query_status(
             msg_aggregator=evm_inquirer.database.msg_aggregator,
             last_notified_ts=last_ts,
-            protocol='StakeDAO',
+            protocol=CPT_STAKEDAO,
             chain=evm_inquirer.chain_id,
             processed=processed,
             total=total,

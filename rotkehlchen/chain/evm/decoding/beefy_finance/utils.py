@@ -36,7 +36,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.network import request_get
 
-from .constants import BEEFY_CLM_VAULT_ABI, BEEFY_VAULT_ABI
+from .constants import BEEFY_CLM_VAULT_ABI, BEEFY_VAULT_ABI, CPT_BEEFY_FINANCE
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
@@ -143,7 +143,7 @@ def query_beefy_vaults(evm_inquirer: 'EvmNodeInquirer') -> None:
         last_notified_ts = maybe_notify_cache_query_status(
             msg_aggregator=evm_inquirer.database.msg_aggregator,
             last_notified_ts=last_notified_ts,
-            protocol='Beefy finance',
+            protocol=CPT_BEEFY_FINANCE,
             chain=evm_inquirer.chain_id,
             processed=idx + 1,
             total=total_entries,
