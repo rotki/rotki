@@ -2,7 +2,11 @@ import type { Nullable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { api } from '@/modules/api/rotki-api';
 import { useMessageHandling } from '@/modules/messaging';
+import { delay } from '@/utils/async-utilities';
 import { logger } from '@/utils/logging';
+
+/** Delay in milliseconds before attempting to reconnect to websocket */
+const RECONNECT_DELAY_MS = 2000;
 
 export const useWebsocketStore = defineStore('websocket', () => {
   const connection = ref<Nullable<WebSocket>>(null);
@@ -11,7 +15,8 @@ export const useWebsocketStore = defineStore('websocket', () => {
   const { handleMessage } = useMessageHandling();
 
   const reconnect = async (): Promise<void> => {
-    logger.debug('Close was not clean attempting reconnect');
+    logger.debug(`Close was not clean, waiting ${RECONNECT_DELAY_MS}ms before reconnect`);
+    await delay(RECONNECT_DELAY_MS);
     try {
       await connect();
       logger.debug('websocket reconnection complete');

@@ -165,7 +165,11 @@ export default defineConfig({
     port: 8080,
     hmr: hmrEnabled,
     watch: {
-      ignored: ['**/.e2e/**'],
+      ignored: [
+        '**/.e2e/**',
+        '**/*.spec.ts',
+        '**/coverage/**',
+      ],
     },
   },
   build: {
