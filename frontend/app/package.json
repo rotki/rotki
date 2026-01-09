@@ -25,7 +25,6 @@
     "postinstall": "electron-builder install-app-deps && node scripts/postinstall.js",
     "postuninstall": "electron-builder install-app-deps",
     "serve": "tsx scripts/serve.ts --web",
-    "test:contract": "tsx scripts/contract.ts",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",

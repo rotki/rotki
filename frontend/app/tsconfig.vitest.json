@@ -22,7 +22,6 @@
     "src/**/*.vue",
     "src/**/*.spec.ts",
     "tests/unit/**/*",
-    "tests/contract/**/*",
     "shared/**/*"
   ],
   "exclude": []
