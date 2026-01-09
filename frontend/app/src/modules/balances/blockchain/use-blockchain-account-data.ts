@@ -244,8 +244,8 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
         getAccounts(groupId: string) {
           return blockchainAccounts.filter(account => account.groupId === groupId);
         },
-        getLabel(address, chain) {
-          return get(addressNameSelector(address, chain));
+        getLabel(account, chain) {
+          return account.data.type === 'xpub' ? getAccountLabel(account) : get(addressNameSelector(getAccountAddress(account), chain));
         },
       },
     ));
@@ -260,8 +260,8 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     const blockchainAccounts = getAccountList(accountData, balanceData);
     const groupAccounts = blockchainAccounts.filter(account => account.groupId === params.groupId);
     resolve(sortAndFilterAccounts(groupAccounts, params, {
-      getLabel(address, chain) {
-        return get(addressNameSelector(address, chain));
+      getLabel(account, chain) {
+        return get(addressNameSelector(getAccountAddress(account), chain));
       },
     }));
   });

@@ -47,7 +47,7 @@ export function isAccountWithBalanceValidator(
 function filterAccount<T extends BlockchainAccountBalance>(
   account: T,
   filters: { tags?: string[]; label?: string; address?: string; chain?: string[]; category?: string },
-  resolvers: { getLabel: (address: string, chain?: string) => string | undefined },
+  resolvers: { getLabel: (account: BlockchainAccountBalance, chain?: string) => string | undefined },
 ): boolean {
   const chains = account.type === 'group' ? account.chains : [account.chain];
   const { getLabel } = resolvers;
@@ -64,7 +64,7 @@ function filterAccount<T extends BlockchainAccountBalance>(
     matches.push({ matches: includes(getAccountAddress(account), addressFilter), name: 'address' });
 
   if (labelFilter) {
-    const resolvedLabel = getLabel(getAccountAddress(account), getChain(account))
+    const resolvedLabel = getLabel(account, getChain(account))
       ?? account.label
       ?? getAccountAddress(account);
     if (resolvedLabel)
@@ -109,7 +109,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   params: BlockchainAccountRequestPayload,
   resolvers: {
     getAccounts?: (groupId: string) => BlockchainAccountWithBalance[];
-    getLabel: (address: string, chain?: string) => string | undefined;
+    getLabel: (account: BlockchainAccountBalance, chain?: string) => string | undefined;
   },
 ): Collection<T> {
   const {
@@ -135,7 +135,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     || isFilterEnabled(chain)
     || isFilterEnabled(category);
 
-  const nonNull = <T extends BlockchainAccountBalance>(x: T | null): x is T => x !== null;
+  const nonNull = <U extends BlockchainAccountBalance>(x: U | null): x is U => x !== null;
 
   const filtered = !hasFilter
     ? accounts.map(account => applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []))
@@ -191,7 +191,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
 
   const getSortElement = <T extends BlockchainAccountBalance>(key: keyof T, item: T): string | T[keyof T] => {
     if (key === 'label')
-      return getLabel(getAccountAddress(item), getChain(item)) ?? item[key] ?? getAccountAddress(item);
+      return getLabel(item, getChain(item)) ?? item[key] ?? getAccountAddress(item);
 
     return item[key];
   };

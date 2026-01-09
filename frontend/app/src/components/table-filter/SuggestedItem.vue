@@ -6,6 +6,7 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { truncateAddress } from '@/utils/truncate';
+import { isPrefixed } from '@/utils/xpub';
 
 const props = withDefaults(
   defineProps<{
@@ -92,14 +93,14 @@ const truncatedDisplayValue = computed<string>(() => {
   const labelAddressMatch = value.match(/^(.+?)\s*\(([^)]+)\)$/);
   if (labelAddressMatch) {
     const [, label, address] = labelAddressMatch;
-    if (isValidAddress(address) || isValidTxHashOrSignature(address))
+    if (isValidAddress(address) || isValidTxHashOrSignature(address) || isPrefixed(value))
       return `${label} (${truncateAddress(address, 6)})`;
 
     return value;
   }
 
   // Fallback to existing truncation logic for plain addresses
-  if (isValidAddress(value) || isValidTxHashOrSignature(value))
+  if (isValidAddress(value) || isValidTxHashOrSignature(value) || isPrefixed(value))
     return truncateAddress(value, 8);
 
   return value;
