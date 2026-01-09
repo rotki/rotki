@@ -15,16 +15,20 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def skip_if_running(f: Callable) -> Callable:
-    """Decorator that skips execution if the function is already running."""
+    """Decorator that skips execution if the function is already running.
+    For class/instance methods, use LockableQueryMixIn with protect_with_lock instead.
+    """
     lock = Semaphore()
 
     @wraps(f)
     def wrapper(*args: Any, **kwargs: Any) -> Any:
-        if lock.locked():
+        if not lock.acquire(blocking=False):
             log.debug(f'{f.__name__} already running, skipping')
             return None
-        with lock:
+        try:
             return f(*args, **kwargs)
+        finally:
+            lock.release()
 
     return wrapper
 
