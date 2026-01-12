@@ -88,6 +88,7 @@ export interface RepullingTransactionPayload extends TimeRange {
 
 export interface RepullingTransactionResponse {
   newTransactionsCount: number;
+  newTransactions: Record<string, string[]>;
 }
 
 export interface RepullingExchangeEventsPayload extends TimeRange {

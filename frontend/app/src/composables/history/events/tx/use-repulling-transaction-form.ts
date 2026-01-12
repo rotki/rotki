@@ -55,23 +55,28 @@ function useRepullingTransactionFormFn(): UseRepullingTransactionFormReturn {
 
   const chainOptions = computed<string[]>(() => {
     const decodableChains = get(decodableTxChains);
-    return Object.entries(get(accountsPerChain))
+    const chains = Object.entries(get(accountsPerChain))
       .filter(([chain, accounts]) => accounts.length > 0 && decodableChains.includes(chain))
       .map(([chain]) => chain);
+
+    if (chains.length > 0)
+      return ['all', ...chains];
+
+    return chains;
   });
 
   function createDefaultFormData(): RepullingTransactionPayload {
     return {
       address: '',
-      chain: get(chainOptions)[0],
+      chain: 'all',
       fromTimestamp: dayjs().subtract(1, 'year').unix(),
       toTimestamp: dayjs().unix(),
     };
   }
 
   function getUsableChains(chain: string | undefined): string[] {
-    if (!chain)
-      return get(chainOptions);
+    if (!chain || chain === 'all')
+      return get(chainOptions).filter(c => c !== 'all');
 
     return [getChain(chain)];
   }
@@ -80,14 +85,16 @@ function useRepullingTransactionFormFn(): UseRepullingTransactionFormReturn {
     const accountsPerChainVal = get(accountsPerChain);
     const chainOptionsVal = get(chainOptions);
 
-    if (data.chain) {
+    if (data.chain && data.chain !== 'all') {
       if (data.address)
         return 1;
 
       return accountsPerChainVal[data.chain]?.length ?? 0;
     }
 
-    return chainOptionsVal.reduce((total, chain) => total + (accountsPerChainVal[chain]?.length ?? 0), 0);
+    return chainOptionsVal
+      .filter(chain => chain !== 'all')
+      .reduce((total, chain) => total + (accountsPerChainVal[chain]?.length ?? 0), 0);
   }
 
   function shouldShowConfirmation(data: RepullingTransactionPayload): boolean {

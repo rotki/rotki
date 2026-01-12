@@ -140,6 +140,7 @@ const protocolCacheStats = computed(() => ({
       <RuiIcon
         :name="expanded ? 'lu-chevron-up' : 'lu-chevron-down'"
         size="16"
+        class="m-1"
       />
 
       <RuiButton

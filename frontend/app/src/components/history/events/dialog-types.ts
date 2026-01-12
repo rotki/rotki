@@ -1,3 +1,4 @@
+import type { RepullingTransactionResult } from '@/composables/history/events/tx';
 import type {
   GroupEventData,
   HistoryEventEditData,
@@ -43,7 +44,7 @@ export interface HistoryEventsToggles {
 export interface DialogEventHandlers {
   onHistoryEventSaved?: () => void | Promise<void>;
   onTransactionAdded?: (payload: LocationAndTxRef) => void | Promise<void>;
-  onRepullTransactions?: (payload?: { chain?: string; address?: string }) => void | Promise<void>;
+  onRepullTransactions?: (result: RepullingTransactionResult) => void | Promise<void>;
   onRepullExchangeEvents?: (exchanges: Exchange[]) => Promise<void>;
   onRedecodeTransaction?: (payload: LocationAndTxRef) => void | Promise<void>;
   onRedecodeAllEvents?: () => void | Promise<void>;

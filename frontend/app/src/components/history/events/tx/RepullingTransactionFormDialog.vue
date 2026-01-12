@@ -4,10 +4,11 @@ import type { RepullingExchangeEventsPayload, RepullingTransactionPayload } from
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RepullingTransactionForm from '@/components/history/events/tx/RepullingTransactionForm.vue';
-import { useHistoryTransactions } from '@/composables/history/events/tx';
+import { type RepullingTransactionResult, useHistoryTransactions } from '@/composables/history/events/tx';
 import { useRepullingTransactionForm } from '@/composables/history/events/tx/use-repulling-transaction-form';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useConfirmStore } from '@/store/confirm';
+import { useHistoryStore } from '@/store/history';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError } from '@/types/api/errors';
@@ -19,7 +20,7 @@ const currentAction = defineModel<HistoryEventAction>('currentAction', { require
 
 const props = withDefaults(defineProps<{
   loading?: boolean;
-  repullTransactions?: (payload?: { chain?: string; address?: string }) => void;
+  repullTransactions?: (result: RepullingTransactionResult) => void;
   repullExchangeEvents?: (exchanges: Exchange[]) => void;
 }>(), {
   loading: false,
@@ -39,6 +40,7 @@ const { show } = useConfirmStore();
 const { repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
 const { useIsTaskRunning } = useTaskStore();
 const { createDefaultFormData, shouldShowConfirmation } = useRepullingTransactionForm();
+const { resetUndecodedTransactionsStatus } = useHistoryStore();
 
 const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
 
@@ -91,21 +93,20 @@ async function handleExchangeSubmission(
 }
 
 async function handleBlockchainSubmission(data: RepullingTransactionPayload): Promise<void> {
+  const chain = data.chain === 'all' ? undefined : data.chain;
   const blockchainPayload: RepullingTransactionPayload = {
     address: data.address,
-    chain: data.chain,
+    chain,
     fromTimestamp: data.fromTimestamp,
     toTimestamp: data.toTimestamp,
   };
 
   set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
-  const newTransactionsDetected = await repullingTransactions(blockchainPayload);
-  if (newTransactionsDetected) {
-    props.repullTransactions?.({
-      address: data.address || undefined,
-      chain: data.chain || undefined,
-    });
-    logger.debug(`New transactions detected${data.chain ? ` for chain ${data.chain}` : ' for all chains'}`);
+  resetUndecodedTransactionsStatus();
+  const result = await repullingTransactions(blockchainPayload);
+  if (result) {
+    props.repullTransactions?.(result);
+    logger.debug(`New transactions detected${chain ? ` for chain ${chain}` : ' for all chains'}`);
   }
 }
 

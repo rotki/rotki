@@ -58,7 +58,7 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
       .find(
         item =>
           getAccountAddress(item) === model.address
-          && (!model.chain || model.chain === item.chain),
+          && (!model.chain || model.chain === 'all' || model.chain === item.chain),
       );
 
     if (accountFound) {
@@ -102,7 +102,7 @@ const rules = computed(() => {
   const timestampRules = get(showDateRangePicker) ? { required } : {};
   return {
     address: {},
-    chain: {},
+    chain: { required },
     exchange: { required },
     fromTimestamp: timestampRules,
     toTimestamp: timestampRules,
@@ -225,8 +225,6 @@ defineExpose({
           v-model="chain"
           class="max-w-[20rem]"
           :items="chainOptions"
-          :hint="t('transactions.repulling.chain_hint')"
-          clearable
           :error-messages="toMessages(v$.chain)"
         />
         <BlockchainAccountSelector

@@ -156,7 +156,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         const isEvmLike = isEvmLikeChains(blockchain);
         return processed < total && isEvmType === !isEvmLike;
       })
-      .map(({ chain }) => chain);
+      .map(({ chain }) => getChain(chain));
     await awaitParallelExecution(
       chains,
       item => item,

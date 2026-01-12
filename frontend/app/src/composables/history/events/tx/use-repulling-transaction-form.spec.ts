@@ -156,9 +156,10 @@ describe('use-repulling-transaction-form', () => {
     });
 
     describe('chainOptions', () => {
-      it('should return chains that have accounts and are decodable', () => {
+      it('should return chains that have accounts and are decodable with all option first', () => {
         const { chainOptions } = useRepullingTransactionForm();
 
+        expect(get(chainOptions)[0]).toBe('all');
         expect(get(chainOptions)).toContain('eth');
         expect(get(chainOptions)).toContain('optimism');
         expect(get(chainOptions)).toContain('arbitrum_one');
@@ -170,7 +171,8 @@ describe('use-repulling-transaction-form', () => {
 
         // eth2 has accounts but is not in mockDecodableTxChainsInfo
         expect(get(chainOptions)).not.toContain('eth2');
-        expect(get(chainOptions)).toHaveLength(3);
+        // 3 chains + 'all' = 4
+        expect(get(chainOptions)).toHaveLength(4);
       });
 
       it('should return empty array when no accounts', () => {
@@ -189,17 +191,18 @@ describe('use-repulling-transaction-form', () => {
 
         const { chainOptions } = useRepullingTransactionForm();
 
+        expect(get(chainOptions)[0]).toBe('all');
         expect(get(chainOptions)).toContain('eth');
         expect(get(chainOptions)).not.toContain('optimism');
       });
     });
 
     describe('createDefaultFormData', () => {
-      it('should return form data with first chain option', () => {
+      it('should return form data with all as default chain', () => {
         const { createDefaultFormData } = useRepullingTransactionForm();
         const formData = createDefaultFormData();
 
-        expect(formData.chain).toBe('eth');
+        expect(formData.chain).toBe('all');
         expect(formData.address).toBe('');
       });
 
@@ -220,11 +223,22 @@ describe('use-repulling-transaction-form', () => {
     });
 
     describe('getUsableChains', () => {
-      it('should return all chain options when chain is undefined', () => {
+      it('should return all chain options (excluding all) when chain is undefined', () => {
         const { chainOptions, getUsableChains } = useRepullingTransactionForm();
         const usableChains = getUsableChains(undefined);
+        const expectedChains = get(chainOptions).filter(c => c !== 'all');
 
-        expect(usableChains).toEqual(get(chainOptions));
+        expect(usableChains).toEqual(expectedChains);
+        expect(usableChains).not.toContain('all');
+      });
+
+      it('should return all chain options (excluding all) when chain is all', () => {
+        const { chainOptions, getUsableChains } = useRepullingTransactionForm();
+        const usableChains = getUsableChains('all');
+        const expectedChains = get(chainOptions).filter(c => c !== 'all');
+
+        expect(usableChains).toEqual(expectedChains);
+        expect(usableChains).not.toContain('all');
       });
 
       it('should return single chain array when chain is specified', () => {
@@ -268,6 +282,19 @@ describe('use-repulling-transaction-form', () => {
 
         // 4 total accounts * 50 days = 200 > 180
         const data: RepullingTransactionPayload = {
+          fromTimestamp: 1704067200,
+          toTimestamp: 1704067200 + (50 * SECONDS_PER_DAY),
+        };
+
+        expect(shouldShowConfirmation(data)).toBe(true);
+      });
+
+      it('should count all accounts across all chains when chain is all', () => {
+        const { shouldShowConfirmation } = useRepullingTransactionForm();
+
+        // 4 total accounts * 50 days = 200 > 180
+        const data: RepullingTransactionPayload = {
+          chain: 'all',
           fromTimestamp: 1704067200,
           toTimestamp: 1704067200 + (50 * SECONDS_PER_DAY),
         };

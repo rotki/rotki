@@ -1,12 +1,23 @@
-import type { Blockchain } from '@rotki/common';
 import type { Ref } from 'vue';
+import type { RepullingTransactionResult } from '@/composables/history/events/tx';
 import type { HistoryEventAction } from '@/composables/history/events/types';
 import type { Collection } from '@/types/collection';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
+import { type Blockchain, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { Routes } from '@/router/routes';
 import { useHistoryEventsActions } from './use-history-events-actions';
 
 const mockRefreshTransactions = vi.fn();
+const mockCheckMissingEventsAndRedecode = vi.fn();
+const mockNotify = vi.fn();
+const mockRouterPush = vi.fn();
+
+vi.mock('vue-router', () => ({
+  useRouter: vi.fn(() => ({
+    push: mockRouterPush,
+  })),
+}));
 
 vi.mock('@/composables/history/events/tx', () => ({
   useHistoryTransactions: vi.fn(() => ({
@@ -16,6 +27,7 @@ vi.mock('@/composables/history/events/tx', () => ({
 
 vi.mock('@/composables/history/events/tx/decoding', () => ({
   useHistoryTransactionDecoding: vi.fn(() => ({
+    checkMissingEventsAndRedecode: mockCheckMissingEventsAndRedecode,
     fetchUndecodedTransactionsStatus: vi.fn(),
     pullAndRecodeEthBlockEvents: vi.fn(),
     pullAndRedecodeTransactions: vi.fn(),
@@ -43,6 +55,12 @@ vi.mock('@/store/history', () => ({
   })),
 }));
 
+vi.mock('@/store/notifications', () => ({
+  useNotificationsStore: vi.fn(() => ({
+    notify: mockNotify,
+  })),
+}));
+
 vi.mock('@/modules/history/events/use-history-events-auto-fetch', () => ({
   useHistoryEventsAutoFetch: vi.fn(),
 }));
@@ -67,6 +85,7 @@ describe('useHistoryEventsActions', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
     mockRefreshTransactions.mockResolvedValue(undefined);
+    mockCheckMissingEventsAndRedecode.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -74,121 +93,63 @@ describe('useHistoryEventsActions', () => {
   });
 
   describe('dialogHandlers.onRepullTransactions', () => {
-    it('should call refreshTransactions with specific account when both chain and address provided', async () => {
+    function createResult(newTransactionsCount: number, newTransactions: Record<string, string[]> = {}): RepullingTransactionResult {
+      return { newTransactions, newTransactionsCount };
+    }
+
+    it('should call checkMissingEventsAndRedecode', async () => {
       const options = createOptions();
       const { dialogHandlers } = useHistoryEventsActions(options);
 
-      await dialogHandlers.onRepullTransactions?.({
-        address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
-        chain: 'eth',
-      });
+      await dialogHandlers.onRepullTransactions?.(createResult(0));
 
-      expect(mockRefreshTransactions).toHaveBeenCalledWith({
-        chains: [],
-        disableEvmEvents: false,
-        payload: {
-          accounts: [{ address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c', chain: 'eth' }],
-        },
-        userInitiated: true,
+      expect(mockCheckMissingEventsAndRedecode).toHaveBeenCalled();
+    });
+
+    it('should show notification with no transactions message when count is 0', async () => {
+      const options = createOptions();
+      const { dialogHandlers } = useHistoryEventsActions(options);
+
+      await dialogHandlers.onRepullTransactions?.(createResult(0));
+
+      expect(mockNotify).toHaveBeenCalledWith({
+        action: undefined,
+        display: true,
+        message: 'actions.repulling_transaction.success.no_tx_description',
+        severity: Severity.INFO,
+        title: 'actions.repulling_transaction.task.title',
       });
     });
 
-    it('should call refreshTransactions with specific chain when only chain provided', async () => {
+    it('should show notification with count when new transactions found', async () => {
       const options = createOptions();
       const { dialogHandlers } = useHistoryEventsActions(options);
 
-      await dialogHandlers.onRepullTransactions?.({
-        chain: 'optimism',
-      });
+      await dialogHandlers.onRepullTransactions?.(createResult(5, { eth: ['0xhash1', '0xhash2'] }));
 
-      expect(mockRefreshTransactions).toHaveBeenCalledWith({
-        chains: ['optimism'],
-        disableEvmEvents: false,
-        payload: undefined,
-        userInitiated: true,
-      });
+      expect(mockNotify).toHaveBeenCalledWith(expect.objectContaining({
+        display: true,
+        severity: Severity.INFO,
+        title: 'actions.repulling_transaction.task.title',
+      }));
+      expect(mockNotify.mock.calls[0][0].message).toContain('actions.repulling_transaction.success.description');
+      expect(mockNotify.mock.calls[0][0].action).toBeDefined();
     });
 
-    it('should call refreshTransactions with empty chains when chain is undefined', async () => {
+    it('should create action that navigates to history events with tx hashes', async () => {
       const options = createOptions();
       const { dialogHandlers } = useHistoryEventsActions(options);
 
-      await dialogHandlers.onRepullTransactions?.({
-        chain: undefined,
-      });
+      await dialogHandlers.onRepullTransactions?.(createResult(2, { eth: ['0xhash1'], optimism: ['0xhash2'] }));
 
-      expect(mockRefreshTransactions).toHaveBeenCalledWith({
-        chains: [],
-        disableEvmEvents: false,
-        payload: undefined,
-        userInitiated: true,
-      });
-    });
+      const notifyCall = mockNotify.mock.calls[0][0];
+      expect(notifyCall.action).toBeDefined();
 
-    it('should call refreshTransactions with empty chains when payload is undefined', async () => {
-      const options = createOptions();
-      const { dialogHandlers } = useHistoryEventsActions(options);
+      await notifyCall.action.action();
 
-      await dialogHandlers.onRepullTransactions?.();
-
-      expect(mockRefreshTransactions).toHaveBeenCalledWith({
-        chains: [],
-        disableEvmEvents: false,
-        payload: undefined,
-        userInitiated: true,
-      });
-    });
-
-    it('should call refreshTransactions with empty chains when both chain and address are undefined', async () => {
-      const options = createOptions();
-      const { dialogHandlers } = useHistoryEventsActions(options);
-
-      await dialogHandlers.onRepullTransactions?.({
-        address: undefined,
-        chain: undefined,
-      });
-
-      expect(mockRefreshTransactions).toHaveBeenCalledWith({
-        chains: [],
-        disableEvmEvents: false,
-        payload: undefined,
-        userInitiated: true,
-      });
-    });
-
-    it('should call refreshTransactions with chain only when address is empty string', async () => {
-      const options = createOptions();
-      const { dialogHandlers } = useHistoryEventsActions(options);
-
-      await dialogHandlers.onRepullTransactions?.({
-        address: '',
-        chain: 'eth',
-      });
-
-      // Empty string is falsy, so it takes the else branch
-      expect(mockRefreshTransactions).toHaveBeenCalledWith({
-        chains: ['eth'],
-        disableEvmEvents: false,
-        payload: undefined,
-        userInitiated: true,
-      });
-    });
-
-    it('should call refreshTransactions for all chains when address provided but chain is undefined', async () => {
-      const options = createOptions();
-      const { dialogHandlers } = useHistoryEventsActions(options);
-
-      await dialogHandlers.onRepullTransactions?.({
-        address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
-        chain: undefined,
-      });
-
-      // chain is undefined, so it takes the else branch
-      expect(mockRefreshTransactions).toHaveBeenCalledWith({
-        chains: [],
-        disableEvmEvents: false,
-        payload: undefined,
-        userInitiated: true,
+      expect(mockRouterPush).toHaveBeenCalledWith({
+        path: Routes.HISTORY_EVENTS.toString(),
+        query: { txRefs: ['0xhash1', '0xhash2'] },
       });
     });
   });

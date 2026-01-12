@@ -782,6 +782,7 @@
         "no_address_or_chain_transaction": "Failed to re-pull transactions"
       },
       "success": {
+        "action": "See pulled transactions",
         "description": "{length} transactions re-pulled",
         "no_tx_description": "No transactions re-pulled"
       },
@@ -5498,7 +5499,6 @@
       "add_account_link": "add a blockchain account",
       "add_exchange_link": "add an exchange",
       "address_hint": "Leave it empty to re-pull transactions from all addresses",
-      "chain_hint": "Leave it empty to re-pull transactions from all chains",
       "confirmation": {
         "message": "This action may take some time to complete. Are you sure you want to proceed?",
         "title": "Confirm re-pull"

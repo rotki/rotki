@@ -9,16 +9,17 @@ import type {
   PullLocationTransactionPayload,
 } from '@/types/history/events';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
-import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
+import { type Blockchain, HistoryEventEntryType, type NotificationAction, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { flatten } from 'es-toolkit';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { useHistoryTransactions } from '@/composables/history/events/tx';
+import { type RepullingTransactionResult, useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
+import { Routes } from '@/router/routes';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
+import { useNotificationsStore } from '@/store/notifications';
 import { toLocationAndTxRef } from '@/utils/history';
 import {
   isEthBlockEvent,
@@ -26,7 +27,6 @@ import {
   isEvmSwapEvent,
   isSolanaEvent,
 } from '@/utils/history/events';
-import { logger } from '@/utils/logging';
 
 interface UseHistoryEventsActionsOptions {
   onlyChains: Ref<Blockchain[]>;
@@ -71,7 +71,9 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   } = options;
 
   const { t } = useI18n({ useScope: 'global' });
+  const router = useRouter();
   const { show } = useConfirmStore();
+  const { notify } = useNotificationsStore();
   const {
     fetchAssociatedLocations,
     fetchLocationLabels,
@@ -83,6 +85,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     pullAndRecodeEthBlockEvents,
     pullAndRedecodeTransactions,
     redecodeTransactions,
+    checkMissingEventsAndRedecode,
   } = useHistoryTransactionDecoding();
   const historyEventMappings = useHistoryEventMappings();
 
@@ -130,7 +133,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   async function redecodePageTransactions(): Promise<void> {
-    const events = flatten(get(groups).data);
+    const events = get(groups).data.flat();
     const txEvents = events.filter(event => isEvmEvent(event) || isEvmSwapEvent(event) || isSolanaEvent(event));
     const ethBlockEvents = events.filter(isEthBlockEvent);
 
@@ -204,26 +207,32 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
         userInitiated: true,
       });
     },
-    onRepullTransactions: async (payload?: { chain?: string; address?: string }): Promise<void> => {
-      if (payload?.address && payload?.chain) {
-        await refreshTransactions({
-          chains: [],
-          disableEvmEvents: false,
-          payload: {
-            accounts: [{ address: payload.address, chain: payload.chain }],
+    onRepullTransactions: async (result: RepullingTransactionResult): Promise<void> => {
+      await checkMissingEventsAndRedecode();
+
+      const { newTransactions, newTransactionsCount } = result;
+
+      let action: NotificationAction | undefined;
+      if (newTransactionsCount > 0) {
+        const allTxHashes = Object.values(newTransactions).flat();
+        action = {
+          action: async (): Promise<void> => {
+            await router.push({
+              path: Routes.HISTORY_EVENTS.toString(),
+              query: { txRefs: allTxHashes },
+            });
           },
-          userInitiated: true,
-        });
+          label: t('actions.repulling_transaction.success.action'),
+        };
       }
-      else {
-        logger.debug(`Refreshing transactions${payload?.chain ? ` for chain ${payload.chain}` : ' for all chains'}`);
-        await refreshTransactions({
-          chains: payload?.chain ? [payload.chain] : [],
-          disableEvmEvents: false,
-          payload: undefined,
-          userInitiated: true,
-        });
-      }
+
+      notify({
+        action,
+        display: true,
+        message: newTransactionsCount ? t('actions.repulling_transaction.success.description', { length: newTransactionsCount }) : t('actions.repulling_transaction.success.no_tx_description'),
+        severity: Severity.INFO,
+        title: t('actions.repulling_transaction.task.title'),
+      });
     },
     onResetUndecodedTransactions: (): void => {
       resetUndecodedTransactionsStatus();
