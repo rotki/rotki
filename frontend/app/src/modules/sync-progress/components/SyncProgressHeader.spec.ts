@@ -57,7 +57,7 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
         plugins: [pinia],
         stubs: {
           RuiButton: {
-            template: '<button data-testid="button" @click="$emit(\'click\')"><slot /></button>',
+            template: '<button data-testid="button" @click="$emit(\'click\', $event)"><slot /></button>',
           },
           RuiIcon: {
             template: '<span data-testid="icon" :class="[$attrs.class]">{{ name }}</span>',
@@ -218,12 +218,11 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
       expect(icons.some(icon => icon.text() === 'lu-chevron-up')).toBe(true);
     });
 
-    it('should emit toggle event when toggle button is clicked', async () => {
+    it('should emit toggle event when header is clicked', async () => {
       set(mockPhase, SyncPhase.SYNCING);
       wrapper = createWrapper();
 
-      const buttons = wrapper.findAll('[data-testid="button"]');
-      await buttons[0].trigger('click');
+      await wrapper.trigger('click');
 
       expect(wrapper.emitted('toggle')).toBeTruthy();
     });
@@ -250,9 +249,8 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
       set(mockPhase, SyncPhase.COMPLETE);
       wrapper = createWrapper(false, true);
 
-      const buttons = wrapper.findAll('[data-testid="button"]');
-      const dismissButton = buttons.at(-1);
-      await dismissButton?.trigger('click');
+      const dismissButton = wrapper.find('[data-testid="button"]');
+      await dismissButton.trigger('click');
 
       expect(wrapper.emitted('dismiss')).toBeTruthy();
     });

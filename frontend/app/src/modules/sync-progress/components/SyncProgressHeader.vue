@@ -84,7 +84,10 @@ const protocolCacheStats = computed(() => ({
 </script>
 
 <template>
-  <div class="flex items-center gap-3 px-3 py-2">
+  <div
+    class="flex items-center gap-3 px-3 py-2 cursor-pointer"
+    @click="emit('toggle')"
+  >
     <!-- Status Icon -->
     <RuiIcon
       :name="statusIcon"
@@ -134,24 +137,17 @@ const protocolCacheStats = computed(() => ({
 
     <!-- Action Buttons -->
     <div class="flex items-center gap-1 shrink-0">
-      <RuiButton
-        variant="text"
-        icon
-        size="sm"
-        @click="emit('toggle')"
-      >
-        <RuiIcon
-          :name="expanded ? 'lu-chevron-up' : 'lu-chevron-down'"
-          size="16"
-        />
-      </RuiButton>
+      <RuiIcon
+        :name="expanded ? 'lu-chevron-up' : 'lu-chevron-down'"
+        size="16"
+      />
 
       <RuiButton
         v-if="canDismiss"
         variant="text"
         icon
         size="sm"
-        @click="emit('dismiss')"
+        @click.stop="emit('dismiss')"
       >
         <RuiIcon
           name="lu-x"

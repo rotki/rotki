@@ -73,7 +73,8 @@ watch(phase, (newPhase, oldPhase) => {
       <div
         v-if="visible"
         ref="panelRef"
-        class="relative z-10"
+        class="relative border"
+        :class="expanded ? 'border-default z-[200]' : 'border-white dark:border-[#1E1E1E]'"
       >
         <div class="border-b border-default bg-white dark:bg-[#1E1E1E]">
           <SyncProgressHeader

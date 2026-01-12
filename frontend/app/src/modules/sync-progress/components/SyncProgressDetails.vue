@@ -27,7 +27,7 @@ const protocolCacheComplete = computed<boolean>(() => get(protocolCacheCompleted
 </script>
 
 <template>
-  <div class="border-t border-default px-3 pb-4 space-y-5">
+  <div class="px-3 pb-4 space-y-5">
     <div
       v-if="hasChains"
       class="pt-4"
