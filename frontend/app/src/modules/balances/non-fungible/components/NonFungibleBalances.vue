@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { Module } from '@/types/modules';
 import NonFungibleBalancesFilter from '@/components/accounts/balances/NonFungibleBalancesFilter.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
+import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useNftAssetIgnoring } from '../composables/use-nft-asset-ignoring';
 import { useNftData } from '../composables/use-nft-data';
@@ -104,22 +104,15 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
           </div>
         </template>
         <template #item.priceInAsset="{ row }">
-          <AmountDisplay
+          <AssetAmountDisplay
             v-if="row.priceAsset !== currencySymbol"
-            :value="row.priceInAsset"
+            :amount="row.priceInAsset"
             :asset="row.priceAsset"
           />
           <span v-else>-</span>
         </template>
         <template #item.price="{ row }">
-          <AmountDisplay
-            :price-asset="row.priceAsset"
-            :amount="row.priceInAsset"
-            :value="row.price"
-            is-asset-price
-            show-currency="symbol"
-            force-currency
-          />
+          <FiatDisplay :value="row.price" />
         </template>
         <template #item.actions="{ row }">
           <RowActions
@@ -146,11 +139,7 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
             class="[&>td]:p-4"
             :right-patch-colspan="2"
           >
-            <AmountDisplay
-              :value="totalValue"
-              show-currency="symbol"
-              force-currency
-            />
+            <FiatDisplay :value="totalValue" />
           </RowAppend>
         </template>
       </RuiDataTable>

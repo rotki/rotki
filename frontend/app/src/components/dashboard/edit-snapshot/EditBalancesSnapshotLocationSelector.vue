@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 
 const model = defineModel<string>({ default: '', required: true });
 
@@ -65,9 +65,9 @@ const showOnlyExisting = ref<boolean>(true);
           <div class="text-overline text-rui-text-secondary -mb-2">
             {{ t('dashboard.snapshot.edit.dialog.balances.preview.from') }}
           </div>
-          <AmountDisplay
+          <FiatDisplay
             :value="previewLocationBalance.before"
-            fiat-currency="USD"
+            from="USD"
           />
         </div>
         <div class="px-8 text-rui-text-secondary">
@@ -77,9 +77,9 @@ const showOnlyExisting = ref<boolean>(true);
           <div class="text-overline text-rui-text-secondary -mb-2">
             {{ t('dashboard.snapshot.edit.dialog.balances.preview.to') }}
           </div>
-          <AmountDisplay
+          <FiatDisplay
             :value="previewLocationBalance.after"
-            fiat-currency="USD"
+            from="USD"
           />
         </div>
       </div>

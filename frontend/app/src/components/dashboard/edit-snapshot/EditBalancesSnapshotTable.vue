@@ -7,13 +7,13 @@ import EditBalancesSnapshotLocationSelector
   from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotLocationSelector.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import ConfirmSnapshotConflictReplacementDialog
   from '@/components/snapshots/ConfirmSnapshotConflictReplacementDialog.vue';
+import { AssetValueDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -412,16 +412,15 @@ function confirmDelete(): void {
       </template>
 
       <template #item.amount="{ row }">
-        <AmountDisplay :value="row.amount" />
+        <ValueDisplay :value="row.amount" />
       </template>
 
       <template #item.usdValue="{ row }">
-        <AmountDisplay
-          :value="row.usdValue"
+        <AssetValueDisplay
+          :asset="row.assetIdentifier"
           :amount="row.amount"
-          :price-asset="row.assetIdentifier"
-          :fiat-currency="CURRENCY_USD"
-          :timestamp="timestamp"
+          :value="row.usdValue"
+          :timestamp="{ ms: timestamp }"
         />
       </template>
 
@@ -442,12 +441,11 @@ function confirmDelete(): void {
           {{ t('common.total') }}:
         </div>
         <div class="font-bold text-h6 -mt-1">
-          <AmountDisplay
-            :value="total"
+          <AssetValueDisplay
+            :asset="CURRENCY_USD"
             :amount="total"
-            :price-asset="CURRENCY_USD"
-            :fiat-currency="CURRENCY_USD"
-            :timestamp="timestamp"
+            :value="total"
+            :timestamp="{ ms: timestamp }"
           />
         </div>
       </div>

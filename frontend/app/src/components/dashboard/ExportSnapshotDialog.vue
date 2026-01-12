@@ -2,13 +2,12 @@
 import type { BigNumber, Message } from '@rotki/common';
 import dayjs from 'dayjs';
 import EditSnapshotDialog from '@/components/dashboard/edit-snapshot/EditSnapshotDialog.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
 import { useInterop } from '@/composables/electron-interop';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
 import { downloadFileByBlob } from '@/utils/download';
 
@@ -27,7 +26,6 @@ const props = withDefaults(
 const { t } = useI18n({ useScope: 'global' });
 
 const { balance, timestamp } = toRefs(props);
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const editMode = ref<boolean>(false);
 const { setMessage } = useMessageStore();
@@ -167,10 +165,9 @@ function showDeleteConfirmation() {
         <div class="text-rui-text-secondary">
           {{ t('common.balance') }}:
         </div>
-        <AmountDisplay
+        <FiatDisplay
           v-if="balance"
           :value="balance"
-          :fiat-currency="currencySymbol"
           class="font-bold"
         />
       </div>

@@ -3,9 +3,9 @@ import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 import { type AssetBalance, Zero } from '@rotki/common';
 import { pick } from 'es-toolkit';
 import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { ValueDisplay } from '@/modules/amount-display/components';
 import { sortDesc } from '@/utils/bignumbers';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
@@ -58,7 +58,7 @@ async function navigateToAsset(asset: AssetBalance): Promise<void> {
     v-else-if="assets.length === 1"
     class="flex items-center gap-3 justify-end"
   >
-    <AmountDisplay :value="assets[0].amount" />
+    <ValueDisplay :value="assets[0].amount" />
     <AssetIcon
       flat
       :identifier="assets[0].asset"

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { Blockchain, type ProtocolBalance, toSentenceCase, transformCase } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
+import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 import { useProxyProtocol } from '@/modules/balances/protocols/use-proxy-protocol';
@@ -82,19 +82,22 @@ const name = computed<string>(() => {
           display-mode="link"
         />
       </div>
-      <AmountDisplay
-        :value="protocolBalance.amount"
+      <AssetAmountDisplay
+        v-if="asset"
         :asset="asset"
-        :asset-padding="0.1"
+        :amount="protocolBalance.amount"
         :loading="loading"
         data-cy="top-protocol-amount"
       />
-      <AmountDisplay
-        :asset-padding="0.1"
-        force-currency
+      <ValueDisplay
+        v-else
+        :value="protocolBalance.amount"
         :loading="loading"
+        data-cy="top-protocol-amount"
+      />
+      <FiatDisplay
         :value="protocolBalance.value"
-        show-currency="symbol"
+        :loading="loading"
         data-cy="top-protocol-value"
       />
     </div>

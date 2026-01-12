@@ -3,13 +3,13 @@ import type { AssetBalanceWithPrice } from '@rotki/common';
 import DashboardAssetWarnings from '@/components/dashboard/DashboardAssetWarnings.vue';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useDashboardAssetData } from '@/composables/dashboard/use-dashboard-asset-data';
 import { useDashboardAssetOperations } from '@/composables/dashboard/use-dashboard-asset-operations';
 import { useDashboardStores } from '@/composables/dashboard/use-dashboard-stores';
 import { useDashboardTableConfig } from '@/composables/dashboard/use-dashboard-table-config';
+import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
@@ -75,10 +75,8 @@ watch(search, () => setPage(1));
       />
     </template>
     <template #shortDetails>
-      <AmountDisplay
-        force-currency
+      <FiatDisplay
         :value="total"
-        show-currency="symbol"
         class="text-h6 font-bold"
       />
     </template>
@@ -121,27 +119,21 @@ watch(search, () => setPage(1));
         <template v-if="isAssetMissing(row)">
           -
         </template>
-        <AmountDisplay
+        <FiatDisplay
           v-else
-          :loading="!row.usdPrice || row.usdPrice.lt(0)"
-          is-asset-price
-          show-currency="symbol"
-          :price-asset="row.asset"
-          :price-of-asset="row.usdPrice"
-          fiat-currency="USD"
           :value="row.usdPrice"
+          :loading="!row.usdPrice || row.usdPrice.lt(0)"
+          from="USD"
         />
       </template>
       <template #item.amount="{ row }">
-        <AmountDisplay :value="row.amount" />
+        <ValueDisplay :value="row.amount" />
       </template>
       <template #item.value="{ row }">
-        <AmountDisplay
-          show-currency="symbol"
+        <AssetValueDisplay
+          :asset="row.asset"
           :amount="row.amount"
-          :price-asset="row.asset"
-          :price-of-asset="row.usdPrice"
-          force-currency
+          :price="row.usdPrice"
           :value="row.value"
         />
       </template>
@@ -175,11 +167,7 @@ watch(search, () => setPage(1));
           :right-patch-colspan="tableHeaders.length - 4"
           class-name="text-sm [&_td]:p-4"
         >
-          <AmountDisplay
-            force-currency
-            :value="total"
-            show-currency="symbol"
-          />
+          <FiatDisplay :value="total" />
         </RowAppend>
       </template>
       <template #expanded-item="{ row }">

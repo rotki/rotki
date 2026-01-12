@@ -6,15 +6,14 @@ import type { Exchange } from '@/types/exchanges';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import { startPromise } from '@shared/utils';
 import AppImage from '@/components/common/AppImage.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useInterop } from '@/composables/electron-interop';
 import { useLocations } from '@/composables/locations';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { useAppRoutes } from '@/router/routes';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 withDefaults(
@@ -59,7 +58,6 @@ const key = '/';
 
 const router = useRouter();
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { balances, balancesByLocation } = useAggregatedBalances();
 const { getLocationData } = useLocations();
@@ -538,10 +536,9 @@ onBeforeMount(async () => {
               <div class="text-caption">
                 {{ t('common.price') }}:
               </div>
-              <AmountDisplay
-                class="font-bold"
-                :fiat-currency="currencySymbol"
+              <FiatDisplay
                 :value="item.price"
+                class="font-bold"
               />
             </div>
             <div
@@ -551,10 +548,9 @@ onBeforeMount(async () => {
               <div class="text-caption">
                 {{ t('common.total') }}:
               </div>
-              <AmountDisplay
-                class="font-bold"
-                :fiat-currency="currencySymbol"
+              <FiatDisplay
                 :value="item.total"
+                class="font-bold"
               />
             </div>
           </div>

@@ -15,7 +15,7 @@
  * @example
  * <AssetValueDisplay asset="ETH" :value="preCalculatedValue" />
  */
-import type { FormatOptions, SymbolDisplay, Timestamp } from '@/modules/amount-display/types';
+import type { Timestamp } from '@/modules/amount-display/types';
 import { type BigNumber, Zero } from '@rotki/common';
 import { useAmountDisplaySettings, useAssetValue, useOracleInfo, useScrambledValue } from '@/modules/amount-display';
 import AmountDisplayBase from './AmountDisplayBase.vue';
@@ -33,14 +33,8 @@ interface Props {
   price?: BigNumber | null;
   /** Timestamp for historic price lookup */
   timestamp?: Timestamp;
-  /** Format options */
-  format?: FormatOptions;
-  /** Apply PnL coloring (green positive, red negative) */
-  pnl?: boolean;
   /** Loading state */
   loading?: boolean;
-  /** How to display the currency: 'symbol' (default, e.g. €), 'ticker' (e.g. EUR), or 'none' */
-  symbol?: SymbolDisplay;
 }
 
 defineOptions({
@@ -49,10 +43,7 @@ defineOptions({
 
 const props = withDefaults(defineProps<Props>(), {
   amount: undefined,
-  format: undefined,
-  pnl: false,
   price: null,
-  symbol: 'symbol',
   timestamp: undefined,
   value: undefined,
 });
@@ -72,18 +63,8 @@ const { assetOracle, isManualPrice } = useOracleInfo({
 });
 const { currency } = useAmountDisplaySettings();
 
-// Computed - symbol display
-const displaySymbol = computed<string>(() => {
-  switch (props.symbol) {
-    case 'none':
-      return '';
-    case 'ticker':
-      return get(currency).tickerSymbol;
-    case 'symbol':
-    default:
-      return get(currency).unicodeSymbol;
-  }
-});
+// Computed - currency symbol (always uses user's default)
+const displaySymbol = computed<string>(() => get(currency).unicodeSymbol);
 
 // Computed - value resolution
 const hasProvidedValue = computed<boolean>(() => {
@@ -114,8 +95,6 @@ const { scrambledValue } = useScrambledValue({ value: displayValue });
       :value="scrambledValue"
       :symbol="displaySymbol"
       :loading="loading || loadingProp"
-      :pnl="pnl"
-      :format="format"
       v-bind="$attrs"
     >
       <template #tooltip>

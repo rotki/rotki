@@ -3,12 +3,12 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { HistoricalPriceFormPayload } from '@/types/prices';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFormStateWatcher } from '@/composables/form';
+import { ValueDisplay } from '@/modules/amount-display/components';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
@@ -126,9 +126,9 @@ defineExpose({
       </template>
       <template #price>
         <strong>
-          <AmountDisplay
+          <ValueDisplay
             :value="numericPrice"
-            :tooltip="false"
+            no-tooltip
           />
         </strong>
       </template>

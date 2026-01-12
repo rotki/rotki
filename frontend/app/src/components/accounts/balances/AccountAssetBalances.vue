@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
+import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -112,25 +112,17 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
         />
       </template>
       <template #item.usdPrice="{ row }">
-        <AmountDisplay
-          :loading="!row.usdPrice || row.usdPrice.lt(0)"
-          is-asset-price
-          show-currency="symbol"
-          fiat-currency="USD"
-          :price-asset="row.asset"
-          :price-of-asset="row.usdPrice"
+        <FiatDisplay
           :value="row.usdPrice"
+          :loading="!row.usdPrice || row.usdPrice.lt(0)"
+          from="USD"
         />
       </template>
       <template #item.amount="{ row }">
-        <AmountDisplay :value="row.amount" />
+        <ValueDisplay :value="row.amount" />
       </template>
       <template #item.value="{ row }">
-        <AmountDisplay
-          force-currency
-          :value="row.value"
-          show-currency="symbol"
-        />
+        <FiatDisplay :value="row.value" />
       </template>
       <template #body.append>
         <RowAppend
@@ -138,11 +130,7 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
           :label="t('common.total')"
           class="[&>td]:p-4"
         >
-          <AmountDisplay
-            force-currency
-            :value="totalValue"
-            show-currency="symbol"
-          />
+          <FiatDisplay :value="totalValue" />
         </RowAppend>
       </template>
     </RuiDataTable>

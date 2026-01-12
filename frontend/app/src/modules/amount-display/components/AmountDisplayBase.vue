@@ -8,7 +8,8 @@
  * Use one of the higher-level components instead:
  * - FiatDisplay - for fiat values (with scrambling)
  * - AssetValueDisplay - for asset values (with scrambling)
- * - AssetPriceDisplay - for prices (no scrambling)
+ * - AssetAmountDisplay - for asset amounts (with scrambling)
+ * - ValueDisplay - for raw values (with scrambling)
  *
  * Styling: Use CSS classes via $attrs (e.g., class="text-2xl")
  */
@@ -32,6 +33,8 @@ interface Props {
   loading?: boolean;
   /** Disable truncation on symbol */
   noTruncate?: boolean;
+  /** Disable tooltip */
+  noTooltip?: boolean;
 }
 
 defineOptions({
@@ -41,6 +44,7 @@ defineOptions({
 const props = withDefaults(defineProps<Props>(), {
   format: undefined,
   loading: false,
+  noTooltip: false,
   noTruncate: false,
   pnl: false,
   symbol: '',
@@ -103,7 +107,7 @@ const copyValue = computed<string>(() => {
       />
 
       <CopyTooltip
-        :disabled="!shouldShowAmount"
+        :disabled="!shouldShowAmount || noTooltip"
         :tooltip="tooltip"
         data-cy="display-amount"
         :value="copyValue"

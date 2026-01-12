@@ -1,19 +1,18 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdentifier } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import { useSpamAsset } from '@/composables/assets/spam';
 import { useSupportedChains } from '@/composables/info/chains';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { type NewDetectedToken, NewDetectedTokenKind } from '@/modules/messaging/types';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
 
@@ -31,7 +30,6 @@ const sort = ref<DataTableSortData<NewDetectedToken>>({
   direction: 'asc',
 });
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { removeNewDetectedTokens, tokens } = useNewlyDetectedTokens();
 const { cache } = storeToRefs(useAssetCacheStore());
 const { getChain } = useSupportedChains();
@@ -249,10 +247,7 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
         </template>
 
         <template #item.price="{ row }">
-          <AmountDisplay
-            :value="row.price"
-            :asset="currencySymbol"
-          />
+          <FiatDisplay :value="row.price" />
         </template>
 
         <template #item.description="{ row }">

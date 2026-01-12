@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type BigNumber, toSentenceCase } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 
 interface Props {
   category: string;
@@ -40,11 +40,9 @@ const { t } = useI18n({ useScope: 'global' });
     </div>
   </td>
   <td class="text-end text-body-2 px-4 py-0">
-    <AmountDisplay
+    <FiatDisplay
       v-if="category"
-      force-currency
       :value="categoryTotal"
-      show-currency="symbol"
       :loading="isSectionLoading"
     />
   </td>

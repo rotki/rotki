@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 
 interface Props {
   includedValue: BigNumber | undefined;
@@ -17,21 +17,17 @@ defineProps<Props>();
       v-if="includedValue && !loading"
       class="text-xs"
     >
-      <AmountDisplay
+      <FiatDisplay
         v-if="includedValue"
-        force-currency
         :value="includedValue"
-        show-currency="symbol"
       />
       /
     </div>
-    <AmountDisplay
+    <FiatDisplay
+      :value="value"
+      :loading="loading"
       data-cy="usd-value"
       class="font-medium"
-      force-currency
-      :value="value"
-      show-currency="symbol"
-      :loading="loading"
     />
   </div>
 </template>

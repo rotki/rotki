@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { ValueDisplay } from '@/modules/amount-display/components';
 import { sortDesc } from '@/utils/bignumbers';
 import WrappedCard from '../WrappedCard.vue';
 
@@ -44,9 +44,9 @@ const chainItems = computed<Array<[string, BigNumber]>>(() => {
       />
     </template>
     <template #value="{ item }">
-      <AmountDisplay
+      <ValueDisplay
         :value="item[1]"
-        integer
+        :format="{ integer: true }"
       />
       {{ t('explorers.tx') }}
     </template>

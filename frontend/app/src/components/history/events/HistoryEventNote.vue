@@ -3,9 +3,9 @@ import type { ExplorerUrls } from '@/types/asset/asset-urls';
 import { type BigNumber, Blockchain } from '@rotki/common';
 import Flag from '@/components/common/Flag.vue';
 import MerchantIcon from '@/components/common/MerchantIcon.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { type NoteFormat, NoteType, useHistoryEventNote } from '@/composables/history/events/notes';
+import { AssetAmountDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
 
 defineOptions({
@@ -95,18 +95,16 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
         :location="note.chain ?? chain"
       />
       <template v-else-if="note.type === NoteType.AMOUNT">
-        <AmountDisplay
-          v-if="note.amount"
+        <AssetAmountDisplay
+          v-if="note.amount && note.asset"
           :key="`${index}-amount`"
-          no-truncate
           :asset="note.asset"
-          :value="note.amount"
-          :resolution-options="{
-            collectionParent: false,
-          }"
+          :amount="note.amount"
+          no-truncate
+          no-collection-parent
         />
-        <AmountDisplay
-          v-else
+        <ValueDisplay
+          v-else-if="note.amount"
           :key="`${index}-amount-1`"
           no-truncate
           :value="note.amount"

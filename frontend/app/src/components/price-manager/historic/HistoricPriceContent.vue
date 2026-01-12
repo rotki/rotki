@@ -2,7 +2,6 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { HistoricalPrice, HistoricalPriceFormPayload } from '@/types/prices';
 import dayjs from 'dayjs';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -10,6 +9,7 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HistoricPriceFormDialog from '@/components/price-manager/historic/HistoricPriceFormDialog.vue';
 import { useHistoricPrices } from '@/composables/price-manager/historic';
+import { ValueDisplay } from '@/modules/amount-display/components';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useRefPropVModel } from '@/utils/model';
@@ -191,7 +191,7 @@ onMounted(async () => {
           <DateDisplay :timestamp="row.timestamp" />
         </template>
         <template #item.price="{ row }">
-          <AmountDisplay :value="row.price" />
+          <ValueDisplay :value="row.price" />
         </template>
         <template #item.wasWorth>
           {{ t('price_table.was_worth') }}

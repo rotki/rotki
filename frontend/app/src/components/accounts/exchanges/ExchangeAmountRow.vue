@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useLocations } from '@/composables/locations';
+import { FiatDisplay } from '@/modules/amount-display/components';
 
 const props = defineProps<{
   balance: BigNumber;
@@ -33,11 +33,9 @@ const name = computed<string>(() => {
       <span class="text-sm">
         {{ name }}
       </span>
-      <AmountDisplay
-        class="text-rui-text-secondary text-xs"
-        show-currency="symbol"
-        force-currency
+      <FiatDisplay
         :value="balance"
+        class="text-rui-text-secondary text-xs"
       />
     </div>
   </div>

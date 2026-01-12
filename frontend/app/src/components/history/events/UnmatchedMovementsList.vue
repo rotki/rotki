@@ -3,11 +3,11 @@ import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import { ValueDisplay } from '@/modules/amount-display/components';
 
 interface UnmatchedMovementRow {
   groupIdentifier: string;
@@ -134,7 +134,7 @@ const emptyDescription = computed<string>(() =>
         </div>
       </template>
       <template #item.amount="{ row }">
-        <AmountDisplay :value="row.amount" />
+        <ValueDisplay :value="row.amount" />
       </template>
       <template #item.eventType="{ row }">
         <BadgeDisplay>

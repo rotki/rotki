@@ -5,11 +5,11 @@ import type { TaskMeta } from '@/types/task';
 import { type BigNumber, Blockchain, Zero } from '@rotki/common';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useDefiApi } from '@/composables/api/defi';
+import { AssetAmountDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useNotificationsStore } from '@/store/notifications';
@@ -264,10 +264,14 @@ watch([status, selectedAccounts], () => {
           />
         </template>
         <template #item.amount="{ row }">
-          <AmountDisplay
-            v-if="!hasDetails(row.details)"
-            :value="row.amount"
+          <AssetAmountDisplay
+            v-if="!hasDetails(row.details) && row.asset"
             :asset="row.asset"
+            :amount="row.amount"
+          />
+          <ValueDisplay
+            v-else-if="!hasDetails(row.details)"
+            :value="row.amount"
           />
           <span v-else>{{ row.details.length }}</span>
         </template>

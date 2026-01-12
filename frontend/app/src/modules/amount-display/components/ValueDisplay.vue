@@ -1,15 +1,15 @@
 <script setup lang="ts">
 /**
- * ValueDisplay - Display a raw numeric value with optional symbol.
+ * ValueDisplay - Display a raw numeric value.
  *
- * Shows a scrambled numeric value with optional symbol.
+ * Shows a scrambled numeric value without any symbol.
  * Uses amountRoundingMode for rounding (typically ROUND_UP).
  *
  * @example
  * <ValueDisplay :value="bigNumberify(1.5)" />
  *
  * @example
- * <ValueDisplay :value="amount" symbol="ETH" />
+ * <ValueDisplay :value="amount" :format="{ integer: true }" />
  */
 import type { BigNumber } from '@rotki/common';
 import type { FormatOptions } from '@/modules/amount-display/types';
@@ -19,16 +19,12 @@ import AmountDisplayBase from './AmountDisplayBase.vue';
 interface Props {
   /** The value to display */
   value: BigNumber;
-  /** Optional symbol to display (e.g., 'ETH', '$'), or empty string for no symbol */
-  symbol?: string;
   /** Format options */
   format?: FormatOptions;
-  /** Apply PnL coloring (green positive, red negative) */
-  pnl?: boolean;
   /** Loading state */
   loading?: boolean;
-  /** Disable truncation on symbol */
-  noTruncate?: boolean;
+  /** Disable tooltip */
+  noTooltip?: boolean;
 }
 
 defineOptions({
@@ -38,9 +34,7 @@ defineOptions({
 const props = withDefaults(defineProps<Props>(), {
   format: undefined,
   loading: false,
-  noTruncate: false,
-  pnl: false,
-  symbol: '',
+  noTooltip: false,
 });
 
 const { value } = toRefs(props);
@@ -58,11 +52,9 @@ const formatWithRounding = computed<FormatOptions>(() => ({
 <template>
   <AmountDisplayBase
     :value="scrambledValue"
-    :symbol="symbol"
     :loading="loading"
-    :pnl="pnl"
     :format="formatWithRounding"
-    :no-truncate="noTruncate"
+    :no-tooltip="noTooltip"
     v-bind="$attrs"
   />
 </template>

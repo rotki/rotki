@@ -4,13 +4,13 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
 import SimpleTable from '@/components/common/SimpleTable.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { ValueDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
 
 interface PotentialMatchRow {
@@ -127,7 +127,7 @@ watchDebounced(onlyExpectedAssets, () => {
               </BadgeDisplay>
             </td>
             <td class="text-end">
-              <AmountDisplay :value="movementEntry.amount" />
+              <ValueDisplay :value="movementEntry.amount" />
             </td>
             <td>
               <AssetDetails :asset="movementEntry.asset" />
@@ -211,7 +211,7 @@ watchDebounced(onlyExpectedAssets, () => {
         <div>{{ getHistoryEventSubTypeName(row.eventSubtype) }}</div>
       </template>
       <template #item.amount="{ row }">
-        <AmountDisplay :value="row.amount" />
+        <ValueDisplay :value="row.amount" />
       </template>
       <template #item.timestamp="{ row }">
         <DateDisplay

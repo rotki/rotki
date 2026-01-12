@@ -3,8 +3,8 @@ import type { BalanceSnapshot, LocationDataSnapshot } from '@/types/snapshots';
 import { assert, type BigNumber, bigNumberify, One, Zero } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
@@ -202,9 +202,9 @@ async function save(): Promise<void> {
             keypath="dashboard.snapshot.edit.dialog.total.warning"
           >
             <template #amount>
-              <AmountDisplay
+              <FiatDisplay
                 :value="nftsExcludedTotal"
-                fiat-currency="USD"
+                from="USD"
               />
             </template>
           </i18n-t>
@@ -224,12 +224,12 @@ async function save(): Promise<void> {
               <span>
                 {{ suggestionsLabel[key] }}
               </span>
-              <AmountDisplay
+              <FiatDisplay
                 v-if="number"
-                class="text-2xl"
                 :value="number"
-                fiat-currency="USD"
-                :timestamp="timestamp"
+                :timestamp="{ ms: timestamp }"
+                from="USD"
+                class="text-2xl"
               />
             </div>
           </RuiButton>

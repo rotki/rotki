@@ -2,13 +2,12 @@
 import { assert, TimeFramePeriod, TimeFramePersist, timeframes, type TimeFrameSetting, TimeUnit } from '@rotki/common';
 import dayjs from 'dayjs';
 import SnapshotActionButton from '@/components/dashboard/SnapshotActionButton.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import { usePremium } from '@/composables/premium';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStatisticsStore } from '@/store/statistics';
 import { useStatusStore } from '@/store/status';
@@ -16,7 +15,6 @@ import { Section } from '@/types/status';
 import { isPeriodAllowed } from '@/utils/settings';
 
 const { t } = useI18n({ useScope: 'global' });
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const sessionStore = useSessionSettingsStore();
 const { update } = sessionStore;
 const { timeframe } = storeToRefs(sessionStore);
@@ -117,11 +115,9 @@ onMounted(() => {
         class="font-medium"
         data-cy="overall-balances__net-worth"
       >
-        <AmountDisplay
-          xl
+        <FiatDisplay
+          class="text-[2rem] leading-[3rem] sm:text-[3rem] sm:leading-[4rem]"
           no-truncate
-          show-currency="symbol"
-          :fiat-currency="currencySymbol"
           :value="totalNetWorth"
         />
       </div>
@@ -146,10 +142,8 @@ onMounted(() => {
         />
         <span>
           (
-          <AmountDisplay
+          <FiatDisplay
             v-if="!isLoading"
-            show-currency="symbol"
-            :fiat-currency="currencySymbol"
             :value="balanceDelta"
           />
           )

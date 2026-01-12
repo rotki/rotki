@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import type { TradableAsset } from '@/modules/onchain/types';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
+import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 
 const props = defineProps<{
   data: TradableAsset;
@@ -66,14 +66,10 @@ const name = assetName(props.data.asset, { collectionParent: false });
 
         <template v-else>
           <div>
-            <AmountDisplay :value="amount" />
+            <ValueDisplay :value="amount" />
           </div>
           <div>
-            (<AmountDisplay
-              force-currency
-              show-currency="symbol"
-              :value="data.price.multipliedBy(amount)"
-            />)
+            (<FiatDisplay :value="data.price.multipliedBy(amount)" />)
           </div>
           <div>
             <RuiButton

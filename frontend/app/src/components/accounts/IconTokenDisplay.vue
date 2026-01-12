@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import type { AssetBalance } from '@rotki/common';
 import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
+import { AssetAmountDisplay } from '@/modules/amount-display/components';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = withDefaults(defineProps<{
@@ -62,11 +62,10 @@ async function navigateToAsset(asset: AssetBalance): Promise<void> {
           </div>
         </template>
 
-        <AmountDisplay
-          :value="asset.amount"
+        <AssetAmountDisplay
           :asset="asset.asset"
-          :asset-padding="0.1"
-          :resolution-options="resolutionOptions"
+          :amount="asset.amount"
+          :no-collection-parent="!resolutionOptions?.collectionParent"
           data-cy="top-asset-amount"
         />
       </RuiTooltip>

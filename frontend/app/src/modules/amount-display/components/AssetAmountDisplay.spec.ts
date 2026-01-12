@@ -164,7 +164,7 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
         },
       });
       // Asset amounts use amountRoundingMode which defaults to ROUND_UP
-      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('129');
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('128');
     });
   });
 

@@ -23,7 +23,7 @@
  * <FiatDisplay :value="reportValue" :currency="report.profitCurrency" />
  */
 import type { BigNumber } from '@rotki/common';
-import type { FormatOptions, SymbolDisplay, Timestamp } from '@/modules/amount-display/types';
+import type { SymbolDisplay, Timestamp } from '@/modules/amount-display/types';
 import { useAmountDisplaySettings, useFiatConversion, useScrambledValue } from '@/modules/amount-display';
 import { type Currency, useCurrencies } from '@/types/currencies';
 import AmountDisplayBase from './AmountDisplayBase.vue';
@@ -35,16 +35,12 @@ interface Props {
   from?: string;
   /** Timestamp for historic rate lookup */
   timestamp?: Timestamp;
-  /** Format options */
-  format?: FormatOptions;
   /** Apply PnL coloring (green positive, red negative) */
   pnl?: boolean;
   /** Loading state */
   loading?: boolean;
   /** How to display the currency: 'symbol' (default, e.g. €), 'ticker' (e.g. EUR), or 'none' */
   symbol?: SymbolDisplay;
-  /** Disable truncation on currency symbol */
-  noTruncate?: boolean;
   /** Override the displayed currency (e.g., 'USD', 'EUR'). If omitted, uses user's main currency. */
   currency?: string;
 }
@@ -55,9 +51,7 @@ defineOptions({
 
 const props = withDefaults(defineProps<Props>(), {
   currency: undefined,
-  format: undefined,
   from: '',
-  noTruncate: false,
   pnl: false,
   symbol: 'symbol',
   timestamp: undefined,
@@ -102,8 +96,6 @@ const displaySymbol = computed<string>(() => {
     :symbol="displaySymbol"
     :loading="loading || loadingProp"
     :pnl="pnl"
-    :format="format"
-    :no-truncate="noTruncate"
     v-bind="$attrs"
   >
     <template #tooltip>

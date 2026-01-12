@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { NegativeBalanceDetectedData } from '@/modules/messaging/types/status-types';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
+import { AssetAmountDisplay } from '@/modules/amount-display/components';
 import { Routes } from '@/router/routes';
 
 const modelValue = defineModel<boolean>({ required: true });
@@ -94,8 +94,8 @@ async function navigateToEvent(row: NegativeBalanceDetectedData): Promise<void> 
           />
         </template>
         <template #item.balanceBefore="{ row }">
-          <AmountDisplay
-            :value="row.balanceBefore"
+          <AssetAmountDisplay
+            :amount="row.balanceBefore"
             :asset="row.asset"
           />
         </template>

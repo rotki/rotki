@@ -2,7 +2,6 @@
 import { type AssetBalanceWithPrice, type BigNumber, toHumanReadable, toSentenceCase, Zero } from '@rotki/common';
 import ExchangeAmountRow from '@/components/accounts/exchanges/ExchangeAmountRow.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import BinanceSavingDetail from '@/components/exchanges/BinanceSavingDetail.vue';
 import InternalLink from '@/components/helper/InternalLink.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
@@ -10,6 +9,7 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import { useRefresh } from '@/composables/balances/refresh';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { Routes } from '@/router/routes';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -209,10 +209,8 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
                 :identifier="usedExchange"
                 size="36px"
               />
-              <AmountDisplay
+              <FiatDisplay
                 class="mt-1 text-xl"
-                show-currency="symbol"
-                force-currency
                 :value="exchangeBalance(usedExchange)"
               />
             </RuiTab>

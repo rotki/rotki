@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
+import { ValueDisplay } from '@/modules/amount-display/components';
 import { sortDesc } from '@/utils/bignumbers';
 import WrappedCard from '../WrappedCard.vue';
 
@@ -43,9 +43,9 @@ const sortedProtocols = computed<ProtocolActivity[]>(() => {
       <CounterpartyDisplay :counterparty="item.protocol" />
     </template>
     <template #value="{ item }">
-      <AmountDisplay
+      <ValueDisplay
         :value="item.transactions"
-        integer
+        :format="{ integer: true }"
       />
       {{ t('explorers.tx') }}
     </template>

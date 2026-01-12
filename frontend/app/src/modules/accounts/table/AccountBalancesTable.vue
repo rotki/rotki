@@ -5,10 +5,10 @@ import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import AccountChains from '@/components/accounts/AccountChains.vue';
 import AccountTopTokens from '@/components/accounts/AccountTopTokens.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import AccountTableGroupHeader from './components/AccountTableGroupHeader.vue';
 import AccountActions from './components/table/AccountActions.vue';
 import AccountBalanceValue from './components/table/AccountBalanceValue.vue';
@@ -158,11 +158,9 @@ defineExpose({
       >
         <template #custom-columns>
           <td class="text-end">
-            <AmountDisplay
-              :loading="isSectionLoading"
-              force-currency
-              show-currency="symbol"
+            <FiatDisplay
               :value="totalValue"
+              :loading="isSectionLoading"
             />
           </td>
         </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { getPublicServiceImagePath } from '@/utils/file';
 import { useWrappedFormatters } from '../../composables/use-wrapped-formatters';
 import WrappedCard from '../WrappedCard.vue';
@@ -50,10 +50,7 @@ const { calculateFontSize } = useWrappedFormatters();
       </div>
     </template>
     <template #value="{ item }">
-      <AmountDisplay
-        force-currency
-        :value="item.amount"
-      />
+      <FiatDisplay :value="item.amount" />
       {{ item.symbol }}
     </template>
   </WrappedCard>

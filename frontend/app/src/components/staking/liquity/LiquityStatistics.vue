@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { type AssetBalance, type Balance, type BigNumber, type LiquityPoolDetailEntry, type LiquityStatisticDetails, One } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
@@ -195,22 +195,20 @@ const totalPnl = computed<BigNumber | null>(() => {
           <div class="text-rui-text-secondary">
             {{ t('liquity_statistic.total_gains_stability_pool') }}
           </div>
-          <AmountDisplay
+          <FiatDisplay
             :value="statisticWithAdjustedPrice.totalValueGainsStabilityPool"
-            force-currency
-            class="font-bold"
             :loading="loading"
+            class="font-bold"
           />
         </div>
         <div class="flex justify-between">
           <div class="text-rui-text-secondary">
             {{ t('liquity_statistic.total_gains_staking') }}
           </div>
-          <AmountDisplay
+          <FiatDisplay
             :value="statisticWithAdjustedPrice.totalValueGainsStaking"
-            force-currency
-            class="font-bold"
             :loading="loading"
+            class="font-bold"
           />
         </div>
       </div>
@@ -293,11 +291,9 @@ const totalPnl = computed<BigNumber | null>(() => {
                     </RuiTooltip>
                     {{ t('liquity_statistic.estimated_pnl') }}
                   </div>
-                  <AmountDisplay
+                  <FiatDisplay
                     :value="totalPnl"
-                    force-currency
                     :loading="loading"
-                    show-currency="symbol"
                     pnl
                   />
                 </div>

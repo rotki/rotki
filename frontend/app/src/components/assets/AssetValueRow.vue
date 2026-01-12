@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useLatestPrices } from '@/composables/price-manager/latest';
+import { AssetAmountDisplay, AssetValueDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useConfirmStore } from '@/store/confirm';
@@ -107,15 +107,11 @@ const pricesLoading = computed(() => {
         </div>
       </template>
       <div class="px-4 pb-3 flex flex-wrap items-center gap-1 md:gap-3">
-        <AmountDisplay
+        <FiatDisplay
           class="flex-1 text-h5 font-medium text-rui-text-secondary"
-          :loading="pricesLoading"
-          show-currency="symbol"
-          :price-asset="identifier"
-          :price-of-asset="info.usdPrice"
-          fiat-currency="USD"
           :value="info.usdPrice"
-          is-asset-price
+          :loading="pricesLoading"
+          from="USD"
         />
 
         <RowActions
@@ -140,9 +136,9 @@ const pricesLoading = computed(() => {
       <template #header>
         {{ t('assets.amount') }}
       </template>
-      <AmountDisplay
+      <AssetAmountDisplay
         class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
-        :value="info.amount"
+        :amount="info.amount"
         :asset="identifier"
         no-truncate
       />
@@ -151,15 +147,13 @@ const pricesLoading = computed(() => {
       <template #header>
         {{ t('assets.value') }}
       </template>
-      <AmountDisplay
+      <AssetValueDisplay
         class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
-        :loading="refreshing"
-        show-currency="symbol"
+        :asset="identifier"
         :amount="info.amount"
-        :price-asset="identifier"
-        :price-of-asset="info.usdPrice"
-        force-currency
+        :price="info.usdPrice"
         :value="info.value"
+        :loading="refreshing"
       />
     </RuiCard>
   </div>

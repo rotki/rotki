@@ -24,7 +24,6 @@ import AssetLink from '@/components/assets/AssetLink.vue';
 import PaginatedCards from '@/components/common/PaginatedCards.vue';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
@@ -49,7 +48,6 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import {
   AssetAmountDisplay,
-  AssetPriceDisplay,
   AssetValueDisplay,
   FiatDisplay,
   ValueDisplay,
@@ -80,7 +78,7 @@ function ruiRegister(app: App): void {
 
 export function registerComponents(app: App): void {
   // Globally registered components are also provided to the premium components.
-  app.component('AmountDisplay', AmountDisplay);
+  // AmountDisplay was removed at 1.42;
   // version: 1
   app.component('HashLink', HashLink);
   app.component('AssetDetails', AssetDetails);
@@ -144,7 +142,6 @@ export function registerComponents(app: App): void {
   // Version 27 - Amount display components
   app.component('FiatDisplay', FiatDisplay);
   app.component('AssetValueDisplay', AssetValueDisplay);
-  app.component('AssetPriceDisplay', AssetPriceDisplay);
   app.component('AssetAmountDisplay', AssetAmountDisplay);
   app.component('ValueDisplay', ValueDisplay);
 

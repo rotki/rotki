@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { AssetBalance } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
-import { type AssetBalance, Zero } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -135,13 +135,10 @@ watchImmediate(currencySymbol, async () => {
           <AssetDetails :asset="row.asset" />
         </template>
         <template #item.amount="{ row }">
-          <AmountDisplay :value="row.amount" />
+          <ValueDisplay :value="row.amount" />
         </template>
         <template #item.value="{ row }">
-          <AmountDisplay
-            :value="row.value"
-            force-currency
-          />
+          <FiatDisplay :value="row.value" />
         </template>
         <template
           v-if="savingsReceived.length > 0"
@@ -152,11 +149,9 @@ watchImmediate(currencySymbol, async () => {
             :label="t('common.total')"
             class="[&>td]:p-4"
           >
-            <AmountDisplay
+            <FiatDisplay
               v-if="collection.totalValue"
-              force-currency
               :value="collection.totalValue"
-              show-currency="symbol"
             />
           </RowAppend>
         </template>
@@ -181,15 +176,13 @@ watchImmediate(currencySymbol, async () => {
           <AssetDetails :asset="row.asset" />
         </template>
         <template #item.amount="{ row }">
-          <AmountDisplay :value="row.amount" />
+          <ValueDisplay :value="row.amount" />
         </template>
         <template #item.value="{ row }">
-          <AmountDisplay
+          <AssetValueDisplay
             :key="row.timestamp"
+            :asset="row.asset"
             :amount="row.amount"
-            :value="Zero"
-            :price-asset="row.asset"
-            force-currency
             :timestamp="row.timestamp"
           />
         </template>

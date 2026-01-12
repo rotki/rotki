@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
+import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { useNftData } from '@/modules/balances/non-fungible/composables/use-nft-data';
 import { Routes } from '@/router/routes';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
@@ -64,11 +64,9 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
       <VisibleColumnsSelector :group="group" />
     </template>
     <template #shortDetails>
-      <AmountDisplay
+      <FiatDisplay
         v-if="totalValue"
         :value="totalValue"
-        show-currency="symbol"
-        force-currency
         class="text-h6 font-bold"
       />
     </template>
@@ -89,22 +87,15 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
         <NftDetails :identifier="row.id" />
       </template>
       <template #item.priceInAsset="{ row }">
-        <AmountDisplay
+        <AssetAmountDisplay
           v-if="row.priceAsset !== currencySymbol"
-          :value="row.priceInAsset"
+          :amount="row.priceInAsset"
           :asset="row.priceAsset"
         />
         <span v-else>-</span>
       </template>
       <template #item.price="{ row }">
-        <AmountDisplay
-          is-asset-price
-          :price-asset="row.priceAsset"
-          :amount="row.priceInAsset"
-          :value="row.price"
-          show-currency="symbol"
-          force-currency
-        />
+        <FiatDisplay :value="row.price" />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
         <PercentageDisplay
@@ -126,11 +117,9 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
           :is-mobile="false"
           class-name="[&>td]:p-4 text-sm"
         >
-          <AmountDisplay
+          <FiatDisplay
             v-if="totalValue"
             :value="totalValue"
-            show-currency="symbol"
-            force-currency
           />
         </RowAppend>
       </template>
