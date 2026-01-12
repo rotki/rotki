@@ -2,10 +2,10 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { MissingAcquisition } from '@/types/reports';
 import { assert, type BigNumber } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import { ValueDisplay } from '@/modules/amount-display/components';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { Routes } from '@/router/routes';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -196,7 +196,7 @@ async function showInHistoryEvent(identifier: number) {
         {{ row.acquisitions.length }}
       </template>
       <template #item.total_amount_missing="{ row }">
-        <AmountDisplay
+        <ValueDisplay
           class="text-rui-error"
           :value="row.totalAmountMissing"
         />
@@ -269,13 +269,13 @@ async function showInHistoryEvent(identifier: number) {
             <DateDisplay :timestamp="childItem.time" />
           </template>
           <template #item.foundAmount="{ row: childItem }">
-            <AmountDisplay
-              pnl
+            <ValueDisplay
               :value="childItem.foundAmount"
+              pnl
             />
           </template>
           <template #item.missingAmount="{ row: childItem }">
-            <AmountDisplay
+            <ValueDisplay
               class="text-rui-error"
               :value="childItem.missingAmount"
             />

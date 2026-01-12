@@ -3,7 +3,6 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { Collection } from '@/types/collection';
 import type { ProfitLossEvent, ProfitLossEvents, ProfitLossEventsPayload, Report } from '@/types/reports';
 import { some } from 'es-toolkit/compat';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
@@ -14,6 +13,7 @@ import ProfitLossEventType from '@/components/profitloss/ProfitLossEventType.vue
 import ReportProfitLossEventAction from '@/components/profitloss/ReportProfitLossEventAction.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useReportsStore } from '@/store/reports';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
@@ -242,43 +242,35 @@ onMounted(async () => {
         />
       </template>
       <template #item.free_amount="{ row }">
-        <AmountDisplay
-          force-currency
-          :value="row.freeAmount"
-          :asset="row.assetIdentifier ? row.assetIdentifier : ''"
+        <AssetAmountDisplay
+          :amount="row.freeAmount"
+          :asset="row.assetIdentifier || ''"
         />
       </template>
       <template #item.taxable_amount="{ row }">
-        <AmountDisplay
-          force-currency
-          :value="row.taxableAmount"
-          :asset="row.assetIdentifier ? row.assetIdentifier : ''"
+        <AssetAmountDisplay
+          :amount="row.taxableAmount"
+          :asset="row.assetIdentifier || ''"
         />
       </template>
       <template #item.price="{ row }">
-        <AmountDisplay
-          force-currency
+        <FiatDisplay
           :value="row.price"
-          show-currency="symbol"
-          :fiat-currency="report.settings.profitCurrency"
+          :currency="report.settings.profitCurrency ?? undefined"
         />
       </template>
       <template #item.pnl_taxable="{ row }">
-        <AmountDisplay
-          pnl
-          force-currency
+        <FiatDisplay
           :value="row.pnlTaxable"
-          show-currency="symbol"
-          :fiat-currency="report.settings.profitCurrency"
+          :currency="report.settings.profitCurrency ?? undefined"
+          pnl
         />
       </template>
       <template #item.pnl_free="{ row }">
-        <AmountDisplay
-          pnl
-          force-currency
+        <FiatDisplay
           :value="row.pnlFree"
-          show-currency="symbol"
-          :fiat-currency="report.settings.profitCurrency"
+          :currency="report.settings.profitCurrency ?? undefined"
+          pnl
         />
       </template>
       <template

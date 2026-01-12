@@ -4,6 +4,7 @@
  *
  * If `from` is provided, converts from source currency to user's currency.
  * If `from` is omitted, displays value as-is in user's currency.
+ * If `currency` is provided, displays using that currency's symbol instead of user's.
  * Values are scrambled for privacy when enabled in settings.
  *
  * @example
@@ -17,10 +18,14 @@
  *
  * @example
  * <FiatDisplay :value="amount" symbol="ticker" />
+ *
+ * @example
+ * <FiatDisplay :value="reportValue" :currency="report.profitCurrency" />
  */
 import type { BigNumber } from '@rotki/common';
 import type { FormatOptions, SymbolDisplay, Timestamp } from '@/modules/amount-display/types';
 import { useAmountDisplaySettings, useFiatConversion, useScrambledValue } from '@/modules/amount-display';
+import { type Currency, useCurrencies } from '@/types/currencies';
 import AmountDisplayBase from './AmountDisplayBase.vue';
 
 interface Props {
@@ -40,6 +45,8 @@ interface Props {
   symbol?: SymbolDisplay;
   /** Disable truncation on currency symbol */
   noTruncate?: boolean;
+  /** Override the displayed currency (e.g., 'USD', 'EUR'). If omitted, uses user's main currency. */
+  currency?: string;
 }
 
 defineOptions({
@@ -47,6 +54,7 @@ defineOptions({
 });
 
 const props = withDefaults(defineProps<Props>(), {
+  currency: undefined,
   format: undefined,
   from: '',
   noTruncate: false,
@@ -63,19 +71,27 @@ const { converted, loading } = useFiatConversion({
   timestamp,
   value,
 });
-const { currency } = useAmountDisplaySettings();
+const { currency: userCurrency } = useAmountDisplaySettings();
+const { findCurrency } = useCurrencies();
 const { scrambledValue } = useScrambledValue({ value: converted });
 
 // Computed
+const resolvedCurrency = computed<Currency>(() => {
+  if (props.currency)
+    return findCurrency(props.currency);
+  return get(userCurrency);
+});
+
 const displaySymbol = computed<string>(() => {
+  const currency = get(resolvedCurrency);
   switch (props.symbol) {
     case 'none':
       return '';
     case 'ticker':
-      return get(currency).tickerSymbol;
+      return currency.tickerSymbol;
     case 'symbol':
     default:
-      return get(currency).unicodeSymbol;
+      return currency.unicodeSymbol;
   }
 });
 </script>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalance, BigNumber } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { sum } from '@/utils/balances';
 
 const props = defineProps<{
@@ -47,10 +47,9 @@ const { t } = useI18n({ useScope: 'global' });
         </div>
         <div class="flex items-center">
           <ValueAccuracyHint />
-          <AmountDisplay
-            show-currency="ticker"
-            force-currency
+          <FiatDisplay
             :value="totalHistorical"
+            symbol="ticker"
             class="text-rui-text-secondary"
           />
         </div>
@@ -71,11 +70,10 @@ const { t } = useI18n({ useScope: 'global' });
             <span>{{ t('kraken_staking_overview.hint.current') }}</span>
           </RuiTooltip>
         </div>
-        <AmountDisplay
-          show-currency="ticker"
-          force-currency
-          :loading="loading"
+        <FiatDisplay
           :value="totalCurrent"
+          :loading="loading"
+          symbol="ticker"
           class="text-rui-text-secondary"
         />
       </div>
