@@ -74,8 +74,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       '@rotki/ui-library':
-        specifier: 2.11.0
-        version: 2.11.0(@vueuse/core@13.8.0(vue@3.5.22(typescript@5.9.3)))(@vueuse/shared@13.8.0(vue@3.5.22(typescript@5.9.3)))(dayjs@1.11.14)(vue@3.5.22(typescript@5.9.3))
+        specifier: 2.11.1
+        version: 2.11.1(@vueuse/core@13.8.0(vue@3.5.22(typescript@5.9.3)))(@vueuse/shared@13.8.0(vue@3.5.22(typescript@5.9.3)))(dayjs@1.11.14)(vue@3.5.22(typescript@5.9.3))
       '@types/jsdom':
         specifier: 21.1.7
         version: 21.1.7
@@ -1503,8 +1503,8 @@ packages:
     peerDependencies:
       eslint: ^9.20.0
 
-  '@rotki/ui-library@2.11.0':
-    resolution: {integrity: sha512-jabTlWPB7QEmlveU+rxGvhEx8MhXi41KbbotRzMDzlCmPIMJqFDMjndWj2Nx9YzOWNaJWz6POdt2MSkjO5d1Iw==}
+  '@rotki/ui-library@2.11.1':
+    resolution: {integrity: sha512-gnbmog5/dsXjvM8hYJ2w8OJl6oc8x2e7YxhoVo2nX5mFItGTxVGgPc51c2F3vSRd7/CFzrApLNQOVunsPLVvkw==}
     engines: {node: '>=24 <25', pnpm: '>=10 <11'}
     peerDependencies:
       '@vueuse/core': '>13.0.0'
@@ -6173,6 +6173,7 @@ packages:
   vue-i18n@11.1.12:
     resolution: {integrity: sha512-BnstPj3KLHLrsqbVU2UOrPmr0+Mv11bsUZG0PyCOzsawCivk8W00GMXHeVUWIDOgNaScCuZah47CZFE+Wnl8mw==}
     engines: {node: '>= 16'}
+    deprecated: This version is NOT deprecated. Previous deprecation was a mistake.
     peerDependencies:
       vue: ^3.0.0
 
@@ -6221,6 +6222,7 @@ packages:
   whatwg-encoding@3.1.1:
     resolution: {integrity: sha512-6qN4hJdMwfYBtE3YBTTHhoeuUrDBPZmbQaxWAqSALV/MeEnR5z1xd8UKud2RAkFoPkmB+hli1TZSnyi84xz1vQ==}
     engines: {node: '>=18'}
+    deprecated: Use @exodus/bytes instead for a more spec-conformant and faster implementation
 
   whatwg-mimetype@3.0.0:
     resolution: {integrity: sha512-nt+N2dzIutVRxARx1nghPKGv1xHikU7HKdfafKkLNLindmPU/ch3U31NOCGGA/dmPcmb1VlofO0vnKAcsm0o/Q==}
@@ -7878,7 +7880,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@rotki/ui-library@2.11.0(@vueuse/core@13.8.0(vue@3.5.22(typescript@5.9.3)))(@vueuse/shared@13.8.0(vue@3.5.22(typescript@5.9.3)))(dayjs@1.11.14)(vue@3.5.22(typescript@5.9.3))':
+  '@rotki/ui-library@2.11.1(@vueuse/core@13.8.0(vue@3.5.22(typescript@5.9.3)))(@vueuse/shared@13.8.0(vue@3.5.22(typescript@5.9.3)))(dayjs@1.11.14)(vue@3.5.22(typescript@5.9.3))':
     dependencies:
       '@popperjs/core': 2.11.8
       '@vueuse/core': 13.8.0(vue@3.5.22(typescript@5.9.3))
