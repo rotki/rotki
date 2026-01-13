@@ -3,7 +3,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { AssetBalanceWithPrice } from '../balances';
 import type { AssetInfoWithId } from '../data';
 import type { BigNumber } from '../numbers';
-import type { DebugSettings, FrontendSettingsPayload, TimeUnit } from '../settings/frontend';
+import type { FrontendSettingsPayload, TimeUnit } from '../settings/frontend';
 import type { Theme, Themes } from '../settings/themes';
 import type {
   CommonQueryStatusData,
@@ -19,13 +19,6 @@ import type {
 } from '../statistics';
 
 export type ExclusionSource = 'exchange' | 'manual' | 'blockchain';
-
-export interface PremiumInterface {
-  readonly useHostComponents: boolean;
-  readonly version: number;
-  readonly api: () => PremiumApi;
-  readonly debug?: DebugSettings;
-}
 
 export interface StatisticsApi {
   assetValueDistribution: () => Promise<TimedAssetBalances>;
