@@ -645,7 +645,12 @@ class TransactionsService:
             addresses_to_query: tuple[ChecksumEvmAddress | SolanaAddress, ...] = (address,)
         else:
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                addresses_to_query = self.rotkehlchen.data.db.get_blockchain_accounts(cursor).get(blockchain)  # noqa: E501
+                addresses_to_query = tuple(
+                    self.rotkehlchen.data.db.get_single_blockchain_addresses(
+                        cursor=cursor,
+                        blockchain=blockchain,
+                    ),
+                )
 
         if len(addresses_to_query) == 0:
             return set()

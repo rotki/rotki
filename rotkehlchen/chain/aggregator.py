@@ -1168,10 +1168,19 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         existed_accounts: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []
         no_activity_accounts: list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]] = []  # noqa: E501
         evm_contract_addresses: set[ChecksumEvmAddress] = set()
+        accounts_by_chain = {
+            chain: set(self.accounts.get(chain))
+            for chain in SUPPORTED_EVM_EVMLIKE_CHAINS
+        }
 
         for account in accounts:
-            existed_accounts += [(chain, account) for chain in SUPPORTED_EVM_EVMLIKE_CHAINS if account in self.accounts.get(chain)]  # noqa: E501
-            chains_to_check = [x for x in SUPPORTED_EVM_EVMLIKE_CHAINS if account not in self.accounts.get(x)]  # noqa: E501
+            chains_to_check = []
+            for chain in SUPPORTED_EVM_EVMLIKE_CHAINS:
+                if account in accounts_by_chain[chain]:
+                    existed_accounts.append((chain, account))
+                else:
+                    chains_to_check.append(chain)
+
             chains_with_valid_addresses = []
             for chain in chains_to_check:
                 chains_with_valid_addresses.append(chain)
