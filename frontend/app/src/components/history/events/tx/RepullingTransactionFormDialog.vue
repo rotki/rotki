@@ -1,14 +1,13 @@
 <script lang="ts" setup>
 import type { Exchange } from '@/types/exchanges';
-import type { ChainAddress, RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/types/history/events';
-import dayjs from 'dayjs';
+import type { RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/types/history/events';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RepullingTransactionForm from '@/components/history/events/tx/RepullingTransactionForm.vue';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
+import { useRepullingTransactionForm } from '@/composables/history/events/tx/use-repulling-transaction-form';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
-import { useSupportedChains } from '@/composables/info/chains';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError } from '@/types/api/errors';
@@ -20,7 +19,7 @@ const currentAction = defineModel<HistoryEventAction>('currentAction', { require
 
 const props = withDefaults(defineProps<{
   loading?: boolean;
-  repullTransactions?: (account: ChainAddress) => void;
+  repullTransactions?: (payload?: { chain?: string; address?: string }) => void;
   repullExchangeEvents?: (exchanges: Exchange[]) => void;
 }>(), {
   loading: false,
@@ -36,35 +35,17 @@ const form = useTemplateRef<InstanceType<typeof RepullingTransactionForm>>('form
 const stateUpdated = ref<boolean>(false);
 
 const { setMessage } = useMessageStore();
+const { show } = useConfirmStore();
 const { repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
-const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { useIsTaskRunning } = useTaskStore();
-const { decodableTxChainsInfo } = useSupportedChains();
-const decodableTxChains = useArrayMap(decodableTxChainsInfo, x => x.id);
+const { createDefaultFormData, shouldShowConfirmation } = useRepullingTransactionForm();
 
 const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
 
-const chainOptions = computed<string[]>(() => {
-  const accountChains = Object.entries(get(accountsPerChain))
-    .filter(([_, accounts]) => accounts.length > 0)
-    .map(([chain]) => chain);
-
-  return get(decodableTxChains).filter(chain => accountChains.includes(chain));
-});
-
-function defaultForm(): RepullingTransactionPayload {
-  return {
-    address: '',
-    chain: get(chainOptions)[0],
-    fromTimestamp: dayjs().subtract(1, 'year').unix(),
-    toTimestamp: dayjs().unix(),
-  };
-}
-
-const formData = ref<RepullingTransactionPayload>(defaultForm());
+const formData = ref(createDefaultFormData());
 
 function resetForm(): void {
-  set(formData, defaultForm());
+  set(formData, createDefaultFormData());
   set(accountType, 'blockchain');
 }
 
@@ -110,12 +91,9 @@ async function handleExchangeSubmission(
 }
 
 async function handleBlockchainSubmission(data: RepullingTransactionPayload): Promise<void> {
-  const refreshPayload: ChainAddress = {
-    address: data.address!,
-    chain: data.chain,
-  };
   const blockchainPayload: RepullingTransactionPayload = {
-    ...refreshPayload,
+    address: data.address,
+    chain: data.chain,
     fromTimestamp: data.fromTimestamp,
     toTimestamp: data.toTimestamp,
   };
@@ -123,18 +101,16 @@ async function handleBlockchainSubmission(data: RepullingTransactionPayload): Pr
   set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
   const newTransactionsDetected = await repullingTransactions(blockchainPayload);
   if (newTransactionsDetected) {
-    const chains = [data.chain];
-    props.repullTransactions?.(refreshPayload);
-    logger.debug(`New transactions detected ${chains.join(', ')}`);
+    props.repullTransactions?.({
+      address: data.address || undefined,
+      chain: data.chain || undefined,
+    });
+    logger.debug(`New transactions detected${data.chain ? ` for chain ${data.chain}` : ' for all chains'}`);
   }
 }
 
-async function submit(): Promise<void> {
+async function performSubmission(): Promise<void> {
   const formRef = get(form);
-  const valid = await formRef?.validate();
-  if (!valid)
-    return;
-
   const data = get(formData);
   const type = get(accountType);
 
@@ -156,6 +132,27 @@ async function submit(): Promise<void> {
     set(submitting, false);
   }
 }
+
+async function submit(): Promise<void> {
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return;
+
+  const data = get(formData);
+  const type = get(accountType);
+
+  if (type === 'blockchain' && shouldShowConfirmation(data)) {
+    show({
+      message: t('transactions.repulling.confirmation.message'),
+      title: t('transactions.repulling.confirmation.title'),
+      type: 'info',
+    }, performSubmission);
+  }
+  else {
+    await performSubmission();
+  }
+}
 </script>
 
 <template>
@@ -164,6 +161,7 @@ async function submit(): Promise<void> {
     :title="t('transactions.repulling.action')"
     :primary-action="t('transactions.repulling.action')"
     :action-disabled="loading || taskRunning"
+    :action-tooltip="loading ? t('transactions.repulling.loading_tooltip') : ''"
     :loading="submitting || taskRunning"
     :prompt-on-close="stateUpdated"
     @confirm="submit()"
@@ -175,7 +173,6 @@ async function submit(): Promise<void> {
       v-model:account-type="accountType"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
-      :chain-options="chainOptions"
     />
   </BigDialog>
 </template>

@@ -4,7 +4,6 @@ import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { Collection } from '@/types/collection';
 import type { Exchange } from '@/types/exchanges';
 import type {
-  ChainAddress,
   LocationAndTxRef,
   PullEthBlockEventPayload,
   PullLocationTransactionPayload,
@@ -18,15 +17,16 @@ import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
-import { isEvmSwapEvent } from '@/modules/history/management/forms/form-guards';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
 import { toLocationAndTxRef } from '@/utils/history';
 import {
   isEthBlockEvent,
   isEvmEvent,
+  isEvmSwapEvent,
   isSolanaEvent,
 } from '@/utils/history/events';
+import { logger } from '@/utils/logging';
 
 interface UseHistoryEventsActionsOptions {
   onlyChains: Ref<Blockchain[]>;
@@ -204,20 +204,21 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
         userInitiated: true,
       });
     },
-    onRepullTransactions: async (account: ChainAddress): Promise<void> => {
-      if (account.address) {
+    onRepullTransactions: async (payload?: { chain?: string; address?: string }): Promise<void> => {
+      if (payload?.address && payload?.chain) {
         await refreshTransactions({
           chains: [],
           disableEvmEvents: false,
           payload: {
-            accounts: [account],
+            accounts: [{ address: payload.address, chain: payload.chain }],
           },
           userInitiated: true,
         });
       }
       else {
+        logger.debug(`Refreshing transactions${payload?.chain ? ` for chain ${payload.chain}` : ' for all chains'}`);
         await refreshTransactions({
-          chains: [account.chain],
+          chains: payload?.chain ? [payload.chain] : [],
           disableEvmEvents: false,
           payload: undefined,
           userInitiated: true,

@@ -6,6 +6,7 @@ import {
   type EthBlockEvent,
   type EthWithdrawalEvent,
   type EvmHistoryEvent,
+  type EvmSwapEvent,
   type HistoryEvent,
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
@@ -24,6 +25,14 @@ export function isEvmEventType(type: HistoryEventEntryType): boolean {
 
 export function isEvmEvent(event: HistoryEvent): event is EvmHistoryEvent {
   return isEvmEventType(event.entryType);
+}
+
+export function isEvmSwapEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.EVM_SWAP_EVENT;
+}
+
+export function isEvmSwapEvent(event: HistoryEvent): event is EvmSwapEvent {
+  return isEvmSwapEventType(event.entryType);
 }
 
 export function isWithdrawalEventType(type: HistoryEventEntryType): boolean {

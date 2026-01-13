@@ -82,7 +82,7 @@ interface TimeRange {
 }
 
 export interface RepullingTransactionPayload extends TimeRange {
-  readonly chain: string;
+  readonly chain?: string;
   readonly address?: string;
 }
 

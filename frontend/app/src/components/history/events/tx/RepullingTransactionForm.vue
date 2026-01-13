@@ -10,7 +10,10 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
-import { useSupportedChains } from '@/composables/info/chains';
+import {
+  shouldShowDateRangePicker,
+  useRepullingTransactionForm,
+} from '@/composables/history/events/tx/use-repulling-transaction-form';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { Routes } from '@/router/routes';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -26,10 +29,6 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const accountType = defineModel<AccountType>('accountType', { default: 'blockchain', required: false });
 
-const props = defineProps<{
-  chainOptions: string[];
-}>();
-
 const { t } = useI18n({ useScope: 'global' });
 
 const chain = useRefPropVModel(modelValue, 'chain');
@@ -39,30 +38,16 @@ const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
 
 const exchange = ref<Exchange | undefined>(undefined);
 
-const EXCHANGES_WITHOUT_DATE_RANGE_FILTER: string[] = [
-  'coinbase',
-  'binance',
-  'binanceus',
-  'bitmex',
-];
-
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { getChain } = useSupportedChains();
+const { chainOptions, getUsableChains } = useRepullingTransactionForm();
 
 const accountTypeOptions = computed<{ text: string; value: AccountType }[]>(() => [
   { text: t('common.blockchain'), value: 'blockchain' },
   { text: t('common.exchange'), value: 'exchange' },
 ]);
 
-const usableChains = computed<string[]>(() => {
-  const chainVal = get(chain);
-  if (!chainVal) {
-    return props.chainOptions;
-  }
-
-  return [getChain(chainVal)];
-});
+const usableChains = computed<string[]>(() => getUsableChains(get(chain)));
 
 const accounts = computed<BlockchainAccount<AddressData>[]>({
   get: () => {
@@ -97,26 +82,17 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
 
 const isBlockchainType = computed<boolean>(() => get(accountType) === 'blockchain');
 
-const hasNoBlockchainAccounts = computed<boolean>(() => get(isBlockchainType) && props.chainOptions.length === 0);
+const hasNoBlockchainAccounts = computed<boolean>(() => get(isBlockchainType) && get(chainOptions).length === 0);
 
 const hasNoExchanges = computed<boolean>(() => !get(isBlockchainType) && get(connectedExchanges).length === 0);
 
-const showDateRangePicker = computed<boolean>(() => {
-  if (get(isBlockchainType))
-    return true;
-
-  const selectedExchange = get(exchange);
-  if (!selectedExchange)
-    return true;
-
-  return !EXCHANGES_WITHOUT_DATE_RANGE_FILTER.includes(selectedExchange.location);
-});
+const showDateRangePicker = computed<boolean>(() => shouldShowDateRangePicker(get(isBlockchainType), get(exchange)));
 
 const rules = computed(() => {
   if (get(isBlockchainType)) {
     return {
       address: { externalServerValidation: () => true },
-      chain: { required },
+      chain: {},
       exchange: {},
       fromTimestamp: { required },
       toTimestamp: { required },
@@ -249,6 +225,8 @@ defineExpose({
           v-model="chain"
           class="max-w-[20rem]"
           :items="chainOptions"
+          :hint="t('transactions.repulling.chain_hint')"
+          clearable
           :error-messages="toMessages(v$.chain)"
         />
         <BlockchainAccountSelector

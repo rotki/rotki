@@ -5490,6 +5490,12 @@
       "add_account_link": "add a blockchain account",
       "add_exchange_link": "add an exchange",
       "address_hint": "Leave it empty to re-pull transactions from all addresses",
+      "chain_hint": "Leave it empty to re-pull transactions from all chains",
+      "confirmation": {
+        "message": "This action may take some time to complete. Are you sure you want to proceed?",
+        "title": "Confirm re-pull"
+      },
+      "loading_tooltip": "Re-pulling is currently disabled because the transactions are still being fetched. Please wait a moment.",
       "no_accounts": "You don't have any blockchain accounts registered. Please {link} first.",
       "no_exchanges": "You don't have any exchanges connected. Please {link} first."
     },

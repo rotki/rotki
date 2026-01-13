@@ -13,6 +13,7 @@ const props = withDefaults(defineProps<{
   loading?: boolean;
   actionHidden?: boolean;
   actionDisabled?: boolean;
+  actionTooltip?: string;
   primaryAction?: string;
   secondaryAction?: string;
   maxWidth?: string;
@@ -25,6 +26,7 @@ const props = withDefaults(defineProps<{
 }>(), {
   actionDisabled: false,
   actionHidden: false,
+  actionTooltip: '',
   autoHeight: false,
   autoScrollToError: false,
   divide: false,
@@ -166,28 +168,37 @@ function promptClose() {
             >
               {{ secondary }}
             </RuiButton>
-            <RuiButton
+            <RuiTooltip
               v-if="!actionHidden"
-              data-cy="confirm"
-              :color="hasErrors ? 'error' : 'primary'"
-              :disabled="actionDisabled || loading"
-              :loading="loading"
-              type="submit"
+              :disabled="!actionTooltip"
+              :popper="{ placement: 'top' }"
+              tooltip-class="max-w-80"
             >
-              {{ primary }}
-              <template
-                v-if="hasErrors"
-                #append
-              >
-                <RuiChip
-                  size="sm"
-                  class="!py-0 !px-0.5 !bg-rui-error-darker"
-                  color="error"
+              <template #activator>
+                <RuiButton
+                  data-cy="confirm"
+                  :color="hasErrors ? 'error' : 'primary'"
+                  :disabled="actionDisabled || loading"
+                  :loading="loading"
+                  type="submit"
                 >
-                  {{ errorCount }}
-                </RuiChip>
+                  {{ primary }}
+                  <template
+                    v-if="hasErrors"
+                    #append
+                  >
+                    <RuiChip
+                      size="sm"
+                      class="!py-0 !px-0.5 !bg-rui-error-darker"
+                      color="error"
+                    >
+                      {{ errorCount }}
+                    </RuiChip>
+                  </template>
+                </RuiButton>
               </template>
-            </RuiButton>
+              {{ actionTooltip }}
+            </RuiTooltip>
           </div>
         </slot>
       </RuiCard>

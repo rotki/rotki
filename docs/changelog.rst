@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`11332` Users can now re-pull transactions for all chains at once by leaving the chain field empty.
 * :feature:`-` Users will now see a redesigned history sync progress panel that provides detailed real-time progress for chain queries, decoding, exchange syncing, and protocol cache updates.
 * :bug:`11259` rotki will now properly query Aerodrome fee addresses to ensure claim fees are decoded correctly.
 * :feature:`-` Users will now see a warning when viewing event groups that have some events hidden because they contain ignored assets.
