@@ -5399,12 +5399,14 @@
       "unlink_error": "Failed to unlink asset movement",
       "unlink_no_asset_movement": "No asset movement event found in this group",
       "unsupported": {
-        "description": "This transaction only contains a gas fee with no other events. This typically means the protocol is not yet supported.",
+        "description_gas_fee_only": "This transaction only contains a gas fee with no other events. This typically means the protocol is not yet supported.",
+        "description_incomplete_swap": "This swap appears to be incomplete. It has one side of the trade but is missing the other.",
         "location": "- Location: {location}",
         "more_detail": "More detail:",
         "placeholder": "[Add more context here]",
         "report_action": "Report Transaction",
-        "report_description_intro": "I found a transaction that appears to be unsupported (only gas fee event).",
+        "report_description_intro_gas_fee_only": "I found a transaction that appears to be unsupported (only gas fee event).",
+        "report_description_intro_incomplete_swap": "I found a swap transaction that appears to be incomplete (missing one side of the trade).",
         "title": "Unsupported Transaction",
         "tx_hash": "- Tx Hash: {hash}"
       },
