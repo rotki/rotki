@@ -7,6 +7,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RepullingTransactionForm from '@/components/history/events/tx/RepullingTransactionForm.vue';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
@@ -38,17 +39,23 @@ const { setMessage } = useMessageStore();
 const { repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { useIsTaskRunning } = useTaskStore();
+const { decodableTxChainsInfo } = useSupportedChains();
+const decodableTxChains = useArrayMap(decodableTxChainsInfo, x => x.id);
 
 const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
 
-function defaultForm(): RepullingTransactionPayload {
+const chainOptions = computed<string[]>(() => {
   const accountChains = Object.entries(get(accountsPerChain))
     .filter(([_, accounts]) => accounts.length > 0)
     .map(([chain]) => chain);
 
+  return get(decodableTxChains).filter(chain => accountChains.includes(chain));
+});
+
+function defaultForm(): RepullingTransactionPayload {
   return {
     address: '',
-    chain: accountChains[0],
+    chain: get(chainOptions)[0],
     fromTimestamp: dayjs().subtract(1, 'year').unix(),
     toTimestamp: dayjs().unix(),
   };
@@ -168,6 +175,7 @@ async function submit(): Promise<void> {
       v-model:account-type="accountType"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
+      :chain-options="chainOptions"
     />
   </BigDialog>
 </template>

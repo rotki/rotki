@@ -26,6 +26,10 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const accountType = defineModel<AccountType>('accountType', { default: 'blockchain', required: false });
 
+const props = defineProps<{
+  chainOptions: string[];
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const chain = useRefPropVModel(modelValue, 'chain');
@@ -44,26 +48,17 @@ const EXCHANGES_WITHOUT_DATE_RANGE_FILTER: string[] = [
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { decodableTxChainsInfo, getChain } = useSupportedChains();
-const decodableTxChains = useArrayMap(decodableTxChainsInfo, x => x.id);
+const { getChain } = useSupportedChains();
 
 const accountTypeOptions = computed<{ text: string; value: AccountType }[]>(() => [
   { text: t('transactions.repulling.account_type.blockchain'), value: 'blockchain' },
   { text: t('transactions.repulling.account_type.exchange'), value: 'exchange' },
 ]);
 
-const chainOptions = computed(() => {
-  const accountChains = Object.entries(get(accountsPerChain))
-    .filter(([_, accounts]) => accounts.length > 0)
-    .map(([chain]) => chain);
-
-  return get(decodableTxChains).filter(chain => accountChains.includes(chain));
-});
-
 const usableChains = computed<string[]>(() => {
   const chainVal = get(chain);
   if (!chainVal) {
-    return get(chainOptions);
+    return props.chainOptions;
   }
 
   return [getChain(chainVal)];
@@ -102,7 +97,7 @@ const accounts = computed<BlockchainAccount<AddressData>[]>({
 
 const isBlockchainType = computed<boolean>(() => get(accountType) === 'blockchain');
 
-const hasNoBlockchainAccounts = computed<boolean>(() => get(isBlockchainType) && get(chainOptions).length === 0);
+const hasNoBlockchainAccounts = computed<boolean>(() => get(isBlockchainType) && props.chainOptions.length === 0);
 
 const hasNoExchanges = computed<boolean>(() => !get(isBlockchainType) && get(connectedExchanges).length === 0);
 

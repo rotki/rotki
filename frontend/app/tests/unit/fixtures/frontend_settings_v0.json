@@ -52,7 +52,7 @@
   "persistTableSorting": false,
   "profitLossReportPeriod": {
     "quarter": "ALL",
-    "year": "2025"
+    "year": "2026"
   },
   "queryPeriod": 5,
   "refreshPeriod": -1,
