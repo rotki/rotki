@@ -1199,11 +1199,13 @@
     "actions": {
       "auto_match": "Trigger automatic matching",
       "auto_match_tooltip": "Automatically match asset movements with corresponding on-chain events based on amount, asset, and timestamp.",
-      "ignore_all": "Ignore All",
-      "ignore_all_confirm": "Are you sure you want to ignore all {count} unmatched asset movements? This action marks them as having no corresponding on-chain event.",
       "ignore_fiat": "Ignore All Fiat",
       "ignore_fiat_confirm": "Are you sure you want to ignore all {count} fiat currency movements? Fiat movements typically don't have corresponding on-chain events.",
-      "ignore_fiat_tooltip": "Ignore all fiat currency movements (e.g., USD, EUR). These typically don't have corresponding on-chain events."
+      "ignore_fiat_tooltip": "Ignore all fiat currency movements (e.g., USD, EUR). These typically don't have corresponding on-chain events.",
+      "ignore_selected": "Ignore Selected",
+      "ignore_selected_confirm": "Are you sure you want to ignore {count} selected asset movement(s)? This action marks them as having no corresponding on-chain event.",
+      "unignore_selected": "Unignore Selected",
+      "unignore_selected_confirm": "Are you sure you want to restore {count} selected asset movement(s) to the unmatched list?"
     },
     "auto_match": {
       "error": "Failed to run automatic matching: {error}",

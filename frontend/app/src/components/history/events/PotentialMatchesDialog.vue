@@ -14,6 +14,7 @@ export interface PotentialMatchRow {
   asset: string;
   amount: BigNumber;
   location: string;
+  locationLabel?: string;
   timestamp: number;
   txRef?: string;
   eventType: string;
@@ -66,6 +67,7 @@ function transformToMatchRow(row: HistoryEventCollectionRow, isCloseMatch: boole
     identifier: entry.identifier,
     isCloseMatch,
     location: entry.location,
+    locationLabel: entry.locationLabel ?? undefined,
     timestamp: entry.timestamp,
     txRef: 'txRef' in entry ? entry.txRef : undefined,
   };

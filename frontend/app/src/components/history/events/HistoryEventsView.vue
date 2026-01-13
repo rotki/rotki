@@ -91,6 +91,7 @@ const {
 } = useHistoryEventsStatus();
 
 const {
+  autoMatchLoading,
   refreshUnmatchedAssetMovements,
   unmatchedCount,
 } = useUnmatchedAssetMovements();
@@ -232,7 +233,7 @@ function openMatchAssetMovementsDialog(): void {
 
       <div>
         <RuiAlert
-          v-if="!debouncedProcessing && mainPage && unmatchedCount > 0"
+          v-if="!debouncedProcessing && !autoMatchLoading && mainPage && unmatchedCount > 0"
           type="warning"
           class="mb-4 [&>div]:items-center"
         >

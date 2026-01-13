@@ -18,6 +18,7 @@ interface PotentialMatchRow {
   asset: string;
   amount: BigNumber;
   location: string;
+  locationLabel?: string;
   timestamp: number;
   txRef?: string;
   eventType: string;
@@ -51,8 +52,9 @@ const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => [
     label: t('common.datetime'),
   },
   {
+    class: 'whitespace-pre-line',
     key: 'txRef',
-    label: t('common.tx_hash'),
+    label: `${t('common.tx_hash')} -\n${t('common.account')}`,
   },
   {
     class: 'whitespace-pre-line',
@@ -153,7 +155,10 @@ watchDebounced(onlyExpectedAssets, () => {
           variant="outlined"
           dense
         />
-        <RuiTooltip :popper="{ placement: 'top' }">
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          tooltip-class="max-w-80"
+        >
           <template #activator>
             <RuiCheckbox
               v-model="onlyExpectedAssets"
@@ -187,7 +192,7 @@ watchDebounced(onlyExpectedAssets, () => {
       :loading="loading"
     >
       <template #item.txRef="{ row }">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5">
           <LocationIcon
             horizontal
             icon
@@ -198,6 +203,14 @@ watchDebounced(onlyExpectedAssets, () => {
             v-if="row.txRef"
             :text="row.txRef"
             type="transaction"
+            :location="row.location"
+          />
+          <span v-else>-</span>
+        </div>
+        <div class="pt-1">
+          <HashLink
+            v-if="row.locationLabel"
+            :text="row.locationLabel"
             :location="row.location"
           />
           <span v-else>-</span>

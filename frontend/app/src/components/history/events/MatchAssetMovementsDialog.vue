@@ -35,6 +35,8 @@ const activeTab = ref<number>(0);
 const selectedMovement = ref<UnmatchedAssetMovement>();
 const showPotentialMatchesDialog = ref<boolean>(false);
 const ignoreLoading = ref<boolean>(false);
+const selectedUnmatched = ref<string[]>([]);
+const selectedIgnored = ref<string[]>([]);
 
 function getEventEntry(movement: UnmatchedAssetMovement): HistoryEventEntryWithMeta {
   const events = Array.isArray(movement.events) ? movement.events : [movement.events];
@@ -83,27 +85,69 @@ function closeDialog(): void {
   set(modelValue, false);
 }
 
-async function ignoreAllMovements(movements: UnmatchedAssetMovement[]): Promise<void> {
+async function ignoreSelectedMovements(groupIdentifiers: string[]): Promise<void> {
   set(ignoreLoading, true);
   try {
+    const movements = get(unmatchedMovements).filter(m => groupIdentifiers.includes(m.groupIdentifier));
     for (const movement of movements) {
       const eventEntry = getEventEntry(movement);
       await matchAssetMovements(eventEntry.entry.identifier);
     }
     await refreshUnmatchedAssetMovements();
+    set(selectedUnmatched, []);
   }
   finally {
     set(ignoreLoading, false);
   }
 }
 
-function confirmIgnoreAll(): void {
-  const count = get(unmatchedMovements).length;
+async function unignoreSelectedMovements(groupIdentifiers: string[]): Promise<void> {
+  set(ignoreLoading, true);
+  try {
+    const movements = get(ignoredMovements).filter(m => groupIdentifiers.includes(m.groupIdentifier));
+    for (const movement of movements) {
+      const eventEntry = getEventEntry(movement);
+      await unlinkAssetMovement(eventEntry.entry.identifier);
+    }
+    await refreshUnmatchedAssetMovements();
+    set(selectedIgnored, []);
+  }
+  finally {
+    set(ignoreLoading, false);
+  }
+}
+
+function confirmIgnoreSelected(): void {
+  const count = get(selectedUnmatched).length;
   show({
-    message: t('asset_movement_matching.actions.ignore_all_confirm', { count }),
+    message: t('asset_movement_matching.actions.ignore_selected_confirm', { count }),
     primaryAction: t('common.actions.confirm'),
-    title: t('asset_movement_matching.actions.ignore_all'),
-  }, async () => ignoreAllMovements(get(unmatchedMovements)));
+    title: t('asset_movement_matching.actions.ignore_selected'),
+  }, async () => ignoreSelectedMovements(get(selectedUnmatched)));
+}
+
+function confirmUnignoreSelected(): void {
+  const count = get(selectedIgnored).length;
+  show({
+    message: t('asset_movement_matching.actions.unignore_selected_confirm', { count }),
+    primaryAction: t('common.actions.confirm'),
+    title: t('asset_movement_matching.actions.unignore_selected'),
+  }, async () => unignoreSelectedMovements(get(selectedIgnored)));
+}
+
+async function ignoreAllFiatMovements(): Promise<void> {
+  set(ignoreLoading, true);
+  try {
+    for (const movement of get(fiatMovements)) {
+      const eventEntry = getEventEntry(movement);
+      await matchAssetMovements(eventEntry.entry.identifier);
+    }
+    await refreshUnmatchedAssetMovements();
+    set(selectedUnmatched, []);
+  }
+  finally {
+    set(ignoreLoading, false);
+  }
 }
 
 function confirmIgnoreAllFiat(): void {
@@ -112,10 +156,10 @@ function confirmIgnoreAllFiat(): void {
     message: t('asset_movement_matching.actions.ignore_fiat_confirm', { count }),
     primaryAction: t('common.actions.confirm'),
     title: t('asset_movement_matching.actions.ignore_fiat'),
-  }, async () => ignoreAllMovements(get(fiatMovements)));
+  }, async () => ignoreAllFiatMovements());
 }
 
-onMounted(async () => {
+onBeforeMount(async () => {
   await refreshUnmatchedAssetMovements();
 });
 </script>
@@ -179,6 +223,7 @@ onMounted(async () => {
       >
         <RuiTabItem>
           <UnmatchedMovementsList
+            v-model:selected="selectedUnmatched"
             :movements="unmatchedMovements"
             :ignore-loading="ignoreLoading"
             :loading="loading"
@@ -188,6 +233,7 @@ onMounted(async () => {
         </RuiTabItem>
         <RuiTabItem>
           <UnmatchedMovementsList
+            v-model:selected="selectedIgnored"
             :movements="ignoredMovements"
             :loading="ignoredLoading"
             :ignore-loading="ignoreLoading"
@@ -206,11 +252,19 @@ onMounted(async () => {
             <RuiButton
               variant="outlined"
               color="primary"
-              :disabled="unmatchedMovements.length === 0 || ignoreLoading"
+              :disabled="selectedUnmatched.length === 0 || ignoreLoading"
               :loading="ignoreLoading"
-              @click="confirmIgnoreAll()"
+              @click="confirmIgnoreSelected()"
             >
-              {{ t('asset_movement_matching.actions.ignore_all') }}
+              {{ t('asset_movement_matching.actions.ignore_selected') }}
+              <RuiChip
+                v-if="selectedUnmatched.length > 0"
+                size="sm"
+                color="primary"
+                class="ml-2 !py-0"
+              >
+                {{ selectedUnmatched.length }}
+              </RuiChip>
             </RuiButton>
             <RuiTooltip
               :open-delay="400"
@@ -249,7 +303,28 @@ onMounted(async () => {
               {{ t('asset_movement_matching.actions.auto_match_tooltip') }}
             </RuiTooltip>
           </div>
-          <div v-else />
+          <div
+            v-else
+            class="flex gap-2"
+          >
+            <RuiButton
+              variant="outlined"
+              color="primary"
+              :disabled="selectedIgnored.length === 0 || ignoreLoading"
+              :loading="ignoreLoading"
+              @click="confirmUnignoreSelected()"
+            >
+              {{ t('asset_movement_matching.actions.unignore_selected') }}
+              <RuiChip
+                v-if="selectedIgnored.length > 0"
+                size="sm"
+                color="primary"
+                class="ml-2 !py-0"
+              >
+                {{ selectedIgnored.length }}
+              </RuiChip>
+            </RuiButton>
+          </div>
           <RuiButton
             variant="text"
             @click="closeDialog()"

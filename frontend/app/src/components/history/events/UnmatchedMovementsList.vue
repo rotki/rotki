@@ -20,6 +20,8 @@ interface UnmatchedMovementRow {
   original: UnmatchedAssetMovement;
 }
 
+const selected = defineModel<string[]>('selected', { required: true });
+
 const props = defineProps<{
   movements: UnmatchedAssetMovement[];
   ignoreLoading?: boolean;
@@ -102,12 +104,13 @@ const emptyDescription = computed<string>(() =>
     </p>
 
     <RuiDataTable
+      v-model="selected"
       :cols="columns"
       :rows="rows"
       row-attr="groupIdentifier"
       outlined
-      sticky-header
       dense
+      multi-page-select
       :loading="loading"
       class="table-inside-dialog max-h-[calc(100vh-23rem)]"
       :empty="{ description: emptyDescription }"
