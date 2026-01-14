@@ -17,7 +17,7 @@ export const useSync = createSharedComposable(() => {
   const syncAction = ref<SyncAction>(SYNC_DOWNLOAD);
   const displaySyncConfirmation = ref(false);
   const confirmChecked = ref(false);
-  const uploadStatus = useSessionStorage<DbUploadResult>('rotki.upload_status.message', null, {
+  const uploadStatus = useSessionStorage<DbUploadResult | null>('rotki.upload_status.message', null, {
     serializer,
   });
   const uploadStatusAlreadyHandled = useSessionStorage<boolean>('rotki.upload_status.handled', false);
