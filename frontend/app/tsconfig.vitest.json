@@ -3,15 +3,12 @@
   "compilerOptions": {
     "composite": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.vitest.tsbuildinfo",
-
-    "lib": [],
     "paths": {
       "@/*": ["./src/*"],
       "@shared/*": ["./shared/*"],
       "@electron/*": ["./electron/*"],
       "@test/*": ["./tests/unit/*"]
-    },
-    "types": ["node", "jsdom"]
+    }
   },
   "include": [
     "env.d.ts",

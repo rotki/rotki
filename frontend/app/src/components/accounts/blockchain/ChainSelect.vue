@@ -1,5 +1,4 @@
 <script setup lang="ts" generic="T extends string | string[]">
-import type { AutoCompleteProps } from '@rotki/ui-library';
 import type { ChainInfo } from '@/types/api/chains';
 import { Blockchain } from '@rotki/common';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
@@ -38,7 +37,7 @@ const { isEvm, supportedChains } = useSupportedChains();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const filteredItems = computed(() => {
+const filteredItems = computed <string[]> (() => {
   const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
 
   let data: string[] = get(supportedChains).map(({ id }) => id);
@@ -56,7 +55,7 @@ const filteredItems = computed(() => {
   return data;
 });
 
-const mappedOptions = computed(() => {
+const mappedOptions = computed<ChainInfo[]>(() => {
   const filtered = get(filteredItems);
   const chains = get(supportedChains).filter(item => filtered.includes(item.id));
   if (get(items).includes('all')) {
@@ -70,10 +69,6 @@ const mappedOptions = computed(() => {
 
   return chains;
 });
-
-const autoCompleteProps: AutoCompleteProps<string, ChainInfo> = {
-  keyAttr: 'id',
-};
 </script>
 
 <template>
@@ -88,7 +83,7 @@ const autoCompleteProps: AutoCompleteProps<string, ChainInfo> = {
     auto-select-first
     text-attr="name"
     :item-height="dense ? 48 : 56"
-    v-bind="{ ...$attrs, ...autoCompleteProps }"
+    v-bind="{ ...$attrs, keyAttr: 'id' as any }"
   >
     <template #selection="{ item }">
       <ChainDisplay
