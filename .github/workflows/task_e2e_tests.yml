@@ -231,6 +231,7 @@ jobs:
 
       - name: Annotate backend log errors
         if: always()
+        continue-on-error: true
         shell: bash
         run: |
           # Sanitize content to prevent log injection and annotation spoofing
@@ -246,7 +247,7 @@ jobs:
             # Find Python tracebacks - capture the line number and extract the error type from following lines
             while IFS=: read -r linenum _; do
               # Get the traceback context (next 50 lines) to find the actual error
-              error_line=$(tail -n +"$linenum" "$logfile" | head -n 50 | grep -m 1 -E "^\w+Error:|^\w+Exception:|^\w+Warning:" | head -c 200)
+              error_line=$(sed -n "${linenum},$((linenum+49))p" "$logfile" | grep -m 1 -E "^\w+Error:|^\w+Exception:|^\w+Warning:" | head -c 200)
               if [[ -n "$error_line" ]]; then
                 error_line=$(sanitize "$error_line")
                 echo "::error file=$filename,line=$linenum::Python Traceback: $error_line"
@@ -257,13 +258,15 @@ jobs:
 
             # Find ERROR level log messages (common Python logging format)
             while IFS=: read -r linenum content; do
-              short_content=$(sanitize "$(echo "$content" | head -c 250)")
+              # Skip known noisy errors
+              [[ "$content" == *"Failed to add the location asset mapping of"* ]] && continue
+              short_content=$(sanitize "${content:0:250}")
               echo "::error file=$filename,line=$linenum::$short_content"
             done < <(grep -n -E " ERROR " "$logfile" 2>/dev/null | head -n 20 || true)
 
             # Find CRITICAL level log messages
             while IFS=: read -r linenum content; do
-              short_content=$(sanitize "$(echo "$content" | head -c 250)")
+              short_content=$(sanitize "${content:0:250}")
               echo "::error file=$filename,line=$linenum::$short_content"
             done < <(grep -n -E " CRITICAL " "$logfile" 2>/dev/null | head -n 10 || true)
           done
