@@ -24,10 +24,11 @@ const { copied, copy } = useCopy(value);
   <RuiTooltip
     :popper="{ placement: 'top' }"
     :open-delay="200"
+    :close-delay="100"
     class="text-no-wrap"
     :class="{ 'cursor-pointer': !disabled }"
     :disabled="disabled"
-    @click="copy()"
+    @click.stop="copy()"
   >
     <template #activator>
       <slot />

@@ -282,7 +282,10 @@ function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
           tag="span"
         >
           <InternalLink
-            :to="Routes.API_KEYS_EXCHANGES"
+            :to="{
+              path: `${Routes.API_KEYS_EXCHANGES}`,
+              query: { add: 'true' },
+            }"
             class="module-not-active__link font-weight-regular text-body-1 text-decoration-none"
           >
             {{ t('exchange_balances.click_here') }}

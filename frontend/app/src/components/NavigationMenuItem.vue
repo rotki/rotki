@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 import type { Component } from 'vue';
+import type { RouteLocationRaw } from 'vue-router';
 import AppImage from '@/components/common/AppImage.vue';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     mini?: boolean;
     icon?: RuiIcons;
@@ -13,6 +14,7 @@ withDefaults(
     active?: boolean;
     subMenu?: boolean;
     parent?: boolean;
+    to?: RouteLocationRaw;
   }>(),
   {
     active: false,
@@ -22,12 +24,15 @@ withDefaults(
     mini: false,
     parent: false,
     subMenu: false,
+    to: undefined,
   },
 );
 
 defineSlots<{
   default: () => any;
 }>();
+
+const router = useRouter();
 
 const [DefineImage, ReuseImage] = createReusableTemplate();
 
@@ -38,10 +43,7 @@ const subMenuExpanded = ref<boolean>(false);
 
 const submenuWrapperStyle = computed(() => get(subMenuExpanded) ? { height: `${get(innerHeight)}px` } : {});
 
-function expandParent() {
-  if (!get(parent))
-    return;
-
+function toggleExpand(): void {
   const newState = !get(subMenuExpanded);
   set(subMenuExpanded, newState);
 
@@ -49,6 +51,19 @@ function expandParent() {
     setTimeout(() => {
       get(outer)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }, 150);
+  }
+}
+
+function onBodyClick(): void {
+  if (!props.parent)
+    return;
+
+  if (props.to && !get(subMenuExpanded)) {
+    router.push(props.to);
+    toggleExpand();
+  }
+  else {
+    toggleExpand();
   }
 }
 </script>
@@ -64,7 +79,7 @@ function expandParent() {
         'px-0 justify-center': mini,
         'pl-0': mini && subMenu,
       }"
-      @click="expandParent()"
+      @click="onBodyClick()"
     >
       <DefineImage>
         <div
@@ -110,7 +125,9 @@ function expandParent() {
       </template>
       <div
         v-if="parent && !mini"
+        class="p-1 -mr-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10"
         :class="active ? 'text-rui-primary' : 'text-rui-grey-500'"
+        @click.stop="toggleExpand()"
       >
         <RuiIcon
           name="lu-chevron-down"

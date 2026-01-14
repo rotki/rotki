@@ -84,6 +84,10 @@ const showManualIndicator = computed<boolean>(() =>
   !isDefined(timestamp) && get(isManualPrice),
 );
 
+const showAssetOracle = computed<boolean>(() =>
+  !isDefined(timestamp) && isDefined(assetOracle),
+);
+
 // Scrambling (depends on displayValue computed)
 const { scrambledValue } = useScrambledValue({ value: displayValue });
 </script>
@@ -97,7 +101,10 @@ const { scrambledValue } = useScrambledValue({ value: displayValue });
       :loading="loading || loadingProp"
       v-bind="$attrs"
     >
-      <template #tooltip>
+      <template
+        v-if="showAssetOracle"
+        #tooltip
+      >
         <OracleBadge
           v-if="assetOracle"
           :oracle="assetOracle"
