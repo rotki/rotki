@@ -138,13 +138,13 @@ describe('use-repulling-transaction-form', () => {
 
       // Reset mocks to default values
       set(mockAccountsPerChain, {
-        arbitrum_one: [createMockAccount('0xbDA5747bFD65F08deb54cb465eB87D40e51B197E', 'arbitrum_one')],
+        eth2: [createMockAccount('0x1234567890123456789012345678901234567890', 'eth2')],
         eth: [
           createMockAccount('0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c', 'eth'),
           createMockAccount('0x71C7656EC7ab88b098defB751B7401B5f6d8976F', 'eth'),
         ],
-        eth2: [createMockAccount('0x1234567890123456789012345678901234567890', 'eth2')],
         optimism: [createMockAccount('0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199', 'optimism')],
+        arbitrum_one: [createMockAccount('0xbDA5747bFD65F08deb54cb465eB87D40e51B197E', 'arbitrum_one')],
       });
 
       set(mockDecodableTxChainsInfo, [

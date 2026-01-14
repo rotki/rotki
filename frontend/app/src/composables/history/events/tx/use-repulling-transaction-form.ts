@@ -54,11 +54,10 @@ function useRepullingTransactionFormFn(): UseRepullingTransactionFormReturn {
   const decodableTxChains = useArrayMap(decodableTxChainsInfo, x => x.id);
 
   const chainOptions = computed<string[]>(() => {
-    const accountChains = Object.entries(get(accountsPerChain))
-      .filter(([_, accounts]) => accounts.length > 0)
+    const decodableChains = get(decodableTxChains);
+    return Object.entries(get(accountsPerChain))
+      .filter(([chain, accounts]) => accounts.length > 0 && decodableChains.includes(chain))
       .map(([chain]) => chain);
-
-    return get(decodableTxChains).filter(chain => accountChains.includes(chain));
   });
 
   function createDefaultFormData(): RepullingTransactionPayload {
