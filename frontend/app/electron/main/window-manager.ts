@@ -1,5 +1,7 @@
 import type { LogService } from '@electron/main/log-service';
 import type { BackendCode, OAuthResult } from '@shared/ipc';
+import fs from 'node:fs';
+import path from 'node:path';
 import process from 'node:process';
 import { ContextMenuHandler } from '@electron/main/context-menu-handler';
 import { createProtocol } from '@electron/main/create-protocol';
@@ -101,6 +103,7 @@ export class WindowManager {
     if (devServerUrl) {
       // Load the url of the dev server if in development mode with retry logic
       await this.loadUrlWithRetry(window, devServerUrl);
+      await this.loadDevExtensions(window);
       if (process.env.ENABLE_DEV_TOOLS)
         window.webContents.openDevTools();
       return;
@@ -109,6 +112,28 @@ export class WindowManager {
     createProtocol('app');
     // Load the index.html when not in development
     await window.loadURL('app://localhost/index.html');
+  }
+
+  private async loadDevExtensions(window: BrowserWindow): Promise<void> {
+    // Path from dist/ to tools/chrome-task-tracker
+    // import.meta.dirname points to dist/ in dev mode
+    const extensionPath = path.resolve(import.meta.dirname, '..', '..', '..', 'tools', 'chrome-task-tracker');
+
+    // Check if the extension directory exists
+    if (!fs.existsSync(extensionPath)) {
+      this.logger.debug(`Task tracker extension not found at: ${extensionPath}`);
+      return;
+    }
+
+    try {
+      const extension = await window.webContents.session.extensions.loadExtension(extensionPath, {
+        allowFileAccess: true,
+      });
+      this.logger.info(`Loaded dev extension: ${extension.name} from ${extensionPath}`);
+    }
+    catch (error) {
+      this.logger.warn('Failed to load task tracker extension:', error);
+    }
   }
 
   private async loadUrlWithRetry(window: BrowserWindow, url: string, maxRetries: number = 5): Promise<void> {

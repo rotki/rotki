@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Rotki Async Task Tracker",
+  "version": "1.0.0",
+  "description": "Track and correlate async task requests in Rotki development",
+  "permissions": [
+    "webRequest"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:*/*",
+    "http://localhost:*/*"
+  ],
+  "devtools_page": "devtools.html",
+  "background": {
+    "service_worker": "background.js"
+  }
+}

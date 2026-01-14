@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Rotki Task Tracker</title>
+  <style>
+    :root {
+      /* Dark theme (default) */
+      --bg-primary: #1e1e1e;
+      --bg-secondary: #252526;
+      --bg-tertiary: #2d2d2d;
+      --bg-hover: #2a2d2e;
+      --bg-selected: #094771;
+      --bg-input: #3c3c3c;
+
+      --border-color: #3c3c3c;
+      --border-input: #4c4c4c;
+
+      --text-primary: #d4d4d4;
+      --text-secondary: #858585;
+      --text-muted: #6a6a6a;
+
+      --accent-blue: #569cd6;
+      --accent-orange: #ce9178;
+      --accent-green: #6a9955;
+      --accent-green-light: #b5cea8;
+      --accent-cyan: #4ec9b0;
+      --accent-cyan-light: #9cdcfe;
+      --accent-yellow: #dcdcaa;
+      --accent-red: #f14c4c;
+
+      --btn-primary: #0e639c;
+      --btn-primary-hover: #1177bb;
+      --btn-secondary: #3c3c3c;
+      --btn-secondary-hover: #4c4c4c;
+
+      --status-pending-bg: #4d4d00;
+      --status-pending-text: #dcdcaa;
+      --status-completed-bg: #1e4d40;
+      --status-completed-text: #4ec9b0;
+      --status-error-bg: #4d1e1e;
+      --status-error-text: #f14c4c;
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-primary: #ffffff;
+        --bg-secondary: #f3f3f3;
+        --bg-tertiary: #e8e8e8;
+        --bg-hover: #e4e6e8;
+        --bg-selected: #cce5ff;
+        --bg-input: #ffffff;
+
+        --border-color: #d4d4d4;
+        --border-input: #c4c4c4;
+
+        --text-primary: #1e1e1e;
+        --text-secondary: #616161;
+        --text-muted: #8a8a8a;
+
+        --accent-blue: #0066cc;
+        --accent-orange: #c55a11;
+        --accent-green: #008000;
+        --accent-green-light: #2d7d2d;
+        --accent-cyan: #008080;
+        --accent-cyan-light: #0070c0;
+        --accent-yellow: #795e26;
+        --accent-red: #d32f2f;
+
+        --btn-primary: #0066cc;
+        --btn-primary-hover: #0052a3;
+        --btn-secondary: #e0e0e0;
+        --btn-secondary-hover: #c4c4c4;
+
+        --status-pending-bg: #fff3cd;
+        --status-pending-text: #856404;
+        --status-completed-bg: #d4edda;
+        --status-completed-text: #155724;
+        --status-error-bg: #f8d7da;
+        --status-error-text: #721c24;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+      font-size: 12px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .header h1 {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .header button {
+      padding: 4px 12px;
+      background: var(--btn-primary);
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 11px;
+    }
+
+    .header button:hover {
+      background: var(--btn-primary-hover);
+    }
+
+    .header button.secondary {
+      background: var(--btn-secondary);
+      color: var(--text-primary);
+    }
+
+    .header button.secondary:hover {
+      background: var(--btn-secondary-hover);
+    }
+
+    .stats {
+      display: flex;
+      gap: 15px;
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .stats span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .stats .pending { color: var(--accent-yellow); }
+    .stats .completed { color: var(--accent-cyan); }
+
+    .filter-bar {
+      padding: 6px 12px;
+      background: var(--bg-tertiary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .filter-bar input[type="text"] {
+      flex: 1;
+      padding: 4px 8px;
+      background: var(--bg-input);
+      border: 1px solid var(--border-input);
+      border-radius: 3px;
+      color: var(--text-primary);
+      font-size: 11px;
+    }
+
+    .filter-bar input[type="text"]:focus {
+      outline: none;
+      border-color: var(--btn-primary);
+    }
+
+    .filter-bar label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: var(--text-secondary);
+    }
+
+    .container {
+      display: flex;
+      height: calc(100vh - 75px);
+    }
+
+    .task-list {
+      width: 100%;
+      overflow-y: auto;
+    }
+
+    .task-list.split {
+      width: 50%;
+      border-right: 1px solid var(--border-color);
+    }
+
+    .task-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--bg-tertiary);
+      cursor: pointer;
+      transition: background 0.1s;
+    }
+
+    .task-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .task-item.selected {
+      background: var(--bg-selected);
+    }
+
+    .task-item.pending {
+      border-left: 3px solid var(--accent-yellow);
+    }
+
+    .task-item.completed {
+      border-left: 3px solid var(--accent-cyan);
+    }
+
+    .task-item.error {
+      border-left: 3px solid var(--accent-red);
+    }
+
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+
+    .task-id {
+      font-weight: 600;
+      color: var(--accent-blue);
+    }
+
+    .task-status {
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .task-status.pending {
+      background: var(--status-pending-bg);
+      color: var(--status-pending-text);
+    }
+
+    .task-status.completed {
+      background: var(--status-completed-bg);
+      color: var(--status-completed-text);
+    }
+
+    .task-status.error {
+      background: var(--status-error-bg);
+      color: var(--status-error-text);
+    }
+
+    .task-endpoint {
+      color: var(--accent-orange);
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 11px;
+      word-break: break-all;
+    }
+
+    .task-time {
+      font-size: 10px;
+      color: var(--accent-green);
+      margin-top: 4px;
+    }
+
+    .task-duration {
+      color: var(--accent-green-light);
+    }
+
+    .detail-panel {
+      width: 50%;
+      overflow-y: auto;
+      background: var(--bg-primary);
+    }
+
+    .detail-section {
+      padding: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .detail-section h3 {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .detail-section > h3 {
+      margin-bottom: 8px;
+    }
+
+    .select-btn {
+      padding: 2px 8px;
+      background: var(--btn-secondary);
+      color: var(--text-primary);
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 10px;
+    }
+
+    .select-btn:hover {
+      background: var(--btn-secondary-hover);
+    }
+
+    .detail-content {
+      background: var(--bg-secondary);
+      padding: 8px;
+      border-radius: 3px;
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 11px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .detail-content.json {
+      color: var(--accent-cyan-light);
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-secondary);
+      text-align: center;
+      padding: 20px;
+    }
+
+    .empty-state svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+
+    .recording-indicator {
+      width: 8px;
+      height: 8px;
+      background: var(--accent-red);
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+      cursor: default;
+    }
+
+    .recording-indicator.paused {
+      background: var(--text-muted);
+      animation: none;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .recording-paused {
+      background: var(--accent-green) !important;
+    }
+
+    .recording-paused:hover {
+      background: var(--accent-green-light) !important;
+    }
+
+    /* Network link buttons */
+    .network-links {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .network-link-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      background: var(--btn-secondary);
+      color: var(--accent-blue);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      text-align: left;
+      transition: background 0.1s, border-color 0.1s;
+    }
+
+    .network-link-btn:hover {
+      background: var(--btn-secondary-hover);
+      border-color: var(--accent-blue);
+    }
+
+    .network-link-btn svg {
+      flex-shrink: 0;
+      stroke: var(--accent-blue);
+    }
+
+    .network-link-unavailable {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-style: italic;
+      padding: 4px 0;
+    }
+
+    /* JSON syntax highlighting */
+    .json-key { color: var(--accent-cyan); }
+    .json-string { color: var(--accent-orange); }
+    .json-number { color: var(--accent-green-light); }
+    .json-boolean { color: var(--accent-blue); }
+    .json-null { color: var(--accent-red); }
+    .json-bracket { color: var(--text-secondary); }
+
+    /* Filter popup */
+    #filter-popup {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #filter-popup.visible {
+      display: flex;
+    }
+
+    .filter-popup-content {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      width: 350px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+
+    .filter-popup-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .filter-popup-close {
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+    }
+
+    .filter-popup-close:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+
+    .filter-popup-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-primary);
+      border: none;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--accent-orange);
+      font-family: 'Consolas', 'Monaco', monospace;
+      font-size: 13px;
+      box-sizing: border-box;
+    }
+
+    .filter-popup-input:focus {
+      outline: none;
+      background: var(--bg-input);
+    }
+
+    .filter-popup-steps {
+      padding: 12px 16px;
+    }
+
+    .filter-popup-step {
+      font-size: 11px;
+      color: var(--text-secondary);
+      padding: 4px 0;
+    }
+
+    .filter-popup-step strong {
+      color: var(--accent-blue);
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div id="recordingIndicator" class="recording-indicator" title="Recording"></div>
+    <h1>Rotki Async Tasks</h1>
+    <button id="recordBtn" class="secondary">Pause</button>
+    <button id="clearBtn" class="secondary">Clear</button>
+    <button id="exportBtn" class="secondary">Export</button>
+    <div class="stats">
+      <span class="pending">Pending: <strong id="pendingCount">0</strong></span>
+      <span class="completed">Completed: <strong id="completedCount">0</strong></span>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <input type="text" id="filterInput" placeholder="Filter by endpoint or task ID...">
+    <label>
+      <input type="checkbox" id="showCompleted" checked> Completed
+    </label>
+    <label>
+      <input type="checkbox" id="showPending" checked> Pending
+    </label>
+  </div>
+
+  <div class="container">
+    <div id="taskList" class="task-list">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12,6 12,12 16,14"/>
+        </svg>
+        <div>No async tasks recorded yet</div>
+        <div style="margin-top: 8px; font-size: 11px;">
+          Make requests with asyncQuery=true to see them here
+        </div>
+      </div>
+    </div>
+    <div id="detailPanel" class="detail-panel" style="display: none;">
+    </div>
+  </div>
+
+  <script src="panel.js"></script>
+</body>
+</html>
