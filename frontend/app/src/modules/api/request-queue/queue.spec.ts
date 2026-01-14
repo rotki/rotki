@@ -1,17 +1,22 @@
 import { startPromise } from '@shared/utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type MockedFunction, vi } from 'vitest';
 import { QueueOverflowError, RequestCancelledError } from './errors';
-import { RequestQueue } from './queue';
+import { type QueueFetchFn, RequestQueue } from './queue';
 import { RequestPriority } from './request-priority';
 
 describe('requestQueue', () => {
   let queue: RequestQueue;
-  let mockFetch: ReturnType<typeof vi.fn>;
+  let mockFetch: MockedFunction<QueueFetchFn>;
+
+  const mockFetchWrapper = async <T>(
+    url: string,
+    options?: Record<string, unknown>,
+  ): Promise<T> => mockFetch(url, options) as Promise<T>;
 
   beforeEach(() => {
     vi.useFakeTimers();
     mockFetch = vi.fn().mockResolvedValue({ data: 'success' });
-    queue = new RequestQueue(mockFetch, {
+    queue = new RequestQueue(mockFetchWrapper, {
       maxConcurrent: 2,
       maxPerSecond: 10,
       maxQueueSize: 5,
@@ -266,7 +271,7 @@ describe('requestQueue', () => {
 
   describe('rate limiting', () => {
     it('should respect maxPerSecond rate limit', async () => {
-      const fastQueue = new RequestQueue(mockFetch, {
+      const fastQueue = new RequestQueue(mockFetchWrapper, {
         maxConcurrent: 100,
         maxPerSecond: 3,
         maxQueueSize: 100,
@@ -369,7 +374,7 @@ describe('requestQueue', () => {
   describe('queue timeout', () => {
     it('should timeout requests that wait too long in queue', async () => {
       // Create a queue with short timeout
-      const timeoutQueue = new RequestQueue(mockFetch, {
+      const timeoutQueue = new RequestQueue(mockFetchWrapper, {
         maxConcurrent: 1,
         maxPerSecond: 100,
         maxQueueSize: 10,
@@ -409,7 +414,7 @@ describe('requestQueue', () => {
     });
 
     it('should not timeout requests that are processed in time', async () => {
-      const timeoutQueue = new RequestQueue(mockFetch, {
+      const timeoutQueue = new RequestQueue(mockFetchWrapper, {
         maxConcurrent: 2,
         maxPerSecond: 100,
         maxQueueSize: 10,
@@ -464,7 +469,7 @@ describe('requestQueue', () => {
 
   describe('dropLowest overflow strategy', () => {
     it('should drop lowest priority when queue overflows with dropLowest strategy', async () => {
-      const dropQueue = new RequestQueue(mockFetch, {
+      const dropQueue = new RequestQueue(mockFetchWrapper, {
         maxConcurrent: 1,
         maxPerSecond: 100,
         maxQueueSize: 2,

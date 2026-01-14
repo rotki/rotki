@@ -3,7 +3,7 @@ import type { Ref } from 'vue';
 import type { HistoryEventAction } from '@/composables/history/events/types';
 import type { Collection } from '@/types/collection';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { useHistoryEventsActions } from './use-history-events-actions';
 
 const mockRefreshTransactions = vi.fn();
@@ -51,7 +51,7 @@ describe('useHistoryEventsActions', () => {
   function createOptions(): {
     currentAction: Ref<HistoryEventAction>;
     entryTypes: Ref<undefined>;
-    fetchData: ReturnType<typeof vi.fn>;
+    fetchData: Mock<() => Promise<void>>;
     groups: Ref<Collection<HistoryEventRow>>;
     onlyChains: Ref<Blockchain[]>;
   } {

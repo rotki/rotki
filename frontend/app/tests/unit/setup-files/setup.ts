@@ -101,11 +101,12 @@ beforeAll(() => {
     };
   });
 
-  globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
-    observe: vi.fn(),
-    unobserve: vi.fn(),
-    disconnect: vi.fn(),
-  }));
+  class ResizeObserverMock {
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+  }
+  globalThis.ResizeObserver = ResizeObserverMock;
 });
 
 afterEach(() => server.resetHandlers());
