@@ -1247,6 +1247,14 @@
       "label": "Fiat",
       "tooltip": "This is a fiat currency movement. Fiat movements typically don't have a corresponding on-chain event and can usually be safely ignored."
     },
+    "settings": {
+      "amount_tolerance": {
+        "hint": "Maximum allowed difference between asset movement amount and on-chain event amount to be matched automatically.",
+        "label": "Amount tolerance"
+      },
+      "title": "Auto Match Settings",
+      "tooltip": "Configure automatic matching settings"
+    },
     "tabs": {
       "ignored": "Ignored",
       "unmatched": "Unmatched"

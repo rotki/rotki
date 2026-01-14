@@ -67,6 +67,7 @@ function createSettingsResponse(overrides: Record<string, unknown> = {}): Action
       csv_export_delimiter: ',',
       default_evm_indexer_order: [],
       evm_indexers_order: {},
+      asset_movement_amount_tolerance: '0.000001',
       ...overrides,
     },
     message: '',

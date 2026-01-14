@@ -67,7 +67,7 @@
     "ask_user_upon_size_discrepancy": true,
     "auto_detect_tokens": true,
     "csv_export_delimiter": ",",
-    "use_unified_etherscan_api": false
+    "asset_movement_amount_tolerance": "0.000001"
   },
   "message": ""
 }

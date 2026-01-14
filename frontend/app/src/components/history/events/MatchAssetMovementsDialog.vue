@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
+import AssetMovementMatchingSettingsMenu from '@/components/history/events/AssetMovementMatchingSettingsMenu.vue';
 import PotentialMatchesDialog from '@/components/history/events/PotentialMatchesDialog.vue';
 import UnmatchedMovementsList from '@/components/history/events/UnmatchedMovementsList.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
@@ -284,24 +285,31 @@ onBeforeMount(async () => {
               </template>
               {{ t('asset_movement_matching.actions.ignore_fiat_tooltip') }}
             </RuiTooltip>
-            <RuiTooltip
-              :open-delay="400"
-              :popper="{ placement: 'top' }"
-              tooltip-class="max-w-80"
-              class="border-l border-default pl-2"
+            <RuiButtonGroup
+              color="primary"
+              class="pl-3"
             >
-              <template #activator>
-                <RuiButton
-                  color="primary"
-                  :disabled="unmatchedMovements.length === 0 || autoMatchLoading"
-                  :loading="autoMatchLoading"
-                  @click="triggerAutoMatch()"
-                >
-                  {{ t('asset_movement_matching.actions.auto_match') }}
-                </RuiButton>
-              </template>
-              {{ t('asset_movement_matching.actions.auto_match_tooltip') }}
-            </RuiTooltip>
+              <RuiTooltip
+                :open-delay="400"
+                :popper="{ placement: 'top' }"
+                tooltip-class="max-w-80"
+              >
+                <template #activator>
+                  <RuiButton
+                    color="primary"
+                    class="!rounded-r-none"
+                    :disabled="unmatchedMovements.length === 0 || autoMatchLoading"
+                    :loading="autoMatchLoading"
+                    @click="triggerAutoMatch()"
+                  >
+                    {{ t('asset_movement_matching.actions.auto_match') }}
+                  </RuiButton>
+                </template>
+                {{ t('asset_movement_matching.actions.auto_match_tooltip') }}
+              </RuiTooltip>
+
+              <AssetMovementMatchingSettingsMenu />
+            </RuiButtonGroup>
           </div>
           <div
             v-else

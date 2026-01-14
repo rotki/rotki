@@ -7,6 +7,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     activeModules: [],
     addressNamePriority: [],
     askUserUponSizeDiscrepancy: true,
+    assetMovementAmountTolerance: Defaults.ASSET_MOVEMENT_AMOUNT_TOLERANCE,
     autoCreateCalendarReminders: true,
     autoDeleteCalendarEntries: true,
     autoDetectTokens: true,

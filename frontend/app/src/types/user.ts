@@ -2,6 +2,7 @@ import type { ToSnakeCase } from '@/types/common';
 import { NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
 import { Constraints } from '@/data/constraints';
+import { Defaults } from '@/data/defaults';
 import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { ModuleEnum } from '@/types/modules';
@@ -23,6 +24,7 @@ const GeneralSettings = z.object({
   activeModules: z.array(ModuleEnum),
   addressNamePriority: z.array(AddressNamePriorityEnum),
   askUserUponSizeDiscrepancy: z.boolean(),
+  assetMovementAmountTolerance: z.string().default(Defaults.ASSET_MOVEMENT_AMOUNT_TOLERANCE),
   autoCreateCalendarReminders: z.boolean(),
   autoDeleteCalendarEntries: z.boolean(),
   autoDetectTokens: z.boolean(),
@@ -143,6 +145,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     activeModules: settings.activeModules,
     addressNamePriority: settings.addressNamePriority,
     askUserUponSizeDiscrepancy: settings.askUserUponSizeDiscrepancy,
+    assetMovementAmountTolerance: settings.assetMovementAmountTolerance,
     autoCreateCalendarReminders: settings.autoCreateCalendarReminders,
     autoDeleteCalendarEntries: settings.autoDeleteCalendarEntries,
     autoDetectTokens: settings.autoDetectTokens,

@@ -9,6 +9,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
 
   const uiFloatingPrecision = useComputedRef(settings, 'uiFloatingPrecision');
   const submitUsageAnalytics = useComputedRef(settings, 'submitUsageAnalytics');
+  const assetMovementAmountTolerance = useComputedRef(settings, 'assetMovementAmountTolerance');
   const ksmRpcEndpoint = useComputedRef(settings, 'ksmRpcEndpoint');
   const dotRpcEndpoint = useComputedRef(settings, 'dotRpcEndpoint');
   const btcMempoolApi = useComputedRef(settings, 'btcMempoolApi');
@@ -57,6 +58,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     activeModules,
     addressNamePriority,
     askUserUponSizeDiscrepancy,
+    assetMovementAmountTolerance,
     autoCreateCalendarReminders,
     autoDeleteCalendarEntries,
     autoDetectTokens,

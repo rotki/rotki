@@ -6,6 +6,7 @@ import { TableColumn } from '@/types/table-column';
 
 export const Defaults = {
   ANONYMOUS_USAGE_ANALYTICS: true,
+  ASSET_MOVEMENT_AMOUNT_TOLERANCE: '0.000001',
   BALANCE_SAVE_FREQUENCY: 24,
   BEACON_RPC_ENDPOINT: '', // same as Kusama, must be set by user
   BTC_DERIVATION_GAP_LIMIT: 20,
