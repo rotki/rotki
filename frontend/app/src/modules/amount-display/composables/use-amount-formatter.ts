@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import type { RoundingType } from '@/modules/amount-display/types';
 import { BigNumber, bigNumberify } from '@rotki/common';
 import { displayAmountFormatter } from '@/data/amount-formatter';

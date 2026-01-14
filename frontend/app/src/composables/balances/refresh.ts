@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import { Blockchain } from '@rotki/common';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useSupportedChains } from '@/composables/info/chains';

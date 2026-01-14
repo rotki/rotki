@@ -1,5 +1,5 @@
 import type { SupportedAsset } from '@rotki/common';
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { AssetRequestPayload } from '@/types/asset';
 import type { Collection } from '@/types/collection';

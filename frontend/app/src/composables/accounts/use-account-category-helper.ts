@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import { useSupportedChains } from '@/composables/info/chains';
 
 interface UseBlockchainAccountLoadingReturn {

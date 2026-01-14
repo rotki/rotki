@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRef, Ref } from 'vue';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import type { ConfirmationMessage } from '@/modules/history/events/composables/use-deletion-strategies';
 import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';

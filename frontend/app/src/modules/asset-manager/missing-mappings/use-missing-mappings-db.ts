@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { MissingMapping } from '@/modules/data/schemas';
 import type { Collection } from '@/types/collection';
 import type { PaginationRequestPayload } from '@/types/common';

@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { Balances } from '@/types/blockchain/accounts';
 import type { BlockchainAssetBalances, BlockchainBalances } from '@/types/blockchain/balances';
 import type { ExchangeData } from '@/types/exchanges';

@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { AssetPrices } from '@/types/prices';
 import { startPromise } from '@shared/utils';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';

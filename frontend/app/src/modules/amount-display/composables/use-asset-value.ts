@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import { type BigNumber, Zero } from '@rotki/common';
 import { normalizeTimestamp, type Timestamp } from '@/modules/amount-display/types';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';

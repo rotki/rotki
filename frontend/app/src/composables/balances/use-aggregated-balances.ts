@@ -1,9 +1,8 @@
-import type { MaybeRef } from '@vueuse/core';
 import type { EthBalance } from '@/types/blockchain/balances';
 import type { AssetPriceInfo } from '@/types/prices';
 import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, NoPrice, Zero } from '@rotki/common';
 import { storeToRefs } from 'pinia';
-import { computed, type ComputedRef, ref } from 'vue';
+import { computed, type ComputedRef, type MaybeRef, ref } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';

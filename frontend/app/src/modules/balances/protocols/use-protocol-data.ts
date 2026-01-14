@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import { toSentenceCase } from '@rotki/common';
 import { useDefiMetadata } from '@/composables/defi/metadata';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';

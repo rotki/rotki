@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
 import { z } from 'zod/v4';

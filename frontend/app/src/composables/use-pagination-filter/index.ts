@@ -1,8 +1,7 @@
 /* eslint-disable max-lines */
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { MaybeRef } from '@vueuse/core';
 import type { FetchError } from 'ofetch';
-import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef, Ref, WritableComputedRef } from 'vue';
 import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
 import type { TableId } from '@/modules/table/use-remember-table-sorting';
 import type { Collection } from '@/types/collection';

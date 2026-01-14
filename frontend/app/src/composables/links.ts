@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import { externalLinks } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
 

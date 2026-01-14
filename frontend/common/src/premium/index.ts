@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRef, Ref } from 'vue';
 import type { AssetBalanceWithPrice } from '../balances';
 import type { AssetInfoWithId } from '../data';
 import type { BigNumber } from '../numbers';

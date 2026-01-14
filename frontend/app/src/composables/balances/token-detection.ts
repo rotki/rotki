@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import type { EthDetectedTokensInfo } from '@/types/balances';
 import { assert } from '@rotki/common';
 import { useBalanceQueue } from '@/composables/balances/use-balance-queue';

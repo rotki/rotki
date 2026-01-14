@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import type { AssetProtocolBalances } from '@/types/blockchain/balances';
 import type { ExchangeInfo } from '@/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

@@ -1,7 +1,8 @@
+import type { MaybeRef } from 'vue';
 import type { MigratedAddresses } from '@/modules/messaging/types';
 import { assert, type Notification, NotificationCategory, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { type MaybeRef, useSessionStorage } from '@vueuse/core';
+import { useSessionStorage } from '@vueuse/core';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useBlockchains } from '@/composables/blockchain';
 import { useSupportedChains } from '@/composables/info/chains';

@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';

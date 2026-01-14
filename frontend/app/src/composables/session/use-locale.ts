@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { SupportedLanguage } from '@/types/settings/frontend-settings';

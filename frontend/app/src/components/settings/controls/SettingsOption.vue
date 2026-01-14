@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { SessionSettings } from '@/types/session';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type { SettingsUpdate } from '@/types/user';

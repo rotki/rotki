@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { Ref } from 'vue';
+import type { MaybeRef, Ref } from 'vue';
 import type { BaseMessage } from '@/types/messages';
 import { useConfirmStore } from '@/store/confirm';
 

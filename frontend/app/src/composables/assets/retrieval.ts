@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { EvmChainAddress } from '@/types/history/events';
 import type { TaskMeta } from '@/types/task';

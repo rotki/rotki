@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import type { TradableAsset, TradableAssetWithoutValue } from '@/modules/onchain/types';
 import type { BlockchainAssetBalances, EthBalance, ProtocolBalances } from '@/types/blockchain/balances';
 import { Zero } from '@rotki/common';

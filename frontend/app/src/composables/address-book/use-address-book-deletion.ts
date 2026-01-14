@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
 import { NotificationCategory, Severity } from '@rotki/common';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';

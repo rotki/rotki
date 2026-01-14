@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import { toRem } from '@/utils/data';
 import { getPublicPlaceholderImagePath } from '@/utils/file';
 

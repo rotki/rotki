@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useStatusStore } from '@/store/status';

@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { AssetBalances } from '@/types/balances';
 import type {
   AddressData,

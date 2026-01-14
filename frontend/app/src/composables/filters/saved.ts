@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/types/filtering';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';

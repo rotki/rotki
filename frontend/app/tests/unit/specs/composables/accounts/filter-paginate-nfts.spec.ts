@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { Collection } from '@/types/collection';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';

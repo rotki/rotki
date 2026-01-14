@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
 import type { TaskMeta } from '@/types/task';
 import { Blockchain } from '@rotki/common';

@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRef, Ref } from 'vue';
 import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { logger } from '@/utils/logging';

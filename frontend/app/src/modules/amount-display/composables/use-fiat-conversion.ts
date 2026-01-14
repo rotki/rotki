@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import { type BigNumber, One, Zero } from '@rotki/common';
 import { useAmountDisplaySettings } from '@/modules/amount-display/composables/use-amount-display-settings';
 import { normalizeTimestamp, type Timestamp } from '@/modules/amount-display/types';
