@@ -2481,9 +2481,10 @@
     },
     "missing_api_key": {
       "action": "回车键",
+      "change_indexer_order": "更改索引器顺序",
       "etherscan": {
-        "message": "由于您没有配置 {location} {service} 的 API 密钥，{location}链的 Rotki 查询速度较慢。配置了 API 密钥。请使用 @.quote:notification_messages.missing_api_key.get_key 或 @.quote:notification_messages.missing_api_key.action 在应用程序中添加密钥。",
-        "title": "{location} {service} API 密钥"
+        "message": "rotki 正在使用 {service}，但未配置 API 密钥，这可能会减慢查询速度。您可以添加 API 密钥以获得更好的性能，或调整索引器顺序以优先使用其他服务。",
+        "title": "{service} API 密钥"
       },
       "get_key": "获取 API 密钥"
     },

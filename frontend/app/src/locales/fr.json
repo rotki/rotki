@@ -2749,9 +2749,10 @@
     },
     "missing_api_key": {
       "action": "Entrer la clé",
+      "change_indexer_order": "Modifier l'ordre de l'indexeur",
       "etherscan": {
-        "message": "Rotki effectue des requêtes pour la chaîne {location} plus lentement car vous n'avez pas configuré de clé API {location} {service}. Appuyez sur @.quote:notification_messages.missing_api_key.get_key pour en créer une ou sur @.quote:notification_messages.missing_api_key.action pour l'ajouter dans l'application.",
-        "title": "Clé API {location} {service}"
+        "message": "rotki utilise {service} sans clé API configurée, ce qui peut ralentir les requêtes. Vous pouvez ajouter une clé API pour de meilleures performances, ou ajuster l'ordre de l'indexeur pour prioriser un autre service.",
+        "title": "Clé API {service}"
       },
       "get_key": "Obtenir la clé API"
     },

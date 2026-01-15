@@ -41,6 +41,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const askUserUponSizeDiscrepancy = useComputedRef(settings, 'askUserUponSizeDiscrepancy');
   const autoDetectTokens = useComputedRef(settings, 'autoDetectTokens');
   const csvExportDelimiter = useComputedRef(settings, 'csvExportDelimiter');
+  const suppressMissingKeyMsgServices = useComputedRef(settings, 'suppressMissingKeyMsgServices');
 
   const currencySymbol = computed<SupportedCurrency>(() => {
     const currency = get(mainCurrency);
@@ -90,6 +91,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     settings,
     ssfGraphMultiplier,
     submitUsageAnalytics,
+    suppressMissingKeyMsgServices,
     treatEth2AsEth,
     update,
   };

@@ -36,6 +36,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     readTimeout: Defaults.DEFAULT_READ_TIMEOUT,
     ssfGraphMultiplier: 0,
     submitUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,
+    suppressMissingKeyMsgServices: [],
     treatEth2AsEth: false,
     uiFloatingPrecision: Defaults.FLOATING_PRECISION,
   };

@@ -2447,12 +2447,14 @@
     },
     "indexer": {
       "add_chain": "Add specific chain setting",
+      "api_key_missing_alert": "{indexer} is your first priority indexer but you don't have an API key configured. Queries may be slower or fail. Consider adding an API key for better performance.",
       "chain_order": "{chain} Indexer Order",
       "chain_updated": "{chain} indexer order updated",
       "data_name": "indexer",
       "default_order": "Default Indexer Order",
       "default_tab": "Default",
       "default_updated": "Default indexer order updated",
+      "enter_api_key": "Enter API key",
       "no_indexers_warning": "At least one indexer must be selected. The list cannot be empty.",
       "remove_chain": "Remove chain specific setting",
       "subtitle": "Indexers are used to query history events. Configure the priority order of indexers for each EVM chain. If the first indexer fails, the next one will be tried, and so on.",
@@ -2961,6 +2963,15 @@
         "read_timeout_hint": "The number of seconds to wait for the first byte after a connection to an external service has been established."
       },
       "subtitle": "Manage your external service settings.",
+      "suppress_missing_key": {
+        "clear_all": "Clear all",
+        "error": "Error updating suppressed services",
+        "label": "Suppressed services",
+        "subtitle": "Select services for which you don't want to receive notifications about missing API keys.",
+        "success": "Suppressed services updated successfully",
+        "suppress_all": "Suppress all",
+        "title": "Suppress missing API key notifications"
+      },
       "title": "External service settings",
       "validation": {
         "connect_timeout": {
@@ -3982,14 +3993,20 @@
         "message": "rotki cannot query ETH staking data because you don't have a Beaconcha.in API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
         "title": "{service} API key"
       },
+      "change_indexer_order": "Change indexer order",
+      "do_not_show_again": "Do not show again",
       "etherscan": {
-        "message": "rotki queries for {location} chain are working slower because you don't have {location} {service} API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
-        "title": "{location} {service} API key"
+        "message": "rotki is using {service} without an API key configured, which may slow down queries. You can add an API key for better performance, or adjust the indexer order to prioritize a different service.",
+        "title": "{service} API key"
       },
       "get_key": "Get API key",
       "helius": {
         "message": "Transaction queries for Solana will be slow because you don't have a Helius API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
         "title": "{service} API key for Solana"
+      },
+      "suppress_confirm": {
+        "message": "Missing API key notifications for {service} will be suppressed. You can re-enable it later in Settings > General > External Service Settings.",
+        "title": "Suppress notification?"
       },
       "thegraph": {
         "message": "rotki cannot query {location} data because you don't have {service} API key configured, or the API key you are using isn't authorized for {location}. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app. Read the docs {docs} for more information.",

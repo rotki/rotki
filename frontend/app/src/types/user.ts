@@ -20,6 +20,12 @@ export const OtherSettings = z.object({
 
 export type OtherSettings = z.infer<typeof OtherSettings>;
 
+export const SuppressibleMissingKeyServiceEnum = z.enum(['etherscan', 'beaconchain', 'helius', 'thegraph']);
+
+export type SuppressibleMissingKeyService = z.infer<typeof SuppressibleMissingKeyServiceEnum>;
+
+export const SUPPRESSIBLE_SERVICES: SuppressibleMissingKeyService[] = SuppressibleMissingKeyServiceEnum.options;
+
 const GeneralSettings = z.object({
   activeModules: z.array(ModuleEnum),
   addressNamePriority: z.array(AddressNamePriorityEnum),
@@ -59,6 +65,7 @@ const GeneralSettings = z.object({
   readTimeout: z.number().min(1),
   ssfGraphMultiplier: z.number().default(0),
   submitUsageAnalytics: z.boolean(),
+  suppressMissingKeyMsgServices: z.array(SuppressibleMissingKeyServiceEnum),
   treatEth2AsEth: z.boolean(),
   uiFloatingPrecision: z.number(),
 });
@@ -174,6 +181,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     readTimeout: settings.readTimeout,
     ssfGraphMultiplier: settings.ssfGraphMultiplier,
     submitUsageAnalytics: settings.submitUsageAnalytics,
+    suppressMissingKeyMsgServices: settings.suppressMissingKeyMsgServices,
     treatEth2AsEth: settings.treatEth2AsEth,
     uiFloatingPrecision: settings.uiFloatingPrecision,
   };

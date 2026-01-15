@@ -3909,9 +3909,11 @@
         "message": "rotki не может запросить данные стейкинга ETH, потому что у вас не настроен API ключ Beaconcha.in. Нажмите @.quote:notification_messages.missing_api_key.get_key, чтобы создать его, или @.quote:notification_messages.missing_api_key.action, чтобы добавить его в приложении.",
         "title": "API ключ {service}"
       },
+      "change_indexer_order": "Изменить порядок индексаторов",
+      "do_not_show_again": "Больше не показывать",
       "etherscan": {
-        "message": "Запросы rotki для сети {location} работают медленнее, потому что у вас не настроен API ключ {service} для {location}. Нажмите @.quote:notification_messages.missing_api_key.get_key, чтобы создать его, или @.quote:notification_messages.missing_api_key.action, чтобы добавить его в приложении.",
-        "title": "API ключ {service} для {location}"
+        "message": "rotki использует {service} без настроенного API ключа, что может замедлить запросы. Вы можете добавить API ключ для лучшей производительности или изменить порядок индексаторов, чтобы приоритизировать другой сервис.",
+        "title": "API ключ {service}"
       },
       "get_key": "Получить API ключ",
       "helius": {

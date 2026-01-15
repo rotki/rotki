@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users can now suppress missing API key notifications for specific services in Settings > General > External Service Settings.
 * :feature:`11332` Users can now view the newly retrieved transactions directly from the notification after repulling transactions.
 * :feature:`11332` Users can now re-pull transactions for all chains at once.
 * :feature:`-` Users will now see a redesigned history sync progress panel that provides detailed real-time progress for chain queries, decoding, exchange syncing, and protocol cache updates.

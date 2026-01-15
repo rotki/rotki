@@ -4,17 +4,31 @@ import { type NotificationAction, NotificationCategory, Priority, Severity, toHu
 import { externalLinks } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
 import { createNotificationHandler } from '@/modules/messaging/utils';
+import { Routes } from '@/router/routes';
+import { useConfirmStore } from '@/store/confirm';
+import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { SUPPRESSIBLE_SERVICES, type SuppressibleMissingKeyService } from '@/types/user';
 import { getServiceRegisterUrl } from '@/utils/url';
+
+function isSuppressibleService(service: string): service is SuppressibleMissingKeyService {
+  return SUPPRESSIBLE_SERVICES.includes(service as SuppressibleMissingKeyService);
+}
 
 export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<MissingApiKey> {
   // Capture interop functions at handler creation time (in setup context)
   const { openUrl } = useInterop();
+  const { update } = useSettingsStore();
+  const { suppressMissingKeyMsgServices } = storeToRefs(useGeneralSettingsStore());
+  const { show } = useConfirmStore();
 
   return createNotificationHandler<MissingApiKey>((data) => {
     const { service } = data;
     const { external, route } = getServiceRegisterUrl(service) ?? { external: undefined, route: undefined };
 
     const actions: NotificationAction[] = [];
+
+    const isEtherscan = service === 'etherscan';
 
     if (route) {
       actions.push({
@@ -24,7 +38,15 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       });
     }
 
-    if (external) {
+    if (isEtherscan) {
+      actions.push({
+        action: async () => router.push({ path: Routes.SETTINGS_EVM.toString(), hash: '#indexer' }),
+        icon: 'lu-settings',
+        label: t('notification_messages.missing_api_key.change_indexer_order'),
+        persist: true,
+      });
+    }
+    else if (external) {
       actions.push({
         action: async () => openUrl(external),
         icon: 'lu-external-link',
@@ -33,7 +55,32 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       });
     }
 
+    // "Do not show again" action - adds service to suppress list with confirmation
+    if (isSuppressibleService(service)) {
+      const serviceName = toHumanReadable(service, 'capitalize');
+      actions.push({
+        action: async () => {
+          show(
+            {
+              message: t('notification_messages.missing_api_key.suppress_confirm.message', { service: serviceName }),
+              title: t('notification_messages.missing_api_key.suppress_confirm.title'),
+            },
+            async () => {
+              const currentList = get(suppressMissingKeyMsgServices);
+              if (!currentList.includes(service)) {
+                await update({ suppressMissingKeyMsgServices: [...currentList, service] });
+              }
+            },
+          );
+        },
+        icon: 'lu-bell-off',
+        danger: true,
+        label: t('notification_messages.missing_api_key.do_not_show_again'),
+      });
+    }
+
     const metadata = {
+      ...data,
       service: toHumanReadable(service, 'capitalize'),
     };
 

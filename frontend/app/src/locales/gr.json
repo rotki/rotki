@@ -2398,9 +2398,10 @@
     },
     "missing_api_key": {
       "action": "Εισάγετε κλειδί",
+      "change_indexer_order": "Αλλαγή σειράς ευρετηρίου",
       "etherscan": {
-        "message": "Τα ερωτήματα Rotki για την αλυσίδα {location} λειτουργούν πιο αργά επειδή δεν έχετε {location} {service} API key configured. Πατήστε @.quote:notification_messages.missing_api_key.get_key για να φτιάξετε ένα ή @.quote:notification_messages.missing_api_key.action για να το προσθέσετε στην εφαρμογή.",
-        "title": "Κλειδί API {location} {service}"
+        "message": "Το rotki χρησιμοποιεί το {service} χωρίς διαμορφωμένο κλειδί API, κάτι που μπορεί να επιβραδύνει τα ερωτήματα. Μπορείτε να προσθέσετε ένα κλειδί API για καλύτερη απόδοση ή να προσαρμόσετε τη σειρά ευρετηρίου για να δώσετε προτεραιότητα σε διαφορετική υπηρεσία.",
+        "title": "Κλειδί API {service}"
       },
       "get_key": "Λήψη κλειδιού API"
     },

@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { toCapitalCase } from '@rotki/common';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { Routes } from '@/router/routes';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { EvmIndexer } from '@/types/settings/evm-indexer';
@@ -31,12 +34,16 @@ interface TabItem {
 }
 
 const { t } = useI18n({ useScope: 'global' });
+const router = useRouter();
 
 const DEFAULT_TAB = 'default';
 
 const { getChain, getChainName, getEvmChainName, txEvmChains } = useSupportedChains();
 const { defaultEvmIndexerOrder, evmIndexersOrder } = storeToRefs(useGeneralSettingsStore());
 const { update: updateSettings } = useSettingsStore();
+const { apiKey } = useExternalApiKeys(t);
+
+const etherscanApiKey = apiKey('etherscan');
 
 const activeTab = ref<string>(DEFAULT_TAB);
 const showChainMenu = ref<boolean>(false);
@@ -44,11 +51,29 @@ const showChainMenu = ref<boolean>(false);
 const localDefaultOrder = ref<PrioritizedListId[]>([]);
 const localChainOrders = ref<Record<string, PrioritizedListId[]>>({});
 
-const availableIndexers = new PrioritizedListData<PrioritizedListId>([
+const allIndexerItems = [
   ETHERSCAN_PRIO_LIST_ITEM,
   BLOCKSCOUT_PRIO_LIST_ITEM,
   ROUTESCAN_PRIO_LIST_ITEM,
-]);
+];
+
+const CHAIN_SUPPORTED_INDEXERS: Record<string, typeof allIndexerItems> = {
+  binance_sc: [ETHERSCAN_PRIO_LIST_ITEM],
+};
+
+function getAvailableIndexersForChain(chainId: string | null): PrioritizedListData<PrioritizedListId> {
+  const items = chainId && chainId in CHAIN_SUPPORTED_INDEXERS
+    ? CHAIN_SUPPORTED_INDEXERS[chainId]
+    : allIndexerItems;
+
+  return new PrioritizedListData<PrioritizedListId>(items);
+}
+
+const availableIndexers = computed<PrioritizedListData<PrioritizedListId>>(() => {
+  const tab = get(activeTab);
+  const chainId = tab === DEFAULT_TAB ? null : tab;
+  return getAvailableIndexersForChain(chainId);
+});
 
 const configuredChains = computed<string[]>(() => Object.keys(get(localChainOrders)));
 
@@ -112,7 +137,12 @@ function toEvmChainNameKeys(orders: Record<string, PrioritizedListId[]>): Record
 
 async function addChain(chain: ChainItem): Promise<void> {
   const orders = { ...get(localChainOrders) };
-  orders[chain.id] = [...get(localDefaultOrder)];
+  const chainAvailableIndexers = getAvailableIndexersForChain(chain.id);
+  // Filter default order to only include indexers available for this chain
+  const filteredOrder = get(localDefaultOrder).filter(
+    indexer => chainAvailableIndexers.itemDataForId(indexer) !== undefined,
+  );
+  orders[chain.id] = filteredOrder.length > 0 ? filteredOrder : [EvmIndexer.ETHERSCAN];
   set(localChainOrders, orders);
   set(activeTab, chain.id);
   set(showChainMenu, false);
@@ -136,6 +166,44 @@ const currentOrder = computed<PrioritizedListId[]>(() => {
 
   return get(localChainOrders)[tab] ?? [];
 });
+
+const missingApiKeyIndexer = computed<string | null>(() => {
+  const order = get(currentOrder);
+  if (order.length === 0)
+    return null;
+
+  const firstIndexer = order[0];
+
+  if (firstIndexer === EvmIndexer.ETHERSCAN) {
+    if (!get(etherscanApiKey))
+      return toCapitalCase(EvmIndexer.ETHERSCAN);
+  }
+  else if (firstIndexer === EvmIndexer.BLOCKSCOUT) {
+    const tab = get(activeTab);
+    const chainId = tab === DEFAULT_TAB ? 'ethereum' : tab;
+    const blockscoutKey = apiKey('blockscout', chainId);
+    if (!get(blockscoutKey))
+      return toCapitalCase(EvmIndexer.BLOCKSCOUT);
+  }
+
+  return null;
+});
+
+function navigateToApiKeys(): void {
+  const order = get(currentOrder);
+  if (order.length === 0)
+    return;
+
+  const firstIndexer = order[0];
+  if (firstIndexer === EvmIndexer.ETHERSCAN) {
+    router.push({ path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(), query: { service: EvmIndexer.ETHERSCAN } });
+  }
+  else if (firstIndexer === EvmIndexer.BLOCKSCOUT) {
+    const tab = get(activeTab);
+    const chainId = tab === DEFAULT_TAB ? 'ethereum' : tab;
+    router.push({ path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(), query: { service: EvmIndexer.BLOCKSCOUT, location: chainId } });
+  }
+}
 
 function updateDefaultOrder(value: PrioritizedListId[], updateImmediate: (value: PrioritizedListId[]) => void): void {
   set(localDefaultOrder, value);
@@ -276,6 +344,26 @@ watchImmediate([evmIndexersOrder, defaultEvmIndexerOrder], () => {
         class="mb-4"
       >
         {{ t('evm_settings.indexer.no_indexers_warning') }}
+      </RuiAlert>
+
+      <RuiAlert
+        v-else-if="missingApiKeyIndexer"
+        type="info"
+        class="mb-4"
+        data-cy="missing-api-key-alert"
+      >
+        <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <span class="flex-1">
+            {{ t('evm_settings.indexer.api_key_missing_alert', { indexer: missingApiKeyIndexer }) }}
+          </span>
+          <RuiButton
+            color="info"
+            size="sm"
+            @click="navigateToApiKeys()"
+          >
+            {{ t('evm_settings.indexer.enter_api_key') }}
+          </RuiButton>
+        </div>
       </RuiAlert>
 
       <RuiTabItems v-model="activeTab">

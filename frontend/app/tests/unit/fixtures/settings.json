@@ -67,7 +67,8 @@
     "ask_user_upon_size_discrepancy": true,
     "auto_detect_tokens": true,
     "csv_export_delimiter": ",",
-    "asset_movement_amount_tolerance": "0.000001"
+    "asset_movement_amount_tolerance": "0.000001",
+    "suppress_missing_key_msg_services": []
   },
   "message": ""
 }

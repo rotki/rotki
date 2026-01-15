@@ -7,10 +7,13 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { getPublicServiceImagePath } from '@/utils/file';
 
+const name = 'blockscout';
 const { t } = useI18n({ useScope: 'global' });
 const { keys } = useExternalApiKeys(t);
 const tabIndex = ref<number>(0);
 const route = useRoute();
+const router = useRouter();
+
 const { getChainName } = useSupportedChains();
 
 const supportedChains = computed(() => {
@@ -25,18 +28,19 @@ const supportedChains = computed(() => {
   });
 });
 
-function setActiveTab(hash: string) {
-  const evmChain = hash?.slice(1);
+function setActiveTab(location: string) {
   const chains = get(supportedChains);
-  const index = chains.findIndex(x => x.evmChainName === evmChain);
+  const index = chains.findIndex(x => x.evmChainName === location);
   if (index >= 0) {
     set(tabIndex, index);
   }
 }
 
-watch([route, supportedChains], ([route, chains]) => {
-  if (route && route.hash && chains.length > 0) {
-    setActiveTab(route.hash);
+watch([route, supportedChains], async ([route, chains]) => {
+  const location = route?.query?.location;
+  if (location && typeof location === 'string' && chains.length > 0) {
+    setActiveTab(location);
+    await router.replace({ query: {} });
   }
 }, { immediate: true });
 </script>
@@ -44,6 +48,7 @@ watch([route, supportedChains], ([route, chains]) => {
 <template>
   <ServiceKeyCard
     hide-action
+    :name="name"
     :title="t('external_services.blockscout.title')"
     :subtitle="t('external_services.blockscout.description')"
     :image-src="getPublicServiceImagePath('blockscout.svg')"
