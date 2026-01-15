@@ -1,4 +1,4 @@
-import type { SearchMatcher, StringSuggestionMatcher, Suggestion } from '@/types/filtering';
+import type { MatchedKeywordWithBehaviour, SearchMatcher, StringSuggestionMatcher, Suggestion } from '@/types/filtering';
 import { get, set } from '@vueuse/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { type Ref, ref } from 'vue';
@@ -28,10 +28,12 @@ describe('composables/use-filter-selection', () => {
     };
   }
 
+  type EmitFn = (event: 'update:matches', matches: MatchedKeywordWithBehaviour<any>) => void;
+
   interface TestSetup {
     matchers: Ref<SearchMatcher<any, any>[]>;
     search: Ref<string>;
-    emit: ReturnType<typeof vi.fn>;
+    emit: EmitFn;
     matcherForKey: (searchKey: string | undefined) => SearchMatcher<any, any> | undefined;
     matcherForKeyValue: (searchKey: string | undefined) => SearchMatcher<any, any> | undefined;
   }
@@ -39,7 +41,7 @@ describe('composables/use-filter-selection', () => {
   function createTestSetup(matchersList: SearchMatcher<any, any>[] = []): TestSetup {
     const matchers = ref<SearchMatcher<any, any>[]>(matchersList);
     const search = ref<string>('');
-    const emit = vi.fn();
+    const emit = vi.fn<EmitFn>();
 
     const matcherForKey = (searchKey: string | undefined): SearchMatcher<any, any> | undefined =>
       get(matchers).find((matcher: SearchMatcher<any, any>) => matcher.key === searchKey);

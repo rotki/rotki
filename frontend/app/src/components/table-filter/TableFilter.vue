@@ -52,8 +52,6 @@ const suggestedFilter = ref<Suggestion>({
 });
 const shaking = ref<boolean>(false);
 
-const autoCompleteClass = '[&_[class*=value]_div.flex:has(.hidden)]:hidden'; // hide wrapper for autocomplete selection if it's contain empty child (means that we hide it due to the chip grouping)
-
 // Matcher utilities
 const {
   matcherForKey,
@@ -267,10 +265,11 @@ const { t } = useI18n({ useScope: 'global' });
           ref="input"
           v-model:search-input="search"
           :model-value="selection"
-          :class="[autoCompleteClass, {
-            '[&_input:not(.edit-input)]:hidden': !!suggestionBeingEdited,
+          :class="{
             'animate-shake': shaking,
-          }]"
+          }"
+          hide-selection-wrapper
+          :hide-search-input="!!suggestionBeingEdited"
           variant="outlined"
           dense
           :disabled="disabled"

@@ -6,10 +6,9 @@ import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/
 import { flatten } from 'es-toolkit';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useRefWithDebounce } from '@/composables/ref';
+import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useStatusStore } from '@/store/status';
-import { Section } from '@/types/status';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 interface UseHistoryEventsDataOptions {
@@ -52,13 +51,11 @@ export function useHistoryEventsData(
 
   // Extract collection data
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
-  const { isLoading } = useStatusStore();
   const { data, entriesFoundTotal, found, limit, total } = getCollectionData(groups);
   const { showUpgradeRow } = setupEntryLimit(limit, found, total, entriesFoundTotal);
   const { fetchHistoryEvents } = useHistoryEvents();
   const { isAssetIgnored } = useIgnoredAssetsStore();
-
-  const sectionLoading = computed(() => get(isLoading(Section.HISTORY)));
+  const { sectionLoading } = useHistoryEventsStatus();
 
   const events: Ref<HistoryEventRow[]> = asyncComputed(async () => {
     const dataValue = get(data);

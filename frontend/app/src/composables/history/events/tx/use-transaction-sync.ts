@@ -3,12 +3,10 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useStatusUpdater } from '@/composables/status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { type BlockchainAddress, type ChainAddress, TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/types/history/events';
-import { Section, Status } from '@/types/status';
 import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
@@ -34,10 +32,9 @@ export function useTransactionSync(): UseTransactionSyncReturn {
   const queue = new LimitedParallelizationQueue(1);
   const { fetchTransactionsTask } = useHistoryEventsApi();
 
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { awaitTask } = useTaskStore();
   const { removeQueryStatus, setEvmlikeStatus } = useTxQueryStatusStore();
   const { getChainName } = useSupportedChains();
-  const { setStatus } = useStatusUpdater(Section.HISTORY);
   const { decodeTransactionsTask } = useHistoryTransactionDecoding();
   const { getTransactionTypeFromChain } = useHistoryTransactionAccounts();
 
@@ -100,8 +97,6 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       // Mark evmlike as finished when the task completes
       if (isEvmlike && trackProgress)
         setEvmlikeStatus(account, 'finished');
-
-      setStatus(isTaskRunning(taskType, { type }) ? Status.REFRESHING : Status.LOADED);
     }
   };
 
