@@ -267,6 +267,7 @@ export class SubprocessHandler {
   }
 
   async terminateProcesses(restart: boolean = false): Promise<void> {
+    this.logger.debug(`Terminating subprocesses isRestart: ${restart} (exiting: ${this.exiting})`);
     if (this.exiting)
       return;
 
@@ -275,6 +276,7 @@ export class SubprocessHandler {
     await this.coreManager?.terminate();
     this.exiting = false;
 
+    this.logger.debug('Termination complete');
     if (!restart)
       app.quit();
   }

@@ -135,7 +135,8 @@ export class ProcessManager {
         await this.terminateWindowsProcesses();
       }
       else {
-        this.process.kill();
+        const success = this.process.kill();
+        this.log(`Process ${this.processName} (PID: ${this.process.pid}) terminated with success: ${success}`);
       }
     }
     catch (error: any) {
