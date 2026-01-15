@@ -62,9 +62,13 @@ export function useChipGrouping(
     return 'hidden';
   }
 
+  /**
+   * Returns the overflow count for grouped chips.
+   * Subtracts 1 from the total because the first item is shown separately.
+   */
   function getGroupedOverflowCount(item: Suggestion): number {
     const total = get(groupedKeysCounts)[item.key] || 0;
-    return total - 1; // Subtract 1 because we show the first item
+    return total - 1;
   }
 
   function toggleGroupMenu(key: string): void {

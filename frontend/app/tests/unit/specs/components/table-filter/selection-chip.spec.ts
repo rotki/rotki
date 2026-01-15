@@ -76,7 +76,7 @@ describe('table-filter/SelectionChip.vue', () => {
       const chip = wrapper.findComponent({ name: 'RuiChip' });
       expect(chip.exists()).toBe(true);
       expect(wrapper.findComponent({ name: 'RuiMenu' }).exists()).toBe(false);
-      expect(wrapper.find('.hidden').exists()).toBe(false);
+      expect(wrapper.find('[data-testid=hidden-selection-chip]').exists()).toBe(false);
     });
 
     it('emits click-item when chip is clicked', async () => {
@@ -281,7 +281,7 @@ describe('table-filter/SelectionChip.vue', () => {
         },
       });
 
-      expect(wrapper.find('.hidden').exists()).toBe(true);
+      expect(wrapper.find('[data-testid=hidden-selection-chip]').exists()).toBe(true);
       expect(wrapper.findComponent({ name: 'RuiChip' }).exists()).toBe(false);
       expect(wrapper.findComponent({ name: 'RuiMenu' }).exists()).toBe(false);
     });

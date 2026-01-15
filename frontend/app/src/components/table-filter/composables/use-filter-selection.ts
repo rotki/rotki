@@ -28,7 +28,6 @@ interface UseFilterSelectionReturn {
 }
 
 export function useFilterSelection(
-  matchers: Ref<SearchMatcher<any, any>[]>,
   search: Ref<string>,
   matcherForKey: (searchKey: string | undefined) => SearchMatcher<any, any> | undefined,
   matcherForKeyValue: (searchKey: string | undefined) => SearchMatcher<any, any> | undefined,
@@ -212,6 +211,9 @@ export function useFilterSelection(
             deserializedValue = foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
           }
         }
+
+        if (deserializedValue === null)
+          return;
 
         newSelection.push({
           asset,

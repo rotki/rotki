@@ -6,12 +6,13 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const expandedGroupKey = defineModel<string | undefined>('expandedGroupKey');
+
 const props = defineProps<{
   item: Suggestion;
   chipAttrs: Record<string, unknown>;
   displayType: 'normal' | 'grouped' | 'hidden';
   editMode: boolean;
-  expandedGroupKey?: string;
   overflowCount: number;
   groupedItems: Suggestion[];
 }>();
@@ -23,15 +24,14 @@ const emit = defineEmits<{
   'toggle-group-menu': [key: string];
   'remove-all-items': [key: string];
   'remove-grouped-item': [item: Suggestion];
-  'update:expanded-group-key': [key: string | undefined];
 }>();
 
-const { item, expandedGroupKey } = toRefs(props);
+const { item } = toRefs(props);
 
 const isMenuOpen = computed<boolean>(() => get(expandedGroupKey) === get(item).key);
 
 function onMenuUpdate(value: boolean): void {
-  emit('update:expanded-group-key', value ? get(item).key : undefined);
+  set(expandedGroupKey, value ? get(item).key : undefined);
 }
 </script>
 
@@ -122,6 +122,7 @@ function onMenuUpdate(value: boolean): void {
   <!-- Hidden items (other items in grouped keys) -->
   <div
     v-else
+    data-testid="hidden-selection-chip"
     class="hidden"
   />
 </template>

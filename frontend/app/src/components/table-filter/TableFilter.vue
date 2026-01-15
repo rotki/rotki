@@ -70,7 +70,7 @@ const {
   suggestionBeingEdited,
   updateEditSuggestionSearch,
   updateMatches,
-} = useFilterSelection(matchers, search, matcherForKey, matcherForKeyValue, emit);
+} = useFilterSelection(search, matcherForKey, matcherForKeyValue, emit);
 
 // Filtered matchers based on selection
 const { filteredMatchers } = useFilterMatchers(matchers, selection, search);
@@ -289,11 +289,11 @@ const { t } = useI18n({ useScope: 'global' });
         >
           <template #selection="{ item, chipAttrs }">
             <SelectionChip
+              v-model:expanded-group-key="expandedGroupKey"
               :item="item"
               :chip-attrs="chipAttrs"
               :display-type="getChipDisplayType(item)"
               :edit-mode="isSuggestionBeingEdited(item)"
-              :expanded-group-key="expandedGroupKey"
               :overflow-count="getGroupedOverflowCount(item)"
               :grouped-items="getGroupedItemsForKey(item)"
               @click-item="clickItem($event)"
@@ -302,7 +302,6 @@ const { t } = useI18n({ useScope: 'global' });
               @toggle-group-menu="toggleGroupMenu($event)"
               @remove-all-items="removeAllItemsForKey($event)"
               @remove-grouped-item="removeGroupedItem($event)"
-              @update:expanded-group-key="expandedGroupKey = $event"
             />
           </template>
           <template #no-data>

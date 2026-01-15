@@ -31,7 +31,6 @@ describe('composables/use-filter-selection', () => {
   type EmitFn = (event: 'update:matches', matches: MatchedKeywordWithBehaviour<any>) => void;
 
   interface TestSetup {
-    matchers: Ref<SearchMatcher<any, any>[]>;
     search: Ref<string>;
     emit: EmitFn;
     matcherForKey: (searchKey: string | undefined) => SearchMatcher<any, any> | undefined;
@@ -53,7 +52,6 @@ describe('composables/use-filter-selection', () => {
       emit,
       matcherForKey,
       matcherForKeyValue,
-      matchers,
       search,
     };
   }
@@ -62,7 +60,6 @@ describe('composables/use-filter-selection', () => {
     it('returns string value directly', () => {
       const setup = createTestSetup();
       const { getDisplayValue } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -78,7 +75,6 @@ describe('composables/use-filter-selection', () => {
     it('formats suggestion with equals operator', () => {
       const setup = createTestSetup();
       const { getSuggestionText } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -96,7 +92,6 @@ describe('composables/use-filter-selection', () => {
     it('formats suggestion with not-equals operator when excluded', () => {
       const setup = createTestSetup();
       const { getSuggestionText } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -116,7 +111,6 @@ describe('composables/use-filter-selection', () => {
     it('returns false when no suggestion is being edited', () => {
       const setup = createTestSetup();
       const { isSuggestionBeingEdited } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -130,7 +124,6 @@ describe('composables/use-filter-selection', () => {
     it('returns true when the same suggestion is being edited', () => {
       const setup = createTestSetup();
       const { isSuggestionBeingEdited, clickItem } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -148,7 +141,6 @@ describe('composables/use-filter-selection', () => {
     it('sets suggestionBeingEdited and search for string values', () => {
       const setup = createTestSetup();
       const { suggestionBeingEdited, clickItem } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -165,7 +157,6 @@ describe('composables/use-filter-selection', () => {
     it('sets search with != for excluded items', () => {
       const setup = createTestSetup();
       const { clickItem } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -181,7 +172,6 @@ describe('composables/use-filter-selection', () => {
     it('does not set editing state for boolean values', () => {
       const setup = createTestSetup();
       const { suggestionBeingEdited, clickItem } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -205,7 +195,6 @@ describe('composables/use-filter-selection', () => {
     it('clears suggestionBeingEdited and search', () => {
       const setup = createTestSetup();
       const { suggestionBeingEdited, clickItem, cancelEditSuggestion } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -223,7 +212,6 @@ describe('composables/use-filter-selection', () => {
     it('preserves search when skipClearSearch is true', () => {
       const setup = createTestSetup();
       const { clickItem, cancelEditSuggestion } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -242,7 +230,6 @@ describe('composables/use-filter-selection', () => {
     it('updates search with edited value', () => {
       const setup = createTestSetup();
       const { clickItem, updateEditSuggestionSearch } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -259,7 +246,6 @@ describe('composables/use-filter-selection', () => {
     it('does nothing when not editing', () => {
       const setup = createTestSetup();
       const { updateEditSuggestionSearch } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -276,7 +262,6 @@ describe('composables/use-filter-selection', () => {
     it('emits update:matches with transformed values', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { updateMatches } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -292,7 +277,6 @@ describe('composables/use-filter-selection', () => {
     it('handles excluded values with ! prefix', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { updateMatches } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -308,7 +292,6 @@ describe('composables/use-filter-selection', () => {
     it('filters out invalid suggestions', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { updateMatches } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -327,7 +310,6 @@ describe('composables/use-filter-selection', () => {
     it('adds new filter to selection', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { applyFilter, selection } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -344,7 +326,6 @@ describe('composables/use-filter-selection', () => {
     it('replaces non-multiple matcher values', () => {
       const setup = createTestSetup([createStringMatcher('single', 'single', false)]);
       const { applyFilter, selection } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -366,7 +347,6 @@ describe('composables/use-filter-selection', () => {
       set(setup.search, 'type=value');
 
       const { applyFilter } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -384,7 +364,6 @@ describe('composables/use-filter-selection', () => {
     it('restores selection from matches object', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { restoreSelection, selection } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -401,7 +380,6 @@ describe('composables/use-filter-selection', () => {
     it('restores excluded values with ! prefix', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { restoreSelection, selection } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
@@ -418,7 +396,6 @@ describe('composables/use-filter-selection', () => {
     it('handles single values', () => {
       const setup = createTestSetup([createStringMatcher('single', 'single', false)]);
       const { restoreSelection, selection } = useFilterSelection(
-        setup.matchers,
         setup.search,
         setup.matcherForKey,
         setup.matcherForKeyValue,
