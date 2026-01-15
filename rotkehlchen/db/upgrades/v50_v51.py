@@ -1,4 +1,6 @@
+import json
 import logging
+from json import JSONDecodeError
 from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -10,6 +12,7 @@ from rotkehlchen.constants import (
     CONTRACT_TAG_FOREGROUND_COLOR,
     CONTRACT_TAG_NAME,
 )
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -186,6 +189,41 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             'UPDATE key_value_cache SET name=? WHERE name=?',
             ('last_eth2_events_processing_ts', 'last_events_processing_task_ts'),
         )
+
+    @progress_step(description='Remove Monerium profile data from cached credentials.')
+    def _remove_monerium_profiles_from_cache(write_cursor: 'DBCursor') -> None:
+        """Remove stored Monerium OAuth profile data from cached credentials."""
+        if (result := write_cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS.value,),
+        ).fetchone()) is None:
+            return
+
+        raw_value = result[0]
+        try:
+            cached_data = json.loads(raw_value)
+        except (JSONDecodeError, TypeError) as exc:
+            log.error(
+                'Failed to parse stored Monerium OAuth credentials during upgrade: '
+                f'{exc!s}',
+            )
+            return
+
+        if not isinstance(cached_data, dict):
+            log.error('Unexpected Monerium OAuth credentials format during upgrade. Bailing')
+            return
+
+        if 'profiles' not in cached_data and 'default_profile_id' not in cached_data:
+            log.debug(f'_remove_monerium_profiles_from_cache bails because profiles and default_profile_id are not in the cached data. {cached_data=}')  # noqa: E501
+            return
+
+        cached_data.pop('profiles', None)
+        cached_data.pop('default_profile_id', None)
+        write_cursor.execute(
+            'UPDATE key_value_cache SET value=? WHERE name=?',
+            (json.dumps(cached_data), DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS.value),
+        )
+        log.debug(f'_remove_monerium_profiles_from_cache successfully saved in the database {cached_data=}')  # noqa: E501
 
     @progress_step(description='Migrating deposit/withdrawal subtypes for customized events.')
     def _migrate_defi_protocol_subtypes(write_cursor: 'DBCursor') -> None:

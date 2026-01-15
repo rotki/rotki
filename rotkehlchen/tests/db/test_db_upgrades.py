@@ -25,7 +25,7 @@ from rotkehlchen.constants.misc import (
 )
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.importers.constants import ROTKI_EVENT_PREFIX
-from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
@@ -3809,6 +3809,14 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
         assert cursor.execute(
             "SELECT * FROM key_value_cache WHERE name = 'last_events_processing_task_ts'",
         ).fetchone() == ('last_events_processing_task_ts', (processing_ts := '1767987178'))
+        raw_monerium_credentials = cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS.value,),
+        ).fetchone()[0]
+        assert {
+            'profiles',
+            'default_profile_id',
+        }.issubset(json.loads(raw_monerium_credentials))
 
     db_v50.logout()
     db = _init_db_with_target_version(
@@ -3853,5 +3861,14 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
             (8, 'deposit', 'deposit asset', None),  # asset movement
             (9, 'deposit', 'deposit asset', None),  # no counterparty
         ]
+        assert json.loads(cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name=?',
+            (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS.value,),
+        ).fetchone()[0]) == {
+            'access_token': 'a1',
+            'refresh_token': 'b2',
+            'expires_at': 1765794259,
+            'user_email': 'user@example.com',
+        }
 
     db.logout()

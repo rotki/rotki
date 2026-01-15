@@ -229,8 +229,6 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
                 'client_id': 'mock-client-id',
                 'token_type': 'Bearer',
                 'user_email': 'mock@monerium.com',
-                'default_profile_id': 'profile-id',
-                'profiles': [],
             }),
         )
 
