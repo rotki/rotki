@@ -226,6 +226,7 @@ function getAccount(account: AccountWithAddressData): Account {
       :hide-no-data="!hideOnEmptyUsable"
       :chips="multiple"
       :item-height="40"
+      :required="required"
       :clearable="!required"
       :dense="dense"
       :variant="outlined ? 'outlined' : 'default'"

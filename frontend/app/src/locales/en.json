@@ -2398,6 +2398,7 @@
     "add_error": {
       "title": "Adding {chain} RPC Node"
     },
+    "archive_node": "Archive Node",
     "confirm": {
       "message": "Are you sure you want to delete the RPC node '{node}' ({endpoint}) for {chain}?",
       "title": "Delete {chain} RPC Node"
@@ -3263,7 +3264,14 @@
     "lt": "<"
   },
   "historical_balances": {
+    "account": "Account",
+    "account_hint": "Select an account from a chain with an archive node",
     "asset_hint": "Leave empty to show all assets",
+    "asset_required_hint": "The asset to query balance for (required)",
+    "errors": {
+      "invalid_chain": "Invalid EVM chain selected",
+      "missing_archive_node_fields": "Please fill in all required fields: account and asset"
+    },
     "fetch_button": "Get Historical Balances",
     "hint": "View your asset balances at a specific point in time, calculated from your historical events.",
     "location_hint": "Leave empty to show all locations",
@@ -3280,16 +3288,26 @@
     },
     "no_data": "No historical data found for the selected timestamp",
     "no_location_labels": "No accounts available",
+    "onchain_task_description": "Querying on-chain balance for {asset} at {address} on {chain} at {timestamp}",
     "premium_required": "Historical balances is a premium feature. Please upgrade to access this functionality.",
     "processing_description": "Processing historical events to calculate balances",
     "processing_progress": "Processing: {processed} / {total}",
     "protocol_hint": "Leave empty to show all protocols",
     "results_timestamp": "Showing balances as of",
+    "source": {
+      "archive_node": "Archive Node",
+      "chain_missing_archive_node": "No archive node configured for {chain}. Configure one in {link} to query historical balances for this chain.",
+      "historical_events": "Historical Events",
+      "label": "Source",
+      "loading_archive_nodes": "Checking for archive nodes...",
+      "no_archive_nodes": "No archive nodes available. Configure an archive node in {link} to enable this feature.",
+      "settings_link": "Settings"
+    },
     "task_description_all": "Calculating balances for all assets at {timestamp}",
     "task_description_asset": "Calculating balance for {asset} at {timestamp}",
     "timestamp_label": "Date and Time",
     "title": "Historical Balances",
-    "trigger_processing": "Process Events"
+    "trigger_processing": "Process Historical Events"
   },
   "history_events_alert": {
     "nudge": "History events need to be queried and decoded. Navigate to {link} view to ensure your data is up to date."

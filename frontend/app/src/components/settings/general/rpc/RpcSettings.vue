@@ -94,6 +94,9 @@ onMounted(() => {
       if ('id' in tab) {
         return tab.id === tabQuery;
       }
+      if ('chain' in tab) {
+        return tab.chain === tabQuery;
+      }
       return false;
     });
 
