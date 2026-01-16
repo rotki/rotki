@@ -4,17 +4,17 @@ import AppImage from '@/components/common/AppImage.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { SUPPRESSIBLE_SERVICES, type SuppressibleMissingKeyService } from '@/types/user';
+import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/types/user';
 import { getPublicServiceImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 const { suppressMissingKeyMsgServices } = storeToRefs(useGeneralSettingsStore());
 
 const SERVICE_ICONS: Record<SuppressibleMissingKeyService, string> = {
-  beaconchain: getPublicServiceImagePath('beaconchain.svg'),
-  etherscan: getPublicServiceImagePath('etherscan.svg'),
-  helius: getPublicServiceImagePath('helius.svg'),
-  thegraph: getPublicServiceImagePath('thegraph.svg'),
+  [SuppressibleMissingKeyService.BEACONCHAIN]: getPublicServiceImagePath('beaconchain.svg'),
+  [SuppressibleMissingKeyService.ETHERSCAN]: getPublicServiceImagePath('etherscan.svg'),
+  [SuppressibleMissingKeyService.HELIUS]: getPublicServiceImagePath('helius.svg'),
+  [SuppressibleMissingKeyService.THEGRAPH]: getPublicServiceImagePath('thegraph.svg'),
 };
 
 interface ServiceOption {

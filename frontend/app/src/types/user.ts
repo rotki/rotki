@@ -20,11 +20,23 @@ export const OtherSettings = z.object({
 
 export type OtherSettings = z.infer<typeof OtherSettings>;
 
-export const SuppressibleMissingKeyServiceEnum = z.enum(['etherscan', 'beaconchain', 'helius', 'thegraph']);
+export const SuppressibleMissingKeyService = {
+  BEACONCHAIN: 'beaconchain',
+  ETHERSCAN: 'etherscan',
+  HELIUS: 'helius',
+  THEGRAPH: 'thegraph',
+} as const;
+
+export const SuppressibleMissingKeyServiceEnum = z.enum([
+  SuppressibleMissingKeyService.BEACONCHAIN,
+  SuppressibleMissingKeyService.ETHERSCAN,
+  SuppressibleMissingKeyService.HELIUS,
+  SuppressibleMissingKeyService.THEGRAPH,
+]);
 
 export type SuppressibleMissingKeyService = z.infer<typeof SuppressibleMissingKeyServiceEnum>;
 
-export const SUPPRESSIBLE_SERVICES: SuppressibleMissingKeyService[] = SuppressibleMissingKeyServiceEnum.options;
+export const SUPPRESSIBLE_SERVICES: SuppressibleMissingKeyService[] = Object.values(SuppressibleMissingKeyService);
 
 const GeneralSettings = z.object({
   activeModules: z.array(ModuleEnum),

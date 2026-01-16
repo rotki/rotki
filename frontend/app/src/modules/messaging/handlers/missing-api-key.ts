@@ -8,11 +8,11 @@ import { Routes } from '@/router/routes';
 import { useConfirmStore } from '@/store/confirm';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { SUPPRESSIBLE_SERVICES, type SuppressibleMissingKeyService } from '@/types/user';
+import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/types/user';
 import { getServiceRegisterUrl } from '@/utils/url';
 
 function isSuppressibleService(service: string): service is SuppressibleMissingKeyService {
-  return SUPPRESSIBLE_SERVICES.includes(service as SuppressibleMissingKeyService);
+  return Array.prototype.includes.call(SUPPRESSIBLE_SERVICES, service);
 }
 
 export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<MissingApiKey> {
@@ -28,7 +28,7 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
 
     const actions: NotificationAction[] = [];
 
-    const isEtherscan = service === 'etherscan';
+    const isEtherscan = service === SuppressibleMissingKeyService.ETHERSCAN;
 
     if (route) {
       actions.push({
@@ -89,31 +89,31 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
       messageKey: string;
       titleKey: string;
     }> = {
-      beaconchain: {
+      [SuppressibleMissingKeyService.BEACONCHAIN]: {
         category: NotificationCategory.BEACONCHAIN,
         messageKey: 'notification_messages.missing_api_key.beaconchain.message',
         titleKey: 'notification_messages.missing_api_key.beaconchain.title',
       },
-      etherscan: {
+      [SuppressibleMissingKeyService.ETHERSCAN]: {
         category: NotificationCategory.ETHERSCAN,
         messageKey: 'notification_messages.missing_api_key.etherscan.message',
         titleKey: 'notification_messages.missing_api_key.etherscan.title',
       },
-      helius: {
+      [SuppressibleMissingKeyService.HELIUS]: {
         category: NotificationCategory.HELIUS,
         messageKey: 'notification_messages.missing_api_key.helius.message',
         titleKey: 'notification_messages.missing_api_key.helius.title',
       },
-      thegraph: {
+      [SuppressibleMissingKeyService.THEGRAPH]: {
         category: NotificationCategory.THEGRAPH,
         messageKey: 'notification_messages.missing_api_key.thegraph.message',
         titleKey: 'notification_messages.missing_api_key.thegraph.title',
       },
     };
 
-    const config = serviceConfig[service] || serviceConfig.etherscan;
+    const config = serviceConfig[service] || serviceConfig[SuppressibleMissingKeyService.ETHERSCAN];
     const { category, messageKey, titleKey } = config;
-    const theGraphWarning = service === 'thegraph';
+    const theGraphWarning = service === SuppressibleMissingKeyService.THEGRAPH;
 
     return {
       action: actions,
