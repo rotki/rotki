@@ -29,6 +29,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const currencyLocation = useComputedRef(settings, 'currencyLocation');
   const abbreviateNumber = useComputedRef(settings, 'abbreviateNumber');
   const minimumDigitToBeAbbreviated = useComputedRef(settings, 'minimumDigitToBeAbbreviated');
+  const newlyDetectedTokensMaxCount = useComputedRef(settings, 'newlyDetectedTokensMaxCount');
+  const newlyDetectedTokensTtlDays = useComputedRef(settings, 'newlyDetectedTokensTtlDays');
   const refreshPeriod = useComputedRef(settings, 'refreshPeriod');
   const explorers = useComputedRef(settings, 'explorers');
   const itemsPerPage = useComputedRef(settings, 'itemsPerPage');
@@ -148,6 +150,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     lastPasswordConfirmed,
     lightTheme,
     minimumDigitToBeAbbreviated,
+    newlyDetectedTokensMaxCount,
+    newlyDetectedTokensTtlDays,
     nftsInNetValue,
     notifyNewNfts,
     passwordConfirmationInterval,

@@ -27,14 +27,14 @@ interface UseMappingDBReturn {
 
 export function useMissingMappingsDB(): UseMappingDBReturn {
   // This should not be destructured to avoid accessing it during the composable creation
-  const handler = useDatabase();
+  const { db } = useDatabase();
 
   async function put(mapping: AddMissingMapping): Promise<number> {
-    return handler.db.missingMappings.put(mapping);
+    return db().missingMappings.put(mapping);
   }
 
   async function remove(mapping: DeleteMissingMapping): Promise<void> {
-    const matchingMapping = await handler.db
+    const matchingMapping = await db()
       .missingMappings
       .where(`[identifier+location]`)
       .equals([mapping.identifier, mapping.location])
@@ -44,11 +44,11 @@ export function useMissingMappingsDB(): UseMappingDBReturn {
       return;
     }
 
-    await handler.db.missingMappings.delete(matchingMapping.id);
+    await db().missingMappings.delete(matchingMapping.id);
   }
 
   async function count(): Promise<number> {
-    return handler.db.missingMappings.count();
+    return db().missingMappings.count();
   }
 
   async function getData(payload: MaybeRef<MissingMappingsRequestPayload>): Promise<Collection<MissingMapping>> {
@@ -72,7 +72,7 @@ export function useMissingMappingsDB(): UseMappingDBReturn {
       };
     }
 
-    const table = handler.db.missingMappings;
+    const table = db().missingMappings;
     const { data, total } = await getPage<MissingMapping, 'id'>(table, {
       limit,
       offset,

@@ -1,8 +1,7 @@
 import type { MessageHandler } from '../interfaces';
-import type { NewDetectedToken } from '../types/business-types';
 import { NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
-import { useNewlyDetectedTokens } from '@/composables/assets/newly-detected-tokens';
 import { createStateWithNotificationHandler } from '@/modules/messaging/utils';
+import { type NewDetectedToken, useNewlyDetectedTokens } from '@/modules/newly-detected-tokens';
 import { Routes } from '@/router/routes';
 import { useNotificationsStore } from '@/store/notifications';
 
@@ -18,7 +17,7 @@ export function createNewTokenDetectedHandler(
   return createStateWithNotificationHandler<NewDetectedToken, number>(
     async (data: NewDetectedToken) => {
       const existingNotification = get(notifications).find(({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS);
-      const countAdded = addNewDetectedToken(data);
+      const countAdded = await addNewDetectedToken(data);
       return (existingNotification?.groupCount || 0) + +countAdded;
     },
     async (data: NewDetectedToken, count: number) => {

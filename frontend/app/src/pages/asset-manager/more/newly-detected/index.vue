@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import NewlyDetectedAssetContent from '@/components/asset-manager/newly-detected/NewlyDetectedAssetContent.vue';
+import NewlyDetectedAssetTable from '@/modules/newly-detected-tokens/components/NewlyDetectedAssetTable.vue';
 
 definePage({
   name: 'asset-manager-newly-detected',
@@ -7,5 +7,5 @@ definePage({
 </script>
 
 <template>
-  <NewlyDetectedAssetContent />
+  <NewlyDetectedAssetTable />
 </template>

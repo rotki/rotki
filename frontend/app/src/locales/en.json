@@ -1289,11 +1289,14 @@
     "newly_detected": {
       "accept": "Accept token",
       "accept_selected": "Accept selected tokens",
+      "all_types": "All Types",
+      "detected_at": "Detected At",
       "mark_as_spam": "Mark token as spam",
       "mark_selected_as_spam": "Mark selected tokens as spam",
       "seen_during": "Seen during",
       "select_deselect_all_tokens": "Select/deselect all tokens",
-      "subtitle": "Inspect the list of newly detected tokens and add any assets to the spam tokens list"
+      "subtitle": "Inspect the list of newly detected tokens and add any assets to the spam tokens list",
+      "token_type": "Token Type"
     },
     "only_show_ignored": "Only show ignored assets ({length}) | Only show ignored assets",
     "only_show_owned": "Only show owned assets",
@@ -2810,6 +2813,30 @@
         "title": "Reset dismissal status"
       },
       "title": "Progress Query Indicator on Dashboard"
+    },
+    "newly_detected_tokens": {
+      "max_count": {
+        "hint": "Tokens exceeding this limit will be pruned (oldest first)",
+        "label": "Maximum number of tokens",
+        "title": "Maximum Stored Tokens",
+        "validation": {
+          "error": "Failed to set the maximum token count",
+          "invalid_range": "Count must be between {min} and {max}",
+          "non_empty": "Please enter the maximum count"
+        }
+      },
+      "subtitle": "Configure how newly detected tokens are stored and pruned",
+      "title": "Newly Detected Tokens",
+      "ttl_days": {
+        "hint": "Tokens older than this will be automatically removed",
+        "label": "Retention period (days)",
+        "title": "Token Retention Period",
+        "validation": {
+          "error": "Failed to set the retention period",
+          "invalid_range": "Days must be between {min} and {max}",
+          "non_empty": "Please enter the number of days"
+        }
+      }
     },
     "periodic_query": {
       "hint": "How often (in seconds) the backend will be checked for messages,",

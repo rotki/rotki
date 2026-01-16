@@ -93,6 +93,8 @@ describe('types/user', () => {
       evmQueryIndicatorDismissalThreshold: 6,
       lastPasswordConfirmed: 0,
       passwordConfirmationInterval: 604800,
+      newlyDetectedTokensMaxCount: 500,
+      newlyDetectedTokensTtlDays: 30,
     };
 
     const raw = {

@@ -1,10 +1,10 @@
 import { z } from 'zod/v4';
+import { NewDetectedToken } from '@/modules/newly-detected-tokens';
 import { CalendarEventWithReminder } from '@/types/history/calendar';
 import { LegacyMessageData, SocketMessageType } from './types/base';
 import {
   AccountingRuleConflictData,
   ExchangeUnknownAssetData,
-  NewDetectedToken,
   RefreshBalancesData,
 } from './types/business-types';
 import {

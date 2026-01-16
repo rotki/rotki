@@ -1,17 +1,35 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useDatabase } from '@/modules/data/use-database';
+import { useMainStore } from '@/store/main';
 import {
   type AddMissingMapping,
   type MissingMappingsRequestPayload,
   useMissingMappingsDB,
 } from './use-missing-mappings-db';
 
+const TEST_USER = 'test-user-mappings';
+const TEST_DATA_DIR = '/test/data/dir';
+
 beforeEach(async () => {
+  setActivePinia(createPinia());
+
+  const { db, isReady } = useDatabase();
+
+  // Set up user identifier
   const user = useLoggedUserIdentifier();
-  set(user, 'test-user');
-  const { db } = useDatabase();
-  await db.missingMappings.clear();
+  set(user, TEST_USER);
+
+  // Set up data directory
+  const mainStore = useMainStore();
+  const { dataDirectory } = storeToRefs(mainStore);
+  set(dataDirectory, TEST_DATA_DIR);
+
+  // Wait for database to become ready
+  await until(isReady).toBe(true);
+
+  // Clear the table before each test
+  await db().missingMappings.clear();
 });
 
 function createMissingMapping(data: Pick<AddMissingMapping, 'location' | 'identifier'>): AddMissingMapping {
@@ -38,7 +56,7 @@ describe('useMissingMappingsDB', () => {
 
     const id = await put(mapping);
 
-    const savedMapping = await db.missingMappings.get(id);
+    const savedMapping = await db().missingMappings.get(id);
 
     expect(savedMapping).toMatchObject(expect.objectContaining({
       id,

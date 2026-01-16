@@ -6,6 +6,8 @@ import { TableColumn } from '@/types/table-column';
 
 export const Defaults = {
   ANONYMOUS_USAGE_ANALYTICS: true,
+  DEFAULT_NEWLY_DETECTED_TOKENS_MAX_COUNT: 500,
+  DEFAULT_NEWLY_DETECTED_TOKENS_TTL_DAYS: 30,
   ASSET_MOVEMENT_AMOUNT_TOLERANCE: '0.000001',
   BALANCE_SAVE_FREQUENCY: 24,
   BEACON_RPC_ENDPOINT: '', // same as Kusama, must be set by user

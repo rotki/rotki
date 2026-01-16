@@ -182,6 +182,8 @@ describe('settings:frontend', () => {
       evmQueryIndicatorDismissalThreshold: 6,
       lastPasswordConfirmed: 0,
       passwordConfirmationInterval: 604800,
+      newlyDetectedTokensMaxCount: 500,
+      newlyDetectedTokensTtlDays: 30,
     };
 
     store.update(state);

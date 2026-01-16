@@ -4,6 +4,7 @@ import AliasSettingsCategory from '@/components/settings/frontend/AliasSettingsC
 import GraphSettingsCategory from '@/components/settings/frontend/GraphSettingsCategory.vue';
 import InterfaceOnlyCategory from '@/components/settings/frontend/InterfaceOnlyCategory.vue';
 import ThemeSettingsCategory from '@/components/settings/frontend/ThemeSettingsCategory.vue';
+import NewlyDetectedTokensSettingsCategory from '@/modules/newly-detected-tokens/settings/NewlyDetectedTokensSettingsCategory.vue';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
@@ -18,6 +19,7 @@ enum Category {
   INTERFACE_ONLY = 'interface_only',
   GRAPH = 'graph',
   ALIAS = 'alias',
+  NEWLY_DETECTED_TOKENS = 'newly_detected_tokens',
   THEME = 'theme',
 }
 
@@ -25,6 +27,7 @@ const navigation = [
   { id: Category.INTERFACE_ONLY, label: t('frontend_settings.title') },
   { id: Category.GRAPH, label: t('frontend_settings.subtitle.graph_settings') },
   { id: Category.ALIAS, label: t('frontend_settings.subtitle.alias_names') },
+  { id: Category.NEWLY_DETECTED_TOKENS, label: t('frontend_settings.newly_detected_tokens.title') },
   { id: Category.THEME, label: t('premium_components.theme_manager.text') },
 ];
 </script>
@@ -34,6 +37,7 @@ const navigation = [
     <InterfaceOnlyCategory :id="Category.INTERFACE_ONLY" />
     <GraphSettingsCategory :id="Category.GRAPH" />
     <AliasSettingsCategory :id="Category.ALIAS" />
+    <NewlyDetectedTokensSettingsCategory :id="Category.NEWLY_DETECTED_TOKENS" />
     <ThemeSettingsCategory :id="Category.THEME" />
   </SettingsPage>
 </template>
