@@ -58,6 +58,7 @@ from rotkehlchen.api.v1.resources import (
     CounterpartyAssetMappingsResource,
     CustomAssetsResource,
     CustomAssetsTypesResource,
+    CustomizedEventDuplicatesResource,
     DatabaseBackupsResource,
     DatabaseInfoResource,
     DataImportResource,
@@ -246,6 +247,7 @@ URLS_V1: URLS = [
     ('/history/events/export', ExportHistoryEventResource),
     ('/history/events/export/download', ExportHistoryDownloadResource),
     ('/history/events/match/asset_movements', MatchAssetMovementsResource),
+    ('/history/events/duplicates/customized', CustomizedEventDuplicatesResource),
     ('/history/actionable_items', HistoryActionableItemsResource),
     ('/reports', AccountingReportsResource),
     (

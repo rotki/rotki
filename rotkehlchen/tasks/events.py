@@ -1,4 +1,6 @@
 import logging
+from collections import defaultdict
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
@@ -19,7 +21,11 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryBaseEntryType
+from rotkehlchen.history.events.structures.base import (
+    HistoryBaseEntry,
+    HistoryBaseEntryType,
+    get_event_direction,
+)
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
@@ -27,10 +33,12 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CHAINS_WITH_TRANSACTIONS, SupportedBlockchain, Timestamp
+from rotkehlchen.types import CHAINS_WITH_TRANSACTIONS, Location, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 
 if TYPE_CHECKING:
+    from collections.abc import Iterable
+
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -38,6 +46,53 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 ASSET_MOVEMENT_MATCH_WINDOW: Final = HOUR_IN_SECONDS
+
+
+@dataclass(frozen=True)
+class CustomizedEventCandidate:
+    """Represents a history event row used for customized duplicate detection."""
+    identifier: int
+    group_identifier: str
+    sequence_index: int
+    timestamp: int
+    location: str
+    location_label: str | None
+    asset: str
+    amount: str
+    notes: str | None
+    event_type: str
+    event_subtype: str
+    extra_data: str | None
+    entry_type: int
+    counterparty: str | None
+    address: str | None
+    customized: bool
+
+    def signature(self) -> tuple:
+        return (
+            self.timestamp,
+            self.location,
+            self.location_label,
+            self.asset,
+            self.amount,
+            self.notes,
+            self.event_type,
+            self.event_subtype,
+            self.extra_data,
+            self.counterparty,
+            self.address,
+            self.entry_type,
+        )
+
+    def direction(self) -> EventDirection | None:
+        try:
+            return get_event_direction(
+                event_type=HistoryEventType.deserialize(self.event_type),
+                event_subtype=HistoryEventSubType.deserialize(self.event_subtype),
+                location=Location.deserialize_from_db(self.location),
+            )
+        except DeserializationError:
+            return None
 
 
 def process_eth2_events(
@@ -67,6 +122,153 @@ def process_asset_movements(database: 'DBHandler') -> None:
             name=DBCacheStatic.LAST_ASSET_MOVEMENT_PROCESSING_TS,
             value=ts_now(),
         )
+
+
+def _load_customized_event_candidates(database: 'DBHandler') -> dict[str, list[CustomizedEventCandidate]]:  # noqa: E501
+    """Load customized and related non-customized EVM/Solana events grouped by group identifier.
+
+    Query outline:
+    - Select base history event fields plus chain metadata (counterparty/address).
+    - LEFT JOIN chain_events_info for EVM/Solana-specific columns.
+    - LEFT JOIN history_events_mappings to mark customized rows.
+    - Restrict to group identifiers that include at least one customized event (EXISTS).
+    - Filter to EVM/Solana entry types and order by group/sequence for stable ordering.
+    """
+    group_events: dict[str, list[CustomizedEventCandidate]] = defaultdict(list)
+    entry_type_values = [entry_type.serialize_for_db() for entry_type in (
+        HistoryBaseEntryType.EVM_EVENT,
+        HistoryBaseEntryType.EVM_SWAP_EVENT,
+        HistoryBaseEntryType.SOLANA_EVENT,
+        HistoryBaseEntryType.SOLANA_SWAP_EVENT,
+    )]
+    entry_type_placeholders = ', '.join(['?'] * len(entry_type_values))
+    with database.conn.read_ctx() as cursor:
+        for entry in cursor.execute(
+            'SELECT he.identifier, he.group_identifier, he.sequence_index, he.timestamp, '
+            'he.location, he.location_label, he.asset, he.amount, he.notes, he.type, '
+            'he.subtype, he.extra_data, he.entry_type, '
+            'cei.counterparty, cei.address, '
+            'CASE WHEN hm.parent_identifier IS NULL THEN 0 ELSE 1 END AS customized '
+            'FROM history_events he '
+            'LEFT JOIN chain_events_info cei ON he.identifier=cei.identifier '
+            'LEFT JOIN history_events_mappings hm ON hm.parent_identifier=he.identifier '
+            'AND hm.name=? AND hm.value=? '
+            'WHERE EXISTS ('
+            'SELECT 1 FROM history_events he2 '
+            'JOIN history_events_mappings hm2 ON hm2.parent_identifier=he2.identifier '
+            'AND hm2.name=? AND hm2.value=? '
+            'WHERE he2.group_identifier=he.group_identifier '
+            f'AND he2.entry_type IN ({entry_type_placeholders})) '
+            f'AND he.entry_type IN ({entry_type_placeholders}) '
+            'ORDER BY he.group_identifier, he.sequence_index',
+            (
+                HISTORY_MAPPING_KEY_STATE,
+                HISTORY_MAPPING_STATE_CUSTOMIZED,
+                HISTORY_MAPPING_KEY_STATE,
+                HISTORY_MAPPING_STATE_CUSTOMIZED,
+                *entry_type_values,
+                *entry_type_values,
+            ),
+        ):
+            event = CustomizedEventCandidate(
+                identifier=entry[0],
+                group_identifier=entry[1],
+                sequence_index=entry[2],
+                timestamp=entry[3],
+                location=entry[4],
+                location_label=entry[5],
+                asset=entry[6],
+                amount=entry[7],
+                notes=entry[8],
+                event_type=entry[9],
+                event_subtype=entry[10],
+                extra_data=entry[11],
+                entry_type=entry[12],
+                counterparty=entry[13],
+                address=entry[14],
+                customized=bool(entry[15]),
+            )
+            group_events[event.group_identifier].append(event)
+
+    return group_events
+
+
+def find_customized_event_duplicate_groups(
+        database: 'DBHandler',
+        group_identifiers: list[str] | None = None,
+) -> tuple[list[str], list[str], list[int]]:
+    """Return group identifiers for auto-fixable duplicates and manual review groups.
+
+    Auto-fixable groups are exact matches (same fields except sequence_index/identifier)
+    between at least one customized event and at least one non-customized event for EVM/Solana.
+    Manual review groups are same-asset/same-direction pairs between customized and
+    non-customized EVM/Solana events that are not exact matches.
+    The returned exact_duplicate_ids are the non-customized event identifiers eligible for removal.
+    When group_identifiers is provided, results are limited to those groups.
+    """
+    log.debug('Detecting duplicate customized EVM events')
+    group_events = _load_customized_event_candidates(database=database)
+
+    auto_fix_group_ids: set[str] = set()  # groups with exact customized/non-customized matches
+    manual_review_group_ids: set[str] = set()  # groups with asset+direction matches
+    exact_duplicate_ids: set[int] = set()  # non-customized event identifiers to delete
+
+    target_group_ids: set[str] | None = set(group_identifiers) if group_identifiers is not None else None  # noqa: E501
+    group_iter: Iterable[tuple[str, list[CustomizedEventCandidate]]]
+    if target_group_ids is None:
+        group_iter = group_events.items()
+    else:
+        group_iter = (
+            (group_id, group_events[group_id])
+            for group_id in group_events
+            if group_id in target_group_ids
+        )
+
+    for group_id, events in group_iter:
+        # Index by signature to spot exact customized/non-customized duplicates.
+        signatures: dict[tuple, tuple[set[int], set[int]]] = defaultdict(
+            lambda: (set(), set()),
+        )
+        for event in events:
+            customized_ids, non_customized_ids = signatures[event.signature()]
+            if event.customized:
+                customized_ids.add(event.identifier)
+            else:
+                non_customized_ids.add(event.identifier)
+
+        # Collect non-customized duplicates where a customized event shares the same signature.
+        group_exact_ids: set[int] = set()
+        for customized_ids, non_customized_ids in signatures.values():
+            if customized_ids and non_customized_ids:
+                group_exact_ids.update(non_customized_ids)
+
+        # Auto-fixable groups have at least one exact customized/non-customized pair.
+        if len(group_exact_ids) > 0:
+            auto_fix_group_ids.add(group_id)
+            exact_duplicate_ids.update(group_exact_ids)
+
+        # Build asset+direction pairs for remaining manual review detection.
+        customized_pairs: set[tuple[str, EventDirection]] = set()
+        non_customized_pairs: set[tuple[str, EventDirection]] = set()
+        for event in events:
+            if (direction := event.direction()) is None:
+                continue
+            pair = (event.asset, direction)
+            if event.customized:
+                customized_pairs.add(pair)
+            elif event.identifier not in group_exact_ids:
+                non_customized_pairs.add(pair)
+
+        # Flag groups where customized/non-customized share asset+direction but are not exact.
+        shared_pairs = customized_pairs & non_customized_pairs
+        if len(customized_pairs) > 0 and len(non_customized_pairs) > 0 and len(shared_pairs) > 0:
+            manual_review_group_ids.add(group_id)
+
+    return (
+        list(auto_fix_group_ids - manual_review_group_ids),  # Don't include groups in auto fix if they also have pairs that need manual review  # noqa: E501
+        list(manual_review_group_ids),
+        sorted(exact_duplicate_ids),
+    )
 
 
 def _should_auto_ignore_movement(asset_movement: AssetMovement) -> bool:

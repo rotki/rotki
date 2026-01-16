@@ -6497,6 +6497,97 @@ Match exchange asset movements with onchain events
    :statuscode 409: No user is logged in or failure.
    :statuscode 500: Internal rotki error
 
+Customized history event duplicates
+===================================
+
+.. http:get:: /api/(version)/history/events/duplicates/customized
+
+   Get group identifiers for customized event duplicate candidates.
+
+   Supports async execution via the `async_query` query parameter.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/events/duplicates/customized?async_query=false HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "auto_fix_group_ids": [
+                  "0x7f9b1d9b3d6c80b6f699a25f3e91c408155cbff965d0f3a0df4d3a4f8f4b73c7"
+              ],
+              "manual_review_group_ids": [
+                  "0xa8e4c2f6b79a1b9d6288a763dc6243cbce1e2c35c8b65ec79a9d35a1f4ec6a20"
+              ]
+          },
+          "message": ""
+      }
+
+   :reqquery bool[optional] async_query: Whether to execute as an async task.
+   :resjson list result.auto_fix_group_ids: Group identifiers where a customized EVM/Solana event has a non-customized duplicate that only differs by sequence index.
+   :resjson list result.manual_review_group_ids: Group identifiers where customized and non-customized EVM/Solana events share asset and direction but are not exact matches.
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Group identifiers returned successfully
+   :statuscode 401: No user is currently logged in
+   :statuscode 500: Internal rotki error
+
+.. http:post:: /api/(version)/history/events/duplicates/customized
+
+   Remove non-customized duplicates that only differ by sequence index and return updated groups.
+   Supports async execution via the `async_query` query parameter.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/duplicates/customized?async_query=false HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "group_identifiers": [
+              "0x7f9b1d9b3d6c80b6f699a25f3e91c408155cbff965d0f3a0df4d3a4f8f4b73c7"
+          ]
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "removed_event_identifiers": [123, 124],
+              "auto_fix_group_ids": [],
+              "manual_review_group_ids": [
+                  "0xa8e4c2f6b79a1b9d6288a763dc6243cbce1e2c35c8b65ec79a9d35a1f4ec6a20"
+              ]
+          },
+          "message": ""
+      }
+
+   :reqquery bool[optional] async_query: Whether to execute as an async task.
+   :reqjson list[optional] group_identifiers: Optional list of group identifiers to auto-fix. If omitted, all auto-fixable groups are processed.
+   :resjson list result.removed_event_identifiers: Event identifiers removed by the auto-fix operation.
+   :resjson list result.auto_fix_group_ids: Remaining auto-fixable group identifiers after removal.
+   :resjson list result.manual_review_group_ids: Remaining manual review group identifiers after removal.
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Auto-fix operation completed successfully
+   :statuscode 401: No user is currently logged in
+   :statuscode 409: Auto-fix failed due to a deletion constraint
+   :statuscode 500: Internal rotki error
+
 Querying messages to show to the user
 =====================================
 

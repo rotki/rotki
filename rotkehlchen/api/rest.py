@@ -150,6 +150,7 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.events import (
     find_asset_movement_matches,
+    find_customized_event_duplicate_groups,
     get_unmatched_asset_movements,
     process_asset_movements,
     should_exclude_possible_match,
@@ -3538,6 +3539,53 @@ class RestAPI:
             movement_group_ids = list(dict.fromkeys(event.group_identifier for event in asset_movements))  # noqa: E501
 
         return api_response(_wrap_in_ok_result(result=movement_group_ids))
+
+    @async_api_call()
+    def get_customized_event_duplicates(self) -> dict[str, Any]:
+        """Get customized event duplicate candidates grouped by fixability."""
+        auto_fix_group_ids, manual_review_group_ids, _ = find_customized_event_duplicate_groups(
+            database=self.rotkehlchen.data.db,
+        )
+        return _wrap_in_ok_result(result={
+            'auto_fix_group_ids': auto_fix_group_ids,
+            'manual_review_group_ids': manual_review_group_ids,
+        })
+
+    @async_api_call()
+    def fix_customized_event_duplicates(
+            self,
+            group_identifiers: list[str] | None,
+    ) -> dict[str, Any]:
+        """Remove exact duplicate non-customized events that only differ by sequence index.
+
+        When group_identifiers is provided, only those groups are processed.
+        """
+        events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
+        auto_fix_group_ids, manual_review_group_ids, duplicate_ids = find_customized_event_duplicate_groups(  # noqa: E501
+            database=self.rotkehlchen.data.db,
+            group_identifiers=group_identifiers,
+        )
+        if not duplicate_ids:
+            return _wrap_in_ok_result(result={
+                'removed_event_identifiers': [],
+                'auto_fix_group_ids': auto_fix_group_ids,
+                'manual_review_group_ids': manual_review_group_ids,
+            })
+
+        if (error := events_db.delete_history_events_by_identifier(
+            identifiers=duplicate_ids,
+            force_delete=False,
+        )) is not None:
+            return wrap_in_fail_result(message=error, status_code=HTTPStatus.CONFLICT)
+
+        auto_fix_group_ids, manual_review_group_ids, _ = find_customized_event_duplicate_groups(
+            database=self.rotkehlchen.data.db,
+        )
+        return _wrap_in_ok_result(result={
+            'removed_event_identifiers': duplicate_ids,
+            'auto_fix_group_ids': auto_fix_group_ids,
+            'manual_review_group_ids': manual_review_group_ids,
+        })
 
     def unlink_matched_asset_movements(
             self,

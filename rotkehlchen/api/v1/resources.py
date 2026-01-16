@@ -72,6 +72,7 @@ from rotkehlchen.api.v1.schemas import (
     CreateHistoryEventSchema,
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
+    CustomizedEventDuplicatesFixSchema,
     DataImportSchema,
     DeletePremiumDeviceSchema,
     DetectTokensSchema,
@@ -3701,4 +3702,23 @@ class MatchAssetMovementsResource(BaseMethodView):
     def delete(self, asset_movement: int) -> Response:
         return self.rest_api.unlink_matched_asset_movements(
             asset_movement_identifier=asset_movement,
+        )
+
+
+class CustomizedEventDuplicatesResource(BaseMethodView):
+
+    get_schema = AsyncQueryArgumentSchema()
+    post_schema = CustomizedEventDuplicatesFixSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_customized_event_duplicates(async_query=async_query)
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, group_identifiers: list[str] | None, async_query: bool) -> Response:
+        return self.rest_api.fix_customized_event_duplicates(
+            async_query=async_query,
+            group_identifiers=group_identifiers,
         )

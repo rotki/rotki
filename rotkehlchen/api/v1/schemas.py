@@ -4694,3 +4694,7 @@ class UnlinkMatchedAssetMovementSchema(Schema):
 
 class TriggerTaskSchema(AsyncQueryArgumentSchema):
     task = SerializableEnumField(enum_class=TaskName, required=True)
+
+
+class CustomizedEventDuplicatesFixSchema(AsyncQueryArgumentSchema):
+    group_identifiers = fields.List(NonEmptyStringField(), load_default=None)
