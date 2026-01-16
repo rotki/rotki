@@ -52,6 +52,7 @@ const { t } = useI18n({ useScope: 'global' });
 const currentLimit = ref<number>(PER_BATCH);
 const containerRef = ref<HTMLElement>();
 const showReportDialog = ref<boolean>(false);
+const showingIgnoredAssets = ref<boolean>(false);
 
 const {
   allEvents,
@@ -64,9 +65,10 @@ const {
   matchExactEvents,
 } = toRefs(props);
 
-const combinedDisplayedEvents = computed<HistoryEventRow[]>(() =>
-  combineEvents(get(displayedEvents), get(eventGroup)),
-);
+const combinedDisplayedEvents = computed<HistoryEventRow[]>(() => {
+  const events = get(showingIgnoredAssets) ? get(allEvents) : get(displayedEvents);
+  return combineEvents(events, get(eventGroup));
+});
 
 const combinedAllEvents = computed<HistoryEventRow[]>(() =>
   combineEvents(get(allEvents), get(eventGroup)),
@@ -166,7 +168,7 @@ const reportDescription = computed<string>(() => {
 // Show warning when group has hidden ignored assets
 const showIgnoredAssetsWarning = computed<boolean>(() => {
   const group = get(eventGroup);
-  return get(hideIgnoredAssets) && !!group.hasIgnoredAssets;
+  return get(hideIgnoredAssets) && (group.hasIgnoredAssets || get(allEvents).length !== get(displayedEvents).length);
 });
 
 function isGasFeeOnlyEvent(event: HistoryEventEntry): boolean {
@@ -226,8 +228,13 @@ function scrollToTop() {
   get(containerRef)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function toggleShowIgnoredAssets(): void {
+  set(showingIgnoredAssets, !get(showingIgnoredAssets));
+}
+
 watch(() => get(eventGroup), () => {
   set(currentLimit, PER_BATCH);
+  set(showingIgnoredAssets, false);
 });
 </script>
 
@@ -265,13 +272,22 @@ watch(() => get(eventGroup), () => {
       class="flex items-center gap-2 px-2 py-1.5 mt-3 md:mx-3 bg-rui-info-lighter/20 rounded"
     >
       <RuiIcon
-        name="lu-eye-off"
+        :name="showingIgnoredAssets ? 'lu-eye' : 'lu-eye-off'"
         class="text-rui-info shrink-0"
         size="16"
       />
-      <span class="text-xs text-rui-text-secondary">
-        {{ t('transactions.events.ignored_assets_hidden') }}
+      <span class="flex-1 text-xs text-rui-text-secondary">
+        {{ showingIgnoredAssets ? t('transactions.events.ignored_assets_shown') : t('transactions.events.ignored_assets_hidden') }}
       </span>
+      <RuiButton
+        color="info"
+        variant="text"
+        size="sm"
+        class="!py-0 !px-1 shrink-0"
+        @click="toggleShowIgnoredAssets()"
+      >
+        {{ showingIgnoredAssets ? t('common.actions.hide') : t('common.actions.show') }}
+      </RuiButton>
     </div>
 
     <HistoryEventsListTable

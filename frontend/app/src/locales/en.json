@@ -1764,6 +1764,7 @@
       "filter": "Filter",
       "finish": "Finish",
       "generate": "Generate",
+      "hide": "Hide",
       "import": "Import",
       "install": "Install",
       "next": "Next",
@@ -1775,6 +1776,7 @@
       "save": "Save",
       "search": "Search",
       "select_all": "Select All",
+      "show": "Show",
       "show_less": "Show less",
       "show_more_num": "Show {count} more",
       "skip": "Skip",
@@ -5369,6 +5371,7 @@
         "title": "Ignore Transactions"
       },
       "ignored_assets_hidden": "Some events in this group are hidden because they contain ignored assets.",
+      "ignored_assets_shown": "Showing all events including those with ignored assets.",
       "loading": "Loading events...",
       "no_data": "Events are hidden because they contain ignored assets",
       "note": {

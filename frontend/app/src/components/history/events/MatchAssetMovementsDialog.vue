@@ -297,7 +297,7 @@ onBeforeMount(async () => {
                 <template #activator>
                   <RuiButton
                     color="primary"
-                    class="!rounded-r-none"
+                    class="!rounded-r-none h-9"
                     :disabled="unmatchedMovements.length === 0 || autoMatchLoading"
                     :loading="autoMatchLoading"
                     @click="triggerAutoMatch()"
