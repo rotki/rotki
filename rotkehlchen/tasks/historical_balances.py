@@ -99,6 +99,14 @@ class Bucket(NamedTuple):
     def from_db(cls, row: tuple[str, str | None, str | None, str]) -> 'Bucket':
         return cls(location=row[0], location_label=row[1], protocol=row[2], asset=row[3])
 
+    def serialize(self) -> dict[str, str | None]:
+        return {
+            'asset': self.asset,
+            'protocol': self.protocol,
+            'location': self.location,
+            'location_label': self.location_label,
+        }
+
     @classmethod
     def from_event(cls, event: 'HistoryBaseEntry') -> list[tuple['Bucket', EventDirection]]:
         """Returns list of (Bucket, direction) pairs affected by this event.
@@ -336,6 +344,7 @@ def process_historical_balances(
                             'event_identifier': event.identifier,
                             'group_identifier': event.group_identifier,
                             'asset': event.asset.identifier,
+                            'bucket': bucket.serialize(),
                             'balance_before': str(current_balance),
                             'last_run_ts': last_run_ts,
                         },
