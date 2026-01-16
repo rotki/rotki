@@ -1,4 +1,3 @@
-import type { Blockchain } from '@rotki/common';
 import type { ComputedRef, MaybeRef, Ref } from 'vue';
 import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -24,11 +23,11 @@ export function useArchiveNodes(): UseArchiveNodesReturn {
 
       const results = await Promise.allSettled(
         evmChains.map(async (chainInfo) => {
-          const chainRef = ref<Blockchain>(chainInfo.id as Blockchain);
-          const api = useEvmNodesApi(chainRef);
+          const chain = chainInfo.id;
+          const api = useEvmNodesApi(chain);
           const nodes = await api.fetchEvmNodes();
-          const hasArchive = nodes.some(node => node.isArchive === true);
-          return { chainId: chainInfo.id, hasArchive };
+          const hasArchive = nodes.some(node => node.isArchive);
+          return { chainId: chain, hasArchive };
         }),
       );
 
