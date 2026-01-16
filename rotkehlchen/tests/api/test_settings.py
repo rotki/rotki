@@ -812,3 +812,22 @@ def test_update_oracles_order_settings(rotkehlchen_api_server: 'APIServer') -> N
     )
     result = assert_proper_sync_response_with_result(response=response)
     assert result['current_price_oracles'] == ['alchemy']
+
+
+def test_suppress_missing_key_msg_services_not_overwritten(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Test that suppress_missing_key_msg_services is not
+    overwritten when updating other settings."""
+    assert assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'suppress_missing_key_msg_services': ['etherscan']}},
+    ))['suppress_missing_key_msg_services'] == ['etherscan']
+
+    result = assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'ui_floating_precision': 4}},
+    ))
+    assert result['ui_floating_precision'] == 4
+    assert result['suppress_missing_key_msg_services'] == ['etherscan']
+    assert CachedSettings().get_settings().suppress_missing_key_msg_services == [ExternalService.ETHERSCAN]  # noqa: E501

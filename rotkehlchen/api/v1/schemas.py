@@ -1677,7 +1677,7 @@ class ModifiableSettingsSchema(Schema):
     suppress_missing_key_msg_services = fields.List(
         SerializableEnumField(enum_class=ExternalService, required=True),
         required=False,
-        load_default=[],
+        load_default=None,
     )
 
     @validates_schema
