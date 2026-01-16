@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11381` Users will no longer see a non-working edit button when viewing accounts filtered by a specific chain.
 * :bug:`11380` Tags will no longer appear duplicated in the asset location breakdown view.
 * :bug:`11339` Restoring the DB while background tasks that modify the DB are running will no longer result in malformed DB disk image errors.
 * :bug:`11258` 1inch v6 limit order swaps will now be understood properly.

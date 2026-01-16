@@ -47,6 +47,7 @@ function showTokenDetection(row: AccountDataRow<T>): boolean {
       class="account-balance-table__actions"
       :edit-tooltip="t('account_balances.edit_tooltip')"
       :disabled="accountOperation"
+      :no-edit="group !== 'evm'"
       @edit-click="emit('edit', group, row)"
       @delete-click="emit('delete', row)"
     />
