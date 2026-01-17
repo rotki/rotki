@@ -4,13 +4,15 @@ import platform
 from collections.abc import Sequence
 from enum import Enum, auto
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import base58check
 import bech32
 import requests
 from bip_utils import P2TRAddrEncoder, P2WPKHAddrEncoder
 
+from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
+from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.constants.timing import GLOBAL_REQUESTS_TIMEOUT
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
@@ -21,6 +23,9 @@ from rotkehlchen.serialization.deserialize import ensure_type
 from rotkehlchen.types import BTCAddress
 from rotkehlchen.utils.misc import satoshis_to_btc
 from rotkehlchen.utils.network import request_get_dict, retry_calls
+
+if TYPE_CHECKING:
+    from rotkehlchen.types import SupportedBlockchain
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -310,3 +315,14 @@ def query_blockstream_like_has_transactions(
         balance, tx_count = query_blockstream_like_account_info(base_url, account)
         have_transactions[account] = ((tx_count != 0), balance)
     return have_transactions
+
+
+def is_valid_bitcoin_address(chain: 'SupportedBlockchain', value: str) -> bool:
+    """
+    Returns False only if `chain` is a Bitcoin chain and `value` is an
+    invalid address; otherwise returns True.
+    """
+    return (
+        not chain.is_bitcoin() or
+        (is_valid_btc_address(value) or is_valid_bitcoin_cash_address(value))
+    )

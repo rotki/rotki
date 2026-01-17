@@ -28,12 +28,15 @@ from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount
-from rotkehlchen.chain.bitcoin import is_valid_bitcoin_address, is_valid_btc_address
 from rotkehlchen.chain.bitcoin.bch.utils import (
     validate_bch_address_input,
 )
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
-from rotkehlchen.chain.bitcoin.utils import scriptpubkey_to_btc_address
+from rotkehlchen.chain.bitcoin.utils import (
+    is_valid_bitcoin_address,
+    is_valid_btc_address,
+    scriptpubkey_to_btc_address,
+)
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
