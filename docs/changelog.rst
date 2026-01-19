@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`11397` Users will now be able to trigger token detection for EVM address groups with multiple chains.
 * :feature:`-` Users can now suppress missing API key notifications for specific services in Settings > General > External Service Settings.
 * :feature:`11332` Users can now view the newly retrieved transactions directly from the notification after repulling transactions.
 * :feature:`11332` Users can now re-pull transactions for all chains at once.

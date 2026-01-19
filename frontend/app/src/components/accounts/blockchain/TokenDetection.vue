@@ -5,12 +5,12 @@ import { useTokenDetection } from '@/composables/balances/token-detection';
 const props = defineProps<{
   address: string;
   loading: boolean;
-  chain: string;
+  chains: string[];
 }>();
 
-const { address, chain } = toRefs(props);
+const { address, chains } = toRefs(props);
 
-const { detectedTokens, detectingTokens, detectTokens } = useTokenDetection(chain, address);
+const { detectedTokens, detectingTokens, detectTokens } = useTokenDetection(chains, address);
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
