@@ -2,7 +2,7 @@
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import type { RouteLocationRaw } from 'vue-router';
 import { externalLinks } from '@shared/external-links';
-import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
+import ManagedAssetIgnoreSwitch from '@/components/asset-manager/managed/ManagedAssetIgnoreSwitch.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
@@ -117,38 +117,60 @@ const collectionAssetWithPrice = computed<string | undefined>(() => {
 
 const isSpam = computed(() => get(asset)?.isSpam || false);
 
-function goToEdit() {
+const loadingIgnore = ref<boolean>(false);
+const loadingWhitelist = ref<boolean>(false);
+const loadingSpam = ref<boolean>(false);
+
+function goToEdit(): void {
   router.push(get(editRoute));
 }
 
-async function toggleSpam() {
-  const id = get(identifier);
-  if (get(isSpam))
-    await removeAssetFromSpamList(id);
-  else
-    await markAssetsAsSpam([id]);
+async function toggleSpam(): Promise<void> {
+  set(loadingSpam, true);
+  try {
+    const id = get(identifier);
+    if (get(isSpam))
+      await removeAssetFromSpamList(id);
+    else
+      await markAssetsAsSpam([id]);
 
-  refetchAssetInfo(id);
-}
-
-async function toggleIgnoreAsset() {
-  const id = get(identifier);
-  if (get(isIgnored)) {
-    await unignoreAsset(id);
+    refetchAssetInfo(id);
   }
-  else {
-    await ignoreAssetWithConfirmation(id, get(symbol) || get(name));
+  finally {
+    set(loadingSpam, false);
   }
 }
 
-async function toggleWhitelistAsset() {
-  const id = get(identifier);
-  if (get(isWhitelisted))
-    await unWhitelistAsset(id);
-  else
-    await whitelistAsset(id);
+async function toggleIgnoreAsset(): Promise<void> {
+  set(loadingIgnore, true);
+  try {
+    const id = get(identifier);
+    if (get(isIgnored)) {
+      await unignoreAsset(id);
+    }
+    else {
+      await ignoreAssetWithConfirmation(id, get(symbol) || get(name));
+    }
+  }
+  finally {
+    set(loadingIgnore, false);
+  }
+}
 
-  refetchAssetInfo(id);
+async function toggleWhitelistAsset(): Promise<void> {
+  set(loadingWhitelist, true);
+  try {
+    const id = get(identifier);
+    if (get(isWhitelisted))
+      await unWhitelistAsset(id);
+    else
+      await whitelistAsset(id);
+
+    refetchAssetInfo(id);
+  }
+  finally {
+    set(loadingWhitelist, false);
+  }
 }
 </script>
 
@@ -250,32 +272,18 @@ async function toggleWhitelistAsset() {
             {{ t('assets.action.ignore') }}
           </div>
 
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-            tooltip-class="max-w-[10rem]"
-            :disabled="!isSpam"
-          >
-            <template #activator>
-              <RuiSwitch
-                color="primary"
-                hide-details
-                :disabled="isSpam"
-                :model-value="isIgnored"
-                @update:model-value="toggleIgnoreAsset()"
-              />
-            </template>
-            {{ t('ignore.spam.hint') }}
-          </RuiTooltip>
+          <ManagedAssetIgnoreSwitch
+            :identifier="identifier"
+            :is-spam="isSpam"
+            :show-more-options="asset?.assetType === EVM_TOKEN"
+            :loading-ignore="loadingIgnore"
+            :loading-whitelist="loadingWhitelist"
+            :loading-spam="loadingSpam"
+            @toggle-ignore="toggleIgnoreAsset()"
+            @toggle-whitelist="toggleWhitelistAsset()"
+            @toggle-spam="toggleSpam()"
+          />
         </template>
-
-        <ManagedAssetIgnoringMore
-          v-if="asset?.assetType === EVM_TOKEN"
-          :identifier="identifier"
-          :is-spam="isSpam"
-          @toggle-whitelist="toggleWhitelistAsset()"
-          @toggle-spam="toggleSpam()"
-        />
       </div>
     </div>
 

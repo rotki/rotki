@@ -18,6 +18,9 @@ interface IgnoredFilter {
 interface UseManagedAssetOperationsReturn {
   isAssetWhitelisted: (identifier: string) => ComputedRef<boolean>;
   isSpamAsset: (asset: SupportedAsset) => boolean;
+  loadingIgnore: Ref<string | null>;
+  loadingSpam: Ref<string | null>;
+  loadingWhitelist: Ref<string | null>;
   massIgnore: (ignored: boolean) => Promise<void>;
   toggleIgnoreAsset: (asset: SupportedAsset) => Promise<void>;
   toggleSpam: (item: SupportedAsset) => Promise<void>;
@@ -40,6 +43,10 @@ export function useManagedAssetOperations(
 
   const isSpamAsset = (asset: SupportedAsset): boolean => asset.protocol === 'spam';
 
+  const loadingIgnore = ref<string | null>(null);
+  const loadingWhitelist = ref<string | null>(null);
+  const loadingSpam = ref<string | null>(null);
+
   function refreshAssetsConditionally(): void {
     if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
       onRefresh();
@@ -47,33 +54,51 @@ export function useManagedAssetOperations(
 
   const toggleIgnoreAsset = async (asset: SupportedAsset): Promise<void> => {
     const { identifier, name, symbol } = asset;
-    if (get(useIsAssetIgnored(identifier))) {
-      await unignoreAsset(identifier);
-      refreshAssetsConditionally();
+    set(loadingIgnore, identifier);
+    try {
+      if (get(useIsAssetIgnored(identifier))) {
+        await unignoreAsset(identifier);
+        refreshAssetsConditionally();
+      }
+      else {
+        await ignoreAssetWithConfirmation(identifier, symbol || name, refreshAssetsConditionally);
+      }
     }
-    else {
-      await ignoreAssetWithConfirmation(identifier, symbol || name, refreshAssetsConditionally);
+    finally {
+      set(loadingIgnore, null);
     }
   };
 
   const toggleSpam = async (item: SupportedAsset): Promise<void> => {
     const { identifier } = item;
-    if (isSpamAsset(item))
-      await removeAssetFromSpamList(identifier);
-    else
-      await markAssetsAsSpam([identifier]);
+    set(loadingSpam, identifier);
+    try {
+      if (isSpamAsset(item))
+        await removeAssetFromSpamList(identifier);
+      else
+        await markAssetsAsSpam([identifier]);
 
-    refetchAssetInfo(identifier);
-    onRefresh();
+      refetchAssetInfo(identifier);
+      onRefresh();
+    }
+    finally {
+      set(loadingSpam, null);
+    }
   };
 
   const toggleWhitelistAsset = async (identifier: string): Promise<void> => {
-    if (get(isAssetWhitelisted(identifier)))
-      await unWhitelistAsset(identifier);
-    else
-      await whitelistAsset(identifier);
+    set(loadingWhitelist, identifier);
+    try {
+      if (get(isAssetWhitelisted(identifier)))
+        await unWhitelistAsset(identifier);
+      else
+        await whitelistAsset(identifier);
 
-    onRefresh();
+      onRefresh();
+    }
+    finally {
+      set(loadingWhitelist, null);
+    }
   };
 
   const massIgnore = async (ignored: boolean): Promise<void> => {
@@ -111,6 +136,9 @@ export function useManagedAssetOperations(
   return {
     isAssetWhitelisted,
     isSpamAsset,
+    loadingIgnore,
+    loadingSpam,
+    loadingWhitelist,
     massIgnore,
     toggleIgnoreAsset,
     toggleSpam,

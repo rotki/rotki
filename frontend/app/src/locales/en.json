@@ -3186,7 +3186,8 @@
         "unwhitelist_title": "Failed to remove token from whitelist",
         "whitelist_message": "Token could not be added to whitelisted assets: {message}",
         "whitelist_title": "Failed to add token to whitelist"
-      }
+      },
+      "hint": "The asset is whitelisted. To be able to ignore this asset, you need to remove it from the whitelist."
     }
   },
   "ignore_buttons": {

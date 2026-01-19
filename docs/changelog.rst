@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11396` The ignore asset switch will now be properly disabled when an asset is whitelisted and show proper loading indicators during actions.
 * :bug:`11395` The table filter input will now respond to the numpad Enter key when editing an filter.
 * :bug:`11381` Users will no longer see a non-working edit button when viewing accounts filtered by a specific chain.
 * :bug:`11380` Tags will no longer appear duplicated in the asset location breakdown view.
