@@ -64,11 +64,11 @@ class HistoricalBalancesManager:
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
                 f"""SELECT asset, SUM(metric_value) FROM (
-                    SELECT he.asset, em.metric_value, MAX(he.timestamp + he.sequence_index)
+                    SELECT em.asset, em.metric_value, MAX(he.timestamp + he.sequence_index)
                     FROM event_metrics em
                     INNER JOIN history_events he ON em.event_identifier = he.identifier
                     WHERE he.ignored = 0 AND em.metric_key = ? {filter_str}
-                    GROUP BY he.location, em.location_label, em.protocol, he.asset
+                    GROUP BY he.location, em.location_label, em.protocol, em.asset
                 ) GROUP BY asset HAVING SUM(metric_value) > 0
                 """,
                 query_bindings,
@@ -120,7 +120,8 @@ class HistoricalBalancesManager:
           None if no data is available.
         """
         from_ts_ms, to_ts_ms = ts_sec_to_ms(from_ts), ts_sec_to_ms(to_ts)
-        metric_key, asset_ids = EventMetricKey.BALANCE.serialize(), [asset.identifier for asset in assets]  # noqa: E501
+        metric_key = EventMetricKey.BALANCE.serialize()
+        asset_ids = [asset.resolve_swapped_for().identifier for asset in assets]
         schema = {'timestamp': pl.Int64, 'sort_key': pl.Int64, 'delta': pl.Float64}
         df = pl.DataFrame(schema=schema)
         with self.db.conn.read_ctx() as cursor:
@@ -131,12 +132,12 @@ class HistoricalBalancesManager:
                         WITH all_events AS (
                             SELECT
                                 he.timestamp,
-                                he.location || COALESCE(em.location_label, '') || COALESCE(em.protocol, '') || he.asset as bucket,
+                                he.location || COALESCE(em.location_label, '') || COALESCE(em.protocol, '') || em.asset as bucket,
                                 CAST(em.metric_value AS REAL) as balance,
                                 he.timestamp + he.sequence_index as sort_key
                             FROM event_metrics em
                             INNER JOIN history_events he ON em.event_identifier = he.identifier
-                            WHERE em.metric_key = ? AND he.asset IN ({placeholders})
+                            WHERE em.metric_key = ? AND em.asset IN ({placeholders})
                         ),
                         with_delta AS (
                             SELECT
@@ -172,7 +173,7 @@ class HistoricalBalancesManager:
 
         for chunk, placeholders in get_query_chunks(data=asset_ids):
             if self._has_unprocessed_events(
-                where_clause=f'asset IN ({placeholders}) AND timestamp >= ? AND timestamp <= ?',
+                where_clause=f'he.asset IN ({placeholders}) AND he.timestamp >= ? AND he.timestamp <= ?',  # noqa: E501
                 bindings=[*chunk, from_ts_ms, to_ts_ms],
             ):
                 return True, data
@@ -198,9 +199,9 @@ class HistoricalBalancesManager:
                 cursor.execute(
                     """
                     WITH all_events AS (
-                        SELECT he.timestamp, he.asset, CAST(em.metric_value AS REAL) as balance,
+                        SELECT he.timestamp, em.asset, CAST(em.metric_value AS REAL) as balance,
                                he.timestamp + he.sequence_index as sort_key,
-                               he.location || COALESCE(em.location_label, '') || COALESCE(em.protocol, '') || he.asset as bucket
+                               he.location || COALESCE(em.location_label, '') || COALESCE(em.protocol, '') || em.asset as bucket
                         FROM event_metrics em
                         INNER JOIN history_events he ON em.event_identifier = he.identifier
                         WHERE em.metric_key = ? AND he.ignored = 0
@@ -246,7 +247,7 @@ class HistoricalBalancesManager:
             data = (timestamps, balances_per_day)
 
         return self._has_unprocessed_events(
-            where_clause='timestamp >= ? AND timestamp <= ?',
+            where_clause='he.timestamp >= ? AND he.timestamp <= ?',
             bindings=[from_ts_ms, to_ts_ms],
         ), data
 

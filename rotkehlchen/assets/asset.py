@@ -205,6 +205,13 @@ class Asset:
             expected_type=FiatAsset,
         )
 
+    def resolve_swapped_for(self) -> 'Asset':
+        """Returns swapped_for asset if set, otherwise returns self."""
+        resolved = self.resolve()
+        if isinstance(resolved, CryptoAsset) and resolved.swapped_for is not None:
+            return resolved.swapped_for
+        return self
+
     def symbol_or_name(self) -> str:
         """
         If it is an asset with symbol, returns symbol. If it's not, returns name.

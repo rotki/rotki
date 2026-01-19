@@ -108,7 +108,8 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             protocol TEXT,
             metric_key TEXT NOT NULL,
             metric_value TEXT NOT NULL,
-            UNIQUE(event_identifier, location_label, protocol, metric_key)
+            asset TEXT NOT NULL,
+            UNIQUE(event_identifier, location_label, protocol, metric_key, asset)
         );
         """)  # noqa: E501
         write_cursor.execute(
@@ -126,6 +127,10 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         write_cursor.execute(
             'CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key '
             'ON event_metrics(metric_key);',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_event_metrics_asset '
+            'ON event_metrics(asset);',
         )
 
     @progress_step(description='Adding reserved Contract tag.')

@@ -785,3 +785,81 @@ def test_staking_protocol_lp_token_received_from_untracked_address(
             (1000, TEST_ADDR1, CPT_HOP, '10'),  # hop bucket: 0 + 10 = 10
             (2000, TEST_ADDR1, CPT_HOP, '10'),  # hop bucket: 10 - 5 + 5 = 10 (same bucket)
         ]
+
+
+def test_swapped_for_asset_tracked_under_new_identifier(
+        database: 'DBHandler',
+        messages_aggregator: 'MessagesAggregator',
+        globaldb,  # pylint: disable=unused-argument
+) -> None:
+    """Test that events with v1 tokens (that have swapped_for set) are tracked under v2 identifier.
+
+    When a token upgrades (v1 -> v2) and has swapped_for set, historical balance processing should:
+    1. Store the v2 identifier in em.asset (not v1)
+    2. Allow querying by v2 identifier to find balances from v1 events
+
+    Example used: GNT (v1) -> GLM (v2)
+    """
+    gnt = Asset('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d')
+    glm = Asset('eip155:1/erc20:0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429')
+    with database.user_write() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=gnt,
+                amount=FVal('100'),
+                location_label=TEST_ADDR1,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=gnt,
+                amount=FVal('30'),
+                location_label=TEST_ADDR1,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(2500),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=glm,
+                amount=FVal('10'),
+                location_label=TEST_ADDR1,
+            ), EvmEvent(
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(3000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=glm,
+                amount=FVal('50'),
+                location_label=TEST_ADDR1,
+            )],
+        )
+
+    process_historical_balances(database, messages_aggregator)
+
+    with database.conn.read_ctx() as cursor:
+        results = cursor.execute(
+            'SELECT he.asset, em.asset, em.metric_value '
+            'FROM event_metrics em '
+            'JOIN history_events he ON em.event_identifier = he.identifier '
+            'ORDER BY he.timestamp',
+        ).fetchall()
+        assert results == [
+            (gnt.identifier, glm.identifier, '100'),  # receive 100 GNT -> 0 + 100 = 100
+            (gnt.identifier, glm.identifier, '70'),  # spend 30 GNT -> 100 - 30 = 70
+            (glm.identifier, glm.identifier, '60'),  # spend 10 GLM -> 70 - 10 = 60
+            (glm.identifier, glm.identifier, '110'),  # receive 50 GLM -> 60 + 50 = 110
+        ]

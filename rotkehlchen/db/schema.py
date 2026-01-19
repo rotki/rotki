@@ -856,6 +856,8 @@ CREATE TABLE IF NOT EXISTS lido_csm_node_operator_metrics (
 # - location_label is the address/account (can differ from history_events for transfers)
 # - protocol is NULL for wallet, or protocol name for DeFi positions (e.g., 'aave_v3', 'lido')
 # - metric_key is the type of metric ('balance', 'pnl', 'cost_basis', etc.)
+# - asset is the identifier this metric is aggregated under (may differ from event asset,
+#   e.g., token upgrades)
 DB_CREATE_EVENT_METRICS = """
 CREATE TABLE IF NOT EXISTS event_metrics (
     id INTEGER NOT NULL PRIMARY KEY,
@@ -864,7 +866,8 @@ CREATE TABLE IF NOT EXISTS event_metrics (
     protocol TEXT,
     metric_key TEXT NOT NULL,
     metric_value TEXT NOT NULL,
-    UNIQUE(event_identifier, location_label, protocol, metric_key)
+    asset TEXT NOT NULL,
+    UNIQUE(event_identifier, location_label, protocol, metric_key, asset)
 );
 """
 
@@ -892,6 +895,7 @@ CREATE INDEX IF NOT EXISTS idx_event_metrics_event ON event_metrics(event_identi
 CREATE INDEX IF NOT EXISTS idx_event_metrics_location_label ON event_metrics(location_label);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_protocol ON event_metrics(protocol);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key ON event_metrics(metric_key);
+CREATE INDEX IF NOT EXISTS idx_event_metrics_asset ON event_metrics(asset);
 """  # noqa: E501
 
 DB_SCRIPT_CREATE_TABLES = f"""

@@ -2434,8 +2434,8 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             asset_filter = DBEqualsFilter(
                 and_op=True,
                 column='asset',
-                value=asset.identifier,
-                alias='he',
+                value=asset.resolve_swapped_for().identifier,
+                alias='em',
             )
             filters.append(asset_filter)
             unprocessed_clauses.append('asset = ?')

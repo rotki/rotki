@@ -125,7 +125,7 @@ class Bucket(NamedTuple):
         - Everything else: tracked in wallet bucket
         """
         location = event.location.serialize_for_db()
-        asset = event.asset.identifier
+        asset = event.asset.resolve_swapped_for().identifier
         event_key = (event.event_type, event.event_subtype)
         counterparty = getattr(event, 'counterparty', None)
         address = getattr(event, 'address', None)
@@ -237,12 +237,12 @@ def _load_bucket_balances_before_ts(
     with database.conn.read_ctx() as cursor:
         cursor.execute(
             """
-            SELECT he.location, em.location_label, em.protocol, he.asset,
+            SELECT he.location, em.location_label, em.protocol, em.asset,
                    em.metric_value, MAX(he.timestamp + he.sequence_index)
             FROM event_metrics em
             INNER JOIN history_events he ON em.event_identifier = he.identifier
             WHERE em.metric_key = ? AND he.timestamp < ?
-            GROUP BY he.location, em.location_label, em.protocol, he.asset
+            GROUP BY he.location, em.location_label, em.protocol, em.asset
             """,
             (EventMetricKey.BALANCE.serialize(), from_ts),
         )
@@ -284,7 +284,7 @@ def process_historical_balances(
         _finalize_processing(database=database, processing_started_at=processing_started_at)
         return
 
-    metrics_batch: list[tuple[int | None, str | None, str | None, str, str]] = []
+    metrics_batch: list[tuple[int | None, str | None, str | None, str, str, str]] = []
     first_batch_written, send_ws_every = False, msg_aggregator.how_many_events_per_ws(total_events)
     for idx, event in enumerate(events):
         for event_to_apply in events_to_apply if (events_to_apply := _maybe_add_profit_event(
@@ -373,7 +373,7 @@ def _finalize_processing(database: 'DBHandler', processing_started_at: Timestamp
 
 def _write_metrics_batch(
         write_cursor: 'DBCursor',
-        metrics_batch: list[tuple[int | None, str | None, str | None, str, str]],
+        metrics_batch: list[tuple[int | None, str | None, str | None, str, str, str]],
         from_ts: TimestampMS | None,
         first_batch_written: bool,
 ) -> None:
@@ -389,8 +389,8 @@ def _write_metrics_batch(
             write_cursor.execute('DELETE FROM event_metrics')
     write_cursor.executemany(
         'INSERT OR REPLACE INTO event_metrics '
-        '(event_identifier, location_label, protocol, metric_key, metric_value) '
-        'VALUES (?, ?, ?, ?, ?)',
+        '(event_identifier, location_label, protocol, metric_key, metric_value, asset) '
+        'VALUES (?, ?, ?, ?, ?, ?)',
         metrics_batch,
     )
 
@@ -399,7 +399,7 @@ def _apply_to_buckets(
         database: 'DBHandler',
         event: 'HistoryBaseEntry',
         bucket_balances: dict[Bucket, FVal],
-        metrics_batch: list[tuple[int | None, str | None, str | None, str, str]],
+        metrics_batch: list[tuple[int | None, str | None, str | None, str, str, str]],
         last_run_ts: Timestamp | None,
 ) -> None:
     """Apply the given event to the buckets it affects."""
@@ -438,6 +438,7 @@ def _apply_to_buckets(
             bucket.protocol,
             EventMetricKey.BALANCE.serialize(),
             str(new_balance),
+            bucket.asset,
         ))
 
 
