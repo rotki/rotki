@@ -27,9 +27,16 @@ const { supportsTransactions } = useSupportedChains();
 
 function showTokenDetection(row: AccountDataRow<T>): boolean {
   if (row.type === 'group')
-    return row.chains.length === 1 && supportsTransactions(row.chains[0]);
+    return row.chains.some(chain => supportsTransactions(chain));
 
   return supportsTransactions(row.chain);
+}
+
+function getTokenDetectionChains(row: AccountDataRow<T>): string[] {
+  if (row.type === 'group')
+    return row.chains.filter(chain => supportsTransactions(chain));
+
+  return [row.chain];
 }
 </script>
 
@@ -40,7 +47,7 @@ function showTokenDetection(row: AccountDataRow<T>): boolean {
       class="ms-2"
       :address="getAccountAddress(row)"
       :loading="isSectionLoading"
-      :chain="row.type === 'group' ? row.chains[0] : row.chain"
+      :chains="getTokenDetectionChains(row)"
     />
     <RowActions
       v-if="!isVirtual && !isOnlyShowingLoopringChain"

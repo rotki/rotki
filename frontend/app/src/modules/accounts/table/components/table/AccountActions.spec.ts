@@ -159,7 +159,7 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       expect(supportsTransactionsMock).toHaveBeenCalledWith('eth');
     });
 
-    it('should hide TokenDetection for groups with multiple chains', () => {
+    it('should show TokenDetection for groups with multiple chains if at least one supports transactions', () => {
       supportsTransactionsMock.mockReturnValue(true);
 
       wrapper = createWrapper({
@@ -169,6 +169,21 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
         isSectionLoading: false,
         isVirtual: false,
         row: createGroupRow(['eth', 'optimism']),
+      });
+
+      expect(wrapper.findComponent({ name: 'TokenDetection' }).exists()).toBe(true);
+    });
+
+    it('should hide TokenDetection for groups with multiple chains if none support transactions', () => {
+      supportsTransactionsMock.mockReturnValue(false);
+
+      wrapper = createWrapper({
+        accountOperation: false,
+        group: 'evm',
+        isOnlyShowingLoopringChain: false,
+        isSectionLoading: false,
+        isVirtual: false,
+        row: createGroupRow(['btc', 'bch']),
       });
 
       expect(wrapper.findComponent({ name: 'TokenDetection' }).exists()).toBe(false);
@@ -368,10 +383,10 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       const tokenDetection = wrapper.findComponent({ name: 'TokenDetection' });
       expect(tokenDetection.props('address')).toBe('0x1234567890abcdef1234567890abcdef12345678');
       expect(tokenDetection.props('loading')).toBe(true);
-      expect(tokenDetection.props('chain')).toBe('eth');
+      expect(tokenDetection.props('chains')).toEqual(['eth']);
     });
 
-    it('should pass correct chain prop to TokenDetection for group row with single chain', () => {
+    it('should pass correct chains prop to TokenDetection for group row with single chain', () => {
       supportsTransactionsMock.mockReturnValue(true);
 
       wrapper = createWrapper({
@@ -384,7 +399,23 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       });
 
       const tokenDetection = wrapper.findComponent({ name: 'TokenDetection' });
-      expect(tokenDetection.props('chain')).toBe('optimism');
+      expect(tokenDetection.props('chains')).toEqual(['optimism']);
+    });
+
+    it('should pass only supported chains to TokenDetection for group row with multiple chains', () => {
+      supportsTransactionsMock.mockImplementation((chain: string) => chain === 'eth' || chain === 'optimism');
+
+      wrapper = createWrapper({
+        accountOperation: false,
+        group: 'evm',
+        isOnlyShowingLoopringChain: false,
+        isSectionLoading: false,
+        isVirtual: false,
+        row: createGroupRow(['eth', 'optimism', 'btc']),
+      });
+
+      const tokenDetection = wrapper.findComponent({ name: 'TokenDetection' });
+      expect(tokenDetection.props('chains')).toEqual(['eth', 'optimism']);
     });
   });
 });

@@ -7,6 +7,7 @@ import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-a
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
+import { arrayify } from '@/utils/array';
 
 interface UseTokenDetectionReturn {
   detectingTokens: ComputedRef<boolean>;
@@ -16,52 +17,81 @@ interface UseTokenDetectionReturn {
   detectTokensOfAllAddresses: () => Promise<void>;
 }
 
-export function useTokenDetection(chain: MaybeRef<string>, accountAddress: MaybeRef<string | null> = null): UseTokenDetectionReturn {
+export function useTokenDetection(chain: MaybeRef<string | string[]>, accountAddress: MaybeRef<string | null> = null): UseTokenDetectionReturn {
   const { useIsTaskRunning } = useTaskStore();
   const { fetchDetectedTokens: fetchDetectedTokensCaller, getEthDetectedTokensInfo } = useBlockchainTokensStore();
   const { addresses } = useAccountAddresses();
   const { supportsTransactions } = useSupportedChains();
+  const { queueTokenDetection } = useBalanceQueue();
 
-  const isDetectingTaskRunning = (address: string | null): ComputedRef<boolean> =>
+  const chains = computed<string[]>(() => arrayify(get(chain)));
+
+  const isDetectingTaskRunning = (blockchain: string, address: string | null): ComputedRef<boolean> =>
     computed(() => get(
       useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-        chain: get(chain),
+        chain: blockchain,
         ...(address ? { address } : {}),
       }),
     ));
 
   const detectingTokens = computed<boolean>(() => {
     const address = get(accountAddress);
-    return get(isDetectingTaskRunning(address));
+    return get(chains).some(blockchain => get(isDetectingTaskRunning(blockchain, address)));
   });
 
-  const detectedTokens = getEthDetectedTokensInfo(chain, accountAddress);
+  const detectedTokens = computed<EthDetectedTokensInfo>(() => {
+    const chainsValue = get(chains);
+    let totalTokens = 0;
+    let latestTimestamp: number | null = null;
+    const allTokens: string[] = [];
 
-  const fetchDetectedTokens = async (address: string): Promise<void> => {
-    const blockchain = get(chain);
+    for (const blockchain of chainsValue) {
+      const info = get(getEthDetectedTokensInfo(blockchain, accountAddress));
+      totalTokens += info.total;
+      allTokens.push(...info.tokens);
+
+      if (info.timestamp !== null && (latestTimestamp === null || info.timestamp > latestTimestamp))
+        latestTimestamp = info.timestamp;
+    }
+
+    return {
+      timestamp: latestTimestamp,
+      tokens: allTokens,
+      total: totalTokens,
+    };
+  });
+
+  const fetchDetectedTokens = async (blockchain: string, address: string): Promise<void> => {
     assert(supportsTransactions(blockchain));
     await fetchDetectedTokensCaller(blockchain, address);
   };
 
-  const detectTokens = async (addresses: string[] = []): Promise<void> => {
+  const detectTokens = async (addressList: string[] = []): Promise<void> => {
     const address = get(accountAddress);
-    assert(address || addresses.length > 0);
-    const usedAddresses = (address ? [address] : addresses).filter(address => !get(isDetectingTaskRunning(address)));
+    assert(address || addressList.length > 0);
+    const usedAddresses = address ? [address] : addressList;
+    const chainsValue = get(chains);
 
-    const blockchain = get(chain);
-    const { queueTokenDetection } = useBalanceQueue();
-    await queueTokenDetection(blockchain, usedAddresses, fetchDetectedTokens);
+    await Promise.all(chainsValue.map(async (blockchain) => {
+      const filteredAddresses = usedAddresses.filter(addr => !get(isDetectingTaskRunning(blockchain, addr)));
+      if (filteredAddresses.length > 0)
+        await queueTokenDetection(blockchain, filteredAddresses, async addr => fetchDetectedTokens(blockchain, addr));
+    }));
   };
 
   const detectTokensOfAllAddresses = async (): Promise<void> => {
-    const blockchain = get(chain);
-    if (!supportsTransactions(chain))
-      return;
+    const chainsValue = get(chains);
+    const addressesValue = get(addresses);
 
-    const tokenAddresses = get(addresses)[blockchain] ?? [];
+    await Promise.all(chainsValue.map(async (blockchain) => {
+      if (!supportsTransactions(blockchain))
+        return;
 
-    if (tokenAddresses.length > 0)
-      await detectTokens(tokenAddresses);
+      const tokenAddresses = addressesValue[blockchain] ?? [];
+
+      if (tokenAddresses.length > 0)
+        await queueTokenDetection(blockchain, tokenAddresses, async addr => fetchDetectedTokens(blockchain, addr));
+    }));
   };
 
   return {
