@@ -135,8 +135,7 @@ export class ProcessManager {
         await this.terminateWindowsProcesses();
       }
       else {
-        const success = this.process.kill();
-        this.log(`Process ${this.processName} (PID: ${this.process.pid}) terminated with success: ${success}`);
+        await this.terminateAndWait();
       }
     }
     catch (error: any) {
@@ -180,6 +179,32 @@ export class ProcessManager {
     }
     finally {
       this.log('Call to taskkill complete');
+    }
+  }
+
+  private async terminateAndWait(): Promise<void> {
+    if (!this.process) {
+      return;
+    }
+
+    const pid = this.process.pid;
+    const maxWaitMs = 10000;
+
+    const exitPromise = new Promise<boolean>((resolve) => {
+      this.process?.once('exit', () => resolve(true));
+    });
+
+    const success = this.process.kill('SIGTERM');
+    this.log(`Sent SIGTERM to ${this.processName} (PID: ${pid}), success: ${success}`);
+
+    const timeoutPromise = wait(maxWaitMs).then(() => false);
+
+    const exited = await Promise.race([exitPromise, timeoutPromise]);
+    if (exited) {
+      this.log(`Process ${this.processName} (PID: ${pid}) terminated gracefully`);
+    }
+    else {
+      this.log(`Timeout waiting for ${this.processName} (PID: ${pid}) to exit after ${maxWaitMs}ms`);
     }
   }
 

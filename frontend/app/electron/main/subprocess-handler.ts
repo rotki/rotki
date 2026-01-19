@@ -271,10 +271,18 @@ export class SubprocessHandler {
     if (this.exiting)
       return;
 
+    const wasRunning = this.colibriManager?.isRunning || this.coreManager?.isRunning;
+
     this.exiting = true;
     await this.colibriManager?.terminate();
     await this.coreManager?.terminate();
     this.exiting = false;
+
+    // Allow time for sockets to be released before restarting
+    if (restart && wasRunning) {
+      this.logger.debug('Waiting for socket cleanup before restart');
+      await wait(1000);
+    }
 
     this.logger.debug('Termination complete');
     if (!restart)
