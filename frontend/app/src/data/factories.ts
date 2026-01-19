@@ -8,6 +8,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     addressNamePriority: [],
     askUserUponSizeDiscrepancy: true,
     assetMovementAmountTolerance: Defaults.ASSET_MOVEMENT_AMOUNT_TOLERANCE,
+    assetMovementTimeRange: Defaults.ASSET_MOVEMENT_TIME_RANGE,
     autoCreateCalendarReminders: true,
     autoDeleteCalendarEntries: true,
     autoDetectTokens: true,

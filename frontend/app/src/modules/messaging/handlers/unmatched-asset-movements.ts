@@ -23,6 +23,7 @@ export function createUnmatchedAssetMovementsHandler(t: ReturnType<typeof useI18
         action: {
           action: async () => router.push({
             path: Routes.HISTORY_EVENTS.toString(),
+            query: { openMatchAssetMovementsDialog: 'true' },
           }),
           label: t('notification_messages.unmatched_asset_movements.action'),
           persist: true,

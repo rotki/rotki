@@ -1250,8 +1250,19 @@
     },
     "settings": {
       "amount_tolerance": {
-        "hint": "Maximum allowed difference between asset movement amount and on-chain event amount to be matched automatically.",
-        "label": "Amount tolerance"
+        "hint": "Maximum allowed percentage difference between the asset movement amount and the on-chain event amount for automatic matching. For example, 1% tolerance on a 0.1 BTC movement allows matching with events between 0.099 and 0.101 BTC.",
+        "label": "Amount tolerance (%)",
+        "validations": {
+          "max": "Value must be at most 100",
+          "min": "Value must be at least 0.0001"
+        }
+      },
+      "time_range": {
+        "hint": "Maximum allowed time difference (in hours) between the asset movement timestamp and the on-chain event timestamp to be matched automatically.",
+        "label": "Time range (hours)",
+        "validations": {
+          "min": "Value must be at least 1"
+        }
       },
       "title": "Auto Match Settings",
       "tooltip": "Configure automatic matching settings"

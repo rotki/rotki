@@ -288,6 +288,7 @@ onBeforeMount(async () => {
             <RuiButtonGroup
               color="primary"
               class="pl-3"
+              :disabled="autoMatchLoading"
             >
               <RuiTooltip
                 :open-delay="400"
@@ -308,7 +309,7 @@ onBeforeMount(async () => {
                 {{ t('asset_movement_matching.actions.auto_match_tooltip') }}
               </RuiTooltip>
 
-              <AssetMovementMatchingSettingsMenu />
+              <AssetMovementMatchingSettingsMenu :disabled="autoMatchLoading" />
             </RuiButtonGroup>
           </div>
           <div

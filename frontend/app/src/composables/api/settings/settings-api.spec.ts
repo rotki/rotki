@@ -68,6 +68,7 @@ function createSettingsResponse(overrides: Record<string, unknown> = {}): Action
       default_evm_indexer_order: [],
       evm_indexers_order: {},
       asset_movement_amount_tolerance: '0.000001',
+      asset_movement_time_range: 3600,
       suppress_missing_key_msg_services: [],
       ...overrides,
     },

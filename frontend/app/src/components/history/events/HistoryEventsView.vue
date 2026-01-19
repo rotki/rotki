@@ -2,7 +2,7 @@
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
-import { DIALOG_TYPES, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
+import { DIALOG_TYPES, type DialogShowOptions, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import HistoryEventsDialogContainer from '@/components/history/events/HistoryEventsDialogContainer.vue';
 import HistoryEventsFiltersChips from '@/components/history/events/HistoryEventsFiltersChips.vue';
 import HistoryEventsTableActions from '@/components/history/events/HistoryEventsTableActions.vue';
@@ -177,12 +177,18 @@ function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds
   set(originalGroups, rawEvents || get(groups).data);
 }
 
-watchImmediate(route, async (route) => {
-  if (!route.query.openDecodingStatusDialog) {
+const queryToDialogMap: Record<string, DialogShowOptions> = {
+  openDecodingStatusDialog: { type: DIALOG_TYPES.DECODING_STATUS },
+  openMatchAssetMovementsDialog: { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS },
+};
+
+watchImmediate(route, async ({ query }) => {
+  const dialogOptions = Object.keys(queryToDialogMap).find(key => query[key]);
+  if (!dialogOptions)
     return;
-  }
+
   await nextTick();
-  get(dialogContainer)?.show({ type: DIALOG_TYPES.DECODING_STATUS });
+  get(dialogContainer)?.show(queryToDialogMap[dialogOptions]);
   await router.replace({ query: {} });
 });
 
