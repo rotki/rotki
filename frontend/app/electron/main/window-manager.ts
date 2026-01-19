@@ -101,9 +101,10 @@ export class WindowManager {
   private async loadContent(window: BrowserWindow): Promise<void> {
     const devServerUrl = import.meta.env.VITE_DEV_SERVER_URL;
     if (devServerUrl) {
+      // Load extensions before the page to avoid interfering with dynamic imports
+      await this.loadDevExtensions(window);
       // Load the url of the dev server if in development mode with retry logic
       await this.loadUrlWithRetry(window, devServerUrl);
-      await this.loadDevExtensions(window);
       if (process.env.ENABLE_DEV_TOOLS)
         window.webContents.openDevTools();
       return;
