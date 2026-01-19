@@ -108,7 +108,7 @@ const truncatedDisplayValue = computed<string>(() => {
 const keyCodeToPropagate: string[] = ['Enter', 'Esc', 'ArrowUp', 'ArrowDown'] as const;
 
 function onKeyDown(e: KeyboardEvent) {
-  if (!keyCodeToPropagate.includes(e.code)) {
+  if (!keyCodeToPropagate.includes(e.key)) {
     e.stopPropagation();
   }
 
