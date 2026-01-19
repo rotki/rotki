@@ -55,8 +55,6 @@ const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
 // Use composables
 const {
-  isAssetWhitelisted,
-  isSpamAsset,
   loadingIgnore,
   loadingSpam,
   loadingWhitelist,
@@ -64,6 +62,7 @@ const {
   toggleIgnoreAsset,
   toggleSpam,
   toggleWhitelistAsset,
+  useIsAssetWhitelisted,
 } = useManagedAssetOperations(() => emit('refresh'), ignoredFilter, selected);
 
 const { cols, data, expand, isExpanded } = useManagedAssetTable(
@@ -73,9 +72,9 @@ const { cols, data, expand, isExpanded } = useManagedAssetTable(
   collection,
 );
 
-const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset, showMoreOptions } = useAssetDisplayHelpers(
+const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAssetDisplayHelpers(
   collection,
-  isAssetWhitelisted,
+  useIsAssetWhitelisted,
 );
 
 const { fetchIgnoredAssets } = useIgnoredAssetsStore();
@@ -147,12 +146,9 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
       <template #item.ignored="{ row }">
         <ManagedAssetIgnoreSwitch
           v-if="canBeIgnored(row)"
-          :identifier="row.identifier"
-          :is-spam="isSpamAsset(row)"
-          :show-more-options="showMoreOptions(row)"
-          :loading-ignore="loadingIgnore === row.identifier"
-          :loading-whitelist="loadingWhitelist === row.identifier"
-          :loading-spam="loadingSpam === row.identifier"
+          :asset="row"
+          :loading="loadingIgnore === row.identifier"
+          :menu-loading="loadingWhitelist === row.identifier || loadingSpam === row.identifier"
           @toggle-ignore="toggleIgnoreAsset(row)"
           @toggle-whitelist="toggleWhitelistAsset(row.identifier)"
           @toggle-spam="toggleSpam(row)"

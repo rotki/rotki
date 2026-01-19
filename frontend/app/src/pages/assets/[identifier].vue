@@ -19,7 +19,6 @@ import HashLink from '@/modules/common/links/HashLink.vue';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
-import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
 import { getPublicServiceImagePath } from '@/utils/file';
 
@@ -48,7 +47,7 @@ const route = useRoute();
 const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 
 const { ignoreAssetWithConfirmation, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
-const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
+const { unWhitelistAsset, useIsAssetWhitelisted, whitelistAsset } = useWhitelistedAssetsStore();
 const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 const { assetContractInfo, assetInfo, assetName, assetSymbol, refetchAssetInfo } = useAssetInfoRetrieval();
 const premium = usePremium();
@@ -57,7 +56,7 @@ const { balances } = useAggregatedBalances();
 const aggregatedBalances = balances();
 
 const isIgnored = useIsAssetIgnored(identifier);
-const isWhitelisted = isAssetWhitelisted(identifier);
+const isWhitelisted = useIsAssetWhitelisted(identifier);
 
 const isCollectionParent = computed<boolean>(() => {
   const currentRoute = get(route);
@@ -273,12 +272,9 @@ async function toggleWhitelistAsset(): Promise<void> {
           </div>
 
           <ManagedAssetIgnoreSwitch
-            :identifier="identifier"
-            :is-spam="isSpam"
-            :show-more-options="asset?.assetType === EVM_TOKEN"
-            :loading-ignore="loadingIgnore"
-            :loading-whitelist="loadingWhitelist"
-            :loading-spam="loadingSpam"
+            :asset="{ identifier, assetType: asset?.assetType, protocol: asset?.protocol }"
+            :loading="loadingIgnore"
+            :menu-loading="loadingWhitelist || loadingSpam"
             @toggle-ignore="toggleIgnoreAsset()"
             @toggle-whitelist="toggleWhitelistAsset()"
             @toggle-spam="toggleSpam()"

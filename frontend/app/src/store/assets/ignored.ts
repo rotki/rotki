@@ -120,12 +120,12 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
     }
   };
 
+  const isAssetIgnored = (asset: string): boolean => get(ignoredAssets).includes(asset);
+
   const useIsAssetIgnored = (asset: MaybeRef<string>): ComputedRef<boolean> => computed<boolean>(() => {
     const selectedAsset = get(asset);
-    return get(ignoredAssets).includes(selectedAsset);
+    return isAssetIgnored(selectedAsset);
   });
-
-  const isAssetIgnored = (asset: string): boolean => get(ignoredAssets).includes(asset);
 
   const addIgnoredAsset = (asset: string): void => {
     const ignored = get(ignoredAssets);

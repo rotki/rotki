@@ -16,16 +16,14 @@ interface IgnoredFilter {
 }
 
 interface UseManagedAssetOperationsReturn {
-  isAssetWhitelisted: (identifier: string) => ComputedRef<boolean>;
-  isSpamAsset: (asset: SupportedAsset) => boolean;
-  loadingIgnore: Ref<string | null>;
-  loadingSpam: Ref<string | null>;
-  loadingWhitelist: Ref<string | null>;
+  useIsAssetWhitelisted: (identifier: string) => ComputedRef<boolean>;
+  loadingIgnore: Ref<string | undefined>;
+  loadingSpam: Ref<string | undefined>;
+  loadingWhitelist: Ref<string | undefined>;
   massIgnore: (ignored: boolean) => Promise<void>;
   toggleIgnoreAsset: (asset: SupportedAsset) => Promise<void>;
   toggleSpam: (item: SupportedAsset) => Promise<void>;
   toggleWhitelistAsset: (identifier: string) => Promise<void>;
-  useIsAssetIgnored: (identifier: string) => ComputedRef<boolean>;
 }
 
 export function useManagedAssetOperations(
@@ -36,16 +34,16 @@ export function useManagedAssetOperations(
   const { t } = useI18n({ useScope: 'global' });
 
   const { setMessage } = useMessageStore();
-  const { ignoreAsset, ignoreAssetWithConfirmation, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
-  const { isAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
+  const { ignoreAsset, ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+  const { isAssetWhitelisted, unWhitelistAsset, useIsAssetWhitelisted, whitelistAsset } = useWhitelistedAssetsStore();
   const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
   const { refetchAssetInfo } = useAssetInfoRetrieval();
 
   const isSpamAsset = (asset: SupportedAsset): boolean => asset.protocol === 'spam';
 
-  const loadingIgnore = ref<string | null>(null);
-  const loadingWhitelist = ref<string | null>(null);
-  const loadingSpam = ref<string | null>(null);
+  const loadingIgnore = ref<string | undefined>(undefined);
+  const loadingWhitelist = ref<string | undefined>(undefined);
+  const loadingSpam = ref<string | undefined>(undefined);
 
   function refreshAssetsConditionally(): void {
     if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
@@ -56,7 +54,7 @@ export function useManagedAssetOperations(
     const { identifier, name, symbol } = asset;
     set(loadingIgnore, identifier);
     try {
-      if (get(useIsAssetIgnored(identifier))) {
+      if (isAssetIgnored(identifier)) {
         await unignoreAsset(identifier);
         refreshAssetsConditionally();
       }
@@ -65,7 +63,7 @@ export function useManagedAssetOperations(
       }
     }
     finally {
-      set(loadingIgnore, null);
+      set(loadingIgnore, undefined);
     }
   };
 
@@ -82,14 +80,14 @@ export function useManagedAssetOperations(
       onRefresh();
     }
     finally {
-      set(loadingSpam, null);
+      set(loadingSpam, undefined);
     }
   };
 
   const toggleWhitelistAsset = async (identifier: string): Promise<void> => {
     set(loadingWhitelist, identifier);
     try {
-      if (get(isAssetWhitelisted(identifier)))
+      if (isAssetWhitelisted(identifier))
         await unWhitelistAsset(identifier);
       else
         await whitelistAsset(identifier);
@@ -97,14 +95,14 @@ export function useManagedAssetOperations(
       onRefresh();
     }
     finally {
-      set(loadingWhitelist, null);
+      set(loadingWhitelist, undefined);
     }
   };
 
   const massIgnore = async (ignored: boolean): Promise<void> => {
     const ids = get(selected)
       .filter((identifier) => {
-        const isItemIgnored = get(useIsAssetIgnored(identifier));
+        const isItemIgnored = isAssetIgnored(identifier);
         return ignored ? !isItemIgnored : isItemIgnored;
       })
       .filter(uniqueStrings);
@@ -128,14 +126,11 @@ export function useManagedAssetOperations(
 
     if (status.success) {
       set(selected, []);
-      if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
-        onRefresh();
+      refreshAssetsConditionally();
     }
   };
 
   return {
-    isAssetWhitelisted,
-    isSpamAsset,
     loadingIgnore,
     loadingSpam,
     loadingWhitelist,
@@ -143,6 +138,6 @@ export function useManagedAssetOperations(
     toggleIgnoreAsset,
     toggleSpam,
     toggleWhitelistAsset,
-    useIsAssetIgnored,
+    useIsAssetWhitelisted,
   };
 }

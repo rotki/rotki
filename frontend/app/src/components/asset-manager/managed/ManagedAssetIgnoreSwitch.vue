@@ -1,22 +1,23 @@
 <script setup lang="ts">
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
+import { EVM_TOKEN } from '@/types/asset';
+
+interface AssetForIgnoreSwitch {
+  identifier: string;
+  assetType?: string | null;
+  protocol?: string | null;
+}
 
 const props = withDefaults(
   defineProps<{
-    identifier: string;
-    isSpam?: boolean;
-    showMoreOptions?: boolean;
-    loadingIgnore?: boolean;
-    loadingWhitelist?: boolean;
-    loadingSpam?: boolean;
+    asset: AssetForIgnoreSwitch;
+    loading?: boolean;
+    menuLoading?: boolean;
   }>(),
   {
-    isSpam: false,
-    loadingIgnore: false,
-    loadingSpam: false,
-    loadingWhitelist: false,
-    showMoreOptions: false,
+    loading: false,
+    menuLoading: false,
   },
 );
 
@@ -26,24 +27,24 @@ const emit = defineEmits<{
   'toggle-spam': [];
 }>();
 
-const { identifier } = toRefs(props);
-
 const { t } = useI18n({ useScope: 'global' });
 
 const { useIsAssetIgnored } = useIgnoredAssetsStore();
-const { isAssetWhitelisted } = useWhitelistedAssetsStore();
+const { useIsAssetWhitelisted } = useWhitelistedAssetsStore();
+
+const identifier = computed<string>(() => props.asset.identifier);
+const isSpam = computed<boolean>(() => props.asset.protocol === 'spam');
+const showMoreOptions = computed<boolean>(() => props.asset.assetType === EVM_TOKEN);
 
 const isIgnored = useIsAssetIgnored(identifier);
-const isWhitelisted = isAssetWhitelisted(identifier);
+const isWhitelisted = useIsAssetWhitelisted(identifier);
 
-const isLoading = computed<boolean>(() => props.loadingIgnore || props.loadingWhitelist || props.loadingSpam);
+const isLoading = computed<boolean>(() => props.loading || props.menuLoading);
 
-const isMenuLoading = computed<boolean>(() => props.loadingWhitelist || props.loadingSpam);
-
-const isIgnoringDisabled = computed<boolean>(() => props.isSpam || get(isWhitelisted) || get(isLoading));
+const isIgnoringDisabled = computed<boolean>(() => get(isSpam) || get(isWhitelisted) || get(isLoading));
 
 const tooltipMessage = computed<string>(() =>
-  props.isSpam ? t('ignore.spam.hint') : t('ignore.whitelist.hint'),
+  get(isSpam) ? t('ignore.spam.hint') : t('ignore.whitelist.hint'),
 );
 </script>
 
@@ -59,7 +60,7 @@ const tooltipMessage = computed<string>(() =>
         <RuiSwitch
           color="primary"
           hide-details
-          :loading="loadingIgnore"
+          :loading="loading"
           :disabled="isIgnoringDisabled"
           :model-value="isIgnored"
           @update:model-value="emit('toggle-ignore')"
@@ -88,7 +89,7 @@ const tooltipMessage = computed<string>(() =>
             icon
             v-bind="attrs"
             size="sm"
-            :loading="isMenuLoading"
+            :loading="menuLoading"
             class="dark:!bg-rui-grey-800 dark:!text-white"
           >
             <RuiIcon

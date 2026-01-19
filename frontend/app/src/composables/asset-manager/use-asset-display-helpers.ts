@@ -1,7 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { Collection } from '@/types/collection';
 import { getAddressFromEvmIdentifier, isEvmIdentifier, type SupportedAsset, toSentenceCase } from '@rotki/common';
-import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
+import { CUSTOM_ASSET } from '@/types/asset';
 
 export interface AssetDisplay {
   customAssetType: string;
@@ -19,12 +19,11 @@ interface UseAssetDisplayHelpersReturn {
   disabledRows: ComputedRef<SupportedAsset[]>;
   formatType: (string?: string | null) => string;
   getAsset: (item: SupportedAsset) => AssetDisplay;
-  showMoreOptions: (asset: SupportedAsset) => boolean;
 }
 
 export function useAssetDisplayHelpers(
   collection: Ref<Collection<SupportedAsset>>,
-  isAssetWhitelisted: (identifier: string) => ComputedRef<boolean>,
+  useIsAssetWhitelisted: (identifier: string) => ComputedRef<boolean>,
 ): UseAssetDisplayHelpersReturn {
   const formatType = (string?: string | null): string => toSentenceCase(string ?? 'EVM token');
 
@@ -55,14 +54,12 @@ export function useAssetDisplayHelpers(
 
   const isSpamAsset = (asset: SupportedAsset): boolean => asset.protocol === 'spam';
   const isCustomAsset = (asset: SupportedAsset): boolean => asset.assetType === CUSTOM_ASSET;
-  const isEvmToken = (asset: SupportedAsset): boolean => asset.assetType === EVM_TOKEN;
   const canBeIgnored = (asset: SupportedAsset): boolean => !isCustomAsset(asset);
   const canBeEdited = (asset: SupportedAsset): boolean => !isCustomAsset(asset);
-  const showMoreOptions = (asset: SupportedAsset): boolean => isEvmToken(asset);
 
   const disabledRows = computed<SupportedAsset[]>(() => {
     const data = get(collection).data;
-    return data.filter(item => get(isAssetWhitelisted(item.identifier)) || isSpamAsset(item));
+    return data.filter(item => get(useIsAssetWhitelisted(item.identifier)) || isSpamAsset(item));
   });
 
   return {
@@ -71,6 +68,5 @@ export function useAssetDisplayHelpers(
     disabledRows,
     formatType,
     getAsset,
-    showMoreOptions,
   };
 }
