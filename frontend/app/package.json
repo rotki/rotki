@@ -48,7 +48,7 @@
     "@vueuse/math": "13.9.0",
     "@vueuse/shared": "13.9.0",
     "@walletconnect/core": "2.23.3",
-    "bignumber.js": "9.1.2",
+    "bignumber.js": "9.3.1",
     "bufferutil": "4.1.0",
     "consola": "3.4.2",
     "dayjs": "1.11.19",

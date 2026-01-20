@@ -60,7 +60,7 @@
   "pnpm": {
     "allowUnusedPatches": true,
     "patchedDependencies": {
-      "bignumber.js@9.1.2": "patches/bignumber.js@9.1.2.patch"
+      "bignumber.js@9.3.1": "patches/bignumber.js@9.3.1.patch"
     },
     "onlyBuiltDependencies": [
       "@parcel/watcher",

@@ -20,13 +20,13 @@
   },
   "peerDependencies": {
     "@vueuse/core": ">=10.11.0",
-    "bignumber.js": "9.1.2",
+    "bignumber.js": "9.3.1",
     "vue": ">=3.4.0",
     "zod": "3.23.8"
   },
   "devDependencies": {
     "@vueuse/core": "13.9.0",
-    "bignumber.js": "9.1.2",
+    "bignumber.js": "9.3.1",
     "tsup": "8.5.1",
     "typescript": "5.9.3",
     "vue": "3.5.26",
