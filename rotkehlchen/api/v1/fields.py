@@ -410,6 +410,8 @@ class BlockchainField(fields.Field):
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 
+        if self.allow_only and chain_type not in self.allow_only:
+            raise ValidationError(f'Blockchain name {value!s} is not allowed in this endpoint')
         if self.exclude_types and chain_type in self.exclude_types:
             raise ValidationError(f'Blockchain name {value!s} is not allowed in this endpoint')
         return chain_type

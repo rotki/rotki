@@ -4,10 +4,10 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PoolAsset, PoolLiquidityBalance } from './types';
 import DashboardExpandableTable from '@/components/dashboard/DashboardExpandableTable.vue';
 import VisibleColumnsSelector from '@/components/dashboard/VisibleColumnsSelector.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import PoolDetails from '@/modules/dashboard/liquidity-pools/PoolDetails.vue';
 import PoolIcon from '@/modules/dashboard/liquidity-pools/PoolIcon.vue';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
@@ -115,10 +115,8 @@ watch(currencySymbol, async () => {
       />
     </template>
     <template #shortDetails>
-      <AmountDisplay
+      <FiatDisplay
         :value="total"
-        show-currency="symbol"
-        force-currency
         class="text-h6 font-bold"
       />
     </template>
@@ -146,10 +144,7 @@ watch(currencySymbol, async () => {
         </div>
       </template>
       <template #item.value="{ row }">
-        <AmountDisplay
-          :value="row.value"
-          force-currency
-        />
+        <FiatDisplay :value="row.value" />
       </template>
       <template #item.percentageOfTotalNetValue="{ row }">
         <PercentageDisplay
@@ -176,11 +171,7 @@ watch(currencySymbol, async () => {
           :right-patch-colspan="tableHeaders.length - 2"
           class-name="[&>td]:p-4"
         >
-          <AmountDisplay
-            :value="total"
-            show-currency="symbol"
-            force-currency
-          />
+          <FiatDisplay :value="total" />
         </RowAppend>
       </template>
     </RuiDataTable>

@@ -3,12 +3,12 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { LidoCsmNodeOperator, LidoCsmNodeOperatorPayload } from '@/types/staking';
 import { BigNumber, bigNumberify, Blockchain } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import TableEmptyState from '@/components/display/TableEmptyState.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useLidoCsmApi } from '@/composables/api/staking/lido-csm';
+import { AssetAmountDisplay } from '@/modules/amount-display/components';
 import { useMessageStore } from '@/store/message';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
@@ -394,11 +394,9 @@ defineExpose({
                   size="20px"
                   no-tooltip
                 />
-                <AmountDisplay
-                  show-currency="ticker"
-                  force-currency
+                <AssetAmountDisplay
                   :asset="STETH_IDENTIFIER"
-                  :value="row.bondCurrent"
+                  :amount="row.bondCurrent"
                 />
               </div>
               <span
@@ -418,11 +416,9 @@ defineExpose({
                   size="20px"
                   no-tooltip
                 />
-                <AmountDisplay
-                  show-currency="ticker"
-                  force-currency
+                <AssetAmountDisplay
                   :asset="STETH_IDENTIFIER"
-                  :value="row.bondRequired"
+                  :amount="row.bondRequired"
                 />
               </div>
               <span
@@ -442,11 +438,9 @@ defineExpose({
                   size="20px"
                   no-tooltip
                 />
-                <AmountDisplay
-                  show-currency="ticker"
-                  force-currency
+                <AssetAmountDisplay
                   :asset="STETH_IDENTIFIER"
-                  :value="row.bondClaimable"
+                  :amount="row.bondClaimable"
                 />
               </div>
               <span
@@ -471,11 +465,9 @@ defineExpose({
                   size="20px"
                   no-tooltip
                 />
-                <AmountDisplay
-                  show-currency="ticker"
-                  force-currency
+                <AssetAmountDisplay
                   :asset="STETH_IDENTIFIER"
-                  :value="row.rewardsPending"
+                  :amount="row.rewardsPending"
                 />
               </div>
               <span

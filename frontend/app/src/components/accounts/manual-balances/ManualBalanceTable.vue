@@ -5,7 +5,6 @@ import { isEqual } from 'es-toolkit';
 import ManualBalanceMissingAssetWarning
   from '@/components/accounts/manual-balances/ManualBalanceMissingAssetWarning.vue';
 import { useManualBalanceTableActions } from '@/components/accounts/manual-balances/use-manual-balance-table-actions';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -16,6 +15,7 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { type Filters, ManualBalancesFilterSchema, type Matcher, useManualBalanceFilter } from '@/composables/filters/manual-balances';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display';
 import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-manual-balances-or-liabilities';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -204,20 +204,16 @@ watchDebounced(
       <template #item.asset="{ row }">
         <AssetDetails
           v-if="!row.assetIsMissing"
-          hide-actions
+          hide-actionsusd-pr
           class="[&>div]:max-w-[12rem] xl:[&>div]:max-w-[16rem] 2xl:[&>div]:max-w-[20rem]"
           :asset="row.asset"
         />
         <ManualBalanceMissingAssetWarning v-else />
       </template>
       <template #item.usdPrice="{ row }">
-        <AmountDisplay
+        <FiatDisplay
           v-if="!row.assetIsMissing"
           :loading="!row.usdPrice || row.usdPrice.lt(0)"
-          is-asset-price
-          show-currency="symbol"
-          :price-asset="row.asset"
-          :price-of-asset="row.usdPrice"
           :value="row.usdPrice"
         />
         <template v-else>
@@ -225,19 +221,15 @@ watchDebounced(
         </template>
       </template>
       <template #item.amount="{ row }">
-        <AmountDisplay
+        <ValueDisplay
           data-cy="manual-balances__amount"
           :value="row.amount"
         />
       </template>
       <template #item.value="{ row }">
-        <AmountDisplay
+        <AssetValueDisplay
           v-if="!row.assetIsMissing"
-          show-currency="symbol"
-          :amount="row.amount"
-          :price-asset="row.asset"
-          :price-of-asset="row.usdPrice"
-          force-currency
+          :asset="row.asset"
           :value="row.value"
         />
         <template v-else>
@@ -273,11 +265,9 @@ watchDebounced(
             </span>
           </template>
 
-          <AmountDisplay
+          <FiatDisplay
             v-if="state.totalValue"
-            show-currency="symbol"
             class="p-4"
-            force-currency
             data-cy="manual-balances__amount"
             :value="state.totalValue"
           />

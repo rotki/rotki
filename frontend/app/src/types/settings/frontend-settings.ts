@@ -120,6 +120,9 @@ export type BalanceValueThreshold = z.infer<typeof BalanceValueThreshold>;
 const EvmQueryIndicatorMinOutOfSyncPeriod = z.number().min(1).max(Constraints.MAX_HOURS_DELAY).int();
 const EvmQueryIndicatorDismissalThreshold = z.number().min(1).max(Constraints.MAX_HOURS_DELAY).int();
 
+const NewlyDetectedTokensMaxCount = z.number().min(Constraints.NEWLY_DETECTED_TOKENS_MIN_COUNT).max(Constraints.NEWLY_DETECTED_TOKENS_MAX_COUNT).int();
+const NewlyDetectedTokensTtlDays = z.number().min(Constraints.NEWLY_DETECTED_TOKENS_MIN_TTL_DAYS).max(Constraints.NEWLY_DETECTED_TOKENS_MAX_TTL_DAYS).int();
+
 const PasswordConfirmationInterval = z.number().min(Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS).max(Constraints.PASSWORD_CONFIRMATION_MAX_SECONDS).int();
 const LastPasswordConfirmed = z.number().int().nonnegative();
 const EnablePasswordConfirmation = z.boolean();
@@ -157,6 +160,8 @@ export const FrontendSettings = z.object({
   lastPasswordConfirmed: LastPasswordConfirmed.default(0),
   lightTheme: ThemeColors.default(LIGHT_COLORS),
   minimumDigitToBeAbbreviated: z.number().default(MINIMUM_DIGIT_TO_BE_ABBREVIATED),
+  newlyDetectedTokensMaxCount: NewlyDetectedTokensMaxCount.default(Defaults.DEFAULT_NEWLY_DETECTED_TOKENS_MAX_COUNT),
+  newlyDetectedTokensTtlDays: NewlyDetectedTokensTtlDays.default(Defaults.DEFAULT_NEWLY_DETECTED_TOKENS_TTL_DAYS),
   nftsInNetValue: z.boolean().default(true),
   notifyNewNfts: z.boolean().optional().default(false),
   passwordConfirmationInterval: PasswordConfirmationInterval.default(Defaults.DEFAULT_PASSWORD_CONFIRMATION_INTERVAL),

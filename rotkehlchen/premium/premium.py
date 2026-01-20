@@ -121,7 +121,7 @@ class UserLimitType(Enum):
         raise NotImplementedError(f'Unknown limit type: {self}. This indicates a bug in the code.')
 
 
-COMPONENTS_VERSION: Final = 14
+COMPONENTS_VERSION: Final = 15
 DEFAULT_ERROR_MSG: Final = 'Failed to contact rotki server. Check logs for more details'
 KNOWN_STATUS_CODES: Final = (
     HTTPStatus.OK,

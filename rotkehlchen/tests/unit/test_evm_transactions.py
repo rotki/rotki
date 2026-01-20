@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
@@ -18,11 +18,12 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQ
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.factories import make_ethereum_transaction, make_evm_address
 from rotkehlchen.types import (
     ChainID,
     EvmInternalTransaction,
     EvmTransaction,
+    EVMTxHash,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -39,6 +40,16 @@ if TYPE_CHECKING:
 
 ADDR_1, ADDR_2, ADDR_3 = make_evm_address(), make_evm_address(), make_evm_address()
 YAB_ADDRESS = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+
+
+def _make_receipt_data(tx_hash: EVMTxHash) -> dict[str, Any]:
+    return {
+        'transactionHash': str(tx_hash),
+        'contractAddress': None,
+        'status': 1,
+        'type': '0x0',
+        'logs': [],
+    }
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -119,6 +130,161 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: 'DBHandler'
 
     with database.conn.read_ctx() as cursor:  # ensure the range was not marked as pulled
         assert database.get_used_query_range(cursor=cursor, name=location_string) is None
+
+
+def test_query_and_save_transactions_returns_only_new_hashes(
+        database: 'DBHandler',
+        ethereum_manager: 'EthereumManager',
+) -> None:
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[existing_tx := make_ethereum_transaction()],
+            relevant_address=(address := make_evm_address()),
+        )
+
+    with patch.object(
+            ethereum_manager.node_inquirer,
+            'get_transactions',
+            return_value=iter([[existing_tx, new_tx := make_ethereum_transaction()]]),
+    ):
+        queried_hashes = ethereum_manager.transactions._query_and_save_transactions_for_range(
+            address=address,
+            period=TimestampOrBlockRange(range_type='blocks', from_value=0, to_value=1),
+            return_queried_hashes=True,
+        )
+
+    assert queried_hashes == [new_tx.tx_hash]
+    with database.conn.read_ctx() as cursor:
+        txs = dbevmtx.get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM),
+        )
+
+    assert {tx.tx_hash for tx in txs} == {existing_tx.tx_hash, new_tx.tx_hash}
+
+
+def test_query_and_save_internal_transactions_returns_only_new_hashes(
+        database: 'DBHandler',
+        ethereum_manager: 'EthereumManager',
+) -> None:
+    existing_parent_tx, new_parent_tx = make_ethereum_transaction(), make_ethereum_transaction()
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[existing_parent_tx],
+            relevant_address=(address := make_evm_address()),
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(existing_parent_tx.tx_hash),
+        )
+
+    def _mock_get_transaction_by_hash(
+            tx_hash: EVMTxHash,
+            call_order=None,
+    ) -> tuple[EvmTransaction, dict[str, Any]]:
+        if tx_hash == new_parent_tx.tx_hash:
+            return new_parent_tx, _make_receipt_data(new_parent_tx.tx_hash)
+        raise AssertionError(f'Unexpected tx hash {tx_hash!s}')
+
+    with patch.object(
+        ethereum_manager.node_inquirer,
+        'get_transactions',
+        return_value=iter([[EvmInternalTransaction(
+            parent_tx_hash=existing_parent_tx.tx_hash,
+            chain_id=ChainID.ETHEREUM,
+            trace_id=1,
+            from_address=make_evm_address(),
+            to_address=make_evm_address(),
+            value=1,
+            gas=1,
+            gas_used=1,
+        ), EvmInternalTransaction(
+            parent_tx_hash=new_parent_tx.tx_hash,
+            chain_id=ChainID.ETHEREUM,
+            trace_id=2,
+            from_address=make_evm_address(),
+            to_address=make_evm_address(),
+            value=1,
+            gas=1,
+            gas_used=1,
+        ),
+    ]])), patch.object(
+        ethereum_manager.node_inquirer,
+        'get_transaction_by_hash',
+        side_effect=_mock_get_transaction_by_hash,
+    ):
+        queried_hashes = ethereum_manager.transactions._query_and_save_internal_transactions_for_range_or_parent_hash(  # noqa: E501
+            address=address,
+            period_or_hash=TimestampOrBlockRange(range_type='blocks', from_value=0, to_value=1),
+            return_queried_hashes=True,
+        )
+
+    assert queried_hashes == [new_parent_tx.tx_hash]
+
+
+def test_query_and_save_erc20_transfers_returns_only_new_hashes(
+        database: 'DBHandler',
+        ethereum_manager: 'EthereumManager',
+) -> None:
+    address = make_evm_address()
+    existing_tx = make_ethereum_transaction()
+    new_tx = make_ethereum_transaction()
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[existing_tx],
+            relevant_address=address,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(existing_tx.tx_hash),
+        )
+
+    period = TimestampOrBlockRange(
+        range_type='timestamps',
+        from_value=Timestamp(0),
+        to_value=Timestamp(1),
+    )
+    location_string = (
+        f'{ethereum_manager.node_inquirer.blockchain.to_range_prefix("tokentxs")}_{address}'
+    )
+
+    def _mock_get_transaction_by_hash(
+            tx_hash: EVMTxHash,
+            call_order=None,
+    ) -> tuple[EvmTransaction, dict[str, Any]]:
+        if tx_hash == new_tx.tx_hash:
+            return new_tx, _make_receipt_data(new_tx.tx_hash)
+        raise AssertionError(f'Unexpected tx hash {tx_hash!s}')
+
+    with patch.object(
+            ethereum_manager.node_inquirer,
+            'get_blocknumber_by_time',
+            side_effect=[0, 1],
+    ), patch.object(
+            ethereum_manager.node_inquirer,
+            'get_token_transaction_hashes',
+            return_value=iter([[existing_tx.tx_hash, new_tx.tx_hash]]),
+    ), patch.object(
+            ethereum_manager.node_inquirer,
+            'get_transaction_by_hash',
+            side_effect=_mock_get_transaction_by_hash,
+    ):
+        queried_hashes = ethereum_manager.transactions._query_and_save_erc20_transfers_for_range(
+            address=address,
+            period=period,
+            location_string=location_string,
+            return_queried_hashes=True,
+        )
+
+    assert queried_hashes == [new_tx.tx_hash]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

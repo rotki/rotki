@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.constants import (
     WITHDRAW_TOPIC_V2,
     ZERO_ADDRESS,
 )
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.interfaces import (
     EvmDecoderInterface,
     ReloadablePoolsAndGaugesDecoderMixin,
@@ -29,6 +30,7 @@ from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import (
 )
 from rotkehlchen.chain.evm.decoding.velodrome.constants import (
     CLAIM_REWARDS_V2,
+    DROME_ROTKI_ABI,
     GAUGE_DEPOSIT_V2,
     REMOVE_LIQUIDITY_EVENT_V2,
     SWAP_V2,
@@ -43,11 +45,13 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_timestamp
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, GeneralCacheType, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
@@ -75,6 +79,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             voting_escrow_address: ChecksumEvmAddress,
             voter_address: ChecksumEvmAddress,
             routers: set[ChecksumEvmAddress],
+            drome_rotki_address: ChecksumEvmAddress,
             token_symbol: Literal['AERO', 'VELO'],
             gauge_bribes_cache_type: GeneralCacheType,
             gauge_fees_cache_type: GeneralCacheType,
@@ -99,6 +104,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         self.gauge_bribes_cache_type = gauge_bribes_cache_type
         self.gauge_fees_cache_type = gauge_fees_cache_type
         self.voter_address = voter_address
+        self.drome_rotki_address = drome_rotki_address
         self.token_symbol = token_symbol
 
     @property
@@ -218,8 +224,66 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         )
         return EvmDecodingOutput(process_swaps=True)
 
+    def _ensure_pool_tokens_exist(self, pool_address: ChecksumEvmAddress) -> None:
+        """Ensure the pool token and its token0 and token1 exist in the DB.
+        Queries pool info from our custom DROME_ROTKI_CONTRACT.
+
+        Note: As of 2026/01 the LpSugar source code on Github appears to have a byAddress method
+        that we should use instead of this custom contract, but the current deployment is missing
+        this method. It would be advisable to switch to using that instead of the custom contract
+        if it becomes available in a future deployment of the LpSugar contract. For the latest
+        deployment addresses see https://github.com/velodrome-finance/sugar/tree/main/deployments
+        """
+        if (
+            (pool_token := self.base.get_evm_token(address=pool_address)) is not None and
+            pool_token.protocol == self.counterparty
+        ):
+            return  # Pool token already exists
+
+        try:
+            pool_info = EvmContract(
+                address=self.drome_rotki_address,
+                abi=DROME_ROTKI_ABI,
+            ).call(
+                node_inquirer=self.node_inquirer,
+                method_name='get_pool_info',
+                arguments=[pool_address],
+            )
+        except RemoteError as e:
+            log.error(
+                f'Failed to get info for {self.counterparty} '
+                f'pool {pool_address} due to {e!s}',
+            )
+            return
+
+        symbol, decimals, token0, token1, tick_spacing = pool_info
+        try:
+            token0, token1 = (
+                self.base.get_or_create_evm_token(address=addr)
+                for addr in (deserialize_evm_address(token0), deserialize_evm_address(token1))
+            )
+        except (DeserializationError, NotERC20Conformant) as e:
+            log.error(
+                f'Failed to create token0 and token1 for {self.counterparty} '
+                f'pool {pool_address} due to {e!s}',
+            )
+            return
+
+        fallback_symbol = f'CL{tick_spacing}-{token0.symbol}/{token1.symbol}' if symbol == '' else symbol  # noqa: E501
+        get_or_create_evm_token(  # this will not raise NotERC20Conformant because we give fallback info  # noqa: E501
+            userdb=self.base.database,
+            evm_address=pool_address,
+            chain_id=self.node_inquirer.chain_id,
+            evm_inquirer=self.node_inquirer,
+            protocol=self.counterparty,  # mark with protocol which triggers the inquirer to use find_lp_price_from_uniswaplike_pool to query the price  # noqa: E501
+            fallback_decimals=decimals or DEFAULT_TOKEN_DECIMALS,
+            fallback_name=f'{fallback_symbol} Pool',
+            fallback_symbol=fallback_symbol,
+        )
+
     def _decode_pool_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes transactions that interact with a (velo/aero)drome v1 or v2 pool"""
+        self._ensure_pool_tokens_exist(context.tx_log.address)
         if context.tx_log.topics[0] in (REMOVE_LIQUIDITY_EVENT_V2, BURN_TOPIC):
             return self._decode_remove_liquidity_events(
                 tx_log=context.tx_log,
@@ -258,7 +322,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 found_event_modifying_balances = True
                 if context.tx_log.topics[0] == GAUGE_DEPOSIT_V2:
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                     event.notes = f'Deposit {event.amount} {crypto_asset.symbol} into {gauge_address} {self.counterparty} gauge'  # noqa: E501
                     GlobalDBHandler.set_tokens_protocol_if_missing(
                         tokens=[event.asset.resolve_to_evm_token()],
@@ -266,7 +330,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                     )
                 elif context.tx_log.topics[0] == WITHDRAW_TOPIC_V2:
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                     event.notes = f'Withdraw {event.amount} {crypto_asset.symbol} from {gauge_address} {self.counterparty} gauge'  # noqa: E501
                 else:  # CLAIM_REWARDS
                     event.event_type = HistoryEventType.RECEIVE
@@ -312,7 +376,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             ):
                 event.counterparty = self.counterparty
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.notes = f'Receive {amount} {self.token_symbol} from vote escrow after burning veNFT-{token_id}'  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
@@ -344,7 +408,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                     event.amount == amount
             ):
                 event.notes = f'Lock {amount} {self.token_symbol} in vote escrow until {timestamp_to_date((lock_time := deserialize_timestamp(int.from_bytes(context.tx_log.data[32:64]))), formatstr="%d/%m/%Y")}'  # noqa: E501
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.extra_data = {
                     'token_id': token_id,
                     'lock_time': lock_time,
@@ -364,7 +428,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.DEPOSIT and
-                    event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
+                    event.event_subtype == HistoryEventSubType.DEPOSIT_TO_PROTOCOL and
                     event.counterparty == self.counterparty
             ):  # increase amount locked
                 token_id = event.extra_data['token_id']  # type: ignore[index]  # it is always available

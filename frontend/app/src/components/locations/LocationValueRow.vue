@@ -1,14 +1,12 @@
 <script setup lang="ts">
 import { type BigNumber, Zero } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
-import { useGeneralSettingsStore } from '@/store/settings/general';
+import { FiatDisplay } from '@/modules/amount-display';
 
 const props = defineProps<{ identifier: string }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { balancesByLocation } = useAggregatedBalances();
 
 const totalValue = computed<BigNumber>(() => {
@@ -23,12 +21,8 @@ const totalValue = computed<BigNumber>(() => {
       <template #header>
         {{ t('locations.total_asset_price') }}
       </template>
-      <AmountDisplay
+      <FiatDisplay
         class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
-        tooltip
-        show-currency="symbol"
-        :fiat-currency="currencySymbol"
-        :amount="totalValue"
         :value="totalValue"
       />
     </RuiCard>

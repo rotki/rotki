@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { bigNumberify } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import AbbreviateNumberSetting from '@/components/settings/general/amount/AbbreviateNumberSetting.vue';
 import FloatingPrecisionSetting from '@/components/settings/general/amount/FloatingPrecisionSetting.vue';
@@ -9,6 +8,7 @@ import NumericSeparatorsSettings from '@/components/settings/general/amount/Nume
 import RoundingSettings from '@/components/settings/general/amount/RoundingSettings.vue';
 import CurrencyLocationSetting from '@/components/settings/general/CurrencyLocationSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { FiatDisplay } from '@/modules/amount-display';
 import SubscriptToggle from './general/amount/SubscriptToggle.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -38,10 +38,7 @@ const amountExample = bigNumberify(123456.789);
         <div class="text-rui-text-secondary">
           {{ t('general_settings.amount.label.resulting_format') }}
         </div>
-        <AmountDisplay
-          :value="amountExample"
-          show-currency="symbol"
-        />
+        <FiatDisplay :value="amountExample" />
       </div>
     </SettingsItem>
 

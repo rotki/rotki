@@ -3,11 +3,11 @@ import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import { ValueDisplay } from '@/modules/amount-display/components';
 
 interface UnmatchedMovementRow {
   groupIdentifier: string;
@@ -19,6 +19,8 @@ interface UnmatchedMovementRow {
   timestamp: number;
   original: UnmatchedAssetMovement;
 }
+
+const selected = defineModel<string[]>('selected', { required: true });
 
 const props = defineProps<{
   movements: UnmatchedAssetMovement[];
@@ -102,12 +104,13 @@ const emptyDescription = computed<string>(() =>
     </p>
 
     <RuiDataTable
+      v-model="selected"
       :cols="columns"
       :rows="rows"
       row-attr="groupIdentifier"
       outlined
-      sticky-header
       dense
+      multi-page-select
       :loading="loading"
       class="table-inside-dialog max-h-[calc(100vh-23rem)]"
       :empty="{ description: emptyDescription }"
@@ -134,7 +137,7 @@ const emptyDescription = computed<string>(() =>
         </div>
       </template>
       <template #item.amount="{ row }">
-        <AmountDisplay :value="row.amount" />
+        <ValueDisplay :value="row.amount" />
       </template>
       <template #item.eventType="{ row }">
         <BadgeDisplay>

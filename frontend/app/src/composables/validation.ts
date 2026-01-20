@@ -1,5 +1,5 @@
 import type { Validation, ValidationArgs } from '@vuelidate/core';
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 
 interface UseValidationReturn {
   callIfValid: <T = unknown>(value: T, method: (e: T) => void, invalid?: () => boolean) => void;

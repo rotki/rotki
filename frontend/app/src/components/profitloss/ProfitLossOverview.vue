@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { ProfitLossOverviewItem, Report } from '@/types/reports';
 import { pluralizeLastWord, toCapitalCase } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { calculateTotalProfitLoss } from '@/utils/report';
 
 const props = withDefaults(
@@ -55,23 +55,19 @@ const { t } = useI18n({ useScope: 'global' });
               {{ pluralizeLastWord(toCapitalCase(key)) }}
             </td>
             <td class="text-right p-4">
-              <AmountDisplay
-                pnl
-                force-currency
-                show-currency="symbol"
+              <FiatDisplay
                 :value="item.free"
+                :currency="report.settings.profitCurrency ?? undefined"
                 :loading="loading"
-                :fiat-currency="report.settings.profitCurrency"
+                pnl
               />
             </td>
             <td class="text-right p-4">
-              <AmountDisplay
-                pnl
-                force-currency
-                show-currency="symbol"
+              <FiatDisplay
                 :value="item.taxable"
+                :currency="report.settings.profitCurrency ?? undefined"
                 :loading="loading"
-                :fiat-currency="report.settings.profitCurrency"
+                pnl
               />
             </td>
           </tr>
@@ -86,23 +82,19 @@ const { t } = useI18n({ useScope: 'global' });
               {{ t('common.total') }}
             </td>
             <td class="text-right p-4">
-              <AmountDisplay
-                pnl
-                force-currency
-                show-currency="symbol"
+              <FiatDisplay
                 :value="total.free"
+                :currency="report.settings.profitCurrency ?? undefined"
                 :loading="loading"
-                :fiat-currency="report.settings.profitCurrency"
+                pnl
               />
             </td>
             <td class="text-right p-4">
-              <AmountDisplay
-                pnl
-                force-currency
-                show-currency="symbol"
+              <FiatDisplay
                 :value="total.taxable"
+                :currency="report.settings.profitCurrency ?? undefined"
                 :loading="loading"
-                :fiat-currency="report.settings.profitCurrency"
+                pnl
               />
             </td>
           </tr>

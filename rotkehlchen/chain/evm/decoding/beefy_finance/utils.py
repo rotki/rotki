@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     get_or_create_evm_token,
@@ -10,7 +9,8 @@ from rotkehlchen.assets.utils import (
     token_raw_value_decimals,
 )
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_vaults
+from rotkehlchen.chain.evm.decoding.utils import get_vault_price
+from rotkehlchen.chain.evm.utils import maybe_notify_cache_query_status
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.misc import (
@@ -20,13 +20,19 @@ from rotkehlchen.errors.misc import (
     RemoteError,
     UnableToDecryptRemoteData,
 )
+from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.cache import (
+    globaldb_set_general_cache_values,
+    globaldb_update_cache_last_ts,
+)
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CacheType,
     ChainID,
     Price,
-    TokenKind,
+    Timestamp,
 )
 from rotkehlchen.utils.network import request_get
 
@@ -76,83 +82,82 @@ def _query_beefy_vaults_api(chain: ChainID) -> list[dict[str, Any]] | None:
 
 
 def _process_beefy_vault(
-        database: 'DBHandler',
+        database: 'DBHandler',  # pylint: disable=unused-argument
         vault: dict[str, Any],
         evm_inquirer: 'EvmNodeInquirer',
-) -> None:
-    """Process beefy finance vault data from the api and add its tokens to the database.
+) -> str | None:
+    """Process Beefy finance vault data from the API and prepare cache entries.
     May raise:
-    - NotERC20Conformant
     - DeserializationError
     - KeyError
-    - InputError if there is an error while editing a token (if the underlying token is the same
-      as the vault token for example)
     """
-    encounter = TokenEncounterInfo(
-        description='Querying Beefy finance vaults',
-        should_notify=False,
-    )
-    name = symbol = decimals = token = None
     if (vault_type := vault.get('type')) is None or vault_type in ('standard', 'gov'):
         # in boost (no type key), standard, and gov vaults the `tokenAddress` is the vault address,
         # so add it as the earned token's underlying token to be used when querying the price.
         if (raw_token_address := vault.get('tokenAddress')) is not None:
-            token = get_or_create_evm_token(
-                userdb=database,
-                evm_inquirer=evm_inquirer,
-                evm_address=deserialize_evm_address(raw_token_address),
-                chain_id=evm_inquirer.chain_id,
-                encounter=encounter,
-            )
+            underlying_token_address = deserialize_evm_address(raw_token_address)
         else:
             # For vaults without tokenAddress field (native token vaults like ETH, BNB, MATIC),
             # use the chain's wrapped native token as the underlying asset
-            token = evm_inquirer.wrapped_native_token
-
-        underlying_tokens = [UnderlyingToken(
-            address=token.evm_address,
-            token_kind=TokenKind.ERC20,
-            weight=ONE,
-        )]
+            underlying_token_address = evm_inquirer.wrapped_native_token.evm_address
     elif vault_type == 'cowcentrated':
-        underlying_tokens = None  # CLM vault where the earned token is the vault token itself.
+        # CLM vaults use the vault token itself and do not have underlying tokens.
+        underlying_token_address = deserialize_evm_address(vault['earnContractAddress'])
     else:
         log.warning(f'Unknown Beefy vault type {vault_type} for vault {vault}')
-        return
+        return None
 
-    # Legacy beefy boost vaults are not standard ERC20 tokens but implement balanceOf,
-    # requiring manual token metadata creation using the underlying token's info.
-    if vault.get('version') == 1 and token is not None:
-        name = f'Reward {token.name}'
-        symbol = f'r{token.symbol}'
-        decimals = token.decimals
-
-    # For non-legacy vaults, name/symbol/decimals are intentionally left as None
-    # to let get_or_create_evm_token query these details on-chain
-    get_or_create_evm_token(
-        userdb=database,
-        evm_address=deserialize_evm_address(vault['earnContractAddress']),  # this key is present for all vault types  # noqa: E501
-        name=name,
-        decimals=decimals,
-        symbol=symbol,
-        chain_id=evm_inquirer.chain_id,
-        evm_inquirer=evm_inquirer,
-        protocol=CPT_BEEFY_FINANCE,
-        underlying_tokens=underlying_tokens,
-        encounter=encounter,
-    )
+    vault_token_address = deserialize_evm_address(vault['earnContractAddress'])
+    is_legacy = '1' if vault.get('version') == 1 else '0'
+    return f'{vault_token_address},{underlying_token_address},{is_legacy}'
 
 
 def query_beefy_vaults(evm_inquirer: 'EvmNodeInquirer') -> None:
-    """Query list of Beefy finance vaults and add the vault tokens to the global database."""
-    update_cached_vaults(
-        database=evm_inquirer.database,
-        cache_key=(CacheType.BEEFY_VAULTS, str(evm_inquirer.chain_id.value)),
-        display_name='Beefy finance',
-        chain=evm_inquirer.chain_id,
-        query_vaults=lambda: _query_beefy_vaults_api(evm_inquirer.chain_id),
-        process_vault=lambda db, entry: _process_beefy_vault(db, entry, evm_inquirer),
-    )
+    """Query list of Beefy finance vaults and cache their token relationships."""
+    if (vault_list := _query_beefy_vaults_api(evm_inquirer.chain_id)) is None:
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            globaldb_update_cache_last_ts(
+                write_cursor=write_cursor,
+                cache_type=CacheType.BEEFY_VAULTS,
+                key_parts=(str(evm_inquirer.chain_id.value),),
+            )
+        return
+
+    cache_entries: list[str] = []
+    last_notified_ts, total_entries = Timestamp(0), len(vault_list)
+    for idx, vault in enumerate(vault_list):
+        try:
+            if (cache_entry := _process_beefy_vault(
+                    database=evm_inquirer.database,
+                    vault=vault,
+                    evm_inquirer=evm_inquirer,
+            )) is not None:
+                cache_entries.append(cache_entry)
+        except (DeserializationError, KeyError) as e:
+            error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
+            log.error(
+                f'Failed to cache Beefy vault data due to {error}. '
+                f'Vault: {vault}. Skipping...',
+            )
+
+        last_notified_ts = maybe_notify_cache_query_status(
+            msg_aggregator=evm_inquirer.database.msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=CPT_BEEFY_FINANCE,
+            chain=evm_inquirer.chain_id,
+            processed=idx + 1,
+            total=total_entries,
+        )
+
+    if len(cache_entries) == 0:
+        return
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BEEFY_VAULTS, str(evm_inquirer.chain_id.value)),
+            values=cache_entries,
+        )
 
 
 def _query_beefy_cow_token_price(

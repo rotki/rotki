@@ -3,6 +3,7 @@ import { get } from '@vueuse/shared';
 import { useRefWithDebounce } from '@/composables/ref';
 import { useHistoryQueryIndicatorSettings } from '@/modules/dashboard/progress/composables/use-history-query-indicator-settings';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { Routes } from '@/router/routes';
 import { useHistoryStore } from '@/store/history';
 
 interface UseTransactionStatusCheckReturn {
@@ -123,7 +124,7 @@ export function useTransactionStatusCheck(): UseTransactionStatusCheckReturn {
   });
 
   async function navigateToHistory(): Promise<void> {
-    await router.push('/history');
+    await router.push(Routes.HISTORY_EVENTS);
   }
 
   return {

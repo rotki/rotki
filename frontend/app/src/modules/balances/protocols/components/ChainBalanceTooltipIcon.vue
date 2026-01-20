@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import type { Balance } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const props = defineProps<{
@@ -37,17 +37,19 @@ const chainName = getChainName(chainId);
       <div class="font-medium text-sm mb-0.5">
         {{ chainName }}
       </div>
-      <AmountDisplay
-        :value="chainBalance.amount"
+      <AssetAmountDisplay
+        v-if="asset"
         :asset="asset"
-        :asset-padding="0.1"
+        :amount="chainBalance.amount"
         data-cy="chain-balance-amount"
       />
-      <AmountDisplay
-        :asset-padding="0.1"
-        force-currency
+      <ValueDisplay
+        v-else
+        :value="chainBalance.amount"
+        data-cy="chain-balance-amount"
+      />
+      <FiatDisplay
         :value="chainBalance.value"
-        show-currency="symbol"
         data-cy="chain-balance-value"
       />
     </div>

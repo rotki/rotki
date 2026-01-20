@@ -4,10 +4,10 @@ import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
 import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import IconTokenDisplay from '@/components/accounts/IconTokenDisplay.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -169,19 +169,13 @@ function getAssets(location: string): AssetBalance[] {
       />
     </template>
     <template #item.amount="{ row }">
-      <AmountDisplay :value="row.amount" />
+      <ValueDisplay :value="row.amount" />
     </template>
     <template #item.value="{ row }">
       <div class="flex items-center justify-end gap-2">
         <Eth2ValidatorLimitTooltip v-if="row.location === Blockchain.ETH2" />
 
-        <AmountDisplay
-          show-currency="symbol"
-          :amount="row.amount"
-          :price-asset="identifier"
-          force-currency
-          :value="row.value"
-        />
+        <FiatDisplay :value="row.value" />
       </div>
     </template>
     <template #item.percentage="{ row }">

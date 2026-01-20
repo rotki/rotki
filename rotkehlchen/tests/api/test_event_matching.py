@@ -5,13 +5,14 @@ from unittest.mock import patch
 import requests
 
 from rotkehlchen.api.v1.types import TaskName
+from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_WETH
 from rotkehlchen.db.cache import ASSET_MOVEMENT_NO_MATCH_CACHE_VALUE, DBCacheDynamic
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
@@ -374,6 +375,16 @@ def test_get_possible_matches(rotkehlchen_api_server: 'APIServer') -> None:
                 amount=FVal('0.1'),
                 withdrawal_address=make_evm_address(),
                 is_exit=False,
+            ), EvmEvent(  # INFO/APPROVE event that should be ignored.
+                identifier=11,
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=matched_movement.timestamp,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.APPROVE,
+                asset=matched_movement.asset,
+                amount=matched_movement.amount,
             )],
         )
 
@@ -386,6 +397,7 @@ def test_get_possible_matches(rotkehlchen_api_server: 'APIServer') -> None:
                 api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
                 json={
                     'asset_movement': matched_movement.group_identifier,
+                    'time_range': HOUR_IN_SECONDS,
                     'only_expected_assets': only_expected_assets,
                 },
             ),
@@ -485,20 +497,26 @@ def test_get_history_events_with_matched_asset_movements(
             is_deposit=False,
         )
 
-    # First query history aggregated by group
-    result = assert_proper_response_with_result(
-        response=requests.post(
-            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-            json={'aggregate_by_group_ids': True},
-        ),
-        rotkehlchen_api_server=rotkehlchen_api_server,
-    )
-    assert result['entries_found'] == result['entries_found_total'] == result['entries_total'] == 2
-    assert len(result['entries']) == 2
-    assert result['entries'][0]['grouped_events_num'] == 3  # includes both evm events and the matched asset movement  # noqa: E501
-    assert result['entries'][0]['entry']['group_identifier'] == evm_event_1.group_identifier
-    assert result['entries'][1]['grouped_events_num'] == 4  # the two matched movements and their fees  # noqa: E501
-    assert result['entries'][1]['entry']['group_identifier'] == movement2.group_identifier
+    # Check aggregating by group with several filters that should all get the same groups.
+    for filters in (
+        {},
+        {'entry_types': {'values': [HistoryBaseEntryType.ASSET_MOVEMENT_EVENT.serialize()]}},
+        {'group_identifiers': [evm_event_1.group_identifier, movement2.group_identifier]},
+    ):
+        filters['aggregate_by_group_ids'] = True  # type: ignore[assignment]
+        result = assert_proper_response_with_result(
+            response=requests.post(
+                api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+                json=filters,
+            ),
+            rotkehlchen_api_server=rotkehlchen_api_server,
+        )
+        assert result['entries_found'] == result['entries_found_total'] == result['entries_total'] == 2  # noqa: E501
+        assert len(result['entries']) == 2
+        assert result['entries'][0]['grouped_events_num'] == 3  # includes both evm events and the matched asset movement  # noqa: E501
+        assert result['entries'][0]['entry']['group_identifier'] == evm_event_1.group_identifier
+        assert result['entries'][1]['grouped_events_num'] == 4  # the two matched movements and their fees  # noqa: E501
+        assert result['entries'][1]['entry']['group_identifier'] == movement2.group_identifier
 
     # Then query the evm event group and the matched asset movement should be included
     result = assert_proper_response_with_result(

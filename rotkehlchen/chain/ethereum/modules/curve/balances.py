@@ -47,8 +47,8 @@ class CurveBalances(ProtocolWithGauges):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_CURVE,
-            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
-            gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},  # noqa: E501
+            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},  # noqa: E501
+            gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},  # noqa: E501
             excluded_addresses=[VOTING_ESCROW],  # exclude the veCRV from the list of interacted contracts  # noqa: E501
         )
 

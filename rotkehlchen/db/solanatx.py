@@ -12,6 +12,7 @@ from rotkehlchen.db.filtering import (
     SolanaTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.types import Location, SolanaAddress, Timestamp
 
 if TYPE_CHECKING:
@@ -25,6 +26,30 @@ TOP_LEVEL_PARENT: Final = -1
 
 class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaTransactionsFilterQuery, SolanaTransactionsNotDecodedFilterQuery]):  # noqa: E501
     """Database handler for Solana transactions"""
+
+    @staticmethod
+    def get_existing_signatures(
+            cursor: 'DBCursor',
+            signatures: list[bytes],
+    ) -> set[bytes]:
+        """Return signatures already stored to filter return_queried_hashes.
+
+        Solana inserts ignore duplicates, so we pre-check to avoid returning
+        signatures that were not newly saved.
+        """
+        existing_signatures: set[bytes] = set()
+        if len(signatures) == 0:
+            return existing_signatures
+
+        for signature_chunk, placeholders in get_query_chunks(signatures):
+            cursor.execute(
+                f'SELECT signature FROM solana_transactions '
+                f'WHERE signature IN ({placeholders})',
+                signature_chunk,
+            )
+            existing_signatures.update(entry[0] for entry in cursor)
+
+        return existing_signatures
 
     def add_transactions(
             self,

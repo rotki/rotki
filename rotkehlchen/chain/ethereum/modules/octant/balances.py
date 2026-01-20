@@ -33,7 +33,7 @@ class OctantBalances(ProtocolWithBalance):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_OCTANT,
-            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},  # noqa: E501
         )
         self.glm = A_GLM.resolve_to_evm_token()
 

@@ -1,6 +1,8 @@
 import pytest
+from marshmallow.exceptions import ValidationError
 
 from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.api.v1.fields import BlockchainField
 from rotkehlchen.balances.manual import ManuallyTrackedBalance, add_manually_tracked_balances
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -16,6 +18,7 @@ from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
     Location,
+    SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
 )
@@ -114,3 +117,16 @@ def test_deserialize_deployment_ethereum_transaction():
         nonce=data['nonce'],
     )
     assert tx == expected
+
+
+def test_blockchain_field_allow_only():
+    """Test that BlockchainField properly validates the allow_only parameter."""
+    field = BlockchainField(allow_only=[SupportedBlockchain.ETHEREUM, SupportedBlockchain.OPTIMISM])  # noqa: E501
+    assert field.deserialize('ETH') == SupportedBlockchain.ETHEREUM
+    assert field.deserialize('OPTIMISM') == SupportedBlockchain.OPTIMISM
+
+    with pytest.raises(ValidationError, match='is not allowed in this endpoint'):
+        field.deserialize('ETH2')
+
+    with pytest.raises(ValidationError, match='is not allowed in this endpoint'):
+        field.deserialize('BTC')

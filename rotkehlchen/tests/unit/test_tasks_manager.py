@@ -14,9 +14,6 @@ from rotkehlchen.chain.ethereum.constants import LAST_GRAPH_DELEGATIONS
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails, ValidatorType
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
-from rotkehlchen.chain.evm.decoding.pendle.constants import (
-    PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM,
-)
 from rotkehlchen.chain.evm.decoding.spark.constants import CPT_SPARK
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
@@ -34,7 +31,6 @@ from rotkehlchen.db.utils import LocationData
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -63,7 +59,6 @@ from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SEC
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
     AssetAmount,
-    CacheType,
     ChainID,
     ChecksumEvmAddress,
     Eth2PubKey,
@@ -774,18 +769,14 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
     """Test that we don't execute extra logic in tasks if no ethereum address is tracked"""
     with gevent.Timeout(5):  # this should not take long. Otherwise a long running task ran
         task_manager.should_schedule = True
-        for func in (
-            task_manager._maybe_update_yearn_vaults,
-            task_manager._maybe_update_ilk_cache,
+        with (  # if we get to should_update_protocol_cache it means check did not work
+            patch('rotkehlchen.chain.ethereum.utils.should_update_protocol_cache') as mocked_func,
         ):
-            with (  # if we get to should_update_protocol_cache it means check did not work
-                patch('rotkehlchen.chain.ethereum.utils.should_update_protocol_cache') as mocked_func,  # noqa: E501
-            ):
-                task_manager.potential_tasks = [func]
-                task_manager.schedule()
-                if len(task_manager.running_greenlets) != 0:
-                    gevent.joinall(task_manager.running_greenlets[func])
-                assert mocked_func.call_count == 0
+            task_manager.potential_tasks = [task_manager._maybe_update_ilk_cache]
+            task_manager.schedule()
+            if len(task_manager.running_greenlets) != 0:
+                gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_ilk_cache])
+            assert mocked_func.call_count == 0
 
 
 @pytest.mark.parametrize('vcr_cassette_name', ['test_update_lending_protocol_tokens'])
@@ -1441,70 +1432,6 @@ def test_graph_query_query_delegations(
             assert cursor.execute("SELECT COUNT(*) FROM key_value_cache WHERE name LIKE 'ethereum_GRAPH_DELEGATIONS%'").fetchone() == (2,)  # noqa: E501
 
 
-@pytest.mark.parametrize('max_tasks_num', [5])
-def test_morpho_reward_task_repetition(task_manager: TaskManager) -> None:
-    """Test that the morpho reward task doesn't keep re-running after the cache has been updated.
-    Regression test for https://github.com/rotki/rotki/pull/9355.
-    """
-    task_manager.should_schedule = True
-    task_manager.potential_tasks = [task_manager._maybe_update_morpho_cache]
-
-    def update_cache(chain_id):
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            globaldb_set_general_cache_values(
-                write_cursor=write_cursor,
-                key_parts=(CacheType.MORPHO_REWARD_DISTRIBUTORS, str(chain_id)),
-                values=['test'],
-            )
-
-    with (
-        gevent.Timeout(5),  # this should not take long. Otherwise a long running task ran
-        patch.object(target=task_manager, attribute='query_morpho_vaults'),
-        patch.object(
-            target=task_manager,
-            attribute='query_morpho_reward_distributors',
-            side_effect=update_cache,
-        ) as mocked_query_distributors,
-    ):
-        task_manager.schedule()
-        if len(task_manager.running_greenlets) != 0:
-            gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_morpho_cache])
-
-            assert mocked_query_distributors.call_count == 2
-
-
-@pytest.mark.parametrize('max_tasks_num', [1])
-def test_query_pendle_yield_tokens_task(task_manager: TaskManager) -> None:
-    task_manager.should_schedule = True
-    task_manager.potential_tasks = [task_manager._maybe_update_pendle_cache]
-    with patch.object(target=task_manager, attribute='query_pendle_yield_tokens') as mocked_query_pendle_yield_tokens:  # noqa: E501
-        task_manager.schedule()
-        if len(task_manager.running_greenlets) != 0:
-            gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_pendle_cache])
-
-        assert mocked_query_pendle_yield_tokens.call_count == len(PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM) + 1  # noqa: E501
-
-
-@pytest.mark.parametrize('max_tasks_num', [5])
-def test_maybe_update_morpho_cache_with_chain_ids(task_manager: TaskManager) -> None:
-    """Regression test that _maybe_update_morpho_cache correctly calls vault and
-    reward distributor queries for both supported chains with chain_id parameters."""
-    task_manager.should_schedule = True
-    task_manager.potential_tasks = [task_manager._maybe_update_morpho_cache]
-
-    with (
-        patch.object(target=task_manager, attribute='query_morpho_vaults') as mock_vaults,
-        patch.object(target=task_manager, attribute='query_morpho_reward_distributors') as mock_distributors,  # noqa: E501
-    ):
-        task_manager.schedule()
-        if len(task_manager.running_greenlets) != 0:
-            gevent.joinall(task_manager.running_greenlets[task_manager._maybe_update_morpho_cache])
-
-        for mock_fn in (mock_vaults, mock_distributors):
-            assert mock_fn.call_count == 2
-            assert mock_fn.call_args[1]['chain_id'] in {ChainID.ETHEREUM, ChainID.BASE}
-
-
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('max_tasks_num', [1])
 def test_process_events_frequency(
@@ -1533,10 +1460,10 @@ def test_process_events_frequency(
 
         freezer.move_to(datetime.datetime.now(tz=datetime.UTC) + time_delta)
         with patch('rotkehlchen.tasks.events.match_asset_movements') as match_events_mock:
-            task_manager.potential_tasks = [task_manager._maybe_run_events_processing]
+            task_manager.potential_tasks = [task_manager._maybe_process_asset_movements]
             task_manager.schedule()
             if len(task_manager.running_greenlets):
-                gevent.joinall(task_manager.running_greenlets[task_manager._maybe_run_events_processing])
+                gevent.joinall(task_manager.running_greenlets[task_manager._maybe_process_asset_movements])
 
         assert match_events_mock.call_count == (1 if should_run else 0)
 
@@ -1572,21 +1499,30 @@ def test_process_historical_balances(
                 receive=AssetAmount(asset=A_DAI, amount=FVal('1000')),
                 group_identifier='grp2',
                 location_label=TEST_ADDR1,
-            ), AssetMovement(  # withdraw 500 DAI (asset movement, neutral) -> no metric recorded
-                identifier=4,
+            ), AssetMovement(  # deposit 1000 DAI to exchange -> exchange bucket, balance: 1000
+                identifier=(event4_id := 4),
                 group_identifier='grp3',
                 timestamp=TimestampMS(3000),
-                location=Location.ETHEREUM,
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.DEPOSIT,
+                asset=A_DAI,
+                amount=FVal('1000'),
+                location_label=TEST_ADDR1,
+            ), AssetMovement(  # withdraw 500 DAI from exchange -> exchange bucket, balance: 500
+                identifier=(event5_id := 5),
+                group_identifier='grp4',
+                timestamp=TimestampMS(3500),
+                location=Location.KRAKEN,
                 event_type=HistoryEventType.WITHDRAWAL,
                 asset=A_DAI,
                 amount=FVal('500'),
                 location_label=TEST_ADDR1,
             ), EvmEvent(  # deposit DAI -> wallet bucket, balance: 500
-                identifier=(event5_id := 5),
+                identifier=(event6_id := 6),
                 tx_ref=(pool_tx_hash := make_evm_tx_hash()),
-                group_identifier='grp3',
-                sequence_index=1,
-                timestamp=TimestampMS(3000),
+                group_identifier='grp5',
+                sequence_index=0,
+                timestamp=TimestampMS(4000),
                 location=Location.ETHEREUM,
                 event_type=HistoryEventType.DEPOSIT,
                 event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
@@ -1595,11 +1531,11 @@ def test_process_historical_balances(
                 location_label=TEST_ADDR1,
                 counterparty=CPT_AAVE_V3,
             ), EvmEvent(  # receive aEthDAI (wrapped) -> aave protocol bucket, balance: 500
-                identifier=(event6_id := 6),
+                identifier=(event7_id := 7),
                 tx_ref=pool_tx_hash,
-                group_identifier='grp3',
+                group_identifier='grp5',
                 sequence_index=2,
-                timestamp=TimestampMS(3000),
+                timestamp=TimestampMS(4000),
                 location=Location.ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -1608,11 +1544,11 @@ def test_process_historical_balances(
                 location_label=TEST_ADDR1,
                 counterparty=CPT_AAVE_V3,
             ), EvmEvent(  # spend 100 ETH -> triggers negative balance, skips ETH wallet bucket
-                identifier=7,
+                identifier=8,
                 tx_ref=make_evm_tx_hash(),
-                group_identifier='grp4',
+                group_identifier='grp6',
                 sequence_index=0,
-                timestamp=TimestampMS(4000),
+                timestamp=TimestampMS(5000),
                 location=Location.ETHEREUM,
                 event_type=HistoryEventType.SPEND,
                 event_subtype=HistoryEventSubType.NONE,
@@ -1620,11 +1556,11 @@ def test_process_historical_balances(
                 amount=FVal('100'),
                 location_label=TEST_ADDR1,
             ), EvmEvent(  # receive ETH after negative -> skipped
-                identifier=8,
+                identifier=9,
                 tx_ref=make_evm_tx_hash(),
-                group_identifier='grp5',
+                group_identifier='grp7',
                 sequence_index=0,
-                timestamp=TimestampMS(5000),
+                timestamp=TimestampMS(6000),
                 location=Location.ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
@@ -1632,11 +1568,11 @@ def test_process_historical_balances(
                 amount=FVal('50'),
                 location_label=TEST_ADDR1,
             ), EvmEvent(  # receive 200 DAI -> wallet bucket, balance: 700
-                identifier=(event7_id := 9),
+                identifier=(event8_id := 10),
                 tx_ref=make_evm_tx_hash(),
-                group_identifier='grp6',
+                group_identifier='grp8',
                 sequence_index=0,
-                timestamp=TimestampMS(6000),
+                timestamp=TimestampMS(7000),
                 location=Location.ETHEREUM,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.NONE,
@@ -1653,12 +1589,12 @@ def test_process_historical_balances(
     messages = task_manager.database.msg_aggregator.rotki_notifier.messages  # type: ignore[union-attr]
     assert len(messages) == 4
     assert messages[0].message_type == WSMessageType.PROGRESS_UPDATES
-    assert messages[0].data == {'subtype': 'historical_balance_processing', 'total': 9, 'processed': 0}  # noqa: E501
+    assert messages[0].data == {'subtype': 'historical_balance_processing', 'total': 10, 'processed': 0}  # noqa: E501
     assert messages[1].message_type == WSMessageType.PROGRESS_UPDATES
     assert messages[2].message_type == WSMessageType.NEGATIVE_BALANCE_DETECTED
     assert messages[2].data['asset'] == A_ETH.identifier
     assert messages[3].message_type == WSMessageType.PROGRESS_UPDATES
-    assert messages[3].data == {'subtype': 'historical_balance_processing', 'total': 9, 'processed': 9}  # noqa: E501
+    assert messages[3].data == {'subtype': 'historical_balance_processing', 'total': 10, 'processed': 10}  # noqa: E501
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -1670,7 +1606,33 @@ def test_process_historical_balances(
             (event1_id, None, '10', A_ETH.identifier),
             (event2_id, None, '8', A_ETH.identifier),
             (event3_id, None, '1000', A_DAI.identifier),
+            (event4_id, None, '1000', A_DAI.identifier),
             (event5_id, None, '500', A_DAI.identifier),
-            (event6_id, CPT_AAVE_V3, '500', a_ethdai_asset.identifier),
-            (event7_id, None, '700', A_DAI.identifier),
+            (event6_id, None, '500', A_DAI.identifier),
+            (event7_id, CPT_AAVE_V3, '500', a_ethdai_asset.identifier),
+            (event8_id, None, '700', A_DAI.identifier),
         ]
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+def test_maybe_decode_transactions(task_manager: TaskManager) -> None:
+    task_manager.should_schedule = True
+    task_manager.potential_tasks = [task_manager._maybe_decode_transactions]
+
+    # When there are no transactions to decode we expect None
+    with patch('rotkehlchen.tasks.manager.DBSolanaTx') as mock_solana_tx:
+        mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 0
+        result = task_manager._maybe_decode_transactions()
+        assert result is None
+
+    with (  # When there are Solana transactions to decode a greenlet should be spawned
+        patch('rotkehlchen.tasks.manager.DBSolanaTx') as mock_solana_tx,
+        patch(
+            'rotkehlchen.tasks.manager.CHAINS_WITH_TRANSACTION_DECODERS',
+            new=(SupportedBlockchain.SOLANA,),
+        ),
+    ):
+        mock_solana_tx.return_value.count_hashes_not_decoded.return_value = 5
+        result = task_manager._maybe_decode_transactions()
+        assert result is not None and len(result) == 1

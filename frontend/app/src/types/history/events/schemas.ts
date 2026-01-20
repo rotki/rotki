@@ -316,6 +316,7 @@ const HistoryEventMeta = z.object({
   eventAccountingRuleStatus: HistoryEventAccountingRuleStatusEnum,
   groupedEventsNum: z.number().nullish(),
   hasDetails: z.boolean().optional(),
+  hasIgnoredAssets: z.boolean().optional(),
   hidden: z.boolean().optional(),
 });
 

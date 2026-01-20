@@ -7,6 +7,8 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     activeModules: [],
     addressNamePriority: [],
     askUserUponSizeDiscrepancy: true,
+    assetMovementAmountTolerance: Defaults.ASSET_MOVEMENT_AMOUNT_TOLERANCE,
+    assetMovementTimeRange: Defaults.ASSET_MOVEMENT_TIME_RANGE,
     autoCreateCalendarReminders: true,
     autoDeleteCalendarEntries: true,
     autoDetectTokens: true,
@@ -35,6 +37,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     readTimeout: Defaults.DEFAULT_READ_TIMEOUT,
     ssfGraphMultiplier: 0,
     submitUsageAnalytics: Defaults.ANONYMOUS_USAGE_ANALYTICS,
+    suppressMissingKeyMsgServices: [],
     treatEth2AsEth: false,
     uiFloatingPrecision: Defaults.FLOATING_PRECISION,
   };

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import { AssetAmountDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { sortDesc } from '@/utils/bignumbers';
 import WrappedCard from '../WrappedCard.vue';
@@ -36,9 +36,9 @@ const gasPerAddressItems = computed<Array<[string, BigNumber]>>(() => {
       {{ t('wrapped.gas_spent_total') }}
     </template>
     <template #value="{ item }">
-      <AmountDisplay
-        :value="item.value"
+      <AssetAmountDisplay
         asset="ETH"
+        :amount="item.value"
       />
     </template>
   </WrappedCard>
@@ -65,9 +65,9 @@ const gasPerAddressItems = computed<Array<[string, BigNumber]>>(() => {
       />
     </template>
     <template #value="{ item }">
-      <AmountDisplay
-        :value="item[1]"
+      <AssetAmountDisplay
         asset="ETH"
+        :amount="item[1]"
       />
     </template>
   </WrappedCard>

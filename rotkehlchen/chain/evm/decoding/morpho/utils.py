@@ -4,30 +4,34 @@ from typing import TYPE_CHECKING, Any, Final
 
 import requests
 
-from rotkehlchen.assets.asset import UnderlyingToken
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO, MORPHO_VAULT_ABI
-from rotkehlchen.chain.evm.decoding.utils import get_vault_price, update_cached_vaults
-from rotkehlchen.constants import EXP18_INT, ONE
+from rotkehlchen.chain.evm.decoding.utils import get_vault_price
+from rotkehlchen.chain.evm.utils import (
+    maybe_notify_cache_query_status,
+    maybe_notify_new_pools_status,
+)
+from rotkehlchen.constants import EXP18_INT
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
+from rotkehlchen.globaldb.cache import (
+    globaldb_set_general_cache_values,
+    globaldb_update_cache_last_ts,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_evm_address, deserialize_int
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CacheType,
     ChainID,
     Price,
-    TokenKind,
+    Timestamp,
 )
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.inquirer import Inquirer
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -38,10 +42,13 @@ VAULT_QUERY_PAGE_SIZE: Final = 200
 VAULT_QUERY: Final = 'items {address symbol name asset {address symbol name decimals} chain {id}}'
 
 
-def _query_morpho_vaults_api(chain_id: ChainID) -> list[dict[str, Any]] | None:
+def _query_morpho_vaults_api(
+        chain_id: ChainID,
+        msg_aggregator: 'MessagesAggregator',
+) -> list[dict[str, Any]] | None:
     """Query morpho vaults from the morpho blue api.
     Returns vault list or None if there was an error."""
-    all_vaults, offset = [], 0
+    all_vaults, offset, last_notified_ts = [], 0, Timestamp(0)
     while True:
         try:
             response_data = requests.post(
@@ -53,6 +60,13 @@ def _query_morpho_vaults_api(chain_id: ChainID) -> list[dict[str, Any]] | None:
             vault_list = response_data.json()['data']['vaults']['items']
             all_vaults.extend(vault_list)
             offset += VAULT_QUERY_PAGE_SIZE
+            last_notified_ts = maybe_notify_new_pools_status(
+                msg_aggregator=msg_aggregator,
+                last_notified_ts=last_notified_ts,
+                protocol=CPT_MORPHO,
+                chain=chain_id,
+                get_new_pools_count=lambda: len(all_vaults),
+            )
             if len(vault_list) < VAULT_QUERY_PAGE_SIZE:
                 break  # no more vaults to retrieve
 
@@ -64,52 +78,50 @@ def _query_morpho_vaults_api(chain_id: ChainID) -> list[dict[str, Any]] | None:
     return all_vaults
 
 
-def _process_morpho_vault(database: 'DBHandler', vault: dict[str, Any]) -> None:
-    """Process Morpho vault data from the api and add its tokens to the database.
-    May raise NotERC20Conformant, NotERC721Conformant, DeserializationError, and KeyError."""
-    vault_chain_id = ChainID.deserialize_from_db(vault['chain']['id'])
-    underlying_token = get_or_create_evm_token(
-        userdb=database,
-        evm_address=deserialize_evm_address(vault['asset']['address']),
-        chain_id=vault_chain_id,
-        decimals=deserialize_int(
-            value=vault['asset']['decimals'],
-            location='morpho vault underlying token decimals',
-        ),
-        name=vault['asset']['name'],
-        symbol=vault['asset']['symbol'],
-        encounter=(encounter := TokenEncounterInfo(
-            description='Querying Morpho vaults',
-            should_notify=False,
-        )),
-    )
-    get_or_create_evm_token(
-        userdb=database,
-        evm_address=deserialize_evm_address(vault['address']),
-        chain_id=vault_chain_id,
-        protocol=CPT_MORPHO,
-        decimals=DEFAULT_TOKEN_DECIMALS,  # all morpho vaults have 18 decimals
-        name=vault['name'],
-        symbol=vault['symbol'],
-        underlying_tokens=[UnderlyingToken(
-            address=underlying_token.evm_address,
-            token_kind=TokenKind.ERC20,
-            weight=ONE,
-        )],
-        encounter=encounter,
-    )
-
-
-def query_morpho_vaults(database: 'DBHandler', chain_id: ChainID) -> None:
+def query_morpho_vaults(chain_id: ChainID, msg_aggregator: 'MessagesAggregator') -> None:
     """Query list of Morpho vaults and add the vault tokens to the global database."""
-    update_cached_vaults(
-        database=database,
-        cache_key=(CacheType.MORPHO_VAULTS, str(chain_id)),
-        display_name='Morpho',
-        chain=chain_id,
-        query_vaults=lambda: _query_morpho_vaults_api(chain_id),
-        process_vault=_process_morpho_vault,
-    )
+    if (vault_list := _query_morpho_vaults_api(
+            chain_id=chain_id,
+            msg_aggregator=msg_aggregator,
+    )) is None:
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            globaldb_update_cache_last_ts(
+                write_cursor=write_cursor,
+                cache_type=CacheType.MORPHO_VAULTS,
+                key_parts=(str(chain_id.serialize()),),
+            )  # Update cache timestamp to prevent repeated errors.
+        return
+
+    cache_entries, last_notified_ts, total_entries = [], Timestamp(0), len(vault_list)
+    for idx, vault in enumerate(vault_list):
+        try:
+            cache_entries.append(','.join((
+                deserialize_evm_address(vault['address']),
+                deserialize_evm_address(vault['asset']['address']),
+            )))
+        except (DeserializationError, KeyError) as e:
+            error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
+            log.error(
+                f'Failed to cache Morpho vault address and underlying token address for vault '
+                f'{vault} due to {error}. Skipping.',
+            )
+
+        last_notified_ts = maybe_notify_cache_query_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=CPT_MORPHO,
+            chain=chain_id,
+            processed=idx + 1,
+            total=total_entries,
+        )
+
+    if len(cache_entries) > 0:
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            globaldb_set_general_cache_values(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.MORPHO_VAULTS, str(chain_id.serialize())),
+                values=cache_entries,
+            )
 
 
 def query_morpho_reward_distributors(chain_id: ChainID) -> None:

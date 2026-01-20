@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.decoder import VelodromeLikeDecode
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     read_aerodrome_pools_and_gauges_from_cache,
 )
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType
 
@@ -35,6 +36,7 @@ class AerodromeDecoder(VelodromeLikeDecoder):
             msg_aggregator=msg_aggregator,
             counterparty=CPT_AERODROME,
             routers={ROUTER},
+            drome_rotki_address=string_to_evm_address('0x9d4483AfEF087B78181Ef2313aCD2276e5b0FffA'),
             token_symbol='AERO',
             voter_address=VOTER_CONTRACT_ADDRESS,
             voting_escrow_address=VOTING_ESCROW_CONTRACT_ADDRESS,

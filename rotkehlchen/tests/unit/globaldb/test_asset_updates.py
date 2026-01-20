@@ -351,6 +351,7 @@ def get_mock_github_assets_response(
         'At asset DB update could not parse common asset details data out of',
     ),
 ])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_parse_full_insert_assets(
         assets_updater: AssetsUpdater,
         text: str,
@@ -376,6 +377,7 @@ def test_parse_full_insert_assets(
         assert error_msg in str(excinfo.value)
 
 
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_some_updates_are_malformed(assets_updater: AssetsUpdater) -> None:
     """
     Checks the following cases:
@@ -420,6 +422,7 @@ INSERT INTO assets(identifier, name, type) VALUES('NEW-ASSET-2', 'name4', 'B'); 
         assert cursor.execute("SELECT symbol FROM common_asset_details WHERE identifier='NEW-ASSET-2'").fetchone()[0] == 'symbol4'  # noqa: E501
 
 
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
     """
     Check that assets collections can be created and edited correctly.
@@ -482,6 +485,7 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
 @pytest.mark.parametrize('update_assets', [True, False])
 @pytest.mark.parametrize('update_collections', [True, False])
 @pytest.mark.parametrize('update_mappings', [True, False])
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_asset_update(
         assets_updater: AssetsUpdater,
         update_assets: bool,
@@ -526,6 +530,7 @@ def test_asset_update(
         ]
 
 
+@pytest.mark.parametrize('use_in_memory_globaldb', [False])
 def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandler):
     """Test that the logic doesn't add duplicates for assets that were inserted twice
     in the globaldb assets updates. Also test a bug in asset updates where the foreign key entries

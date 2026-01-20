@@ -150,35 +150,35 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             new=MagicMock(return_value=False),
         ))
         patched_convex_query = stack.enter_context(patch(
-            'rotkehlchen.api.rest.query_convex_data',
+            'rotkehlchen.api.services.assets.query_convex_data',
             new=MagicMock(),
         ))
         patched_curve_query = stack.enter_context(patch(
-            'rotkehlchen.api.rest.query_curve_data',
+            'rotkehlchen.api.services.assets.query_curve_data',
             new=MagicMock(),
         ))
         patched_velodrome_query = stack.enter_context(patch(
-            'rotkehlchen.api.rest.query_velodrome_like_data',
+            'rotkehlchen.api.services.assets.query_velodrome_like_data',
             new=MagicMock(),
         ))
         patched_gearbox_query = stack.enter_context(patch(
-            'rotkehlchen.api.rest.query_gearbox_data',
+            'rotkehlchen.api.services.assets.query_gearbox_data',
             new=MagicMock(),
         ))
         patched_query_yearn_vaults = stack.enter_context(patch(
-            'rotkehlchen.api.rest.query_yearn_vaults',
+            'rotkehlchen.api.services.assets.query_yearn_vaults',
             new=MagicMock(),
         ))
         patched_ilk_registry = stack.enter_context(patch(
-            'rotkehlchen.api.rest.query_ilk_registry_and_maybe_update_cache',
+            'rotkehlchen.api.services.assets.query_ilk_registry_and_maybe_update_cache',
             new=MagicMock(),
         ))
         patched_aave_v3_assets = stack.enter_context(patch(
-            'rotkehlchen.api.rest.update_aave_v3_underlying_assets',
+            'rotkehlchen.api.services.assets.update_aave_v3_underlying_assets',
             new=MagicMock(),
         ))
         patched_spark_assets = stack.enter_context(patch(
-            'rotkehlchen.api.rest.update_spark_underlying_assets',
+            'rotkehlchen.api.services.assets.update_spark_underlying_assets',
             new=MagicMock(),
         ))
         patched_eth_withdrawals_cache = stack.enter_context(patch.object(
@@ -192,11 +192,11 @@ def test_protocol_data_refresh(rotkehlchen_api_server: 'APIServer') -> None:
             new=MagicMock(),
         ))
         patched_balancer_query = stack.enter_context(patch(
-            'rotkehlchen.api.rest.query_balancer_data',
+            'rotkehlchen.api.services.assets.query_balancer_data',
             new=MagicMock(),
         ))
         patched_globaldb_handler = stack.enter_context(patch(
-            'rotkehlchen.api.rest.GlobalDBHandler',
+            'rotkehlchen.api.services.assets.GlobalDBHandler',
             new=MagicMock(),
         ))
 

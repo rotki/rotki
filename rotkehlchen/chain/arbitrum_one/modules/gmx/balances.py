@@ -40,7 +40,7 @@ class GmxBalances(ProtocolWithBalance):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_GMX,
-            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},  # noqa: E501
         )
         self.gmx = A_GMX.resolve_to_evm_token()
 

@@ -35,12 +35,15 @@ from rotkehlchen.tests.utils.history_base_entry import add_entries, store_and_re
 from rotkehlchen.types import Location, TimestampMS
 
 
-def _update_rules(rotki: Rotkehlchen, latest_accounting_rules: list[tuple[int, Path]]) -> None:
+def _update_rules(
+        rotki: Rotkehlchen,
+        latest_accounting_rules_data: list[tuple[int, list[dict[str, Any]]]],
+) -> None:
     """Pull remote accounting rules and save them"""
     data_updater = RotkiDataUpdater(msg_aggregator=rotki.msg_aggregator, user_db=rotki.data.db)
-    for version, jsonfile in latest_accounting_rules:
+    for version, rules in latest_accounting_rules_data:
         data_updater.update_accounting_rules(
-            data=json.loads(jsonfile.read_text(encoding='utf-8'))['accounting_rules'],
+            data=rules,
             version=version,
             force_updates=False,  # TODO: This should adjust / go away. Related to https://github.com/orgs/rotki/projects/11?pane=issue&itemId=96831912  # noqa: E501
         )
@@ -48,7 +51,7 @@ def _update_rules(rotki: Rotkehlchen, latest_accounting_rules: list[tuple[int, P
 
 def _setup_conflict_tests(
         rotkehlchen_api_server: APIServer,
-        latest_accounting_rules: list[tuple[int, Path]],
+        latest_accounting_rules_data: list[tuple[int, list[dict[str, Any]]]],
 ) -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     rule_1 = {
@@ -81,7 +84,7 @@ def _setup_conflict_tests(
         assert_simple_ok_response(response)
 
     # pull only the first remote update (so that new rules don't mess with our tests)
-    _update_rules(rotki=rotki, latest_accounting_rules=latest_accounting_rules[:1])
+    _update_rules(rotki=rotki, latest_accounting_rules_data=latest_accounting_rules_data[:1])
 
     # check the conflicts
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -281,10 +284,10 @@ def test_rules_info(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
 def test_solving_conflicts(
         rotkehlchen_api_server: APIServer,
-        latest_accounting_rules: list[tuple[int, Path]],
+        latest_accounting_rules_data: list[tuple[int, list[dict[str, Any]]]],
 ) -> None:
     """Test solving conflicts using a different method for each rule"""
-    _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules)
+    _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules_data)
     conflict_resolution = [
         {'local_id': 1, 'solve_using': 'remote'},
         {'local_id': 2, 'solve_using': 'local'},
@@ -312,11 +315,11 @@ def test_solving_conflicts(
 @pytest.mark.parametrize('solve_all_using', ['remote', 'local'])
 def test_solving_conflicts_all(
         rotkehlchen_api_server: APIServer,
-        latest_accounting_rules: list[tuple[int, Path]],
+        latest_accounting_rules_data: list[tuple[int, list[dict[str, Any]]]],
         solve_all_using: Literal['remote', 'local'],
 ) -> None:
     """Test that solving all the conflicts using either local or remote works"""
-    _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules)
+    _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules_data)
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
@@ -346,10 +349,10 @@ def test_solving_conflicts_all(
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
 def test_listing_conflicts(
         rotkehlchen_api_server: APIServer,
-        latest_accounting_rules: list[tuple[int, Path]],
+        latest_accounting_rules_data: list[tuple[int, list[dict[str, Any]]]],
 ) -> None:
     """Test that serialization for conflicts works as expected"""
-    _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules)
+    _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules_data)
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,

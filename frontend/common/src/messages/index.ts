@@ -48,6 +48,7 @@ export interface NotificationAction {
   readonly action: Awaitable;
   readonly icon?: string;
   readonly persist?: boolean;
+  readonly danger?: boolean;
 }
 
 export interface I18nParam {

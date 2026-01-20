@@ -73,6 +73,10 @@ class UpdateType(Enum):
 HISTORY_BASE_ENTRY_FIELDS: Final = 'entry_type, history_events.identifier AS history_events_identifier, group_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype, extra_data, ignored '  # noqa: E501
 HISTORY_BASE_ENTRY_LENGTH: Final = 13
 
+# Window function to compute if any event in a group has an ignored asset.
+# This is added at the END of the query (after all other fields) in _create_history_events_query.
+GROUP_HAS_IGNORED_ASSETS_FIELD: Final = 'MAX(ignored) OVER (PARTITION BY group_identifier) AS group_has_ignored_assets'  # noqa: E501
+
 CHAIN_EVENT_FIELDS: Final = 'tx_ref, counterparty, address'
 CHAIN_FIELD_LENGTH: Final = 3
 

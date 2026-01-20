@@ -35,7 +35,7 @@ class RunmoneyBalances(ProtocolWithBalance):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_RUNMONEY,
-            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},  # noqa: E501
         )
         self.runmoney_contract = EvmContract(
             address=RUNMONEY_CONTRACT_ADDRESS,

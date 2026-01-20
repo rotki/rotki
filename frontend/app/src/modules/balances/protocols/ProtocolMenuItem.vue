@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { type ProtocolBalance, toSentenceCase, toSnakeCase } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
+import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 
@@ -39,22 +39,25 @@ const dot = '•';
       </div>
 
       <div class="flex items-center gap-2 text-caption">
-        <AmountDisplay
-          :value="protocolBalance.amount"
+        <AssetAmountDisplay
+          v-if="asset"
           :asset="asset"
-          :asset-padding="0.1"
+          :amount="protocolBalance.amount"
+          :loading="loading"
+          data-cy="protocol-menu-amount"
+        />
+        <ValueDisplay
+          v-else
+          :value="protocolBalance.amount"
           :loading="loading"
           data-cy="protocol-menu-amount"
         />
         <span class="text-rui-text-secondary">
           {{ dot }}
         </span>
-        <AmountDisplay
-          :asset-padding="0.1"
-          force-currency
+        <FiatDisplay
           :value="protocolBalance.value"
           :loading="loading"
-          show-currency="symbol"
           data-cy="protocol-menu-value"
         />
       </div>

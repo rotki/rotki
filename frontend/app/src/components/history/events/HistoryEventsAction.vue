@@ -17,7 +17,6 @@ import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import {
   type DecodableEventType,
-  isEvmSwapEvent,
   isGroupEditableHistoryEvent,
 } from '@/modules/history/management/forms/form-guards';
 import { toLocationAndTxRef } from '@/utils/history';
@@ -25,6 +24,7 @@ import {
   isEthBlockEvent,
   isEthBlockEventRef,
   isEvmEvent,
+  isEvmSwapEvent,
   isOnlineHistoryEvent,
   isSolanaEvent,
   isSolanaSwapEvent,

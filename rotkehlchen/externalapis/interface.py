@@ -1,6 +1,5 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.types import ApiKey, ExternalService, Timestamp
 from rotkehlchen.utils.interfaces import DBSetterMixin
 from rotkehlchen.utils.misc import ts_now
@@ -76,8 +75,5 @@ class ExternalServiceWithRecommendedApiKey(ExternalServiceWithApiKey):
     def maybe_warn_missing_key(self) -> None:
         """Warns the user once if the Helius api key is missing."""
         if not self.warning_given:
-            self.db.msg_aggregator.add_message(
-                message_type=WSMessageType.MISSING_API_KEY,
-                data={'service': self.service_name.serialize()},
-            )
+            self.db.msg_aggregator.add_missing_key_message(self.service_name)
             self.warning_given = True

@@ -2,8 +2,17 @@
 Changelog
 =========
 
+* :feature:`11385` When authenticating for monerium on linux AppImage the cookie will no longer be shared between different accounts.
+* :feature:`11397` Users will now be able to trigger token detection for EVM address groups with multiple chains.
+* :feature:`-` Users can now suppress missing API key notifications for specific services in Settings > General > External Service Settings.
+* :feature:`11332` Users can now view the newly retrieved transactions directly from the notification after repulling transactions.
+* :feature:`11332` Users can now re-pull transactions for all chains at once.
+* :feature:`-` Users will now see a redesigned history sync progress panel that provides detailed real-time progress for chain queries, decoding, exchange syncing, and protocol cache updates.
+* :bug:`11259` rotki will now properly query Aerodrome fee addresses to ensure claim fees are decoded correctly.
+* :feature:`-` Users will now see a warning when viewing event groups that have some events hidden because they contain ignored assets.
 * :feature:`-` Users will now see the protocol icon on assets that belong to a specific protocol (e.g., Aave, Compound).
 * :bug:`11245` Users will now be able to select February in the date picker when the current date's day is greater than 28.
+* :bug:`-` Tags will no longer be duplicated in the assets view for EVM accounts.
 * :feature:`-` rotki is now available in Russian.
 * :feature:`11253` Premium users can now view their historical asset balances at any point in time, calculated from their transaction history.
 * :feature:`-` Users can now add smart contract addresses to all EVM chains at once. Contracts are automatically detected and tagged with a reserved "Contract" system tag.
@@ -29,6 +38,11 @@ Changelog
 * :feature:`-` rotki will now be able to decode Sushiswap RedSnwap router transactions.
 * :feature:`10599` Users will now be able to bulk ignore assets, or mark assets as spam, from the account page.
 * :bug:`11208` Users will now be able to use contract addresses to filter assets in asset selection fields.
+* :bug:`11396` The ignore asset switch will now be properly disabled when an asset is whitelisted and show proper loading indicators during actions.
+* :bug:`11395` The table filter input will now respond to the numpad Enter key when editing an filter.
+* :bug:`11381` Users will no longer see a non-working edit button when viewing accounts filtered by a specific chain.
+* :bug:`11380` Tags will no longer appear duplicated in the asset location breakdown view.
+* :bug:`11339` Restoring the DB while background tasks that modify the DB are running will no longer result in malformed DB disk image errors.
 * :bug:`11258` 1inch v6 limit order swaps will now be understood properly.
 * :feature:`-` Users can now search blockchain accounts by either address or label using a single unified filter.
 * :bug:`11267` PnL report generation will no longer crash when a fiat asset's price is unavailable for a swap event.

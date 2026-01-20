@@ -272,8 +272,6 @@ class MoneriumOAuthCredentials:
     refresh_token: str
     expires_at: int
     user_email: str | None = None
-    default_profile_id: str | None = None
-    profiles: list[dict[str, Any]] | None = None
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> 'MoneriumOAuthCredentials':
@@ -282,8 +280,6 @@ class MoneriumOAuthCredentials:
             refresh_token=data['refresh_token'],
             expires_at=int(data['expires_at']),
             user_email=data.get('user_email'),
-            default_profile_id=data.get('default_profile_id'),
-            profiles=data.get('profiles'),
         )
 
     def to_dict(self) -> dict[str, Any]:
@@ -361,8 +357,6 @@ class MoneriumOAuthClient:
         return {
             'authenticated': True,
             'user_email': credentials.user_email,
-            'default_profile_id': credentials.default_profile_id,
-            'profiles': credentials.profiles or [],
             'expires_at': credentials.expires_at,
         }
 
@@ -390,16 +384,12 @@ class MoneriumOAuthClient:
 
         context = self._fetch_user_context()
         credentials.user_email = context.get('email')
-        credentials.default_profile_id = context.get('defaultProfile')
-        credentials.profiles = context.get('profiles')
         self._store_credentials(credentials)
 
         return {
             'success': True,
             'message': 'Successfully authenticated with Monerium',
             'user_email': credentials.user_email,
-            'default_profile_id': credentials.default_profile_id,
-            'profiles': credentials.profiles or [],
         }
 
     def ensure_access_token(self) -> None:

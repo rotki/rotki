@@ -27,6 +27,7 @@ export const SocketMessageType = {
   HISTORY_EVENTS_STATUS: 'history_events_status',
   LEGACY: 'legacy',
   MISSING_API_KEY: 'missing_api_key',
+  NEGATIVE_BALANCE_DETECTED: 'negative_balance_detected',
   NEW_TOKEN_DETECTED: 'new_token_detected',
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   PROGRESS_UPDATES: 'progress_updates',
@@ -40,6 +41,7 @@ export type SocketMessageType = (typeof SocketMessageType)[keyof typeof SocketMe
 
 export const SocketMessageProgressUpdateSubType = {
   CSV_IMPORT_RESULT: 'csv_import_result',
+  HISTORICAL_BALANCE_PROCESSING: 'historical_balance_processing',
   HISTORICAL_PRICE_QUERY_STATUS: 'historical_price_query_status',
   LIQUITY_STAKING_QUERY: 'liquity_staking_query',
   MULTIPLE_PRICES_QUERY_STATUS: 'multiple_prices_query_status',

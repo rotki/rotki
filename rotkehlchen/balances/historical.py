@@ -8,19 +8,17 @@ import polars as pl
 from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import DAY_IN_MILLISECONDS, ZERO
-from rotkehlchen.db.filtering import HistoryEventFilterQuery
+from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.filtering import (
+    HistoricalBalancesFilterQuery,
+    HistoryEventFilterQuery,
+)
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import NotFoundError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.base import (
-    HistoryEvent,
-    get_event_direction,
-)
-from rotkehlchen.history.events.structures.types import (
-    EventDirection,
-    HistoryEventSubType,
-)
+from rotkehlchen.history.events.structures.base import HistoryEvent, get_event_direction
+from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EventMetricKey, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
@@ -37,12 +35,19 @@ log = RotkehlchenLogsAdapter(logger)
 class HistoricalBalancesManager:
     """Processes historical events and calculates balances"""
 
+    _neutral_balance_tracking_pairs: tuple[tuple[str, str], ...] = tuple(
+        (event_type.serialize(), subtype.serialize())
+        for event_type, subtypes in EVENT_CATEGORY_MAPPINGS.items()
+        for subtype in subtypes
+        if get_event_direction(event_type=event_type, event_subtype=subtype, for_balance_tracking=True) == EventDirection.NEUTRAL  # noqa: E501
+    )
+
     def __init__(self, db: 'DBHandler') -> None:
         self.db = db
 
     def get_balances(
             self,
-            timestamp: Timestamp,
+            filter_query: HistoricalBalancesFilterQuery,
     ) -> tuple[bool, dict[Asset, FVal] | None]:
         """Get historical balances for all assets at a given timestamp.
 
@@ -54,31 +59,25 @@ class HistoricalBalancesManager:
         - processing_required: True if events exist but haven't been processed yet
         - balances: Dict of asset to amount, or None if no data available
         """
-        asset_balances_by_id: dict[str, FVal] = {}
-        timestamp_ms = ts_sec_to_ms(timestamp)
+        filter_str, filter_bindings = filter_query.prepare()
+        query_bindings: list = [EventMetricKey.BALANCE.serialize(), *filter_bindings]
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
-                """SELECT asset, SUM(metric_value) FROM (
+                f"""SELECT asset, SUM(metric_value) FROM (
                     SELECT he.asset, em.metric_value, MAX(he.timestamp + he.sequence_index)
                     FROM event_metrics em
                     INNER JOIN history_events he ON em.event_identifier = he.identifier
-                    WHERE he.ignored = 0 AND em.metric_key = ? AND he.timestamp <= ?
-                    GROUP BY he.location, he.location_label, em.protocol, he.asset
-                ) GROUP BY asset
+                    WHERE he.ignored = 0 AND em.metric_key = ? {filter_str}
+                    GROUP BY he.location, em.location_label, em.protocol, he.asset
+                ) GROUP BY asset HAVING SUM(metric_value) > 0
                 """,
-                (EventMetricKey.BALANCE.serialize(), timestamp_ms),
+                query_bindings,
             )
-            for asset_id, total in cursor:
-                asset_balances_by_id[asset_id] = FVal(total)
-
-        data = {
-            Asset(asset_id): amount
-            for asset_id, amount in asset_balances_by_id.items()
-        } if len(asset_balances_by_id) != 0 else None
+            data = {Asset(asset_id): FVal(total) for asset_id, total in cursor} or None
 
         return self._has_unprocessed_events(
-            where_clause='timestamp <= ?',
-            bindings=[timestamp_ms],
+            where_clause=filter_query.unprocessed_where_clause,
+            bindings=filter_query.unprocessed_bindings,
         ), data
 
     def get_erc721_tokens_balances(
@@ -104,39 +103,6 @@ class HistoricalBalancesManager:
             self._update_balances(event=event, current_balances=current_balances)
 
         return {asset.resolve_to_evm_token(): balance for asset, balance in current_balances.items() if balance > ZERO}  # noqa: E501
-
-    def get_asset_balance(
-            self,
-            asset: Asset,
-            timestamp: Timestamp,
-    ) -> tuple[bool, FVal | None]:
-        """Get historical balance for a single asset at a given timestamp.
-
-        The inner query gets the latest balance per bucket via MAX(timestamp + sequence_index),
-        relying on SQLite's bare column behavior to return non-aggregated columns from that row.
-        See https://www.sqlite.org/lang_select.html#bareagg
-
-        Returns a tuple of (processing_required, balance):
-        - processing_required: True if events exist but haven't been processed yet
-        - balance: Amount as FVal, or None if no data available
-        """
-        data, timestamp_ms = None, ts_sec_to_ms(timestamp)
-        with self.db.conn.read_ctx() as cursor:
-            if (total_amount := cursor.execute(
-                """SELECT SUM(metric_value) FROM (SELECT em.metric_value, MAX(he.timestamp + he.sequence_index)
-                    FROM event_metrics em
-                    INNER JOIN history_events he ON em.event_identifier = he.identifier
-                    WHERE em.metric_key = ? AND he.timestamp <= ? AND he.asset = ?
-                    GROUP BY he.location, he.location_label, em.protocol
-                )""",  # noqa: E501
-                (EventMetricKey.BALANCE.serialize(), timestamp_ms, asset.identifier),
-            ).fetchone()[0]) is not None:
-                data = FVal(total_amount)
-
-        return self._has_unprocessed_events(
-            where_clause='asset = ? AND timestamp <= ?',
-            bindings=[asset.identifier, timestamp_ms],
-        ), data
 
     def get_assets_amounts(
             self,
@@ -165,7 +131,7 @@ class HistoricalBalancesManager:
                         WITH all_events AS (
                             SELECT
                                 he.timestamp,
-                                he.location || COALESCE(he.location_label, '') || COALESCE(em.protocol, '') || he.asset as bucket,
+                                he.location || COALESCE(em.location_label, '') || COALESCE(em.protocol, '') || he.asset as bucket,
                                 CAST(em.metric_value AS REAL) as balance,
                                 he.timestamp + he.sequence_index as sort_key
                             FROM event_metrics em
@@ -234,7 +200,7 @@ class HistoricalBalancesManager:
                     WITH all_events AS (
                         SELECT he.timestamp, he.asset, CAST(em.metric_value AS REAL) as balance,
                                he.timestamp + he.sequence_index as sort_key,
-                               he.location || COALESCE(he.location_label, '') || COALESCE(em.protocol, '') || he.asset as bucket
+                               he.location || COALESCE(em.location_label, '') || COALESCE(em.protocol, '') || he.asset as bucket
                         FROM event_metrics em
                         INNER JOIN history_events he ON em.event_identifier = he.identifier
                         WHERE em.metric_key = ? AND he.ignored = 0
@@ -289,23 +255,33 @@ class HistoricalBalancesManager:
             where_clause: str,
             bindings: Sequence[str | TimestampMS],
     ) -> bool:
-        """Return True if events that should have metrics are missing them."""
-        neutral_pairs: list[tuple[str, str]] = []
-        for event_type, subtypes in EVENT_CATEGORY_MAPPINGS.items():
-            neutral_pairs.extend(
-                (event_type.serialize(), subtype.serialize())
-                for subtype in subtypes
-                if get_event_direction(event_type, subtype) == EventDirection.NEUTRAL
-            )
+        """Return True if events that should have metrics are missing them.
 
-        exclusions = ' OR '.join(['(he.type = ? AND he.subtype = ?)'] * len(neutral_pairs))
+        Uses the stale marker to determine which events need checking:
+        - If stale marker is None: all events were evaluated (including negative balance skips)
+        - If stale marker exists and processing ran: only check events >= stale_event_ts
+        - If stale marker exists but never processed: check all events matching where_clause
+        """
         with self.db.conn.read_ctx() as cursor:
+            if (stale_value := self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.STALE_BALANCES_FROM_TS,
+            )) is None:
+                return False  # All events evaluated (including negative balance skips)
+
+            if self.db.get_static_cache(
+                cursor=cursor,
+                name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
+            ) is not None:  # events before stale_event_ts were already evaluated
+                where_clause = f'({where_clause}) AND he.timestamp >= {stale_value}'
+
+            exclusions = ' OR '.join(['(he.type = ? AND he.subtype = ?)'] * len(self._neutral_balance_tracking_pairs))  # noqa: E501
             return cursor.execute(
                 f"""SELECT 1 FROM history_events he
                 WHERE {where_clause} AND he.ignored = 0 AND NOT ({exclusions})
                 AND NOT EXISTS (SELECT 1 FROM event_metrics em WHERE em.event_identifier = he.identifier) LIMIT 1
                 """,  # noqa: E501
-                [*bindings, *[val for pair in neutral_pairs for val in pair]],
+                [*bindings, *[v for pair in self._neutral_balance_tracking_pairs for v in pair]],
             ).fetchone() is not None
 
     def _get_events_and_currency(

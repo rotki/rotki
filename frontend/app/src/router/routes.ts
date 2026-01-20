@@ -38,6 +38,8 @@ export const Routes = {
   CALENDAR: ensureRoute('/calendar'),
   DASHBOARD: ensureRoute('/dashboard'),
   HISTORY: ensureRoute('/history'),
+  HISTORY_BALANCES: ensureRoute('/history/balances'),
+  HISTORY_EVENTS: ensureRoute('/history/events'),
   IMPORT: ensureRoute('/import'),
   LOCATIONS: ensureRoute('/locations/:identifier'),
   NFTS: ensureRoute('/nfts'),
@@ -214,6 +216,16 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'lu-history' as const,
       route: Routes.HISTORY,
       text: t('navigation_menu.history'),
+    },
+    HISTORY_BALANCES: {
+      icon: 'lu-scale' as const,
+      route: Routes.HISTORY_BALANCES,
+      text: t('navigation_menu.history_sub.balances'),
+    },
+    HISTORY_EVENTS: {
+      icon: 'lu-list' as const,
+      route: Routes.HISTORY_EVENTS,
+      text: t('navigation_menu.history_sub.events'),
     },
     IMPORT: {
       icon: 'lu-folder-input' as const,

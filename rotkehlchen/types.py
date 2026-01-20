@@ -106,6 +106,7 @@ class ExternalService(SerializableEnumNameMixin):
     BLOCKSCOUT = auto()
     THEGRAPH = auto()
     GNOSIS_PAY = auto()
+    MONERIUM = auto()
     OPTIMISM_BLOCKSCOUT = auto()
     POLYGON_POS_BLOCKSCOUT = auto()
     ARBITRUM_ONE_BLOCKSCOUT = auto()
@@ -1346,7 +1347,6 @@ class CacheType(Enum):
     STAKEDAO_GAUGES = auto()
     PENDLE_POOLS = auto()
     PENDLE_SY_TOKENS = auto()
-    PENDLE_YIELD_TOKENS = auto()  # store the count of all SYs, PTs, YTs & LP tokens per chain
     BEEFY_VAULTS = auto()
     MERKL_REWARD_PROTOCOLS = auto()
     STAKEDAO_V2_VAULTS = auto()
@@ -1409,17 +1409,13 @@ UniqueCacheType = Literal[
     CacheType.EXTRAFI_FARM_METADADATA,
     CacheType.EXTRAFI_NEXT_RESERVE_ID,
     CacheType.EFP_SLOT_ADDRESS,
-    CacheType.MORPHO_VAULTS,
     CacheType.CURVE_LENDING_VAULTS,
     CacheType.CURVE_LENDING_VAULT_CONTROLLER,
     CacheType.CURVE_LENDING_VAULT_BORROWED_TOKEN,
     CacheType.CURVE_LENDING_VAULT_GAUGE,
     CacheType.CURVE_CRVUSD_COLLATERAL_TOKEN,
     CacheType.CURVE_CRVUSD_AMM,
-    CacheType.PENDLE_YIELD_TOKENS,
-    CacheType.BEEFY_VAULTS,
     CacheType.MERKL_REWARD_PROTOCOLS,
-    CacheType.STAKEDAO_V2_VAULTS,
     CacheType.SUPERFLUID_TOKEN_LIST_VERSION,
 ]
 
@@ -1447,12 +1443,15 @@ GeneralCacheType = Literal[
     CacheType.BALANCER_V1_GAUGES,
     CacheType.BALANCER_V2_GAUGES,
     CacheType.BALANCER_V3_GAUGES,
+    CacheType.MORPHO_VAULTS,
     CacheType.MORPHO_REWARD_DISTRIBUTORS,
     CacheType.CURVE_CRVUSD_CONTROLLERS,
+    CacheType.STAKEDAO_V2_VAULTS,
     CacheType.STAKEDAO_GAUGES,
     CacheType.PENDLE_POOLS,
     CacheType.PENDLE_SY_TOKENS,
     CacheType.SUPERFLUID_SUPER_TOKENS,
+    CacheType.BEEFY_VAULTS,
 ]
 
 

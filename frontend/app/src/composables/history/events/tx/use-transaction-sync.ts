@@ -3,12 +3,10 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useStatusUpdater } from '@/composables/status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
-import { type BlockchainAddress, type ChainAddress, type TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/types/history/events';
-import { Section, Status } from '@/types/status';
+import { type BlockchainAddress, type ChainAddress, TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/types/history/events';
 import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
@@ -19,12 +17,13 @@ import { logger } from '@/utils/logging';
 interface TransactionSyncParams {
   accounts: ChainAddress[];
   type: TransactionChainType;
+  trackProgress?: boolean;
 }
 
 interface UseTransactionSyncReturn {
   syncAndReDecodeEvents: (chain: string, params: TransactionSyncParams) => Promise<void>;
-  syncTransactionTask: (account: ChainAddress, type: TransactionChainType) => Promise<void>;
-  syncTransactionsByChains: (accounts: ChainAddress[]) => Promise<void>;
+  syncTransactionTask: (account: ChainAddress, type: TransactionChainType, trackProgress?: boolean) => Promise<void>;
+  syncTransactionsByChains: (accounts: ChainAddress[], trackProgress?: boolean) => Promise<void>;
 }
 
 export function useTransactionSync(): UseTransactionSyncReturn {
@@ -33,19 +32,20 @@ export function useTransactionSync(): UseTransactionSyncReturn {
   const queue = new LimitedParallelizationQueue(1);
   const { fetchTransactionsTask } = useHistoryEventsApi();
 
-  const { awaitTask, isTaskRunning } = useTaskStore();
-  const { removeQueryStatus } = useTxQueryStatusStore();
+  const { awaitTask } = useTaskStore();
+  const { removeQueryStatus, setEvmlikeStatus } = useTxQueryStatusStore();
   const { getChainName } = useSupportedChains();
-  const { setStatus } = useStatusUpdater(Section.HISTORY);
   const { decodeTransactionsTask } = useHistoryTransactionDecoding();
   const { getTransactionTypeFromChain } = useHistoryTransactionAccounts();
 
   const syncTransactionTask = async (
     account: ChainAddress,
     type: TransactionChainType,
+    trackProgress = true,
   ): Promise<void> => {
     const taskType = TaskType.TX;
     const { address, chain } = account;
+    const isEvmlike = type === TransactionChainType.EVMLIKE;
 
     const blockchainAccount: BlockchainAddress = {
       address,
@@ -54,6 +54,11 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     const defaults: TransactionRequestPayload = {
       accounts: [blockchainAccount],
     };
+
+    // Evmlike chains don't send websocket messages, so track status manually
+    // Only track when progress display is enabled
+    if (isEvmlike && trackProgress)
+      setEvmlikeStatus(account, 'started');
 
     const chainName = get(getChainName(chain));
     const { taskId } = await fetchTransactionsTask(defaults);
@@ -89,7 +94,9 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       }
     }
     finally {
-      setStatus(isTaskRunning(taskType, { type }) ? Status.REFRESHING : Status.LOADED);
+      // Mark evmlike as finished when the task completes
+      if (isEvmlike && trackProgress)
+        setEvmlikeStatus(account, 'finished');
     }
   };
 
@@ -97,7 +104,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     chain: string,
     params: TransactionSyncParams,
   ): Promise<void> => {
-    const { accounts, type } = params;
+    const { accounts, trackProgress = true, type } = params;
     logger.debug(`syncing ${chain} transactions for ${accounts.length} addresses`);
 
     const getAccountKey = (item: ChainAddress): string => item.chain + item.address;
@@ -105,7 +112,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     await awaitParallelExecution(
       accounts,
       getAccountKey,
-      async item => syncTransactionTask(item, type),
+      async item => syncTransactionTask(item, type, trackProgress),
       2,
     );
 
@@ -118,7 +125,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     }
   };
 
-  const syncTransactionsByChains = async (accounts: ChainAddress[]): Promise<void> => {
+  const syncTransactionsByChains = async (accounts: ChainAddress[], trackProgress = true): Promise<void> => {
     logger.debug(`refreshing transactions for ${accounts.length} addresses`);
 
     const groupedByChains = Object.entries(groupBy(accounts, item => item.chain));
@@ -128,7 +135,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       ([chain]) => chain,
       async ([chain, accounts]) => {
         const type = getTransactionTypeFromChain(chain);
-        await syncAndReDecodeEvents(chain, { accounts, type });
+        await syncAndReDecodeEvents(chain, { accounts, trackProgress, type });
       },
       2,
     );

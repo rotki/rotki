@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import type { AssetMap } from '@/types/asset';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';

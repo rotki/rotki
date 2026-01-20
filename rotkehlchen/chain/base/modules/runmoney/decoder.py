@@ -59,7 +59,7 @@ class RunmoneyDecoder(EvmDecoderInterface):
             context: DecoderContext,
             from_event_type: Literal[HistoryEventType.SPEND, HistoryEventType.RECEIVE],
             to_event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
-            to_event_subtype: Literal[HistoryEventSubType.DEPOSIT_ASSET, HistoryEventSubType.REMOVE_ASSET],  # noqa: E501
+            to_event_subtype: Literal[HistoryEventSubType.DEPOSIT_TO_PROTOCOL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL],  # noqa: E501
             action: Literal['deposit', 'withdraw'],
             preposition: Literal['into', 'from'],
     ) -> EvmDecodingOutput:
@@ -123,7 +123,7 @@ class RunmoneyDecoder(EvmDecoderInterface):
                 action='deposit',
                 from_event_type=HistoryEventType.SPEND,
                 to_event_type=HistoryEventType.DEPOSIT,
-                to_event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                to_event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
                 preposition='into',
             )
 
@@ -133,7 +133,7 @@ class RunmoneyDecoder(EvmDecoderInterface):
                 action='withdraw',
                 from_event_type=HistoryEventType.RECEIVE,
                 to_event_type=HistoryEventType.WITHDRAWAL,
-                to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
                 preposition='from',
             )
 

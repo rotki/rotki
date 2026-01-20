@@ -67,7 +67,7 @@ class PendleDecoder(PendleCommonDecoder, CustomizableDateMixin):
                 ):
                     event.notes = f'Lock {event.amount} PENDLE in voting escrow until {self.timestamp_to_date(lock_time := deserialize_timestamp(int.from_bytes(context.tx_log.data[32:64])))}'  # noqa: E501
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                     event.extra_data = {'lock_time': lock_time}
                     event.counterparty = CPT_PENDLE
                     break
@@ -113,7 +113,7 @@ class PendleDecoder(PendleCommonDecoder, CustomizableDateMixin):
                 ):
                     event.counterparty = CPT_PENDLE
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                     event.notes = f'Withdraw {amount} PENDLE from vote escrow'
                     break
             else:

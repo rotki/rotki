@@ -260,11 +260,11 @@ function getIcon(action: NotificationAction): RuiIcons {
         </RuiButton>
       </div>
     </div>
-    <div class="flex mt-1 gap-2 mx-0.5">
+    <div class="flex mt-1 gap-x-2 gap-y-0.5 flex-wrap mx-0.5 max-w-full overflow-auto">
       <RuiButton
         v-for="(action, index) in actions"
         :key="index"
-        color="primary"
+        :color="action.danger ? 'error' : 'primary'"
         variant="text"
         size="sm"
         @click="doAction(notification.id, action)"

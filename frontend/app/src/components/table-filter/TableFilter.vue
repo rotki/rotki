@@ -1,16 +1,18 @@
 <script setup lang="ts">
+import type { AssetInfo } from '@rotki/common';
 import type {
-  MatchedKeyword,
   MatchedKeywordWithBehaviour,
   SavedFilterLocation,
   SearchMatcher,
   Suggestion,
 } from '@/types/filtering';
-import { assert, type AssetInfo, getTextToken } from '@rotki/common';
+import { useChipGrouping } from '@/components/table-filter/composables/use-chip-grouping';
+import { useFilterMatchers } from '@/components/table-filter/composables/use-filter-matchers';
+import { useFilterSelection } from '@/components/table-filter/composables/use-filter-selection';
+import { useMatcherUtils } from '@/components/table-filter/composables/use-matcher-utils';
 import FilterDropdown from '@/components/table-filter/FilterDropdown.vue';
 import SavedFilterManagement from '@/components/table-filter/SavedFilterManagement.vue';
-import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
-import { compareTextByKeyword } from '@/utils/assets';
+import SelectionChip from '@/components/table-filter/SelectionChip.vue';
 import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
 
@@ -39,10 +41,8 @@ defineSlots<{
 const { matchers, matches } = toRefs(props);
 
 const input = ref();
-const selection = ref<Suggestion[]>([]);
-
-const search = ref('');
-const selectedSuggestion = ref(0);
+const search = ref<string>('');
+const selectedSuggestion = ref<number>(0);
 const suggestedFilter = ref<Suggestion>({
   asset: false,
   index: 0,
@@ -50,24 +50,51 @@ const suggestedFilter = ref<Suggestion>({
   total: 0,
   value: '',
 });
-const validKeys = computed(() => get(matchers).map(({ key }) => key));
+const shaking = ref<boolean>(false);
 
-const selectedMatcher = computed(() => {
+// Matcher utilities
+const {
+  matcherForKey,
+  matcherForKeyValue,
+  validKeys,
+} = useMatcherUtils(matchers);
+
+// Selection management
+const {
+  applyFilter,
+  cancelEditSuggestion,
+  clickItem,
+  isSuggestionBeingEdited,
+  restoreSelection,
+  selection,
+  suggestionBeingEdited,
+  updateEditSuggestionSearch,
+  updateMatches,
+} = useFilterSelection(search, matcherForKey, matcherForKeyValue, emit);
+
+// Filtered matchers based on selection
+const { filteredMatchers } = useFilterMatchers(matchers, selection, search);
+
+// Chip grouping composable
+const {
+  expandedGroupKey,
+  getChipDisplayType,
+  getGroupedItemsForKey,
+  getGroupedOverflowCount,
+  removeAllItemsForKey,
+  removeGroupedItem,
+  toggleGroupMenu,
+} = useChipGrouping(selection, updateMatches);
+
+const selectedMatcher = computed<SearchMatcher<any, any> | undefined>(() => {
   const searchKey = splitSearch(get(search));
 
-  // If searchKey.exclude is not defined it means user hasn't put any matcher symbol
-  // So we shouldn't set the selectedMatcher yet.
   if (searchKey.exclude === undefined)
     return undefined;
 
   const key = get(validKeys).find(value => value === searchKey.key);
   return matcherForKey(key) ?? undefined;
 });
-
-const usedKeys = computed(() => get(selection).map(entry => entry.key));
-
-const suggestionBeingEdited = ref<Suggestion>();
-const shaking = ref<boolean>(false);
 
 function triggerShake(): void {
   set(shaking, true);
@@ -76,45 +103,7 @@ function triggerShake(): void {
   }, 500);
 }
 
-function isSuggestionBeingEdited(suggestion: Suggestion) {
-  const edited = get(suggestionBeingEdited);
-  if (!edited)
-    return false;
-
-  return getSuggestionText(suggestion).text === getSuggestionText(edited).text;
-}
-
-function clickItem(item: Suggestion) {
-  if (typeof item.value !== 'boolean') {
-    set(suggestionBeingEdited, item);
-    set(search, `${item.key}${item.exclude ? '!=' : '='}`);
-  }
-}
-
-function cancelEditSuggestion(skipClearSearch = false) {
-  set(suggestionBeingEdited, undefined);
-  if (!skipClearSearch) {
-    set(search, '');
-  }
-}
-
-function updateEditSuggestionSearch(value: string) {
-  const beingEdited = get(suggestionBeingEdited);
-  if (!beingEdited)
-    return;
-
-  set(search, `${beingEdited.key}${beingEdited.exclude ? '!=' : '='}${value}`);
-}
-
-function matcherForKey(searchKey: string | undefined) {
-  return get(matchers).find(({ key }) => key === searchKey);
-}
-
-function matcherForKeyValue(searchKey: string | undefined) {
-  return get(matchers).find(({ keyValue }) => keyValue === searchKey);
-}
-
-function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
+function setSearchToMatcherKey(matcher: SearchMatcher<any>): void {
   const boolean = 'boolean' in matcher;
   if (boolean) {
     applyFilter({
@@ -132,118 +121,6 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
     set(search, filter);
   });
 }
-
-function updateMatches(pairs: Suggestion[]) {
-  const matched: Partial<MatchedKeyword<any>> = {};
-  const validPairs: Suggestion[] = [];
-
-  for (const entry of pairs) {
-    const key = entry.key;
-    const matcher = matcherForKey(key);
-    if (!matcher)
-      continue;
-
-    const valueKey = (matcher.keyValue || matcher.key) as string;
-    let transformedKeyword: string | boolean = '';
-
-    if ('string' in matcher) {
-      if (typeof entry.value !== 'string')
-        continue;
-
-      if (matcher.validate(entry.value)) {
-        transformedKeyword = matcher.serializer?.(entry.value) || entry.value;
-
-        if (entry.exclude)
-          transformedKeyword = `!${transformedKeyword}`;
-      }
-      else {
-        continue;
-      }
-    }
-    else if ('asset' in matcher) {
-      transformedKeyword = typeof entry.value !== 'string' ? entry.value.identifier : entry.value;
-    }
-    else {
-      transformedKeyword = true;
-    }
-
-    if (!transformedKeyword)
-      continue;
-
-    validPairs.push(entry);
-
-    if (matcher.multiple) {
-      if (!matched[valueKey])
-        matched[valueKey] = [];
-
-      (matched[valueKey] as (string | boolean)[]).push(transformedKeyword);
-    }
-    else {
-      matched[valueKey] = transformedKeyword;
-    }
-  }
-
-  set(selection, validPairs);
-  emit('update:matches', matched);
-}
-
-function findBeingSelectedIndex(selection: Suggestion[]) {
-  return selection.findIndex(sel => isSuggestionBeingEdited(sel));
-}
-
-function applyFilter(filter: Suggestion) {
-  let newSelection = [...get(selection)];
-  const key = filter.key;
-  const index = newSelection.findIndex(value => value.key === key);
-  const matcher = matcherForKey(key);
-  assert(matcher);
-
-  if (index >= 0 && (!matcher.multiple || newSelection[index].exclude !== filter.exclude))
-    newSelection = newSelection.filter(item => item.key !== key);
-
-  let beingEditedIndex = -1;
-
-  const beingEdited = get(suggestionBeingEdited);
-  if (beingEdited) {
-    beingEditedIndex = findBeingSelectedIndex(newSelection);
-    if (beingEditedIndex > -1) {
-      newSelection.splice(beingEditedIndex, 1);
-    }
-    set(suggestionBeingEdited, undefined);
-  }
-
-  if (beingEditedIndex === -1) {
-    newSelection.push(filter);
-  }
-  else {
-    newSelection.splice(beingEditedIndex, 0, filter);
-  }
-
-  updateMatches(newSelection);
-  set(search, '');
-}
-
-const filteredMatchers = computed<SearchMatcher<any>[]>(() => {
-  const filteredByUsedKeys = get(matchers).filter(({ key, multiple }) => !get(usedKeys).includes(key) || multiple);
-
-  const searchVal = get(search);
-  if (!searchVal)
-    return filteredByUsedKeys;
-
-  const searchToken = getTextToken(searchVal);
-
-  const filteredByKey = filteredByUsedKeys
-    .filter(({ key }) => getTextToken(key).includes(searchToken))
-    .sort((a, b) => compareTextByKeyword(getTextToken(a.key), getTextToken(b.key), searchToken));
-
-  const keySet = new Set(filteredByKey.map(item => item.key));
-
-  const filteredByDescription = filteredByUsedKeys
-    .filter(({ description, key }) => !keySet.has(key) && getTextToken(description).includes(searchToken))
-    .sort((a, b) => compareTextByKeyword(getTextToken(a.description), getTextToken(b.description), searchToken));
-
-  return [...filteredByKey, ...filteredByDescription];
-});
 
 async function applySuggestion(): Promise<void> {
   const selectedIndex = get(selectedSuggestion);
@@ -325,29 +202,12 @@ async function applySuggestion(): Promise<void> {
     return;
   }
 
-  // Has suggestions or no validate function - clear editing state and search
-  set(suggestionBeingEdited, undefined);
+  cancelEditSuggestion();
   set(selectedSuggestion, 0);
   set(search, '');
 }
 
-onMounted(() => {
-  get(input).onTabDown = function (e: KeyboardEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-    moveSuggestion(false);
-  };
-  get(input).onEnterDown = function (e: KeyboardEvent) {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-});
-
-watch(search, () => {
-  set(selectedSuggestion, 0);
-});
-
-function moveSuggestion(up: boolean) {
+function moveSuggestion(up: boolean): void {
   const total = get(selectedMatcher) ? get(suggestedFilter).total : get(filteredMatchers).length;
 
   let position = get(selectedSuggestion);
@@ -362,82 +222,26 @@ function moveSuggestion(up: boolean) {
   else set(selectedSuggestion, position);
 }
 
-// TODO: This is too specific for custom asset, move it!
-function getDisplayValue(suggestion: Suggestion) {
-  const value = suggestion.value;
-  if (typeof value === 'string')
-    return value;
-
-  return value.isCustomAsset ? value.name : value.symbol;
-}
-
-function getSuggestionText(suggestion: Suggestion) {
-  const operator = suggestion.exclude ? '!=' : '=';
-  const startSelection = suggestion.key.length + operator.length;
-  const value = getDisplayValue(suggestion);
-  return {
-    endSelection: startSelection + value.length,
-    startSelection,
-    text: `${suggestion.key}${operator}${value}`,
-  };
-}
-
-function restoreSelection(matches: MatchedKeywordWithBehaviour<any>): void {
-  const oldSelection = get(selection);
-  const newSelection: Suggestion[] = [];
-  Object.entries(matches).forEach(([key, value]) => {
-    const foundMatchers = matcherForKeyValue(key);
-
-    if (!(foundMatchers && value))
-      return;
-
-    const values = Array.isArray(value) ? value : [value];
-    const asset = 'asset' in foundMatchers;
-    const boolean = 'boolean' in foundMatchers;
-
-    values.forEach((value) => {
-      let deserializedValue = null;
-      if (asset) {
-        const prevAssetSelection = oldSelection.find(({ key }) => key === foundMatchers.key);
-        if (prevAssetSelection)
-          deserializedValue = prevAssetSelection.value;
-      }
-
-      let exclude = false;
-      if (!deserializedValue) {
-        if (boolean || typeof value === 'boolean') {
-          deserializedValue = true;
-        }
-        else if (typeof value === 'string') {
-          let normalizedValue = value;
-          if (!asset && value.startsWith('!')) {
-            normalizedValue = value.substring(1);
-            exclude = true;
-          }
-          deserializedValue = foundMatchers.deserializer?.(normalizedValue) || normalizedValue;
-        }
-      }
-
-      newSelection.push({
-        asset,
-        exclude,
-        index: 0,
-        key: foundMatchers.key,
-        total: 1,
-        value: deserializedValue,
-      });
-    });
-  });
-
-  set(selection, newSelection);
-}
-
 onMounted(() => {
+  get(input).onTabDown = function (e: KeyboardEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    moveSuggestion(false);
+  };
+  get(input).onEnterDown = function (e: KeyboardEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
   restoreSelection(get(matches));
 });
 
-watch(matches, (matches) => {
-  restoreSelection(matches);
+watch(search, () => {
+  set(selectedSuggestion, 0);
+});
+
+watch(matches, (matchesData) => {
+  restoreSelection(matchesData);
 });
 
 const { t } = useI18n({ useScope: 'global' });
@@ -462,9 +266,10 @@ const { t } = useI18n({ useScope: 'global' });
           v-model:search-input="search"
           :model-value="selection"
           :class="{
-            '[&_input:not(.edit-input)]:hidden': !!suggestionBeingEdited,
             'animate-shake': shaking,
           }"
+          hide-selection-wrapper
+          :hide-search-input="!!suggestionBeingEdited"
           variant="outlined"
           dense
           :disabled="disabled"
@@ -483,23 +288,21 @@ const { t } = useI18n({ useScope: 'global' });
           @keydown.down.prevent="moveSuggestion(false)"
         >
           <template #selection="{ item, chipAttrs }">
-            <RuiChip
-              tile
-              size="sm"
-              class="font-medium !py-0"
-              clickable
-              closeable
-              v-bind="chipAttrs"
-              @click="clickItem(item)"
-            >
-              <SuggestedItem
-                chip
-                :edit-mode="isSuggestionBeingEdited(item)"
-                :suggestion="item"
-                @cancel-edit="cancelEditSuggestion($event)"
-                @update:search="updateEditSuggestionSearch($event)"
-              />
-            </RuiChip>
+            <SelectionChip
+              v-model:expanded-group-key="expandedGroupKey"
+              :item="item"
+              :chip-attrs="chipAttrs"
+              :display-type="getChipDisplayType(item)"
+              :edit-mode="isSuggestionBeingEdited(item)"
+              :overflow-count="getGroupedOverflowCount(item)"
+              :grouped-items="getGroupedItemsForKey(item)"
+              @click-item="clickItem($event)"
+              @cancel-edit="cancelEditSuggestion($event)"
+              @update:search="updateEditSuggestionSearch($event)"
+              @toggle-group-menu="toggleGroupMenu($event)"
+              @remove-all-items="removeAllItemsForKey($event)"
+              @remove-grouped-item="removeGroupedItem($event)"
+            />
           </template>
           <template #no-data>
             <FilterDropdown

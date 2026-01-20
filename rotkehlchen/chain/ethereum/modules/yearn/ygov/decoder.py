@@ -54,7 +54,7 @@ class YearnygovDecoder(EvmDecoderInterface):
             ):
                 event.counterparty = CPT_YGOV
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.notes = f'Withdraw {event.amount} YFI reward from ygov.finance'
                 break
 
@@ -93,7 +93,7 @@ class YearnygovDecoder(EvmDecoderInterface):
             ):
                 event.counterparty = CPT_YGOV
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.notes = f'Deposit {event.amount} yDAI+yUSDC+yUSDT+yTUSD in ygov.finance'
                 break
 

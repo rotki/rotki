@@ -43,6 +43,8 @@ from rotkehlchen.db.schema import DB_CREATE_USER_NOTES
 from rotkehlchen.db.settings import (
     DEFAULT_ACTIVE_MODULES,
     DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
+    DEFAULT_ASSET_MOVEMENT_AMOUNT_TOLERANCE,
+    DEFAULT_ASSET_MOVEMENT_TIME_RANGE,
     DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS,
     DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES,
     DEFAULT_AUTO_DETECT_TOKENS,
@@ -541,6 +543,9 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'auto_detect_tokens': DEFAULT_AUTO_DETECT_TOKENS,
         'csv_export_delimiter': DEFAULT_CSV_EXPORT_DELIMITER,
         'events_processing_frequency': DEFAULT_EVENTS_PROCESSING_FREQUENCY,
+        'asset_movement_amount_tolerance': DEFAULT_ASSET_MOVEMENT_AMOUNT_TOLERANCE,
+        'asset_movement_time_range': DEFAULT_ASSET_MOVEMENT_TIME_RANGE,
+        'suppress_missing_key_msg_services': [],
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 

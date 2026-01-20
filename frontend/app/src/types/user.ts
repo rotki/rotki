@@ -2,6 +2,7 @@ import type { ToSnakeCase } from '@/types/common';
 import { NumericString } from '@rotki/common';
 import { z } from 'zod/v4';
 import { Constraints } from '@/data/constraints';
+import { Defaults } from '@/data/defaults';
 import { useCurrencies } from '@/types/currencies';
 import { Exchange, KrakenAccountType } from '@/types/exchanges';
 import { ModuleEnum } from '@/types/modules';
@@ -19,10 +20,30 @@ export const OtherSettings = z.object({
 
 export type OtherSettings = z.infer<typeof OtherSettings>;
 
+export const SuppressibleMissingKeyService = {
+  BEACONCHAIN: 'beaconchain',
+  ETHERSCAN: 'etherscan',
+  HELIUS: 'helius',
+  THEGRAPH: 'thegraph',
+} as const;
+
+export const SuppressibleMissingKeyServiceEnum = z.enum([
+  SuppressibleMissingKeyService.BEACONCHAIN,
+  SuppressibleMissingKeyService.ETHERSCAN,
+  SuppressibleMissingKeyService.HELIUS,
+  SuppressibleMissingKeyService.THEGRAPH,
+]);
+
+export type SuppressibleMissingKeyService = z.infer<typeof SuppressibleMissingKeyServiceEnum>;
+
+export const SUPPRESSIBLE_SERVICES: SuppressibleMissingKeyService[] = Object.values(SuppressibleMissingKeyService);
+
 const GeneralSettings = z.object({
   activeModules: z.array(ModuleEnum),
   addressNamePriority: z.array(AddressNamePriorityEnum),
   askUserUponSizeDiscrepancy: z.boolean(),
+  assetMovementAmountTolerance: z.string().default(Defaults.ASSET_MOVEMENT_AMOUNT_TOLERANCE),
+  assetMovementTimeRange: z.number().int().min(1).default(Defaults.ASSET_MOVEMENT_TIME_RANGE),
   autoCreateCalendarReminders: z.boolean(),
   autoDeleteCalendarEntries: z.boolean(),
   autoDetectTokens: z.boolean(),
@@ -57,6 +78,7 @@ const GeneralSettings = z.object({
   readTimeout: z.number().min(1),
   ssfGraphMultiplier: z.number().default(0),
   submitUsageAnalytics: z.boolean(),
+  suppressMissingKeyMsgServices: z.array(SuppressibleMissingKeyServiceEnum),
   treatEth2AsEth: z.boolean(),
   uiFloatingPrecision: z.number(),
 });
@@ -143,6 +165,8 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     activeModules: settings.activeModules,
     addressNamePriority: settings.addressNamePriority,
     askUserUponSizeDiscrepancy: settings.askUserUponSizeDiscrepancy,
+    assetMovementAmountTolerance: settings.assetMovementAmountTolerance,
+    assetMovementTimeRange: settings.assetMovementTimeRange,
     autoCreateCalendarReminders: settings.autoCreateCalendarReminders,
     autoDeleteCalendarEntries: settings.autoDeleteCalendarEntries,
     autoDetectTokens: settings.autoDetectTokens,
@@ -171,6 +195,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     readTimeout: settings.readTimeout,
     ssfGraphMultiplier: settings.ssfGraphMultiplier,
     submitUsageAnalytics: settings.submitUsageAnalytics,
+    suppressMissingKeyMsgServices: settings.suppressMissingKeyMsgServices,
     treatEth2AsEth: settings.treatEth2AsEth,
     uiFloatingPrecision: settings.uiFloatingPrecision,
   };

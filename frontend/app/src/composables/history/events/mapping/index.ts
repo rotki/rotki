@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { ActionDataEntry } from '@/types/action';
 import type {
   HistoryEventCategoryDetailWithId,

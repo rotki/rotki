@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset, UnderlyingToken
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -11,11 +11,16 @@ from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_GMX, A_USDC, A_WETH_ARB, A_WETH_BASE
+from rotkehlchen.globaldb.cache import (
+    globaldb_set_general_cache_values,
+)
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
+    CacheType,
     ChainID,
     FVal,
     Location,
@@ -35,6 +40,30 @@ if TYPE_CHECKING:
 @pytest.fixture(name='beefy_cache')
 def _beefy_cache(database: 'DBHandler') -> None:
     """Fixture that preloads beefy finance's vaults."""
+    cache_entries = [
+        ','.join((
+            string_to_evm_address('0x81F040E82aae01f3921A1c1225C86ce5C57C218b'),
+            string_to_evm_address('0x40D16FC0246aD3160Ccc09B8D0D3A2cD28aE6C2f'),
+            '0',
+        )),
+        ','.join((
+            string_to_evm_address('0xD81eaAE8E6195e67695bE9aC447c9D6214CB717A'),
+            string_to_evm_address('0x5018BE882DccE5E3F2f3B0913AE2096B9b3fB61f'),
+            '0',
+        )),
+        ','.join((
+            string_to_evm_address('0xbd313b13ed794B86Bd161885F8e170769E0e68b2'),
+            string_to_evm_address('0x46EA5993fdDC27E4f770eFfB6921F401101Cbd59'),
+            '1',
+        )),
+
+    ]
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BEEFY_VAULTS, str(ChainID.ETHEREUM.value)),
+            values=cache_entries,
+        )
     get_or_create_evm_token(
         userdb=database,
         evm_address=string_to_evm_address('0x81F040E82aae01f3921A1c1225C86ce5C57C218b'),
@@ -53,6 +82,19 @@ def _beefy_cache(database: 'DBHandler') -> None:
         decimals=18,
         protocol=CPT_BEEFY_FINANCE,
     )
+
+
+def _set_beefy_cache(chain_id: ChainID, entries: list[tuple[str, str, bool]]) -> None:
+    cache_entries = [
+        f'{vault},{underlying},{"1" if is_legacy else "0"}'
+        for vault, underlying, is_legacy in entries
+    ]
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BEEFY_VAULTS, str(chain_id.value)),
+            values=cache_entries,
+        )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -309,6 +351,10 @@ def test_deposit_to_beefy_morpho_vault(
             weight=ONE,
         )],
     )
+    _set_beefy_cache(
+        chain_id=ChainID.BASE,
+        entries=[(beefy_vault.evm_address, base_inquirer.wrapped_native_token.evm_address, False)],
+    )
     tx_hash = deserialize_evm_tx_hash('0x9ec67f14375ce96036b23f4b13c38dcee6d74973d4be0ba81c775674450da340')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
@@ -385,6 +431,10 @@ def test_withdrawal_from_beefy_clm_vault(
             token_kind=TokenKind.ERC20,
             weight=ONE,
         )],
+    )
+    _set_beefy_cache(
+        chain_id=ChainID.ARBITRUM_ONE,
+        entries=[(rcow_token.evm_address, cow_token.evm_address, False)],
     )
     tx_hash = deserialize_evm_tx_hash('0xc964a5c62d7ce489e8d21d5a222bebbb11fccd802fe250cf66118a17f06e9ee5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
@@ -622,6 +672,10 @@ def test_withdrawal_from_beefy_receiving_eth(
         decimals=18,
         protocol=CPT_BEEFY_FINANCE,
     )
+    _set_beefy_cache(
+        chain_id=ChainID.OPTIMISM,
+        entries=[(cow_token.evm_address, optimism_inquirer.wrapped_native_token.evm_address, False)],  # noqa: E501
+    )
     tx_hash = deserialize_evm_tx_hash('0x1fb86d2bcbccde112422984862ac5ed4f88a2414b86a740ed64ea082b099ee2a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
@@ -678,3 +732,20 @@ def test_withdrawal_from_beefy_receiving_eth(
         counterparty=CPT_BEEFY_FINANCE,
         address=string_to_evm_address('0xE82343A116d2179F197111D92f9B53611B43C01c'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x356a14285c8D2d351682D6E6fEF0213ddEd8Abad']])
+def test_legacy_boost_exit(ethereum_inquirer, ethereum_accounts, beefy_cache):
+    tx_hash = deserialize_evm_tx_hash('0x79be37675ed545796804fcb146cb7ba08915d6c032fe99cb8005a877dc9974b4')  # noqa: E501
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+    )
+    # TODO @yabirgb(#11317): Fix the beefy decoder to process correctly boost exits
+    legacy_vault = EvmToken('eip155:1/erc20:0xbd313b13ed794B86Bd161885F8e170769E0e68b2')
+    assert (
+        len(legacy_vault.underlying_tokens) == 1 and
+        legacy_vault.underlying_tokens[0].address == '0x46EA5993fdDC27E4f770eFfB6921F401101Cbd59'
+    )
+    assert legacy_vault.name == 'Reward Moo Curve ShezETH-ETH'

@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ModelRef } from 'vue';
+import type { MaybeRef, ModelRef } from 'vue';
 
 export function useFormStateWatcher(
   states: Record<string, MaybeRef<any>>,

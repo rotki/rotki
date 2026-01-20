@@ -1,6 +1,9 @@
 import type { LogService } from '@electron/main/log-service';
-import type { BackendCode, OAuthResult } from '@shared/ipc';
+import type { BackendCode, OAuthResult, StartupError } from '@shared/ipc';
+import fs from 'node:fs';
+import path from 'node:path';
 import process from 'node:process';
+import { IpcCommands } from '@electron/ipc-commands';
 import { ContextMenuHandler } from '@electron/main/context-menu-handler';
 import { createProtocol } from '@electron/main/create-protocol';
 import { NavigationHandler } from '@electron/main/navigation-handler';
@@ -24,7 +27,10 @@ export class WindowManager {
 
   private readonly isMac = process.platform === 'darwin';
   private forceQuit: boolean = false;
-  private notificationInterval?: number;
+
+  // Startup error state management
+  private startupError: StartupError | null = null;
+  private rendererReady: boolean = false;
 
   private listener: WindowManagerListener | null = null;
 
@@ -57,7 +63,7 @@ export class WindowManager {
     this.setupEventListeners(this.window);
     this.navigation.setupNavigationEvents(this.window.webContents);
     this.contextMenuHandler.setupContextMenu(this.window);
-    this.listenForAckMessages();
+    this.setupStartupErrorHandlers();
 
     return this.window;
   }
@@ -99,6 +105,8 @@ export class WindowManager {
   private async loadContent(window: BrowserWindow): Promise<void> {
     const devServerUrl = import.meta.env.VITE_DEV_SERVER_URL;
     if (devServerUrl) {
+      // Load extensions before the page to avoid interfering with dynamic imports
+      await this.loadDevExtensions(window);
       // Load the url of the dev server if in development mode with retry logic
       await this.loadUrlWithRetry(window, devServerUrl);
       if (process.env.ENABLE_DEV_TOOLS)
@@ -109,6 +117,28 @@ export class WindowManager {
     createProtocol('app');
     // Load the index.html when not in development
     await window.loadURL('app://localhost/index.html');
+  }
+
+  private async loadDevExtensions(window: BrowserWindow): Promise<void> {
+    // Path from dist/ to tools/chrome-task-tracker
+    // import.meta.dirname points to dist/ in dev mode
+    const extensionPath = path.resolve(import.meta.dirname, '..', '..', '..', 'tools', 'chrome-task-tracker');
+
+    // Check if the extension directory exists
+    if (!fs.existsSync(extensionPath)) {
+      this.logger.debug(`Task tracker extension not found at: ${extensionPath}`);
+      return;
+    }
+
+    try {
+      const extension = await window.webContents.session.extensions.loadExtension(extensionPath, {
+        allowFileAccess: true,
+      });
+      this.logger.info(`Loaded dev extension: ${extension.name} from ${extensionPath}`);
+    }
+    catch (error) {
+      this.logger.warn('Failed to load task tracker extension:', error);
+    }
   }
 
   private async loadUrlWithRetry(window: BrowserWindow, url: string, maxRetries: number = 5): Promise<void> {
@@ -183,7 +213,13 @@ export class WindowManager {
   }
 
   cleanup() {
-    this.clearPending();
+    // Remove startup error IPC handlers
+    ipcMain.removeAllListeners(IpcCommands.SYNC_GET_STARTUP_ERROR);
+    ipcMain.removeAllListeners(IpcCommands.RENDERER_READY);
+    // Reset startup error state
+    this.startupError = null;
+    this.rendererReady = false;
+    // Clean up window listeners
     this.window?.removeAllListeners('show');
     this.window?.removeAllListeners('hide');
     this.window?.removeAllListeners('close');
@@ -197,39 +233,65 @@ export class WindowManager {
     window.on('closed', () => this.handleClosed());
   }
 
-  listenForAckMessages() {
-    // Listen for ack messages from the renderer process
-    ipcMain.on('ack', (_event, ...args) => {
-      if (args[0] === 1)
-        this.clearPending();
-      else
-        this.logger.warn(`Warning: unknown ack code ${args[0]}`);
+  /**
+   * Sets up IPC handlers for startup error management.
+   * - SYNC_GET_STARTUP_ERROR: Synchronous handler for renderer to fetch current error state
+   * - RENDERER_READY: Signal from renderer that it's ready to receive async messages
+   */
+  private setupStartupErrorHandlers(): void {
+    // Sync handler - renderer fetches on init to get any error that occurred before ready
+    ipcMain.on(IpcCommands.SYNC_GET_STARTUP_ERROR, (event) => {
+      event.returnValue = this.startupError;
+    });
+
+    // Ready signal handler - renderer is now listening for async messages
+    ipcMain.on(IpcCommands.RENDERER_READY, () => {
+      this.onRendererReady();
     });
   }
 
-  private clearPending() {
-    if (this.notificationInterval)
-      clearInterval(this.notificationInterval);
+  /**
+   * Called when renderer signals it's ready to receive async messages.
+   * If an error occurred before ready, push it now.
+   */
+  private onRendererReady(): void {
+    this.rendererReady = true;
+    // Push any error that occurred before renderer was ready
+    if (this.startupError) {
+      this.pushStartupError();
+    }
   }
 
-  notify(
+  /**
+   * Push the current startup error to the renderer via async IPC.
+   */
+  private pushStartupError(): void {
+    if (this.startupError && this.window?.webContents) {
+      try {
+        this.window.webContents.send(IpcCommands.STARTUP_ERROR, this.startupError);
+      }
+      catch (error) {
+        this.logger.error('Failed to push startup error to renderer:', error);
+      }
+    }
+  }
+
+  /**
+   * Store a startup error and notify the renderer.
+   * If the renderer is already ready, push immediately via async IPC.
+   * If not ready, the error will be fetched synchronously when the renderer initializes.
+   */
+  setStartupError(
     backendOutput: string | Error,
     code: BackendCode,
   ): void {
-    this.clearPending();
-    // Notify the main window every 2 seconds until it acks the notification
-    this.notificationInterval = setInterval(() => {
-      /**
-       * There is a possibility that the window has been already disposed and this
-       * will result in an exception. In that case, we just catch and clear the notifier
-       */
-      try {
-        this.window?.webContents.send('failed', backendOutput, code);
-      }
-      catch {
-        clearInterval(this.notificationInterval);
-      }
-    }, 2000) as unknown as number;
+    const message = typeof backendOutput === 'string' ? backendOutput : backendOutput.message;
+    this.startupError = { message, code };
+
+    // If renderer is already ready, push immediately
+    if (this.rendererReady) {
+      this.pushStartupError();
+    }
   }
 
   sendOAuthCallback(oAuthResult: OAuthResult): void {

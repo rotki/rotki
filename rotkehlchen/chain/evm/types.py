@@ -159,14 +159,17 @@ DEFAULT_EVM_INDEXER_ORDER: Final = (
     EvmIndexer.BLOCKSCOUT,
     EvmIndexer.ROUTESCAN,
 )
-# list based on https://info.etherscan.com/whats-changing-in-the-free-api-tier-coverage-and-why/
-# might need adjustment in the future.
-CHAINS_WITH_PAID_ETHERSCAN: Final = {ChainID.BASE, ChainID.OPTIMISM, ChainID.BINANCE_SC}
+# Special order for chains that Etherscan doesn't currently support in the free tier
+# https://info.etherscan.com/whats-changing-in-the-free-api-tier-coverage-and-why/
 BLOCKSCOUT_PRIORITY_ORDER: Final = (
     EvmIndexer.BLOCKSCOUT,
-    EvmIndexer.ETHERSCAN,
     EvmIndexer.ROUTESCAN,
+    EvmIndexer.ETHERSCAN,
 )
 DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
-    order=dict.fromkeys(CHAINS_WITH_PAID_ETHERSCAN, BLOCKSCOUT_PRIORITY_ORDER),
+    order={
+        ChainID.BASE: BLOCKSCOUT_PRIORITY_ORDER,
+        ChainID.OPTIMISM: BLOCKSCOUT_PRIORITY_ORDER,
+        ChainID.BINANCE_SC: (EvmIndexer.ETHERSCAN,),  # Blockscout and Routescan do not support BSC (will only work with premium etherscan)  # noqa: E501
+    },
 )

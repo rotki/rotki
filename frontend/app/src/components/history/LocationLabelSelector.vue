@@ -14,12 +14,26 @@ import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
 defineOptions({
   name: 'LocationLabelSelector',
+  inheritAttrs: false,
 });
 
-const modelValue = defineModel<string[]>({ required: true });
+const modelValue = defineModel<string[] | string>({
+  required: true,
+  set: (val: string[] | string | undefined) => val ?? '',
+});
+
+const props = withDefaults(defineProps<{
+  options?: LocationLabel[];
+  noTruncate?: boolean;
+}>(), {
+  options: undefined,
+  noTruncate: false,
+});
 
 const { t } = useI18n({ useScope: 'global' });
-const { locationLabels: locationLabelOptions } = storeToRefs(useHistoryStore());
+const { locationLabels: storeLocationLabels } = storeToRefs(useHistoryStore());
+
+const locationLabelOptions = computed<LocationLabel[]>(() => props.options ?? get(storeLocationLabels));
 const { allTxChainsInfo, matchChain } = useSupportedChains();
 const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
 
@@ -102,6 +116,7 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
       :size="dense ? '16px' : '24px'"
       :account="{ address: item.locationLabel, chain: getBlockchainLocation(item.location)! }"
       hide-chain-icon
+      :no-truncate="noTruncate"
     />
     <div
       v-else
@@ -120,18 +135,15 @@ const [DefineLocationItem, ReuseLocationItem] = createReusableTemplate<{ item: L
   </DefineLocationItem>
   <RuiAutoComplete
     v-model="modelValue"
-    class="w-[18rem]"
     :options="locationLabelOptions"
-    hide-details
     :item-height="40"
-    dense
     clearable
-    chips
     key-attr="locationLabel"
     text-attr="locationLabel"
     :filter="filter"
     :label="t('transactions.filter.account')"
     variant="outlined"
+    v-bind="$attrs"
   >
     <template #selection="{ item }">
       <ReuseLocationItem

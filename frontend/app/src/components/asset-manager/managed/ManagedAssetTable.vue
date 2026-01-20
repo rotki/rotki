@@ -5,7 +5,7 @@ import type { Filters, Matcher } from '@/composables/filters/assets';
 import type { Collection } from '@/types/collection';
 import AssetUnderlyingTokens from '@/components/asset-manager/AssetUnderlyingTokens.vue';
 import ManagedAssetActions from '@/components/asset-manager/managed/ManagedAssetActions.vue';
-import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
+import ManagedAssetIgnoreSwitch from '@/components/asset-manager/managed/ManagedAssetIgnoreSwitch.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import CopyButton from '@/components/helper/CopyButton.vue';
@@ -55,14 +55,15 @@ const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
 // Use composables
 const {
-  isAssetWhitelisted,
-  isSpamAsset,
+  loadingIgnore,
+  loadingSpam,
+  loadingWhitelist,
   massIgnore,
   massSpam,
   toggleIgnoreAsset,
   toggleSpam,
   toggleWhitelistAsset,
-  useIsAssetIgnored,
+  useIsAssetWhitelisted,
 } = useManagedAssetOperations(() => emit('refresh'), ignoredFilter, selected);
 
 const { cols, data, expand, isExpanded } = useManagedAssetTable(
@@ -72,9 +73,9 @@ const { cols, data, expand, isExpanded } = useManagedAssetTable(
   collection,
 );
 
-const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset, showMoreOptions } = useAssetDisplayHelpers(
+const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAssetDisplayHelpers(
   collection,
-  isAssetWhitelisted,
+  useIsAssetWhitelisted,
 );
 
 const { fetchIgnoredAssets } = useIgnoredAssetsStore();
@@ -145,36 +146,15 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
         {{ formatType(row.assetType) }}
       </template>
       <template #item.ignored="{ row }">
-        <div
+        <ManagedAssetIgnoreSwitch
           v-if="canBeIgnored(row)"
-          class="flex justify-start items-center gap-2"
-        >
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-            tooltip-class="max-w-[10rem]"
-            :disabled="!isSpamAsset(row)"
-          >
-            <template #activator>
-              <RuiSwitch
-                color="primary"
-                hide-details
-                :disabled="isSpamAsset(row)"
-                :model-value="useIsAssetIgnored(row.identifier).value"
-                @update:model-value="toggleIgnoreAsset(row)"
-              />
-            </template>
-            {{ t('ignore.spam.hint') }}
-          </RuiTooltip>
-
-          <ManagedAssetIgnoringMore
-            v-if="showMoreOptions(row)"
-            :identifier="row.identifier"
-            :is-spam="isSpamAsset(row)"
-            @toggle-whitelist="toggleWhitelistAsset(row.identifier)"
-            @toggle-spam="toggleSpam(row)"
-          />
-        </div>
+          :asset="row"
+          :loading="loadingIgnore === row.identifier"
+          :menu-loading="loadingWhitelist === row.identifier || loadingSpam === row.identifier"
+          @toggle-ignore="toggleIgnoreAsset(row)"
+          @toggle-whitelist="toggleWhitelistAsset(row.identifier)"
+          @toggle-spam="toggleSpam(row)"
+        />
       </template>
       <template #item.actions="{ row }">
         <RowActions

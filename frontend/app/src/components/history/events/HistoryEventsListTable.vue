@@ -14,6 +14,7 @@ interface HistoryEventsListTableProps {
   loading: boolean;
   total: number;
   hideActions?: boolean;
+  hideIgnoredAssets?: boolean;
   highlightedIdentifiers?: string[];
   selection?: UseHistoryEventsSelectionModeReturn;
 }
@@ -52,8 +53,10 @@ function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEnt
           :is-last="index === events.length - 1"
           :all-events="findAllEventsFromArrayItem(item) || item"
           :hide-actions="hideActions"
+          :hide-ignored-assets="hideIgnoredAssets"
           :highlighted-identifiers="highlightedIdentifiers"
           :selection="selection"
+          :has-ignored-assets="eventGroup.hasIgnoredAssets"
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"

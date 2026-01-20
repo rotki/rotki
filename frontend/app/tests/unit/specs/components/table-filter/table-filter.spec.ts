@@ -44,7 +44,7 @@ describe('table-filter/TableFilter.vue', () => {
     TYPE = 'type',
   }
 
-  const createMatchers = (startValidate: (value: string) => boolean = () => true): StringSuggestionMatcher<FilterKeys, FilterKeyValues>[] => [
+  const createMatchers = (startValidate: (value: string) => boolean = () => true, typeSuggestions: string[] = ['type 1', 'type 2', 'type 3']): StringSuggestionMatcher<FilterKeys, FilterKeyValues>[] => [
     {
       key: FilterKeys.START,
       keyValue: FilterKeyValues.START,
@@ -60,7 +60,7 @@ describe('table-filter/TableFilter.vue', () => {
       string: true,
       allowExclusion: true,
       multiple: true,
-      suggestions: () => ['type 1', 'type 2', 'type 3'],
+      suggestions: () => typeSuggestions,
       validate: () => true,
     },
   ];
@@ -127,7 +127,7 @@ describe('table-filter/TableFilter.vue', () => {
     await wrapper.find('[data-cy=suggestions] > button:first-child').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button]> span').text()).toBe('type=type 1');
+    expect(wrapper.find('[data-id="activator"] .contents:nth-child(1) > [role=button] > span').text()).toBe('type=type 1');
 
     expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ type: ['type 1'] }]);
 
@@ -138,19 +138,19 @@ describe('table-filter/TableFilter.vue', () => {
     await wrapper.find('[data-cy=suggestions] > button:first-child').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-id="activator"] .flex:nth-child(2) > [role=button] > span').text()).toBe('type=type 2');
+    expect(wrapper.find('[data-id="activator"] .contents:nth-child(2) > [role=button] > span').text()).toBe('type=type 2');
 
     expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ type: ['type 1', 'type 2'] }]);
 
     // Remove first selected item (type 1)
-    await wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button] > button').trigger('click');
+    await wrapper.find('[data-id="activator"] .contents:nth-child(1) > [role=button] > button').trigger('click');
 
     await vi.advanceTimersToNextTimerAsync();
 
     expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ type: ['type 2'] }]);
 
     // Click selected item remains (type 2), set it to text field
-    await wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button]').trigger('click');
+    await wrapper.find('[data-id="activator"] .contents:nth-child(1) > [role=button]').trigger('click');
 
     await vi.advanceTimersToNextTimerAsync();
 
@@ -187,7 +187,7 @@ describe('table-filter/TableFilter.vue', () => {
     await wrapper.find('[data-cy=suggestions] > button:first-child').trigger('click');
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button] > span').text()).toBe('type!=type 1');
+    expect(wrapper.find('[data-id="activator"] .contents:nth-child(1) > [role=button] > span').text()).toBe('type!=type 1');
 
     expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ type: ['!type 1'] }]);
   });
@@ -204,8 +204,8 @@ describe('table-filter/TableFilter.vue', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button] > span').text()).toBe('type=type 1');
-    expect(wrapper.find('[data-id="activator"] .flex:nth-child(2) > [role=button] > span').text()).toBe('type=type 2');
+    expect(wrapper.find('[data-id="activator"] .contents:nth-child(1) > [role=button] > span').text()).toBe('type=type 1');
+    expect(wrapper.find('[data-id="activator"] .contents:nth-child(2) > [role=button] > span').text()).toBe('type=type 2');
   });
 
   it('restore selection with exclusion', async () => {
@@ -220,7 +220,7 @@ describe('table-filter/TableFilter.vue', () => {
 
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[data-id="activator"] .flex:nth-child(1) > [role=button] > span').text()).toBe('type!=type 1');
+    expect(wrapper.find('[data-id="activator"] .contents:nth-child(1) > [role=button] > span').text()).toBe('type!=type 1');
   });
 
   it('shakes and keeps search when validation fails', async () => {
@@ -291,5 +291,124 @@ describe('table-filter/TableFilter.vue', () => {
 
     // Filter should be emitted
     expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ start: 'valid' }]);
+  });
+
+  describe('chip grouping', () => {
+    it('groups chips when more than 3 items with same key', async () => {
+      wrapper = createWrapper({
+        props: {
+          matchers,
+          matches: {
+            type: ['type 1', 'type 2', 'type 3', 'type 4', 'type 5'],
+          },
+        },
+      });
+
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Should show the first item with overflow badge
+      const firstChip = wrapper.find('[data-id="activator"] .contents:nth-child(1) [role=button]');
+      expect(firstChip.exists()).toBe(true);
+
+      // Should show overflow count badge (4+ since first item is shown separately)
+      const badge = wrapper.find('[data-id="activator"] .contents:nth-child(1) span.bg-rui-primary');
+      expect(badge.exists()).toBe(true);
+      expect(badge.text()).toBe('4+');
+
+      // Hidden items should have element [data-testid="hidden-selection-chip"]
+      const hiddenItems = wrapper.findAll('[data-id="activator"] .contents > [data-testid=hidden-selection-chip]');
+      expect(hiddenItems.length).toBe(4);
+    });
+
+    it('does not group chips when 3 or fewer items with same key', async () => {
+      wrapper = createWrapper({
+        props: {
+          matchers,
+          matches: {
+            type: ['type 1', 'type 2', 'type 3'],
+          },
+        },
+      });
+
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Should show all 3 items as normal chips
+      expect(wrapper.find('[data-id="activator"] .contents:nth-child(1) > [role=button] > span').text()).toBe('type=type 1');
+      expect(wrapper.find('[data-id="activator"] .contents:nth-child(2) > [role=button] > span').text()).toBe('type=type 2');
+      expect(wrapper.find('[data-id="activator"] .contents:nth-child(3) > [role=button] > span').text()).toBe('type=type 3');
+
+      // Should not have overflow badge
+      const badge = wrapper.find('[data-id="activator"] span.bg-rui-primary');
+      expect(badge.exists()).toBe(false);
+    });
+
+    it('opens menu when clicking overflow badge', async () => {
+      wrapper = createWrapper({
+        props: {
+          matchers,
+          matches: {
+            type: ['type 1', 'type 2', 'type 3', 'type 4'],
+          },
+        },
+      });
+
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Click the overflow badge to open menu
+      const badge = wrapper.find('[data-id="activator"] .contents:nth-child(1) span.bg-rui-primary');
+      await badge.trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Menu should be open with all items
+      const menuItems = wrapper.findAll('.flex.flex-wrap.gap-1.p-2 [role=button]');
+      expect(menuItems.length).toBe(4);
+    });
+
+    it('removes all items for key when close button clicked', async () => {
+      wrapper = createWrapper({
+        props: {
+          matchers,
+          matches: {
+            type: ['type 1', 'type 2', 'type 3', 'type 4'],
+          },
+        },
+      });
+
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Click the close button (remove all)
+      const closeButton = wrapper.find('[data-id="activator"] .contents:nth-child(1) [role=button] button[type=button]');
+      await closeButton.trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Should emit empty matches for type
+      expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{}]);
+    });
+
+    it('removes individual item from group menu', async () => {
+      wrapper = createWrapper({
+        props: {
+          matchers,
+          matches: {
+            type: ['type 1', 'type 2', 'type 3', 'type 4'],
+          },
+        },
+      });
+
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Click the overflow badge to open menu
+      const badge = wrapper.find('[data-id="activator"] .contents:nth-child(1) span.bg-rui-primary');
+      await badge.trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Remove the first item from the menu
+      const menuItemCloseButton = wrapper.find('.flex.flex-wrap.gap-1.p-2 [role=button] button');
+      await menuItemCloseButton.trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Should emit matches without the removed item
+      expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ type: ['type 2', 'type 3', 'type 4'] }]);
+    });
   });
 });

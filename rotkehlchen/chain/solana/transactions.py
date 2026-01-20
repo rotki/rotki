@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Final, Literal, overload
 
 from solders.solders import Signature
 
@@ -133,34 +133,85 @@ class SolanaTransactions:
             status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
         )
 
+    @overload
     def query_transactions_for_signatures(
             self,
             signatures: list[Signature],
             relevant_address: SolanaAddress,
+            return_queried_hashes: Literal[True],
+    ) -> list[Signature]:
+        ...
+
+    @overload
+    def query_transactions_for_signatures(
+            self,
+            signatures: list[Signature],
+            relevant_address: SolanaAddress,
+            return_queried_hashes: Literal[False] = False,
     ) -> None:
+        ...
+
+    @overload
+    def query_transactions_for_signatures(
+            self,
+            signatures: list[Signature],
+            relevant_address: SolanaAddress,
+            return_queried_hashes: bool = False,
+    ) -> list[Signature] | None:
+        ...
+
+    def query_transactions_for_signatures(
+            self,
+            signatures: list[Signature],
+            relevant_address: SolanaAddress,
+            return_queried_hashes: bool = False,
+    ) -> list[Signature] | None:
         """Query the transactions for the given signatures from either Helius or the RPCs,
         and save them to the DB.
         """
         try:
-            self.helius.get_transactions(
-                signatures=[str(x) for x in signatures],
-                relevant_address=relevant_address,
-            )
+            if return_queried_hashes:
+                helius_signatures = self.helius.get_transactions(
+                    signatures=[str(x) for x in signatures],
+                    relevant_address=relevant_address,
+                    return_queried_hashes=True,
+                )
+            else:
+                self.helius.get_transactions(
+                    signatures=[str(x) for x in signatures],
+                    relevant_address=relevant_address,
+                )
+                helius_signatures = None
         except (RemoteError, MissingAPIKey) as e:
             log.debug(
                 f'Unable to query solana transactions from Helius due to {e!s} '
                 f'Falling back to querying from the RPCs for address {relevant_address}.',
             )
         else:
-            return
+            return helius_signatures
 
         solana_tx_db = DBSolanaTx(database=self.database)
+        queried_signatures: list[Signature] | None = [] if return_queried_hashes else None
         for chunk in get_chunks(signatures, RPC_TX_BATCH_SIZE):
+            existing_signatures: set[bytes] = set()
+            if queried_signatures is not None:
+                with self.database.conn.read_ctx() as cursor:
+                    existing_signatures = solana_tx_db.get_existing_signatures(
+                        cursor=cursor,
+                        signatures=[signature.to_bytes() for signature in chunk],
+                    )
+
             txs, token_accounts_mappings = [], {}
             for signature in chunk:
                 try:
                     tx, token_accounts_mapping = self.node_inquirer.get_transaction_for_signature(signature)  # noqa: E501
                     txs.append(tx)
+                    if queried_signatures is not None:
+                        signature_bytes_entry = tx.signature.to_bytes()
+                        if signature_bytes_entry in existing_signatures:
+                            continue
+                        queried_signatures.append(tx.signature)
+                        existing_signatures.add(signature_bytes_entry)
                     token_accounts_mappings.update(token_accounts_mapping)
                 except (RemoteError, DeserializationError) as e_:
                     log.error(
@@ -179,13 +230,35 @@ class SolanaTransactions:
                     write_cursor=write_cursor,
                     token_accounts_mappings=token_accounts_mappings,
                 )
+        return queried_signatures
+
+    @overload
+    def query_transactions_in_range(
+            self,
+            address: SolanaAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            return_queried_hashes: Literal[True],
+    ) -> list[Signature]:
+        ...
+
+    @overload
+    def query_transactions_in_range(
+            self,
+            address: SolanaAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            return_queried_hashes: Literal[False] = False,
+    ) -> None:
+        ...
 
     def query_transactions_in_range(
             self,
             address: SolanaAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> None:
+            return_queried_hashes: bool = False,
+    ) -> list[Signature] | None:
         """Query any missing transactions for the given address in the given range and
         save them to the DB.
 
@@ -194,6 +267,7 @@ class SolanaTransactions:
         present in the DB for one or both sides of the range, then we query all txs on that side
         to ensure we get all missed transactions for the given range.
 
+        Returns the signatures queried in this run when requested.
         May raise RemoteError if there is a problem querying an external service.
         """
         self._send_tx_status_message(
@@ -221,18 +295,26 @@ class SolanaTransactions:
                     before_sig = Signature(last_sig)
 
         existing_signatures = [Signature(x) for x, _ in existing_txs]
+        new_signatures: list[Signature] = []
         if len(sigs_to_query := [x for x in self.node_inquirer.query_tx_signatures_for_address(
             address=address,
             until=until_sig,
             before=before_sig,
         ) if x not in existing_signatures]) != 0:
-            self.query_transactions_for_signatures(
+            queried_signatures = self.query_transactions_for_signatures(
                 signatures=sigs_to_query,
                 relevant_address=address,
+                return_queried_hashes=return_queried_hashes,
             )
+            if queried_signatures:
+                new_signatures.extend(queried_signatures)
 
         self._send_tx_status_message(
             address=address,
             period=(start_ts, end_ts),
             status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
         )
+        if not return_queried_hashes:
+            return None
+
+        return new_signatures

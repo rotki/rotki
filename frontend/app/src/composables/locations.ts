@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLocationStore } from '@/store/locations';

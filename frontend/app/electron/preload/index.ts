@@ -1,4 +1,4 @@
-import type { ApiUrls, Credentials, Interop, Listeners, TrayUpdate } from '@shared/ipc';
+import type { ApiUrls, Credentials, Interop, Listeners, StartupError, TrayUpdate } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
 import { IpcCommands } from '@electron/ipc-commands';
 import { checkIfDevelopment } from '@shared/utils';
@@ -25,9 +25,9 @@ contextBridge.exposeInMainWorld('interop', {
   openDirectory: async (title: string) => ipcRenderer.invoke(IpcCommands.INVOKE_OPEN_DIRECTORY, title),
   premiumUserLoggedIn: (premiumUser: boolean) => ipcRenderer.send(IpcCommands.PREMIUM_LOGIN, premiumUser),
   setListeners(listeners: Listeners): void {
-    ipcRenderer.on('failed', (event, error, code) => {
-      listeners.onError(error, code);
-      ipcRenderer.send('ack', 1);
+    // Listen for startup errors pushed after renderer is ready
+    ipcRenderer.on(IpcCommands.STARTUP_ERROR, (_event, error: StartupError) => {
+      listeners.onError(error.message, error.code);
     });
 
     ipcRenderer.on(IpcCommands.REQUEST_RESTART, () => {
@@ -48,6 +48,9 @@ contextBridge.exposeInMainWorld('interop', {
         onOAuthCallback(oAuthResult);
       });
     }
+
+    // Signal to main process that renderer is ready for async messages
+    ipcRenderer.send(IpcCommands.RENDERER_READY);
   },
   debugSettings: isDevelopment ? (): DebugSettings | undefined => debugSettings : undefined,
   apiUrls: (): ApiUrls => ipcRenderer.sendSync(IpcCommands.SYNC_API_URL),
@@ -75,6 +78,8 @@ contextBridge.exposeInMainWorld('interop', {
   getPassword: async (username: string) => ipcRenderer.invoke(IpcCommands.INVOKE_GET_PASSWORD, username),
   clearPassword: async () => ipcRenderer.invoke(IpcCommands.INVOKE_CLEAR_PASSWORD),
   notifyUserLogout: () => ipcRenderer.send(IpcCommands.USER_LOGOUT),
+  // Synchronously get any startup error that occurred before renderer was ready
+  getStartupError: (): StartupError | null => ipcRenderer.sendSync(IpcCommands.SYNC_GET_STARTUP_ERROR),
 } satisfies Interop);
 
 // Initialize wallet bridge

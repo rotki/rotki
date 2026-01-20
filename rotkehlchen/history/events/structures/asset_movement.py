@@ -42,8 +42,9 @@ class AssetMovementExtraData(TypedDict):
     reference: NotRequired[str]
     # Internal use only. Used for matching the corresponding crypto_transaction. Removed before being saved to the DB.  # noqa: E501
     fee: NotRequired['FVal']
-    # blockchain where the transaction happened. We use string since
-    # it can be a non supported blockchain
+    # Blockchain that the funds are moving from/to. Simply a string since it could be unsupported.
+    # Note that if it is a supported chain, it should be a serialized SupportedBlockchain value
+    # so we can properly read the value during asset movement matching.
     blockchain: NotRequired[str]
     # Used when an asset movement is matched with another asset movement in exchange to exchange transfers.  # noqa: E501
     matched_asset_movement: NotRequired[dict[str, Any]]

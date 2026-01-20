@@ -108,6 +108,9 @@ export class Application {
   private async initialize() {
     this.registerAsDefaultProtocolHandler();
 
+    // Clear OAuth cookies on startup to ensure clean state between users
+    this.ipc.clearOAuthCookiesOnStartup();
+
     // Handle protocol URL if app was opened with one
     if (process.argv.length >= 2) {
       this.handleProtocolUrl(process.argv);
@@ -131,7 +134,7 @@ export class Application {
         this.logger.setLogLevel(options.loglevel ?? this.appConfig.isDev ? LogLevel.DEBUG : LogLevel.INFO);
         await this.processHandler.terminateProcesses(true);
         await this.processHandler.startProcesses(options, {
-          onProcessError: (message, code) => this.window.notify(message, code),
+          onProcessError: (message, code) => this.window.setStartupError(message, code),
         });
       },
       terminateSubprocesses: async (update = false) => {

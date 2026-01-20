@@ -32,7 +32,7 @@ Exchange asset movement events may now be manually matched with specific onchain
 
   - Finds possible matches for a given asset movement within the specified time range.
   - Required ``asset_movement`` parameter specifying the group identifier to find matches for.
-  - Optional ``time_range`` parameter specifying the time range in seconds to include. Defaults to 7200 (2 hours).
+  - Required ``time_range`` parameter specifying the time range in seconds to include.
   - Optional ``only_expected_assets`` parameter indicating whether to limit the possible matches to only events with assets in the same collection as the asset movement's asset. True by default.
   - Example: ``{"asset_movement": "ef2...69f", "time_range": 7200, "only_expected_assets": true}``
 
@@ -49,6 +49,12 @@ Exchange asset movement events may now be manually matched with specific onchain
 
   - New optional ``actual_group_identifier`` field in the response, containing the actual group identifier of the event as stored in the DB.
   - This change preserves the actual group identifier when asset movements are combined with the group of their matched event for display as a single unit in the frontend.
+
+* **New Settings** (new fields in both ``PUT`` and ``POST`` on ``/api/(version)/settings``)
+  - ``events_processing_frequency`` The frequency in seconds at which to process events and match asset movements. Must be >= 60 seconds. Default is 86400 (24 hours).
+  - ``asset_movement_amount_tolerance`` The tolerance value used when matching asset movement amounts with onchain events. Must be a positive decimal number. Default is ``"0.000001"``.
+  - ``asset_movement_time_range`` The time range on each side of the asset movement in which to check for possible matching events. Default is 3600 (1 hour).
+  - ``suppress_missing_key_msg_services`` A list of services for which the missing api key WS message should be suppressed. Empty list by default.
 
 Event/Group Identifier Renaming
 -------------------------------

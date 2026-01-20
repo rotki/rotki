@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { bigNumberify } from '@rotki/common';
 import { get, set } from '@vueuse/core';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
+import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
@@ -108,16 +108,14 @@ defineExpose({
       />
 
       <div class="text-rui-grey-400 flex justify-center gap-1 items-center text-sm font-medium pt-2">
-        <AmountDisplay
+        <FiatDisplay
           v-if="isAmountSelected"
-          force-currency
           :value="fiatValueToBigNumber"
-          show-currency="symbol"
         />
-        <AmountDisplay
+        <AssetAmountDisplay
           v-else
-          :value="amountToBigNumber"
           :asset="asset"
+          :amount="amountToBigNumber"
         />
         <RuiButton
           icon

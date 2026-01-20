@@ -12,10 +12,10 @@ export const serializer = {
 
 export const useDynamicMessages = createSharedComposable(() => {
   const branch = checkIfDevelopment() ? 'develop' : 'main';
-  const welcomeMessages = useSessionStorage<WelcomeSchema>('rotki.messages.welcome', null, {
+  const welcomeMessages = useSessionStorage<WelcomeSchema | null>('rotki.messages.welcome', null, {
     serializer,
   });
-  const dashboardMessages = useSessionStorage<DashboardSchema>('rotki.messages.dashboard', null, {
+  const dashboardMessages = useSessionStorage<DashboardSchema | null>('rotki.messages.dashboard', null, {
     serializer,
   });
 

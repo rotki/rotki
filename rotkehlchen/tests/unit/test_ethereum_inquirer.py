@@ -710,3 +710,11 @@ def test_contract_call_raises_on_non_checksum_token_address(ethereum_inquirer):
             method_name='tokens_balance',
             arguments=['0xBCaBdc5eBd28dC9d1629210f92D27171852eBa53', [token_address]],
         )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_is_contract_eip7702(ethereum_inquirer):
+    """Test is_contract returns False for EIP-7702 delegated account (nicholasyoder.eth)."""
+    assert ethereum_inquirer.is_contract(
+        address=string_to_evm_address('0x56a1A34F0d33788ebA53e2706854A37A5F275536'),
+    ) is False

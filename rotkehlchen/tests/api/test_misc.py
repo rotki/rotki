@@ -11,7 +11,8 @@ import requests
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
-from rotkehlchen.chain.evm.types import NodeName
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
@@ -384,6 +385,75 @@ def test_manage_nodes(rotkehlchen_api_server: 'APIServer') -> None:
             },
         )
         assert_proper_response(response)
+
+
+def test_rpc_nodes_is_archive_field(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that is_archive field is correctly returned for RPC nodes.
+
+    Tests all three cases:
+    - is_archive=True for connected archive node
+    - is_archive=False for connected non-archive node
+    - is_archive=None for node not currently connected
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    archive_node = WeightedNode(
+        identifier=100,
+        node_info=NodeName(
+            name='archive_node',
+            endpoint='https://archive.example.com',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        weight=FVal('0.3'),
+        active=True,
+    )
+    non_archive_node = WeightedNode(
+        identifier=101,
+        node_info=NodeName(
+            name='non_archive_node',
+            endpoint='https://non-archive.example.com',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        weight=FVal('0.3'),
+        active=True,
+    )
+    not_connected_node = WeightedNode(
+        identifier=102,
+        node_info=NodeName(
+            name='not_connected_node',
+            endpoint='https://not-connected.example.com',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        weight=FVal('0.3'),
+        active=True,
+    )
+
+    for node in (archive_node, non_archive_node, not_connected_node):
+        rotki.data.db.add_rpc_node(node)
+
+    ethereum_inquirer = rotki.chains_aggregator.ethereum.node_inquirer
+    for node, is_archive in ((archive_node, True), (non_archive_node, False)):
+        web3, _ = ethereum_inquirer._init_web3(node.node_info)
+        ethereum_inquirer.rpc_mapping[node.node_info] = RPCNode(
+            rpc_client=web3,
+            is_pruned=False,
+            is_archive=is_archive,
+        )
+
+    result = assert_proper_sync_response_with_result(requests.get(api_url_for(
+        api_server=rotkehlchen_api_server,
+        endpoint='rpcnodesresource',
+        blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+    )))
+    for node in result:
+        if node['name'] == 'archive_node':
+            assert node['is_archive'] is True
+        elif node['name'] == 'non_archive_node':
+            assert node['is_archive'] is False
+        elif node['name'] == 'not_connected_node':
+            assert 'is_archive' not in node
 
 
 @pytest.mark.parametrize('max_size_in_mb_all_logs', [659])

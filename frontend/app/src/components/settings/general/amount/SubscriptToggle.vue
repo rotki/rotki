@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { bigNumberify } from '@rotki/common';
 import { RuiIcon } from '@rotki/ui-library';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import { ValueDisplay } from '@/modules/amount-display';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import SettingsOption from '../../controls/SettingsOption.vue';
 
@@ -60,10 +60,7 @@ onMounted(() => {
             name="lu-arrow-right"
             class="text-rui-text-secondary"
           />
-          <AmountDisplay
-            :value="example.value"
-            :subscript-decimals="subscriptEnabled"
-          />
+          <ValueDisplay :value="example.value" />
         </div>
       </div>
     </div>

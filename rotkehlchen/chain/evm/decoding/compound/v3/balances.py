@@ -69,7 +69,7 @@ class Compoundv3Balances(ProtocolWithBalance):
         """Fetch the unique collateral tokens we need to query the comet contracts for"""
         unique_collaterals: dict[ChecksumEvmAddress, set[CompoundArguments]] = defaultdict(set)
         for user_address, events in self.addresses_with_activity(
-            event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+            event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},
         ).items():
             for event in events:
                 if event.address is None:

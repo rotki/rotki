@@ -98,6 +98,6 @@ class MakerdaoAccountant(ModuleAccountantInterface):
         return {  # vault collateral deposit
             get_event_type_identifier(HistoryEventType.SPEND, HistoryEventSubType.PAYBACK_DEBT, CPT_VAULT): (1, self._process_vault_dai_payback),  # generate DAI from vault  # noqa: E501
             get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT, CPT_VAULT): (1, self._process_vault_dai_generation),  # Deposit DAI in the DSR  # noqa: E501
-            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET, CPT_DSR): (1, self._process_dsr_deposit),  # Withdraw DAI from the DSR  # noqa: E501
-            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET, CPT_DSR): (1, self._process_dsr_withdraw),  # Migrate SAI to DAI  # noqa: E501
+            get_event_type_identifier(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL, CPT_DSR): (1, self._process_dsr_deposit),  # Withdraw DAI from the DSR  # noqa: E501
+            get_event_type_identifier(HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL, CPT_DSR): (1, self._process_dsr_withdraw),  # Migrate SAI to DAI  # noqa: E501
         }

@@ -41,35 +41,3 @@ export interface EthDetectedTokensInfo {
   total: number;
   timestamp: number | null;
 }
-
-export const HistoricalAssetBalance = z.object({
-  amount: z.string(),
-  price: z.string(),
-});
-
-export type HistoricalAssetBalance = z.infer<typeof HistoricalAssetBalance>;
-
-export const HistoricalBalancesAllAssetsResponse = z.object({
-  processingRequired: z.literal(false),
-  entries: z.record(z.string(), HistoricalAssetBalance),
-});
-
-export type HistoricalBalancesAllAssetsResponse = z.infer<typeof HistoricalBalancesAllAssetsResponse>;
-
-export const HistoricalBalancesSingleAssetResponse = z.object({
-  processingRequired: z.literal(false),
-  entries: HistoricalAssetBalance,
-});
-
-export type HistoricalBalancesSingleAssetResponse = z.infer<typeof HistoricalBalancesSingleAssetResponse>;
-
-export const HistoricalBalancesProcessingRequiredResponse = z.object({
-  processingRequired: z.literal(true),
-});
-
-export type HistoricalBalancesProcessingRequiredResponse = z.infer<typeof HistoricalBalancesProcessingRequiredResponse>;
-
-export interface HistoricalBalancesPayload {
-  timestamp: number;
-  asset?: string;
-}

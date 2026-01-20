@@ -140,10 +140,17 @@ def test_iconomi_assets_are_known(
     supported_tickers = []
     resp = iconomi._api_query('get', 'assets', authenticated=False)
     for asset_info in resp:
-        if not asset_info['supported']:
+        if (
+            asset_info['supported'] is False or
+            asset_info['status'] == 'OFFLINE' or
+            is_asset_symbol_unsupported(
+                globaldb=globaldb,
+                location=Location.ICONOMI,
+                asset_symbol=asset_info['ticker'],
+            ) is True
+        ):
             continue
-        if is_asset_symbol_unsupported(globaldb, Location.ICONOMI, asset_info['ticker']):
-            continue
+
         supported_tickers.append(asset_info['ticker'])
 
     for ticker in supported_tickers:

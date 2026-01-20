@@ -19,6 +19,11 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
 
+export interface RepullingTransactionResult {
+  newTransactionsCount: number;
+  newTransactions: Record<string, string[]>;
+}
+
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotificationsStore();
@@ -68,7 +73,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     return t('actions.date_range', { from, to }, choice);
   };
 
-  const repullingTransactions = async (payload: RepullingTransactionPayload): Promise<boolean> => {
+  const repullingTransactions = async (payload: RepullingTransactionPayload): Promise<RepullingTransactionResult | undefined> => {
     const taskType = TaskType.REPULLING_TXS;
     const { taskId } = await repullingTransactionsCaller(payload);
 
@@ -90,19 +95,11 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
     try {
       const { result } = await awaitTask<RepullingTransactionResponse, TaskMeta>(taskId, taskType, taskMeta, true);
-      const { newTransactionsCount } = result;
-      notify({
-        display: true,
-        message: newTransactionsCount ? t('actions.repulling_transaction.success.description', { length: newTransactionsCount }) : t('actions.repulling_transaction.success.no_tx_description'),
-        severity: Severity.INFO,
-        title: t('actions.repulling_transaction.task.title'),
-      });
-
-      return newTransactionsCount > 0;
+      return result;
     }
     catch (error: any) {
       if (isTaskCancelled(error)) {
-        return false;
+        return undefined;
       }
       logger.error(error);
       notify({
@@ -113,7 +110,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
         title: t('actions.repulling_transaction.task.title'),
       });
     }
-    return false;
+    return undefined;
   };
 
   const repullingExchangeEvents = async (payload: RepullingExchangeEventsPayload): Promise<boolean> => {

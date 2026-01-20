@@ -362,7 +362,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                             event.address == withdrawal_event.extra_data.get('strategy')  # strategy sends it  # noqa: E501
                     ):  # not checking amount as it can differ due to rebasing in some assets
                         event.event_type = HistoryEventType.WITHDRAWAL
-                        event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                        event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                         event.counterparty = CPT_EIGENLAYER
                         event.notes = f'Withdraw {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Eigenlayer'  # noqa: E501
                         break

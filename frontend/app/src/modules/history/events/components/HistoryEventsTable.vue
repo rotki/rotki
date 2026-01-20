@@ -211,12 +211,13 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
     <template #item.expand />
     <template #expanded-item="{ row }">
       <HistoryEventsList
-        class="-my-4"
+        class="-my-4 -mx-4"
         :class="{ 'opacity-50': row.ignoredInAccounting }"
         :all-events="allEventsMapped[row.groupIdentifier] || []"
         :displayed-events="displayedEventsMapped[row.groupIdentifier] || []"
         :event-group="row"
         :hide-actions="hideActions"
+        :hide-ignored-assets="excludeIgnored"
         :loading="sectionLoading || eventsLoading"
         :has-ignored-event="hasIgnoredEvent"
         :highlighted-identifiers="highlightedIdentifiers"

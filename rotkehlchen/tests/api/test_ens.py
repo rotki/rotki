@@ -90,7 +90,10 @@ def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
         string_to_evm_address('0x9531C059098e3d194fF87FebB587aB07B30B1306'),
         string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
     ]
-    with patch('rotkehlchen.api.rest.find_ens_mappings', wraps=mocked_find_ens_mappings):
+    with patch(
+            'rotkehlchen.api.services.user_data.find_ens_mappings',
+            wraps=mocked_find_ens_mappings,
+    ):
         response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,

@@ -473,7 +473,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.WITHDRAWAL,
-        event_subtype=HistoryEventSubType.REMOVE_ASSET,
+        event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
         asset=cbeth,
         amount=FVal(amount),
         location_label=user_address,

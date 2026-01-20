@@ -1,21 +1,24 @@
 import logging
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple
 
-from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
+from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.decoding.velodrome.constants import (
+    CPT_AERODROME,
+    CPT_VELODROME,
+    SUGAR_V3_CONTRACT_ABI,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import (
     maybe_notify_cache_query_status,
     maybe_notify_new_pools_status,
 )
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_like,
     globaldb_get_general_cache_values,
-    globaldb_set_general_cache_values,
     globaldb_update_cache_last_ts,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -28,6 +31,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     Timestamp,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -38,19 +42,14 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-VELODROME_SUGAR_V2_CONTRACT: Final = string_to_evm_address('0xc734656F0112CA18cdcaD424ddd8949F3D4c1DdD')  # Velodrome Finance LP Sugar v3  # noqa: E501
-AERODROME_SUGAR_V2_CONTRACT: Final = string_to_evm_address('0xC301856B4262E49E9239ec8a2d0c754d5ae317c0')  # Aerodrome Finance LP Sugar v3  # noqa: E501
-POOL_DATA_CHUNK_SIZE: Final = 100
-POOL_DATA_MAX_QUERY: Final = 400  # takes less than 2 minutes
+VELODROME_LP_SUGAR_CONTRACT: Final = string_to_evm_address('0x1d5E1893fCfb62CAaCE48eB2BAF7a6E134a8a27c')  # Velodrome Finance LP Sugar v3  # noqa: E501
+AERODROME_LP_SUGAR_CONTRACT: Final = string_to_evm_address('0x9DE6Eab7a910A288dE83a04b6A43B52Fd1246f1E')  # Aerodrome Finance LP Sugar v3  # noqa: E501
+POOL_DATA_CHUNK_SIZE: Final = 500
 
 
 class VelodromePoolData(NamedTuple):
     pool_address: ChecksumEvmAddress
     pool_name: str
-    pool_decimals: int
-    tick_spacing: int
-    token0_address: ChecksumEvmAddress
-    token1_address: ChecksumEvmAddress
     fee_address: ChecksumEvmAddress | None
     bribe_address: ChecksumEvmAddress | None
     gauge_address: ChecksumEvmAddress | None
@@ -88,39 +87,28 @@ def save_velodrome_pool_to_cache(
         )
 
         if pool.chain_id == ChainID.OPTIMISM:
-            pool_key = (CacheType.VELODROME_POOL_ADDRESS,)
-            gauge_key = (CacheType.VELODROME_GAUGE_ADDRESS,)
-            fee_key = (CacheType.VELODROME_GAUGE_FEE_ADDRESS,)
-            bribe_key = (CacheType.VELODROME_GAUGE_BRIBE_ADDRESS,)
+            pool_key = CacheType.VELODROME_POOL_ADDRESS
+            gauge_key = CacheType.VELODROME_GAUGE_ADDRESS
+            fee_key = CacheType.VELODROME_GAUGE_FEE_ADDRESS
+            bribe_key = CacheType.VELODROME_GAUGE_BRIBE_ADDRESS
         else:
-            pool_key = (CacheType.AERODROME_POOL_ADDRESS,)
-            gauge_key = (CacheType.AERODROME_GAUGE_ADDRESS,)
-            fee_key = (CacheType.AERODROME_GAUGE_FEE_ADDRESS,)
-            bribe_key = (CacheType.AERODROME_GAUGE_BRIBE_ADDRESS,)
+            pool_key = CacheType.AERODROME_POOL_ADDRESS
+            gauge_key = CacheType.AERODROME_GAUGE_ADDRESS
+            fee_key = CacheType.AERODROME_GAUGE_FEE_ADDRESS
+            bribe_key = CacheType.AERODROME_GAUGE_BRIBE_ADDRESS
 
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=pool_key,  # type: ignore
-            values=[pool.pool_address],
-        )
+        tuples = [(pool_key.serialize(), pool.pool_address, (now_ts := ts_now()))]
         if pool.gauge_address is not None:
-            globaldb_set_general_cache_values(
-                write_cursor=write_cursor,
-                key_parts=gauge_key,  # type: ignore
-                values=[pool.gauge_address],
-            )
+            tuples.append((gauge_key.serialize(), pool.gauge_address, now_ts))
         if pool.fee_address is not None:
-            globaldb_set_general_cache_values(
-                write_cursor=write_cursor,
-                key_parts=fee_key,  # type: ignore
-                values=[pool.fee_address],
-            )
+            tuples.append((fee_key.serialize(), pool.fee_address, now_ts))
         if pool.bribe_address is not None:
-            globaldb_set_general_cache_values(
-                write_cursor=write_cursor,
-                key_parts=bribe_key,  # type: ignore
-                values=[pool.bribe_address],
-            )
+            tuples.append((bribe_key.serialize(), pool.bribe_address, now_ts))
+
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO general_cache (key, value, last_queried_ts) VALUES (?, ?, ?)',
+            tuples,
+        )
 
 
 def read_velodrome_like_pools_and_gauges_from_cache(
@@ -166,21 +154,21 @@ def read_aerodrome_pools_and_gauges_from_cache() -> tuple[set[ChecksumEvmAddress
     )
 
 
-def query_velodrome_data_from_chain_and_maybe_create_tokens(
+def query_velodrome_data_from_chain(
         inquirer: 'OptimismInquirer | BaseInquirer',
-        existing_pools: list[ChecksumEvmAddress],
+        existing_pools: list[str],
         msg_aggregator: 'MessagesAggregator',
         reload_all: bool,
 ) -> list[VelodromePoolData]:
     """
-    Queries velodrome data from chain from the Velodrome Finance LP Sugar v2 contract.
+    Queries velodrome data from chain from the Velodrome Finance LP Sugar v3 contract.
     If new pools are found their tokens are created and the pools are returned.
     (Find more details for the contract here: https://github.com/velodrome-finance/sugar).
 
     Will only process up to POOL_DATA_MAX_QUERY (400) pools at a time. Queries pool data in
     chunks of POOL_DATA_CHUNK_SIZE (100) from the Sugar contract.
 
-    - It only queries velodrome v2. Velodrome v1 data is "hardcoded" in the packaged db
+    - It only queries velodrome v2 & v3. Velodrome v1 data is "hardcoded" in the packaged db
     because they are not expected to change and there is no reason to make this method slower
     by querying v1 too.
 
@@ -188,10 +176,16 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
     - RemoteError if there is an error connecting with the remote source of data
     """
     if inquirer.chain_id == ChainID.OPTIMISM:
-        data_contract = inquirer.contracts.contract(VELODROME_SUGAR_V2_CONTRACT)
+        data_contract = EvmContract(
+            address=VELODROME_LP_SUGAR_CONTRACT,
+            abi=SUGAR_V3_CONTRACT_ABI,
+        )
         counterparty = CPT_VELODROME
     else:
-        data_contract = inquirer.contracts.contract(AERODROME_SUGAR_V2_CONTRACT)
+        data_contract = EvmContract(
+            address=AERODROME_LP_SUGAR_CONTRACT,
+            abi=SUGAR_V3_CONTRACT_ABI,
+        )
         counterparty = CPT_AERODROME
 
     pool_data: list[dict] = []
@@ -199,17 +193,11 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
     offset = initial_offset = 0 if reload_all else len(existing_pools)
     limit, last_notified_ts = POOL_DATA_CHUNK_SIZE, Timestamp(0)
     while len(pool_data_chunk) == limit or (len(pool_data_chunk) == 0 and offset == initial_offset):  # noqa: E501
-        if len(pool_data) >= POOL_DATA_MAX_QUERY and reload_all is False:
-            log.info(
-                f'Reached max number of new {counterparty} pools to query at once. '
-                f'Only querying {len(pool_data)} pools.',
-            )
-            break
         try:
             pool_data_chunk = data_contract.call(
                 node_inquirer=inquirer,
                 method_name='all',
-                arguments=[limit, offset],
+                arguments=[limit, offset, 0],  # return all.
             )
         except RemoteError as e:
             log.warning(f'Failed to query {counterparty} pool data chunk due to {e!s}.')
@@ -230,88 +218,32 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
         )
 
     deserialized_pools: list[VelodromePoolData] = []
-    # first gather all pool data, and prepare a multicall for token information
-    for pool in pool_data:
+    all_pools_length = len(pool_data)
+    for idx, raw_pool in enumerate(pool_data):
         try:
-            pool_address = deserialize_evm_address(pool[0])
-        except DeserializationError as e:
+            if (pool_address := deserialize_evm_address(raw_pool[0])) in existing_pools:
+                continue  # This pool is already present in the cache
+
+            gauge_address = deserialize_evm_address(raw_pool[13])
+            fee_address = deserialize_evm_address(raw_pool[16])
+            bribe_address = deserialize_evm_address(raw_pool[17])
+            pool = VelodromePoolData(
+                pool_address=pool_address,
+                pool_name=raw_pool[1],
+                fee_address=fee_address if fee_address != ZERO_ADDRESS else None,
+                bribe_address=bribe_address if bribe_address != ZERO_ADDRESS else None,
+                gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
+                chain_id=inquirer.chain_id,  # type: ignore
+            )
+        except (DeserializationError, IndexError) as e:
             log.error(
-                f'Skipping {counterparty} pool {pool[0]}. Could not deserialize it while '
+                f'Skipping {counterparty} pool {raw_pool[0]}. Could not deserialize it while '
                 f'decoding it. Additional information: {e}',
             )
             continue
 
-        if pool_address in existing_pools:
-            continue
-
-        try:
-            token0_address, token1_address = deserialize_evm_address(pool[7]), deserialize_evm_address(pool[10])  # noqa: E501
-            gauge_address = deserialize_evm_address(pool[13])
-            fee_address = deserialize_evm_address(pool[16])
-            bribe_address = deserialize_evm_address(pool[17])
-        except DeserializationError as e:
-            log.error(
-                f'Skipping {counterparty} pool {pool[0]}. Could not deserialize an evm address '
-                f'while decoding it. Additional information: {e}',
-            )
-            continue
-
-        deserialized_pools.append(VelodromePoolData(
-            pool_address=pool_address,
-            pool_name=pool[1],
-            pool_decimals=pool[2],
-            tick_spacing=pool[4],
-            token0_address=token0_address,
-            token1_address=token1_address,
-            fee_address=fee_address if fee_address != ZERO_ADDRESS else None,
-            bribe_address=bribe_address if bribe_address != ZERO_ADDRESS else None,
-            gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
-            chain_id=inquirer.chain_id,  # type: ignore
-        ))
-
-    returned_pools = []
-    encounter = TokenEncounterInfo(
-        description=f'Querying {counterparty} pools for {inquirer.chain_name}',
-        should_notify=False,
-    )
-    all_pools_length = len(deserialized_pools)
-    for idx, entry in enumerate(deserialized_pools):
-        inquirer.get_multiple_erc20_contract_info([  # multicall for token info
-            entry.pool_address,
-            entry.token0_address,
-            entry.token1_address,
-        ])
-        try:
-            token0, token1 = (
-                get_or_create_evm_token(
-                    userdb=inquirer.database,
-                    evm_address=token,
-                    chain_id=inquirer.chain_id,
-                    evm_inquirer=inquirer,
-                    encounter=encounter,
-                )  # create the tokens for the new pools. Keep in mind that the pool address is the address of the lp token received when depositing to the pool  # noqa: E501
-                for token in (entry.token0_address, entry.token1_address)
-            )
-        except NotERC20Conformant as e:
-            log.error(
-                f'Skipping {counterparty} pool {entry.pool_address} '
-                f'because its tokens are not valid ERC20 tokens. {e}',
-            )
-            continue
-
-        pool_name = f'CL{entry.tick_spacing}-{token0.symbol}/{token1.symbol}' if entry.pool_name == '' else entry.pool_name  # noqa: E501
-        get_or_create_evm_token(  # this will not raise NotERC20Conformant because we give fallback info  # noqa: E501
-            userdb=inquirer.database,
-            evm_address=entry.pool_address,
-            chain_id=inquirer.chain_id,
-            evm_inquirer=inquirer,
-            encounter=encounter,
-            protocol=counterparty,  # mark the lp tokens with the protocol to identify them for special treatment for price calculation  # noqa: E501
-            fallback_decimals=entry.pool_decimals,
-            fallback_name=f'{pool_name} Pool',
-            fallback_symbol=pool_name,
-        )
-        save_velodrome_pool_to_cache(database=inquirer.database, pool=entry)
+        deserialized_pools.append(pool)
+        save_velodrome_pool_to_cache(database=inquirer.database, pool=pool)
         last_notified_ts = maybe_notify_cache_query_status(
             msg_aggregator=msg_aggregator,
             last_notified_ts=last_notified_ts,
@@ -321,12 +253,11 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             total=all_pools_length,
         )
         log.debug(
-            f'Processed {counterparty} pool {processed}/{all_pools_length} {entry.pool_address} '
+            f'Processed {counterparty} pool {processed}/{all_pools_length} {pool.pool_address} '
             f'on {inquirer.chain_name}.',
         )
-        returned_pools.append(entry)
 
-    return returned_pools
+    return deserialized_pools
 
 
 def query_velodrome_like_data(
@@ -337,20 +268,17 @@ def query_velodrome_like_data(
 ) -> list[VelodromePoolData] | None:
     """Queries velodrome pools and tokens."""
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        existing_pools = [
-            string_to_evm_address(address)
-            for address in globaldb_get_general_cache_like(
-                cursor=write_cursor,
-                key_parts=(cache_type,),
-            )
-        ]
+        existing_pools = globaldb_get_general_cache_like(
+            cursor=write_cursor,
+            key_parts=(cache_type,),
+        )
         globaldb_update_cache_last_ts(  # update the last_queried_ts of db entries
             write_cursor=write_cursor,
             cache_type=cache_type,
             key_parts=None,
         )
 
-    return pools_data if len(pools_data := query_velodrome_data_from_chain_and_maybe_create_tokens(
+    return pools_data if len(pools_data := query_velodrome_data_from_chain(
         inquirer=inquirer,
         existing_pools=existing_pools,
         msg_aggregator=msg_aggregator,

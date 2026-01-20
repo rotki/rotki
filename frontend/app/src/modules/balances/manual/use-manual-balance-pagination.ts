@@ -1,5 +1,5 @@
 import type { BigNumber } from '@rotki/common';
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { Collection } from '@/types/collection';
 import type { ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

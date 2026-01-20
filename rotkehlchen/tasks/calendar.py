@@ -344,7 +344,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
         """Check for lock CRV in vote escrow history events and create reminders if needed."""
         if len(crv_events := self.get_history_events(
             event_types=[
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
                 (HistoryEventType.INFORMATIONAL, HistoryEventSubType.UPDATE),
             ],
             counterparties=[CPT_CURVE],
@@ -380,7 +380,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
         """Create reminders for AERO/VERO lock periods in vote escrow history events."""
         if len(events := self.get_history_events(
             event_types=[
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
                 (HistoryEventType.INFORMATIONAL, HistoryEventSubType.NONE),  # unlock time updates
             ],
             counterparties=[CPT_VELODROME, CPT_AERODROME],

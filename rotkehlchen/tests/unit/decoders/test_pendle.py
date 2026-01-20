@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import get_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
@@ -85,7 +86,7 @@ def test_lock_pendle(ethereum_inquirer, ethereum_accounts):
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827'),
             amount=FVal(locked_amount),
             location_label=user_address,
@@ -135,7 +136,7 @@ def test_unlock_pendle(ethereum_inquirer, ethereum_accounts):
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827'),
             amount=FVal(withdrawn_amount),
             location_label=user_address,
@@ -151,10 +152,16 @@ def test_unlock_pendle(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.parametrize('ethereum_accounts', [['0x4aCAeaD5249770F268F18284Ef7e71039DC127Fb']])
 def test_buy_pt(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4374352cb86470cc895b7ad433a5ea6e8c62a7d0016434600fa1446ebaea857b')  # noqa: E501
+    assert get_evm_token(
+        evm_address=(pt_token_addr := string_to_evm_address('0xeA1180804bDBA8aC04E2a4406B11fb7970c474f1')),  # noqa: E501
+        chain_id=ethereum_inquirer.chain_id,
+    ) is None
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=tx_hash,
     )
+    assert (pt_token := get_evm_token(evm_address=pt_token_addr, chain_id=ethereum_inquirer.chain_id)) is not None  # noqa: E501
+    assert pt_token.protocol == CPT_PENDLE
     user_address, timestamp, gas_amount, approval_amount, out_amount, in_amount, interest_amount = ethereum_accounts[0], TimestampMS(1742355155000), '0.00033753258899598', '50.014942', '5001.535682', '5066.377589', '1.535939'  # noqa: E501
     expected_events = [
         EvmEvent(
@@ -215,7 +222,7 @@ def test_buy_pt(ethereum_inquirer, ethereum_accounts):
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=Asset('eip155:1/erc20:0xeA1180804bDBA8aC04E2a4406B11fb7970c474f1'),
+            asset=pt_token,
             amount=FVal(in_amount),
             location_label=user_address,
             notes=f'Receive {in_amount} PT-aUSDC-26JUN2025 from depositing into Pendle',
@@ -407,11 +414,17 @@ def test_sell_yt(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xCA9CE67D4E2d19a5aa9C1c3EB5BfDaec71c271C7']])
 def test_add_liquidity(base_inquirer, base_accounts):
+    assert get_evm_token(
+        evm_address=(lp_token_addr := string_to_evm_address('0xE15578523937ed7F08E8F7a1Fa8a021E07025a08')),  # noqa: E501
+        chain_id=base_inquirer.chain_id,
+    ) is None
     tx_hash = deserialize_evm_tx_hash('0x04ca9cb81658c528c2a026d8aa9df5798b473d3a8be8e0215ed3efd444a89456')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
         tx_hash=tx_hash,
     )
+    assert (lp_token := get_evm_token(evm_address=lp_token_addr, chain_id=base_inquirer.chain_id)) is not None  # noqa: E501
+    assert lp_token.protocol == CPT_PENDLE
     user_address, timestamp, gas_amount, out_amount, in_amount = base_accounts[0], TimestampMS(1743007437000), '0.000000641175932399', '222', '113.156787685931457114'  # noqa: E501
     expected_events = [
         EvmEvent(
@@ -446,7 +459,7 @@ def test_add_liquidity(base_inquirer, base_accounts):
             location=Location.BASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=Asset('eip155:8453/erc20:0xE15578523937ed7F08E8F7a1Fa8a021E07025a08'),
+            asset=lp_token,
             amount=FVal(in_amount),
             location_label=user_address,
             notes=f'Receive {in_amount} PENDLE-LPT for depositing in a Pendle pool',
@@ -954,11 +967,17 @@ def test_exit_post_exp_to_token(ethereum_inquirer, ethereum_accounts):
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xaC28b5A163eD3265c5d76809aF39955Da27B8430']])
 def test_remove_liquidity(base_inquirer, base_accounts, pendle_cache):
+    assert get_evm_token(
+        evm_address=(lp_token_addr := string_to_evm_address('0xE15578523937ed7F08E8F7a1Fa8a021E07025a08')),  # noqa: E501
+        chain_id=base_inquirer.chain_id,
+    ) is None
     tx_hash = deserialize_evm_tx_hash('0x60ab64b9c8c560ffccd2bfbf5411be2efdd8d241296d3bfe778d905001db663d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
         tx_hash=tx_hash,
     )
+    assert (lp_token := get_evm_token(evm_address=lp_token_addr, chain_id=base_inquirer.chain_id)) is not None  # noqa: E501
+    assert lp_token.protocol == CPT_PENDLE
     user_address, timestamp, gas_amount, approve_amount, out_amount, in_amount, reward_amount = base_accounts[0], TimestampMS(1743008107000), '0.000000772529310385', '0.501902187294857254', '51.498097812705142746', '101.027879453122635516', '0.038804848288942801'  # noqa: E501
     expected_events = [
         EvmEvent(
@@ -980,7 +999,7 @@ def test_remove_liquidity(base_inquirer, base_accounts, pendle_cache):
             location=Location.BASE,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
-            asset=Asset('eip155:8453/erc20:0xE15578523937ed7F08E8F7a1Fa8a021E07025a08'),
+            asset=lp_token,
             amount=FVal(approve_amount),
             location_label=user_address,
             notes=f'Set PENDLE-LPT spending approval of {user_address} by 0x888888888889758F76e7103c6CbF23ABbF58F946 to {approve_amount}',  # noqa: E501
@@ -992,12 +1011,12 @@ def test_remove_liquidity(base_inquirer, base_accounts, pendle_cache):
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=Asset('eip155:8453/erc20:0xE15578523937ed7F08E8F7a1Fa8a021E07025a08'),
+            asset=lp_token,
             amount=FVal(out_amount),
             location_label=user_address,
             notes=f'Return {out_amount} PENDLE-LPT to Pendle',
             counterparty=CPT_PENDLE,
-            address=string_to_evm_address('0xE15578523937ed7F08E8F7a1Fa8a021E07025a08'),
+            address=lp_token.evm_address,
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=444,
@@ -1023,7 +1042,7 @@ def test_remove_liquidity(base_inquirer, base_accounts, pendle_cache):
             location_label=user_address,
             notes=f'Claim {reward_amount} PENDLE reward from Pendle',
             counterparty=CPT_PENDLE,
-            address=string_to_evm_address('0xE15578523937ed7F08E8F7a1Fa8a021E07025a08'),
+            address=lp_token.evm_address,
         ),
     ]
     assert events == expected_events
@@ -1069,7 +1088,7 @@ def test_redeem_due_rewards_and_interests(ethereum_inquirer, ethereum_accounts, 
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             asset=Asset('eip155:1/erc20:0xFAe103DC9cf190eD75350761e95403b7b8aFa6c0'),
             amount=FVal(in_amount),
             location_label=user_address,

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { RoundingMode } from '@/types/settings/frontend-settings';
 import { type BigNumber, bigNumberify } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RoundingSelector from '@/components/settings/general/amount/RoundingSelector.vue';
+import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const frontendSettingsStore = useFrontendSettingsStore();
@@ -34,7 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
         :hint="t('rounding_settings.amount_rounding_hint')"
         @update:model-value="setAmountRoundingMode($event)"
       >
-        <AmountDisplay
+        <ValueDisplay
           class="ml-2 mt-4"
           :value="numberExample"
         />
@@ -45,10 +45,10 @@ const { t } = useI18n({ useScope: 'global' });
         :hint="t('rounding_settings.value_rounding_hint')"
         @update:model-value="setValueRoundingMode($event)"
       >
-        <AmountDisplay
+        <FiatDisplay
           class="ml-2 mt-4"
           :value="numberExample"
-          fiat-currency="USD"
+          from="USD"
         />
       </RoundingSelector>
     </div>

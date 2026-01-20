@@ -3,7 +3,6 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import { type BigNumber, Blockchain } from '@rotki/common';
 import { type AssetLocation, useAssetLocationsData } from '@/components/assets/use-asset-locations-data';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
@@ -11,6 +10,7 @@ import LocationSelector from '@/components/helper/LocationSelector.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TagFilter from '@/components/inputs/TagFilter.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
+import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { CURRENCY_USD } from '@/types/currencies';
 
@@ -200,16 +200,10 @@ watch([onlyTags, locationFilter, selectedAccounts], () => {
         </div>
       </template>
       <template #item.amount="{ row }">
-        <AmountDisplay :value="row.amount" />
+        <ValueDisplay :value="row.amount" />
       </template>
       <template #item.value="{ row }">
-        <AmountDisplay
-          show-currency="symbol"
-          :amount="row.amount"
-          :price-asset="identifier"
-          force-currency
-          :value="row.value"
-        />
+        <FiatDisplay :value="row.value" />
       </template>
       <template #item.percentage="{ row }">
         <PercentageDisplay

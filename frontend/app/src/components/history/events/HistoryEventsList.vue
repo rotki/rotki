@@ -11,11 +11,17 @@ import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
 import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
 import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
 
+interface UnsupportedEventInfo {
+  event: HistoryEventEntry;
+  type: UnsupportedEventType;
+}
+
 const props = withDefaults(defineProps<{
   eventGroup: HistoryEventEntry;
   allEvents: HistoryEventRow[];
   displayedEvents: HistoryEventRow[];
   hasIgnoredEvent?: boolean;
+  hideIgnoredAssets?: boolean;
   loading?: boolean;
   hideActions?: boolean;
   highlightedIdentifiers?: string[];
@@ -33,46 +39,36 @@ const emit = defineEmits<{
   'refresh': [];
 }>();
 
+const PER_BATCH = 6;
+const UnsupportedEventTypes = {
+  INCOMPLETE_SWAP: 'incomplete-swap',
+  GAS_FEE_ONLY: 'gas-fee-only',
+} as const;
+
+type UnsupportedEventType = typeof UnsupportedEventTypes[keyof typeof UnsupportedEventTypes];
+
 const { t } = useI18n({ useScope: 'global' });
 
-const PER_BATCH = 6;
 const currentLimit = ref<number>(PER_BATCH);
 const containerRef = ref<HTMLElement>();
+const showReportDialog = ref<boolean>(false);
+const showingIgnoredAssets = ref<boolean>(false);
 
 const {
   allEvents,
   displayedEvents,
   eventGroup,
   hasIgnoredEvent,
+  hideIgnoredAssets,
   highlightedIdentifiers,
   loading,
   matchExactEvents,
 } = toRefs(props);
 
-function combineEvents(events: HistoryEventRow[], group: HistoryEventEntry): HistoryEventRow[] {
-  if (events.length === 0) {
-    return [group];
-  }
-
-  if (isSwapEvent(group)) {
-    const allFlattened = flatten(events);
-    if (allFlattened.length === 1 && Array.isArray(allFlattened[0])) {
-      return [allFlattened[0]];
-    }
-    return [allFlattened];
-  }
-
-  return events.map((item) => {
-    if (Array.isArray(item) && item.length === 1) {
-      return item[0];
-    }
-    return item;
-  });
-}
-
-const combinedDisplayedEvents = computed<HistoryEventRow[]>(() =>
-  combineEvents(get(displayedEvents), get(eventGroup)),
-);
+const combinedDisplayedEvents = computed<HistoryEventRow[]>(() => {
+  const events = get(showingIgnoredAssets) ? get(allEvents) : get(displayedEvents);
+  return combineEvents(events, get(eventGroup));
+});
 
 const combinedAllEvents = computed<HistoryEventRow[]>(() =>
   combineEvents(get(allEvents), get(eventGroup)),
@@ -102,6 +98,111 @@ const buttonText = computed<string>(() => {
   return t('transactions.events.view.load_more', { length: remain });
 });
 
+// Unsupported event detection
+const unsupportedEventInfo = computed<UnsupportedEventInfo | null>(() => {
+  if (get(loading) || get(matchExactEvents))
+    return null;
+
+  const events = get(combinedAllEvents);
+
+  // Flatten all events to check for incomplete trades
+  const flatEvents = events.flatMap(event => (Array.isArray(event) ? event : [event]));
+
+  // Check for incomplete trade events (receive without spend or vice versa)
+  const tradeReceive = flatEvents.find(e => e.eventType === 'trade' && e.eventSubtype === 'receive');
+  const tradeSpend = flatEvents.find(e => e.eventType === 'trade' && e.eventSubtype === 'spend');
+
+  if (tradeReceive && !tradeSpend)
+    return { event: tradeReceive, type: UnsupportedEventTypes.INCOMPLETE_SWAP };
+
+  if (tradeSpend && !tradeReceive)
+    return { event: tradeSpend, type: UnsupportedEventTypes.INCOMPLETE_SWAP };
+
+  // Check for gas-fee-only transaction
+  if (events.length !== 1)
+    return null;
+
+  const event = events[0];
+  if (Array.isArray(event))
+    return null;
+
+  return isGasFeeOnlyEvent(event) ? { event, type: UnsupportedEventTypes.GAS_FEE_ONLY } : null;
+});
+
+const unsupportedEvent = computed<HistoryEventEntry | null>(() => get(unsupportedEventInfo)?.event ?? null);
+
+const reportTitle = computed<string>(() => t('transactions.events.unsupported.title'));
+
+const unsupportedDescription = computed<string>(() => {
+  const info = get(unsupportedEventInfo);
+  if (!info)
+    return '';
+
+  return info.type === UnsupportedEventTypes.INCOMPLETE_SWAP
+    ? t('transactions.events.unsupported.description_incomplete_swap')
+    : t('transactions.events.unsupported.description_gas_fee_only');
+});
+
+const reportDescription = computed<string>(() => {
+  const info = get(unsupportedEventInfo);
+  if (!info)
+    return '';
+
+  const { event, type } = info;
+  const txRef = 'txRef' in event ? event.txRef : '';
+
+  const intro = type === UnsupportedEventTypes.INCOMPLETE_SWAP
+    ? t('transactions.events.unsupported.report_description_intro_incomplete_swap')
+    : t('transactions.events.unsupported.report_description_intro_gas_fee_only');
+
+  return [
+    intro,
+    txRef ? t('transactions.events.unsupported.tx_hash', { hash: txRef }) : '',
+    t('transactions.events.unsupported.location', { location: event.location }),
+    '',
+    t('transactions.events.unsupported.more_detail'),
+    t('transactions.events.unsupported.placeholder'),
+  ].filter(Boolean).join('\n');
+});
+
+// Show warning when group has hidden ignored assets
+const showIgnoredAssetsWarning = computed<boolean>(() => {
+  const group = get(eventGroup);
+  return get(hideIgnoredAssets) && (group.hasIgnoredAssets || get(allEvents).length !== get(displayedEvents).length);
+});
+
+function isGasFeeOnlyEvent(event: HistoryEventEntry): boolean {
+  const isFeeSpend = event.eventType === 'spend' && event.eventSubtype === 'fee';
+  if (!isFeeSpend)
+    return false;
+
+  return 'counterparty' in event
+    && event.counterparty === 'gas'
+    && 'txRef' in event
+    && !!event.txRef;
+}
+
+function combineEvents(events: HistoryEventRow[], group: HistoryEventEntry): HistoryEventRow[] {
+  if (events.length === 0) {
+    return [group];
+  }
+
+  if (isSwapEvent(group)) {
+    const allFlattened = flatten(events);
+    if (allFlattened.length === 1 && Array.isArray(allFlattened[0])) {
+      return [allFlattened[0]];
+    }
+    return [allFlattened];
+  }
+
+  return events.map((item) => {
+    if (Array.isArray(item) && item.length === 1) {
+      return item[0];
+    }
+    return item;
+  });
+}
+
 function handleMoreClick() {
   const limit = get(currentLimit);
 
@@ -127,67 +228,13 @@ function scrollToTop() {
   get(containerRef)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+function toggleShowIgnoredAssets(): void {
+  set(showingIgnoredAssets, !get(showingIgnoredAssets));
+}
+
 watch(() => get(eventGroup), () => {
   set(currentLimit, PER_BATCH);
-});
-
-// Unsupported event detection
-const unsupportedEvent = computed<HistoryEventEntry | null>(() => {
-  if (get(loading) || get(matchExactEvents))
-    return null;
-
-  const events = get(combinedAllEvents);
-
-  // Flatten all events to check for incomplete trades
-  const flatEvents = events.flatMap(event => (Array.isArray(event) ? event : [event]));
-
-  // Check for incomplete trade events (receive without spend or vice versa)
-  const tradeReceive = flatEvents.find(e => e.eventType === 'trade' && e.eventSubtype === 'receive');
-  const tradeSpend = flatEvents.find(e => e.eventType === 'trade' && e.eventSubtype === 'spend');
-
-  if (tradeReceive && !tradeSpend)
-    return tradeReceive;
-
-  if (tradeSpend && !tradeReceive)
-    return tradeSpend;
-
-  // Check for gas-fee-only transaction
-  if (events.length !== 1)
-    return null;
-
-  const event = events[0];
-  if (Array.isArray(event))
-    return null;
-
-  const isGasFeeOnly = event.eventType === 'spend'
-    && event.eventSubtype === 'fee'
-    && 'counterparty' in event
-    && event.counterparty === 'gas'
-    && 'txRef' in event
-    && event.txRef;
-
-  return isGasFeeOnly ? event : null;
-});
-
-const showReportDialog = ref<boolean>(false);
-
-const reportTitle = computed<string>(() => t('transactions.events.unsupported.title'));
-
-const reportDescription = computed<string>(() => {
-  const event = get(unsupportedEvent);
-  if (!event)
-    return '';
-
-  const txRef = 'txRef' in event ? event.txRef : '';
-
-  return [
-    t('transactions.events.unsupported.report_description_intro'),
-    txRef ? t('transactions.events.unsupported.tx_hash', { hash: txRef }) : '',
-    t('transactions.events.unsupported.location', { location: event.location }),
-    '',
-    t('transactions.events.unsupported.more_detail'),
-    t('transactions.events.unsupported.placeholder'),
-  ].filter(Boolean).join('\n');
+  set(showingIgnoredAssets, false);
 });
 </script>
 
@@ -207,7 +254,7 @@ const reportDescription = computed<string>(() => {
       />
       <div class="flex-1 min-w-0">
         <span class="text-xs font-medium">{{ t('transactions.events.unsupported.title') }}</span>
-        <span class="text-xs text-rui-text-secondary"> - {{ t('transactions.events.unsupported.description') }}</span>
+        <span class="text-xs text-rui-text-secondary"> - {{ unsupportedDescription }}</span>
       </div>
       <RuiButton
         color="warning"
@@ -220,6 +267,29 @@ const reportDescription = computed<string>(() => {
       </RuiButton>
     </div>
 
+    <div
+      v-if="showIgnoredAssetsWarning"
+      class="flex items-center gap-2 px-2 py-1.5 mt-3 md:mx-3 bg-rui-info-lighter/20 rounded"
+    >
+      <RuiIcon
+        :name="showingIgnoredAssets ? 'lu-eye' : 'lu-eye-off'"
+        class="text-rui-info shrink-0"
+        size="16"
+      />
+      <span class="flex-1 text-xs text-rui-text-secondary">
+        {{ showingIgnoredAssets ? t('transactions.events.ignored_assets_shown') : t('transactions.events.ignored_assets_hidden') }}
+      </span>
+      <RuiButton
+        color="info"
+        variant="text"
+        size="sm"
+        class="!py-0 !px-1 shrink-0"
+        @click="toggleShowIgnoredAssets()"
+      >
+        {{ showingIgnoredAssets ? t('common.actions.hide') : t('common.actions.show') }}
+      </RuiButton>
+    </div>
+
     <HistoryEventsListTable
       :key="eventGroup.groupIdentifier"
       :event-group="eventGroup"
@@ -228,6 +298,7 @@ const reportDescription = computed<string>(() => {
       :total="totalBlocks"
       :loading="loading"
       :hide-actions="hideActions"
+      :hide-ignored-assets="hideIgnoredAssets"
       :highlighted-identifiers="highlightedIdentifiers"
       :selection="selection"
       @delete-event="emit('delete-event', $event)"

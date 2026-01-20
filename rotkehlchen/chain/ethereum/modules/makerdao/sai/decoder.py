@@ -105,7 +105,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
                         int.from_bytes(context.tx_log.topics[3]) == int.from_bytes(log.data[:32])
                     ):
                         event.event_type = HistoryEventType.WITHDRAWAL
-                        event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                        event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                         event.counterparty = CPT_SAI
                         event.notes = f'Withdraw {event.amount} {self.eth.symbol} from CDP {cdp_id}'  # noqa: E501
                         return DEFAULT_EVM_DECODING_OUTPUT
@@ -401,7 +401,7 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
 
             if context.event.asset == self.peth:
                 context.event.event_type = HistoryEventType.DEPOSIT
-                context.event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                context.event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 context.event.notes = f'Increase CDP collateral by {context.event.amount} {self.peth.symbol}'  # noqa: E501
                 context.event.counterparty = CPT_SAI
                 return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)
@@ -413,14 +413,14 @@ class MakerdaosaiDecoder(EvmDecoderInterface):
         ):
             if context.event.asset == self.weth:
                 context.event.event_type = HistoryEventType.WITHDRAWAL
-                context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                context.event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 context.event.notes = f'Withdraw {context.event.amount} {self.weth.symbol} from Sai vault'  # noqa: E501
                 context.event.counterparty = CPT_SAI
                 return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)
 
             if context.event.asset == self.peth:
                 context.event.event_type = HistoryEventType.WITHDRAWAL
-                context.event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                context.event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 context.event.notes = f'Decrease CDP collateral by {context.event.amount} {self.peth.symbol}'  # noqa: E501
                 context.event.counterparty = CPT_SAI
                 return TransferEnrichmentOutput(matched_counterparty=CPT_SAI)

@@ -49,7 +49,9 @@ def get_merkl_protocol_for_token(
                 try:
                     protocols.add(opportunity['protocol']['name'])
                 except KeyError as e:
-                    log.error(f'Failed to get protocols for {account=} on {chain_id=} due to missing key {e!s}')  # noqa: E501
+                    log.debug(
+                        f'Failed to get opportunity protocol for token {token} on {chain_id.name} '
+                        f'due to missing key {e!s}. Raw data: {opportunity}')
                     continue
 
             if len(response) < items_per_page:  # If we get less than the full page size, we've reached the end  # noqa: E501
@@ -59,14 +61,15 @@ def get_merkl_protocol_for_token(
 
         except (RemoteError, UnableToDecryptRemoteData, KeyError) as e:
             msg = f'missing key {e!s}' if isinstance(e, KeyError) else str(e)
-            log.error(f'Failed to retrieve Merkl opportunities for account {account=} on {chain_id=} page {page} due to {msg}')  # noqa: E501
+            log.error(f'Failed to retrieve Merkl opportunities for token {token} on {chain_id.name} page {page} due to {msg}')  # noqa: E501
             return None
 
     # Merkl API doesn't provide a way to match claims to specific protocols.
     # We can only confidently return a protocol if exactly one protocol uses this token.
     # If there are multiple protocols or none, we cannot determine the correct one.
-    if len(protocols) != 1:
-        log.debug(f'Found multiple protocols `{protocols}` for token {token} on {chain_id=}. Cannot determine specific protocol for merkle claim')  # noqa: E501
+    if (count := len(protocols)) != 1:
+        msg = f'Found multiple protocols {protocols}' if count > 1 else 'No protocols found for'
+        log.debug(f'{msg} for token {token} on {chain_id.name}. Cannot determine specific protocol for merkle claim')  # noqa: E501
         return None
 
     with GlobalDBHandler().conn.write_ctx() as write_cursor:

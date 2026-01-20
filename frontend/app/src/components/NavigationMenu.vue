@@ -101,8 +101,20 @@ const navItems: MenuItem[] = [
   },
   {
     class: 'history',
-    type: 'item',
+    type: 'group',
     ...Routes.HISTORY,
+    items: [
+      {
+        class: 'history-events',
+        type: 'item',
+        ...Routes.HISTORY_EVENTS,
+      },
+      {
+        class: 'history-balances',
+        type: 'item',
+        ...Routes.HISTORY_BALANCES,
+      },
+    ],
   },
   {
     class: 'onchain',
@@ -295,6 +307,7 @@ function isRouteMatch(location: RouteLocationRaw) {
               :icon-component="navItem.component"
               :image="navItem.image"
               :active="isActiveParent"
+              :to="navItem.items[0]?.route"
               parent
             >
               <div :class="{ 'bg-rui-grey-200 dark:bg-rui-grey-800': isMini }">

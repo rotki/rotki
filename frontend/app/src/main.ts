@@ -6,7 +6,6 @@ import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { i18n } from '@/i18n';
 import { registerDevtools } from '@/plugins/devtools';
 import { createRuiPlugin } from '@/plugins/rui';
-import { usePremiumApi } from '@/premium/setup-interface';
 import { router } from '@/router';
 import { StoreStatePersistsPlugin } from '@/store/debug';
 import { StoreResetPlugin, StoreTrackPlugin } from '@/store/plugins';
@@ -62,8 +61,6 @@ app.directive('blur', {
     });
   },
 });
-
-app.provide('premium', usePremiumApi());
 
 app.use(rui);
 app.use(pinia);

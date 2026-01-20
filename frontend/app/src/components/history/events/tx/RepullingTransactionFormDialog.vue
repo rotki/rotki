@@ -1,13 +1,14 @@
 <script lang="ts" setup>
 import type { Exchange } from '@/types/exchanges';
-import type { ChainAddress, RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/types/history/events';
-import dayjs from 'dayjs';
+import type { RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/types/history/events';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import RepullingTransactionForm from '@/components/history/events/tx/RepullingTransactionForm.vue';
-import { useHistoryTransactions } from '@/composables/history/events/tx';
+import { type RepullingTransactionResult, useHistoryTransactions } from '@/composables/history/events/tx';
+import { useRepullingTransactionForm } from '@/composables/history/events/tx/use-repulling-transaction-form';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useConfirmStore } from '@/store/confirm';
+import { useHistoryStore } from '@/store/history';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError } from '@/types/api/errors';
@@ -19,7 +20,7 @@ const currentAction = defineModel<HistoryEventAction>('currentAction', { require
 
 const props = withDefaults(defineProps<{
   loading?: boolean;
-  repullTransactions?: (account: ChainAddress) => void;
+  repullTransactions?: (result: RepullingTransactionResult) => void;
   repullExchangeEvents?: (exchanges: Exchange[]) => void;
 }>(), {
   loading: false,
@@ -35,29 +36,18 @@ const form = useTemplateRef<InstanceType<typeof RepullingTransactionForm>>('form
 const stateUpdated = ref<boolean>(false);
 
 const { setMessage } = useMessageStore();
+const { show } = useConfirmStore();
 const { repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
-const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
 const { useIsTaskRunning } = useTaskStore();
+const { createDefaultFormData, shouldShowConfirmation } = useRepullingTransactionForm();
+const { resetUndecodedTransactionsStatus } = useHistoryStore();
 
 const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
 
-function defaultForm(): RepullingTransactionPayload {
-  const accountChains = Object.entries(get(accountsPerChain))
-    .filter(([_, accounts]) => accounts.length > 0)
-    .map(([chain]) => chain);
-
-  return {
-    address: '',
-    chain: accountChains[0],
-    fromTimestamp: dayjs().subtract(1, 'year').unix(),
-    toTimestamp: dayjs().unix(),
-  };
-}
-
-const formData = ref<RepullingTransactionPayload>(defaultForm());
+const formData = ref(createDefaultFormData());
 
 function resetForm(): void {
-  set(formData, defaultForm());
+  set(formData, createDefaultFormData());
   set(accountType, 'blockchain');
 }
 
@@ -103,31 +93,25 @@ async function handleExchangeSubmission(
 }
 
 async function handleBlockchainSubmission(data: RepullingTransactionPayload): Promise<void> {
-  const refreshPayload: ChainAddress = {
-    address: data.address!,
-    chain: data.chain,
-  };
+  const chain = data.chain === 'all' ? undefined : data.chain;
   const blockchainPayload: RepullingTransactionPayload = {
-    ...refreshPayload,
+    address: data.address,
+    chain,
     fromTimestamp: data.fromTimestamp,
     toTimestamp: data.toTimestamp,
   };
 
   set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
-  const newTransactionsDetected = await repullingTransactions(blockchainPayload);
-  if (newTransactionsDetected) {
-    const chains = [data.chain];
-    props.repullTransactions?.(refreshPayload);
-    logger.debug(`New transactions detected ${chains.join(', ')}`);
+  resetUndecodedTransactionsStatus();
+  const result = await repullingTransactions(blockchainPayload);
+  if (result) {
+    props.repullTransactions?.(result);
+    logger.debug(`New transactions detected${chain ? ` for chain ${chain}` : ' for all chains'}`);
   }
 }
 
-async function submit(): Promise<void> {
+async function performSubmission(): Promise<void> {
   const formRef = get(form);
-  const valid = await formRef?.validate();
-  if (!valid)
-    return;
-
   const data = get(formData);
   const type = get(accountType);
 
@@ -149,6 +133,27 @@ async function submit(): Promise<void> {
     set(submitting, false);
   }
 }
+
+async function submit(): Promise<void> {
+  const formRef = get(form);
+  const valid = await formRef?.validate();
+  if (!valid)
+    return;
+
+  const data = get(formData);
+  const type = get(accountType);
+
+  if (type === 'blockchain' && shouldShowConfirmation(data)) {
+    show({
+      message: t('transactions.repulling.confirmation.message'),
+      title: t('transactions.repulling.confirmation.title'),
+      type: 'info',
+    }, performSubmission);
+  }
+  else {
+    await performSubmission();
+  }
+}
 </script>
 
 <template>
@@ -157,6 +162,7 @@ async function submit(): Promise<void> {
     :title="t('transactions.repulling.action')"
     :primary-action="t('transactions.repulling.action')"
     :action-disabled="loading || taskRunning"
+    :action-tooltip="loading ? t('transactions.repulling.loading_tooltip') : ''"
     :loading="submitting || taskRunning"
     :prompt-on-close="stateUpdated"
     @confirm="submit()"

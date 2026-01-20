@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { ActionDataEntry } from '@/types/action';
 import { isValidEthAddress, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';

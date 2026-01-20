@@ -34,14 +34,14 @@ class SafeBalances(ProtocolWithBalance):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_SAFE,
-            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},  # noqa: E501
         )
 
     def query_balances(self) -> 'BalancesSheetType':
         """Query balances of locked safe tokens if deposit events are found."""
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         if len(deposit_data := self.addresses_with_activity(
-            event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
+            event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},
         )) == 0:
             return balances
 

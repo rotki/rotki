@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import { ValueDisplay } from '@/modules/amount-display/components';
 import { sortDesc } from '@/utils/bignumbers';
 import WrappedCard from '../WrappedCard.vue';
 
@@ -43,9 +43,9 @@ const exchangeItems = computed<Array<[string, BigNumber]>>(() => {
       />
     </template>
     <template #value="{ item }">
-      <AmountDisplay
+      <ValueDisplay
         :value="item[1]"
-        integer
+        :format="{ integer: true }"
       />
       {{ t('common.trades', item[1].toNumber()) }}
     </template>

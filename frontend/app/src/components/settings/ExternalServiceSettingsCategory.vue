@@ -2,6 +2,8 @@
 import ConnectTimeoutSetting from '@/components/settings/general/external-services/ConnectTimeoutSetting.vue';
 import QueryRetryLimitSetting from '@/components/settings/general/external-services/QueryRetryLimitSetting.vue';
 import ReadTimeoutSetting from '@/components/settings/general/external-services/ReadTimeoutSetting.vue';
+import SuppressMissingKeyServicesSetting
+  from '@/components/settings/general/external-services/SuppressMissingKeyServicesSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -18,5 +20,6 @@ const { t } = useI18n({ useScope: 'global' });
     <QueryRetryLimitSetting />
     <ConnectTimeoutSetting />
     <ReadTimeoutSetting />
+    <SuppressMissingKeyServicesSetting />
   </SettingCategory>
 </template>

@@ -36,7 +36,7 @@ class PendleBalances(ProtocolWithBalance):
             counterparty=CPT_PENDLE,
             evm_inquirer=evm_inquirer,
             deposit_event_types={
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
             },
         )
         self.ve_pendle_contract = EvmContract(

@@ -1,9 +1,18 @@
 import frontendSettingsV0 from '@test/fixtures/frontend_settings_v0.json';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import { FrontendSettings, getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
 import { applyMigrations, migrateSettingsIfNeeded } from '@/types/settings/frontend-settings-migrations';
 
+vi.hoisted(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date(2026, 0, 1));
+});
+
 describe('frontend-settings-migrations', () => {
+  afterAll(() => {
+    vi.useRealTimers();
+  });
+
   it('should apply the frontend schema migration from v0 to v2', () => {
     expect(FrontendSettings.parse(applyMigrations({ ...frontendSettingsV0 } as any))).toEqual(getDefaultFrontendSettings());
   });

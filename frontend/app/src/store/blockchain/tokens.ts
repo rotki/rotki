@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/types/balances';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { TaskMeta } from '@/types/task';

@@ -365,7 +365,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                 event.amount == borrowed_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.notes = f'Deposit {event.amount} {borrowed_token.symbol} into a leveraged Curve position'  # noqa: E501
                 event.counterparty = CPT_CURVE
                 event.extra_data = {'controller_address': controller_address}
@@ -378,7 +378,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
             asset=collateral_token,
             amount=collateral_amount,
             to_event_type=HistoryEventType.DEPOSIT,
-            to_event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            to_event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             to_notes=f'Deposit {collateral_amount} {collateral_token.symbol} into a leveraged Curve position',  # noqa: E501
             to_counterparty=CPT_CURVE,
             extra_data={'controller_address': controller_address},

@@ -4,13 +4,13 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
 import SimpleTable from '@/components/common/SimpleTable.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
+import { ValueDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
 
 interface PotentialMatchRow {
@@ -18,6 +18,7 @@ interface PotentialMatchRow {
   asset: string;
   amount: BigNumber;
   location: string;
+  locationLabel?: string;
   timestamp: number;
   txRef?: string;
   eventType: string;
@@ -51,8 +52,9 @@ const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => [
     label: t('common.datetime'),
   },
   {
+    class: 'whitespace-pre-line',
     key: 'txRef',
-    label: t('common.tx_hash'),
+    label: `${t('common.tx_hash')} -\n${t('common.account')}`,
   },
   {
     class: 'whitespace-pre-line',
@@ -127,7 +129,7 @@ watchDebounced(onlyExpectedAssets, () => {
               </BadgeDisplay>
             </td>
             <td class="text-end">
-              <AmountDisplay :value="movementEntry.amount" />
+              <ValueDisplay :value="movementEntry.amount" />
             </td>
             <td>
               <AssetDetails :asset="movementEntry.asset" />
@@ -153,7 +155,10 @@ watchDebounced(onlyExpectedAssets, () => {
           variant="outlined"
           dense
         />
-        <RuiTooltip :popper="{ placement: 'top' }">
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          tooltip-class="max-w-80"
+        >
           <template #activator>
             <RuiCheckbox
               v-model="onlyExpectedAssets"
@@ -187,7 +192,7 @@ watchDebounced(onlyExpectedAssets, () => {
       :loading="loading"
     >
       <template #item.txRef="{ row }">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-1.5">
           <LocationIcon
             horizontal
             icon
@@ -202,6 +207,14 @@ watchDebounced(onlyExpectedAssets, () => {
           />
           <span v-else>-</span>
         </div>
+        <div class="pt-1">
+          <HashLink
+            v-if="row.locationLabel"
+            :text="row.locationLabel"
+            :location="row.location"
+          />
+          <span v-else>-</span>
+        </div>
       </template>
       <template #item.asset="{ row }">
         <AssetDetails :asset="row.asset" />
@@ -211,7 +224,7 @@ watchDebounced(onlyExpectedAssets, () => {
         <div>{{ getHistoryEventSubTypeName(row.eventSubtype) }}</div>
       </template>
       <template #item.amount="{ row }">
-        <AmountDisplay :value="row.amount" />
+        <ValueDisplay :value="row.amount" />
       </template>
       <template #item.timestamp="{ row }">
         <DateDisplay

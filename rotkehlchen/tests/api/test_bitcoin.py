@@ -666,7 +666,10 @@ def test_delete_btc_account(
     with rotki.data.db.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(),
+            filter_query=HistoryEventFilterQuery.make(order_by_rules=[
+                ('timestamp', True),
+                ('history_events_identifier', True),
+            ]),
             entries_limit=None,
         )
         assert len(events) == 3  # Events remaining are the customized event from address1 and both events from address2  # noqa: E501

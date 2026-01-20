@@ -173,7 +173,7 @@ class CurvecrvusdDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMixin):
                 event.amount == collateral_sent
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.notes = f'Deposit {event.amount} {collateral_token.symbol} into a leveraged Curve position'  # noqa: E501
                 event.counterparty = CPT_CURVE
                 event.extra_data = {'controller_address': controller_address}

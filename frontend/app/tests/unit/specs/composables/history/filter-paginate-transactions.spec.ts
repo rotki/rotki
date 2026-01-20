@@ -1,5 +1,5 @@
 import type { Account } from '@rotki/common/src/account';
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { Collection } from '@/types/collection';

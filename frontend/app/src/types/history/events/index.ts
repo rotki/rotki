@@ -82,12 +82,13 @@ interface TimeRange {
 }
 
 export interface RepullingTransactionPayload extends TimeRange {
-  readonly chain: string;
+  readonly chain?: string;
   readonly address?: string;
 }
 
 export interface RepullingTransactionResponse {
   newTransactionsCount: number;
+  newTransactions: Record<string, string[]>;
 }
 
 export interface RepullingExchangeEventsPayload extends TimeRange {

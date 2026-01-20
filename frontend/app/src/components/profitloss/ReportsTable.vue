@@ -3,11 +3,11 @@ import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
 import type { Report } from '@/types/reports';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportsTableMoreAction from '@/components/profitloss/ReportsTableMoreAction.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useReportsStore } from '@/store/reports';
 import { calculateTotalProfitLoss } from '@/utils/report';
@@ -139,21 +139,17 @@ useRememberTableSorting<ReportData>(TableId.REPORTS, sort, tableHeaders);
         />
       </template>
       <template #item.free="{ row }">
-        <AmountDisplay
-          force-currency
-          show-currency="symbol"
-          pnl
+        <FiatDisplay
           :value="row.free"
-          :fiat-currency="row.settings.profitCurrency"
+          :currency="row.settings.profitCurrency ?? undefined"
+          pnl
         />
       </template>
       <template #item.taxable="{ row }">
-        <AmountDisplay
-          force-currency
-          show-currency="symbol"
-          pnl
+        <FiatDisplay
           :value="row.taxable"
-          :fiat-currency="row.settings.profitCurrency"
+          :currency="row.settings.profitCurrency ?? undefined"
+          pnl
         />
       </template>
       <template #item.actions="{ row }">

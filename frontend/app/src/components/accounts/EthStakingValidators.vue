@@ -3,7 +3,6 @@ import type { StakingValidatorManage } from '@/composables/accounts/blockchain/u
 import type { EthereumValidator } from '@/types/blockchain/accounts';
 import Eth2ValidatorLimitRow from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitRow.vue';
 import ValidatorStatus from '@/components/accounts/staking/eth/ValidatorStatus.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
@@ -11,6 +10,7 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { useEthValidatorData } from '@/composables/staking/eth/use-eth-validator-data';
 import { useEthValidatorOperations } from '@/composables/staking/eth/use-eth-validator-operations';
 import { useEthValidatorUtils } from '@/composables/staking/eth/use-eth-validator-utils';
+import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { SavedFilterLocation } from '@/types/filtering';
 
@@ -150,18 +150,13 @@ defineExpose({
           <ValidatorStatus :validator="row" />
         </template>
         <template #item.amount="{ row }">
-          <AmountDisplay
-            :value="row.amount"
+          <AssetAmountDisplay
             asset="ETH"
-            :asset-padding="0.1"
+            :amount="row.amount"
           />
         </template>
         <template #item.value="{ row }">
-          <AmountDisplay
-            force-currency
-            :value="row.value"
-            show-currency="symbol"
-          />
+          <FiatDisplay :value="row.value" />
         </template>
         <template #item.ownershipPercentage="{ row }">
           <PercentageDisplay
@@ -194,18 +189,13 @@ defineExpose({
           >
             <template #custom-columns>
               <td class="text-end">
-                <AmountDisplay
-                  :value="totalAmount"
+                <AssetAmountDisplay
                   asset="ETH"
-                  :asset-padding="0.1"
+                  :amount="totalAmount"
                 />
               </td>
             </template>
-            <AmountDisplay
-              :value="totalValue"
-              force-currency
-              show-currency="symbol"
-            />
+            <FiatDisplay :value="totalValue" />
           </RowAppend>
         </template>
       </RuiDataTable>

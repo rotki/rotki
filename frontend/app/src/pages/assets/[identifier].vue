@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import { externalLinks } from '@shared/external-links';
-import ManagedAssetIgnoringMore from '@/components/asset-manager/managed/ManagedAssetIgnoringMore.vue';
+import ManagedAssetIgnoreSwitch from '@/components/asset-manager/managed/ManagedAssetIgnoreSwitch.vue';
 import AssetBalances from '@/components/AssetBalances.vue';
 import AssetLocations from '@/components/assets/AssetLocations.vue';
 import AssetValueRow from '@/components/assets/AssetValueRow.vue';
@@ -16,7 +16,6 @@ import { usePremium } from '@/composables/premium';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useAssetPageActions } from '@/pages/assets/use-asset-page-actions';
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
-import { EVM_TOKEN } from '@/types/asset';
 import { NoteLocation } from '@/types/notes';
 import { getPublicServiceImagePath } from '@/utils/file';
 
@@ -67,8 +66,9 @@ const asset = assetInfo(identifier, assetRetrievalOption);
 const contractInfo = assetContractInfo(identifier, assetRetrievalOption);
 
 const {
-  isIgnored,
-  isSpam,
+  loadingIgnore,
+  loadingSpam,
+  loadingWhitelist,
   toggleIgnoreAsset,
   toggleSpam,
   toggleWhitelistAsset,
@@ -223,32 +223,15 @@ function goToEdit(): void {
             {{ t('assets.action.ignore') }}
           </div>
 
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-            tooltip-class="max-w-[10rem]"
-            :disabled="!isSpam"
-          >
-            <template #activator>
-              <RuiSwitch
-                color="primary"
-                hide-details
-                :disabled="isSpam"
-                :model-value="isIgnored"
-                @update:model-value="toggleIgnoreAsset()"
-              />
-            </template>
-            {{ t('ignore.spam.hint') }}
-          </RuiTooltip>
+          <ManagedAssetIgnoreSwitch
+            :asset="{ identifier, assetType: asset?.assetType, protocol: asset?.protocol }"
+            :loading="loadingIgnore"
+            :menu-loading="loadingWhitelist || loadingSpam"
+            @toggle-ignore="toggleIgnoreAsset()"
+            @toggle-whitelist="toggleWhitelistAsset()"
+            @toggle-spam="toggleSpam()"
+          />
         </template>
-
-        <ManagedAssetIgnoringMore
-          v-if="asset?.assetType === EVM_TOKEN"
-          :identifier="identifier"
-          :is-spam="isSpam"
-          @toggle-whitelist="toggleWhitelistAsset()"
-          @toggle-spam="toggleSpam()"
-        />
       </div>
     </div>
 

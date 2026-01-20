@@ -32,7 +32,7 @@ export default mergeConfig(
           'Date',
         ],
       },
-      exclude: [...configDefaults.exclude, 'tests/e2e/**', 'tests/contract/**'],
+      exclude: [...configDefaults.exclude, 'tests/e2e/**'],
       root: fileURLToPath(new URL('./', import.meta.url)),
       server: {
         deps: {

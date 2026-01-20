@@ -103,6 +103,8 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     MESSAGE = auto()
     PROFIT = auto()
     LOSS = auto()
+    DEPOSIT_TO_PROTOCOL = auto()
+    WITHDRAW_FROM_PROTOCOL = auto()
 
     def serialize_or_none(self) -> str | None:
         return self.serialize()
@@ -196,6 +198,8 @@ class EventCategory(Enum):
     ACCOUNT_WITHDRAWAL = 58, EventDirection.NEUTRAL
     PROFIT = 59, EventDirection.IN
     SELF_TRANSACTION = 60, EventDirection.NEUTRAL
+    PROTOCOL_DEPOSIT = 61, EventDirection.NEUTRAL
+    PROTOCOL_WITHDRAWAL = 62, EventDirection.NEUTRAL
 
     @property
     def direction(self) -> EventDirection:

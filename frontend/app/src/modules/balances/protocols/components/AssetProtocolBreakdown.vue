@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { type ProtocolBalanceWithChains, transformCase } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
+import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import ChainBalances from '@/modules/balances/protocols/components/ChainBalances.vue';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -84,20 +84,19 @@ const cols = computed<DataTableColumn<ProtocolBalanceWithChains>[]>(() => [{
     </template>
 
     <template #item.amount="{ row }">
-      <AmountDisplay
-        :value="row.amount"
+      <AssetAmountDisplay
+        v-if="asset"
         :asset="asset"
-        :asset-padding="0.1"
+        :amount="row.amount"
+      />
+      <ValueDisplay
+        v-else
+        :value="row.amount"
       />
     </template>
 
     <template #item.value="{ row }">
-      <AmountDisplay
-        :asset-padding="0.1"
-        force-currency
-        :value="row.value"
-        show-currency="symbol"
-      />
+      <FiatDisplay :value="row.value" />
     </template>
   </RuiDataTable>
 </template>

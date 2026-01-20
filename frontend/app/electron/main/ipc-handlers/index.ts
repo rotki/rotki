@@ -1,5 +1,7 @@
 export { BackendHandlers } from './backend-handlers';
 
+export { OAuthHandlers } from './oauth-handlers';
+
 export { SecurityHandlers } from './security-handlers';
 
 export { SystemHandlers } from './system-handlers';

@@ -122,7 +122,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
             base_event_type = HistoryEventType.SPEND
             # new types of the decoded event
             event_type = HistoryEventType.DEPOSIT
-            event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
             abi_code = EXECUTE_INCREASE_ABI
             # index in the decoded data for the fee amount
             fee_index = 7
@@ -130,7 +130,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
             verb_text = 'decrease'
             base_event_type = HistoryEventType.RECEIVE
             event_type = HistoryEventType.WITHDRAWAL
-            event_subtype = HistoryEventSubType.REMOVE_ASSET
+            event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
             abi_code = EXECUTE_DECREASE_ABI
             fee_index = 8
         else:

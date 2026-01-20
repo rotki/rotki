@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -192,10 +192,7 @@ defineExpose({
           symbol: currencySymbol,
         })
       }}:
-      <AmountDisplay
-        :value="fiatPriceHint"
-        :fiat-currency="currencySymbol"
-      />
+      <FiatDisplay :value="fiatPriceHint" />
     </div>
   </div>
 </template>

@@ -1,16 +1,11 @@
 <script setup lang="ts">
-import HistoryEventsView from '@/components/history/events/HistoryEventsView.vue';
-import { NoteLocation } from '@/types/notes';
+import { Routes } from '@/router/routes';
 
 definePage({
-  meta: {
-    canNavigateBack: true,
-    noteLocation: NoteLocation.HISTORY,
-  },
-  name: 'history-events',
+  redirect: Routes.HISTORY_EVENTS,
 });
 </script>
 
 <template>
-  <HistoryEventsView main-page />
+  <div />
 </template>

@@ -2,11 +2,11 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PoolAsset } from './types';
 import { type AssetBalanceWithPrice, Zero } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { useAssetSelectInfo } from '@/composables/assets/asset-select-info';
 import { usePremium } from '@/composables/premium';
+import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -89,27 +89,21 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
       <AssetDetails :asset="row.asset" />
     </template>
     <template #item.usdPrice="{ row }">
-      <AmountDisplay
+      <FiatDisplay
         v-if="row.usdPrice && row.usdPrice.gte(0)"
-        is-asset-price
-        show-currency="symbol"
-        :price-asset="row.asset"
-        :price-of-asset="row.usdPrice"
-        fiat-currency="USD"
         :value="row.usdPrice"
+        from="USD"
       />
       <span v-else>-</span>
     </template>
     <template #item.amount="{ row }">
-      <AmountDisplay :value="row.amount" />
+      <ValueDisplay :value="row.amount" />
     </template>
     <template #item.value="{ row }">
-      <AmountDisplay
-        show-currency="symbol"
+      <AssetValueDisplay
+        :asset="row.asset"
         :amount="row.amount"
-        :price-asset="row.asset"
-        :price-of-asset="row.usdPrice"
-        fiat-currency="USD"
+        :price="row.usdPrice"
         :value="row.value"
       />
     </template>

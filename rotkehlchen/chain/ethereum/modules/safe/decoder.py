@@ -102,7 +102,7 @@ class SafeDecoder(EvmDecoderInterface):
             ):
 
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.counterparty = CPT_SAFE
                 event.notes = f'Lock {amount} SAFE for Safe{{Pass}}'
                 break
@@ -150,7 +150,7 @@ class SafeDecoder(EvmDecoderInterface):
             asset=self.safe_token,
             amount=amount,
             to_event_type=HistoryEventType.WITHDRAWAL,
-            to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             to_notes=f'Withdraw {amount} SAFE from Safe{{Pass}} locking',
             to_counterparty=CPT_SAFE,
         )

@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { AccountingRuleLinkedSettingMap } from '@/types/settings/accounting';
 import { assert, toHumanReadable, transformCase } from '@rotki/common';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';

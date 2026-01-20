@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { type Balance, Zero } from '@rotki/common';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
+import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 
 const props = withDefaults(
@@ -72,19 +72,16 @@ const valueInCurrency = computed(() => {
         'items-end': align === 'end',
       }"
     >
-      <AmountDisplay
-        :loading="loading"
+      <AssetAmountDisplay
         :asset="asset"
-        :asset-padding="assetPadding"
-        :value="amount"
+        :amount="amount"
+        :loading="loading"
         class="block font-medium"
       />
-      <AmountDisplay
-        force-currency
-        :asset-padding="assetPadding"
+      <FiatDisplay
         :value="valueInCurrency"
-        :show-currency="ticker ? 'ticker' : 'none'"
         :loading="loading"
+        :symbol="ticker ? 'ticker' : 'none'"
         class="block text-rui-text-secondary"
       />
     </div>

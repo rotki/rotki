@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 import ListItem from '@/components/common/ListItem.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useLocations } from '@/composables/locations';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { Routes } from '@/router/routes';
 
 interface ExchangeBoxProps {
@@ -38,9 +38,7 @@ const exchangeLocationRoute = computed<string>(() => {
       </template>
       <div class="flex flex-wrap justify-between gap-1 text-rui-text">
         {{ exchangeName(location) }}
-        <AmountDisplay
-          show-currency="symbol"
-          force-currency
+        <FiatDisplay
           :value="amount"
           class="font-medium"
         />

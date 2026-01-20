@@ -82,12 +82,12 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
         if int.from_bytes(context.tx_log.data[64:96], signed=True) > 0:
             expected_type = HistoryEventType.SPEND
             event_type = HistoryEventType.DEPOSIT
-            event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
             verb, from_to = 'Deposit', 'to'
         else:
             expected_type = HistoryEventType.RECEIVE
             event_type = HistoryEventType.WITHDRAWAL
-            event_subtype = HistoryEventSubType.REMOVE_ASSET
+            event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
             verb, from_to = 'Withdraw', 'from'
 
         # Edit the native currency event from the already decoded events, but use action items

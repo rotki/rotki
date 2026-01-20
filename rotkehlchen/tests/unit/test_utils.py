@@ -6,6 +6,7 @@ from datetime import datetime
 from json.decoder import JSONDecodeError
 from unittest.mock import patch
 
+import gevent
 import pytest
 from eth_typing import HexAddress, HexStr
 from eth_utils import to_checksum_address
@@ -34,6 +35,7 @@ from rotkehlchen.utils.misc import (
     timestamp_to_date,
 )
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
+from rotkehlchen.utils.mixins.lockable import skip_if_running
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -526,3 +528,33 @@ def test_identifier_to_evm_address():
     assert identifier_to_evm_address(identifier='eip155:/:') is None
     assert identifier_to_evm_address(identifier='eip155:1/erc20:') is None
     assert identifier_to_evm_address(identifier='eip155:1/erc20:xyz') is None
+
+
+def test_skip_if_running():
+    """Test that skip_if_running decorator skips concurrent calls"""
+    call_count = 0
+    execution_order = []
+    lock_acquired = gevent.event.Event()
+
+    @skip_if_running
+    def slow_function():
+        nonlocal call_count
+        call_count += 1
+        execution_order.append(f'start_{call_count}')
+        lock_acquired.set()
+        gevent.sleep(0.05)
+        execution_order.append(f'end_{call_count}')
+        return call_count
+
+    greenlet1 = gevent.spawn(slow_function)
+    lock_acquired.wait()  # wait until greenlet1 has acquired the lock
+    greenlet2 = gevent.spawn(slow_function)
+    greenlet3 = gevent.spawn(slow_function)
+
+    gevent.joinall([greenlet1, greenlet2, greenlet3])
+
+    assert greenlet1.value == 1
+    assert greenlet2.value is None  # skipped - already running
+    assert greenlet3.value is None  # skipped - already running
+    assert call_count == 1
+    assert execution_order == ['start_1', 'end_1']

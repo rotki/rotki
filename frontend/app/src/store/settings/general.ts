@@ -9,6 +9,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
 
   const uiFloatingPrecision = useComputedRef(settings, 'uiFloatingPrecision');
   const submitUsageAnalytics = useComputedRef(settings, 'submitUsageAnalytics');
+  const assetMovementAmountTolerance = useComputedRef(settings, 'assetMovementAmountTolerance');
+  const assetMovementTimeRange = useComputedRef(settings, 'assetMovementTimeRange');
   const ksmRpcEndpoint = useComputedRef(settings, 'ksmRpcEndpoint');
   const dotRpcEndpoint = useComputedRef(settings, 'dotRpcEndpoint');
   const btcMempoolApi = useComputedRef(settings, 'btcMempoolApi');
@@ -40,6 +42,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const askUserUponSizeDiscrepancy = useComputedRef(settings, 'askUserUponSizeDiscrepancy');
   const autoDetectTokens = useComputedRef(settings, 'autoDetectTokens');
   const csvExportDelimiter = useComputedRef(settings, 'csvExportDelimiter');
+  const suppressMissingKeyMsgServices = useComputedRef(settings, 'suppressMissingKeyMsgServices');
 
   const currencySymbol = computed<SupportedCurrency>(() => {
     const currency = get(mainCurrency);
@@ -57,6 +60,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     activeModules,
     addressNamePriority,
     askUserUponSizeDiscrepancy,
+    assetMovementAmountTolerance,
+    assetMovementTimeRange,
     autoCreateCalendarReminders,
     autoDeleteCalendarEntries,
     autoDetectTokens,
@@ -88,6 +93,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     settings,
     ssfGraphMultiplier,
     submitUsageAnalytics,
+    suppressMissingKeyMsgServices,
     treatEth2AsEth,
     update,
   };

@@ -2,6 +2,7 @@ import type { MessageHandlerRegistry } from '../interfaces';
 import { createDataMigrationHandler, createDbUpgradeHandler } from '../handlers/database-migration';
 import { createEventsStatusHandler } from '../handlers/events-status';
 import { createEvmAccountsHandler } from '../handlers/evm-accounts';
+import { createNegativeBalanceDetectedHandler } from '../handlers/negative-balance-detected';
 import { createProgressUpdateHandler } from '../handlers/progress-updates';
 import { createTransactionStatusHandler } from '../handlers/transaction-status';
 import { SocketMessageType } from '../types/base';
@@ -14,6 +15,7 @@ export function createStatusRegistry(
     [SocketMessageType.DB_UPGRADE_STATUS]: createDbUpgradeHandler(),
     [SocketMessageType.EVM_ACCOUNTS_DETECTION]: createEvmAccountsHandler(),
     [SocketMessageType.HISTORY_EVENTS_STATUS]: createEventsStatusHandler(),
+    [SocketMessageType.NEGATIVE_BALANCE_DETECTED]: createNegativeBalanceDetectedHandler(),
     [SocketMessageType.PROGRESS_UPDATES]: createProgressUpdateHandler(t),
     [SocketMessageType.TRANSACTION_STATUS]: createTransactionStatusHandler(),
   };

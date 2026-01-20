@@ -2,7 +2,12 @@ import logging
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.utils import asset_normalized_value
+from rotkehlchen.assets.asset import UnderlyingToken
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    asset_normalized_value,
+    get_or_create_evm_token,
+)
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
@@ -12,12 +17,16 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import get_protocol_token_addresses
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.errors.misc import InputError, NotERC20Conformant, NotERC721Conformant
+from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
@@ -59,8 +68,59 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.vaults: set[ChecksumEvmAddress] = set()
+        self.vaults: dict[ChecksumEvmAddress, tuple[ChecksumEvmAddress, bool]] = {}
         self.zap_contract_address = SUPPORTED_BEEFY_CHAINS[self.node_inquirer.chain_id]
+
+    def _ensure_vault_tokens(self, all_logs: list[EvmTxReceiptLog]) -> None:
+        """Ensure vault/underlying tokens exist before decoding Beefy events.
+        Uses fallback metadata for legacy reward vaults that aren't ERC20 conformant.
+        """
+        if len(vault_addresses := {
+            tx_log.address for tx_log in all_logs
+            if tx_log.address in self.vaults
+        }) == 0:
+            return
+
+        encounter = TokenEncounterInfo(
+            description='Beefy vault token',
+            should_notify=False,
+        )
+        for vault_address in vault_addresses:
+            underlying_address, is_legacy = self.vaults[vault_address]
+            fallback_name = fallback_symbol = fallback_decimals = None
+            if underlying_address != vault_address:
+                try:
+                    underlying_token = self.base.get_or_create_evm_token(
+                        address=underlying_address,
+                        encounter=encounter,
+                    )
+                except (NotERC20Conformant, NotERC721Conformant) as e:
+                    log.error(f'Failed to get Beefy underlying token {underlying_address} due to {e!s}')  # noqa: E501
+                    continue
+                underlying_tokens = [UnderlyingToken(address=underlying_token.evm_address, token_kind=TokenKind.ERC20, weight=ONE)]  # noqa: E501
+
+                if is_legacy:
+                    fallback_name = f'Reward {underlying_token.name}'
+                    fallback_symbol = f'r{underlying_token.symbol}'
+                    fallback_decimals = underlying_token.decimals
+            else:  # case of cowcentrated vaults
+                underlying_tokens = None
+
+            try:
+                get_or_create_evm_token(
+                    userdb=self.base.database,
+                    evm_address=vault_address,
+                    chain_id=self.node_inquirer.chain_id,
+                    evm_inquirer=self.node_inquirer,
+                    protocol=CPT_BEEFY_FINANCE,
+                    underlying_tokens=underlying_tokens,
+                    fallback_name=fallback_name,
+                    fallback_symbol=fallback_symbol,
+                    fallback_decimals=fallback_decimals,
+                    encounter=encounter,
+                )
+            except (NotERC20Conformant, NotERC721Conformant, InputError) as e:
+                log.error(f'Failed to create Beefy vault token {vault_address} due to {e!s}')
 
     def _process_beefy_events(
             self,
@@ -182,6 +242,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         operations for Beefy vaults. Deposits involve spending LP tokens to receive
         vault tokens, while withdrawals involve spending vault tokens to receive LP tokens.
         """
+        self._ensure_vault_tokens(all_logs)
         return self._process_beefy_events(
             events=decoded_events,
             transaction=transaction,
@@ -195,6 +256,8 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         """
         if context.tx_log.topics[0] != FULFILLED_ORDER_TOPIC:
             return DEFAULT_EVM_DECODING_OUTPUT
+
+        self._ensure_vault_tokens(context.all_logs)
 
         amounts_and_assets = []
         for tx_log in context.all_logs:
@@ -221,22 +284,30 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
-        if (is_cache_updated := should_update_protocol_cache(
-                userdb=self.base.database,
-                cache_key=CacheType.BEEFY_VAULTS,
-                args=(str(self.node_inquirer.chain_id.serialize()),),
-        )) is True:
+        if should_update_protocol_cache(
+            userdb=self.base.database,
+            cache_key=CacheType.BEEFY_VAULTS,
+            args=(str(self.node_inquirer.chain_id.serialize()),),
+        ) is True:
             query_beefy_vaults(self.node_inquirer)
-            is_cache_updated = True
-
-        if len(self.vaults) != 0 and not is_cache_updated:  # Skip database query if we already have vault data and cache wasn't updated  # noqa: E501
+        elif len(self.vaults) != 0:  # Skip database query if we already have vault data and cache wasn't updated  # noqa: E501
             return None
 
-        self.vaults = get_protocol_token_addresses(
-            protocol=CPT_BEEFY_FINANCE,
-            chain_id=self.node_inquirer.chain_id,
-            existing_tokens=self.vaults,
-        )
+        self.vaults = {}
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            for info in globaldb_get_general_cache_values(
+                cursor=cursor,
+                key_parts=(CacheType.BEEFY_VAULTS, str(self.node_inquirer.chain_id.serialize())),
+            ):
+                if len(vault := info.split(',')) != 3:
+                    log.error(f'Failed to load Beefy vault from cache: {info}')
+                    continue
+
+                self.vaults[string_to_evm_address(vault[0])] = (
+                    string_to_evm_address(vault[1]),
+                    vault[2] == '1',  # is_legacy flag
+                )
+
         return self.addresses_to_decoders()
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:

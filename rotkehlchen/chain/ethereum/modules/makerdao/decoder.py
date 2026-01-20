@@ -176,7 +176,7 @@ class MakerdaoDecoder(EvmDecoderInterface):
                 if event.event_type == HistoryEventType.SPEND and event.asset == vault_asset and event.amount == amount:  # noqa: E501
                     event.sequence_index = context.tx_log.log_index  # to better position it in the list  # noqa: E501
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                     event.counterparty = CPT_VAULT
                     event.notes = f'Deposit {amount} {vault_asset.symbol} to {vault_type} MakerDAO vault'  # noqa: E501
                     event.extra_data = {'vault_type': vault_type}
@@ -185,7 +185,7 @@ class MakerdaoDecoder(EvmDecoderInterface):
             # not found, perhaps the transfer comes after
             from_event_type = HistoryEventType.SPEND
             to_event_type = HistoryEventType.DEPOSIT
-            to_event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            to_event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
             to_notes = f'Deposit {amount} {vault_asset.symbol} to {vault_type} MakerDAO vault'
 
         elif context.tx_log.topics[0] == GENERIC_EXIT:
@@ -198,7 +198,7 @@ class MakerdaoDecoder(EvmDecoderInterface):
             for event in context.decoded_events:
                 if event.event_type == HistoryEventType.RECEIVE and event.asset == vault_asset and event.amount == amount:  # noqa: E501
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                     event.counterparty = CPT_VAULT
                     event.notes = f'Withdraw {amount} {vault_asset.symbol} from {vault_type} MakerDAO vault'  # noqa: E501
                     event.extra_data = {'vault_type': vault_type}
@@ -207,7 +207,7 @@ class MakerdaoDecoder(EvmDecoderInterface):
             # not found, perhaps the transfer comes after
             from_event_type = HistoryEventType.RECEIVE
             to_event_type = HistoryEventType.WITHDRAWAL
-            to_event_subtype = HistoryEventSubType.REMOVE_ASSET
+            to_event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
             to_notes = f'Withdraw {amount} {vault_asset.symbol} from {vault_type} MakerDAO vault'
 
         else:
@@ -326,7 +326,7 @@ class MakerdaoDecoder(EvmDecoderInterface):
                     event.location_label = user
                     event.counterparty = CPT_DSR
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                     event.notes = f'Deposit {amount} DAI in the DSR'
                     return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -363,7 +363,7 @@ class MakerdaoDecoder(EvmDecoderInterface):
                 asset=self.dai,
                 amount=amount,
                 to_event_type=HistoryEventType.WITHDRAWAL,
-                to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
                 to_notes=f'Withdraw {amount} DAI from the DSR',
                 to_counterparty=CPT_DSR,
             )
@@ -497,7 +497,7 @@ class MakerdaoDecoder(EvmDecoderInterface):
                 except (UnknownAsset, WrongAssetType):
                     self.notify_user(event=event, counterparty=CPT_VAULT)
                     continue
-                if event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and event.counterparty == CPT_VAULT:  # noqa: E501
+                if event.event_type == HistoryEventType.DEPOSIT and event.event_subtype == HistoryEventSubType.DEPOSIT_TO_PROTOCOL and event.counterparty == CPT_VAULT:  # noqa: E501
                     normalized_dink = asset_normalized_value(
                         amount=dink,
                         asset=event.asset.resolve_to_crypto_asset(),

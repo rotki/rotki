@@ -191,7 +191,7 @@ def test_curve_locked_crv_balances(
         timestamp=TimestampMS(0),
         location=Location.ETHEREUM,
         event_type=HistoryEventType.DEPOSIT,
-        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
         asset=A_CRV,
         amount=(locked_crv_amount := FVal('311.05616434049212239')),
         location_label=(address := ethereum_accounts[0]),
@@ -298,7 +298,6 @@ def test_convex_staking_balances_without_gauges(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_velodrome_v2_staking_balances(

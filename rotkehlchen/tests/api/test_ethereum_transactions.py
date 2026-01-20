@@ -721,7 +721,7 @@ def test_query_transactions_check_decoded_events(
         with mock_evm_chains_with_transactions():
             rotki.task_manager._maybe_schedule_evm_txreceipts()
             gevent.joinall(rotki.greenlet_manager.greenlets)
-            rotki.task_manager._maybe_decode_evm_transactions()
+            rotki.task_manager._maybe_decode_transactions()
             gevent.joinall(rotki.greenlet_manager.greenlets)
         response = requests.post(
             api_url_for(rotkehlchen_api_server, 'blockchaintransactionsresource'),
@@ -1208,7 +1208,7 @@ def test_ignored_assets(
         expected_totals_with_grouping=3,
         entries_limit=1000,
     )
-    expected = generate_events_response([event4, event1, event2, event3])
+    expected = generate_events_response([event4, event1, event2, event3], has_ignored_assets=[True, True, True, False])  # noqa: E501
     assert returned_events == expected
 
     returned_events = query_events(
@@ -1218,7 +1218,8 @@ def test_ignored_assets(
         expected_totals_with_grouping=3,
         entries_limit=1000,
     )
-    expected = generate_events_response([event1, event3])
+    # event1's group has ignored BTC asset, event3's group has no ignored assets
+    expected = generate_events_response([event1, event3], has_ignored_assets=[True, False])
     assert returned_events == expected
 
 

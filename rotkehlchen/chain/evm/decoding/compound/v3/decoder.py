@@ -325,12 +325,12 @@ class Compoundv3CommonDecoder(EvmDecoderInterface):
                 if event.event_type == HistoryEventType.SPEND:
                     notes_action = 'Enable'
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                     event.notes = f'Deposit {collateral_amount} {asset_symbol} into Compound v3'
                 else:
                     notes_action = 'Disable'
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                     event.notes = f'Withdraw {collateral_amount} {asset_symbol} from Compound v3'
 
                 collateral_event = self.base.make_event_next_index(

@@ -2,11 +2,11 @@
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import { some } from 'es-toolkit/compat';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import { useAssetSelectInfo } from '@/composables/assets/asset-select-info';
+import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocols.vue';
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
@@ -214,26 +214,20 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
       />
     </template>
     <template #item.usdPrice="{ row }">
-      <AmountDisplay
-        :loading="!row.usdPrice || row.usdPrice.lt(0)"
-        is-asset-price
-        show-currency="symbol"
-        :price-asset="row.asset"
-        :price-of-asset="row.usdPrice"
-        fiat-currency="USD"
+      <FiatDisplay
         :value="row.usdPrice"
+        :loading="!row.usdPrice || row.usdPrice.lt(0)"
+        from="USD"
       />
     </template>
     <template #item.amount="{ row }">
-      <AmountDisplay :value="row.amount" />
+      <ValueDisplay :value="row.amount" />
     </template>
     <template #item.value="{ row }">
-      <AmountDisplay
-        show-currency="symbol"
+      <AssetValueDisplay
+        :asset="row.asset"
         :amount="row.amount"
-        :price-asset="row.asset"
-        :price-of-asset="row.usdPrice"
-        force-currency
+        :price="row.usdPrice"
         :value="row.value"
       />
     </template>
@@ -260,11 +254,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
         :right-patch-colspan="2"
         class-name="[&>td]:p-4 text-sm"
       >
-        <AmountDisplay
-          force-currency
-          show-currency="symbol"
-          :value="total"
-        />
+        <FiatDisplay :value="total" />
       </RowAppend>
     </template>
     <template #expanded-item="{ row }">

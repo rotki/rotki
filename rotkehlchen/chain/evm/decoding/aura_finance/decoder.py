@@ -102,7 +102,7 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
             ):
                 event.counterparty = CPT_AURA_FINANCE
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.notes = f'Lock {locked_amount} {event.asset.resolve_to_asset_with_symbol().symbol} in auraLocker (vlAURA)'  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
@@ -140,7 +140,7 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
             ):
                 event.counterparty = CPT_AURA_FINANCE
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.notes = f'Lock {locked_amount} {event.asset.resolve_to_asset_with_symbol().symbol} in Aura Finance (bridged)'  # noqa: E501
 
         if refund_event:  # Remove refund event; it's factored into the bridge fee

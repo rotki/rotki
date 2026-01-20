@@ -106,7 +106,7 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                     continue
 
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.counterparty = CPT_EXTRAFI
                 event.extra_data = {'reserve_index': int.from_bytes(context.tx_log.topics[1])}  # index of the extrafi position. Used to query for balances later  # noqa: E501
                 event.notes = f'Deposit {event.amount} {asset.symbol} into Extrafi lend'
@@ -129,7 +129,7 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.location_label == user
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.counterparty = CPT_EXTRAFI
                 event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from Extrafi lend'  # noqa: E501
                 if on_behalf_of != user:
@@ -230,7 +230,7 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
             ):
                 locktime = deserialize_timestamp(int.from_bytes(context.tx_log.topics[3]))
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.counterparty = CPT_EXTRAFI
                 event.notes = f'Lock {amount} EXTRA until {timestamp_to_date(locktime, formatstr="%d/%m/%Y %H:%M:%S")}'  # noqa: E501
                 break
@@ -259,7 +259,7 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
             ):
                 event.counterparty = CPT_EXTRAFI
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from Extrafi {self._farm_name(vault_id)}'  # noqa: E501
                 break
         else:
@@ -302,7 +302,7 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 tx_ref=context.transaction.tx_hash,
                 timestamp=context.transaction.timestamp,
                 event_type=HistoryEventType.DEPOSIT,
-                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
                 asset=borrow_token,
                 amount=amount,
                 location_label=manager,
@@ -329,7 +329,7 @@ class ExtrafiCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
             ):
                 event.counterparty = CPT_EXTRAFI
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.extra_data = {
                     'vault_id': vault_id,
                     'vault_position': int.from_bytes(context.tx_log.topics[2]),

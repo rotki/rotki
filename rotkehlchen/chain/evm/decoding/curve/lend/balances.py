@@ -46,7 +46,7 @@ class CurveControllerCommonBalances(ProtocolWithBalance, ABC):
             counterparty=CPT_CURVE,
             deposit_event_types={
                 (HistoryEventType.WITHDRAWAL, HistoryEventSubType.GENERATE_DEBT),
-                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
+                (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
             },
         )
 

@@ -5,17 +5,24 @@ from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.decoding.stakedao.utils import STAKEDAO_API
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
-from rotkehlchen.chain.evm.decoding.utils import update_cached_vaults
+from rotkehlchen.chain.evm.utils import maybe_notify_cache_query_status
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.cache import (
+    globaldb_set_general_cache_values,
+    globaldb_update_cache_last_ts,
+)
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import CacheType, ChainID, TokenKind
+from rotkehlchen.types import CacheType, ChainID, Timestamp, TokenKind
 from rotkehlchen.utils.network import request_get
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import ChecksumEvmAddress
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -40,25 +47,23 @@ def _query_stakedao_v2_api(chain_id: ChainID) -> list[dict[str, Any]] | None:
     return vault_data
 
 
-def _process_stakedao_v2_vault(
-        database: 'DBHandler',
-        vault: dict[str, Any],
+def ensure_stakedao_v2_vault_token_exists(
         evm_inquirer: 'EvmNodeInquirer',
+        vault: 'ChecksumEvmAddress',
+        underlying: 'ChecksumEvmAddress',
 ) -> None:
-    """Process StakeDAO v2 vault data from the api and add its tokens to the database.
-    May raise NotERC20Conformant, NotERC721Conformant, DeserializationError, and KeyError.
-    """
+    """Ensure that a StakeDAO V2 vault token and its underlying token exist in the database."""
     get_or_create_evm_token(
-        userdb=database,
-        evm_address=deserialize_evm_address(vault['vault']),
+        userdb=evm_inquirer.database,
+        evm_address=vault,
         chain_id=evm_inquirer.chain_id,
         protocol=CPT_STAKEDAO_V2,
         evm_inquirer=evm_inquirer,
         encounter=TokenEncounterInfo(should_notify=False),
         underlying_tokens=[UnderlyingToken(
             address=get_or_create_evm_token(
-                userdb=database,
-                evm_address=deserialize_evm_address(vault['lpToken']['address']),
+                userdb=evm_inquirer.database,
+                evm_address=underlying,
                 chain_id=evm_inquirer.chain_id,
                 evm_inquirer=evm_inquirer,
                 encounter=TokenEncounterInfo(should_notify=False),
@@ -69,13 +74,44 @@ def _process_stakedao_v2_vault(
     )
 
 
-def query_stakedao_v2_vaults(evm_inquirer: 'EvmNodeInquirer') -> None:
-    """Query StakeDAO V2 vaults from the API and create corresponding tokens."""
-    update_cached_vaults(
-        database=evm_inquirer.database,
-        cache_key=(CacheType.STAKEDAO_V2_VAULTS, str(evm_inquirer.chain_id)),
-        display_name='StakeDAO V2',
-        chain=evm_inquirer.chain_id,
-        query_vaults=lambda: _query_stakedao_v2_api(evm_inquirer.chain_id),
-        process_vault=lambda db, vault: _process_stakedao_v2_vault(db, vault, evm_inquirer),
-    )
+def query_stakedao_v2_vaults(chain_id: ChainID, msg_aggregator: 'MessagesAggregator') -> None:
+    """Query StakeDAO V2 vaults from the API and cache the vault and underlying token addresses."""
+    if (vault_data := _query_stakedao_v2_api(chain_id)) is None:
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            globaldb_update_cache_last_ts(
+                write_cursor=write_cursor,
+                cache_type=CacheType.STAKEDAO_V2_VAULTS,
+                key_parts=(str(chain_id.serialize()),),
+            )  # Update cache timestamp to prevent repeated errors.
+        return
+
+    cache_entries, last_notified_ts, total_entries = [], Timestamp(0), len(vault_data)
+    for idx, vault in enumerate(vault_data):
+        try:
+            cache_entries.append(','.join((
+                deserialize_evm_address(vault['vault']),
+                deserialize_evm_address(vault['lpToken']['address']),
+            )))
+        except (DeserializationError, KeyError) as e:
+            error = f'missing key {e!s}' if isinstance(e, KeyError) else f'{e!s}'
+            log.error(
+                'Failed to cache StakeDAO V2 vault address and underlying token address for '
+                f'vault {vault} due to {error}. Skipping.',
+            )
+
+        last_notified_ts = maybe_notify_cache_query_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=CPT_STAKEDAO_V2,
+            chain=chain_id,
+            processed=idx + 1,
+            total=total_entries,
+        )
+
+    if len(cache_entries) > 0:
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            globaldb_set_general_cache_values(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.STAKEDAO_V2_VAULTS, str(chain_id.serialize())),
+                values=cache_entries,
+            )

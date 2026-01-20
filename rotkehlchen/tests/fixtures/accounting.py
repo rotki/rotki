@@ -6,6 +6,7 @@ from collections import defaultdict
 from collections.abc import Generator
 from contextlib import ExitStack
 from pathlib import Path
+from typing import Any
 from unittest.mock import patch
 
 import pytest
@@ -156,6 +157,18 @@ def fixture_download_rules(last_accounting_rules_version) -> list[tuple[int, Pat
     return result
 
 
+@pytest.fixture(name='latest_accounting_rules_data', scope='session')
+def fixture_latest_accounting_rules_data(
+        latest_accounting_rules: list[tuple[int, Path]],
+) -> list[tuple[int, list[dict[str, Any]]]]:
+    """Parse accounting rules once per session to avoid repeated JSON IO per test."""
+    parsed_rules: list[tuple[int, list[dict[str, Any]]]] = []
+    for version, jsonfile in latest_accounting_rules:
+        rules = json.loads(jsonfile.read_text(encoding='utf-8'))['accounting_rules']
+        parsed_rules.append((version, rules))
+    return parsed_rules
+
+
 @pytest.fixture(name='accountant')
 def fixture_accountant(
         price_historian,  # pylint: disable=unused-argument
@@ -168,6 +181,7 @@ def fixture_accountant(
         rotki_premium_credentials,
         username,
         latest_accounting_rules,
+        latest_accounting_rules_data,
         accountant_without_rules,
         use_dummy_pot,
 ) -> Accountant | None:
@@ -190,9 +204,9 @@ def fixture_accountant(
     )
 
     if accountant_without_rules is False:
-        for version, jsonfile in latest_accounting_rules:
+        for version, rules in latest_accounting_rules_data:
             data_updater.update_accounting_rules(
-                data=json.loads(jsonfile.read_text(encoding='utf-8'))['accounting_rules'],
+                data=rules,
                 version=version,
             )
 

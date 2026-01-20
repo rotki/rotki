@@ -4,9 +4,9 @@ import type { LocationDataSnapshot, LocationDataSnapshotPayload } from '@/types/
 import { type BigNumber, bigNumberify, One, Zero } from '@rotki/common';
 import EditLocationDataSnapshotForm from '@/components/dashboard/edit-snapshot/EditLocationDataSnapshotForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
+import { AssetValueDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
@@ -215,9 +215,9 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
       </template>
 
       <template #item.usdValue="{ row }">
-        <AmountDisplay
+        <FiatDisplay
           :value="row.usdValue"
-          fiat-currency="USD"
+          from="USD"
         />
       </template>
 
@@ -238,12 +238,11 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
           {{ t('common.total') }}:
         </div>
         <div class="font-bold text-h6 -mt-1">
-          <AmountDisplay
-            :value="total"
+          <AssetValueDisplay
+            :asset="CURRENCY_USD"
             :amount="total"
-            :price-asset="CURRENCY_USD"
-            :fiat-currency="CURRENCY_USD"
-            :timestamp="timestamp"
+            :value="total"
+            :timestamp="{ ms: timestamp }"
           />
         </div>
       </div>

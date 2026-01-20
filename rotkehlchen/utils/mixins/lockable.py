@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from collections.abc import Callable
 from functools import wraps
@@ -5,7 +6,31 @@ from typing import Any
 
 from gevent.lock import Semaphore
 
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+
 from .common import function_sig_key
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+
+def skip_if_running(f: Callable) -> Callable:
+    """Decorator that skips execution if the function is already running.
+    For class/instance methods, use LockableQueryMixIn with protect_with_lock instead.
+    """
+    lock = Semaphore()
+
+    @wraps(f)
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
+        if not lock.acquire(blocking=False):
+            log.debug(f'{f.__name__} already running, skipping')
+            return None
+        try:
+            return f(*args, **kwargs)
+        finally:
+            lock.release()
+
+    return wrapper
 
 
 class LockableQueryMixIn:

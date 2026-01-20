@@ -9,14 +9,17 @@ from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC, REWARDS_CLAIMED_TOPIC, WITHDRAW_TOPIC_V3
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.stakedao.v2.constants import CPT_STAKEDAO_V2
-from rotkehlchen.chain.evm.decoding.stakedao.v2.utils import query_stakedao_v2_vaults
+from rotkehlchen.chain.evm.decoding.stakedao.v2.utils import (
+    ensure_stakedao_v2_vault_token_exists,
+    query_stakedao_v2_vaults,
+)
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
     ActionItem,
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.chain.evm.decoding.utils import get_protocol_token_addresses
+from rotkehlchen.chain.evm.decoding.utils import get_address_to_address_dict_from_cache
 from rotkehlchen.history.events.structures.types import (
     HistoryEventSubType,
     HistoryEventType,
@@ -45,7 +48,7 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             reward_token_address: ChecksumEvmAddress,
     ):
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
-        self.vaults: set[ChecksumEvmAddress] = set()
+        self.vaults: dict[ChecksumEvmAddress, ChecksumEvmAddress] = {}
         self.accountant_address = accountant_address
         self.reward_token_address = reward_token_address
 
@@ -54,14 +57,19 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         if should_update_protocol_cache(
             userdb=self.base.database,
             cache_key=CacheType.STAKEDAO_V2_VAULTS,
-            args=(str(self.node_inquirer.chain_id),),
+            args=(str(self.node_inquirer.chain_id.serialize()),),
         ):
-            query_stakedao_v2_vaults(self.node_inquirer)
+            query_stakedao_v2_vaults(
+                chain_id=self.node_inquirer.chain_id,
+                msg_aggregator=self.msg_aggregator,
+            )
+        elif len(self.vaults) != 0:
+            return None  # didn't update cache and we already have the vault info
 
-        self.vaults = get_protocol_token_addresses(
-            protocol=CPT_STAKEDAO_V2,
+        self.vaults = get_address_to_address_dict_from_cache(
+            cache_type=CacheType.STAKEDAO_V2_VAULTS,
             chain_id=self.node_inquirer.chain_id,
-            existing_tokens=self.vaults,
+            description='StakeDAO V2 vault',
         )
         return self.addresses_to_decoders()
 
@@ -148,6 +156,12 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_vault_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        ensure_stakedao_v2_vault_token_exists(
+            evm_inquirer=self.node_inquirer,
+            vault=context.tx_log.address,
+            underlying=self.vaults[context.tx_log.address],
+        )
+
         if context.tx_log.topics[0] == DEPOSIT_TOPIC:
             return self._decode_deposit_withdraw(
                 context=context,

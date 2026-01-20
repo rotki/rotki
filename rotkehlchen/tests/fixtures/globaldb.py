@@ -7,10 +7,13 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+import rsqlite
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
+from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
@@ -81,6 +84,11 @@ def fixture_load_global_caches() -> list[str]:
     return []
 
 
+@pytest.fixture(autouse=True, name='use_in_memory_globaldb')
+def fixture_use_in_memory_globaldb() -> bool:
+    return True
+
+
 def create_globaldb(
         data_directory,
         sql_vm_instructions_cb,
@@ -90,6 +98,7 @@ def create_globaldb(
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
     GlobalDBHandler._GlobalDBHandler__instance = None  # type: ignore
+    AssetResolver._AssetResolver__instance = None  # type: ignore
 
     return GlobalDBHandler(
         data_dir=data_directory,
@@ -112,6 +121,7 @@ def _initialize_fixture_globaldb(
         remove_global_assets,
         load_global_caches,
         messages_aggregator,
+        use_in_memory_globaldb,
 ) -> tuple[GlobalDBHandler, Path]:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -123,8 +133,41 @@ def _initialize_fixture_globaldb(
     new_data_dir = Path(tmpdir_factory.mktemp('test_data_dir'))
     new_global_dir = new_data_dir / GLOBALDIR_NAME
     new_global_dir.mkdir(parents=True, exist_ok=True)
-    copyfile(source_db_path, new_global_dir / GLOBALDB_NAME)
+    if use_in_memory_globaldb is True:
+        (new_global_dir / GLOBALDB_NAME).touch()
+    else:
+        copyfile(source_db_path, new_global_dir / GLOBALDB_NAME)
     with ExitStack() as stack:
+        if use_in_memory_globaldb is True:
+            def _initialize_in_memory_globaldb(
+                    global_dir: Path,
+                    db_filename: str,
+                    sql_vm_instructions_cb: int,
+            ) -> tuple[DBConnection, bool]:
+                connection = DBConnection(
+                    path=':memory:',
+                    connection_type=DBConnectionType.GLOBAL,
+                    sql_vm_instructions_cb=sql_vm_instructions_cb,
+                )
+                disk_conn = rsqlite.connect(
+                    database=source_db_path,
+                    check_same_thread=False,
+                    isolation_level=None,
+                )
+                try:
+                    disk_conn.backup(connection._conn)
+                finally:
+                    disk_conn.close()
+                return connection, False
+
+            stack.enter_context(patch(
+                'rotkehlchen.globaldb.utils.initialize_globaldb',
+                side_effect=_initialize_in_memory_globaldb,
+            ))
+            stack.enter_context(patch(
+                'rotkehlchen.globaldb.handler.initialize_globaldb',
+                side_effect=_initialize_in_memory_globaldb,
+            ))
         stack.enter_context(
             patch('rotkehlchen.globaldb.migrations.manager.MIGRATIONS_LIST', globaldb_migrations),
         )
@@ -178,6 +221,7 @@ def fixture_globaldb(
         remove_global_assets,
         load_global_caches,
         messages_aggregator,
+        use_in_memory_globaldb,
 ):
     globaldb, new_data_dir = _initialize_fixture_globaldb(
         custom_globaldb=custom_globaldb,
@@ -192,6 +236,7 @@ def fixture_globaldb(
         remove_global_assets=remove_global_assets,
         load_global_caches=load_global_caches,
         messages_aggregator=messages_aggregator,
+        use_in_memory_globaldb=use_in_memory_globaldb,
     )
     yield globaldb
 

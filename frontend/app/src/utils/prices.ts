@@ -1,6 +1,5 @@
 import type { Balance, BigNumber } from '@rotki/common';
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import type { AssetBalances } from '@/types/balances';
 import type {
   AssetProtocolBalances,

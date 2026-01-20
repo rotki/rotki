@@ -946,7 +946,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 gauge_events.append(event)
                 if context.tx_log.topics[0] == DEPOSIT_TOPIC_V2:
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED if gauge_token is not None else HistoryEventSubType.DEPOSIT_ASSET  # noqa: E501
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED if gauge_token is not None else HistoryEventSubType.DEPOSIT_TO_PROTOCOL  # noqa: E501
                     event.notes = f'Deposit {event.amount} {evm_asset.symbol} into {gauge_address} curve gauge'  # noqa: E501
                     from_event_type = HistoryEventType.RECEIVE
                     pair_subtype = HistoryEventSubType.RECEIVE_WRAPPED
@@ -954,7 +954,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                     pair_note = 'Receive {{amount}} {symbol} after depositing in {address} curve gauge'  # noqa: E501
                 else:  # Withdraw
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED if gauge_token is not None else HistoryEventSubType.REMOVE_ASSET  # noqa: E501
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED if gauge_token is not None else HistoryEventSubType.WITHDRAW_FROM_PROTOCOL  # noqa: E501
                     event.notes = f'Withdraw {event.amount} {evm_asset.symbol} from {gauge_address} curve gauge'  # noqa: E501
                     from_event_type = HistoryEventType.SPEND
                     pair_subtype = HistoryEventSubType.RETURN_WRAPPED

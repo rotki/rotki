@@ -725,6 +725,12 @@ Sent when historical balance processing detects a negative balance for an asset,
             "event_identifier": 12345,
             "group_identifier": "0xabc123...",
             "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EesdedfFE3F46F5D",
+            "bucket": {
+                "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EesdedfFE3F46F5D",
+                "protocol": "aave-v3",
+                "location": "ethereum",
+                "location_label": "0x1234..."
+            },
             "balance_before": "100.5",
             "last_run_ts": 1672531200
         }
@@ -734,5 +740,10 @@ Sent when historical balance processing detects a negative balance for an asset,
 - ``event_identifier``: Database identifier of the event that caused the negative balance
 - ``group_identifier``: Group identifier (usually transaction hash) of the problematic event
 - ``asset``: Asset identifier that went negative
+- ``bucket``: Object identifying where the balance is tracked, containing:
+    - ``asset``: The asset identifier
+    - ``protocol``: The DeFi protocol if funds are deposited there (e.g., 'aave-v3'), or ``null`` for wallet balances
+    - ``location``: The blockchain/exchange location (e.g., 'ethereum', 'kraken')
+    - ``location_label``: The specific address or account label, or ``null``
 - ``balance_before``: The balance before processing the event that caused it to go negative
 - ``last_run_ts``: Unix timestamp of the last successful historical balance processing run, or ``null`` if this is the first run

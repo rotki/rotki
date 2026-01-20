@@ -19,7 +19,8 @@ class DBCacheStatic(Enum):
     LAST_EVM_ACCOUNTS_DETECT_TS: Final = 'last_evm_accounts_detect_ts'
     LAST_SPAM_ASSETS_DETECT_KEY: Final = 'last_spam_assets_detect_key'
     LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY: Final = 'last_augmented_spam_assets_detect_key'
-    LAST_EVENTS_PROCESSING_TASK_TS: Final = 'last_events_processing_task_ts'
+    LAST_ETH2_EVENTS_PROCESSING_TS: Final = 'last_eth2_events_processing_ts'
+    LAST_ASSET_MOVEMENT_PROCESSING_TS: Final = 'last_asset_movement_processing_ts'
     LAST_WITHDRAWALS_EXIT_QUERY_TS: Final = 'last_withdrawals_exit_query_ts'
     LAST_MONERIUM_QUERY_TS: Final = 'last_monerium_query_ts'
     LAST_AAVE_V3_ASSETS_UPDATE: Final = 'last_aave_v3_assets_update'
@@ -34,6 +35,9 @@ class DBCacheStatic(Enum):
     # Earliest timestamp from which balance caches are stale due to event modifications.
     # When events are added/edited/deleted, balances must be recalculated from this point.
     STALE_BALANCES_FROM_TS: Final = 'stale_balances_from_ts'
+    # Timestamp when events were last modified. Used to detect concurrent modifications
+    # during historical balance processing.
+    STALE_BALANCES_MODIFICATION_TS: Final = 'stale_balances_modification_ts'
     LAST_HISTORICAL_BALANCE_PROCESSING_TS: Final = 'last_historical_balance_processing_ts'
 
 

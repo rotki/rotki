@@ -140,6 +140,15 @@ cargo run -- --database ../data/global.db --port 4343
 #### Vue.js and TypeScript Conventions
 - Use VueUse utilities for reactive state management
 - **IMPORTANT: Use `get()` and `set()` from VueUse instead of `.value` when working with refs**
+- **Floating Promises**: Never use `void` for floating promises. Instead, use `startPromise()` from `@shared/utils`:
+  ```typescript
+  // ✅ Correct
+  import { startPromise } from '@shared/utils';
+  startPromise(someAsyncFunction());
+
+  // ❌ Incorrect
+  void someAsyncFunction();
+  ```
 
 #### Explicit TypeScript Typing Requirements
 

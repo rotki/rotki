@@ -208,8 +208,11 @@ def maybe_notify_cache_query_status(
         total: int,
 ) -> Timestamp:
     """Helper function to notify the cache query status if it's been more than 5 seconds since the
-    last notification, and returns the last notified timestamp."""
-    if (current_time := ts_now()) - last_notified_ts > 5:
+    last notification, and returns the last notified timestamp. Also sends the message if the
+    processed number has reached the total to ensure the frontend is always notified when a cache
+    is finished being queried even if a previous update msg was sent <5 seconds before.
+    """
+    if (current_time := ts_now()) - last_notified_ts > 5 or processed == total:
         msg_aggregator.add_message(
             message_type=WSMessageType.PROGRESS_UPDATES,
             data={

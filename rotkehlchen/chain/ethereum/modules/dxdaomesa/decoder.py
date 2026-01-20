@@ -76,7 +76,7 @@ class DxdaomesaDecoder(EvmDecoderInterface):
             # Find the transfer event which should come before the deposit
             if event.event_type == HistoryEventType.SPEND and event.asset == deposited_asset and event.amount == amount and event.address == self.contract.address:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.counterparty = CPT_DXDAO_MESA
                 event.notes = f'Deposit {amount} {deposited_asset.symbol} to DXDao mesa exchange'
                 break
@@ -96,7 +96,7 @@ class DxdaomesaDecoder(EvmDecoderInterface):
             # Find the transfer event which should come before the withdraw
             if event.event_type == HistoryEventType.RECEIVE and event.asset == withdraw_asset and event.amount == amount and event.address == self.contract.address:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.counterparty = CPT_DXDAO_MESA
                 event.notes = f'Withdraw {amount} {withdraw_asset.symbol} from DXDao mesa exchange'
                 break

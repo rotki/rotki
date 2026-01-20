@@ -29,7 +29,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { getAllAccounts } = useHistoryTransactionAccounts();
   const { fetchDisabled, isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const { fetchUndecodedTransactionsBreakdown, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
-  const { resetUndecodedTransactionsStatus } = useHistoryStore();
+  const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus } = useHistoryStore();
   const { isDecodableChains } = useSupportedChains();
 
   const { syncTransactionsByChains } = useTransactionSync();
@@ -112,15 +112,20 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     // Get decodable accounts for query status initialization
     const decodableAccounts = accountsToRefresh.filter(account => isDecodableChains(account.chain));
 
+    // Only show sync progress bar during initial load or when new accounts/exchanges are added
+    // Don't show it for simple user-initiated refreshes when everything is already loaded
+    const shouldShowSyncProgress = isFirstLoad() || hasNewAccounts || hasNewExchanges;
+
+    // Always reset query status to clear stale data
+    resetQueryStatus();
+
     if (accountsToRefresh.length > 0 || exchangesToRefresh.length > 0) {
       startRefresh(accountsToRefresh, exchangesToRefresh);
-      if (accountsToRefresh.length > 0) {
+      if (accountsToRefresh.length > 0 && shouldShowSyncProgress) {
         initializeQueryStatus(decodableAccounts);
         resetUndecodedTransactionsStatus();
+        resetDecodingSyncProgress();
       }
-    }
-    else {
-      resetQueryStatus();
     }
 
     try {
@@ -131,14 +136,15 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
       // Sync transactions for all accounts (type is derived from chain inside syncTransactionsByChains)
       if (accountsToRefresh.length > 0)
-        asyncOperations.push(syncTransactionsByChains(accountsToRefresh));
+        asyncOperations.push(syncTransactionsByChains(accountsToRefresh, shouldShowSyncProgress));
+
+      // Always reset exchanges query status to clear stale data
+      resetExchangesQueryStatus();
 
       if (fullRefresh || exchanges) {
-        initializeExchangeEventsQueryStatus(exchanges || get(connectedExchanges));
+        if (shouldShowSyncProgress)
+          initializeExchangeEventsQueryStatus(exchanges || get(connectedExchanges));
         asyncOperations.push(queryAllExchangeEvents(exchanges));
-      }
-      else {
-        resetExchangesQueryStatus();
       }
 
       const queriesToExecute: OnlineHistoryEventsQueryType[] | undefined = fullRefresh || disableEvmEvents

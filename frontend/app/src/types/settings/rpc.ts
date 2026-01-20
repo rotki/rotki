@@ -6,6 +6,7 @@ const BlockchainRpcNode = z.object({
   blockchain: z.string().min(1),
   endpoint: z.string(),
   identifier: z.number(),
+  isArchive: z.boolean().optional(),
   name: z.string().min(1),
   owned: z.boolean(),
   weight: z.preprocess(weight => Number.parseFloat(weight as string), z.number().nonnegative().max(100)),

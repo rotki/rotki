@@ -167,6 +167,10 @@ def test_refetch_txs_in_range(
         },
     ))
     assert result['new_transactions_count'] == 2
+    assert set(result['new_transactions'][SupportedBlockchain.SOLANA.serialize()]) == {
+        '5HzJs4E3KobYW4dfDAvxzuUPriKdK71iPG7g7w3VQBC1bgpQmHjeevkBBmp8WFf3FeosqMkcgSHV5LPqwDfmvr2X',
+        '4UoyrhPVWBCkiWUMWdyHUQQ29qMxCFXM6iXt7pL9ufaGgcnA8nz1qGQZfgKJcRURgvwmpLWeBVwfp1EJDZoVXPDA',
+    }
     websocket_connection.wait_until_messages_num(num=3, timeout=2)
     assert [msg['data']['status'] for msg in websocket_connection.messages if msg['data'].get('service') is None] == [  # skip helius message  # noqa: E501
         'querying_transactions_finished',

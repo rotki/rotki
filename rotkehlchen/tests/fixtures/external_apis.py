@@ -32,7 +32,5 @@ def fixture_monerium_credentials(database):
                 'client_id': 'mock-client-id',
                 'token_type': 'Bearer',
                 'user_email': 'mock@monerium.com',
-                'default_profile_id': 'profile-id',
-                'profiles': [],
             }),
         )

@@ -257,6 +257,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
     def get_or_create_evm_token(
             self,
             address: ChecksumEvmAddress,
+            protocol: str | None = None,
             encounter: 'TokenEncounterInfo | None' = None,
     ) -> EvmToken:
         """A version of get_create_evm_token to be called from the decoders"""
@@ -265,6 +266,7 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
             evm_address=address,
             chain_id=self.evm_inquirer.chain_id,
             evm_inquirer=self.evm_inquirer,
+            protocol=protocol,
             encounter=encounter,
         )
 

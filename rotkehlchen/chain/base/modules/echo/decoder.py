@@ -118,7 +118,7 @@ class EchoDecoder(EvmDecoderInterface):
                     from_event_type=HistoryEventType.RECEIVE,
                     from_event_subtype=HistoryEventSubType.NONE,
                     to_event_type=HistoryEventType.WITHDRAWAL,
-                    to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                    to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
                     asset=token,
                     amount=amount,
                     location_label=user_address,
@@ -161,7 +161,7 @@ class EchoDecoder(EvmDecoderInterface):
                 )
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.location_label = user_address
                 event.address = deal_address
                 event.counterparty = CPT_ECHO

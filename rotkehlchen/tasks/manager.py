@@ -12,16 +12,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubManager
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
     query_ilk_registry_and_maybe_update_cache,
 )
-from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.chain.evm.decoding.morpho.utils import (
-    query_morpho_reward_distributors,
-    query_morpho_vaults,
-)
-from rotkehlchen.chain.evm.decoding.pendle.constants import (
-    PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM,
-)
-from rotkehlchen.chain.evm.decoding.pendle.utils import query_pendle_yield_tokens
 from rotkehlchen.constants import WEEK_IN_SECONDS
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
@@ -39,8 +30,10 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     EvmTransactionsFilterQuery,
     EvmTransactionsNotDecodedFilterQuery,
+    SolanaTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
@@ -64,19 +57,20 @@ from rotkehlchen.tasks.calendar import (
 )
 from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.types import (
+    CHAINS_WITH_TRANSACTION_DECODERS,
     EVM_CHAINS_WITH_TRANSACTIONS,
     SUPPORTED_BITCOIN_CHAINS,
     CacheType,
-    ChainID,
     ChecksumEvmAddress,
     ExchangeLocationID,
     Optional,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
 )
 from rotkehlchen.utils.misc import ts_now
 
-from .events import process_events
+from .events import process_asset_movements, process_eth2_events
 from .historical_balances import process_historical_balances
 
 if TYPE_CHECKING:
@@ -151,10 +145,6 @@ class TaskManager:
         self.activate_premium = activate_premium
         self.query_balances = query_balances
         self.last_balance_query_ts = Timestamp(0)
-        self.query_yearn_vaults = query_yearn_vaults
-        self.query_morpho_vaults = query_morpho_vaults
-        self.query_pendle_yield_tokens = query_pendle_yield_tokens
-        self.query_morpho_reward_distributors = query_morpho_reward_distributors
         self.last_premium_status_check = ts_now()
         self.last_calendar_reminder_check = Timestamp(0)
         self.last_google_calendar_sync = Timestamp(0)
@@ -170,17 +160,16 @@ class TaskManager:
             self._maybe_query_evm_transactions,
             self._maybe_schedule_exchange_history_query,
             self._maybe_schedule_evm_txreceipts,
-            self._maybe_decode_evm_transactions,
+            self._maybe_decode_transactions,
             self._maybe_check_premium_status,
             self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
-            self._maybe_update_yearn_vaults,
-            self._maybe_update_morpho_cache,
             self._maybe_detect_evm_accounts,
             self._maybe_update_ilk_cache,
             self._maybe_query_produced_blocks,
             self._maybe_query_withdrawals,
-            self._maybe_run_events_processing,
+            self._maybe_process_eth2_events,
+            self._maybe_process_asset_movements,
             self._maybe_detect_withdrawal_exits,
             self._maybe_detect_new_spam_tokens,
             self._maybe_update_owned_assets,
@@ -191,7 +180,6 @@ class TaskManager:
             self._maybe_delete_past_calendar_events,
             self._maybe_sync_google_calendar,
             self._maybe_query_graph_delegated_tokens,
-            self._maybe_update_pendle_cache,
             self._maybe_process_historical_balances,
         ]
         if self.premium_sync_manager is not None:
@@ -333,38 +321,38 @@ class TaskManager:
         """Schedules the evm transaction query task if enough time has passed"""
         shuffled_chains = list(EVM_CHAINS_WITH_TRANSACTIONS)
         random.shuffle(shuffled_chains)
-        for blockchain in shuffled_chains:
-            with self.database.conn.read_ctx() as cursor:
-                accounts = self.database.get_blockchain_accounts(cursor).get(blockchain)
-                if len(accounts) == 0:
+        now = ts_now()
+        dbevmtx = DBEvmTx(self.database)
+        with self.database.conn.read_ctx() as cursor:
+            tracked_accounts = self.database.get_blockchain_accounts(cursor)
+            for blockchain in shuffled_chains:
+                if len(accounts := tracked_accounts.get(blockchain)) == 0:
                     continue
 
-                now = ts_now()
-                dbevmtx = DBEvmTx(self.database)
                 queriable_accounts: list[ChecksumEvmAddress] = []
                 for account in accounts:
                     _, end_ts = dbevmtx.get_queried_range(cursor, account, blockchain)
                     if now - max(self.last_evm_tx_query_ts[account, blockchain], end_ts) > EVM_TX_QUERY_FREQUENCY:  # noqa: E501
                         queriable_accounts.append(account)
 
-            if len(queriable_accounts) == 0:
-                continue
+                if len(queriable_accounts) == 0:
+                    continue
 
-            evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
-            address = random.choice(queriable_accounts)
-            task_name = f'Query {blockchain!s} transactions for {address}'
-            log.debug(f'Scheduling task to {task_name}')
-            self.last_evm_tx_query_ts[address, blockchain] = now
-            # Since this task is heavy we spawn it only for one chain at a time.
-            return [self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name=task_name,
-                exception_is_error=True,
-                method=evm_manager.transactions.single_address_query_transactions,
-                address=address,
-                start_ts=0,
-                end_ts=now,
-            )]
+                evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
+                address = random.choice(queriable_accounts)
+                task_name = f'Query {blockchain!s} transactions for {address}'
+                log.debug(f'Scheduling task to {task_name}')
+                self.last_evm_tx_query_ts[address, blockchain] = now
+                # Since this task is heavy we spawn it only for one chain at a time.
+                return [self.greenlet_manager.spawn_and_track(
+                    after_seconds=None,
+                    task_name=task_name,
+                    exception_is_error=True,
+                    method=evm_manager.transactions.single_address_query_transactions,
+                    address=address,
+                    start_ts=0,
+                    end_ts=now,
+                )]
         return None
 
     def _maybe_schedule_evm_txreceipts(self) -> Optional[list[gevent.Greenlet]]:
@@ -429,24 +417,30 @@ class TaskManager:
             fail_callback=exchange_fail_cb,
         )]
 
-    def _maybe_decode_evm_transactions(self) -> Optional[list[gevent.Greenlet]]:
-        """Schedules the evm transaction decoding task
+    def _maybe_decode_transactions(self) -> Optional[list[gevent.Greenlet]]:
+        """Schedules the transaction decoding task
 
         The DB check happens first here to see if scheduling would even be needed.
         But the DB query will happen again inside the query task while having the
         lock acquired.
         """
-        dbevmtx = DBEvmTx(self.database)
-        shuffled_chains = list(EVM_CHAINS_WITH_TRANSACTIONS)
+
+        shuffled_chains = list(CHAINS_WITH_TRANSACTION_DECODERS)
         random.shuffle(shuffled_chains)
         for blockchain in shuffled_chains:
-            number_of_tx_to_decode = dbevmtx.count_hashes_not_decoded(
-                filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=blockchain.to_chain_id()),
-            )
+            if blockchain == SupportedBlockchain.SOLANA:
+                number_of_tx_to_decode = DBSolanaTx(self.database).count_hashes_not_decoded(
+                    filter_query=SolanaTransactionsNotDecodedFilterQuery.make(),
+                )
+            else:
+                number_of_tx_to_decode = DBEvmTx(self.database).count_hashes_not_decoded(
+                    filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=blockchain.to_chain_id()),
+                )
+
             if number_of_tx_to_decode == 0:
                 return None
 
-            evm_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
+            chain_inquirer = self.chains_aggregator.get_chain_manager(blockchain)
             task_name = f'decode {min(number_of_tx_to_decode, TX_DECODING_LIMIT)} {blockchain!s} transactions'  # noqa: E501
             log.debug(f'Scheduling periodic task to {task_name}')
             # Since this task is heavy we spawn it only for one chain at a time.
@@ -454,7 +448,7 @@ class TaskManager:
                 after_seconds=None,
                 task_name=task_name,
                 exception_is_error=True,
-                method=evm_inquirer.transactions_decoder.get_and_decode_undecoded_transactions,
+                method=chain_inquirer.transactions_decoder.get_and_decode_undecoded_transactions,  # type: ignore[attr-defined]
                 limit=TX_DECODING_LIMIT,
                 send_ws_notifications=True,
             )]
@@ -640,105 +634,41 @@ class TaskManager:
             method=eth2.detect_exited_validators,
         )]
 
-    def _maybe_run_events_processing(self) -> Optional[list[gevent.Greenlet]]:
-        """Schedules the events processing task which may combine/edit events"""
-        with self.database.conn.read_ctx() as cursor:
-            if (
-                (result := self.database.get_static_cache(
-                    cursor=cursor,
-                    name=DBCacheStatic.LAST_EVENTS_PROCESSING_TASK_TS,
-                )) is not None and
-                ts_now() - result <= CachedSettings().get_settings().events_processing_frequency
-            ):
-                return None
+    def _maybe_process_eth2_events(self) -> Optional[list[gevent.Greenlet]]:
+        if (
+            (self.chains_aggregator.get_module('eth2')) is None or
+            should_run_periodic_task(
+                database=self.database,
+                key_name=DBCacheStatic.LAST_ETH2_EVENTS_PROCESSING_TS,
+                refresh_period=HOUR_IN_SECONDS,
+            ) is False
+        ):
+            return None
 
-        task_name = 'Periodically process events'
-        log.debug(f'Scheduling task to {task_name}')
         return [self.greenlet_manager.spawn_and_track(
             after_seconds=None,
-            task_name=task_name,
+            task_name='Process eth2 events',
             exception_is_error=True,
-            method=process_events,
+            method=process_eth2_events,
             chains_aggregator=self.chains_aggregator,
             database=self.database,
         )]
 
-    def _maybe_update_yearn_vaults(self) -> Optional[list[gevent.Greenlet]]:
-        with self.database.conn.read_ctx() as cursor:
-            if len(self.database.get_single_blockchain_addresses(cursor, SupportedBlockchain.ETHEREUM)) == 0:  # noqa: E501
-                return None
+    def _maybe_process_asset_movements(self) -> Optional[list[gevent.Greenlet]]:
+        if not should_run_periodic_task(
+            database=self.database,
+            key_name=DBCacheStatic.LAST_ASSET_MOVEMENT_PROCESSING_TS,
+            refresh_period=CachedSettings().get_settings().events_processing_frequency,
+        ):
+            return None
 
-        if should_update_protocol_cache(self.database, CacheType.YEARN_VAULTS) is True:
-            return [self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name='Update yearn vaults',
-                exception_is_error=False,
-                method=self.query_yearn_vaults,
-                db=self.database,
-                ethereum_inquirer=self.chains_aggregator.ethereum.node_inquirer,
-            )]
-
-        return None
-
-    def _maybe_update_morpho_cache(self) -> Optional[list[gevent.Greenlet]]:
-        with self.database.conn.read_ctx() as cursor:
-            account_data = self.database.get_blockchain_accounts(cursor)
-            if (
-                len(account_data.get(SupportedBlockchain.ETHEREUM)) == 0 and
-                len(account_data.get(SupportedBlockchain.BASE)) == 0
-            ):
-                return None
-
-        greenlets = []
-        for chain_id in {ChainID.ETHEREUM, ChainID.BASE}:
-            if should_update_protocol_cache(self.database, CacheType.MORPHO_VAULTS, (str(chain_id),)) is True:  # noqa: E501
-                greenlets.append(self.greenlet_manager.spawn_and_track(
-                    after_seconds=None,
-                    task_name=f'Update Morpho vaults for {chain_id.to_name()}',
-                    exception_is_error=False,
-                    method=self.query_morpho_vaults,
-                    database=self.database,
-                    chain_id=chain_id,
-                ))
-
-            if should_update_protocol_cache(
-                userdb=self.database,
-                cache_key=CacheType.MORPHO_REWARD_DISTRIBUTORS,
-                args=(str(chain_id),),
-            ) is True:
-                greenlets.append(self.greenlet_manager.spawn_and_track(
-                    after_seconds=None,
-                    task_name=f'Update Morpho reward distributors for {chain_id.to_name()}',
-                    exception_is_error=False,
-                    method=self.query_morpho_reward_distributors,
-                    chain_id=chain_id,
-                ))
-
-        return greenlets if len(greenlets) > 0 else None
-
-    def _maybe_update_pendle_cache(self) -> Optional[list[gevent.Greenlet]]:
-        with self.database.conn.read_ctx() as cursor:
-            account_data = self.database.get_blockchain_accounts(cursor)
-            if (
-                len(account_data.get(SupportedBlockchain.ARBITRUM_ONE)) == 0 and
-                len(account_data.get(SupportedBlockchain.ETHEREUM)) == 0 and
-                len(account_data.get(SupportedBlockchain.BASE)) == 0 and
-                len(account_data.get(SupportedBlockchain.BINANCE_SC)) == 0 and
-                len(account_data.get(SupportedBlockchain.OPTIMISM)) == 0
-            ):
-                return None
-
-        return [
-            self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name=f'Update Pendle yield tokens for {chain.to_name()}',
-                exception_is_error=False,
-                method=self.query_pendle_yield_tokens,
-                evm_inquirer=self.chains_aggregator.get_evm_manager(chain).node_inquirer,  # type: ignore[arg-type]  # chain is supported
-            )
-            for chain in PENDLE_SUPPORTED_CHAINS_WITHOUT_ETHEREUM | {ChainID.ETHEREUM}
-            if should_update_protocol_cache(self.database, CacheType.PENDLE_YIELD_TOKENS, (str(chain.serialize()),)) is True  # noqa: E501
-        ]
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Process asset movements',
+            exception_is_error=True,
+            method=process_asset_movements,
+            database=self.database,
+        )]
 
     def _maybe_process_historical_balances(self) -> Optional[list[gevent.Greenlet]]:
         """Schedule historical balance processing if enough time has passed.
@@ -746,8 +676,6 @@ class TaskManager:
         Processes history events to compute and store pre-computed balance metrics
         in the event_metrics table.
         """
-        # TODO: Prevent this from running concurrently with tasks that add or modify events,
-        # such as transaction queries, exchange history sync, decoding, and event processing.
         if should_run_periodic_task(
             database=self.database,
             key_name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
@@ -769,7 +697,7 @@ class TaskManager:
             method=process_historical_balances,
             database=self.database,
             msg_aggregator=self.msg_aggregator,
-            from_ts=stale_from_ts,
+            from_ts=TimestampMS(int(stale_from_ts)) if stale_from_ts else None,
         )]
 
     def _maybe_check_data_updates(self) -> Optional[list[gevent.Greenlet]]:

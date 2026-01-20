@@ -28,12 +28,15 @@ from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount
-from rotkehlchen.chain.bitcoin import is_valid_bitcoin_address, is_valid_btc_address
 from rotkehlchen.chain.bitcoin.bch.utils import (
     validate_bch_address_input,
 )
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
-from rotkehlchen.chain.bitcoin.utils import scriptpubkey_to_btc_address
+from rotkehlchen.chain.bitcoin.utils import (
+    is_valid_bitcoin_address,
+    is_valid_btc_address,
+    scriptpubkey_to_btc_address,
+)
 from rotkehlchen.chain.constants import NON_BITCOIN_CHAINS
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
@@ -66,6 +69,7 @@ from rotkehlchen.db.filtering import (
     CustomAssetsFilterQuery,
     EthStakingEventFilterQuery,
     EvmEventFilterQuery,
+    HistoricalBalancesFilterQuery,
     HistoryEventFilterQuery,
     HistoryEventWithCounterpartyFilterQuery,
     HistoryEventWithTxRefFilterQuery,
@@ -79,6 +83,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, get_query_chunks
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import AddressNotSupported, InputError, RemoteError, XPUBError
 from rotkehlchen.errors.serialization import DeserializationError, EncodingError
 from rotkehlchen.exchanges.constants import (
@@ -89,6 +94,7 @@ from rotkehlchen.exchanges.constants import (
 )
 from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     AssetMovementExtraData,
@@ -122,7 +128,6 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_evm_address,
     deserialize_solana_address,
 )
-from rotkehlchen.tasks.events import ASSET_MOVEMENT_MATCH_WINDOW
 from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     CHAINS_WITH_TRANSACTION_DECODERS,
@@ -1666,6 +1671,21 @@ class ModifiableSettingsSchema(Schema):
             error='The frequency should be >= 60 seconds',
         ),
     )
+    asset_movement_amount_tolerance = fields.Decimal(
+        load_default=None,
+        as_string=True,
+        validate=validate.Range(min=0, max=1, min_inclusive=False, max_inclusive=False),
+    )
+    asset_movement_time_range = fields.Integer(
+        required=False,
+        load_default=None,
+        validate=validate.Range(min=0, min_inclusive=False),
+    )
+    suppress_missing_key_msg_services = fields.List(
+        SerializableEnumField(enum_class=ExternalService, required=True),
+        required=False,
+        load_default=None,
+    )
 
     @validates_schema
     def validate_settings_schema(
@@ -1732,6 +1752,9 @@ class ModifiableSettingsSchema(Schema):
             auto_detect_tokens=data['auto_detect_tokens'],
             csv_export_delimiter=data['csv_export_delimiter'],
             events_processing_frequency=data['events_processing_frequency'],
+            asset_movement_amount_tolerance=FVal(data['asset_movement_amount_tolerance']) if data['asset_movement_amount_tolerance'] is not None else None,  # noqa: E501
+            asset_movement_time_range=data['asset_movement_time_range'],
+            suppress_missing_key_msg_services=data['suppress_missing_key_msg_services'],
         )
 
 
@@ -4395,6 +4418,58 @@ class UpdateCalendarReminderSchema(NewCalendarReminderSchema, IntegerIdentifierS
 
 class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryArgumentSchema):
     asset = AssetField(expected_type=Asset, load_default=None)
+    location = LocationField(load_default=None)
+    location_label = EmptyAsNoneStringField(load_default=None)
+    protocol = EmptyAsNoneStringField(load_default=None)
+
+    def __init__(self, db: 'DBHandler', known_counterparties: set[str]) -> None:
+        super().__init__()
+        self.db = db
+        self.known_counterparties = known_counterparties
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if (
+                (protocol := data['protocol']) is not None and
+                protocol not in self.known_counterparties
+        ):
+            raise ValidationError(
+                message=f'Unknown protocol "{protocol}" provided',
+                field_name='protocol',
+            )
+
+        if (location_label := data['location_label']) is not None:
+            with self.db.conn.read_ctx() as cursor:
+                if cursor.execute(
+                    'SELECT COUNT(*) FROM history_events WHERE location_label = ?',
+                    (location_label,),
+                ).fetchone()[0] == 0:
+                    raise ValidationError(
+                        message=f'Unknown location label "{location_label}" provided',
+                        field_name='location_label',
+                    )
+
+    @post_load
+    def make_historical_balance_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        filter_query = HistoricalBalancesFilterQuery.make(
+            timestamp=data['timestamp'],
+            asset=data['asset'],
+            location=data['location'],
+            location_label=data['location_label'],
+            protocol=data['protocol'],
+        )
+        return {
+            'async_query': data['async_query'],
+            'filter_query': filter_query,
+        }
 
 
 class HistoricalPricesPerAssetSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
@@ -4441,6 +4516,48 @@ class HistoricalPricesPerAssetSchema(AsyncQueryArgumentSchema, TimestampRangeSch
         return data
 
 
+class OnchainHistoricalBalanceSchema(AsyncQueryArgumentSchema):
+    timestamp = TimestampField(required=True)
+    evm_chain = EvmChainNameField(required=True, limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS))
+    address = EvmAddressField(required=True)
+    asset = AssetField(expected_type=Asset, required=True)
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['timestamp'] > ts_now():
+            raise ValidationError(
+                message='Timestamp cannot be in the future',
+                field_name='timestamp',
+            )
+
+        if (chain_id := data['evm_chain']).to_blockchain().get_native_token_id() == (asset := data['asset']).identifier:  # noqa: E501
+            return
+
+        try:
+            token = asset.resolve_to_evm_token()
+        except (WrongAssetType, UnknownAsset):
+            raise ValidationError(
+                message=f'{asset.identifier} is not a valid EVM token',
+                field_name='asset',
+            ) from None
+
+        if token.chain_id != chain_id:
+            raise ValidationError(
+                message=f'{asset.identifier} is not on the {chain_id.to_name()}',
+                field_name='asset',
+            )
+
+        if token.started is not None and data['timestamp'] < token.started:
+            raise ValidationError(
+                message=f'{asset.identifier} did not exist at timestamp {data["timestamp"]}. Token started at {token.started}',  # noqa: E501
+                field_name='timestamp',
+            )
+
+
 class RefreshProtocolDataSchema(AsyncQueryArgumentSchema):
     cache_protocol = SerializableEnumField(
         enum_class=ProtocolsWithCache,
@@ -4451,7 +4568,8 @@ class RefreshProtocolDataSchema(AsyncQueryArgumentSchema):
 class RefetchTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
     address = EmptyAsNoneStringField(load_default=None)
     chain = BlockchainField(
-        required=True,
+        required=False,
+        load_default=None,
         allow_only=CHAINS_WITH_TRANSACTION_DECODERS,
     )
 
@@ -4484,15 +4602,17 @@ class RefetchTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
                     field_name='address',
                 )
 
-            with self.db.conn.read_ctx() as cursor:
-                if cursor.execute(
-                    'SELECT COUNT(*) FROM blockchain_accounts WHERE account=? AND blockchain=?',
-                    (address, (chain := data['chain']).value),
-                ).fetchone()[0] == 0:
-                    raise ValidationError(
-                        message=f'Account {address} with chain {chain.name.lower()} is not tracked by rotki',  # noqa: E501
-                        field_name='address',
-                    )
+            # Only validate address belongs to chain if chain is specified
+            if (chain := data['chain']) is not None:
+                with self.db.conn.read_ctx() as cursor:
+                    if cursor.execute(
+                        'SELECT COUNT(*) FROM blockchain_accounts WHERE account=? AND blockchain=?',  # noqa: E501
+                        (address, chain.value),
+                    ).fetchone()[0] == 0:
+                        raise ValidationError(
+                            message=f'Account {address} with chain {chain.name.lower()} is not tracked by rotki',  # noqa: E501
+                            field_name='address',
+                        )
 
 
 class AddressesInteraction(Schema):
@@ -4569,7 +4689,7 @@ class MatchAssetMovementsSchema(Schema):
 
 class FindPossibleMatchesSchema(Schema):
     asset_movement = fields.String(required=True)
-    time_range = fields.Integer(required=False, load_default=ASSET_MOVEMENT_MATCH_WINDOW)
+    time_range = fields.Integer(required=True, validate=validate.Range(min=0, min_inclusive=False))
     only_expected_assets = fields.Boolean(required=False, load_default=True)
 
 
@@ -4579,3 +4699,7 @@ class UnlinkMatchedAssetMovementSchema(Schema):
 
 class TriggerTaskSchema(AsyncQueryArgumentSchema):
     task = SerializableEnumField(enum_class=TaskName, required=True)
+
+
+class CustomizedEventDuplicatesFixSchema(AsyncQueryArgumentSchema):
+    group_identifiers = fields.List(NonEmptyStringField(), load_default=None)

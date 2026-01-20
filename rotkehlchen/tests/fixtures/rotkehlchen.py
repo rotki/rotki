@@ -345,6 +345,7 @@ def initialize_mock_rotkehlchen_instance(
         have_decoders,
         add_accounts_to_db,
         latest_accounting_rules,
+        latest_accounting_rules_data,
         initialize_accounting_rules,
         should_mock_settings=True,
 ) -> None:
@@ -494,11 +495,18 @@ def initialize_mock_rotkehlchen_instance(
             user_db=rotki.data.db,
         )
 
-        for version, jsonfile in latest_accounting_rules:
-            data_updater.update_accounting_rules(
-                data=json.loads(jsonfile.read_text(encoding='utf-8'))['accounting_rules'],
-                version=version,
-            )
+        if latest_accounting_rules_data is None:
+            for version, jsonfile in latest_accounting_rules:
+                data_updater.update_accounting_rules(
+                    data=json.loads(jsonfile.read_text(encoding='utf-8'))['accounting_rules'],
+                    version=version,
+                )
+        else:
+            for version, rules in latest_accounting_rules_data:
+                data_updater.update_accounting_rules(
+                    data=rules,
+                    version=version,
+                )
         with accountant.db.conn.read_ctx() as cursor:
             db_settings = accountant.db.get_settings(cursor)
 
@@ -581,6 +589,7 @@ def fixture_rotkehlchen_api_server(
         have_decoders,
         add_accounts_to_db,
         latest_accounting_rules,
+        latest_accounting_rules_data,
         initialize_accounting_rules,
         should_mock_settings,
 ):
@@ -631,6 +640,7 @@ def fixture_rotkehlchen_api_server(
         have_decoders=have_decoders,
         add_accounts_to_db=add_accounts_to_db,
         latest_accounting_rules=latest_accounting_rules,
+        latest_accounting_rules_data=latest_accounting_rules_data,
         initialize_accounting_rules=initialize_accounting_rules,
         should_mock_settings=should_mock_settings,
     )
@@ -719,6 +729,7 @@ def rotkehlchen_instance(
         have_decoders,
         add_accounts_to_db,
         latest_accounting_rules,
+        latest_accounting_rules_data,
         initialize_accounting_rules,
 ) -> Rotkehlchen:
     """A partially mocked rotkehlchen instance"""
@@ -764,6 +775,7 @@ def rotkehlchen_instance(
         have_decoders=have_decoders,
         add_accounts_to_db=add_accounts_to_db,
         latest_accounting_rules=latest_accounting_rules,
+        latest_accounting_rules_data=latest_accounting_rules_data,
         initialize_accounting_rules=initialize_accounting_rules,
     )
     return uninitialized_rotkehlchen

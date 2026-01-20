@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { ProtocolMetadata } from '@/types/defi';
 import { decodeHtmlEntities } from '@rotki/common';
 import { camelCase } from 'es-toolkit';

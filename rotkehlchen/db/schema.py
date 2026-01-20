@@ -853,16 +853,18 @@ CREATE TABLE IF NOT EXISTS lido_csm_node_operator_metrics (
 # Stores metrics for history events including balance, pnl, and cost_basis data.
 # Each row represents a metric for a specific bucket after the event is applied.
 # Bucket = (location, location_label, protocol, asset) where:
+# - location_label is the address/account (can differ from history_events for transfers)
 # - protocol is NULL for wallet, or protocol name for DeFi positions (e.g., 'aave_v3', 'lido')
 # - metric_key is the type of metric ('balance', 'pnl', 'cost_basis', etc.)
 DB_CREATE_EVENT_METRICS = """
 CREATE TABLE IF NOT EXISTS event_metrics (
     id INTEGER NOT NULL PRIMARY KEY,
     event_identifier INTEGER NOT NULL REFERENCES history_events(identifier) ON DELETE CASCADE,
+    location_label TEXT,
     protocol TEXT,
     metric_key TEXT NOT NULL,
     metric_value TEXT NOT NULL,
-    UNIQUE(event_identifier, protocol, metric_key)
+    UNIQUE(event_identifier, location_label, protocol, metric_key)
 );
 """
 
@@ -887,6 +889,7 @@ CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype)
 CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
 CREATE UNIQUE INDEX IF NOT EXISTS unique_generic_accounting_rules ON accounting_rules(type, subtype, counterparty) WHERE is_event_specific = 0;
 CREATE INDEX IF NOT EXISTS idx_event_metrics_event ON event_metrics(event_identifier);
+CREATE INDEX IF NOT EXISTS idx_event_metrics_location_label ON event_metrics(location_label);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_protocol ON event_metrics(protocol);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key ON event_metrics(metric_key);
 """  # noqa: E501

@@ -57,11 +57,16 @@ watch(route, async (route) => {
     return;
 
   const { query } = route;
-  if (query?.service === props.name) {
+  if (!query) {
+    return;
+  }
+  const { service, ...restQuery } = query;
+
+  if (service === props.name) {
     nextTick(() => {
       setOpen(true);
     });
-    await router.replace({ query: {} });
+    await router.replace({ query: restQuery });
   }
 }, { immediate: true });
 

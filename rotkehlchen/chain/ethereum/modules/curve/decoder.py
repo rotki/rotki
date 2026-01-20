@@ -193,7 +193,7 @@ class CurveDecoder(CurveCommonDecoder):
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_CRV and event.amount == amount:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.counterparty = CPT_CURVE
                 event.notes = f'Lock {amount} CRV in vote escrow until {timestamp_to_date(locktime, formatstr="%d/%m/%Y %H:%M:%S")}{suffix}'  # noqa: E501
                 event.extra_data = {'locktime': locktime}
@@ -207,7 +207,7 @@ class CurveDecoder(CurveCommonDecoder):
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_CRV and event.amount == amount:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.counterparty = CPT_CURVE
                 event.notes = f'Withdraw {amount} CRV from vote escrow{suffix}'
                 break

@@ -16,23 +16,6 @@ export const ExchangeUnknownAssetData = z.object({
 
 export type ExchangeUnknownAssetData = z.infer<typeof ExchangeUnknownAssetData>;
 
-export enum NewDetectedTokenKind {
-  EVM = 'evm',
-  SOLANA = 'solana',
-}
-
-export const NewDetectedToken = z.object({
-  isIgnored: z.boolean().optional(),
-  seenDescription: z.string().nullish(),
-  seenTxReference: z.string().nullish(),
-  tokenIdentifier: z.string(),
-  tokenKind: z.enum(NewDetectedTokenKind).default(NewDetectedTokenKind.EVM),
-});
-
-export type NewDetectedToken = z.infer<typeof NewDetectedToken>;
-
-export const NewDetectedTokens = z.array(NewDetectedToken);
-
 const RefreshBalancesType = {
   BLOCKCHAIN_BALANCES: 'blockchain_balances',
 } as const;

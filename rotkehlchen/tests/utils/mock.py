@@ -1,8 +1,9 @@
 import json
 import re
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, NamedTuple
-from unittest.mock import _patch, patch
+from unittest.mock import patch
 
 import requests
 from hexbytes import HexBytes
@@ -280,8 +281,13 @@ def mock_proxies(stack, mocked_proxies):
     ))
 
 
-def mock_evm_chains_with_transactions() -> _patch:
-    return patch(
+@contextmanager
+def mock_evm_chains_with_transactions():
+    with patch(
         'rotkehlchen.tasks.manager.EVM_CHAINS_WITH_TRANSACTIONS',
         new=(SupportedBlockchain.ETHEREUM,),
-    )
+    ), patch(
+        'rotkehlchen.tasks.manager.CHAINS_WITH_TRANSACTION_DECODERS',
+        new=(SupportedBlockchain.ETHEREUM,),
+    ):
+        yield

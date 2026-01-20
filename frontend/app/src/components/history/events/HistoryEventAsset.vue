@@ -2,12 +2,11 @@
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { type AssetInfoWithId, Zero } from '@rotki/common';
 import { useTemplateRef } from 'vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetDetailsMenuContent from '@/components/helper/AssetDetailsMenuContent.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useRefMap } from '@/composables/utils/useRefMap';
-import { CURRENCY_USD } from '@/types/currencies';
+import { AssetAmountDisplay, AssetValueDisplay } from '@/modules/amount-display/components';
 
 const props = defineProps<{
   event: HistoryEventEntry;
@@ -77,20 +76,18 @@ function openMenuHandler(event: MouseEvent): void {
           v-if="showBalance"
           class="flex flex-col"
         >
-          <AmountDisplay
-            :value="event.amount"
+          <AssetAmountDisplay
+            :amount="event.amount"
             :asset="event.asset"
-            :resolution-options="ASSET_RESOLUTION_OPTIONS"
+            no-collection-parent
           />
-          <AmountDisplay
+          <AssetValueDisplay
             :key="event.timestamp"
             :amount="event.amount"
+            :asset="event.asset"
             :value="Zero"
-            :price-asset="event.asset"
-            :fiat-currency="CURRENCY_USD"
+            :timestamp="{ ms: event.timestamp }"
             class="text-rui-text-secondary"
-            :timestamp="event.timestamp"
-            milliseconds
           />
         </div>
         <div

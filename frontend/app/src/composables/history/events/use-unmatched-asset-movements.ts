@@ -38,6 +38,7 @@ const rawUnmatchedMovements = ref<RawUnmatchedAssetMovement[]>([]);
 const rawIgnoredMovements = ref<RawUnmatchedAssetMovement[]>([]);
 const loading = ref<boolean>(false);
 const ignoredLoading = ref<boolean>(false);
+const triggerAutoMatchLoading = ref<boolean>(false);
 
 export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatchedAssetMovementsReturn => {
   const { t } = useI18n({ useScope: 'global' });
@@ -52,7 +53,8 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     matchAssetMovements: matchAssetMovementsApi,
   } = useHistoryEventsApi();
 
-  const autoMatchLoading = useIsTaskRunning(TaskType.MATCH_ASSET_MOVEMENTS);
+  const isTaskRunning = useIsTaskRunning(TaskType.MATCH_ASSET_MOVEMENTS);
+  const autoMatchLoading = logicOr(triggerAutoMatchLoading, isTaskRunning);
 
   function addIsFiat(movements: RawUnmatchedAssetMovement[]): UnmatchedAssetMovement[] {
     return movements.map(movement => ({
@@ -160,6 +162,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   };
 
   const triggerAutoMatch = async (): Promise<void> => {
+    set(triggerAutoMatchLoading, true);
     try {
       const { taskId } = await triggerTask('asset_movement_matching');
 
@@ -179,6 +182,9 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
         description: t('asset_movement_matching.auto_match.error', { error: error.message }),
         title: t('asset_movement_matching.auto_match.error_title'),
       });
+    }
+    finally {
+      set(triggerAutoMatchLoading, false);
     }
   };
 

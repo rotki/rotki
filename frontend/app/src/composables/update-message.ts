@@ -2,14 +2,14 @@ import { externalLinks } from '@shared/external-links';
 import { useMainStore } from '@/store/main';
 
 export const useUpdateMessage = createSharedComposable(() => {
-  const lastUsedVersion = useLocalStorage<string>('rotki.last_version', null);
+  const lastUsedVersion = useLocalStorage<string | null>('rotki.last_version', null);
   const showReleaseNotes = ref(false);
 
   const { appVersion } = storeToRefs(useMainStore());
 
   const link = computed(() => externalLinks.releasesVersion.replace('$version', get(appVersion)));
 
-  const setShowNotes = (appVersion: string, lastUsed: string): void => {
+  const setShowNotes = (appVersion: string, lastUsed: string | null): void => {
     if (!appVersion || appVersion.includes('dev'))
       return;
 

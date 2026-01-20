@@ -72,7 +72,7 @@ class EvmManager(
         """Attempts to get a historical eth balance from the local own node only.
         If there is no node or the node can't query historical balance (not archive) then
         returns None"""
-        return self.node_inquirer.get_historical_balance(address, block_number)
+        return self.node_inquirer.get_historical_native_balance(address, block_number)
 
     def query_balances(
             self,

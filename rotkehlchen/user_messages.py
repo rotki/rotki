@@ -4,8 +4,10 @@ from collections import deque
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.serialize import process_result
+from rotkehlchen.types import ExternalService
 
 if TYPE_CHECKING:
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
@@ -89,6 +91,23 @@ class MessagesAggregator:
 
         elif message_type in ERROR_MESSAGE_TYPES:  # Fallback to polling for error messages
             self.errors.appendleft(fallback_msg)
+
+    def add_missing_key_message(
+            self,
+            service: ExternalService,
+            location: str | None = None,
+    ) -> None:
+        """Send a missing key message for the specified service unless this service is marked
+        to have its missing key messages suppressed.
+        """
+        if service in CachedSettings().get_settings().suppress_missing_key_msg_services:
+            return
+
+        data = {'service': service.serialize()}
+        if location is not None:
+            data['location'] = location
+
+        self.add_message(message_type=WSMessageType.MISSING_API_KEY, data=data)
 
     def consume_errors(self) -> list[str]:
         result = []

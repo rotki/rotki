@@ -1,9 +1,17 @@
-import type { Component } from 'vue';
+import type { PremiumApi } from '@rotki/common';
+import type { App, Component } from 'vue';
 import { checkIfDevelopment } from '@shared/utils';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { app } from '@/main';
-import { setupPremium } from '@/premium/setup-premium';
 import { logger } from '@/utils/logging';
+
+const PREMIUM_COMPONENTS_VERSION = 27;
+
+type PremiumLibrary = {
+  install: (app: App) => void;
+  installed?: boolean;
+  initPremiumApi?: (factory: () => PremiumApi, version: number) => void;
+} & Record<string, Component>;
 
 class AsyncLock {
   promise: Promise<void>;
@@ -58,6 +66,8 @@ async function loadComponents(): Promise<string[]> {
     if (components.length > 0)
       return components;
 
+    // Dynamic import - setup-premium.ts and its heavy dependencies (ECharts, VueUse, etc.) go into separate chunk
+    const { setupPremium } = await import('@/premium/setup-premium');
     await setupPremium();
     const api = useStatisticsApi();
     const result = await api.queryStatisticsRenderer();
@@ -70,9 +80,6 @@ async function loadComponents(): Promise<string[]> {
     if (components.length === 0)
       throw new Error('There was no component loaded');
 
-    script.addEventListener('error', (e) => {
-      console.error(e);
-    });
     return components;
   }
   finally {
@@ -80,13 +87,21 @@ async function loadComponents(): Promise<string[]> {
   }
 }
 
-async function loadLibrary(): Promise<any> {
+async function loadLibrary(): Promise<PremiumLibrary> {
   const [component] = await loadComponents();
   // @ts-expect-error component is dynamic and not added in the window type
-  const library = window[component];
+  const library: PremiumLibrary = window[component];
   if (!library.installed) {
     app.use(library);
     library.installed = true;
+
+    // Dynamic import - setup-interface.ts and its dependencies go into separate chunk
+    const { createPremiumApi } = await import('@/premium/setup-interface');
+
+    // Pass the factory and version to the library - factory will be called in component context
+    if (library.initPremiumApi) {
+      library.initPremiumApi(createPremiumApi, PREMIUM_COMPONENTS_VERSION);
+    }
   }
   return library;
 }

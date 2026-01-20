@@ -6,6 +6,7 @@ import type { LogLevel } from '@shared/log-level';
 import { IpcCommands } from '@electron/ipc-commands';
 import {
   BackendHandlers,
+  OAuthHandlers,
   SecurityHandlers,
   SystemHandlers,
   UpdateHandlers,
@@ -14,6 +15,7 @@ import {
 } from '@electron/main/ipc-handlers';
 import { WalletBridgeHandlers } from '@electron/main/wallet-bridge-handlers';
 import { WalletBridgeWebSocketServer } from '@electron/main/ws';
+import { startPromise } from '@shared/utils';
 import { ipcMain } from 'electron';
 
 interface Callbacks {
@@ -38,6 +40,7 @@ export class IpcManager {
   private readonly securityHandlers: SecurityHandlers;
   private readonly walletImportHandlers: WalletImportHandlers;
   private readonly walletBridgeIpcHandlers: WalletBridgeIpcHandlers;
+  private readonly oauthHandlers: OAuthHandlers;
 
   private callbacks: Callbacks | null = null;
 
@@ -64,6 +67,7 @@ export class IpcManager {
     this.securityHandlers = new SecurityHandlers();
     this.walletImportHandlers = new WalletImportHandlers(logger);
     this.walletBridgeIpcHandlers = new WalletBridgeIpcHandlers(logger, this.walletBridgeWebSocketServer);
+    this.oauthHandlers = new OAuthHandlers(logger);
 
     // Set up bridge disconnection callback
     this.walletBridgeWebSocketServer.setOnBridgeDisconnected(() => {
@@ -148,7 +152,10 @@ export class IpcManager {
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_HTTP_LISTENING, this.walletBridgeIpcHandlers.handleWalletBridgeHttpListening);
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_WS_LISTENING, this.walletBridgeIpcHandlers.handleWalletBridgeWsListening);
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_CLIENT_READY, this.walletBridgeIpcHandlers.handleWalletBridgeClientReady);
-    ipcMain.on(IpcCommands.USER_LOGOUT, this.walletBridgeIpcHandlers.handleUserLogout);
+    ipcMain.on(IpcCommands.USER_LOGOUT, () => {
+      this.walletBridgeIpcHandlers.handleUserLogout();
+      startPromise(this.oauthHandlers.clearOAuthCookies());
+    });
 
     // Wallet Bridge handlers (from existing handler class)
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_REQUEST, this.walletBridgeHandlers.handleWalletBridgeRequest);
@@ -159,6 +166,14 @@ export class IpcManager {
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_GET_PROVIDERS, this.walletBridgeIpcHandlers.getAvailableProviders);
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_SELECT_PROVIDER, this.walletBridgeIpcHandlers.selectProvider);
     ipcMain.handle(IpcCommands.WALLET_BRIDGE_GET_SELECTED_PROVIDER, this.walletBridgeIpcHandlers.getSelectedProvider);
+  }
+
+  /**
+   * Clears OAuth cookies on app startup to ensure clean state.
+   * This handles cases where the previous user didn't properly log out.
+   */
+  clearOAuthCookiesOnStartup(): void {
+    startPromise(this.oauthHandlers.clearOAuthCookies('startup'));
   }
 
   cleanup(): void {

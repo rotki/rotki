@@ -2,16 +2,16 @@ import logging
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
+from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import (
     asset_normalized_value,
     asset_raw_value,
-    token_normalized_value_decimals,
+    token_normalized_value,
 )
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import (
-    DEFAULT_TOKEN_DECIMALS,
     SWAPPED_TOPIC,
     ZERO_ADDRESS,
 )
@@ -100,49 +100,83 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _get_add_remove_liquidity_tokens(
+            self,
+            context: DecoderContext,
+    ) -> tuple[CryptoAsset | EvmToken, EvmToken]:
+        """Ensure the asset and LP token for a given add/remove liquidity event exist in the DB
+        and that the LP token has the correct protocol.
+        Returns a tuple of (asset, lp_token).
+        """
+        return (
+            self.base.get_token_or_native(bytes_to_address(context.tx_log.topics[3])),
+            self.base.get_or_create_evm_token(
+                address=bytes_to_address(context.tx_log.topics[2]),
+                protocol=CPT_PENDLE,
+            ),
+        )
+
     def _decode_add_liquidity_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """This method decodes adding liquidity to a Pendle LP"""
+        deposited_token, lp_token = self._get_add_remove_liquidity_tokens(context)
         deposited_amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data[32:64]),
-            asset=(deposited_token := self.base.get_token_or_native(bytes_to_address(context.tx_log.topics[3]))),  # noqa: E501
+            asset=deposited_token,
         )
-        received_amount = token_normalized_value_decimals(
+        received_amount = token_normalized_value(
             token_amount=int.from_bytes(context.tx_log.data[64:96]),
-            token_decimals=DEFAULT_TOKEN_DECIMALS,
+            token=lp_token,
         )
         for event in context.decoded_events:
-            if event.amount == deposited_amount and event.event_type == HistoryEventType.SPEND:
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.asset == deposited_token and
+                event.amount == deposited_amount
+            ):
                 event.counterparty = CPT_PENDLE
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.notes = f'Deposit {event.amount} {deposited_token.symbol} in a Pendle pool'
 
-            elif event.amount == received_amount and event.event_type == HistoryEventType.RECEIVE:
+            elif (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.asset == lp_token and
+                event.amount == received_amount
+            ):
                 event.counterparty = CPT_PENDLE
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                event.notes = f'Receive {received_amount} PENDLE-LPT for depositing in a Pendle pool'  # noqa: E501
+                event.notes = f'Receive {received_amount} {lp_token.symbol} for depositing in a Pendle pool'  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_remove_liquidity_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """This method decodes removing liquidity from a Pendle LP"""
+        received_token, lp_token = self._get_add_remove_liquidity_tokens(context)
         received_amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data[64:96]),
-            asset=(received_token := self.base.get_or_create_evm_token(bytes_to_address(context.tx_log.topics[3]))),  # noqa: E501
+            asset=received_token,
         )
-        returned_amount = token_normalized_value_decimals(
+        returned_amount = token_normalized_value(
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
-            token_decimals=DEFAULT_TOKEN_DECIMALS,
+            token=lp_token,
         )
         for event in context.decoded_events:
-            if event.amount == returned_amount and event.event_type == HistoryEventType.SPEND:
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.asset == lp_token and
+                event.amount == returned_amount
+            ):
                 event.counterparty = CPT_PENDLE
                 event.event_type = HistoryEventType.SPEND
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                event.notes = f'Return {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} to Pendle'  # noqa: E501
+                event.notes = f'Return {event.amount} {lp_token.symbol} to Pendle'
 
-            elif event.amount == received_amount and event.event_type == HistoryEventType.RECEIVE:
+            elif (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.asset == received_token and
+                event.amount == received_amount
+            ):
                 event.counterparty = CPT_PENDLE
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
@@ -167,7 +201,10 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             amount=abs(int.from_bytes(context.tx_log.data[64:96], signed=True)),
             asset=(token_0 := self.base.get_token_or_native(bytes_to_address(context.tx_log.topics[3]))),  # noqa: E501
         )
-        token_1 = self.base.get_or_create_evm_token(principal_token if context.tx_log.topics[0] == SWAP_TOKEN_FOR_PT_TOPIC else yield_token)  # noqa: E501
+        token_1 = self.base.get_or_create_evm_token(
+            address=principal_token if context.tx_log.topics[0] == SWAP_TOKEN_FOR_PT_TOPIC else yield_token,  # noqa: E501
+            protocol=CPT_PENDLE,
+        )
         out_event, in_events = None, []
         for event in context.decoded_events:
             if event.asset == token_0 and event.amount == amount_0:
@@ -341,6 +378,10 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             amount=int.from_bytes(context.tx_log.data[32:64]),
             asset=(token_out := self.base.get_token_or_native(token_out_address := bytes_to_address(context.tx_log.topics[output_token_log_idx]))),  # noqa: E501
         )
+        GlobalDBHandler.set_tokens_protocol_if_missing(
+            tokens=[(token_in if direction == 'mint' else token_out).resolve_to_evm_token()],
+            new_protocol=CPT_PENDLE,
+        )
         out_events, in_events = [], []
         for event in context.decoded_events:
             if (
@@ -456,7 +497,10 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             amount=int.from_bytes(context.tx_log.data[:32]),
         )
         amount_out = asset_normalized_value(
-            asset=(token_out := self.base.get_or_create_evm_token(context.tx_log.address)),
+            asset=(token_out := self.base.get_or_create_evm_token(
+                address=context.tx_log.address,
+                protocol=CPT_PENDLE,
+            )),
             amount=int.from_bytes(context.tx_log.data[32:64]),
         )
         sy_in_event, sy_out_event = None, None
@@ -482,7 +526,7 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             ):
                 event.counterparty = CPT_PENDLE
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.notes = f'Withdraw {event.amount} {token_in.symbol} from Pendle'
 
         if not sy_in_event or not sy_out_event:

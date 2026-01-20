@@ -184,7 +184,7 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 event.amount == collateral_amount
             ):
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.notes = f'Deposit {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as collateral on Curve'  # noqa: E501
                 event.counterparty = CPT_CURVE
                 out_event = event
@@ -217,7 +217,7 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 asset=collateral_token,
                 amount=collateral_amount,
                 to_event_type=HistoryEventType.DEPOSIT,
-                to_event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                to_event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
                 to_notes=f'Deposit {collateral_amount} {collateral_token.symbol} as collateral on Curve',  # noqa: E501
                 to_counterparty=CPT_CURVE,
             ), ActionItem(
@@ -265,7 +265,7 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
                 )
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.notes = f'Withdraw {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Curve after repaying loan'  # noqa: E501
                 event.counterparty = CPT_CURVE
                 in_event = event
@@ -308,7 +308,7 @@ class CurveBorrowRepayCommonDecoder(EvmDecoderInterface, ABC):
             asset=collateral_token,
             amount=collateral_amount,
             to_event_type=HistoryEventType.WITHDRAWAL,
-            to_event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            to_event_subtype=HistoryEventSubType.WITHDRAW_FROM_PROTOCOL,
             to_notes=f'Withdraw {collateral_amount} {collateral_token.symbol} from Curve loan collateral',  # noqa: E501
             to_counterparty=CPT_CURVE,
         )])

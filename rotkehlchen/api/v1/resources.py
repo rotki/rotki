@@ -72,6 +72,7 @@ from rotkehlchen.api.v1.schemas import (
     CreateHistoryEventSchema,
     CurrentAssetsPriceSchema,
     CustomAssetsQuerySchema,
+    CustomizedEventDuplicatesFixSchema,
     DataImportSchema,
     DeletePremiumDeviceSchema,
     DetectTokensSchema,
@@ -145,6 +146,7 @@ from rotkehlchen.api.v1.schemas import (
     NewUserSchema,
     NFTFilterQuerySchema,
     NFTLpFilterSchema,
+    OnchainHistoricalBalanceSchema,
     OptionalAddressesWithBlockchainsListSchema,
     PendingTransactionDecodingSchema,
     QueriedAddressesSchema,
@@ -228,6 +230,7 @@ from rotkehlchen.db.filtering import (
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
+    HistoricalBalancesFilterQuery,
     HistoryBaseEntryFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
@@ -252,6 +255,7 @@ from rotkehlchen.types import (
     CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
     CHAINS_WITH_TRANSACTIONS_TYPE,
     CHAINS_WITH_TX_DECODING_TYPE,
+    EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     SOLANA_TOKEN_KINDS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -3473,25 +3477,21 @@ class EventsAnalysisResource(BaseMethodView):
 
 class TimestampHistoricalBalanceResource(BaseMethodView):
 
-    post_schema = HistoricalPerAssetBalanceSchema()
+    def make_post_schema(self) -> HistoricalPerAssetBalanceSchema:
+        return HistoricalPerAssetBalanceSchema(
+            db=self.rest_api.rotkehlchen.data.db,
+            known_counterparties={cpt.identifier for cpt in self.rest_api.rotkehlchen.chains_aggregator.get_all_counterparties()},  # noqa: E501
+        )
 
     @require_premium_user(active_check=False)
-    @use_kwargs(post_schema, location='json')
+    @resource_parser.use_kwargs(make_post_schema, location='json')
     def post(
             self,
             async_query: bool,
-            timestamp: Timestamp,
-            asset: Asset | None = None,
+            filter_query: HistoricalBalancesFilterQuery,
     ) -> Response:
-        if asset is None:
-            return self.rest_api.get_historical_balance(
-                timestamp=timestamp,
-                async_query=async_query,
-            )
-
-        return self.rest_api.get_historical_asset_balance(
-            asset=asset,
-            timestamp=timestamp,
+        return self.rest_api.get_historical_balance(
+            filter_query=filter_query,
             async_query=async_query,
         )
 
@@ -3527,6 +3527,29 @@ class HistoricalNetValueResource(BaseMethodView):
         return self.rest_api.get_historical_netvalue(
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+        )
+
+
+class OnchainHistoricalBalanceResource(BaseMethodView):
+
+    post_schema = OnchainHistoricalBalanceSchema()
+
+    @require_premium_user(active_check=False)
+    @use_kwargs(post_schema, location='json')
+    def post(
+            self,
+            async_query: bool,
+            evm_chain: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+            address: ChecksumEvmAddress,
+            asset: Asset,
+            timestamp: Timestamp,
+    ) -> Response:
+        return self.rest_api.get_onchain_historical_balance(
+            async_query=async_query,
+            evm_chain=evm_chain,
+            address=address,
+            asset=asset,
+            timestamp=timestamp,
         )
 
 
@@ -3579,7 +3602,7 @@ class RefetchTransactionsResource(BaseMethodView):
             async_query: bool,
             to_timestamp: Timestamp,
             from_timestamp: Timestamp,
-            chain: CHAINS_WITH_TRANSACTION_DECODERS_TYPE,
+            chain: CHAINS_WITH_TRANSACTION_DECODERS_TYPE | None = None,
             address: ChecksumEvmAddress | SolanaAddress | None = None,
     ) -> Response:
         return self.rest_api.force_refetch_transactions(
@@ -3679,4 +3702,23 @@ class MatchAssetMovementsResource(BaseMethodView):
     def delete(self, asset_movement: int) -> Response:
         return self.rest_api.unlink_matched_asset_movements(
             asset_movement_identifier=asset_movement,
+        )
+
+
+class CustomizedEventDuplicatesResource(BaseMethodView):
+
+    get_schema = AsyncQueryArgumentSchema()
+    post_schema = CustomizedEventDuplicatesFixSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_customized_event_duplicates(async_query=async_query)
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, group_identifiers: list[str] | None, async_query: bool) -> Response:
+        return self.rest_api.fix_customized_event_duplicates(
+            async_query=async_query,
+            group_identifiers=group_identifiers,
         )

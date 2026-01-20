@@ -2,13 +2,12 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.assets.asset import Asset, UnderlyingToken
-from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import get_evm_token
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT, A_WETH_BASE
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
@@ -16,21 +15,12 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_zerox import A_BASE_USDC
-from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.tests.utils.morpho import (
-    create_base_morpho_ionic_weth_vault_token,
-    create_base_morpho_vault_token,
-    create_base_morpho_vault_tokens_for_bundler_test,
-    create_ethereum_morpho_vault_token,
-    create_multiple_vault_tokens,
-)
 from rotkehlchen.types import (
     CacheType,
     ChainID,
     Location,
     TimestampMS,
-    TokenKind,
     deserialize_evm_tx_hash,
 )
 
@@ -53,8 +43,21 @@ def _add_morpho_reward_distributor(chain_id: ChainID, address: str):
         )
 
 
+def _add_morpho_vault(
+        chain_id: 'ChainID',
+        vault: 'ChecksumEvmAddress',
+        underlying: 'ChecksumEvmAddress',
+):
+    """Add Morpho vault address and underlying token address to the cache for proper decoding."""
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.MORPHO_VAULTS, str(chain_id.serialize())),
+            values=[f'{vault},{underlying}'],
+        )
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_deposit_base(
@@ -62,8 +65,20 @@ def test_morpho_deposit_base(
         base_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf1bfb66819293de78d82ccf1d076ef4987114d01716ddc1d846f4c806df200c0')  # noqa: E501
-    vault_token = create_base_morpho_vault_token(database=base_inquirer.database)
+    _add_morpho_vault(
+        chain_id=ChainID.BASE,
+        vault=(vault_addr := string_to_evm_address('0xc1256Ae5FF1cf2719D4937adb3bbCCab2E00A2Ca')),
+        underlying=(underlying_addr := string_to_evm_address('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')),  # noqa: E501
+    )
+    assert get_evm_token(evm_address=vault_addr, chain_id=ChainID.BASE) is None
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    assert (vault_token := get_evm_token(evm_address=vault_addr, chain_id=ChainID.BASE)) is not None  # noqa: E501
+    assert vault_token.symbol == 'mwUSDC'
+    assert vault_token.name == 'Moonwell Flagship USDC'
+    assert vault_token.protocol == CPT_MORPHO
+    assert vault_token.underlying_tokens is not None
+    assert len(vault_token.underlying_tokens) == 1
+    assert vault_token.underlying_tokens[0].address == underlying_addr
     timestamp, user_address, gas_amount, deposit_amount, receive_amount = TimestampMS(1731100821000), base_accounts[0], '0.000007106536379632', '51.573591', '51.333358693113784641'  # noqa: E501
     assert events == [
         EvmEvent(
@@ -122,7 +137,6 @@ def test_morpho_deposit_base(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xCa17262d6b9B1F5e1995dAdB35d63f9f53896387']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_deposit_base_bundler(
@@ -131,7 +145,16 @@ def test_morpho_deposit_base_bundler(
 ) -> None:
     """Test that using the bundler to move funds between vaults is decoded correctly."""
     tx_hash = deserialize_evm_tx_hash('0x7da62153ad02205b019c8af287a9e3232e672dcb5a9ec7217f8f17de3011b168')  # noqa: E501
-    re7_token, pyth_token = create_base_morpho_vault_tokens_for_bundler_test(database=base_inquirer.database)  # noqa: E501
+    _add_morpho_vault(
+        chain_id=ChainID.BASE,
+        vault=(re7_addr := string_to_evm_address('0xA2Cac0023a4797b4729Db94783405189a4203AFc')),
+        underlying=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+    )
+    _add_morpho_vault(
+        chain_id=ChainID.BASE,
+        vault=(pyth_addr := string_to_evm_address('0x80D9964fEb4A507dD697b4437Fc5b25b618CE446')),
+        underlying=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+    )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp, user_address, gas_amount = TimestampMS(1731679657000), base_accounts[0], '0.000033559670856685'  # noqa: E501
     assert events == [
@@ -154,7 +177,7 @@ def test_morpho_deposit_base_bundler(
             location=Location.BASE,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
-            asset=re7_token,
+            asset=Asset(f'eip155:8453/erc20:{re7_addr}'),
             amount=FVal('0.080036912194887522'),
             location_label=user_address,
             notes=f'Set Re7WETH spending approval of {user_address} by 0x23055618898e202386e6c13955a58D3C68200BFB to 0.080036912194887522',  # noqa: E501
@@ -166,7 +189,7 @@ def test_morpho_deposit_base_bundler(
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=re7_token,
+            asset=Asset(f'eip155:8453/erc20:{re7_addr}'),
             amount=FVal('0.080036912194887522'),
             location_label=user_address,
             notes='Return 0.080036912194887522 Re7WETH to a Morpho vault',
@@ -184,7 +207,7 @@ def test_morpho_deposit_base_bundler(
             location_label=user_address,
             notes='Withdraw 0.081308576708772071 WETH from a Morpho vault',
             counterparty=CPT_MORPHO,
-            address=re7_token.evm_address,
+            address=re7_addr,
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=337,
@@ -211,7 +234,7 @@ def test_morpho_deposit_base_bundler(
             location_label=user_address,
             notes='Deposit 0.08130851016150618 WETH in a Morpho vault',
             counterparty=CPT_MORPHO,
-            address=pyth_token.evm_address,
+            address=pyth_addr,
             extra_data={'vault': '0x80D9964fEb4A507dD697b4437Fc5b25b618CE446'},
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -220,7 +243,7 @@ def test_morpho_deposit_base_bundler(
             location=Location.BASE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=pyth_token,
+            asset=Asset(f'eip155:8453/erc20:{pyth_addr}'),
             amount=FVal('0.080458744637341029'),
             location_label=user_address,
             notes='Receive 0.080458744637341029 pythETH after deposit in a Morpho vault',
@@ -231,7 +254,6 @@ def test_morpho_deposit_base_bundler(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x315178907fE88C7B8CC09D51F03ffb60A55e11e5']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_withdraw_base(
@@ -239,7 +261,11 @@ def test_morpho_withdraw_base(
         base_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x72782434a36d0bd5c26751b344dcf301b1510b63cac7d67596b34642bf068a51')  # noqa: E501
-    vault_token = create_base_morpho_vault_token(database=base_inquirer.database)
+    _add_morpho_vault(
+        chain_id=ChainID.BASE,
+        vault=(vault_addr := string_to_evm_address('0xc1256Ae5FF1cf2719D4937adb3bbCCab2E00A2Ca')),
+        underlying=string_to_evm_address('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
+    )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp, user_address, gas_amount, return_amount, withdraw_amount = TimestampMS(1731408939000), base_accounts[0], '0.000009372834639654', '9951.725252259523570499', '10000'  # noqa: E501
     assert events == [
@@ -262,7 +288,7 @@ def test_morpho_withdraw_base(
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=vault_token,
+            asset=Asset(f'eip155:8453/erc20:{vault_addr}'),
             amount=FVal(return_amount),
             location_label=user_address,
             notes=f'Return {return_amount} mwUSDC to a Morpho vault',
@@ -280,13 +306,12 @@ def test_morpho_withdraw_base(
             location_label=user_address,
             notes=f'Withdraw {withdraw_amount} USDC from a Morpho vault',
             counterparty=CPT_MORPHO,
-            address=vault_token.evm_address,
+            address=vault_addr,
         ),
     ]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x7f2A099EEdE569438584790d2126202B39036831']])
 def test_morpho_claim_reward_base(
         base_inquirer: 'BaseInquirer',
@@ -334,7 +359,11 @@ def test_morpho_deposit_ethereum(
         ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x3dabc0f6b3b795249b9b1d2b5398e09487f1321aacfc80242e9d6171051a99a8')  # noqa: E501
-    vault_token = create_ethereum_morpho_vault_token(database=ethereum_inquirer.database)
+    _add_morpho_vault(
+        chain_id=ChainID.ETHEREUM,
+        vault=(vault_addr := string_to_evm_address('0xd63070114470f685b75B74D60EEc7c1113d33a3D')),
+        underlying=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+    )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, user_address, gas_amount, deposit_amount, receive_amount = TimestampMS(1731354683000), ethereum_accounts[0], '0.019537376734385857', '200', '194.826292786685129719'  # noqa: E501
     assert events == [
@@ -375,7 +404,7 @@ def test_morpho_deposit_ethereum(
             notes=f'Deposit {deposit_amount} USDC in a Morpho vault',
             counterparty=CPT_MORPHO,
             address=string_to_evm_address('0x4095F064B8d3c3548A3bebfd0Bbfd04750E30077'),
-            extra_data={'vault': vault_token.evm_address},
+            extra_data={'vault': vault_addr},
         ), EvmEvent(
             tx_ref=tx_hash,
             sequence_index=408,
@@ -383,7 +412,7 @@ def test_morpho_deposit_ethereum(
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=vault_token,
+            asset=Asset(f'eip155:1/erc20:{vault_addr}'),
             amount=FVal(receive_amount),
             location_label=user_address,
             notes=f'Receive {receive_amount} USUALUSDC+ after deposit in a Morpho vault',
@@ -401,7 +430,11 @@ def test_morpho_withdraw_ethereum(
         ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8d3a5be47ff121846a85c84e9f1f487c43f66eadd5a3607f6c767ffc6704b50f')  # noqa: E501
-    vault_token = create_ethereum_morpho_vault_token(database=ethereum_inquirer.database)
+    _add_morpho_vault(
+        chain_id=ChainID.ETHEREUM,
+        vault=(vault_addr := string_to_evm_address('0xd63070114470f685b75B74D60EEc7c1113d33a3D')),
+        underlying=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
+    )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, user_address, gas_amount, approve_amount, return_amount, withdraw_amount = TimestampMS(1731405887000), ethereum_accounts[0], '0.035931819008110328', '1141398.660779466856241893', '1141393.264141539859656044', '1172000'  # noqa: E501
     assert events == [
@@ -424,7 +457,7 @@ def test_morpho_withdraw_ethereum(
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
-            asset=vault_token,
+            asset=Asset(f'eip155:1/erc20:{vault_addr}'),
             amount=FVal(approve_amount),
             location_label=user_address,
             notes=f'Set USUALUSDC+ spending approval of {user_address} by 0x4095F064B8d3c3548A3bebfd0Bbfd04750E30077 to {approve_amount}',  # noqa: E501
@@ -436,7 +469,7 @@ def test_morpho_withdraw_ethereum(
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=vault_token,
+            asset=Asset(f'eip155:1/erc20:{vault_addr}'),
             amount=FVal(return_amount),
             location_label=user_address,
             notes=f'Return {return_amount} USUALUSDC+ to a Morpho vault',
@@ -454,7 +487,7 @@ def test_morpho_withdraw_ethereum(
             location_label=user_address,
             notes=f'Withdraw {withdraw_amount} USDC from a Morpho vault',
             counterparty=CPT_MORPHO,
-            address=vault_token.evm_address,
+            address=vault_addr,
         ),
     ]
 
@@ -488,7 +521,6 @@ def test_morpho_claim_reward_ethereum(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_morpho_deposit_eth_and_weth_base(
@@ -496,7 +528,11 @@ def test_morpho_deposit_eth_and_weth_base(
         base_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x70df73acae65e1bb2568799d4d2cae0a0a56158383598475317832fb9066d930')  # noqa: E501
-    vault_token = create_base_morpho_ionic_weth_vault_token(database=base_inquirer.database)
+    _add_morpho_vault(
+        chain_id=ChainID.BASE,
+        vault=(vault_addr := string_to_evm_address('0x5A32099837D89E3a794a44fb131CBbAD41f87a8C')),
+        underlying=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+    )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp, user_address, gas_amount, deposit1_amount, deposit2_amount, receive_amount = TimestampMS(1737414513000), base_accounts[0], '0.000014687937701214', '0.030990676336768753', '0.000009323663231247', '0.030971714651894301'  # noqa: E501
     assert events == [EvmEvent(
@@ -524,7 +560,7 @@ def test_morpho_deposit_eth_and_weth_base(
         notes=f'Deposit {deposit1_amount} ETH in a Morpho vault',
         counterparty=CPT_MORPHO,
         address=string_to_evm_address('0x23055618898e202386e6c13955a58D3C68200BFB'),
-        extra_data={'vault': vault_token.evm_address},
+        extra_data={'vault': vault_addr},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -538,7 +574,7 @@ def test_morpho_deposit_eth_and_weth_base(
         notes=f'Deposit {deposit2_amount} WETH in a Morpho vault',
         counterparty=CPT_MORPHO,
         address=string_to_evm_address('0x23055618898e202386e6c13955a58D3C68200BFB'),
-        extra_data={'vault': vault_token.evm_address},
+        extra_data={'vault': vault_addr},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=3,
@@ -546,24 +582,32 @@ def test_morpho_deposit_eth_and_weth_base(
         location=Location.BASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-        asset=vault_token,
+        asset=Asset(f'eip155:8453/erc20:{vault_addr}'),
         amount=FVal(receive_amount),
         location_label=user_address,
-        notes=f'Receive {receive_amount} ionicWETH after deposit in a Morpho vault',
+        notes=f'Receive {receive_amount} exmWETH after deposit in a Morpho vault',
         counterparty=CPT_MORPHO,
         address=ZERO_ADDRESS,
     )]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0x21f2a9b5F420245d86E8Faa753022dA01946B13F']])
 def test_vault_withdrawal_deposit_with_wallet_tokens(base_inquirer: 'BaseInquirer', base_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
     """Regression test for morpho transaction where a user withdraws from one vault and
     deposits into another vault, combining it with additional tokens from their wallet.
     """
     tx_hash = deserialize_evm_tx_hash('0x0dabb5eea94b244ff0b30bdfedb4b77580638b6177dd430b5699a1dd418ddd19')  # noqa: E501
-    create_multiple_vault_tokens(database=base_inquirer.database)
+    _add_morpho_vault(
+        chain_id=ChainID.BASE,
+        vault=(sm_usdc_addr := string_to_evm_address('0x616a4E1db48e22028f6bbf20444Cd3b8e3273738')),  # noqa: E501
+        underlying=string_to_evm_address('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
+    )
+    _add_morpho_vault(
+        chain_id=ChainID.BASE,
+        vault=(mw_usdc_addr := string_to_evm_address('0xc1256Ae5FF1cf2719D4937adb3bbCCab2E00A2Ca')),  # noqa: E501
+        underlying=string_to_evm_address('0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
+    )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
         tx_ref=tx_hash,
@@ -584,7 +628,7 @@ def test_vault_withdrawal_deposit_with_wallet_tokens(base_inquirer: 'BaseInquire
         location=Location.BASE,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.APPROVE,
-        asset=Asset('eip155:8453/erc20:0xc1256Ae5FF1cf2719D4937adb3bbCCab2E00A2Ca'),
+        asset=Asset(f'eip155:8453/erc20:{mw_usdc_addr}'),
         amount=(approval_amount := FVal('2404.324028784031837625')),
         location_label=user_address,
         notes=f'Set mwUSDC spending approval of {user_address} by 0xb98c948CFA24072e58935BC004a8A7b376AE746A to {approval_amount}',  # noqa: E501
@@ -608,7 +652,7 @@ def test_vault_withdrawal_deposit_with_wallet_tokens(base_inquirer: 'BaseInquire
         location=Location.BASE,
         event_type=HistoryEventType.SPEND,
         event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-        asset=Asset('eip155:8453/erc20:0xc1256Ae5FF1cf2719D4937adb3bbCCab2E00A2Ca'),
+        asset=Asset(f'eip155:8453/erc20:{mw_usdc_addr}'),
         amount=(return_amount := FVal('2404.324028784031837625')),
         location_label=user_address,
         notes=f'Return {return_amount} mwUSDC to a Morpho vault',
@@ -626,7 +670,7 @@ def test_vault_withdrawal_deposit_with_wallet_tokens(base_inquirer: 'BaseInquire
         location_label=user_address,
         notes=f'Withdraw {receive_amount} USDC from a Morpho vault',
         counterparty=CPT_MORPHO,
-        address=string_to_evm_address('0xc1256Ae5FF1cf2719D4937adb3bbCCab2E00A2Ca'),
+        address=mw_usdc_addr,
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=108,
@@ -639,8 +683,8 @@ def test_vault_withdrawal_deposit_with_wallet_tokens(base_inquirer: 'BaseInquire
         location_label=user_address,
         notes=f'Deposit {deposit_amount} USDC in a Morpho vault',
         counterparty=CPT_MORPHO,
-        address=string_to_evm_address('0x616a4E1db48e22028f6bbf20444Cd3b8e3273738'),
-        extra_data={'vault': '0x616a4E1db48e22028f6bbf20444Cd3b8e3273738'},
+        address=sm_usdc_addr,
+        extra_data={'vault': sm_usdc_addr},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=109,
@@ -648,7 +692,7 @@ def test_vault_withdrawal_deposit_with_wallet_tokens(base_inquirer: 'BaseInquire
         location=Location.BASE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-        asset=Asset('eip155:8453/erc20:0x616a4E1db48e22028f6bbf20444Cd3b8e3273738'),
+        asset=Asset(f'eip155:8453/erc20:{sm_usdc_addr}'),
         amount=(receive_amount := FVal('2439.62243914536842244')),
         location_label=user_address,
         notes=f'Receive {receive_amount} smUSDC after deposit in a Morpho vault',
@@ -664,18 +708,10 @@ def test_morpho_deposit_arbitrum(
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x5233ed02fc0693a83c54d973201475a183b262e8d5a4498e45f5e3cd015b4d13')  # noqa: E501
-    vault_token = get_or_create_evm_token(
-        userdb=arbitrum_one_inquirer.database,
-        evm_address=string_to_evm_address('0xa60643c90A542A95026C0F1dbdB0615fF42019Cf'),
+    _add_morpho_vault(
         chain_id=ChainID.ARBITRUM_ONE,
-        symbol='MCUSDC',
-        name='MEV Capital USDC',
-        protocol=CPT_MORPHO,
-        underlying_tokens=[UnderlyingToken(
-            address=string_to_evm_address('0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
-            token_kind=TokenKind.ERC20,
-            weight=ONE,
-        )],
+        vault=(vault_addr := string_to_evm_address('0xa60643c90A542A95026C0F1dbdB0615fF42019Cf')),
+        underlying=string_to_evm_address('0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=arbitrum_one_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
@@ -715,7 +751,7 @@ def test_morpho_deposit_arbitrum(
         notes=f'Deposit {deposit_amount} USDC in a Morpho vault',
         counterparty=CPT_MORPHO,
         address=string_to_evm_address('0x9954aFB60BB5A222714c478ac86990F221788B88'),
-        extra_data={'vault': vault_token.evm_address},
+        extra_data={'vault': vault_addr},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=3,
@@ -723,7 +759,7 @@ def test_morpho_deposit_arbitrum(
         location=Location.ARBITRUM_ONE,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-        asset=vault_token,
+        asset=Asset(f'eip155:42161/erc20:{vault_addr}'),
         amount=FVal(receive_amount := '1965.512936852456890188'),
         location_label=user_address,
         notes=f'Receive {receive_amount} MCUSDC after deposit in a Morpho vault',
@@ -739,18 +775,10 @@ def test_morpho_deposit_native_polygon(
         polygon_pos_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x6fd0d431c6c1b3dcbd3da59055720a975a45a4099339e2187032d04b66c2cf9f')  # noqa: E501
-    vault_token = get_or_create_evm_token(
-        userdb=polygon_pos_inquirer.database,
-        evm_address=string_to_evm_address('0x3F33F9f7e2D7cfBCBDf8ea8b870a6E3d449664c2'),
+    _add_morpho_vault(
         chain_id=ChainID.POLYGON_POS,
-        symbol='compPOL',
-        name='Compound POL',
-        protocol=CPT_MORPHO,
-        underlying_tokens=[UnderlyingToken(
-            address=string_to_evm_address('0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'),
-            token_kind=TokenKind.ERC20,
-            weight=ONE,
-        )],
+        vault=(vault_addr := string_to_evm_address('0x3F33F9f7e2D7cfBCBDf8ea8b870a6E3d449664c2')),
+        underlying=string_to_evm_address('0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'),
     )
     events, _ = get_decoded_events_of_transaction(evm_inquirer=polygon_pos_inquirer, tx_hash=tx_hash)  # noqa: E501
     assert events == [EvmEvent(
@@ -778,7 +806,7 @@ def test_morpho_deposit_native_polygon(
         notes=f'Deposit {deposit_amount} POL in a Morpho vault',
         counterparty=CPT_MORPHO,
         address=string_to_evm_address('0x2d9C3A9E67c966C711208cc78b34fB9E9f8db589'),
-        extra_data={'vault': vault_token.evm_address},
+        extra_data={'vault': vault_addr},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -786,7 +814,7 @@ def test_morpho_deposit_native_polygon(
         location=Location.POLYGON_POS,
         event_type=HistoryEventType.RECEIVE,
         event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-        asset=vault_token,
+        asset=Asset(f'eip155:137/erc20:{vault_addr}'),
         amount=FVal(receive_amount := '81.496831311534355622'),
         location_label=user_address,
         notes=f'Receive {receive_amount} compPOL after deposit in a Morpho vault',

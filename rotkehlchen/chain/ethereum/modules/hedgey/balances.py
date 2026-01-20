@@ -29,7 +29,7 @@ class HedgeyBalances(ProtocolWithBalance):
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_HEDGEY,
-            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},  # not used  # noqa: E501
+            deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL)},  # not used  # noqa: E501
         )
         self.evm_inquirer: EthereumInquirer
 

@@ -223,6 +223,7 @@ class DBHandler:
         self.conn_transient: DBConnection = None  # type: ignore
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
         self.get_or_create_token_lock = Semaphore()
+        self.match_asset_movements_lock = Semaphore()
         self.password = password
         self._connect()
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
@@ -454,8 +455,9 @@ class DBHandler:
                 'main_currency',
                 'non_syncing_exchanges',
                 'ask_user_upon_size_discrepancy',
+                'asset_movement_amount_tolerance',
             ],
-            value: int | (Timestamp | Asset) | str | bool,
+            value: int | (Timestamp | Asset) | str | bool | FVal,
     ) -> None:
         write_cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
@@ -579,7 +581,7 @@ class DBHandler:
         than the one supported.
         - AuthenticationError if the wrong password is given
         """
-        self.conn.wal_checkpoint()
+        self.conn.wal_checkpoint(mode='(TRUNCATE)')
         self.disconnect()
         rdbpath = self.user_data_dir / USERDB_NAME
         # Make copy of existing encrypted DB before removing it
@@ -675,6 +677,8 @@ class DBHandler:
             name: Literal[
                 DBCacheStatic.DOCKER_DEVICE_INFO,
                 DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+                DBCacheStatic.STALE_BALANCES_FROM_TS,
+                DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
             ],
     ) -> str | None:
         ...
@@ -691,7 +695,8 @@ class DBHandler:
                 DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,
                 DBCacheStatic.LAST_SPAM_ASSETS_DETECT_KEY,
                 DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY,
-                DBCacheStatic.LAST_EVENTS_PROCESSING_TASK_TS,
+                DBCacheStatic.LAST_ETH2_EVENTS_PROCESSING_TS,
+                DBCacheStatic.LAST_ASSET_MOVEMENT_PROCESSING_TS,
                 DBCacheStatic.LAST_WITHDRAWALS_EXIT_QUERY_TS,
                 DBCacheStatic.LAST_MONERIUM_QUERY_TS,
                 DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
@@ -701,7 +706,6 @@ class DBHandler:
                 DBCacheStatic.LAST_GNOSISPAY_QUERY_TS,
                 DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
                 DBCacheStatic.LAST_DB_UPGRADE,
-                DBCacheStatic.STALE_BALANCES_FROM_TS,
                 DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
             ],
     ) -> Timestamp | None:
@@ -727,10 +731,12 @@ class DBHandler:
         ).fetchone()) is None:
             return None
 
-        # Return string for DOCKER_DEVICE_INFO & MONERIUM_OAUTH_CREDENTIALS, timestamp for all others  # noqa: E501
+        # Return string for these cache entries, timestamp for all others
         if name in (
             DBCacheStatic.DOCKER_DEVICE_INFO,
             DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
+            DBCacheStatic.STALE_BALANCES_FROM_TS,
+            DBCacheStatic.STALE_BALANCES_MODIFICATION_TS,
         ):
             return value[0]
 
@@ -1632,11 +1638,15 @@ class DBHandler:
         Each account entry contains address and potentially label and tags
         """
         query = cursor.execute(
-            "SELECT A.account, C.name, group_concat(B.tag_name,',') "
+            "SELECT A.account, COALESCE(C1.name, C2.name), "
+            "(SELECT group_concat(tag_name, ',') "
+            "FROM tag_mappings WHERE object_reference = A.account) "
             "FROM blockchain_accounts AS A "
-            "LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.account "
-            "LEFT OUTER JOIN address_book AS C ON C.address = A.account AND (A.blockchain IS C.blockchain OR C.blockchain IS ?) "  # noqa: E501
-            "WHERE A.blockchain=? GROUP BY account;",
+            "LEFT OUTER JOIN address_book AS C1 "
+            "ON C1.address = A.account AND C1.blockchain = A.blockchain "
+            "LEFT OUTER JOIN address_book AS C2 "
+            "ON C2.address = A.account AND C2.blockchain = ? "
+            "WHERE A.blockchain=?;",
             (f'{ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX}{blockchain.get_address_chain_group().name}', blockchain.value),  # noqa: E501
         )
 

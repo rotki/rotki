@@ -52,12 +52,12 @@ class OctantDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] == LOCKED:
             expected_type = HistoryEventType.SPEND
             new_type = HistoryEventType.DEPOSIT
-            new_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            new_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
             verb, preposition = 'Lock', 'in'
         elif context.tx_log.topics[0] == UNLOCKED:
             expected_type = HistoryEventType.RECEIVE
             new_type = HistoryEventType.WITHDRAWAL
-            new_subtype = HistoryEventSubType.REMOVE_ASSET
+            new_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
             verb, preposition = 'Unlock', 'from'
         else:
             return DEFAULT_EVM_DECODING_OUTPUT

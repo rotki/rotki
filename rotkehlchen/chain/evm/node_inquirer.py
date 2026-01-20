@@ -18,13 +18,15 @@ from web3.exceptions import InvalidAddress, TransactionNotFound, Web3Exception
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.assets.asset import CryptoAsset
-from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN
+from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN, token_normalized_value_decimals
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT, SAFE_BASIC_ABI
 from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE_NAME
 from rotkehlchen.chain.ethereum.types import LogIterationCallback
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
+    EIP7702_DELEGATION_CODE_LENGTH,
+    EIP7702_DELEGATION_PREFIX,
     ERC20_PROPERTIES,
     ERC20_PROPERTIES_NUM,
     ERC721_PROPERTIES,
@@ -78,6 +80,7 @@ from rotkehlchen.utils.misc import from_wei, get_chunks
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.gnosis.transactions import GnosisWithdrawalsQueryParameters
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -287,13 +290,13 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             balances[account] = from_wei(result[idx])
         return balances
 
-    def get_historical_balance(
+    def get_historical_native_balance(
             self,
             address: ChecksumEvmAddress,
             block_number: int,
             web3: Web3 | None = None,
     ) -> FVal | None:
-        """Attempts to get the historical eth balance using the node provided.
+        """Attempts to get the historical native token balance using the node provided.
 
         If `web3` is None, it uses the local own node.
         Returns None if there is no local node or node cannot query historical balance.
@@ -319,10 +322,45 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
         return balance
 
+    def get_historical_token_balance(
+            self,
+            address: ChecksumEvmAddress,
+            token: 'EvmToken',
+            block_number: int,
+    ) -> FVal | None:
+        """Query historical ERC20 token balance at a specific block using archive node.
+
+        Returns None if query fails (e.g., no archive node available, contract doesn't exist
+        at that block, etc.).
+        """
+        try:
+            raw_balance = self.call_contract(
+                contract_address=token.evm_address,
+                abi=self.contracts.erc20_abi,
+                method_name='balanceOf',
+                arguments=[address],
+                block_identifier=block_number,
+            )
+        except (RemoteError, BlockchainQueryError) as e:
+            log.error(
+                f'Failed to query historical token balance for {address} '
+                f'token {token.evm_address} at block {block_number}: {e!s}',
+            )
+            return None
+
+        return token_normalized_value_decimals(
+            token_amount=raw_balance,
+            token_decimals=token.decimals,
+        )
+
+    def has_archive_node(self) -> bool:
+        """Check if any connected RPC node is an archive node."""
+        return any(rpc_node.is_archive for rpc_node in self.rpc_mapping.values())
+
     def _have_archive(self, web3: Web3) -> bool:
         """Returns a boolean representing if node is an archive one."""
         address_to_check, block_to_check, expected_balance = self._get_archive_check_data()
-        return self.get_historical_balance(
+        return self.get_historical_native_balance(
             address=address_to_check,
             block_number=block_to_check,
             web3=web3,
@@ -1302,18 +1340,23 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         return all(result_tuple[0] for result_tuple in outputs)
 
     def is_contract(self, address: ChecksumEvmAddress) -> bool:
-        """Check if an address is a contract (has bytecode) on this chain.
+        """Check if an address is a smart contract on this chain.
 
-        Returns True if bytecode exists, False otherwise (EOA or non-deployed contract).
+        EIP-7702 delegated EOAs have bytecode but are not contracts, so they are excluded.
         """
         try:
-            return self.get_code(account=address) != '0x'
+            code = self.get_code(account=address)
         except RemoteError as e:
             log.error(
                 f'Failed to get code for {address} on {self.chain_name} due to {e}. '
                 'Assuming not a contract.',
             )
             return False
+
+        return not (
+            code == '0x' or
+            (code.lower().startswith(EIP7702_DELEGATION_PREFIX) and len(code) == EIP7702_DELEGATION_CODE_LENGTH)  # noqa: E501
+        )
 
     @overload
     def get_transactions(

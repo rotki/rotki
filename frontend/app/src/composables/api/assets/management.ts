@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { Collection } from '@/types/collection';
 import { OwnedAssets, type SupportedAsset } from '@rotki/common';
 import { api } from '@/modules/api/rotki-api';

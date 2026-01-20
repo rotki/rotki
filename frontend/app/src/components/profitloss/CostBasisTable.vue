@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { CostBasis, MatchedAcquisitions, MatchedAcquisitionsEvent } from '@/types/reports';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
+import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 
 type Acquisition = Omit<MatchedAcquisitions, 'event'> & MatchedAcquisitionsEvent;
@@ -131,30 +131,16 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
           outlined
         >
           <template #item.amount="{ row }">
-            <AmountDisplay
-              force-currency
-              :value="row.amount"
-            />
+            <ValueDisplay :value="row.amount" />
           </template>
           <template #item.fullAmount="{ row }">
-            <AmountDisplay
-              force-currency
-              :value="row.fullAmount"
-            />
+            <ValueDisplay :value="row.fullAmount" />
           </template>
           <template #item.remainingAmount="{ row }">
-            <AmountDisplay
-              force-currency
-              :value="row.fullAmount.minus(row.amount)"
-            />
+            <ValueDisplay :value="row.fullAmount.minus(row.amount)" />
           </template>
           <template #item.rate="{ row }">
-            <AmountDisplay
-              force-currency
-              :value="row.rate"
-              show-currency="symbol"
-              :fiat-currency="currency"
-            />
+            <FiatDisplay :value="row.rate" />
           </template>
           <template #item.timestamp="{ row }">
             <DateDisplay :timestamp="row.timestamp" />

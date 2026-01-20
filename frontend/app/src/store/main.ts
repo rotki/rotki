@@ -14,6 +14,8 @@ export const useMainStore = defineStore('main', () => {
   const version = ref<Version>(defaultVersion());
   const connected = ref<boolean>(false);
   const connectionFailure = ref<boolean>(false);
+  /** When false, connection attempts are blocked (e.g., backend failed to start) */
+  const connectionEnabled = ref<boolean>(true);
   const dataDirectory = ref<string>('');
   const logLevel = ref<LogLevel>(getDefaultLogLevel());
   const dockerRiskAccepted = ref<boolean>(true);
@@ -72,6 +74,11 @@ export const useMainStore = defineStore('main', () => {
   };
 
   const connect = (payload?: string | null): void => {
+    if (!get(connectionEnabled)) {
+      logger.debug('Connection skipped - connection disabled');
+      return;
+    }
+
     let count = 0;
     if (intervalId)
       clearInterval(intervalId);
@@ -127,8 +134,43 @@ export const useMainStore = defineStore('main', () => {
     set(connectionFailure, failed);
   };
 
+  /**
+   * Cancel any ongoing connection attempts (ping loop) without disabling future connections.
+   * Use this for temporary stops like page navigation or intentional disconnect.
+   */
+  const cancelConnectionAttempts = (): void => {
+    if (intervalId) {
+      clearInterval(intervalId);
+      intervalId = null;
+      logger.debug('Connection attempts cancelled');
+    }
+  };
+
+  /**
+   * Stop all connection attempts and disable future connections.
+   * Use this when the backend is known to be unavailable (e.g., startup error).
+   */
+  const stopConnectionAttempts = (): void => {
+    set(connectionEnabled, false);
+    cancelConnectionAttempts();
+    logger.debug('Connection attempts stopped and disabled');
+  };
+
+  /**
+   * Enable or disable connection attempts.
+   * When disabled, connect() and reconnection attempts will not start.
+   */
+  const setConnectionEnabled = (enabled: boolean): void => {
+    set(connectionEnabled, enabled);
+    if (!enabled) {
+      cancelConnectionAttempts();
+    }
+    logger.debug(`Connection attempts ${enabled ? 'enabled' : 'disabled'}`);
+  };
+
   return {
     appVersion,
+    cancelConnectionAttempts,
     connect,
     connected,
     connectionFailure,
@@ -139,7 +181,9 @@ export const useMainStore = defineStore('main', () => {
     getVersion,
     isDevelop,
     setConnected,
+    setConnectionEnabled,
     setConnectionFailure,
+    stopConnectionAttempts,
     updateNeeded,
     version,
   };

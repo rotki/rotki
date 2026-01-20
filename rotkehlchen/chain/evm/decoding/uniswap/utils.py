@@ -293,12 +293,12 @@ def decode_uniswap_v3_like_position_create_or_exit(
         elif event.counterparty == counterparty:
             if (
                     event.event_type == HistoryEventType.DEPOSIT and
-                    event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype == HistoryEventSubType.DEPOSIT_TO_PROTOCOL
             ):
                 deposit_events.append(event)
             elif (
                     event.event_type == HistoryEventType.WITHDRAWAL and
-                    event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+                    event.event_subtype == HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
             ):
                 withdrawal_events.append(event)
 

@@ -74,7 +74,7 @@ const { showDeleteConfirmation } = useAddressBookDeletion(location, refresh);
           chain: row.blockchain ?? 'ALL',
         }"
         :use-alias-name="false"
-        :truncate="false"
+        no-truncate
       />
     </template>
     <template #item.actions="{ row }">

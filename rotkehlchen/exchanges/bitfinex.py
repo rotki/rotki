@@ -622,22 +622,33 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 for bfx_symbol, symbol in response_list[0]:
                     if bfx_symbol in test_assets:
                         continue  # skip test assets
-                    try:  # First check if we have a mapping already.
-                        asset_from_bitfinex(bfx_symbol)
-                    except UnknownAsset:
-                        try:
-                            asset = symbol_to_asset_or_token(symbol)
-                        except UnknownAsset:
-                            log.warning(f'Found new asset symbol {bfx_symbol} for {symbol} in Bitfinex. Support for it has to be added.')  # noqa: E501
-                            continue  # skip unknown assets
 
-                        bindings.append((
-                            bfx_db_serialized,
-                            bfx_symbol,
-                            asset.serialize(),
-                            bfx_db_serialized,
-                            bfx_symbol,
-                        ))
+                    for get_asset_func, param, should_add_mapping in [
+                        (asset_from_bitfinex, bfx_symbol, False),  # normal location asset mapping
+                        (symbol_to_asset_or_token, symbol, True),  # check for an asset with this symbol  # noqa: E501
+                        (asset_from_bitfinex, symbol, True),  # also check if we have a mapping
+                        # for the symbol instead of the bfx_symbol. This is used in some cases like
+                        # USDT0, where there are multiple bfx_symbols (USDT0ARB, USDT0INK, etc)
+                        # which should all map to the same USDT asset
+                    ]:
+                        try:
+                            asset = get_asset_func(param)  # type: ignore[operator]
+                        except UnknownAsset:
+                            continue
+
+                        if should_add_mapping:
+                            bindings.append((
+                                bfx_db_serialized,
+                                bfx_symbol,
+                                asset.serialize(),
+                                bfx_db_serialized,
+                                bfx_symbol,
+                            ))
+
+                        break
+                    else:
+                        log.warning(f'Found new asset symbol {bfx_symbol} for {symbol} in Bitfinex. Support for it has to be added.')  # noqa: E501
+                        continue  # skip unknown assets
 
                 # insert the mapping, and skip unsupported assets
                 with GlobalDBHandler().conn.write_ctx() as write_cursor:

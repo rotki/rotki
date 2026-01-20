@@ -18,7 +18,7 @@ interface UseHistoryEventStatusReturn {
   shouldFetchEventsRegularly: ComputedRef<boolean>;
 }
 
-export function useHistoryEventsStatus(): UseHistoryEventStatusReturn {
+export const useHistoryEventsStatus = createSharedComposable((): UseHistoryEventStatusReturn => {
   const { useIsTaskRunning } = useTaskStore();
   const { isLoading: isSectionLoading } = useStatusStore();
 
@@ -50,4 +50,4 @@ export function useHistoryEventsStatus(): UseHistoryEventStatusReturn {
     shouldFetchEventsRegularly,
     txEventsDecoding,
   };
-}
+});

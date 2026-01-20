@@ -201,7 +201,10 @@ def assert_cryptocom_import_results(rotki: Rotkehlchen):
     with rotki.data.db.conn.read_ctx() as cursor:
         events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
+            filter_query=HistoryEventFilterQuery.make(order_by_rules=[
+                ('timestamp', True),
+                ('history_events_identifier', True),
+            ]),
                     )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -619,7 +622,10 @@ def assert_cryptocom_special_events_import_results(rotki: Rotkehlchen):
     with rotki.data.db.conn.read_ctx() as cursor:
         events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
+            filter_query=HistoryEventFilterQuery.make(order_by_rules=[
+                ('timestamp', True),
+                ('history_events_identifier', True),
+            ]),
                     )
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
@@ -2846,7 +2852,10 @@ def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: Webs
     with rotki.data.db.conn.read_ctx() as cursor:
         events = DBHistoryEvents(rotki.data.db).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
+            filter_query=HistoryEventFilterQuery.make(order_by_rules=[
+                ('timestamp', True),
+                ('history_events_identifier', True),
+            ]),
         )
     for actual, expected in zip(events, expected_events, strict=True):
         assert_is_equal_history_event(actual=actual, expected=expected)
@@ -3582,7 +3591,14 @@ def assert_blockpit_import_results(rotki: Rotkehlchen):
     """A utility function to help assert on correctness of importing data from blockpit"""
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
-        history_events = dbevents.get_history_events_internal(cursor=cursor, filter_query=HistoryEventFilterQuery.make())  # noqa: E501
+        history_events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(order_by_rules=[
+                ('timestamp', True),
+                ('sequence_index', True),
+                ('history_events_identifier', True),
+            ]),
+        )
 
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()

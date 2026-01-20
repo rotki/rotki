@@ -10,7 +10,6 @@ from gql.transport.exceptions import TransportError, TransportQueryError, Transp
 from gql.transport.requests import RequestsHTTPTransport
 from graphql.error import GraphQLError
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import APIKeyNotConfigured
@@ -62,12 +61,9 @@ class Graph(ExternalServiceWithApiKey):
         if (api_key := self._get_api_key()) is None and self.graph_label == CPT_ENS:
             api_key = ApiKey('d943ea1af415001154223fdf46b6f193')  # key created by yabir enabled for ens  # noqa: E501
             if self.warning_given is False:
-                self.db.msg_aggregator.add_message(
-                    message_type=WSMessageType.MISSING_API_KEY,
-                    data={
-                        'service': ExternalService.THEGRAPH.serialize(),
-                        'location': self.graph_label,
-                    },
+                self.db.msg_aggregator.add_missing_key_message(
+                    service=ExternalService.THEGRAPH,
+                    location=self.graph_label,
                 )
                 self.warning_given = True
         elif api_key is None:  # don't bother the user and fail silently. We avoid exhausting the default key  # noqa: E501

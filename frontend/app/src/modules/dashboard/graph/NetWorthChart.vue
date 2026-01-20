@@ -2,12 +2,11 @@
 import { type BigNumber, type NetValue, Zero } from '@rotki/common';
 import VChart from 'vue-echarts';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import NewGraphTooltipWrapper from '@/components/graphs/NewGraphTooltipWrapper.vue';
+import { FiatDisplay } from '@/modules/amount-display/components';
 import { useNetValueChartConfig } from '@/modules/dashboard/graph/use-net-value-chart-config';
 import { useNetValueEventHandlers } from '@/modules/dashboard/graph/use-net-value-event-handlers';
-import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const props = defineProps<{
   chartData: NetValue;
@@ -24,7 +23,6 @@ const selectedTimestamp = ref<number>(0);
 const selectedBalance = ref<BigNumber>(Zero);
 const showExportSnapshotDialog = ref<boolean>(false);
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { isDark } = useRotkiTheme();
 
 const { chartOption } = useNetValueChartConfig(chartData);
@@ -73,12 +71,9 @@ watchImmediate(chartOption, () => {
         {{ t('net_worth_chart.current_balance') }}
       </template>
     </div>
-    <AmountDisplay
+    <FiatDisplay
       class="font-bold"
-      force-currency
-      show-currency="symbol"
       :value="tooltipData.value"
-      :fiat-currency="currencySymbol"
     />
   </NewGraphTooltipWrapper>
 

@@ -1,22 +1,26 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
+
+from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.globaldb.cache import globaldb_general_cache_exists
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import SPAM_PROTOCOL, ChainID, TokenKind
+from rotkehlchen.types import SPAM_PROTOCOL, CacheType, ChainID, TokenKind
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.assets.asset import CryptoAsset
+    from rotkehlchen.db.dbhandler import DBCursor, DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-
+# Mapping of dangerous token symbols to their collection IDs in globaldb
+DANGEROUS_TOKEN_SYMBOLS: Final = {'USDC': 36, 'USDT': 37}
 MISSING_NAME_SPAM_TOKEN = 'Autodetected spam token'
 MISSING_SYMBOL_SPAM_TOKEN = 'SPAM-TOKEN'
 
@@ -90,21 +94,72 @@ def update_spam_assets(db: 'DBHandler', assets_info: list[dict[str, Any]]) -> in
         return write_cursor.rowcount
 
 
-def check_token_impersonates_base_currency(token: 'EvmToken', native_token_symbol: str) -> None:
+def _get_dangerous_token_collection_members(
+        cursor: 'DBCursor',
+        collection_id: int,
+) -> set[str]:
     """
-    Mark a token as spam when it appears to impersonate the chain's native
-    base currency. When triggered, this function sets the token's protocol to spam.
+    Efficiently fetch all assets in a dangerous token collection for a specific chain.
+    Returns a set of asset identifiers that belong to the collection.
+    Uses a single query to get all members of the collection.
     """
-    if (
-        token.protocol != SPAM_PROTOCOL and
-        token.symbol == native_token_symbol and
-        token.started is None  # this is to prevent flaging a token that we have added since the started we are the only ones setting it.  # noqa: E501
-    ):
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+    try:
+        cursor.execute(
+            'SELECT asset FROM multiasset_mappings WHERE collection_id=?;',
+            (collection_id,),
+        )
+        return {row[0] for row in cursor}
+    except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+        log.warning(f'Failed to query collection {collection_id} members: {e}')
+        return set()
+
+
+def check_token_impersonates_dangerous_tokens(
+        token: 'EvmToken',
+        native_token: 'CryptoAsset',
+) -> None:
+    """
+    Mark a token as spam when it appears to impersonate well-known tokens like the native currency
+    (ETH, POL, xDAI) or stablecoins (USDC, USDT).
+
+    For native tokens: flags if symbol matches but identifier doesn't match the real native asset.
+    For stablecoins: flags if symbol matches but not in the known collection (whitelist).
+
+    This function:
+    1. Checks native token impersonation: symbol matches but identifier differs
+    2. Checks stablecoin impersonation: symbol in known collections but not whitelisted
+    3. Respects the whitelist from the SPAM_ASSET_FALSE_POSITIVE cache
+    """
+    if token.protocol == SPAM_PROTOCOL or token.started is not None:
+        return
+
+    globaldb = GlobalDBHandler()
+    # Check native token impersonation (e.g., POL token that's not the real POL)
+    impersonated_symbol: str | None = None
+    if token.symbol == native_token.symbol and token.identifier != native_token.identifier:
+        impersonated_symbol = native_token.symbol
+    elif (collection_id := DANGEROUS_TOKEN_SYMBOLS.get(token.symbol)) is not None:
+        with globaldb.conn.read_ctx() as read_cursor:
+            known_tokens = _get_dangerous_token_collection_members(read_cursor, collection_id)
+
+        # Check if this token is in the known collection (whitelist)
+        if token.identifier not in known_tokens:
+            impersonated_symbol = token.symbol
+
+    if impersonated_symbol is not None:
+        with globaldb.conn.read_ctx() as read_cursor:
+            if globaldb_general_cache_exists(
+                cursor=read_cursor,
+                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+                value=token.identifier,
+            ):
+                return
+
+        with globaldb.conn.write_ctx() as write_cursor:
             set_token_spam_protocol(
                 write_cursor=write_cursor,
                 token=token,
                 is_spam=True,
             )
-        AssetResolver.clean_memory_cache(token.identifier)
-        log.debug(f'Flagged {token} as spam trying to impersonate {native_token_symbol}')
+
+        log.debug(f'Flagged {token} as spam trying to impersonate {impersonated_symbol}')

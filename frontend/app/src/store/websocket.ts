@@ -2,16 +2,27 @@ import type { Nullable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { api } from '@/modules/api/rotki-api';
 import { useMessageHandling } from '@/modules/messaging';
+import { delay } from '@/utils/async-utilities';
 import { logger } from '@/utils/logging';
+
+/** Delay in milliseconds before attempting to reconnect to websocket */
+const RECONNECT_DELAY_MS = 2000;
 
 export const useWebsocketStore = defineStore('websocket', () => {
   const connection = ref<Nullable<WebSocket>>(null);
   const connected = ref<boolean>(false);
+  /** When false, connection attempts are blocked (e.g., backend failed to start) */
+  const connectionEnabled = ref<boolean>(true);
 
   const { handleMessage } = useMessageHandling();
 
   const reconnect = async (): Promise<void> => {
-    logger.debug('Close was not clean attempting reconnect');
+    if (!get(connectionEnabled)) {
+      logger.debug('Websocket reconnection skipped - connection disabled');
+      return;
+    }
+    logger.debug(`Close was not clean, waiting ${RECONNECT_DELAY_MS}ms before reconnect`);
+    await delay(RECONNECT_DELAY_MS);
     try {
       await connect();
       logger.debug('websocket reconnection complete');
@@ -23,6 +34,11 @@ export const useWebsocketStore = defineStore('websocket', () => {
 
   async function connect(): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
+      if (!get(connectionEnabled)) {
+        logger.debug('Websocket connection skipped - connection disabled');
+        resolve(false);
+        return;
+      }
       if (get(connected)) {
         resolve(true);
         return;
@@ -73,10 +89,27 @@ export const useWebsocketStore = defineStore('websocket', () => {
     logger.debug('websocket was disconnected');
   };
 
+  /**
+   * Enable or disable websocket connections.
+   * When disabled, connect() and reconnect() will not attempt to connect.
+   * Use this when the backend is known to be unavailable (e.g., startup error).
+   */
+  function setConnectionEnabled(enabled: boolean): void {
+    set(connectionEnabled, enabled);
+    if (!enabled) {
+      logger.debug('Websocket connections disabled');
+      disconnect();
+    }
+    else {
+      logger.debug('Websocket connections enabled');
+    }
+  }
+
   return {
     connect,
     connected,
     disconnect,
+    setConnectionEnabled,
   };
 });
 

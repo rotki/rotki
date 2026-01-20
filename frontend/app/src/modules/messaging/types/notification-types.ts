@@ -22,6 +22,7 @@ export type GnosisPaySessionKeyExpiredData = z.infer<typeof GnosisPaySessionKeyE
 
 export const MissingApiKey = z.object({
   service: z.string(),
+  location: z.string().optional(),
 });
 
 export type MissingApiKey = z.infer<typeof MissingApiKey>;

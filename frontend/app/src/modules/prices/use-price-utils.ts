@@ -1,5 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
-import type { ComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef } from 'vue';
 import type { ExchangeRates } from '@/types/user';
 import { type BigNumber, One } from '@rotki/common';
 import { useBalancePricesStore } from '@/store/balances/prices';

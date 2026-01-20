@@ -53,6 +53,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
             EXCHANGE: EventCategory.CEX_DEPOSIT,
         },
         HistoryEventSubType.DEPOSIT_FOR_WRAPPED: {DEFAULT: EventCategory.DEPOSIT},
+        HistoryEventSubType.DEPOSIT_TO_PROTOCOL: {DEFAULT: EventCategory.PROTOCOL_DEPOSIT},
         HistoryEventSubType.BRIDGE: {DEFAULT: EventCategory.BRIDGE_DEPOSIT},
         HistoryEventSubType.PLACE_ORDER: {DEFAULT: EventCategory.DEPOSIT},
         HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
@@ -79,6 +80,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
             EXCHANGE: EventCategory.CEX_WITHDRAWAL,
         },
         HistoryEventSubType.REDEEM_WRAPPED: {DEFAULT: EventCategory.WITHDRAW},
+        HistoryEventSubType.WITHDRAW_FROM_PROTOCOL: {DEFAULT: EventCategory.PROTOCOL_WITHDRAWAL},
         HistoryEventSubType.BRIDGE: {DEFAULT: EventCategory.BRIDGE_WITHDRAWAL},
         HistoryEventSubType.CANCEL_ORDER: {DEFAULT: EventCategory.CANCEL_ORDER},
         HistoryEventSubType.REFUND: {DEFAULT: EventCategory.REFUND},
@@ -364,6 +366,12 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.SELF_TRANSACTION: {DEFAULT: EventCategoryDetails(
         label='self transaction',
         icon='lu-repeat-2',
+    )}, EventCategory.PROTOCOL_DEPOSIT: {DEFAULT: EventCategoryDetails(
+        label='protocol deposit',
+        icon='lu-upload',
+    )}, EventCategory.PROTOCOL_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
+        label='protocol withdrawal',
+        icon='lu-download',
     )},
 }
 

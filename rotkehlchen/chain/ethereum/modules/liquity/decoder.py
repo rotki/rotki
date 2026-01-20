@@ -123,12 +123,12 @@ class LiquityDecoder(EvmDecoderInterface):
                 event.notes = f'Pay back {event.amount} LUSD debt to liquity'
             elif event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                 event.counterparty = CPT_LIQUITY
                 event.notes = f'Deposit {event.amount} {crypto_asset.symbol} as collateral for liquity'  # noqa: E501
             elif event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_ETH:  # noqa: E501
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.counterparty = CPT_LIQUITY
                 event.notes = f'Withdraw {event.amount} {crypto_asset.symbol} collateral from liquity'  # noqa: E501
 

@@ -1,5 +1,5 @@
 import type { Message } from '@rotki/common';
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
 import type {

@@ -7,6 +7,9 @@ from .types import string_to_evm_address
 
 DEFAULT_TOKEN_DECIMALS: Final = 18
 
+EIP7702_DELEGATION_PREFIX: Final = '0xef0100'
+EIP7702_DELEGATION_CODE_LENGTH: Final = 48  # 0x + prefix + delegation address
+
 ZERO_ADDRESS: Final = string_to_evm_address('0x0000000000000000000000000000000000000000')
 ETH_SPECIAL_ADDRESS: Final = string_to_evm_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
 BALANCE_SCANNER_ADDRESS: Final = string_to_evm_address('0x54eCF3f6f61F63fdFE7c27Ee8A86e54899600C92')  # noqa: E501

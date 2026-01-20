@@ -1,4 +1,4 @@
-import type { MaybeRef } from '@vueuse/core';
+import type { MaybeRef } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import { useAssetWhitelistApi } from '@/composables/api/assets/whitelist';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -69,15 +69,18 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
     }
   };
 
-  const isAssetWhitelisted = (asset: MaybeRef<string>): ComputedRef<boolean> => computed<boolean>(() => {
+  const isAssetWhitelisted = (asset: string): boolean => get(whitelistedAssets).includes(asset);
+
+  const useIsAssetWhitelisted = (asset: MaybeRef<string>): ComputedRef<boolean> => computed<boolean>(() => {
     const selectedAsset = get(asset);
-    return get(whitelistedAssets).includes(selectedAsset);
+    return isAssetWhitelisted(selectedAsset);
   });
 
   return {
     fetchWhitelistedAssets,
     isAssetWhitelisted,
     unWhitelistAsset,
+    useIsAssetWhitelisted,
     whitelistAsset,
     whitelistedAssets,
   };

@@ -114,12 +114,12 @@ class HistoryQueryingManager:
             premium=self.chains_aggregator.premium,
             limit_type=UserLimitType.HISTORY_EVENTS,
         )
-        events, filter_total_found, _ = db.get_history_events_and_limit_info(
+        events_result = db.get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=filter_query,
             entries_limit=history_events_limit,
         )
-        return events, filter_total_found  # type: ignore  # event is guaranteed HistoryEvent
+        return events_result.events, events_result.entries_found  # type: ignore  # event is guaranteed HistoryEvent
 
     def get_history(
             self,

@@ -168,12 +168,12 @@ def decode_uniswap_v3_like_deposit_or_withdrawal(
         notes = f'Deposit {{amount}} {{asset}} to {display_name} LP {position_id}'
         from_event_type = HistoryEventType.SPEND
         to_event_type = HistoryEventType.DEPOSIT
-        to_event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+        to_event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
     else:  # can only be 'removal'
         notes = f'Remove {{amount}} {{asset}} from {display_name} LP {position_id}'
         from_event_type = HistoryEventType.RECEIVE
         to_event_type = HistoryEventType.WITHDRAWAL
-        to_event_subtype = HistoryEventSubType.REMOVE_ASSET
+        to_event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
 
     resolved_assets_and_amounts: list[CryptoAssetAmount] = []
     for token, amount in (

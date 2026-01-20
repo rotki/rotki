@@ -1,5 +1,6 @@
 import type { MessageHandler } from '../interfaces';
 import type { ProgressUpdateResultData } from '../types/status-types';
+import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
 import { createConditionalHandler } from '@/modules/messaging/utils';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoryStore } from '@/store/history';
@@ -12,6 +13,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
   const { setProtocolCacheStatus, setUndecodedTransactionsStatus } = useHistoryStore();
   const { setHistoricalDailyPriceStatus, setHistoricalPriceStatus, setStatsPriceQueryStatus } = useHistoricCachePriceStore();
   const { setStakingQueryStatus } = useLiquityStore();
+  const { setProcessingProgress } = useHistoricalBalancesStore();
 
   return createConditionalHandler<ProgressUpdateResultData>(async (data) => {
     const subtype = data.subtype;
@@ -39,6 +41,9 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
         break;
       case SocketMessageProgressUpdateSubType.MULTIPLE_PRICES_QUERY_STATUS:
         setHistoricalPriceStatus(data);
+        break;
+      case SocketMessageProgressUpdateSubType.HISTORICAL_BALANCE_PROCESSING:
+        setProcessingProgress(data);
         break;
     }
 

@@ -245,12 +245,27 @@ defineExpose({
               <span>{{ t('evm_rpc_node_manager.private_node') }}</span>
             </RuiTooltip>
             <div>
-              <div class="font-medium">
-                {{ item.name }}
+              <div class="flex items-center gap-2">
+                <span class="font-medium">
+                  {{ item.name }}
+                </span>
               </div>
               <div class="text-rui-text-secondary text-sm">
                 {{ !isEtherscan(item) ? item.endpoint : t('evm_rpc_node_manager.etherscan') }}
               </div>
+              <RuiChip
+                v-if="item.isArchive"
+                size="sm"
+                color="primary"
+                class="!p-0.5 mt-2"
+                content-class="flex items-center gap-1 font-medium"
+              >
+                <RuiIcon
+                  name="lu-check"
+                  size="14"
+                />
+                {{ t('evm_rpc_node_manager.archive_node') }}
+              </RuiChip>
             </div>
           </div>
         </td>

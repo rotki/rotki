@@ -792,11 +792,18 @@ Getting or modifying settings
               "cost_basis_method": "fifo",
               "oracle_penalty_threshold_count": 5,
               "oracle_penalty_duration": 1800,
+              "auto_delete_calendar_entries": true,
               "auto_create_calendar_reminders": true,
               "address_name_priority": ["private_addressbook", "blockchain_account",
                                         "global_addressbook", "ethereum_tokens",
                                         "hardcoded_mappings", "ens_names"],
               "ask_user_upon_size_discrepancy": true,
+              "auto_detect_tokens": true,
+              "csv_export_delimiter": ",",
+              "events_processing_frequency": 86400,
+              "asset_movement_amount_tolerance": "0.000001",
+              "asset_movement_time_range": 3600,
+              "suppress_missing_key_msg_services": ["etherscan"]
           },
           "message": ""
       }
@@ -832,8 +839,15 @@ Getting or modifying settings
    :resjson int read_timeout: The number of seconds to wait for the first byte after a connection to an external service has been established. Default is 30.
    :resjson int oracle_penalty_threshold_count: The number of failures after which an oracle is penalized. Default is 5.
    :resjson int oracle_penalty_duration: The duration in seconds for which an oracle is penalized. Default is 1800.
+   :resjson bool auto_delete_calendar_entries: A boolean denoting whether calendar entries are automatically deleted when related blockchain accounts are removed. Default is ``true``.
    :resjson bool auto_create_calendar_reminders: A boolean denoting whether reminders are created automatically for calendar entries based on the decoded history events. Default is ``true``.
    :resjson bool ask_user_upon_size_discrepancy: A boolean denoting whether to prompt the user for confirmation each time the remote database is bigger than the local one or directly force push. Default is ``true``.
+   :resjson bool auto_detect_tokens: A boolean denoting whether to automatically detect and add tokens for EVM addresses. Default is ``true``.
+   :resjson string csv_export_delimiter: The delimiter character to use when exporting data to CSV files. Default is ``","``.
+   :resjson int events_processing_frequency: The frequency in seconds at which to process events and match asset movements. Must be >= 60 seconds. Default is 86400 (24 hours).
+   :resjson string asset_movement_amount_tolerance: The tolerance value used when matching asset movement amounts with onchain events. Must be a positive decimal number. Default is ``"0.000001"``.
+   :resjson int asset_movement_time_range: The time range on each side of the asset movement in which to check for possible matching events. Default is 3600 (1 hour).
+   :resjson list suppress_missing_key_msg_services: A list of services for which the missing api key WS message should be suppressed. Empty list by default.
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user
@@ -883,8 +897,15 @@ Getting or modifying settings
    :resjson int read_timeout: The number of seconds to wait for the first byte after a connection to an external service has been established. Default is 30.
    :resjson int oracle_penalty_threshold_count: The number of failures after which an oracle is penalized. Default is 5.
    :resjson int oracle_penalty_duration: The duration in seconds for which an oracle is penalized. Default is 1800.
+   :resjson bool[optional] auto_delete_calendar_entries: A boolean denoting whether calendar entries are automatically deleted when related blockchain accounts are removed.
    :resjson bool[optional] auto_create_calendar_reminders: A boolean denoting whether reminders are created automatically for calendar entries based on the decoded history events.
    :resjson bool[optional] ask_user_upon_size_discrepancy: A boolean denoting whether to prompt the user for confirmation each time the remote database is bigger than the local one or directly force push.
+   :resjson bool[optional] auto_detect_tokens: A boolean denoting whether to automatically detect and add tokens for EVM addresses.
+   :resjson string[optional] csv_export_delimiter: The delimiter character to use when exporting data to CSV files.
+   :resjson int[optional] events_processing_frequency: The frequency in seconds at which to process events and match asset movements. Must be >= 60 seconds.
+   :resjson string[optional] asset_movement_amount_tolerance: The tolerance value used when matching asset movement amounts with onchain events. Must be a positive decimal number.
+   :resjson int[optional] asset_movement_time_range: The time range on each side of the asset movement in which to check for possible matching events. Default is 3600 (1 hour).
+   :resjson list[optional] suppress_missing_key_msg_services: A list of services for which the missing api key WS message should be suppressed. Empty list by default.
 
    **Example Response**:
 
@@ -914,9 +935,16 @@ Getting or modifying settings
               "current_price_oracles": ["cryptocompare"],
               "historical_price_oracles": ["coingecko", "cryptocompare"],
               "ssf_graph_multiplier": 2,
-              "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
+              "non_sync_exchanges": [{"location": "binance", "name": "binance1"}],
+              "auto_delete_calendar_entries": true,
               "auto_create_calendar_reminders": true,
               "ask_user_upon_size_discrepancy": true,
+              "auto_detect_tokens": true,
+              "csv_export_delimiter": ",",
+              "events_processing_frequency": 86400,
+              "asset_movement_amount_tolerance": "0.000001",
+              "asset_movement_time_range": 3600,
+              "suppress_missing_key_msg_services": ["etherscan"]
           },
           "message": ""
       }
@@ -1057,47 +1085,49 @@ Adding information for web3 nodes
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      {
-        "result": [
-            {
-                "identifier": 1,
-                "name": "etherscan",
-                "endpoint": "",
-                "owned": false,
-                "weight": "40.00",
-                "active": true,
-                "blockchain": "eth"
-            },
-            {
-                "identifier": 2,
-                "name": "mycrypto",
-                "endpoint": "https://api.mycryptoapi.com/eth",
-                "owned": false,
-                "weight": "20.00",
-                "active": true,
-                "blockchain": "eth"
-            },
-            {
-                "identifier": 3,
-                "name": "blockscout",
-                "endpoint": "https://mainnet-nethermind.blockscout.com/",
-                "owned": false,
-                "weight": "20.00",
-                "active": true,
-                "blockchain": "eth"
-            },
-            {
-                "identifier": 4,
-                "name": "avado pool",
-                "endpoint": "https://mainnet.eth.cloud.ava.do/",
-                "owned": false,
-                "weight": "20.00",
-                "active": true,
-                "blockchain": "eth"
-            }
-        ],
-        "message": ""
-      }
+       {
+         "result": [
+             {
+                 "identifier": 1,
+                 "name": "etherscan",
+                 "endpoint": "",
+                 "owned": false,
+                 "weight": "40.00",
+                 "active": true,
+                 "blockchain": "eth"
+             },
+             {
+                 "identifier": 2,
+                 "name": "mycrypto",
+                 "endpoint": "https://api.mycryptoapi.com/eth",
+                 "owned": false,
+                 "weight": "20.00",
+                 "active": true,
+                 "blockchain": "eth",
+                 "is_archive": true
+             },
+             {
+                 "identifier": 3,
+                 "name": "blockscout",
+                 "endpoint": "https://mainnet-nethermind.blockscout.com/",
+                 "owned": false,
+                 "weight": "20.00",
+                 "active": true,
+                 "blockchain": "eth"
+             },
+             {
+                 "identifier": 4,
+                 "name": "avado pool",
+                 "endpoint": "https://mainnet.eth.cloud.ava.do/",
+                 "owned": false,
+                 "weight": "20.00",
+                 "active": true,
+                 "blockchain": "eth",
+                 "is_archive": false
+             }
+         ],
+         "message": ""
+       }
 
    :resjson list result: A list with information about the web3 nodes.
    :resjson string name: Name and primary key of the node.
@@ -1105,6 +1135,7 @@ Adding information for web3 nodes
    :resjson string weight: Weight of the node in the range of 0 to 100 with 2 decimals.
    :resjson string owned: True if the user owns the node or false if is a public node.
    :resjson string active: True if the node should be used or false if it shouldn't.
+   :resjson bool is_archive: [Optional] Only present for RPC nodes that are currently connected. Not applicable to indexers (e.g., etherscan). True if the node is an archive node, false otherwise.
 
    :statuscode 200: Querying was successful
    :statuscode 409: No user is logged.
@@ -5463,7 +5494,7 @@ Dealing with History Events
           "message": ""
       }
 
-   :resjson list decoded_events: A list of history events, with some events grouped into sub-lists (for instance the spend/receive/fee events making up a swap). Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry may also have a `has_details` flag if true. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event. Also each entry may have a `customized` flag set to true. If it does, it means the event has been customized/added by the user. Each entry may also have a `hidden` flag if set to true. If it does then that means it should be hidden in the UI due to consolidation of events. Also if `aggregate_by_group_ids` exist and is true, each entry contains `grouped_events_num` which is an integer with the amount of events under the group identifier. The consumer has to query this endpoint again with `aggregate_by_group_ids` set to false and with the `group_identifiers` filter set to the identifier of the events having more than 1 event. Finally `ignored_in_accounting` is set to `true` when the user has marked this event as ignored. Following are all possible entries depending on entry type.
+   :resjson list decoded_events: A list of history events, with some events grouped into sub-lists (for instance the spend/receive/fee events making up a swap). Each event is an object comprised of the event entry and a boolean denoting if the event has been customized by the user or not. Each entry may also have a `has_details` flag if true. If `has_details` is true, then it is possible to call /history/events/details endpoint to retrieve some extra information about the event. Also each entry may have a `customized` flag set to true. If it does, it means the event has been customized/added by the user. Each entry may also have a `hidden` flag if set to true. If it does then that means it should be hidden in the UI due to consolidation of events. Also if `aggregate_by_group_ids` exist and is true, each entry contains `grouped_events_num` which is an integer with the amount of events under the group identifier. The consumer has to query this endpoint again with `aggregate_by_group_ids` set to false and with the `group_identifiers` filter set to the identifier of the events having more than 1 event. `ignored_in_accounting` is set to `true` when the user has marked this event as ignored. `has_ignored_assets` is set to `true` when the event group contains ignored assets, indicating that some events may have been excluded by ignored assets filtering. Following are all possible entries depending on entry type.
    :resjson string identifier: Common key. This is the identifier of a single event.
    :resjson string entry_type: Common key. This identifies the category of the event and determines the schema. Possible values are: ``"history event"``, ``"evm event"``, ``"eth withdrawal event"``, ``"eth block event"``, ``"eth deposit event"``.
    :resjson string group_identifier: Common key. An identifier grouping multiple events under a common group. This is how we group transaction events under a transaction, staking related events under block production etc.
@@ -6407,7 +6438,7 @@ Match exchange asset movements with onchain events
       }
 
    :reqjson string asset_movement: Group identifier of the asset movement to find matches for.
-   :reqjson int[optional] time_range: Time range in seconds to search for matches. Defaults to 7200 (2 hours).
+   :reqjson int time_range: Time range in seconds to search for matches.
    :reqjson bool[optional] only_expected_assets: Flag indicating whether to limit the possible matches to only events with assets in the same collection as the asset movement's asset. True by default.
 
    **Example Response**:
@@ -6468,6 +6499,97 @@ Match exchange asset movements with onchain events
    :statuscode 200: Events unlinked successfully
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in or failure.
+   :statuscode 500: Internal rotki error
+
+Customized history event duplicates
+===================================
+
+.. http:get:: /api/(version)/history/events/duplicates/customized
+
+   Get group identifiers for customized event duplicate candidates.
+
+   Supports async execution via the `async_query` query parameter.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/history/events/duplicates/customized?async_query=false HTTP/1.1
+      Host: localhost:5042
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "auto_fix_group_ids": [
+                  "0x7f9b1d9b3d6c80b6f699a25f3e91c408155cbff965d0f3a0df4d3a4f8f4b73c7"
+              ],
+              "manual_review_group_ids": [
+                  "0xa8e4c2f6b79a1b9d6288a763dc6243cbce1e2c35c8b65ec79a9d35a1f4ec6a20"
+              ]
+          },
+          "message": ""
+      }
+
+   :reqquery bool[optional] async_query: Whether to execute as an async task.
+   :resjson list result.auto_fix_group_ids: Group identifiers where a customized EVM/Solana event has a non-customized duplicate that only differs by sequence index.
+   :resjson list result.manual_review_group_ids: Group identifiers where customized and non-customized EVM/Solana events share asset and direction but are not exact matches.
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Group identifiers returned successfully
+   :statuscode 401: No user is currently logged in
+   :statuscode 500: Internal rotki error
+
+.. http:post:: /api/(version)/history/events/duplicates/customized
+
+   Remove non-customized duplicates that only differ by sequence index and return updated groups.
+   Supports async execution via the `async_query` query parameter.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/history/events/duplicates/customized?async_query=false HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "group_identifiers": [
+              "0x7f9b1d9b3d6c80b6f699a25f3e91c408155cbff965d0f3a0df4d3a4f8f4b73c7"
+          ]
+      }
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "removed_event_identifiers": [123, 124],
+              "auto_fix_group_ids": [],
+              "manual_review_group_ids": [
+                  "0xa8e4c2f6b79a1b9d6288a763dc6243cbce1e2c35c8b65ec79a9d35a1f4ec6a20"
+              ]
+          },
+          "message": ""
+      }
+
+   :reqquery bool[optional] async_query: Whether to execute as an async task.
+   :reqjson list[optional] group_identifiers: Optional list of group identifiers to auto-fix. If omitted, all auto-fixable groups are processed.
+   :resjson list result.removed_event_identifiers: Event identifiers removed by the auto-fix operation.
+   :resjson list result.auto_fix_group_ids: Remaining auto-fixable group identifiers after removal.
+   :resjson list result.manual_review_group_ids: Remaining manual review group identifiers after removal.
+   :resjson str message: Error message if any errors occurred.
+   :statuscode 200: Auto-fix operation completed successfully
+   :statuscode 401: No user is currently logged in
+   :statuscode 409: Auto-fix failed due to a deletion constraint
    :statuscode 500: Internal rotki error
 
 Querying messages to show to the user
@@ -14103,8 +14225,50 @@ Historical Balance Queries
         "asset": "BTC"
       }
 
+    **Example Request (Filtered by Location):**
+
+      .. http:example:: curl wget httpie python-requests
+
+      PUT /api/(version)/balances/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "timestamp": 1672531200,
+        "location": "ethereum"
+      }
+
+    **Example Request (Filtered by Location Label):**
+
+      .. http:example:: curl wget httpie python-requests
+
+      PUT /api/(version)/balances/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "timestamp": 1672531200,
+        "location_label": "0x1234567890abcdef1234567890abcdef12345678"
+      }
+
+    **Example Request (Filtered by Protocol):**
+
+      .. http:example:: curl wget httpie python-requests
+
+      PUT /api/(version)/balances/historical HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "timestamp": 1672531200,
+        "protocol": "aave"
+      }
+
       :reqjsonarr integer timestamp: The timestamp to query the balance for
       :reqjsonarr string asset: (Optional) The asset identifier to query balance for. If not provided, returns balances for all assets.
+      :reqjsonarr string location: (Optional) Filter balances by location (e.g., "ethereum", "kraken", "binance"). If not provided, returns balances across all locations.
+      :reqjsonarr string location_label: (Optional) Filter balances by location label (e.g., a specific wallet address). If not provided, returns balances across all location labels.
+      :reqjsonarr string protocol: (Optional) Filter balances by protocol (e.g., "aave", "uniswap-v2"). If not provided, returns balances across all protocols.
 
     **Example Response (All Assets - data available):**
 
@@ -14369,6 +14533,72 @@ Historical Balance Queries
       :statuscode 401: User is not logged in
       :statuscode 500: Internal Rotki error
 
+  .. http:post:: /api/(version)/balances/historical/onchain
+
+    Query the historical on-chain balance of an asset at a specific timestamp using archive nodes.
+    Supports native tokens and ERC20 tokens on EVM chains.
+
+    .. note::
+      This endpoint requires an archive node to be available for the specified chain.
+      This endpoint can also be queried asynchronously by using ``"async_query": true``.
+
+    **Example Request (Native Token):**
+
+      .. http:example:: curl wget httpie python-requests
+
+        POST /api/1/balances/historical/onchain HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "timestamp": 1609459200,
+          "evm_chain": "ethereum",
+          "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+          "asset": "ETH"
+        }
+
+    **Example Request (ERC20 Token):**
+
+      .. http:example:: curl wget httpie python-requests
+
+        POST /api/1/balances/historical/onchain HTTP/1.1
+        Host: localhost:5042
+        Content-Type: application/json;charset=UTF-8
+
+        {
+          "timestamp": 1609459200,
+          "evm_chain": "ethereum",
+          "address": "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045",
+          "asset": "eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        }
+
+    :reqjson integer timestamp: The Unix timestamp at which to query the balance
+    :reqjson string evm_chain: The EVM chain name (e.g., "ethereum", "optimism", "arbitrum_one")
+    :reqjson string address: The EVM address to query the balance for
+    :reqjson string asset: The asset identifier (native token or ERC20 token on the specified chain)
+
+    **Example Response:**
+
+      .. sourcecode:: http
+
+        HTTP/1.1 200 OK
+        Content-Type: application/json
+
+        {
+          "result": {
+            "ETH": "8.275127966894157145"
+          },
+          "message": ""
+        }
+
+    :resjson object result: Mapping of asset identifier to balance amount as string
+    :statuscode 200: Historical on-chain balance returned successfully
+    :statuscode 400: Invalid request (future timestamp, wrong chain for asset, invalid chain)
+    :statuscode 401: User is not logged in
+    :statuscode 403: User does not have premium access
+    :statuscode 409: No archive node available for the specified chain
+    :statuscode 502: Failed to query balance from archive node
+
 
 Refetch transactions for a specific time period
 ===================================================
@@ -14412,9 +14642,22 @@ Refetch transactions for a specific time period
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      { "result": {"new_transactions_count": 12}, "message": "" }
+      {
+          "result": {
+              "new_transactions_count": 2,
+              "new_transactions": {
+                  "eth": [
+                      "0x1234...",
+                      "0xabcd..."
+                  ]
+              }
+          },
+          "message": ""
+      }
 
    :resjson int new_transactions_count: The number of new transactions found and added to the database.
+   :resjson dict new_transactions: Mapping of chain to list of new transaction hashes.
+   :resjson list new_transactions[chain]: New transaction hashes for the chain (Solana uses the transaction signature).
    :statuscode 200: Transactions successfully refetched.
    :statuscode 401: User is not logged in.
    :statuscode 400: Invalid parameters such as from_timestamp > to_timestamp. Address not tracked by rotki.

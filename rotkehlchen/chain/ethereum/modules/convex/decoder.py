@@ -148,7 +148,7 @@ class ConvexDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                         event.notes = f'Return {event.amount} {crypto_asset.symbol} to convex'
                 else:
                     event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
                     event.counterparty = CPT_CONVEX
                     if context.tx_log.address in self.pools:
                         event.notes = f'Deposit {event.amount} {crypto_asset.symbol} into convex {self.pools[context.tx_log.address]} pool'  # noqa: E501
@@ -171,7 +171,7 @@ class ConvexDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
             ):
                 if context.tx_log.topics[0] in WITHDRAWAL_TOPICS:
                     event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED if found_return_wrapped else HistoryEventSubType.REMOVE_ASSET  # noqa: E501
+                    event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED if found_return_wrapped else HistoryEventSubType.WITHDRAW_FROM_PROTOCOL  # noqa: E501
                     event.counterparty = CPT_CONVEX
                     found_event_modifying_balances = True
                     if context.tx_log.address in self.pools:
@@ -220,7 +220,7 @@ class ConvexDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.amount in amounts_withdrawn
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
-                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.event_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
                 event.counterparty = CPT_CONVEX
                 event.notes = f'Unlock {event.amount} {self.cvx.symbol} from convex'
 

@@ -4,10 +4,10 @@ import type { BlockchainTotal } from '@/types/blockchain';
 import { Blockchain, toSentenceCase } from '@rotki/common';
 import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import ListItem from '@/components/common/ListItem.vue';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefMap } from '@/composables/utils/useRefMap';
+import { FiatDisplay } from '@/modules/amount-display/components';
 
 interface BlockChainBalanceCardListProps {
   total: BlockchainTotal;
@@ -47,9 +47,7 @@ const navTarget = computed<RouteLocationRaw>(() => getBlockchainRedirectLink(pro
           <div class="flex gap-2 items-center">
             <Eth2ValidatorLimitTooltip v-if="chain === Blockchain.ETH2" />
 
-            <AmountDisplay
-              show-currency="symbol"
-              force-currency
+            <FiatDisplay
               :value="total.value"
               :loading="total.loading"
               class="font-medium"

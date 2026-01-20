@@ -2,7 +2,6 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 import { omit } from 'es-toolkit';
-import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import RowActions from '@/components/helper/RowActions.vue';
@@ -10,6 +9,7 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import { useLatestPrices } from '@/composables/price-manager/latest';
+import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { useCommonTableProps } from '@/modules/table/use-common-table-props';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
@@ -170,20 +170,16 @@ onMounted(async () => {
           <AssetDetails :asset="row.toAsset" />
         </template>
         <template #item.price="{ row }">
-          <AmountDisplay :value="row.price" />
+          <ValueDisplay :value="row.price" />
         </template>
         <template #item.isWorth>
           {{ t('price_table.is_worth') }}
         </template>
         <template #item.usdPrice="{ row }">
-          <AmountDisplay
-            :loading="!row.usdPrice || row.usdPrice.lt(0)"
-            show-currency="symbol"
-            :price-asset="row.toAsset"
-            :amount="row.price"
-            :price-of-asset="row.usdPrice"
-            fiat-currency="USD"
+          <FiatDisplay
             :value="row.usdPrice"
+            :loading="!row.usdPrice || row.usdPrice.lt(0)"
+            from="USD"
           />
         </template>
         <template #item.actions="{ row }">

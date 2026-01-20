@@ -498,7 +498,7 @@ class DBConnection:
             cursor.execute('VACUUM')
             cursor.close()
 
-    def wal_checkpoint(self, mode: Literal['', '(FULL)', '(PASSIVE)'] = '') -> None:
+    def wal_checkpoint(self, mode: Literal['', '(FULL)', '(PASSIVE)', '(TRUNCATE)'] = '') -> None:
         """
         Perform a WAL checkpoint operation.
         https://www.sqlite.org/pragma.html#pragma_wal_checkpoint

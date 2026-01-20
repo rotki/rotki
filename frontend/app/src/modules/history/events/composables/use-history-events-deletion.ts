@@ -5,6 +5,7 @@ import { get, set } from '@vueuse/shared';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
+import { useSupportedChains } from '@/composables/info/chains';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { buildDeletionConfirmationMessage, DELETION_STRATEGY_TYPE, type DeletionStrategy } from './use-deletion-strategies';
@@ -26,6 +27,7 @@ export function useHistoryEventsDeletion(
   const { setMessage } = useMessageStore();
   const { deleteTransactions } = useHistoryEventsApi();
   const { deleteHistoryEvent } = useHistoryEvents();
+  const { getChain } = useSupportedChains();
 
   const { ignoreSingle } = useIgnore<HistoryEventEntry>(
     { toData: item => item.groupIdentifier },
@@ -40,7 +42,7 @@ export function useHistoryEventsDeletion(
   ): Promise<{ message?: string; success: boolean }> {
     try {
       for (const [txRef, { chain }] of transactions)
-        await deleteTransactions(chain, txRef);
+        await deleteTransactions(getChain(chain), txRef);
 
       return { success: true };
     }

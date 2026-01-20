@@ -11,7 +11,7 @@ import gevent
 from web3.exceptions import Web3Exception
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.spam_assets import check_token_impersonates_base_currency
+from rotkehlchen.assets.spam_assets import check_token_impersonates_dangerous_tokens
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     get_evm_token,
@@ -1089,9 +1089,9 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         else:
             found_token = token
 
-        check_token_impersonates_base_currency(
+        check_token_impersonates_dangerous_tokens(
             token=found_token,
-            native_token_symbol=self.evm_inquirer.native_token.symbol,
+            native_token=self.evm_inquirer.native_token,
         )
 
         if (transfer := self.base.decode_erc20_721_transfer(

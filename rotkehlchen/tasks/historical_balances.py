@@ -1,33 +1,84 @@
 import logging
-from typing import TYPE_CHECKING, Final, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple, TypeAlias
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.types import EventDirection, HistoryEventSubType
+from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EventMetricKey, TimestampMS
-from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
+from rotkehlchen.types import EventMetricKey, Location, TimestampMS
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_now_in_ms
+from rotkehlchen.utils.mixins.lockable import skip_if_running
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-# Subtypes that affect the protocol bucket rather than the wallet bucket
+EventTypeSubtypePairs: TypeAlias = set[tuple[HistoryEventType, HistoryEventSubType]]
+
+# Event subtypes that route to a protocol bucket (single bucket).
+# These represent positions within a protocol (e.g., receiving aTokens, generating debt).
 PROTOCOL_BUCKET_SUBTYPES: Final = {
     HistoryEventSubType.RECEIVE_WRAPPED,
     HistoryEventSubType.GENERATE_DEBT,
     HistoryEventSubType.RETURN_WRAPPED,
     HistoryEventSubType.PAYBACK_DEBT,
 }
+
+# Protocol withdrawals that can trigger synthetic interest events when withdrawal exceeds deposit.
+PROTOCOL_WITHDRAWAL_EVENTS: Final[EventTypeSubtypePairs] = {
+    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.WITHDRAW_FROM_PROTOCOL),
+    (HistoryEventType.STAKING, HistoryEventSubType.REMOVE_ASSET),
+}
+
+# Events that affect both wallet and protocol buckets.
+# Wallet direction comes from get_event_direction, protocol direction is the opposite.
+DUAL_BUCKET_PROTOCOL_EVENTS: Final[EventTypeSubtypePairs] = {
+    *PROTOCOL_WITHDRAWAL_EVENTS,
+    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_TO_PROTOCOL),
+    (HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET),
+}
+
+# Events that affect both sender and receiver wallet buckets.
+# Sender direction is OUT, receiver direction is IN.
+DUAL_BUCKET_TRANSFER_EVENTS: Final[EventTypeSubtypePairs] = {
+    (HistoryEventType.TRANSFER, HistoryEventSubType.NONE),
+    (HistoryEventType.TRANSFER, HistoryEventSubType.DONATE),
+}
+
+# Events where wrapped tokens with a protocol attribute move between protocol buckets.
+# Example: depositing Balancer LP into Aura gauge moves from balancer bucket to aura bucket.
+DUAL_BUCKET_WRAPPED_EVENTS: Final[EventTypeSubtypePairs] = {
+    (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED),
+    (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REDEEM_WRAPPED),
+}
+
 METRICS_BATCH_SIZE: Final = 500
+
+
+def _get_asset_protocol(asset: 'Asset') -> str | None:
+    if not asset.is_evm_token():
+        return None
+    try:
+        return asset.resolve_to_evm_token().protocol
+    except (UnknownAsset, WrongAssetType):
+        return None
 
 
 class Bucket(NamedTuple):
@@ -48,33 +99,127 @@ class Bucket(NamedTuple):
     def from_db(cls, row: tuple[str, str | None, str | None, str]) -> 'Bucket':
         return cls(location=row[0], location_label=row[1], protocol=row[2], asset=row[3])
 
-    @classmethod
-    def from_event(cls, event: 'HistoryBaseEntry') -> 'Bucket':
-        """Returns the Bucket where this event's asset balance is tracked.
+    def serialize(self) -> dict[str, str | None]:
+        return {
+            'asset': self.asset,
+            'protocol': self.protocol,
+            'location': Location.deserialize_from_db(self.location).serialize(),
+            'location_label': self.location_label,
+        }
 
-        For example, depositing DAI into Compound removes DAI from your wallet bucket,
-        while the cDAI you receive is tracked in the Compound protocol bucket.
+    @classmethod
+    def from_event(cls, event: 'HistoryBaseEntry') -> list[tuple['Bucket', EventDirection]]:
+        """Returns list of (Bucket, direction) pairs affected by this event.
+
+        Handles the following cases:
+        - Protocol deposits/withdrawals: affects both wallet and protocol buckets
+        - Transfers: affects sender (OUT) and receiver (IN) buckets. If the transferred
+          asset has a protocol attribute (e.g., Curve LP, Balancer LP), both sender and
+          receiver use that protocol's bucket; otherwise, wallet buckets are used.
+        - Wrapped token deposits/redemptions: updates balances in both source and
+          destination protocol buckets (e.g., depositing Balancer LP into Aura updates
+          the Balancer bucket with OUT and the Aura bucket with IN)
+        - Wrapped tokens and debt positions: tracked in protocol bucket
+        - Everything else: tracked in wallet bucket
         """
         location = event.location.serialize_for_db()
         asset = event.asset.identifier
+        event_key = (event.event_type, event.event_subtype)
+        counterparty = getattr(event, 'counterparty', None)
+        address = getattr(event, 'address', None)
+        asset_protocol = _get_asset_protocol(event.asset)
+
+        if (  # Depositing/withdrawing to protocols affects both wallet and protocol buckets
+            event_key in DUAL_BUCKET_PROTOCOL_EVENTS and
+            counterparty is not None and
+            (wallet_direction := event.maybe_get_direction(for_balance_tracking=True)) is not None
+        ):
+            protocol_direction = EventDirection.IN if wallet_direction == EventDirection.OUT else EventDirection.OUT  # noqa: E501
+            return [
+                (cls(
+                    location=location,
+                    location_label=event.location_label,
+                    protocol=asset_protocol,
+                    asset=asset,
+                ), wallet_direction),
+                (cls(
+                    location=location,
+                    location_label=event.location_label,
+                    protocol=counterparty,
+                    asset=asset,
+                ), protocol_direction),
+            ]
+
+        if (  # Transfers affect both sender and receiver. Protocol tokens use protocol buckets.
+            event_key in DUAL_BUCKET_TRANSFER_EVENTS and
+            address is not None
+        ):
+            return [
+                (cls(
+                    location=location,
+                    location_label=event.location_label,
+                    protocol=asset_protocol,
+                    asset=asset,
+                ), EventDirection.OUT),
+                (cls(
+                    location=location,
+                    location_label=address,
+                    protocol=asset_protocol,
+                    asset=asset,
+                ), EventDirection.IN),
+            ]
+
+        if (  # Wrapping protocol tokens moves between protocol buckets (e.g. Balancer LP to Aura)
+            event_key in DUAL_BUCKET_WRAPPED_EVENTS and
+            counterparty is not None and
+            asset_protocol is not None
+        ):
+            if event_key == (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_FOR_WRAPPED):
+                src_protocol, dst_protocol = asset_protocol, counterparty
+            elif event_key == (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REDEEM_WRAPPED):
+                src_protocol, dst_protocol = counterparty, asset_protocol
+            else:
+                log.error(f'Unexpected event_key {event_key} in DUAL_BUCKET_WRAPPED_EVENTS')
+                return []
+            return [
+                (cls(
+                    location=location,
+                    location_label=event.location_label,
+                    protocol=src_protocol,
+                    asset=asset,
+                ), EventDirection.OUT),
+                (cls(
+                    location=location,
+                    location_label=event.location_label,
+                    protocol=dst_protocol,
+                    asset=asset,
+                ), EventDirection.IN),
+            ]
+
         if (
-            (counterparty := getattr(event, 'counterparty', None)) is not None and
-            event.maybe_get_direction() != EventDirection.NEUTRAL and
+            (direction := event.maybe_get_direction(for_balance_tracking=True)) is None or
+            direction == EventDirection.NEUTRAL
+        ):
+            return []
+
+        if (  # Wrapped tokens and debt positions are tracked in protocol buckets
+            counterparty is not None and
             event.event_subtype in PROTOCOL_BUCKET_SUBTYPES
         ):
-            return cls(
+            return [(cls(
                 location=location,
                 location_label=event.location_label,
                 protocol=counterparty,
                 asset=asset,
-            )
+            ), direction)]
 
-        return cls(
+        # Everything else: wallet bucket, or protocol bucket if asset has protocol
+        return [(cls(
             location=location,
             location_label=event.location_label,
-            protocol=None,
+            protocol=asset_protocol,
             asset=asset,
-        )
+        ), direction)]
 
 
 def _load_bucket_balances_before_ts(
@@ -91,12 +236,12 @@ def _load_bucket_balances_before_ts(
     with database.conn.read_ctx() as cursor:
         cursor.execute(
             """
-            SELECT he.location, he.location_label, em.protocol, he.asset,
+            SELECT he.location, em.location_label, em.protocol, he.asset,
                    em.metric_value, MAX(he.timestamp + he.sequence_index)
             FROM event_metrics em
             INNER JOIN history_events he ON em.event_identifier = he.identifier
             WHERE em.metric_key = ? AND he.timestamp < ?
-            GROUP BY he.location, he.location_label, em.protocol, he.asset
+            GROUP BY he.location, em.location_label, em.protocol, he.asset
             """,
             (EventMetricKey.BALANCE.serialize(), from_ts),
         )
@@ -107,14 +252,15 @@ def _load_bucket_balances_before_ts(
     return bucket_balances
 
 
+@skip_if_running
 def process_historical_balances(
         database: 'DBHandler',
         msg_aggregator: 'MessagesAggregator',
         from_ts: TimestampMS | None = None,
 ) -> None:
-    """Process events and compute balance metrics. Stops on negative balance."""
+    """Process events and compute balance metrics."""
     log.debug(f'Starting historical balance processing from_ts={from_ts}')
-    bucket_balances = {}
+    processing_started_at, bucket_balances = ts_now_in_ms(), {}
     if from_ts is not None:
         bucket_balances = _load_bucket_balances_before_ts(database, from_ts)
 
@@ -134,48 +280,90 @@ def process_historical_balances(
 
     if (total_events := len(events)) == 0:
         log.debug('No events to process for historical balances')
-        _finalize_processing(database)
+        _finalize_processing(database=database, processing_started_at=processing_started_at)
         return
 
-    metrics_batch: list[tuple[int | None, str | None, str, str]] = []
-    first_batch_written = False
-    send_ws_every = msg_aggregator.how_many_events_per_ws(total_events)
+    metrics_batch: list[tuple[int | None, str | None, str | None, str, str]] = []
+    first_batch_written, send_ws_every = False, msg_aggregator.how_many_events_per_ws(total_events)
     for idx, event in enumerate(events):
-        bucket = Bucket.from_event(event)
-        if (current_balance_in_bucket := bucket_balances.get(bucket, ZERO)) < ZERO:
+        if len(bucket_directions := Bucket.from_event(event)) == 0:
             continue
 
-        if (direction := event.maybe_get_direction()) == EventDirection.IN:
-            new_balance = current_balance_in_bucket + event.amount
-            bucket_balances[bucket] = new_balance
-        elif direction == EventDirection.OUT:
-            if (new_balance := current_balance_in_bucket - event.amount) < ZERO:
-                msg_aggregator.add_message(
-                    message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
-                    data={
-                        'event_identifier': event.identifier,
-                        'group_identifier': event.group_identifier,
-                        'asset': event.asset.identifier,
-                        'balance_before': str(current_balance_in_bucket),
-                        'last_run_ts': last_run_ts,
-                    },
-                )
-                log.warning(
-                    f'Negative balance detected for {event.asset.identifier} '
-                    f'at event {event.identifier}. Skipping {bucket}.',
-                )
-                bucket_balances[bucket] = FVal(-1)
+        for bucket, direction in bucket_directions:
+            if (current_balance := bucket_balances.get(bucket, ZERO)) < ZERO:
                 continue
-            bucket_balances[bucket] = new_balance
-        else:  # neutral events don't affect balance
-            continue
 
-        metrics_batch.append((
-            event.identifier,
-            bucket.protocol,
-            EventMetricKey.BALANCE.serialize(),
-            str(new_balance),
-        ))
+            if direction == EventDirection.IN:
+                new_balance = current_balance + event.amount
+            elif (new_balance := current_balance - event.amount) < ZERO:  # direction == EventDirection.OUT  # noqa: E501
+                # Withdrawal exceeds deposit, meaning yield was earned. Only applies to
+                # protocol withdrawals without wrapped tokens (WITHDRAW_FROM_PROTOCOL,
+                # REMOVE_ASSET). Create an interest event to account for the earned yield.
+                if (
+                    bucket.protocol is not None and
+                    (event.event_type, event.event_subtype) in PROTOCOL_WITHDRAWAL_EVENTS and
+                    isinstance(event, OnchainEvent)
+                ):
+                    with database.user_write() as write_cursor:
+                        write_cursor.execute(
+                            'UPDATE history_events SET sequence_index = sequence_index + 1 '
+                            'WHERE group_identifier = ? AND sequence_index >= ?',
+                            (event.group_identifier, event.sequence_index),
+                        )
+                        interest_event_id = DBHistoryEvents(database).add_history_event(
+                            write_cursor=write_cursor,
+                            event=type(event)(
+                                tx_ref=event.tx_ref,
+                                sequence_index=event.sequence_index,
+                                timestamp=event.timestamp,
+                                location=event.location,
+                                event_type=HistoryEventType.RECEIVE,
+                                event_subtype=HistoryEventSubType.INTEREST,
+                                asset=event.asset,
+                                amount=(interest_amount := abs(new_balance)),
+                                location_label=event.location_label,
+                                notes=f'Profit earned from {event.asset} in {bucket.protocol}',
+                                counterparty=bucket.protocol,
+                                address=event.address,
+                            ),
+                            mapping_values={HISTORY_MAPPING_KEY_STATE: HISTORY_MAPPING_STATE_CUSTOMIZED},  # noqa: E501
+                        )
+                    bucket_balances[bucket] = current_balance + interest_amount
+                    metrics_batch.append((
+                        interest_event_id,
+                        bucket.location_label,
+                        bucket.protocol,
+                        EventMetricKey.BALANCE.serialize(),
+                        str(bucket_balances[bucket]),
+                    ))
+                    new_balance = ZERO
+                else:
+                    msg_aggregator.add_message(
+                        message_type=WSMessageType.NEGATIVE_BALANCE_DETECTED,
+                        data={
+                            'event_identifier': event.identifier,
+                            'group_identifier': event.group_identifier,
+                            'asset': event.asset.identifier,
+                            'bucket': bucket.serialize(),
+                            'balance_before': str(current_balance),
+                            'last_run_ts': last_run_ts,
+                        },
+                    )
+                    log.warning(
+                        f'Negative balance detected for {event.asset.identifier} '
+                        f'at event {event.identifier}. Skipping {bucket}.',
+                    )
+                    bucket_balances[bucket] = new_balance
+                    continue
+
+            bucket_balances[bucket] = new_balance
+            metrics_batch.append((
+                event.identifier,
+                bucket.location_label,
+                bucket.protocol,
+                EventMetricKey.BALANCE.serialize(),
+                str(new_balance),
+            ))
 
         if idx % send_ws_every == 0:
             msg_aggregator.add_message(
@@ -189,34 +377,21 @@ def process_historical_balances(
 
         if len(metrics_batch) >= METRICS_BATCH_SIZE:
             with database.user_write() as write_cursor:
-                if not first_batch_written and from_ts is not None:
-                    write_cursor.execute(
-                        'DELETE FROM event_metrics WHERE event_identifier IN '
-                        '(SELECT identifier FROM history_events WHERE timestamp >= ?)',
-                        (from_ts,),
-                    )
-                    first_batch_written = True
-                write_cursor.executemany(
-                    'INSERT OR REPLACE INTO event_metrics '
-                    '(event_identifier, protocol, metric_key, metric_value) '
-                    'VALUES (?, ?, ?, ?)',
-                    metrics_batch,
+                _write_metrics_batch(
+                    write_cursor=write_cursor,
+                    metrics_batch=metrics_batch,
+                    from_ts=from_ts,
+                    first_batch_written=first_batch_written,
                 )
-            metrics_batch = []
+            first_batch_written, metrics_batch = True, []
 
-    if len(metrics_batch) != 0:  # last batch
+    if len(metrics_batch) != 0:
         with database.user_write() as write_cursor:
-            if not first_batch_written and from_ts is not None:
-                write_cursor.execute(
-                    'DELETE FROM event_metrics WHERE event_identifier IN '
-                    '(SELECT identifier FROM history_events WHERE timestamp >= ?)',
-                    (from_ts,),
-                )
-            write_cursor.executemany(
-                'INSERT OR REPLACE INTO event_metrics '
-                '(event_identifier, protocol, metric_key, metric_value) '
-                'VALUES (?, ?, ?, ?)',
-                metrics_batch,
+            _write_metrics_batch(
+                write_cursor=write_cursor,
+                metrics_batch=metrics_batch,
+                from_ts=from_ts,
+                first_batch_written=first_batch_written,
             )
 
     msg_aggregator.add_message(
@@ -227,19 +402,59 @@ def process_historical_balances(
             'processed': total_events,
         },
     )
-    _finalize_processing(database)
+    _finalize_processing(database=database, processing_started_at=processing_started_at)
     log.debug(f'Completed historical balance processing for {total_events} events')
 
 
-def _finalize_processing(database: 'DBHandler') -> None:
-    """Update cache timestamps and clear stale marker."""
+def _finalize_processing(database: 'DBHandler', processing_started_at: TimestampMS) -> None:
+    """Update cache timestamps. Only clears stale marker if no modifications during processing."""
     with database.user_write() as write_cursor:
         database.set_static_cache(
             write_cursor=write_cursor,
             name=DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
             value=ts_now(),
         )
+
+        if (
+            (modification_ts := write_cursor.execute(
+                'SELECT value FROM key_value_cache WHERE name = ?',
+                (DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value,),
+            ).fetchone()) is None or
+            int(modification_ts[0]) >= processing_started_at
+        ):
+            if modification_ts is not None:
+                log.debug(
+                    'Events modified during historical balance processing, '
+                    'keeping stale marker for next run',
+                )
+            return
+
         write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE name = ?',
-            (DBCacheStatic.STALE_BALANCES_FROM_TS.value,),
+            'DELETE FROM key_value_cache WHERE name IN (?, ?)',
+            (DBCacheStatic.STALE_BALANCES_FROM_TS.value,
+             DBCacheStatic.STALE_BALANCES_MODIFICATION_TS.value),
         )
+
+
+def _write_metrics_batch(
+        write_cursor: 'DBCursor',
+        metrics_batch: list[tuple[int | None, str | None, str | None, str, str]],
+        from_ts: TimestampMS | None,
+        first_batch_written: bool,
+) -> None:
+    """Write metrics batch to DB, deleting old entries on first write."""
+    if not first_batch_written:
+        if from_ts is not None:
+            write_cursor.execute(
+                'DELETE FROM event_metrics WHERE event_identifier IN '
+                '(SELECT identifier FROM history_events WHERE timestamp >= ?)',
+                (from_ts,),
+            )
+        else:
+            write_cursor.execute('DELETE FROM event_metrics')
+    write_cursor.executemany(
+        'INSERT OR REPLACE INTO event_metrics '
+        '(event_identifier, location_label, protocol, metric_key, metric_value) '
+        'VALUES (?, ?, ?, ?, ?)',
+        metrics_batch,
+    )

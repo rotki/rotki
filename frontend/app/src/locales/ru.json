@@ -3211,15 +3211,6 @@
     "hint_zero": "Все активы без цены будут скрыты",
     "lt": "<"
   },
-  "historical_balances_dialog": {
-    "asset_hint": "Оставьте пустым, чтобы показать все активы",
-    "fetch_button": "Получить исторические балансы",
-    "hint": "Просматривайте балансы ваших активов в определенный момент времени, рассчитанные на основе ваших исторических событий.",
-    "no_data": "Нет исторических данных для выбранной временной метки",
-    "premium_required": "Исторические балансы — это премиум-функция. Пожалуйста, обновитесь для доступа к этой функциональности.",
-    "timestamp_label": "Дата и время",
-    "title": "Исторические балансы"
-  },
   "history_events_alert": {
     "nudge": "События истории необходимо запросить и декодировать. Перейдите в раздел {link}, чтобы убедиться, что ваши данные актуальны."
   },
@@ -3918,9 +3909,11 @@
         "message": "rotki не может запросить данные стейкинга ETH, потому что у вас не настроен API ключ Beaconcha.in. Нажмите @.quote:notification_messages.missing_api_key.get_key, чтобы создать его, или @.quote:notification_messages.missing_api_key.action, чтобы добавить его в приложении.",
         "title": "API ключ {service}"
       },
+      "change_indexer_order": "Изменить порядок индексаторов",
+      "do_not_show_again": "Больше не показывать",
       "etherscan": {
-        "message": "Запросы rotki для сети {location} работают медленнее, потому что у вас не настроен API ключ {service} для {location}. Нажмите @.quote:notification_messages.missing_api_key.get_key, чтобы создать его, или @.quote:notification_messages.missing_api_key.action, чтобы добавить его в приложении.",
-        "title": "API ключ {service} для {location}"
+        "message": "rotki использует {service} без настроенного API ключа, что может замедлить запросы. Вы можете добавить API ключ для лучшей производительности или изменить порядок индексаторов, чтобы приоритизировать другой сервис.",
+        "title": "API ключ {service}"
       },
       "get_key": "Получить API ключ",
       "helius": {
@@ -4045,11 +4038,8 @@
     "uniswap_v3": "Uniswap V3"
   },
   "overall_balances": {
-    "actions_menu_tooltip": "Действия с балансом",
-    "historical_balances": "Исторические балансы",
     "loading": "ЗАГРУЗКА",
     "premium_hint": "Получите полный опыт, обновившись до rotki premium",
-    "snapshot_action": "Снимок",
     "total_balance": "Общий баланс"
   },
   "page_not_found": {
@@ -4849,6 +4839,39 @@
       "uploading": "Загрузка базы данных..."
     }
   },
+  "sync_progress": {
+    "chains_label": "сеть | сетей",
+    "complete": "Синхронизация завершена",
+    "completed_chains": "{count} сеть завершена | {count} сетей завершено",
+    "completed_decoding": "{count} сеть декодирована | {count} сетей декодировано",
+    "completed_locations": "{count} местоположение завершено | {count} местоположений завершено",
+    "completed_protocol_cache": "{count} протокол обновлен | {count} протоколов обновлено",
+    "decoding": "Декодирование",
+    "decoding_label": "сетей декодировано",
+    "decoding_progress": "{processed}/{total} txns",
+    "events": "События",
+    "locations_label": "местоположение | местоположений",
+    "period": {
+      "beginning": "Начало"
+    },
+    "protocol_cache": "Кэш протокола",
+    "protocol_cache_label": "протоколов обновлено",
+    "protocol_cache_progress": "{processed}/{total} пулов",
+    "show_more": "Показать еще {count}...",
+    "status": {
+      "complete": "Завершено",
+      "decoding": "Декодирование",
+      "pending": "Ожидание",
+      "querying": "Запрос",
+      "querying_event_type": "Запрос {type}",
+      "querying_internal": "Запрос внутренних txs",
+      "querying_tokens": "Запрос переводов токенов",
+      "querying_transactions": "Запрос транзакций",
+      "refreshing": "Обновление"
+    },
+    "title": "Синхронизация истории",
+    "transactions": "Транзакции"
+  },
   "table_filter": {
     "asset_suggestion": "Введите символ актива или адрес для поиска.",
     "exclusion": {
@@ -5023,9 +5046,6 @@
       "redecode_events": "Повторно декодировать события",
       "redecode_page": "Страница передекодирования",
       "redecode_with_options": "Повторно декодировать с опциями"
-    },
-    "cache_refresh": {
-      "refreshing": "Обновление кэш-данных протокола"
     },
     "dialog": {
       "add_tx": "Добавить транзакцию по tx hash",
@@ -5307,12 +5327,14 @@
         }
       },
       "unsupported": {
-        "description": "Эта транзакция содержит только комиссию за газ без других событий. Обычно это означает, что протокол еще не поддерживается.",
+        "description_gas_fee_only": "Эта транзакция содержит только комиссию за газ без других событий. Обычно это означает, что протокол еще не поддерживается.",
+        "description_incomplete_swap": "Этот обмен кажется неполным. Присутствует одна сторона сделки, но отсутствует другая.",
         "location": "- Местоположение: {location}",
         "more_detail": "Подробнее:",
         "placeholder": "[Добавьте больше контекста здесь]",
         "report_action": "Сообщить о транзакции",
-        "report_description_intro": "Я нашел транзакцию, которая кажется неподдерживаемой (только событие комиссии за газ).",
+        "report_description_intro_gas_fee_only": "Я нашел транзакцию, которая кажется неподдерживаемой (только событие комиссии за газ).",
+        "report_description_intro_incomplete_swap": "Я нашел транзакцию обмена, которая кажется неполной (отсутствует одна сторона сделки).",
         "title": "Неподдерживаемая транзакция",
         "tx_hash": "- Хеш транзакции: {hash}"
       },
@@ -5333,10 +5355,7 @@
         "true": "Все транзакции обработаны."
       },
       "decoding": {
-        "all": "Повторное декодирование транзакций",
-        "all_done": "Повторное декодирование завершено",
         "done": "Декодирована {count} транзакция | Декодировано {count} транзакции",
-        "eth_block_events": "Повторное декодирование событий блоков ETH",
         "pending": "{count} Недекодированная транзакция | {count} Недекодированные транзакции",
         "processing": "Декодирование {count} транзакции | Декодирование {count} из {total} транзакций"
       },
@@ -5393,54 +5412,14 @@
       "refreshing": "Обновление кэша протокола",
       "title": "Статус обновлений кэша протокола"
     },
-    "query_all": {
-      "done_group": "Завершен запрос всех событий и транзакций",
-      "group": "Запрос событий и транзакций",
-      "modal_title": "Статус запроса"
-    },
-    "query_status": {
-      "date_range": "Запрос {status} для {address} между {start} и {end}",
-      "done_date_range": "Завершен запрос всех транзакций для {address} между {start} и {end}",
-      "done_end_date": "Завершен запрос всех транзакций для {address} до {end}",
-      "done_group": "Завершен запрос информации о всех транзакциях для {count} адреса | Завершен запрос информации о всех транзакциях для {count} адресов",
-      "done_querying": "Завершен запрос всех транзакций для {address}",
-      "end_date": "Запрос {status} для {address} до {end}",
-      "group": "Запрос информации о транзакциях для {count} адреса | Запрос информации о транзакциях для {count} адресов",
-      "latest_period_date_range": "Последний успешно запрошенный период между {start} и {end}",
-      "latest_period_end_date": "Последний успешно запрошенный период до {end}",
-      "start_decoding": "Декодирование транзакций для {address}",
-      "start_querying": "Запрос транзакций для {address}",
-      "statuses": {
-        "pending": "в ожидании",
-        "querying_evm_tokens_transactions": "транзакции токенов evm",
-        "querying_finished": "завершено",
-        "querying_internal_transactions": "внутренние транзакции evm",
-        "querying_started": "начато",
-        "querying_transactions": "транзакции evm"
-      },
-      "title": "Статус запроса транзакций"
-    },
-    "query_status_events": {
-      "date_range": "Запрос событий для {name} между {start} и {end}",
-      "done_date_range": "Завершен запрос всех событий для {name} между {start} и {end}",
-      "done_end_date": "Завершен запрос всех событий для {name} до {end}",
-      "done_group": "Завершен запрос всех событий для {count} местоположения | Завершен запрос всех событий для {count} местоположений",
-      "end_date": "Запрос событий для {name} до {end}",
-      "group": "Запрос событий для {count} местоположения | Запрос событий для {count} местоположений",
-      "latest_period_date_range": "Последний успешно запрошенный период между {start} и {end}",
-      "latest_period_end_date": "Последний успешно запрошенный период до {end}",
-      "title": "Статус запроса событий истории"
-    },
     "refresh_tooltip": "Получить последние события",
     "repulling": {
       "action": "Перезапросить события",
       "add_account_link": "добавить блокчейн аккаунт",
       "add_exchange_link": "добавить биржу",
       "address_hint": "Оставьте пустым, чтобы перезапросить транзакции со всех адресов",
-      "finished": "Перезапрос событий завершен",
       "no_accounts": "У вас нет зарегистрированных блокчейн аккаунтов. Пожалуйста, сначала {link}.",
-      "no_exchanges": "У вас нет подключенных бирж. Пожалуйста, сначала {link}.",
-      "repulling": "Перезапрос событий"
+      "no_exchanges": "У вас нет подключенных бирж. Пожалуйста, сначала {link}."
     },
     "title": "События истории",
     "unignore": "Не игнорировать события в учете"

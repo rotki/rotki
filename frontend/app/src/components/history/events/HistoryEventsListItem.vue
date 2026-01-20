@@ -128,6 +128,7 @@ const isIgnoredAsset = useIsAssetIgnored(eventAsset);
       'bg-rui-error/[0.05]': isHighlighted,
       'border-b': !isLast && !compact,
       '!opacity-50': isIgnoredAsset,
+      'px-4': !compact,
     }"
   >
     <div class="transition-all duration-300 ease-in-out flex items-center">

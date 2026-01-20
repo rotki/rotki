@@ -231,6 +231,12 @@ def test_set_settings(rotkehlchen_api_server: 'APIServer') -> None:
             value = ';'
         elif setting == 'events_processing_frequency':
             value = HOUR_IN_SECONDS
+        elif setting == 'asset_movement_amount_tolerance':
+            value = '0.0001'
+        elif setting == 'asset_movement_time_range':
+            value = HOUR_IN_SECONDS * 2
+        elif setting == 'suppress_missing_key_msg_services':
+            value = [ExternalService.ETHERSCAN.serialize()]
         else:
             raise AssertionError(f'Unexpected setting {setting} encountered')
 
@@ -616,7 +622,7 @@ def test_set_evm_indexers_order(rotkehlchen_api_server: 'APIServer') -> None:
         response=requests.get(settings_url),
         rotkehlchen_api_server=rotkehlchen_api_server,
     )
-    assert settings['evm_indexers_order'][ChainID.OPTIMISM.to_name()] == ['blockscout', 'etherscan', 'routescan']  # noqa: E501
+    assert settings['evm_indexers_order'][ChainID.OPTIMISM.to_name()] == ['blockscout', 'routescan', 'etherscan']  # noqa: E501
 
     # try editing the order of ethereum
     assert_proper_response(
@@ -808,3 +814,22 @@ def test_update_oracles_order_settings(rotkehlchen_api_server: 'APIServer') -> N
     )
     result = assert_proper_sync_response_with_result(response=response)
     assert result['current_price_oracles'] == ['alchemy']
+
+
+def test_suppress_missing_key_msg_services_not_overwritten(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Test that suppress_missing_key_msg_services is not
+    overwritten when updating other settings."""
+    assert assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'suppress_missing_key_msg_services': ['etherscan']}},
+    ))['suppress_missing_key_msg_services'] == ['etherscan']
+
+    result = assert_proper_sync_response_with_result(requests.put(
+        api_url_for(rotkehlchen_api_server, 'settingsresource'),
+        json={'settings': {'ui_floating_precision': 4}},
+    ))
+    assert result['ui_floating_precision'] == 4
+    assert result['suppress_missing_key_msg_services'] == ['etherscan']
+    assert CachedSettings().get_settings().suppress_missing_key_msg_services == [ExternalService.ETHERSCAN]  # noqa: E501
