@@ -49,6 +49,7 @@ from rotkehlchen.errors.misc import (
     NotERC20Conformant,
     NotERC721Conformant,
     RemoteError,
+    RequestTooLargeError,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.blockscout import Blockscout
@@ -254,6 +255,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self.contract_info_erc721_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
         # cache used by is_safe_proxy_or_eoa
         self._known_accounts_cache: LRUCacheWithRemove[ChecksumEvmAddress, bool] = LRUCacheWithRemove(maxsize=50)  # noqa: E501
+        # tracks the request length that failed to proactively use smaller chunks per node type
+        self._multicall_failed_length: dict[Literal['nodes', 'indexers'], int] = {}
         LockableQueryMixIn.__init__(self)
         EVMRPCMixin.__init__(self)
         # Log the available nodes so we have extra information when debugging connection errors.
@@ -370,8 +373,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         """Queries evm related data by performing a query of the provided method to all given nodes
 
         The first node in the call order that gets a successful response returns.
-        If none get a result then RemoteError is raised
+        May raise:
+        - RemoteError if none of the RPC nodes can get a result
+        - RequestTooLargeError if we encounter a 414 error from etherscan-like
+          indexers or gas limit errors from RPC nodes.
         """
+        gas_limit_error_seen = False
         for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
             if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
@@ -411,6 +418,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'Failed to query {node_info.name} for {method!s}: '
                     f'non-checksum address {e.args[1]}',
                 ) from e
+            except RequestTooLargeError:
+                gas_limit_error_seen = True
+                continue
             except requests.Timeout as e:  # Add node to failed_to_connect_nodes to prevent repeatedly timing out on the same node.  # noqa: E501
                 log.warning(
                     f'Timed out while querying {node_info.name} for '
@@ -433,6 +443,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'Failed to query {node_info.name} with position on the query list {node_idx} '
                     f'for {method.__name__} due to {e!s}',
                 )
+                if any(x in str(e).lower() for x in ('out of gas', 'exceeds block gas limit')):
+                    gas_limit_error_seen = True
                 # Catch all possible errors here and just try next node call
                 continue
 
@@ -443,7 +455,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             f'Failed to query {method.__name__} after trying the following '
             f'nodes: {[x.node_info.name for x in call_order]}. Call parameters were {kwargs}',
         )
-        raise RemoteError(f'Error querying information from {self.blockchain!s}. Checks logs to obtain more information')  # noqa: E501
+        if gas_limit_error_seen:
+            raise RequestTooLargeError(
+                f'Failed to query {method.__name__} for {self.blockchain} due to gas limit error',
+            )
+
+        raise RemoteError(f'Error querying information from {self.blockchain!s}. Check logs for more information')  # noqa: E501
 
     def _get_latest_block_number(self, web3: Web3 | None) -> int:
         if web3 is not None:
@@ -919,23 +936,87 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             calls_chunk_size: int = MULTICALL_CHUNKS,
     ) -> Any:
         """Uses MULTICALL contract. Failure of one call is a failure of the entire multicall.
+        Tries regular nodes first, falls back to indexers if they fail.
         source: https://etherscan.io/address/0xeefBa1e63905eF1D7ACbA5a8513c70307C1cE441#code
         Can raise:
         - RemoteError
         """
-        calls_chunked = list(get_chunks(calls, n=calls_chunk_size))
-        output = []
-        for call_chunk in calls_chunked:
-            multicall_result = self.contract_multicall.call(
-                node_inquirer=self,
-                method_name='aggregate',
-                arguments=[call_chunk],
+        call_order = self.default_call_order() if call_order is None else call_order
+        estimated_length = sum(len(call[1]) for call in calls)
+
+        # try regular nodes first
+        if len(regular_nodes := [n for n in call_order if n.node_info.name != EVM_INDEXERS_NODE_NAME]) != 0:  # noqa: E501
+            chunk_size = 3 if (
+                (failed := self._multicall_failed_length.get('nodes')) is not None and
+                estimated_length >= failed
+            ) else calls_chunk_size
+            try:
+                return self._execute_multicall(
+                    calls=calls,
+                    call_order=regular_nodes,
+                    block_identifier=block_identifier,
+                    calls_chunk_size=chunk_size,
+                    estimated_length=estimated_length,
+                    cache_key='nodes',
+                )
+            except RemoteError:
+                pass  # fall through to indexers
+
+        # fallback to indexers
+        chunk_size = 3 if (
+            (failed := self._multicall_failed_length.get('indexers')) is not None and
+            estimated_length >= failed
+        ) else calls_chunk_size
+        return self._execute_multicall(
+            calls=calls,
+            call_order=[self.indexers_node],
+            block_identifier=block_identifier,
+            calls_chunk_size=chunk_size,
+            estimated_length=estimated_length,
+            cache_key='indexers',
+        )
+
+    def _execute_multicall(
+            self,
+            calls: list[tuple[ChecksumEvmAddress, str]],
+            call_order: Sequence['WeightedNode'],
+            block_identifier: BlockIdentifier,
+            calls_chunk_size: int,
+            estimated_length: int,
+            cache_key: Literal['nodes', 'indexers'],
+    ) -> Any:
+        """Execute multicall with retry on RequestTooLargeError using smaller chunks.
+
+        May raise:
+        - RemoteError if none of the rpcs can get a result
+        - RequestTooLargeError if we encounter a 414 error from etherscan-like
+          indexers or gas limit errors from rpcs and retrying with smaller chunks fails
+        """
+        try:
+            output = []
+            for call_chunk in get_chunks(calls, n=calls_chunk_size):
+                _, chunk_output = self.contract_multicall.call(
+                    node_inquirer=self,
+                    method_name='aggregate',
+                    arguments=[call_chunk],
+                    call_order=call_order,
+                    block_identifier=block_identifier,
+                )
+                output.extend(chunk_output)
+        except RequestTooLargeError:
+            if calls_chunk_size <= 3:
+                raise
+            self._multicall_failed_length[cache_key] = estimated_length
+            return self._execute_multicall(
+                calls=calls,
                 call_order=call_order,
                 block_identifier=block_identifier,
+                calls_chunk_size=3,
+                estimated_length=estimated_length,
+                cache_key=cache_key,
             )
-            _, chunk_output = multicall_result
-            output += chunk_output
-        return output
+        else:
+            return output
 
     def multicall_2(
             self,
@@ -1445,7 +1526,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
     def _try_indexers(self, func: Callable[[EtherscanLikeApi], T]) -> T:
         """Tries to call the given function on the indexers in order until one succeeds.
-        Raises RemoteError if all fail or NoAvailableIndexers if there are no indexers available.
+        May raise:
+        - RemoteError if all indexers fail
+        - NoAvailableIndexers if there are no indexers available
+        - RequestTooLargeError to allow callers to retry with smaller chunks
         """
         if len(ordered_indexers := self._get_indexers_in_order()) == 0:
             raise NoAvailableIndexers(f'No indexers are available for {self.chain_name}')
@@ -1464,6 +1548,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                         f'API key. {e!s} Removing it from the available indexers for this chain.',
                     )
                     errors.append((indexer.name, e))
+            except RequestTooLargeError:
+                raise  # Let RequestTooLargeError bubble up for retry logic in callers
             except (RemoteError, DeserializationError) as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 errors.append((indexer.name, e))

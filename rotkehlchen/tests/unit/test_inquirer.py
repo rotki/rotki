@@ -854,6 +854,7 @@ def test_find_gearbox_lp_price(inquirer: 'Inquirer', arbitrum_one_manager: 'Arbi
             assert result and result[0].address == underlying_token.resolve_to_evm_token().evm_address  # noqa: E501
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_protocol_price_fallback_to_oracle(inquirer_defi):

@@ -47,6 +47,10 @@ class NoAvailableIndexers(RemoteError):
     """Raised when there are no available indexers for a given chain."""
 
 
+class RequestTooLargeError(RemoteError):
+    """Raised when a request fails due to size limits (gas limit, URL too long)."""
+
+
 class XPUBError(Exception):
     """Error XPUB Parsing and address derivation"""
 
