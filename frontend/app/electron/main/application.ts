@@ -108,6 +108,9 @@ export class Application {
   private async initialize() {
     this.registerAsDefaultProtocolHandler();
 
+    // Clear OAuth cookies on startup to ensure clean state between users
+    this.ipc.clearOAuthCookiesOnStartup();
+
     // Handle protocol URL if app was opened with one
     if (process.argv.length >= 2) {
       this.handleProtocolUrl(process.argv);
