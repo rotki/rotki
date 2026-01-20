@@ -85,7 +85,7 @@ describe('modules/external-services/monerium/use-monerium-api', () => {
         server.use(
           http.delete(`${backendUrl}/api/1/services/monerium`, () =>
             HttpResponse.json({
-              result: { success: true },
+              result: true,
               message: '',
             })),
         );
@@ -93,22 +93,21 @@ describe('modules/external-services/monerium/use-monerium-api', () => {
         const { disconnect } = useMoneriumOAuthApi();
         const result = await disconnect();
 
-        expect(result.success).toBe(true);
+        expect(result).toBe(true);
       });
 
-      it('returns failure on error', async () => {
+      it('throws on error', async () => {
         server.use(
           http.delete(`${backendUrl}/api/1/services/monerium`, () =>
             HttpResponse.json({
-              result: { success: false },
+              result: false,
               message: 'Disconnect failed',
             })),
         );
 
         const { disconnect } = useMoneriumOAuthApi();
-        const result = await disconnect();
 
-        expect(result.success).toBe(false);
+        await expect(disconnect()).rejects.toThrow('Disconnect failed');
       });
     });
   });

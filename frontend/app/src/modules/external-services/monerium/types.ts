@@ -31,8 +31,6 @@ export type MoneriumAuthResult = z.infer<typeof MoneriumAuthResultSchema>;
 
 export type MoneriumOAuthResult = Omit<MoneriumAuthResult, 'success'>;
 
-export const MoneriumDisconnectResultSchema = z.object({
-  success: z.boolean(),
-});
+export const MoneriumDisconnectResultSchema = z.boolean();
 
 export type MoneriumDisconnectResult = z.infer<typeof MoneriumDisconnectResultSchema>;
