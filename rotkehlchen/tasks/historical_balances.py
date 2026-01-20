@@ -16,7 +16,7 @@ from rotkehlchen.history.events.structures.types import (
     HistoryEventType,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import EventMetricKey, TimestampMS
+from rotkehlchen.types import EventMetricKey, Location, TimestampMS
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_now_in_ms
 from rotkehlchen.utils.mixins.lockable import skip_if_running
 
@@ -103,7 +103,7 @@ class Bucket(NamedTuple):
         return {
             'asset': self.asset,
             'protocol': self.protocol,
-            'location': self.location,
+            'location': Location.deserialize_from_db(self.location).serialize(),
             'location_label': self.location_label,
         }
 
