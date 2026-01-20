@@ -534,18 +534,20 @@ def test_skip_if_running():
     """Test that skip_if_running decorator skips concurrent calls"""
     call_count = 0
     execution_order = []
+    lock_acquired = gevent.event.Event()
 
     @skip_if_running
     def slow_function():
         nonlocal call_count
         call_count += 1
         execution_order.append(f'start_{call_count}')
+        lock_acquired.set()
         gevent.sleep(0.05)
         execution_order.append(f'end_{call_count}')
         return call_count
 
     greenlet1 = gevent.spawn(slow_function)
-    gevent.sleep(0.01)  # ensure greenlet1 starts first
+    lock_acquired.wait()  # wait until greenlet1 has acquired the lock
     greenlet2 = gevent.spawn(slow_function)
     greenlet3 = gevent.spawn(slow_function)
 
