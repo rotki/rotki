@@ -6,6 +6,7 @@ import type {
   Suggestion,
 } from '@/types/filtering';
 import { assert } from '@rotki/common';
+import { arrayify } from '@/utils/array';
 
 interface SuggestionText {
   text: string;
@@ -185,7 +186,7 @@ export function useFilterSelection(
       if (!(foundMatchers && value))
         return;
 
-      const values = Array.isArray(value) ? value : [value];
+      const values = arrayify(value);
       const asset = 'asset' in foundMatchers;
       const boolean = 'boolean' in foundMatchers;
 

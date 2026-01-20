@@ -51,8 +51,7 @@ const searchTimeRange = ref<string>(DEFAULT_HOUR_RANGE.toString());
 const onlyExpectedAssets = ref<boolean>(true);
 
 function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
-  const events = Array.isArray(row) ? row : [row];
-  return events[0];
+  return Array.isArray(row) ? row[0] : row;
 }
 
 function transformToMatchRow(row: HistoryEventCollectionRow, isCloseMatch: boolean): PotentialMatchRow {

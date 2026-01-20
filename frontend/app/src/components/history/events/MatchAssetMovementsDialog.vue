@@ -40,8 +40,7 @@ const selectedUnmatched = ref<string[]>([]);
 const selectedIgnored = ref<string[]>([]);
 
 function getEventEntry(movement: UnmatchedAssetMovement): HistoryEventEntryWithMeta {
-  const events = Array.isArray(movement.events) ? movement.events : [movement.events];
-  return events[0];
+  return Array.isArray(movement.events) ? movement.events[0] : movement.events;
 }
 
 const fiatMovements = computed<UnmatchedAssetMovement[]>(() =>

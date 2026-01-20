@@ -117,6 +117,17 @@ const { t } = useI18n({ useScope: 'global' });
         </template>
         {{ t('asset_movement_matching.dialog.check_unmatched') }}
       </RuiButton>
+
+      <RuiButton
+        variant="list"
+        :disabled="processing"
+        @click="emit('show:dialog', { type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES })"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-copy-check" />
+        </template>
+        {{ t('customized_event_duplicates.dialog.check_duplicates') }}
+      </RuiButton>
     </div>
   </RuiMenu>
 </template>

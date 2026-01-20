@@ -14,11 +14,14 @@ import type {
   StandaloneEditableEvents,
 } from '@/types/history/events/schemas';
 import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
+import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
+import { type DuplicateHandlingStatus, DuplicateHandlingStatus as DuplicateStatus } from '@/composables/history/events/use-history-events-filters';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import {
   type DecodableEventType,
   isGroupEditableHistoryEvent,
 } from '@/modules/history/management/forms/form-guards';
+import { useConfirmStore } from '@/store/confirm';
 import { toLocationAndTxRef } from '@/utils/history';
 import {
   isEthBlockEvent,
@@ -33,6 +36,7 @@ import {
 const props = defineProps<{
   event: HistoryEventEntry;
   loading: boolean;
+  duplicateHandlingStatus?: DuplicateHandlingStatus;
 }>();
 
 const emit = defineEmits<{
@@ -41,6 +45,7 @@ const emit = defineEmits<{
   'redecode': [event: PullEventPayload];
   'redecode-with-options': [event: PullEventPayload];
   'delete-tx': [data: LocationAndTxRef];
+  'fix-duplicate': [];
 }>();
 
 const {
@@ -48,7 +53,12 @@ const {
   txEventsDecoding,
 } = useHistoryEventsStatus();
 
-const { event } = toRefs(props);
+const { fixDuplicates, fixLoading } = useCustomizedEventDuplicates();
+const { show } = useConfirmStore();
+
+const { duplicateHandlingStatus, event } = toRefs(props);
+
+const isAutoFixable = computed<boolean>(() => get(duplicateHandlingStatus) === DuplicateStatus.AUTO_FIX);
 
 const showMenu = ref<boolean>(false);
 
@@ -159,10 +169,44 @@ const reportDescription = computed<string>(() => {
     t('actions.history_events.report_issue.placeholder'),
   ].filter(Boolean).join('\n');
 });
+
+async function fixDuplicateEvent(): Promise<void> {
+  const groupIdentifier = get(event).groupIdentifier;
+  if (!groupIdentifier)
+    return;
+
+  const result = await fixDuplicates([groupIdentifier]);
+  if (result.success)
+    emit('fix-duplicate');
+}
+
+function confirmFixDuplicate(): void {
+  show({
+    message: t('customized_event_duplicates.actions.fix_single_confirm'),
+    primaryAction: t('common.actions.confirm'),
+    title: t('customized_event_duplicates.actions.fix_single'),
+  }, async () => fixDuplicateEvent());
+}
 </script>
 
 <template>
   <div class="flex items-center">
+    <RuiButton
+      v-if="isAutoFixable"
+      size="sm"
+      color="primary"
+      class="mr-2"
+      :loading="fixLoading"
+      @click="confirmFixDuplicate()"
+    >
+      <template #prepend>
+        <RuiIcon
+          name="lu-wand-sparkles"
+          size="16"
+        />
+      </template>
+      {{ t('customized_event_duplicates.actions.fix') }}
+    </RuiButton>
     <RuiMenu
       v-model="showMenu"
       menu-class="max-w-[15rem]"

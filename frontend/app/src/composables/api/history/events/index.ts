@@ -43,6 +43,16 @@ export interface AssetMovementMatchSuggestions {
   otherEvents: number[];
 }
 
+export interface CustomizedEventDuplicates {
+  autoFixGroupIds: string[];
+  manualReviewGroupIds: string[];
+}
+
+export interface CustomizedEventDuplicatesFixResult {
+  removedEventIdentifiers: number[];
+  autoFixGroupIds: string[];
+}
+
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
   deleteTransactions: (chain: string, txRef?: string) => Promise<boolean>;
@@ -70,6 +80,8 @@ interface UseHistoryEventsApiReturn {
   getAssetMovementMatches: (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean) => Promise<AssetMovementMatchSuggestions>;
   matchAssetMovements: (assetMovement: number, matchedEvent?: number | null) => Promise<boolean>;
   unlinkAssetMovement: (assetMovement: number) => Promise<boolean>;
+  getCustomizedEventDuplicates: () => Promise<CustomizedEventDuplicates>;
+  fixCustomizedEventDuplicates: (groupIdentifiers?: string[]) => Promise<CustomizedEventDuplicatesFixResult>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
@@ -311,6 +323,14 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
       body: { assetMovement },
     });
 
+  const getCustomizedEventDuplicates = async (): Promise<CustomizedEventDuplicates> =>
+    api.get<CustomizedEventDuplicates>('/history/events/duplicates/customized');
+
+  const fixCustomizedEventDuplicates = async (groupIdentifiers?: string[]): Promise<CustomizedEventDuplicatesFixResult> =>
+    api.post<CustomizedEventDuplicatesFixResult>('/history/events/duplicates/customized', {
+      ...(groupIdentifiers && { groupIdentifiers }),
+    });
+
   return {
     addHistoryEvent,
     addTransactionHash,
@@ -323,7 +343,9 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     exportHistoryEventsCSV,
     fetchHistoryEvents,
     fetchTransactionsTask,
+    fixCustomizedEventDuplicates,
     getAssetMovementMatches,
+    getCustomizedEventDuplicates,
     getEventDetails,
     getHistoryEventCounterpartiesData,
     getTransactionStatusSummary,
@@ -332,11 +354,11 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     getUnmatchedAssetMovements,
     matchAssetMovements,
     pullAndRecodeEthBlockEventRequest,
-    unlinkAssetMovement,
     pullAndRecodeTransactionRequest,
     queryExchangeEvents,
     queryOnlineHistoryEvents,
     repullingExchangeEvents,
     repullingTransactions,
+    unlinkAssetMovement,
   };
 }

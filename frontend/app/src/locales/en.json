@@ -494,6 +494,20 @@
         }
       }
     },
+    "customized_event_duplicates": {
+      "fetch_error": {
+        "description": "Failed to fetch customized event duplicates: {error}",
+        "title": "Fetching Customized Event Duplicates"
+      },
+      "fix_error": {
+        "description": "Failed to fix customized event duplicates: {error}",
+        "title": "Fixing Customized Event Duplicates"
+      },
+      "fix_success": {
+        "description": "Successfully removed {count} duplicate event(s).",
+        "title": "Duplicates Fixed"
+      }
+    },
     "date_range": " from {from}| to {to}| from {from} to {to}",
     "defi": {
       "airdrops": {
@@ -2001,6 +2015,37 @@
   "currency_drop_down": {
     "hint": "Select as the main currency",
     "profit_currency": "Profit Currency ({currency})"
+  },
+  "customized_event_duplicates": {
+    "actions": {
+      "fix": "Auto Fix",
+      "fix_all_shown": "Auto Fix All",
+      "fix_selected": "Auto Fix Selected Group",
+      "fix_selected_confirm": "Are you sure you want to fix {count} selected duplicate event(s)?",
+      "fix_single": "Fix Duplicate",
+      "fix_single_confirm": "Are you sure you want to fix this duplicate event? This will remove the duplicate on-chain event and keep your customized event.",
+      "show_all_in_history_events": "View Full Event List"
+    },
+    "banner": {
+      "action": "Review Now",
+      "message": "There are {count} customized events with potential duplicates that need review."
+    },
+    "chips": {
+      "viewing_auto_fixable": "Viewing auto-fixable duplicate events",
+      "viewing_manual_review": "Viewing duplicates requiring manual review"
+    },
+    "dialog": {
+      "auto_fix_description": "These duplicates can be automatically fixed. The duplicate on-chain events will be removed while keeping your customized events intact.",
+      "check_duplicates": "Check Duplicate Events",
+      "manual_review_description": "These events require manual review. Please review each event and edit them as needed in the history events table.",
+      "no_auto_fix": "No auto-fixable duplicates found.",
+      "no_manual_review": "No events requiring manual review.",
+      "title": "Customized Event Duplicates"
+    },
+    "tabs": {
+      "auto_fix": "Auto-fixable",
+      "manual_review": "Manual Review"
+    }
   },
   "dashboard": {
     "blockchain_balances": {
@@ -5195,6 +5240,9 @@
       "redecode_events": "Redecode events",
       "redecode_page": "Redecode page",
       "redecode_with_options": "Redecode with options"
+    },
+    "alerts": {
+      "title": "There are actions needed for your events"
     },
     "dialog": {
       "add_tx": "Add transaction by tx hash",

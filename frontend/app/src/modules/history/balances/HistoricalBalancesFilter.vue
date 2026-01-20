@@ -14,6 +14,7 @@ import {
   HistoricalBalanceSource as Source,
 } from '@/modules/history/balances/types';
 import { useHistoryStore } from '@/store/history';
+import { arrayify } from '@/utils/array';
 
 const timestamp = defineModel<number>('timestamp', { required: true });
 const selectedAsset = defineModel<string>('selectedAsset');
@@ -41,7 +42,7 @@ const assetErrors = computed<string[]>(() => {
   const errors = props.fieldErrors.asset;
   if (!errors)
     return [];
-  return Array.isArray(errors) ? errors : [errors];
+  return arrayify(errors);
 });
 
 const historyStore = useHistoryStore();

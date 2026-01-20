@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { DuplicateHandlingStatus } from '@/composables/history/events/use-history-events-filters';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventsTableEmits } from '@/modules/history/events/types';
@@ -36,6 +37,7 @@ const props = defineProps<{
   hideActions?: boolean;
   selection?: UseHistoryEventsSelectionModeReturn;
   matchExactEvents?: boolean;
+  duplicateHandlingStatus?: DuplicateHandlingStatus;
 }>();
 
 const emit = defineEmits<HistoryEventsTableEmits>();
@@ -200,11 +202,13 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
         <HistoryEventsAction
           :event="row"
           :loading="eventsLoading"
+          :duplicate-handling-status="duplicateHandlingStatus"
           @add-event="addEvent($event, row);"
           @toggle-ignore="toggle($event)"
           @redecode="redecode($event, row.groupIdentifier)"
           @redecode-with-options="redecodeWithOptions($event, row.groupIdentifier)"
           @delete-tx="confirmTxAndEventsDelete($event)"
+          @fix-duplicate="emit('refresh')"
         />
       </LazyLoader>
     </template>

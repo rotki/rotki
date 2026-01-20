@@ -8,6 +8,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
+import { arrayify } from '@/utils/array';
 import { logger } from '@/utils/logging';
 
 interface RawUnmatchedAssetMovement {
@@ -96,13 +97,13 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
       for (const groupId of groupIdentifiers) {
         const eventsForGroup = response.entries.filter((row) => {
-          const events = Array.isArray(row) ? row : [row];
+          const events = arrayify(row);
           return events.some(event => event.entry.groupIdentifier === groupId);
         });
 
         if (eventsForGroup.length > 0) {
           const eventRow = eventsForGroup[0];
-          const events = Array.isArray(eventRow) ? eventRow : [eventRow];
+          const events = arrayify(eventRow);
           const asset = events[0]?.entry.asset ?? '';
 
           movements.push({

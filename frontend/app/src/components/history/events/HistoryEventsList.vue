@@ -10,6 +10,7 @@ import { useI18n } from 'vue-i18n';
 import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
 import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
 import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
+import { arrayify } from '@/utils/array';
 
 interface UnsupportedEventInfo {
   event: HistoryEventEntry;
@@ -106,7 +107,7 @@ const unsupportedEventInfo = computed<UnsupportedEventInfo | null>(() => {
   const events = get(combinedAllEvents);
 
   // Flatten all events to check for incomplete trades
-  const flatEvents = events.flatMap(event => (Array.isArray(event) ? event : [event]));
+  const flatEvents = events.flatMap(event => (arrayify(event)));
 
   // Check for incomplete trade events (receive without spend or vice versa)
   const tradeReceive = flatEvents.find(e => e.eventType === 'trade' && e.eventSubtype === 'receive');

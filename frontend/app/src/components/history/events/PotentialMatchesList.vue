@@ -77,8 +77,7 @@ const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => [
 ]);
 
 function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
-  const events = Array.isArray(row) ? row : [row];
-  return events[0];
+  return Array.isArray(row) ? row[0] : row;
 }
 
 function isSelected(row: PotentialMatchRow): boolean {

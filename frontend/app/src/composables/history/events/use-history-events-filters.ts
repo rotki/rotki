@@ -18,6 +18,13 @@ import {
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
+export const DuplicateHandlingStatus = {
+  AUTO_FIX: 'auto-fix',
+  MANUAL_REVIEW: 'manual-review',
+} as const;
+
+export type DuplicateHandlingStatus = (typeof DuplicateHandlingStatus)[keyof typeof DuplicateHandlingStatus];
+
 interface HistoryEventsFiltersOptions {
   entryTypes: Ref<HistoryEventEntryType[] | undefined>;
   eventSubTypes: Ref<string[]>;
@@ -32,6 +39,7 @@ interface HistoryEventsFiltersOptions {
 }
 
 interface UseHistoryEventsFiltersReturn {
+  duplicateHandlingStatus: ComputedRef<DuplicateHandlingStatus | undefined>;
   locationLabels: Ref<string[]>;
   groupIdentifiers: ComputedRef<string[] | undefined>;
   fetchData: () => Promise<void>;
@@ -85,7 +93,20 @@ export function useHistoryEventsFilters(
 
   const groupIdentifiersFromQuery = computed<string[] | undefined>(() => {
     const { groupIdentifiers } = get(route).query;
-    return groupIdentifiers ? [groupIdentifiers as string] : undefined;
+    if (!groupIdentifiers)
+      return undefined;
+
+    const ids = groupIdentifiers as string;
+    return ids.includes(',') ? ids.split(',') : [ids];
+  });
+
+  const duplicateHandlingStatusFromQuery = computed<DuplicateHandlingStatus | undefined>(() => {
+    const { duplicateHandlingStatus } = get(route).query;
+    if (duplicateHandlingStatus === DuplicateHandlingStatus.AUTO_FIX)
+      return DuplicateHandlingStatus.AUTO_FIX;
+    if (duplicateHandlingStatus === DuplicateHandlingStatus.MANUAL_REVIEW)
+      return DuplicateHandlingStatus.MANUAL_REVIEW;
+    return undefined;
   });
 
   const usedLocationLabels = computed<string[]>(() => {
@@ -150,9 +171,16 @@ export function useHistoryEventsFilters(
       enabled: true,
       tableId: TableId.HISTORY,
     })),
-    queryParamsOnly: computed(() => ({
-      locationLabels: get(usedLocationLabels),
-    })),
+    queryParamsOnly: computed(() => {
+      const duplicateHandlingStatusValue = get(duplicateHandlingStatusFromQuery);
+      const groupIdentifiersValue = get(groupIdentifiersFromQuery);
+
+      return {
+        duplicateHandlingStatus: duplicateHandlingStatusValue,
+        groupIdentifiers: groupIdentifiersValue?.join(','),
+        locationLabels: get(usedLocationLabels),
+      };
+    }),
     requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
       const params: Writeable<Partial<HistoryEventRequestPayload>> = {
         aggregateByGroupIds: true,
@@ -234,6 +262,7 @@ export function useHistoryEventsFilters(
   });
 
   return {
+    duplicateHandlingStatus: duplicateHandlingStatusFromQuery,
     fetchData,
     filters,
     groupIdentifiers: groupIdentifiersFromQuery,

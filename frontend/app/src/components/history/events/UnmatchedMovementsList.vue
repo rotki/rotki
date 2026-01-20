@@ -67,8 +67,7 @@ const columns = computed<DataTableColumn<UnmatchedMovementRow>[]>(() => [
 ]);
 
 function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
-  const events = Array.isArray(row) ? row : [row];
-  return events[0];
+  return Array.isArray(row) ? row[0] : row;
 }
 
 const rows = computed<UnmatchedMovementRow[]>(() =>

@@ -3,6 +3,7 @@ import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import { DIALOG_TYPES, type DialogShowOptions, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
+import HistoryEventsAlerts from '@/components/history/events/HistoryEventsAlerts.vue';
 import HistoryEventsDialogContainer from '@/components/history/events/HistoryEventsDialogContainer.vue';
 import HistoryEventsFiltersChips from '@/components/history/events/HistoryEventsFiltersChips.vue';
 import HistoryEventsTableActions from '@/components/history/events/HistoryEventsTableActions.vue';
@@ -12,7 +13,6 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
 import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
-import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
 import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
 import { useHistoryEventsSelectionActions } from '@/modules/history/events/composables/use-history-events-selection-actions';
@@ -90,17 +90,13 @@ const {
   shouldFetchEventsRegularly,
 } = useHistoryEventsStatus();
 
-const {
-  autoMatchLoading,
-  refreshUnmatchedAssetMovements,
-  unmatchedCount,
-} = useUnmatchedAssetMovements();
-
 const usedTitle = computed<string>(() => get(sectionTitle) || t('transactions.title'));
 
 const {
+  duplicateHandlingStatus,
   fetchData,
   filters,
+  groupIdentifiers,
   groupLoading,
   groups,
   highlightedIdentifiers,
@@ -199,12 +195,6 @@ watch(debouncedProcessing, async (isLoading, wasLoading) => {
     await actions.fetch.dataAndLocations();
 });
 
-watch(logicOr(debouncedProcessing, groupLoading), async (loading) => {
-  if (!loading && get(mainPage)) {
-    await refreshUnmatchedAssetMovements();
-  }
-});
-
 // Wait until the route doesn't change anymore to give time for the persisted filter to be set.
 watchDebounced(route, async () => {
   await actions.refresh.all();
@@ -212,6 +202,10 @@ watchDebounced(route, async () => {
 
 function openMatchAssetMovementsDialog(): void {
   get(dialogContainer)?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+}
+
+function openCustomizedEventDuplicatesDialog(): void {
+  get(dialogContainer)?.show({ type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
 }
 </script>
 
@@ -238,22 +232,12 @@ function openMatchAssetMovementsDialog(): void {
       </template>
 
       <div>
-        <RuiAlert
-          v-if="!debouncedProcessing && !autoMatchLoading && mainPage && unmatchedCount > 0"
-          type="warning"
-          class="mb-4 [&>div]:items-center"
-        >
-          <div class="flex items-center gap-4">
-            {{ t('asset_movement_matching.banner.message', { count: unmatchedCount }) }}
-            <RuiButton
-              size="sm"
-              color="warning"
-              @click="openMatchAssetMovementsDialog()"
-            >
-              {{ t('asset_movement_matching.banner.action') }}
-            </RuiButton>
-          </div>
-        </RuiAlert>
+        <HistoryEventsAlerts
+          :loading="debouncedProcessing || groupLoading"
+          :main-page="mainPage"
+          @open:match-asset-movements="openMatchAssetMovementsDialog()"
+          @open:customized-event-duplicates="openCustomizedEventDuplicatesDialog()"
+        />
 
         <RuiCard>
           <template
@@ -286,7 +270,11 @@ function openMatchAssetMovementsDialog(): void {
             @selection:action="handleSelectionAction($event)"
           />
 
-          <HistoryEventsFiltersChips />
+          <HistoryEventsFiltersChips
+            :group-identifiers="groupIdentifiers"
+            :duplicate-handling-status="duplicateHandlingStatus"
+            @refresh="actions.fetch.dataAndLocations()"
+          />
 
           <HistoryEventsTable
             v-model:sort="sort"
@@ -299,6 +287,7 @@ function openMatchAssetMovementsDialog(): void {
             :highlighted-identifiers="highlightedIdentifiers"
             :selection="selectionMode"
             :match-exact-events="toggles.matchExactEvents"
+            :duplicate-handling-status="duplicateHandlingStatus"
             @show:dialog="dialogContainer?.show($event)"
             @refresh="actions.fetch.dataAndRedecode($event)"
             @refresh:block-event="actions.redecode.blocks($event)"

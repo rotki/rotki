@@ -16,6 +16,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useNotificationsStore } from '@/store/notifications';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { arrayify } from '@/utils/array';
 import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
 import { millisecondsToSeconds } from '@/utils/date';
 import { getEthAddressesFromText } from '@/utils/history';
@@ -64,7 +65,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     const addressesNamesPayload: AddressBookSimplePayload[] = [];
 
     for (const row of collection.data) {
-      const events = Array.isArray(row) ? row : [row];
+      const events = arrayify(row);
       for (const event of events) {
         const { autoNotes, location, userNotes } = event.entry;
         extractAddresses(userNotes, addressesNamesPayload, location);
