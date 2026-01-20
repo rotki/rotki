@@ -197,8 +197,9 @@ export function useHistoryEventsFilters(
   });
 
   const highlightedIdentifiers = computed<string[] | undefined>(() => {
-    const { highlightedIdentifier } = get(route).query;
-    return highlightedIdentifier ? [highlightedIdentifier as string] : undefined;
+    const { highlightedIdentifier, negativeBalanceEvent } = get(route).query;
+    const identifier = highlightedIdentifier ?? negativeBalanceEvent;
+    return identifier ? [identifier as string] : undefined;
   });
 
   const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {

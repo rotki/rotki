@@ -9,10 +9,10 @@ function removeIdentifierParam(): void {
   router.push({ query });
 }
 
-function removeGroupIdentifierParam(): void {
+function removeNegativeBalanceParam(): void {
   const query = { ...route.query };
-  delete query.groupIdentifiers;
-  delete query.highlightIdentifier;
+  delete query.negativeBalanceGroup;
+  delete query.negativeBalanceEvent;
   router.push({ query });
 }
 </script>
@@ -33,27 +33,24 @@ function removeGroupIdentifierParam(): void {
     </RuiChip>
   </div>
 
-  <div
-    v-if="route.query.groupIdentifiers"
+  <RuiTooltip
+    v-if="route.query.negativeBalanceGroup"
     class="mb-4"
+    :popper="{ placement: 'bottom' }"
+    :open-delay="400"
+    tooltip-class="max-w-80"
   >
-    <RuiTooltip
-      :popper="{ placement: 'bottom' }"
-      :open-delay="400"
-      tooltip-class="max-w-80"
-    >
-      <template #activator>
-        <RuiChip
-          closeable
-          color="primary"
-          size="sm"
-          variant="outlined"
-          @click:close="removeGroupIdentifierParam()"
-        >
-          {{ t('transactions.events.show_negative_balance') }}
-        </RuiChip>
-      </template>
-      {{ t('historical_balances.negative_balances.view_event_tooltip') }}
-    </RuiTooltip>
-  </div>
+    <template #activator>
+      <RuiChip
+        closeable
+        color="error"
+        size="sm"
+        variant="outlined"
+        @click:close="removeNegativeBalanceParam()"
+      >
+        {{ t('transactions.events.show_negative_balance') }}
+      </RuiChip>
+    </template>
+    {{ t('historical_balances.negative_balances.view_event_tooltip') }}
+  </RuiTooltip>
 </template>
