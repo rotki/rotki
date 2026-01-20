@@ -10,6 +10,11 @@ export const BackendCode = {
 
 export type BackendCode = typeof BackendCode[keyof typeof BackendCode];
 
+export interface StartupError {
+  message: string;
+  code: BackendCode;
+}
+
 export interface ApiUrls { coreApiUrl: string; colibriApiUrl: string }
 
 interface MetamaskImportError {
@@ -126,4 +131,6 @@ export interface Interop {
   clearPassword: () => Promise<void>;
   openWalletConnectBridge: () => Promise<void>;
   notifyUserLogout: () => void;
+  /** Synchronously get any startup error that occurred before the renderer was ready */
+  getStartupError: () => StartupError | null;
 }

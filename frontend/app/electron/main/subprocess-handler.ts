@@ -19,6 +19,7 @@ interface SubprocessHandlerErrorListener {
 
 export class SubprocessHandler {
   private exiting: boolean;
+  private startupErrorReported: boolean = false;
 
   private readonly colibriManager: ProcessManager;
   private readonly coreManager: ProcessManager;
@@ -92,6 +93,15 @@ export class SubprocessHandler {
   async startProcesses(options: Partial<BackendOptions>, listener: SubprocessHandlerErrorListener): Promise<void> {
     this.logger.info('Preparing to start processes');
     this.logger.updateLogDirectory(options.logDirectory);
+    this.startupErrorReported = false;
+
+    // Wrap listener to track when errors are reported (so we can abort ping loop)
+    const wrappedListener: SubprocessHandlerErrorListener = {
+      onProcessError: (message, code) => {
+        this.startupErrorReported = true;
+        listener.onProcessError(message, code);
+      },
+    };
 
     if (process.env.SKIP_PYTHON_BACKEND) {
       this.logger.warn('Skipped starting rotki-core');
@@ -99,28 +109,29 @@ export class SubprocessHandler {
     }
 
     if (!this.checkIfMacOsVersionIsSupported()) {
-      listener.onProcessError('rotki requires at least macOS High Sierra', BackendCode.MACOS_VERSION);
+      wrappedListener.onProcessError('rotki requires at least macOS High Sierra', BackendCode.MACOS_VERSION);
       return;
     }
 
     if (!this.checkIfWindowsVersionIsSupported()) {
-      listener.onProcessError('rotki requires at least Windows 10', BackendCode.WIN_VERSION);
+      wrappedListener.onProcessError('rotki requires at least Windows 10', BackendCode.WIN_VERSION);
       return;
     }
 
-    await this.startCore(options, listener);
+    await this.startCore(options, wrappedListener);
     const isCoreAvailable = await this.checkCoreApiAvailability(this.config.urls.coreApiUrl);
     if (!isCoreAvailable) {
-      this.logger.error('Failed to connect to core. Exiting');
+      this.logger.error('Failed to connect to core');
       // Report the error to the frontend if the process exited without triggering onProcessError
       // (e.g., if the process crashed but no error was captured)
-      if (!this.coreManager.isRunning) {
-        listener.onProcessError(
+      if (!this.coreManager.isRunning && !this.startupErrorReported) {
+        wrappedListener.onProcessError(
           'Failed to connect to rotki backend. The backend process has exited. Please check the logs for more details.',
           BackendCode.TERMINATED,
         );
       }
-      await this.terminateProcesses();
+      // Terminate subprocesses but don't quit app - let user see the error and close manually
+      await this.terminateProcesses(false, false);
       return;
     }
     await this.startColibri(options);
@@ -214,6 +225,13 @@ export class SubprocessHandler {
       let ping: () => void;
 
       const retryOrFail = (): void => {
+        // Fail early if an error was already reported to the renderer
+        if (this.startupErrorReported) {
+          this.logger.info('Startup error already reported, aborting ping attempts');
+          resolve(false);
+          return;
+        }
+
         // Fail early if the core process has exited
         if (!this.coreManager.isRunning) {
           this.logger.error('Core process has exited, aborting ping attempts');
@@ -232,6 +250,13 @@ export class SubprocessHandler {
       };
 
       ping = (): void => {
+        // Check if an error was already reported
+        if (this.startupErrorReported) {
+          this.logger.info('Startup error already reported, aborting ping attempts');
+          resolve(false);
+          return;
+        }
+
         // Check if process is still running before each ping
         if (!this.coreManager.isRunning) {
           this.logger.error('Core process has exited, aborting ping attempts');
@@ -266,8 +291,13 @@ export class SubprocessHandler {
     });
   }
 
-  async terminateProcesses(restart: boolean = false): Promise<void> {
-    this.logger.debug(`Terminating subprocesses isRestart: ${restart} (exiting: ${this.exiting})`);
+  /**
+   * Terminates all subprocesses.
+   * @param restart - If true, allows socket cleanup time for restart. If false, may quit the app.
+   * @param quitApp - If true and restart is false, quits the app after termination. Defaults to true.
+   */
+  async terminateProcesses(restart: boolean = false, quitApp: boolean = true): Promise<void> {
+    this.logger.debug(`Terminating subprocesses isRestart: ${restart}, quitApp: ${quitApp} (exiting: ${this.exiting})`);
     if (this.exiting)
       return;
 
@@ -285,7 +315,7 @@ export class SubprocessHandler {
     }
 
     this.logger.debug('Termination complete');
-    if (!restart)
+    if (!restart && quitApp)
       app.quit();
   }
 }

@@ -1,4 +1,4 @@
-import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
+import type { BackendOptions, Listeners, StartupError, SystemVersion, TrayUpdate } from '@shared/ipc';
 import type { LogLevel } from '@shared/log-level';
 import type { WebVersion } from '@/types';
 import { assert, type Theme } from '@rotki/common';
@@ -40,6 +40,11 @@ interface UseInteropReturn {
    */
   getPath: (file: File) => string | undefined;
   setSelectedTheme: (selectedTheme: Theme) => Promise<void>;
+  /**
+   * Synchronously get any startup error that occurred before the renderer was ready.
+   * This should be called before setupListeners to catch errors that occurred during app startup.
+   */
+  getStartupError: () => StartupError | null;
 }
 
 const electronApp = !!window.interop;
@@ -188,6 +193,8 @@ const interop: UseInteropReturn = {
     }
     return window.interop?.version();
   },
+
+  getStartupError: (): StartupError | null => window.interop?.getStartupError() ?? null,
 };
 
 export const useInterop = (): UseInteropReturn => interop;
