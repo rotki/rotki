@@ -1388,6 +1388,7 @@ class ProtocolsWithCache(SerializableEnumNameMixin):
     ETH_WITHDRAWALS = auto()
     ETH_BLOCKS = auto()
     ETH_VALIDATORS_DATA = auto()
+    CUSTOMIZED_EVENTS = auto()
 
 
 UniqueCacheType = Literal[

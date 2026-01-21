@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.decoding.eas.constants import CPT_EAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.history.events.structures.base import (
@@ -19,6 +20,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.tests.utils.factories import (
     make_ethereum_transaction,
     make_evm_address,
+    make_evm_tx_hash,
 )
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS
 
@@ -105,3 +107,113 @@ def test_informational_events(database: 'DBHandler', base_accounts: list[Checksu
                 address=string_to_evm_address('0x4200000000000000000000000000000000000021'),
             ),
         ])
+
+
+def test_edited_event_caches_original_position(database: 'DBHandler') -> None:
+    """Test that editing an onchain event caches its original position.
+
+    Verifies:
+    - first edit caches (group_id, seq_idx) with event id as value
+    - subsequent edits don't cache intermediate positions
+    - user can still add events at cached positions (cache only blocks redecoding)
+    - deleting the event clears the cache entry
+    """
+    events_db = DBHistoryEvents(database)
+    tx_hash = make_evm_tx_hash()
+
+    with database.user_write() as write_cursor:
+        assert (event_id := events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=(event := EvmEvent(
+                tx_ref=tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(1710000000000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            )),
+        )) is not None
+        event.identifier = event_id
+        cache_key = DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(
+            group_identifier=event.group_identifier,
+            sequence_index=0,
+        )
+
+        # first edit stores original position with event identifier as value
+        event.sequence_index = 5
+        events_db.edit_history_event(write_cursor=write_cursor, event=event)
+        cache_entry = write_cursor.execute(
+            'SELECT value FROM key_value_cache WHERE name = ?', (cache_key,),
+        ).fetchone()
+        assert cache_entry is not None
+        cached_identifier = int(cache_entry[0])
+
+        # second edit does not create new cache entry for intermediate position
+        event.sequence_index = 10
+        events_db.edit_history_event(write_cursor=write_cursor, event=event)
+        assert write_cursor.execute(
+            'SELECT 1 FROM key_value_cache WHERE name = ?',
+            (DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(
+                group_identifier=event.group_identifier,
+                sequence_index=5,
+            ),),
+        ).fetchone() is None
+
+        # user-added event at cached position succeeds (cache only blocks redecoding)
+        assert events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                tx_ref=tx_hash,
+                sequence_index=0,
+                timestamp=TimestampMS(1710000000000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=ONE,
+            ),
+        ) is not None
+
+    # deleting the event removes the cache entry
+    assert events_db.delete_history_events_by_identifier(
+        identifiers=[cached_identifier],
+        force_delete=True,
+    ) is None
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT 1 FROM key_value_cache WHERE name = ?', (cache_key,),
+        ).fetchone() is None
+
+
+def test_non_onchain_edits_skip_cache(database: 'DBHandler') -> None:
+    """Test that editing non-onchain events (HistoryEvent) does not create cache entries."""
+    events_db = DBHistoryEvents(database)
+
+    with database.user_write() as write_cursor:
+        group_id = 'test_group_123'
+        assert (event_id := events_db.add_history_event(
+            write_cursor=write_cursor,
+            event=(event := HistoryEvent(
+                group_identifier=group_id,
+                sequence_index=0,
+                timestamp=TimestampMS(1710000000000),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+                asset=A_ETH,
+                amount=ONE,
+            )),
+        )) is not None
+        event.identifier = event_id
+        event.sequence_index = 5
+        events_db.edit_history_event(write_cursor=write_cursor, event=event)
+
+        assert write_cursor.execute(
+            'SELECT 1 FROM key_value_cache WHERE name = ?',
+            (DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(
+                group_identifier=group_id,
+                sequence_index=0,
+            ),),
+        ).fetchone() is None

@@ -1166,6 +1166,12 @@ class AssetsService:
                         'DELETE FROM general_cache WHERE key LIKE ?',
                         (f'{CacheType.BEEFY_VAULTS.serialize()}%',),
                     )
+            case ProtocolsWithCache.CUSTOMIZED_EVENTS:
+                with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                    write_cursor.execute(
+                        'DELETE FROM key_value_cache WHERE name LIKE ?',
+                        (f'{DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.value[0][:25]}%',),
+                    )
 
         failed_to_update = []
         for (cache, cache_type, query_method, chain_id, inquirer) in cache_rules:

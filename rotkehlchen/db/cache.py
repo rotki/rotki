@@ -83,6 +83,12 @@ class IdentifierArgType(TypedDict):
     identifier: int
 
 
+class CustomizedEventOriginalArgType(TypedDict):
+    """Type of kwargs for `DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX`"""
+    group_identifier: str
+    sequence_index: int
+
+
 def _deserialize_int_from_str(value: str) -> int | None:
     return int(value)
 
@@ -117,6 +123,7 @@ class DBCacheDynamic(Enum):
     LINEA_AIRDROP_ALLOCATION: Final = 'linea_airdrop_allocation_{address}', lambda x: x
     SOLANA_TOKEN_ACCOUNT: Final = 'solana_token_account_{address}', _deserialize_solana_token_account_from_str  # noqa: E501
     MATCHED_ASSET_MOVEMENT: Final = 'matched_asset_movement_{identifier}', _deserialize_int_from_str  # noqa: E501
+    CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX: Final = 'customized_event_original_{group_identifier}_{sequence_index}', _deserialize_int_from_str  # noqa: E501
 
     @overload
     def get_db_key(self, **kwargs: Unpack[LabeledLocationArgsType]) -> str:
@@ -140,6 +147,10 @@ class DBCacheDynamic(Enum):
 
     @overload
     def get_db_key(self, **kwargs: Unpack[IdentifierArgType]) -> str:
+        ...
+
+    @overload
+    def get_db_key(self, **kwargs: Unpack[CustomizedEventOriginalArgType]) -> str:
         ...
 
     def get_db_key(self, **kwargs: Any) -> str:

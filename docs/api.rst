@@ -13125,7 +13125,7 @@ Refresh protocol data
       Content-Type: application/json
 
       {
-        "result": ["curve", "velodrome", "aerodrome", "yearn", "maker", "aave", "convex", "gearbox", "spark"],
+        "result": ["curve", "velodrome", "aerodrome", "yearn", "maker", "aave", "convex", "gearbox", "spark", "balancer_v1", "balancer_v2", "balancer_v3", "eth_withdrawals", "eth_blocks", "eth_validators_data", "merkl", "beefy_finance", "customized_events"],
         "message": ""
       }
 

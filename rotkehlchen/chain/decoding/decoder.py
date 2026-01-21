@@ -9,6 +9,7 @@ from gevent.lock import Semaphore
 from more_itertools import peekable
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
+from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
 from rotkehlchen.db.dbtx import DBCommonTx, T_Transaction, T_TxHash, T_TxNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -434,20 +435,34 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         `action_id` uniquely identifies the tx (for example, chain id + tx hash for EVM txs)
         which is added to the ignored_action_ids if there are no events.
         `db_id` is the id of the transaction in the DB, used in the tx mappings table.
+
+        Events at positions that were previously customized (original position cached) are
+        filtered out to prevent duplicates during redecoding.
         """
         with self.database.user_write() as write_cursor:
-            if len(events) > 0:
-                self.dbevents.add_history_events(
-                    write_cursor=write_cursor,
-                    history=events,
-                )
-            else:
+            if len(events) == 0:
                 # This is probably a phishing zero value token transfer tx.
                 # Details here: https://github.com/rotki/rotki/issues/5749
                 with suppress(InputError):  # We don't care if it's already in the DB
                     self.database.add_to_ignored_action_ids(
                         write_cursor=write_cursor,
                         identifiers=[action_id],
+                    )
+            else:  # Filter out events at positions previously customized to prevent duplicates
+                cached_keys = {row[0] for row in write_cursor.execute(
+                    'SELECT name FROM key_value_cache WHERE name LIKE ?',
+                    (f'customized_event_original_{events[0].group_identifier}_%',),
+                )}
+                if len(filtered_events := [
+                    event for event in events
+                    if DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(
+                        group_identifier=event.group_identifier,
+                        sequence_index=event.sequence_index,
+                    ) not in cached_keys
+                ]) != 0:
+                    self.dbevents.add_history_events(
+                        write_cursor=write_cursor,
+                        history=filtered_events,
                     )
 
             write_cursor.execute(

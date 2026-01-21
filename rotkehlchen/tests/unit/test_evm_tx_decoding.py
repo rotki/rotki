@@ -468,3 +468,58 @@ def test_contract_deployment(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Deploy a new contract at {contract_address}',
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
+def test_redecode_skips_customized_event_original_position(
+        ethereum_inquirer: 'EthereumInquirer',
+        database: 'DBHandler',
+) -> None:
+    """Test that redecoding a tx skips events at positions where customized events originated.
+
+    Uses contract deployment tx which creates events at seq_indexes 0 (gas) and 1 (deploy).
+    1. Decode tx -> creates events at sequence index 0 and 1
+    2. Edit event at 1 to position 200 -> caches original seq_index=1
+    3. Redecode tx -> should create event at 0, skip seq_index=1 (cached)
+    4. Verify no duplicate at position 1
+    """
+    dbevents = DBHistoryEvents(database)
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x36d18e69806af47ea9469156917af9e0278fa315256d08a566023dce5df08c70')),  # noqa: E501
+    )
+    with database.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(tx_hashes=[tx_hash]),
+        )
+    assert len(events) == 2
+    assert events[0].sequence_index == 0  # gas event
+    assert events[1].sequence_index == 1  # deploy event
+
+    events[1].sequence_index = (new_seq_index := 200)
+    events[1].notes = (edited_note := 'this note was edited')
+    with database.user_write() as write_cursor:
+        dbevents.edit_history_event(write_cursor=write_cursor, event=events[1])
+
+    # 3. reset decoded status and redecode
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM evm_tx_mappings WHERE tx_id IN '
+            '(SELECT identifier FROM evm_transactions WHERE tx_hash = ?)',
+            (tx_hash,),
+        )
+
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+    )
+    with database.conn.read_ctx() as cursor:
+        all_events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(tx_hashes=[tx_hash]),
+        )
+        assert len(all_events) == len(events)
+        assert all_events[1].sequence_index == new_seq_index
+        assert all_events[1].notes == edited_note

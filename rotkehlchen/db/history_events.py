@@ -57,6 +57,7 @@ from rotkehlchen.history.events.structures.eth2 import (
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
+from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
@@ -125,7 +126,7 @@ class DBHistoryEvents:
     def _execute_and_track_modified(
             self,
             write_cursor: 'DBCursor',
-            result: 'DBCursor',
+            result: 'DBCursor | Sequence[tuple[TimestampMS]]',
     ) -> int:
         """Iterate cursor results, track earliest timestamp, and return count.
         Single-pass iteration to compute both count and minimum timestamp.
@@ -147,15 +148,26 @@ class DBHistoryEvents:
             where_bindings: tuple,
     ) -> int:
         """Delete history_events and track the earliest affected timestamp for cache invalidation.
+        Also cleans up any cached original positions for the deleted events.
 
         Returns the number of rows deleted.
         """
+        deleted_ids, timestamps = [], []
+        if len(rows := write_cursor.execute(
+            f'DELETE FROM history_events {where_clause} RETURNING timestamp, identifier',
+            where_bindings,
+        ).fetchall()) > 0:
+            for row in rows:
+                timestamps.append((row[0],))
+                deleted_ids.append(str(row[1]))
+            write_cursor.execute(
+                "DELETE FROM key_value_cache WHERE name LIKE 'customized_event_original_%' "
+                f"AND value IN ({','.join('?' * len(deleted_ids))})",
+                deleted_ids,
+            )
         return self._execute_and_track_modified(
             write_cursor=write_cursor,
-            result=write_cursor.execute(
-                f'DELETE FROM history_events {where_clause} RETURNING timestamp',
-                where_bindings,
-            ),
+            result=timestamps,
         )
 
     def update_events_and_track(
@@ -253,7 +265,7 @@ class DBHistoryEvents:
             - InputError if an error occurred.
         """
         old_data = write_cursor.execute(
-            'SELECT timestamp, asset, amount, type, subtype, location_label '
+            'SELECT timestamp, asset, amount, type, subtype, location_label, sequence_index '
             'FROM history_events WHERE identifier=?',
             (event.identifier,),
         ).fetchone()
@@ -277,10 +289,22 @@ class DBHistoryEvents:
             else:  # all other data
                 write_cursor.execute(f'{updatestr} WHERE identifier=?', (*bindings, event.identifier))  # noqa: E501
 
-        self.mark_event_customized(write_cursor=write_cursor, event=event)
+        # Mark as customized and store original position for duplicate prevention during redecode.
+        # Only store original position on first customization (when INSERT succeeds).
+        if self.mark_event_customized(
+            write_cursor=write_cursor,
+            event=event,
+        ) and isinstance(event, OnchainEvent):
+            write_cursor.execute(
+                'INSERT INTO key_value_cache (name, value) VALUES (?, ?)',
+                (DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(
+                    group_identifier=event.group_identifier,
+                    sequence_index=old_data[6],
+                ), str(event.identifier)),
+            )
 
         # Track modification only if balance-affecting fields changed. cannot be None here
-        if old_data == (
+        if old_data[:6] == (
             event.timestamp,
             event.asset.identifier,
             str(event.amount),
@@ -295,13 +319,18 @@ class DBHistoryEvents:
             timestamp=TimestampMS(min(old_data[0], event.timestamp)),
         )
 
-    def mark_event_customized(self, write_cursor: 'DBCursor', event: HistoryBaseEntry) -> None:
-        """Mark an event as customized."""
+    @staticmethod
+    def mark_event_customized(write_cursor: 'DBCursor', event: HistoryBaseEntry) -> bool:
+        """Mark an event as customized.
+
+        Returns True if newly marked as customized, False if it was already customized.
+        """
         write_cursor.execute(
             'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
             'VALUES(?, ?, ?)',
             (event.identifier, HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         )
+        return write_cursor.rowcount == 1
 
     def delete_history_events_by_identifier(
             self,
