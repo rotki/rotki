@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
 import CustomizedEventDuplicatesTable from '@/components/history/events/CustomizedEventDuplicatesTable.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { type CustomizedEventDuplicate, type DuplicateRow, useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
+import { type CustomizedEventDuplicate, useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { DuplicateHandlingStatus } from '@/composables/history/events/use-history-events-filters';
 import { Routes } from '@/router/routes';
 import { useConfirmStore } from '@/store/confirm';
@@ -19,40 +18,20 @@ const { show } = useConfirmStore();
 
 const {
   autoFixCount,
-  autoFixDuplicates,
+  autoFixGroupIds,
   fetchCustomizedEventDuplicates,
   fixDuplicates,
   fixLoading,
   loading,
   manualReviewCount,
-  manualReviewDuplicates,
+  manualReviewGroupIds,
 } = useCustomizedEventDuplicates();
 
 const activeTab = ref<number>(0);
 const selectedAutoFix = ref<string[]>([]);
 
-function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
-  return Array.isArray(row) ? row[0] : row;
-}
-
-function mapToRows(duplicates: CustomizedEventDuplicate[]): DuplicateRow[] {
-  return duplicates.map((duplicate) => {
-    const entry = getEventEntry(duplicate.events).entry;
-    return {
-      groupIdentifier: duplicate.groupIdentifier,
-      location: entry.location,
-      original: duplicate,
-      timestamp: entry.timestamp,
-      txHash: 'txRef' in entry ? (entry.txRef ?? '') : '',
-    };
-  });
-}
-
-const autoFixRows = computed<DuplicateRow[]>(() => mapToRows(get(autoFixDuplicates)));
-const manualReviewRows = computed<DuplicateRow[]>(() => mapToRows(get(manualReviewDuplicates)));
-
-async function viewAllEvents(rows: DuplicateRow[], status: DuplicateHandlingStatus): Promise<void> {
-  const groupIdentifiers = rows.map(row => row.groupIdentifier).join(',');
+async function viewAllEvents(groupIds: string[], status: DuplicateHandlingStatus): Promise<void> {
+  const groupIdentifiers = groupIds.join(',');
   closeDialog();
   await router.push({
     path: Routes.HISTORY_EVENTS.toString(),
@@ -167,10 +146,11 @@ onBeforeMount(async () => {
               {{ t('customized_event_duplicates.dialog.auto_fix_description') }}
             </p>
             <RuiButton
-              v-if="autoFixRows.length > 0"
+              v-if="autoFixCount > 0"
               size="sm"
               variant="outlined"
-              @click="viewAllEvents(autoFixRows, DuplicateHandlingStatus.AUTO_FIX)"
+              :loading="loading"
+              @click="viewAllEvents(autoFixGroupIds, DuplicateHandlingStatus.AUTO_FIX)"
             >
               <template #prepend>
                 <RuiIcon
@@ -184,8 +164,7 @@ onBeforeMount(async () => {
 
           <CustomizedEventDuplicatesTable
             v-model:selected="selectedAutoFix"
-            :rows="autoFixRows"
-            :loading="loading"
+            :group-ids="autoFixGroupIds"
             :empty-description="t('customized_event_duplicates.dialog.no_auto_fix')"
             :fix-loading="fixLoading"
             selectable
@@ -199,10 +178,11 @@ onBeforeMount(async () => {
               {{ t('customized_event_duplicates.dialog.manual_review_description') }}
             </p>
             <RuiButton
-              v-if="manualReviewRows.length > 0"
+              v-if="manualReviewCount > 0"
               size="sm"
               variant="outlined"
-              @click="viewAllEvents(manualReviewRows, DuplicateHandlingStatus.MANUAL_REVIEW)"
+              :loading="loading"
+              @click="viewAllEvents(manualReviewGroupIds, DuplicateHandlingStatus.MANUAL_REVIEW)"
             >
               <template #prepend>
                 <RuiIcon
@@ -215,8 +195,7 @@ onBeforeMount(async () => {
           </div>
 
           <CustomizedEventDuplicatesTable
-            :rows="manualReviewRows"
-            :loading="loading"
+            :group-ids="manualReviewGroupIds"
             :empty-description="t('customized_event_duplicates.dialog.no_manual_review')"
           />
         </RuiTabItem>

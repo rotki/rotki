@@ -1,6 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { ActionStatus } from '@/types/action';
-import type { HistoryEventCollectionRow } from '@/types/history/events/schemas';
+import type { Collection } from '@/types/collection';
+import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
 import { type CustomizedEventDuplicates, useHistoryEventsApi } from '@/composables/api/history/events';
 import { useMessageStore } from '@/store/message';
 import { arrayify } from '@/utils/array';
@@ -19,10 +20,14 @@ export interface DuplicateRow {
   original: CustomizedEventDuplicate;
 }
 
+export interface FetchDuplicateEventsPayload {
+  groupIds: string[];
+  limit: number;
+  offset: number;
+}
+
 interface UseCustomizedEventDuplicatesReturn {
-  autoFixDuplicates: ComputedRef<CustomizedEventDuplicate[]>;
   autoFixGroupIds: ComputedRef<string[]>;
-  manualReviewDuplicates: ComputedRef<CustomizedEventDuplicate[]>;
   manualReviewGroupIds: ComputedRef<string[]>;
   autoFixCount: ComputedRef<number>;
   manualReviewCount: ComputedRef<number>;
@@ -30,30 +35,24 @@ interface UseCustomizedEventDuplicatesReturn {
   loading: Ref<boolean>;
   fixLoading: Ref<boolean>;
   fetchCustomizedEventDuplicates: () => Promise<void>;
+  fetchDuplicateEvents: (payload: FetchDuplicateEventsPayload) => Promise<Collection<DuplicateRow>>;
   fixDuplicates: (groupIdentifiers?: string[]) => Promise<ActionStatus>;
 }
 
-function createDuplicatesComputed(
-  groupIds: Ref<string[]>,
-  eventsMap: Ref<Map<string, HistoryEventCollectionRow>>,
-): ComputedRef<CustomizedEventDuplicate[]> {
-  return computed<CustomizedEventDuplicate[]>(() =>
-    get(groupIds).map(groupId => ({
-      events: get(eventsMap).get(groupId) ?? [],
-      groupIdentifier: groupId,
-    })).filter((item) => {
-      const events = arrayify(item.events);
-      return events.length > 0;
-    }),
-  );
+function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
+  return Array.isArray(row) ? row[0] : row;
 }
 
-const rawAutoFixGroupIds = ref<string[]>([]);
-const rawManualReviewGroupIds = ref<string[]>([]);
-const autoFixEvents = ref<Map<string, HistoryEventCollectionRow>>(new Map());
-const manualReviewEvents = ref<Map<string, HistoryEventCollectionRow>>(new Map());
-const loading = ref<boolean>(false);
-const fixLoading = ref<boolean>(false);
+function mapToDuplicateRow(groupId: string, events: HistoryEventCollectionRow): DuplicateRow {
+  const entry = getEventEntry(events).entry;
+  return {
+    groupIdentifier: groupId,
+    location: entry.location,
+    original: { events, groupIdentifier: groupId },
+    timestamp: entry.timestamp,
+    txHash: 'txRef' in entry ? (entry.txRef ?? '') : '',
+  };
+}
 
 export const useCustomizedEventDuplicates = createSharedComposable((): UseCustomizedEventDuplicatesReturn => {
   const { t } = useI18n({ useScope: 'global' });
@@ -65,8 +64,10 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     getCustomizedEventDuplicates,
   } = useHistoryEventsApi();
 
-  const autoFixDuplicates = createDuplicatesComputed(rawAutoFixGroupIds, autoFixEvents);
-  const manualReviewDuplicates = createDuplicatesComputed(rawManualReviewGroupIds, manualReviewEvents);
+  const rawAutoFixGroupIds = ref<string[]>([]);
+  const rawManualReviewGroupIds = ref<string[]>([]);
+  const loading = ref<boolean>(false);
+  const fixLoading = ref<boolean>(false);
 
   const autoFixGroupIds = computed<string[]>(() => get(rawAutoFixGroupIds));
   const manualReviewGroupIds = computed<string[]>(() => get(rawManualReviewGroupIds));
@@ -75,51 +76,12 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
   const manualReviewCount = computed<number>(() => get(rawManualReviewGroupIds).length);
   const totalCount = computed<number>(() => get(autoFixCount) + get(manualReviewCount));
 
-  async function fetchEventsForGroupIds(groupIds: string[]): Promise<Map<string, HistoryEventCollectionRow>> {
-    if (groupIds.length === 0) {
-      return new Map();
-    }
-
-    const response = await fetchHistoryEvents({
-      aggregateByGroupIds: false,
-      groupIdentifiers: groupIds,
-      limit: -1,
-      offset: 0,
-      orderByAttributes: ['timestamp'],
-      ascending: [false],
-    });
-
-    const eventsMap = new Map<string, HistoryEventCollectionRow>();
-
-    for (const groupId of groupIds) {
-      const eventsForGroup = response.entries.filter((row) => {
-        const events = arrayify(row);
-        return events.some(event => event.entry.groupIdentifier === groupId);
-      });
-
-      if (eventsForGroup.length > 0) {
-        eventsMap.set(groupId, eventsForGroup[0]);
-      }
-    }
-
-    return eventsMap;
-  }
-
   const fetchCustomizedEventDuplicates = async (): Promise<void> => {
     set(loading, true);
     try {
       const result: CustomizedEventDuplicates = await getCustomizedEventDuplicates();
-
       set(rawAutoFixGroupIds, result.autoFixGroupIds);
       set(rawManualReviewGroupIds, result.manualReviewGroupIds);
-
-      const [autoFixEventsMap, manualReviewEventsMap] = await Promise.all([
-        fetchEventsForGroupIds(result.autoFixGroupIds),
-        fetchEventsForGroupIds(result.manualReviewGroupIds),
-      ]);
-
-      set(autoFixEvents, autoFixEventsMap);
-      set(manualReviewEvents, manualReviewEventsMap);
     }
     catch (error: any) {
       logger.error('Failed to fetch customized event duplicates:', error);
@@ -131,6 +93,62 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     finally {
       set(loading, false);
     }
+  };
+
+  const fetchDuplicateEvents = async (payload: FetchDuplicateEventsPayload): Promise<Collection<DuplicateRow>> => {
+    const { groupIds, limit, offset } = payload;
+
+    if (groupIds.length === 0) {
+      return {
+        data: [],
+        found: 0,
+        limit,
+        total: 0,
+        totalValue: undefined,
+      };
+    }
+
+    // Get the group IDs for the current page
+    const paginatedGroupIds = groupIds.slice(offset, offset + limit);
+
+    if (paginatedGroupIds.length === 0) {
+      return {
+        data: [],
+        found: groupIds.length,
+        limit,
+        total: groupIds.length,
+        totalValue: undefined,
+      };
+    }
+
+    const response = await fetchHistoryEvents({
+      aggregateByGroupIds: false,
+      groupIdentifiers: paginatedGroupIds,
+      limit: -1,
+      offset: 0,
+      orderByAttributes: ['timestamp'],
+      ascending: [false],
+    });
+
+    const rows: DuplicateRow[] = [];
+    for (const groupId of paginatedGroupIds) {
+      const eventsForGroup = response.entries.filter((row) => {
+        const events = arrayify(row);
+        return events.some(event => event.entry.groupIdentifier === groupId);
+      });
+
+      if (eventsForGroup.length > 0) {
+        rows.push(mapToDuplicateRow(groupId, eventsForGroup[0]));
+      }
+    }
+
+    return {
+      data: rows,
+      found: groupIds.length,
+      limit,
+      total: groupIds.length,
+      totalValue: undefined,
+    };
   };
 
   const fixDuplicates = async (groupIdentifiers?: string[]): Promise<ActionStatus> => {
@@ -168,14 +186,13 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
 
   return {
     autoFixCount,
-    autoFixDuplicates,
     autoFixGroupIds,
     fetchCustomizedEventDuplicates,
+    fetchDuplicateEvents,
     fixDuplicates,
     fixLoading,
     loading,
     manualReviewCount,
-    manualReviewDuplicates,
     manualReviewGroupIds,
     totalCount,
   };

@@ -37,7 +37,7 @@ const showDuplicates = computed<boolean>(() => get(duplicatesCount) > 0);
 const hasAlerts = logicOr(showUnmatchedMovements, showDuplicates);
 
 const showAlerts = computed<boolean>(() =>
-  get(mainPage) && !get(loading) && get(getStatus(Section.HISTORY) === Status.LOADED) && get(hasAlerts),
+  get(mainPage) && !get(loading) && getStatus(Section.HISTORY) === Status.LOADED && get(hasAlerts),
 );
 
 watch(loading, async (isLoading) => {
