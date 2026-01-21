@@ -4,6 +4,8 @@ import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unm
 import { useStatusStore } from '@/store/status';
 import { Section, Status } from '@/types/status';
 
+const show = defineModel<boolean>('show', { required: true });
+
 const props = defineProps<{
   loading: boolean;
   mainPage: boolean;
@@ -15,6 +17,7 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+const { getStatus } = useStatusStore();
 
 const { loading, mainPage } = toRefs(props);
 
@@ -29,16 +32,18 @@ const {
   totalCount: duplicatesCount,
 } = useCustomizedEventDuplicates();
 
-const { getStatus } = useStatusStore();
-
 const showUnmatchedMovements = computed<boolean>(() => !get(autoMatchLoading) && get(unmatchedCount) > 0);
 const showDuplicates = computed<boolean>(() => get(duplicatesCount) > 0);
 
 const hasAlerts = logicOr(showUnmatchedMovements, showDuplicates);
 
 const showAlerts = computed<boolean>(() =>
-  get(mainPage) && !get(loading) && getStatus(Section.HISTORY) === Status.LOADED && get(hasAlerts),
+  get(mainPage) && !get(loading) && getStatus(Section.HISTORY) === Status.LOADED && get(hasAlerts) && get(show),
 );
+
+function closeAlerts(): void {
+  set(show, false);
+}
 
 watch(loading, async (isLoading) => {
   if (!isLoading && get(mainPage)) {
@@ -55,6 +60,8 @@ watch(loading, async (isLoading) => {
     v-if="showAlerts"
     type="warning"
     class="mb-3"
+    closeable
+    @close="closeAlerts()"
   >
     <template #title>
       {{ t('transactions.alerts.title') }}

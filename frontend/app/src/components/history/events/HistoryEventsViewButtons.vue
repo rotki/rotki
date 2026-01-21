@@ -1,12 +1,20 @@
 <script setup lang="ts">
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/components/history/events/dialog-types';
+import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
+import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import HistoryRefreshButton from '@/modules/history/refresh/HistoryRefreshButton.vue';
+import { useStatusStore } from '@/store/status';
+import { Section, Status } from '@/types/status';
 
-defineProps<{
+const showAlerts = defineModel<boolean>('showAlerts', { default: false });
+
+const props = defineProps<{
   processing: boolean;
   loading: boolean;
   includeEvmEvents: boolean;
+  mainPage?: boolean;
+  sectionLoading?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -14,10 +22,47 @@ const emit = defineEmits<{
   'show:dialog': [options: DialogShowOptions];
 }>();
 
+const { mainPage, sectionLoading } = toRefs(props);
+
 const { t } = useI18n({ useScope: 'global' });
+const { getStatus } = useStatusStore();
+
+const { autoMatchLoading, unmatchedCount } = useUnmatchedAssetMovements();
+const { totalCount: duplicatesCount } = useCustomizedEventDuplicates();
+
+const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(duplicatesCount));
+const hasIssues = computed<boolean>(() => !get(autoMatchLoading) && get(totalIssuesCount) > 0);
+const showAlertsButton = computed<boolean>(() =>
+  get(mainPage) === true && !get(sectionLoading) && getStatus(Section.HISTORY) === Status.LOADED && get(hasIssues),
+);
+
+function toggleAlerts(): void {
+  set(showAlerts, !get(showAlerts));
+}
 </script>
 
 <template>
+  <RuiBadge
+    v-if="showAlertsButton"
+    :model-value="totalIssuesCount > 0"
+    :text="totalIssuesCount.toString()"
+    color="warning"
+    placement="top"
+    offset-y="4"
+    offset-x="-4"
+  >
+    <RuiButton
+      variant="outlined"
+      color="warning"
+      @click="toggleAlerts()"
+    >
+      <template #prepend>
+        <RuiIcon name="lu-triangle-alert" />
+      </template>
+      {{ t('transactions.alerts.title') }}
+    </RuiButton>
+  </RuiBadge>
+
   <HistoryRefreshButton
     :processing="processing"
     @refresh="emit('refresh', $event)"
@@ -50,7 +95,7 @@ const { t } = useI18n({ useScope: 'global' });
       >
         <RuiButton
           variant="text"
-          icon
+          :icon="true"
           size="sm"
           class="!p-2"
           v-bind="attrs"
