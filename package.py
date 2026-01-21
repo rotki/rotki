@@ -698,15 +698,45 @@ class BackendBuilder:
             logger.error(f'could not install target: {target}')
             sys.exit(1)
 
+    @staticmethod
+    def __get_windows_cargo_env() -> dict[str, str]:
+        """
+        Returns an environment with Strawberry Perl prioritized in PATH.
+
+        On Windows, Git for Windows includes its own Perl in mingw64/bin which
+        can conflict with Strawberry Perl during Rust builds that require native
+        compilation (e.g., OpenSSL bindings). This ensures Strawberry Perl is
+        found first.
+        """
+        env = os.environ.copy()
+        strawberry_paths = [
+            r'C:\Strawberry\perl\bin',
+            r'C:\Strawberry\perl\site\bin',
+            r'C:\Strawberry\c\bin',
+        ]
+        existing_strawberry = [p for p in strawberry_paths if Path(p).exists()]
+        if existing_strawberry:
+            current_path = env.get('PATH', '')
+            # Remove existing Strawberry paths and prepend them
+            path_parts = [p for p in current_path.split(';') if p not in existing_strawberry]
+            env['PATH'] = ';'.join(existing_strawberry + path_parts)
+            logger.info('Reordered PATH to prioritize Strawberry Perl for cargo build')
+        return env
+
     @log_group('cargo build')
     def __create_rust_binary(self) -> None:
         colibri_directory = self.__storage.colibri_directory
         target_arg = ''
 
+        build_env = None
+        if self.__win is not None:
+            build_env = self.__get_windows_cargo_env()
+
         build_ret_code = subprocess.call(
             f'cargo build --target-dir {colibri_directory} '
             f'--manifest-path ./colibri/Cargo.toml --release {target_arg}',
             shell=True,
+            env=build_env,
         )
         if build_ret_code != 0:
             logger.error('packaging failed')
