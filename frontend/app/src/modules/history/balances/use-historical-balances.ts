@@ -12,9 +12,10 @@ import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { useSupportedChains } from '@/composables/info/chains';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { useCollectionInfo } from '@/modules/assets/use-collection-info';
+import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
 import {
   type HistoricalBalanceSource,
-  type HistoricalBalancesResponse,
+  HistoricalBalancesResponse,
   OnchainHistoricalBalanceResponse,
   HistoricalBalanceSource as Source,
 } from '@/modules/history/balances/types';
@@ -31,6 +32,7 @@ interface UseHistoricalBalancesReturn {
   fetchBalances: () => Promise<void>;
   fieldErrors: Ref<ValidationErrors>;
   hasResults: ComputedRef<boolean>;
+  hasSavedFilters: ComputedRef<boolean>;
   loading: Ref<boolean>;
   noDataFound: ComputedRef<boolean>;
   queriedTimestamp: Ref<number | undefined>;
@@ -44,19 +46,31 @@ interface UseHistoricalBalancesReturn {
 }
 
 export function useHistoricalBalances(): UseHistoricalBalancesReturn {
-  const timestamp = ref<number>(dayjs().unix());
-  const selectedAsset = ref<string>();
-  const selectedLocation = ref<string>('');
-  const selectedLocationLabel = ref<string>('');
-  const selectedProtocol = ref<string>();
-  const source = ref<HistoricalBalanceSource>(Source.HISTORICAL_EVENTS);
-  const selectedAccount = ref<BlockchainAccount<AddressData>>();
+  const historicalBalancesStore = useHistoricalBalancesStore();
+  const { savedFilters } = storeToRefs(historicalBalancesStore);
+  const { setSavedFilters } = historicalBalancesStore;
+
+  // Local filter state - initialized from saved filters if available
+  const saved = get(savedFilters);
+  const timestamp = ref<number>(saved?.timestamp ?? dayjs().unix());
+  const selectedAsset = ref<string | undefined>(saved?.selectedAsset);
+  const selectedLocation = ref<string>(saved?.selectedLocation ?? '');
+  const selectedLocationLabel = ref<string>(saved?.selectedLocationLabel ?? '');
+  const selectedProtocol = ref<string | undefined>(saved?.selectedProtocol);
+  const source = ref<HistoricalBalanceSource>(saved?.source ?? Source.HISTORICAL_EVENTS);
+  const selectedAccount = ref<BlockchainAccount<AddressData> | undefined>(saved?.selectedAccount);
+
+  // Local results state
   const rawEntries = ref<Record<string, BigNumber>>({});
+  const queriedTimestamp = ref<number>();
+  const queryCompleted = ref<boolean>(false);
+
   const loading = ref<boolean>(false);
   const errorMessage = ref<string>();
   const fieldErrors = ref<ValidationErrors>({});
-  const queriedTimestamp = ref<number>();
-  const queryCompleted = ref<boolean>(false);
+
+  // Flag to indicate if we have saved filters and should auto-fetch on mount
+  const hasSavedFilters = computed<boolean>(() => !!get(savedFilters));
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -167,7 +181,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
       },
     );
 
-    return result;
+    return HistoricalBalancesResponse.parse(result);
   }
 
   async function queryOnchainBalance(ts: number, chain: string, addr: string, asset: string): Promise<OnchainHistoricalBalanceResponse> {
@@ -245,6 +259,17 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
       set(queriedTimestamp, ts);
       set(loading, false);
       set(queryCompleted, true);
+
+      // Save filters to store only after successful fetch
+      setSavedFilters({
+        selectedAccount: get(selectedAccount),
+        selectedAsset: get(selectedAsset),
+        selectedLocation: get(selectedLocation),
+        selectedLocationLabel: get(selectedLocationLabel),
+        selectedProtocol: get(selectedProtocol),
+        source: currentSource,
+        timestamp: ts,
+      });
     }
     catch (error: any) {
       if (error instanceof ApiValidationError) {
@@ -275,6 +300,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
     fetchBalances,
     fieldErrors,
     hasResults,
+    hasSavedFilters,
     loading,
     noDataFound,
     queriedTimestamp,

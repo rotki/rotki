@@ -1,12 +1,27 @@
+import type { HistoricalBalanceSource } from '@/modules/history/balances/types';
 import type { HistoricalBalanceProcessingData, NegativeBalanceDetectedData } from '@/modules/messaging/types/status-types';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
 import { useHistoricalBalancesApi } from '@/composables/api/balances/historical-balances-api';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
+export interface SavedHistoricalBalancesFilters {
+  timestamp: number;
+  selectedAsset?: string;
+  selectedLocation: string;
+  selectedLocationLabel: string;
+  selectedProtocol?: string;
+  source: HistoricalBalanceSource;
+  selectedAccount?: BlockchainAccount<AddressData>;
+}
+
 export const useHistoricalBalancesStore = defineStore('balances/historical', () => {
   const processingProgress = ref<HistoricalBalanceProcessingData>();
   const negativeBalances = ref<NegativeBalanceDetectedData[]>([]);
+
+  // Saved filter state - only persisted when user clicks "Get Historical Balances"
+  const savedFilters = ref<SavedHistoricalBalancesFilters>();
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -62,13 +77,19 @@ export const useHistoricalBalancesStore = defineStore('balances/historical', () 
     );
   }
 
+  function setSavedFilters(filters: SavedHistoricalBalancesFilters): void {
+    set(savedFilters, filters);
+  }
+
   return {
     addNegativeBalance,
     isProcessing,
     negativeBalances,
     processingPercentage,
     processingProgress,
+    savedFilters,
     setProcessingProgress,
+    setSavedFilters,
     triggerProcessing,
   };
 });

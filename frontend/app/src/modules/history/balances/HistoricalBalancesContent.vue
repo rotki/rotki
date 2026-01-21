@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { startPromise } from '@shared/utils';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import InternalLink from '@/components/helper/InternalLink.vue';
 import HistoryEventsAlert from '@/components/history/HistoryEventsAlert.vue';
@@ -18,6 +19,7 @@ const {
   fetchBalances,
   fieldErrors,
   hasResults,
+  hasSavedFilters,
   loading,
   noDataFound,
   queriedTimestamp,
@@ -80,6 +82,10 @@ const archiveNodeUnavailable = computed<boolean>(() =>
 
 onMounted(() => {
   refreshArchiveNodes();
+
+  // Auto-fetch if there are saved filters from a previous query
+  if (get(hasSavedFilters))
+    startPromise(fetchBalances());
 });
 </script>
 

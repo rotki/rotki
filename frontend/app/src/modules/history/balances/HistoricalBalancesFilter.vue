@@ -188,7 +188,7 @@ onBeforeMount(() => {
         <CounterpartyInput
           v-model="selectedProtocol"
           class="md:col-span-2"
-          :label="t('common.counterparty')"
+          :label="t('common.protocol')"
           :hint="t('historical_balances.protocol_hint')"
         />
       </template>
