@@ -19,7 +19,7 @@ withDefaults(
 </script>
 
 <template>
-  <div class="flex items-center">
+  <div class="flex items-center overflow-hidden">
     <RuiChip
       class="font-medium !rounded-md shrink-0"
       data-cy="tag"
@@ -32,11 +32,11 @@ withDefaults(
     >
       {{ tag.name }}
     </RuiChip>
-    <span
+    <div
       v-if="showDescription"
-      class="ml-4 text-sm leading-4 py-2 text-rui-text-secondary"
+      class="ml-4 text-sm leading-4 py-2 text-rui-text-secondary overflow-hidden whitespace-normal"
     >
       {{ tag.description }}
-    </span>
+    </div>
   </div>
 </template>
