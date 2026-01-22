@@ -98,7 +98,7 @@ const protocolCacheStats = computed(() => ({
     <!-- Content Area -->
     <div class="flex-1 min-w-0 flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
       <!-- Title Row -->
-      <div class="flex items-center gap-3">
+      <div class="flex items-center gap-3 flex-1">
         <span class="font-medium text-sm text-rui-text whitespace-nowrap">
           {{ title }}
         </span>
