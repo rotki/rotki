@@ -103,26 +103,22 @@ const protocolCacheStats = computed(() => ({
           {{ title }}
         </span>
 
-        <!-- Progress Bar -->
-        <div
-          v-if="isSyncing"
-          class="flex-1 max-w-[200px] md:max-w-xs"
-        >
-          <RuiProgress
-            :value="overallProgress"
-            color="primary"
-            size="sm"
-            rounded
-          />
-        </div>
+        <template v-if="isSyncing">
+          <!-- Progress Bar -->
+          <div class="flex-1 max-w-[200px] md:max-w-xs">
+            <RuiProgress
+              :value="overallProgress"
+              color="primary"
+              size="sm"
+              rounded
+            />
+          </div>
 
-        <!-- Progress Percentage -->
-        <span
-          v-if="isSyncing"
-          class="text-xs text-rui-text-secondary tabular-nums"
-        >
-          {{ t('percentage_display.value', { value: overallProgress }) }}
-        </span>
+          <!-- Progress Percentage -->
+          <span class="text-xs text-rui-text-secondary tabular-nums">
+            {{ t('percentage_display.value', { value: overallProgress }) }}
+          </span>
+        </template>
       </div>
 
       <!-- Stats -->

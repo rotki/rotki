@@ -249,7 +249,7 @@ watch(shouldExpand, () => {
           size="sm"
           icon
           color="primary"
-          class="absolute top-3 left-3 md:left-4 size-5 z-[6]"
+          class="absolute top-2.5 left-3 md:left-6 size-5 z-[6]"
           @click="expanded = !expanded"
         >
           <RuiIcon

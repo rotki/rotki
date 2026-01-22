@@ -293,6 +293,117 @@ describe('table-filter/TableFilter.vue', () => {
     expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([{ start: 'valid' }]);
   });
 
+  describe('strictMatching', () => {
+    const createStrictMatchingMatchers = (): StringSuggestionMatcher<FilterKeys, FilterKeyValues>[] => [
+      {
+        key: FilterKeys.START,
+        keyValue: FilterKeyValues.START,
+        description: 'filter by account',
+        string: true,
+        strictMatching: true,
+        suggestions: () => [
+          'vitalik.eth (0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045)',
+          '0x1234567890abcdef1234567890abcdef12345678',
+          'my-wallet (0xabcdef1234567890abcdef1234567890abcdef12)',
+        ],
+        validate: () => true,
+      },
+    ];
+
+    it('rejects filter when keyword does not match any suggestion with strictMatching', async () => {
+      const strictMatchers = createStrictMatchingMatchers();
+      wrapper = createWrapper({
+        props: {
+          matchers: strictMatchers,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Set matcher to `start` with non-matching value
+      await wrapper.find('input').setValue('start=nonexistent');
+      await vi.advanceTimersToNextTimerAsync();
+
+      const autocomplete = wrapper.findComponent({ name: 'RuiAutoComplete' });
+
+      // Press enter to apply the filter
+      await wrapper.find('input').trigger('keydown.enter');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // The search should be kept because no matching suggestions exist
+      expect((wrapper.find('input').element as HTMLInputElement).value).toBe('start=nonexistent');
+
+      // The shake class should be applied
+      expect(autocomplete.classes().some(c => c.includes('shake'))).toBe(true);
+
+      // Advance timers to clear the shake animation
+      await vi.advanceTimersByTimeAsync(500);
+
+      // The filter should not be applied - no emission with 'start' key
+      const emissions = wrapper.emitted('update:matches') ?? [];
+      const hasStartFilter = emissions.some(([matches]) => Object.prototype.hasOwnProperty.call(matches, 'start'));
+      expect(hasStartFilter).toBe(false);
+    });
+
+    it('applies filter when keyword matches a suggestion with strictMatching', async () => {
+      const strictMatchers = createStrictMatchingMatchers();
+      wrapper = createWrapper({
+        props: {
+          matchers: strictMatchers,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Set matcher to `start` and select a suggestion
+      await wrapper.find('input').setValue('start=vitalik');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Should show the matching suggestion
+      expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(1);
+
+      // Click the suggestion to apply
+      await wrapper.find('[data-cy=suggestions] > button:first-child').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // The search should be cleared
+      expect((wrapper.find('input').element as HTMLInputElement).value).toBe('');
+
+      // Filter should be emitted with the full suggestion value
+      expect(wrapper.emitted('update:matches')?.at(-1)).toEqual([
+        { start: 'vitalik.eth (0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045)' },
+      ]);
+    });
+
+    it('filters suggestions using getTextToken normalization with strictMatching', async () => {
+      const strictMatchers = createStrictMatchingMatchers();
+      wrapper = createWrapper({
+        props: {
+          matchers: strictMatchers,
+          matches: {},
+        },
+      });
+      await vi.advanceTimersToNextTimerAsync();
+
+      await wrapper.find('[data-id=activator]').trigger('click');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Search with different case and special characters stripped
+      await wrapper.find('input').setValue('start=D8DA6BF');
+      await vi.advanceTimersToNextTimerAsync();
+
+      // Should match the vitalik.eth entry (getTextToken normalizes both)
+      expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(1);
+      expect(wrapper.find('[data-cy=suggestions] > button:first-child').text()).toContain('vitalik.eth');
+    });
+  });
+
   describe('chip grouping', () => {
     it('groups chips when more than 3 items with same key', async () => {
       wrapper = createWrapper({

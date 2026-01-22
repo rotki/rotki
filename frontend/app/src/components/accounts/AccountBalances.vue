@@ -130,7 +130,7 @@ defineExpose({
         />
         <div
           v-else
-          class="flex items-center gap-2 flex-1 hidden lg:block"
+          class="flex-1 hidden lg:block"
         />
 
         <AccountBalancesFilterBar

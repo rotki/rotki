@@ -1,7 +1,55 @@
-import { describe, expect, it } from 'vitest';
-import { getAccountFilterParams } from './blockchain-account';
+import { describe, expect, it, vi } from 'vitest';
+import { getAccountFilterParams, useBlockchainAccountFilter } from './blockchain-account';
+
+vi.mock('@/composables/accounts/use-account-category-helper', async () => {
+  const { ref } = await import('vue');
+  return {
+    useAccountCategoryHelper: (): { chainIds: Ref<string[]>; isEvm: Ref<boolean> } => ({
+      chainIds: ref<string[]>([]),
+      isEvm: ref<boolean>(true),
+    }),
+  };
+});
+
+vi.mock('@/store/blockchain/accounts/addresses-names', async () => {
+  const { ref } = await import('vue');
+  return {
+    useAddressesNamesStore: (): { addressNameSelector: () => Ref<string> } => ({
+      addressNameSelector: (): Ref<string> => ref<string>(''),
+    }),
+  };
+});
+
+vi.mock('@/modules/balances/blockchain/use-blockchain-account-data', async () => {
+  const { ref } = await import('vue');
+  return {
+    useBlockchainAccountData: (): { getAccountsByCategory: () => Ref<never[]> } => ({
+      getAccountsByCategory: (): Ref<never[]> => ref<never[]>([]),
+    }),
+  };
+});
 
 describe('composables/filters/blockchain-account', () => {
+  describe('useBlockchainAccountFilter', () => {
+    it('account matcher has strictMatching enabled', () => {
+      const t = vi.fn().mockImplementation((key: string) => key);
+      const { matchers } = useBlockchainAccountFilter(t, 'evm');
+
+      const accountMatcher = get(matchers).find(m => m.key === 'account');
+      expect(accountMatcher).toBeDefined();
+      expect('string' in accountMatcher! && accountMatcher.strictMatching).toBe(true);
+    });
+
+    it('chain matcher does not have strictMatching enabled', () => {
+      const t = vi.fn().mockImplementation((key: string) => key);
+      const { matchers } = useBlockchainAccountFilter(t, 'evm');
+
+      const chainMatcher = get(matchers).find(m => m.key === 'chain');
+      expect(chainMatcher).toBeDefined();
+      expect('string' in chainMatcher! && chainMatcher.strictMatching).toBeFalsy();
+    });
+  });
+
   describe('getAccountFilterParams', () => {
     it('returns empty object for undefined value', () => {
       expect(getAccountFilterParams(undefined)).toEqual({});

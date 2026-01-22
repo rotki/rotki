@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { BaseSuggestion, MatchedKeywordWithBehaviour, SearchMatcher, Suggestion } from '@/types/filtering';
+import { getTextToken } from '@rotki/common';
 import FilterEntry from '@/components/table-filter/FilterEntry.vue';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import { compareTextByKeyword } from '@/utils/assets';
@@ -76,7 +77,15 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
   let asset = false;
   if ('string' in selectedMatcher) {
     exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
-    suggestedItems = selectedMatcher.suggestions().map(item => ({
+    let suggestions = selectedMatcher.suggestions();
+
+    // When strictMatching is enabled, filter suggestions to only include those containing the keyword
+    if (selectedMatcher.strictMatching && searchString) {
+      const tokenizedSearch = getTextToken(searchString);
+      suggestions = suggestions.filter(item => getTextToken(item).includes(tokenizedSearch));
+    }
+
+    suggestedItems = suggestions.map(item => ({
       exclude,
       key: suggestedFilter,
       value: item,

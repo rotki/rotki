@@ -133,4 +133,107 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     expect(wrapper.find('i18n-t-stub').attributes('keypath')).toBe('table_filter.start_typing');
   });
+
+  describe('strictMatching', () => {
+    const strictMatchingMatchers: StringSuggestionMatcher<any>[] = [
+      {
+        key: 'account',
+        description: 'filter by account',
+        string: true,
+        strictMatching: true,
+        suggestions: () => [
+          'vitalik.eth (0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045)',
+          '0x1234567890abcdef1234567890abcdef12345678',
+          'my-wallet (0xabcdef1234567890abcdef1234567890abcdef12)',
+        ],
+        validate: () => true,
+      },
+    ];
+
+    it('filters suggestions by substring match when strictMatching is enabled', async () => {
+      const props = {
+        matches: {},
+        matchers: strictMatchingMatchers,
+        selectedSuggestion: 0,
+        keyword: '',
+      };
+
+      const wrapper = createWrapper({ props });
+
+      await wrapper.setProps({
+        selectedMatcher: strictMatchingMatchers[0],
+        keyword: 'account=vitalik',
+      });
+
+      await nextTick();
+
+      // Should only show the vitalik.eth suggestion
+      expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(1);
+      expect(wrapper.find('[data-cy=suggestions] > button:first-child').text()).toContain('vitalik.eth');
+    });
+
+    it('shows no suggestions when keyword does not match any item with strictMatching', async () => {
+      const props = {
+        matches: {},
+        matchers: strictMatchingMatchers,
+        selectedSuggestion: 0,
+        keyword: '',
+      };
+
+      const wrapper = createWrapper({ props });
+
+      await wrapper.setProps({
+        selectedMatcher: strictMatchingMatchers[0],
+        keyword: 'account=nonexistent',
+      });
+
+      await nextTick();
+
+      // Should show no suggestions
+      expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(0);
+    });
+
+    it('filters by address when typing partial address with strictMatching', async () => {
+      const props = {
+        matches: {},
+        matchers: strictMatchingMatchers,
+        selectedSuggestion: 0,
+        keyword: '',
+      };
+
+      const wrapper = createWrapper({ props });
+
+      await wrapper.setProps({
+        selectedMatcher: strictMatchingMatchers[0],
+        keyword: 'account=d8da6bf',
+      });
+
+      await nextTick();
+
+      // Should match the vitalik.eth entry by address (case-insensitive via getTextToken)
+      expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(1);
+      expect(wrapper.find('[data-cy=suggestions] > button:first-child').text()).toContain('vitalik.eth');
+    });
+
+    it('shows all suggestions when keyword is empty with strictMatching', async () => {
+      const props = {
+        matches: {},
+        matchers: strictMatchingMatchers,
+        selectedSuggestion: 0,
+        keyword: '',
+      };
+
+      const wrapper = createWrapper({ props });
+
+      await wrapper.setProps({
+        selectedMatcher: strictMatchingMatchers[0],
+        keyword: 'account=',
+      });
+
+      await nextTick();
+
+      // Should show all suggestions when no keyword value
+      expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(3);
+    });
+  });
 });

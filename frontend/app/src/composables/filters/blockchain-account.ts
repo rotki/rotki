@@ -49,6 +49,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
         description: t('account_balances.filter.account'),
         key: BlockchainAccountFilterKeys.ACCOUNT,
         keyValue: BlockchainAccountFilterValueKeys.ACCOUNT,
+        strictMatching: true,
         string: true,
         suggestions: (): string[] => {
           const suggestions: string[] = [];

@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import type { AssetInfo } from '@rotki/common';
 import type {
   MatchedKeywordWithBehaviour,
   SavedFilterLocation,
   SearchMatcher,
   Suggestion,
 } from '@/types/filtering';
+import { type AssetInfo, getTextToken } from '@rotki/common';
 import { useChipGrouping } from '@/components/table-filter/composables/use-chip-grouping';
 import { useFilterMatchers } from '@/components/table-filter/composables/use-filter-matchers';
 import { useFilterSelection } from '@/components/table-filter/composables/use-filter-selection';
@@ -160,8 +160,18 @@ async function applySuggestion(): Promise<void> {
 
   let asset = false;
   let suggestedItems: (AssetInfo | string)[] = [];
+  let strictMatching = false;
   if ('string' in matcher) {
     suggestedItems = matcher.suggestions();
+    strictMatching = !!matcher.strictMatching;
+
+    // When strictMatching is enabled, filter suggestions to only include those containing the keyword
+    if (strictMatching && keyword) {
+      const tokenizedKeyword = getTextToken(keyword);
+      suggestedItems = suggestedItems.filter(item =>
+        typeof item === 'string' && getTextToken(item).includes(tokenizedKeyword),
+      );
+    }
   }
   else if ('asset' in matcher) {
     suggestedItems = await matcher.suggestions(keyword);
@@ -172,8 +182,9 @@ async function applySuggestion(): Promise<void> {
   }
 
   // If there are no suggestions and the matcher has a validate function
+  // For strictMatching, validation fails when no matching suggestions exist
   if (suggestedItems.length === 0 && 'validate' in matcher) {
-    if (matcher.validate(keyword)) {
+    if (!strictMatching && matcher.validate(keyword)) {
       await nextTick(() =>
         applyFilter({
           asset,

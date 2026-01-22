@@ -22,7 +22,9 @@ interface BaseMatcher<K, KV = void> {
   readonly description: string;
   readonly hint?: string;
   readonly multiple?: boolean;
-  // Suggestions to show in the table filter. Default is 5. Set to -1 to show all.
+  /**
+   * Suggestions to show in the table filter. Default is 5. Set to -1 to show all.
+   */
   readonly suggestionsToShow?: number;
 }
 
@@ -34,6 +36,11 @@ export interface StringSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV
   readonly deserializer?: (value: string) => string;
   readonly allowExclusion?: boolean;
   readonly behaviourRequired?: boolean;
+  /**
+   * When true, suggestions are filtered using substring matching instead of Levenshtein ordering,
+   * and validation only passes when a matching suggestion exists.
+   */
+  readonly strictMatching?: boolean;
 }
 
 interface AssetSuggestionMatcher<K, KV = void> extends BaseMatcher<K, KV> {
