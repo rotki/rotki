@@ -156,7 +156,7 @@ def read_aerodrome_pools_and_gauges_from_cache() -> tuple[set[ChecksumEvmAddress
 
 def query_velodrome_data_from_chain(
         inquirer: 'OptimismInquirer | BaseInquirer',
-        existing_pools: list[str],
+        existing_pools: set[str],
         msg_aggregator: 'MessagesAggregator',
         reload_all: bool,
 ) -> list[VelodromePoolData]:
@@ -280,7 +280,7 @@ def query_velodrome_like_data(
 
     return pools_data if len(pools_data := query_velodrome_data_from_chain(
         inquirer=inquirer,
-        existing_pools=existing_pools,
+        existing_pools=set(existing_pools),
         msg_aggregator=msg_aggregator,
         reload_all=reload_all,
     )) > 0 else None
