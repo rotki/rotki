@@ -2508,15 +2508,16 @@ class RestAPI:
             value_filter=value_filter,
         )
 
-    def get_user_added_assets(self, path: Path | None) -> Response:
-        response = self.assets_service.get_user_added_assets(path)
-        if isinstance(response, Response):
-            return response
-        return make_response_from_dict(response)
+    @async_api_call()
+    def export_user_assets(self, path: Path | None) -> dict[str, Any]:
+        return self.assets_service.export_user_assets(path)
 
     @async_api_call()
     def import_user_assets(self, path: Path) -> dict[str, Any]:
         return self.assets_service.import_user_assets(path)
+
+    def download_user_assets(self, file_path: str) -> Response:
+        return self.assets_service.download_user_assets(file_path)
 
     def get_user_db_snapshot(self, timestamp: Timestamp) -> Response:
         response_data = self.user_data_service.get_user_db_snapshot(timestamp)

@@ -319,7 +319,7 @@ class AssetsService:
         custom_asset_types = db_custom_assets.get_custom_asset_types()
         return {'result': custom_asset_types, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def get_user_added_assets(self, path: Path | None) -> dict[str, Any] | Response:
+    def export_user_assets(self, path: Path | None) -> dict[str, Any]:
         try:
             zip_path = export_assets_from_file(
                 dirpath=path,
@@ -333,19 +333,27 @@ class AssetsService:
             }
 
         if path is None:
-            register_post_download_cleanup(zip_path)
-            return send_file(
-                path_or_file=zip_path,
-                mimetype='application/zip',
-                as_attachment=True,
-                download_name='assets.zip',
-            )
+            # For web case, return the file path for later download
+            return {
+                'result': {'file_path': str(zip_path)},
+                'message': '',
+                'status_code': HTTPStatus.OK,
+            }
 
         return {
-            'result': {'file': str(zip_path)},
+            'result': True,
             'message': '',
             'status_code': HTTPStatus.OK,
         }
+
+    def download_user_assets(self, file_path: str) -> Response:
+        register_post_download_cleanup(path := Path(file_path))
+        return send_file(
+            path_or_file=file_path,
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name=path.name,
+        )
 
     def import_user_assets(self, path: Path) -> dict[str, Any]:
         try:

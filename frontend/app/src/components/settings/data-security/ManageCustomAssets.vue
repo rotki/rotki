@@ -1,22 +1,26 @@
 <script setup lang="ts">
-import { assert } from '@rotki/common';
+import { assert, Severity } from '@rotki/common';
 import FileUpload from '@/components/import/FileUpload.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useAssets } from '@/composables/assets';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
 
 const zip = ref<File>();
-const importError = ref('');
-const exportError = ref('');
-const downloading = ref(false);
-const downloaded = ref(false);
-const uploading = ref(false);
-const uploaded = ref(false);
+const importError = ref<string>('');
+const uploading = ref<boolean>(false);
+const uploaded = ref<boolean>(false);
 
+const { t } = useI18n({ useScope: 'global' });
+const { notify } = useNotificationsStore();
+const { useIsTaskRunning } = useTaskStore();
 const { exportCustomAssets, importCustomAssets } = useAssets();
-const importDisabled = computed(() => !get(zip));
-const { start, stop } = useTimeoutFn(() => set(downloaded, false), 4000);
 
-async function importZip() {
+const importDisabled = computed<boolean>(() => !get(zip));
+const exporting = useIsTaskRunning(TaskType.EXPORT_ASSET);
+
+async function importZip(): Promise<void> {
   const file = get(zip);
   assert(file);
   set(uploading, true);
@@ -26,27 +30,38 @@ async function importZip() {
   else set(importError, result.message);
 
   set(uploading, false);
-  set(zip, null);
+  set(zip, undefined);
 }
 
-async function exportZip() {
-  stop();
-  if (get(downloading))
+async function exportZip(): Promise<void> {
+  if (get(exporting))
     return;
 
-  set(downloading, true);
   const result = await exportCustomAssets();
-  if (result.success) {
-    set(downloaded, true);
-    start();
+
+  let message: string;
+  let severity: Severity;
+
+  if ('success' in result && !result.success) {
+    message = t('manage_user_assets.export.error', { message: result.message });
+    severity = Severity.ERROR;
+  }
+  else if ('directory' in result && result.directory) {
+    message = t('manage_user_assets.export.success', { directory: result.directory });
+    severity = Severity.INFO;
   }
   else {
-    set(exportError, result.message);
+    message = t('manage_user_assets.export.success_download');
+    severity = Severity.INFO;
   }
-  set(downloading, false);
-}
 
-const { t } = useI18n({ useScope: 'global' });
+  notify({
+    display: true,
+    message,
+    severity,
+    title: t('manage_user_assets.export.title'),
+  });
+}
 </script>
 
 <template>
@@ -67,18 +82,11 @@ const { t } = useI18n({ useScope: 'global' });
     <div class="flex flex-col gap-4 items-end">
       <RuiButton
         color="primary"
-        :loading="downloading"
+        :loading="exporting"
         @click="exportZip()"
       >
         {{ t('manage_user_assets.export.button') }}
       </RuiButton>
-      <RuiAlert
-        v-if="downloaded"
-        type="success"
-        class="w-full"
-      >
-        {{ t('manage_user_assets.export.success') }}
-      </RuiAlert>
     </div>
   </SettingsItem>
   <SettingsItem>

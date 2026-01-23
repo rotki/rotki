@@ -11503,7 +11503,10 @@ Export assets added by the user
 
 .. http:put:: /api/(version)/assets/user
 
-   Calling this endpoint with PUT and action `download` will create a zip file with the assets that are not included by default with vanilla rotki. If no destination folder is provided the generated file is returned with headers `application/zip`.
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Calling this endpoint with PUT and action `download` will create a zip file with the assets that are not included by default with vanilla rotki. If a destination folder is provided, the file is saved there and the result is ``true``. If no destination folder is provided, the result contains a ``file_path`` that can be used to download the file via the ``/assets/user/download`` endpoint.
 
    **Example Request**:
 
@@ -11513,10 +11516,22 @@ Export assets added by the user
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"action": "download", "destination": "/home/user/Downloads"}
+      {"action": "download", "destination": "/home/user/Downloads", "async_query": true}
 
 
-   **Example Response**:
+   **Example Response (with destination)**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   **Example Response (without destination)**:
 
    .. sourcecode:: http
 
@@ -11525,17 +11540,51 @@ Export assets added by the user
 
       {
           "result": {
-                "file": "/home/user/Downloads/assets.zip"
+                "file_path": "/tmp/tmpxxxxxx/assets.zip"
           },
           "message": ""
       }
 
    :resjsonarr string action: Action performed on the endpoint
-   :resjsonarr string destination: Folder where the generated files will be saved
+   :resjsonarr string destination: Optional folder where the generated files will be saved
 
    :statuscode 200: Response file is correctly generated
    :statuscode 401: No user is logged in.
    :statuscode 507: Failed to create the file.
+
+Downloading Exported User Assets
+================================
+
+.. http:get:: /api/(version)/assets/user/download
+
+   Doing a GET on this endpoint will download the zip file exported in a previous call to the export endpoint and specified here with file_path.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/assets/user/download HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "file_path": "/tmp/tmpxxxxxx/assets.zip"
+      }
+
+   :reqjson string file_path: The zip file to be downloaded.
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/zip
+
+   :statuscode 200: Zip file successfully downloaded
+   :statuscode 400: Provided JSON is in some way malformed
+   :statuscode 401: No user is logged in.
+   :statuscode 500: Internal rotki error
 
 
 Import assets added by the user

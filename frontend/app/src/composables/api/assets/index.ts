@@ -1,14 +1,10 @@
 import type { ActionStatus } from '@/types/action';
 import type { ConflictResolution } from '@/types/asset';
-import { assert } from '@rotki/common';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_FILE_OPERATION_STATUS, VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/types/task';
-import { downloadFileByBlob } from '@/utils/download';
-
-interface ExportFileResponse {
-  file: string;
-}
+import { downloadFileByUrl } from '@/utils/download';
+import { getFilename } from '@/utils/file';
 
 interface UseAssetApiReturn {
   checkForAssetUpdate: () => Promise<PendingTask>;
@@ -16,7 +12,8 @@ interface UseAssetApiReturn {
   mergeAssets: (sourceIdentifier: string, targetAsset: string) => Promise<true>;
   restoreAssetsDatabase: (reset: 'hard' | 'soft', ignoreWarnings: boolean) => Promise<PendingTask>;
   importCustom: (file: File | string) => Promise<PendingTask>;
-  exportCustom: (directory?: string) => Promise<ActionStatus>;
+  exportCustom: (directory?: string) => Promise<PendingTask>;
+  downloadCustomAssets: (filePath: string) => Promise<ActionStatus>;
   fetchNfts: (ignoreCache: boolean) => Promise<PendingTask>;
 }
 
@@ -80,25 +77,25 @@ export function useAssetsApi(): UseAssetApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
-  const exportCustom = async (directory?: string): Promise<ActionStatus> => {
+  const exportCustom = async (directory?: string): Promise<PendingTask> => {
+    const response = await api.put<PendingTask>(
+      '/assets/user',
+      {
+        action: 'download',
+        asyncQuery: true,
+        destination: directory,
+      },
+      {
+        validStatuses: VALID_FILE_OPERATION_STATUS,
+      },
+    );
+    return PendingTaskSchema.parse(response);
+  };
+
+  const downloadCustomAssets = async (filePath: string): Promise<ActionStatus> => {
     try {
-      if (!directory) {
-        const blob = await api.fetchBlob('/assets/user', {
-          method: 'PUT',
-          body: { action: 'download' },
-          validStatuses: VALID_FILE_OPERATION_STATUS,
-        });
-        downloadFileByBlob(blob, 'assets.zip');
-        return { success: true };
-      }
-      const response = await api.put<ExportFileResponse>(
-        '/assets/user',
-        { action: 'download', destination: directory },
-        {
-          validStatuses: VALID_FILE_OPERATION_STATUS,
-        },
-      );
-      assert(response.file);
+      const fullUrl = api.buildUrl('assets/user/download', { filePath });
+      downloadFileByUrl(fullUrl, getFilename(filePath));
       return { success: true };
     }
     catch (error: any) {
@@ -122,6 +119,7 @@ export function useAssetsApi(): UseAssetApiReturn {
 
   return {
     checkForAssetUpdate,
+    downloadCustomAssets,
     exportCustom,
     fetchNfts,
     importCustom,

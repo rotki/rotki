@@ -305,6 +305,11 @@
           "title": "Retrieving token details for {address} ({evmChain})"
         }
       },
+      "export": {
+        "task": {
+          "title": "Exporting user assets"
+        }
+      },
       "import": {
         "task": {
           "title": "Importing user assets"
@@ -3770,8 +3775,10 @@
   "manage_user_assets": {
     "export": {
       "button": "Export",
+      "error": "Failed to export assets: {message}",
       "subtitle": "Create a zip archive of your assets",
-      "success": "The archive was created successfully",
+      "success": "The archive was created successfully in {directory}",
+      "success_download": "The archive was created and downloaded successfully",
       "title": "Export"
     },
     "import": {

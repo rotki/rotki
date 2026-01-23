@@ -9,11 +9,11 @@ import { useTaskStore } from '@/store/tasks';
 
 vi.mock('@/composables/api/assets/index', () => ({
   useAssetsApi: vi.fn().mockReturnValue({
-    checkForAssetUpdate: vi.fn().mockResolvedValue(1),
-    performUpdate: vi.fn().mockResolvedValue(1),
+    checkForAssetUpdate: vi.fn().mockResolvedValue({ taskId: 1 }),
+    performUpdate: vi.fn().mockResolvedValue({ taskId: 1 }),
     mergeAssets: vi.fn().mockResolvedValue(true),
-    importCustom: vi.fn().mockResolvedValue(1),
-    exportCustom: vi.fn().mockResolvedValue({}),
+    importCustom: vi.fn().mockResolvedValue({ taskId: 1 }),
+    exportCustom: vi.fn().mockResolvedValue({ taskId: 1 }),
   }),
 }));
 
@@ -251,28 +251,34 @@ describe('store::assets/index', () => {
   });
 
   describe('exportCustomAsset', () => {
-    const filepath = 'filepath.csv';
+    const directory = 'filepath.csv';
     beforeEach(() => {
-      vi.mocked(useInterop().openDirectory).mockResolvedValue(filepath);
+      vi.mocked(useInterop().openDirectory).mockResolvedValue(directory);
     });
 
     it('success', async () => {
-      vi.mocked(api.exportCustom).mockResolvedValue({ success: true });
+      vi.mocked(api.exportCustom).mockResolvedValue({ taskId: 1 });
+      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
+        result: true,
+        meta: { title: '' },
+      });
+
       const result = await store.exportCustomAssets();
 
-      expect(api.exportCustom).toHaveBeenCalledWith(filepath);
+      expect(api.exportCustom).toHaveBeenCalledWith(directory);
 
       expect(result).toEqual({
-        success: true,
+        directory,
       });
     });
 
     it('failed', async () => {
-      vi.mocked(api.exportCustom).mockRejectedValue(new Error('failed'));
+      vi.mocked(api.exportCustom).mockResolvedValue({ taskId: 1 });
+      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
 
       const result = await store.exportCustomAssets();
 
-      expect(api.exportCustom).toHaveBeenCalledWith(filepath);
+      expect(api.exportCustom).toHaveBeenCalledWith(directory);
 
       expect(result).toEqual({
         success: false,

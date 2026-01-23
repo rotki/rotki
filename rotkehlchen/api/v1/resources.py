@@ -188,6 +188,7 @@ from rotkehlchen.api.v1.schemas import (
     UpdateCalendarSchema,
     UserActionLoginSchema,
     UserActionSchema,
+    UserAssetsExportDownloadSchema,
     UserNotesGetSchema,
     UserNotesPatchSchema,
     UserNotesPutSchema,
@@ -2766,7 +2767,7 @@ class UserAssetsResource(BaseMethodView):
             file: Path | None,
             destination: Path | None,
             action: str,
-    ) -> Response:
+    ) -> Response | dict[str, Any]:
         if action == 'upload':
             if file is None:
                 return api_response(wrap_in_fail_result(
@@ -2774,7 +2775,7 @@ class UserAssetsResource(BaseMethodView):
                     status_code=HTTPStatus.BAD_REQUEST,
                 ))
             return self.rest_api.import_user_assets(async_query=async_query, path=file)
-        return self.rest_api.get_user_added_assets(path=destination)
+        return self.rest_api.export_user_assets(async_query=async_query, path=destination)
 
     @require_loggedin_user()
     @use_kwargs(import_from_form, location='form_and_file')
@@ -2788,6 +2789,15 @@ class UserAssetsResource(BaseMethodView):
                 async_query=async_query,
                 path=Path(temp_file.name),
             )
+
+
+class UserAssetsExportDownloadResource(BaseMethodView):
+    get_schema = UserAssetsExportDownloadSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, file_path: str) -> Response:
+        return self.rest_api.download_user_assets(file_path=file_path)
 
 
 class DBSnapshotsResource(BaseMethodView):

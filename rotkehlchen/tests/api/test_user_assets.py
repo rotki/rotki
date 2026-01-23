@@ -1006,41 +1006,47 @@ def test_exporting_user_assets_list(
                 ), json={'action': 'download'},
             )
 
+        result = assert_proper_sync_response_with_result(response)
         if with_custom_path:
-            result = assert_proper_sync_response_with_result(response)
-            if with_custom_path:
-                assert path in result['file']
-            zip_file = ZipFile(result['file'])
-            data = json.loads(zip_file.read('assets.json'))
-            assert int(data['version']) == GLOBAL_DB_VERSION
-            assert len(data['assets']) == 2
-            assert {
-                'identifier': identifier,
-                'name': 'yabirtoken',
-                'evm_chain': 'ethereum',
-                'asset_type': 'evm token',
-                'decimals': 18,
-                'symbol': 'YAB',
-                'started': None,
-                'forked': None,
-                'swapped_for': None,
-                'cryptocompare': 'YAB',
-                'coingecko': 'YAB',
-                'protocol': None,
-                'token_kind': 'erc20',
-                'underlying_tokens': None,
-                'address': eth_address,
-            } in data['assets']
-            assert {
-                'identifier': 'my_custom_id',
-                'asset_type': 'custom asset',
-                'name': 'my house',
-                'custom_asset_type': 'property',
-                'notes': None,
-            } in data['assets']
+            # When destination is provided, file is written there and result is True
+            assert result is True
+            # Find the zip file in the destination directory
+            zip_files = list(Path(path).glob('*.zip'))
+            assert len(zip_files) == 1
+            zip_path = zip_files[0]
         else:
-            assert response.status_code == HTTPStatus.OK
-            assert response.headers['Content-Type'] == 'application/zip'
+            # When no destination, result contains file_path for download
+            assert 'file_path' in result
+            zip_path = Path(result['file_path'])
+
+        zip_file = ZipFile(zip_path)
+        data = json.loads(zip_file.read('assets.json'))
+        assert int(data['version']) == GLOBAL_DB_VERSION
+        assert len(data['assets']) == 2
+        assert {
+            'identifier': identifier,
+            'name': 'yabirtoken',
+            'evm_chain': 'ethereum',
+            'asset_type': 'evm token',
+            'decimals': 18,
+            'symbol': 'YAB',
+            'started': None,
+            'forked': None,
+            'swapped_for': None,
+            'cryptocompare': 'YAB',
+            'coingecko': 'YAB',
+            'protocol': None,
+            'token_kind': 'erc20',
+            'underlying_tokens': None,
+            'address': eth_address,
+        } in data['assets']
+        assert {
+            'identifier': 'my_custom_id',
+            'asset_type': 'custom asset',
+            'name': 'my house',
+            'custom_asset_type': 'property',
+            'notes': None,
+        } in data['assets']
 
         # try to download again to see if the database is properly detached
         response = requests.put(
@@ -1050,6 +1056,7 @@ def test_exporting_user_assets_list(
             ), json={'action': 'download', 'destination': path},
         )
         result = assert_proper_sync_response_with_result(response)
+        assert result is True
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

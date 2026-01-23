@@ -17,12 +17,16 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
 
+interface ExportCustomAssetsResult {
+  directory?: string;
+}
+
 interface UseAssetsReturn {
   checkForUpdate: () => Promise<AssetUpdateCheckResult>;
   applyUpdates: (payload: AssetUpdatePayload) => Promise<ApplyUpdateResult>;
   mergeAssets: (payload: AssetMergePayload) => Promise<ActionStatus<string | ValidationErrors>>;
   importCustomAssets: (file: File) => Promise<ActionStatus>;
-  exportCustomAssets: () => Promise<ActionStatus>;
+  exportCustomAssets: () => Promise<ActionStatus | ExportCustomAssetsResult>;
   restoreAssetsDatabase: (resetType: 'hard' | 'soft') => Promise<ActionStatus>;
 }
 
@@ -32,6 +36,7 @@ export function useAssets(): UseAssetsReturn {
   const { appSession, getPath, openDirectory } = useInterop();
   const {
     checkForAssetUpdate,
+    downloadCustomAssets,
     exportCustom,
     importCustom,
     mergeAssets: mergeAssetsCaller,
@@ -153,22 +158,34 @@ export function useAssets(): UseAssetsReturn {
     }
   };
 
-  const exportCustomAssets = async (): Promise<ActionStatus> => {
+  const exportCustomAssets = async (): Promise<ActionStatus | ExportCustomAssetsResult> => {
     try {
-      let file: string | undefined;
+      let directory: string | undefined;
       if (appSession) {
-        const directory = await openDirectory(t('common.select_directory').toString());
-        if (!directory) {
+        const selectedDirectory = await openDirectory(t('common.select_directory').toString());
+        if (!selectedDirectory) {
           return {
             message: t('assets.backup.missing_directory'),
             success: false,
           };
         }
-        file = directory;
+        directory = selectedDirectory;
       }
-      return await exportCustom(file);
+      const { taskId } = await exportCustom(directory);
+      const { result } = await awaitTask<boolean | { filePath: string }, TaskMeta>(taskId, TaskType.EXPORT_ASSET, {
+        title: t('actions.assets.export.task.title'),
+      });
+
+      // For web case, download the file using the returned file path
+      if (result !== true && typeof result === 'object' && 'filePath' in result)
+        await downloadCustomAssets(result.filePath);
+
+      return { directory };
     }
     catch (error: any) {
+      if (!isTaskCancelled(error))
+        logger.error(error);
+
       return {
         message: error.message,
         success: false,

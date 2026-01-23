@@ -3979,6 +3979,11 @@ class ExportHistoryDownloadSchema(Schema):
     file_path = NonEmptyStringField(required=True)
 
 
+class UserAssetsExportDownloadSchema(Schema):
+    """Schema for downloading exported user assets."""
+    file_path = NonEmptyStringField(required=True)
+
+
 class AccountingRuleIdSchema(Schema):
     event_type = SerializableEnumField(enum_class=HistoryEventType, required=True)
     event_subtype = SerializableEnumField(enum_class=HistoryEventSubType, required=True)

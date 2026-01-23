@@ -320,17 +320,15 @@ describe('composables/api/assets/index', () => {
   });
 
   describe('exportCustom', () => {
-    it('exports as blob download when no directory provided', async () => {
+    it('exports custom assets as async task without directory', async () => {
       let capturedBody: Record<string, unknown> | null = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/user`, async ({ request }) => {
           capturedBody = await request.json() as Record<string, unknown>;
-          return new HttpResponse('test file content', {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/octet-stream',
-            },
+          return HttpResponse.json({
+            result: { task_id: 301 },
+            message: '',
           });
         }),
       );
@@ -340,18 +338,19 @@ describe('composables/api/assets/index', () => {
 
       expect(capturedBody).toEqual({
         action: 'download',
+        async_query: true,
       });
-      expect(result.success).toBe(true);
+      expect(result.taskId).toBe(301);
     });
 
-    it('exports to directory path', async () => {
+    it('exports custom assets as async task with directory', async () => {
       let capturedBody: Record<string, unknown> | null = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/user`, async ({ request }) => {
           capturedBody = await request.json() as Record<string, unknown>;
           return HttpResponse.json({
-            result: { file: '/export/assets.zip' },
+            result: { task_id: 302 },
             message: '',
           });
         }),
@@ -362,12 +361,13 @@ describe('composables/api/assets/index', () => {
 
       expect(capturedBody).toEqual({
         action: 'download',
+        async_query: true,
         destination: '/export/dir',
       });
-      expect(result.success).toBe(true);
+      expect(result.taskId).toBe(302);
     });
 
-    it('returns error status on directory export failure', async () => {
+    it('throws error on export failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/assets/user`, () =>
           HttpResponse.json({
@@ -377,28 +377,10 @@ describe('composables/api/assets/index', () => {
       );
 
       const { exportCustom } = useAssetsApi();
-      const result = await exportCustom('/export/dir');
 
-      expect(result.success).toBe(false);
-      if (!result.success)
-        expect(result.message).toBe('Export failed');
-    });
-
-    it('returns error status on blob export failure', async () => {
-      server.use(
-        http.put(`${backendUrl}/api/1/assets/user`, () =>
-          HttpResponse.json({
-            result: null,
-            message: 'Blob export failed',
-          })),
-      );
-
-      const { exportCustom } = useAssetsApi();
-      const result = await exportCustom();
-
-      expect(result.success).toBe(false);
-      if (!result.success)
-        expect(result.message).toBe('Blob export failed');
+      await expect(exportCustom('/export/dir'))
+        .rejects
+        .toThrow('Export failed');
     });
   });
 

@@ -267,7 +267,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const downloadHistoryEventsCSV = async (filePath: string): Promise<ActionStatus> => {
     try {
-      const fullUrl = api.buildUrl('/history/events/export/download', { filePath });
+      const fullUrl = api.buildUrl('history/events/export/download', { filePath });
       downloadFileByUrl(fullUrl, getFilename(filePath));
       return { success: true };
     }

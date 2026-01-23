@@ -296,16 +296,16 @@ export function useHistoryEventFilter(
     .optional();
 
   const RouteFilterSchema = z.object({
+    [HistoryEventFilterValueKeys.START]: OptionalString,
+    [HistoryEventFilterValueKeys.END]: OptionalString,
     [HistoryEventFilterValueKeys.ADDRESSES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.ASSET]: OptionalString,
-    [HistoryEventFilterValueKeys.END]: OptionalString,
     [HistoryEventFilterValueKeys.ENTRY_TYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.EVENT_SUBTYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.EVENT_TYPE]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.LOCATION]: OptionalString,
     [HistoryEventFilterValueKeys.NOTES]: OptionalString,
     [HistoryEventFilterValueKeys.PROTOCOL]: OptionalMultipleString,
-    [HistoryEventFilterValueKeys.START]: OptionalString,
     [HistoryEventFilterValueKeys.TX_HASHES]: OptionalMultipleString,
     [HistoryEventFilterValueKeys.VALIDATOR_INDICES]: OptionalMultipleString,
   });
