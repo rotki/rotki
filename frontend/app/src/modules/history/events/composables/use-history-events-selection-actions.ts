@@ -155,6 +155,9 @@ export function useHistoryEventsSelectionActions(
       case 'toggle-all':
         selectionMode.actions.toggleAll();
         break;
+      case 'toggle-select-all-matching':
+        selectionMode.actions.toggleSelectAllMatching();
+        break;
     }
   }
 

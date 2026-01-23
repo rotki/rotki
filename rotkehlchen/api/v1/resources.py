@@ -1316,9 +1316,13 @@ class HistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, identifiers: list[int], force_delete: bool) -> Response:
+    def delete(
+            self,
+            filter_query: 'HistoryBaseEntryFilterQuery',
+            force_delete: bool,
+    ) -> Response:
         return self.rest_api.delete_history_events(
-            identifiers=identifiers,
+            filter_query=filter_query,
             force_delete=force_delete,
         )
 

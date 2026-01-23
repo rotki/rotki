@@ -103,6 +103,13 @@ const showCheckbox = computed<boolean>(() => {
   return get(props.selection.isSelectionMode);
 });
 
+const isCheckboxDisabled = computed<boolean>(() => {
+  if (!props.selection) {
+    return false;
+  }
+  return get(props.selection.isSelectAllMatching);
+});
+
 const isSelected = computed<boolean>({
   get() {
     if (!props.selection) {
@@ -144,6 +151,7 @@ const hiddenEvent = logicOr(isIgnoredAsset, isSpam);
         color="primary"
         hide-details
         class="ml-2"
+        :disabled="isCheckboxDisabled"
       />
       <div
         class="transition-all duration-300 ease-in-out flex-1"

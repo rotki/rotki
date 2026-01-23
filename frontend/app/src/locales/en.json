@@ -5279,6 +5279,7 @@
           "complete_transaction_title": "Complete Transaction Selected",
           "delete_transaction": "Delete Transaction",
           "message": "Are you sure you want to delete the event?",
+          "message_all_matching": "Are you sure you want to delete all events in {count} groups matching the current filter? This action cannot be undone.",
           "message_multiple": "Are you sure you want to delete {count} selected events?",
           "partial_swap_title": "Partial Swap Selection",
           "partial_swap_warning": "You have selected {selectedCount} out of {totalCount} events from {groupCount} swap group(s). Deleting any event from a swap will delete the entire swap group. All {totalCount} events will be deleted. Do you want to continue?",
@@ -5314,6 +5315,7 @@
           "title": "Delete Failed"
         },
         "success": "{count} event deleted successfully | {count} events deleted successfully",
+        "success_groups": "Events in {count} group deleted successfully | Events in {count} groups deleted successfully",
         "title": "Delete Events"
       },
       "dialog": {
@@ -5504,10 +5506,13 @@
         "merchant_code": "Merchant Code: {code}"
       },
       "selection_mode": {
+        "all_matching_selected": "All events in {count} groups are selected",
         "create_rule": "Set custom accounting rule",
         "delete_selected": "Delete selected events",
         "ignore": "Ignore in accounting",
         "no_events": "There is no event to select",
+        "select_all_matching": "Select all matching events",
+        "select_all_page": "Select all on this page",
         "selected_count": "{count} selected",
         "tooltip": "Select multiple events",
         "unignore": "Unignore in accounting"

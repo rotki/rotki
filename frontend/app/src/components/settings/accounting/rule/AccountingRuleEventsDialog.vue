@@ -22,7 +22,7 @@ const display = ref<boolean>(true);
 
 const { fetchHistoryEvents } = useHistoryEvents();
 
-const groupIdentifiers = computed<string[]>(() => props.eventIds.map(id => id.toString()));
+const eventIdentifiers = computed<string[]>(() => props.eventIds.map(id => id.toString()));
 
 const {
   fetchData,
@@ -40,7 +40,7 @@ const {
 >(fetchHistoryEvents, {
   requestParams: computed(() => ({
     aggregateByGroupIds: true,
-    identifiers: get(groupIdentifiers),
+    identifiers: get(eventIdentifiers),
   })),
 });
 
@@ -73,7 +73,7 @@ watch(display, (value) => {
         :exclude-ignored="false"
         :group-loading="groupLoading"
         :page-params="pageParams"
-        :identifiers="groupIdentifiers"
+        :identifiers="eventIdentifiers"
         @set-page="setPage($event)"
       />
 

@@ -355,6 +355,24 @@ class DBHistoryEvents:
         )
         return write_cursor.rowcount == 1
 
+    def get_history_events_identifiers(
+            self,
+            filter_query: 'HistoryBaseEntryFilterQuery',
+    ) -> list[int]:
+        """Get the identifiers of history events matching the given filter.
+
+        This is useful for bulk operations where we need to know which events
+        match a filter before performing an action on them.
+        """
+        filters, query_bindings = filter_query.prepare(
+            with_pagination=False,
+            with_order=False,
+        )
+        query = f'SELECT history_events.identifier AS history_events_identifier {ALL_EVENTS_DATA_JOIN}' + filters  # noqa: E501
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(query, query_bindings)
+            return [row[0] for row in cursor]
+
     def delete_history_events_by_identifier(
             self,
             identifiers: list[int],

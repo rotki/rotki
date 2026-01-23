@@ -61,7 +61,10 @@ interface UseHistoryEventsApiReturn {
   decodeTransactions: (chains: string, ignoreCache?: boolean) => Promise<PendingTask>;
   addHistoryEvent: (event: AddHistoryEventPayload) => Promise<{ identifier: number }>;
   editHistoryEvent: (event: ModifyHistoryEventPayload) => Promise<boolean>;
-  deleteHistoryEvent: (identifiers: number[], forceDelete?: boolean) => Promise<boolean>;
+  deleteHistoryEvent: (
+    filter: Omit<HistoryEventRequestPayload, 'aggregateByGroupIds' | 'limit' | 'offset'>,
+    forceDelete?: boolean,
+  ) => Promise<boolean>;
   getEventDetails: (identifier: number) => Promise<HistoryEventDetail>;
   addTransactionHash: (payload: AddTransactionHashPayload) => Promise<boolean>;
   repullingTransactions: (payload: RepullingTransactionPayload) => Promise<PendingTask>;
@@ -156,8 +159,11 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const editHistoryEvent = async (event: ModifyHistoryEventPayload): Promise<boolean> => api.patch<boolean>('/history/events', event);
 
-  const deleteHistoryEvent = async (identifiers: number[], forceDelete = false): Promise<boolean> => api.delete<boolean>('/history/events', {
-    body: { forceDelete, identifiers },
+  const deleteHistoryEvent = async (
+    filter: Omit<HistoryEventRequestPayload, 'aggregateByGroupIds' | 'limit' | 'offset'>,
+    forceDelete = false,
+  ): Promise<boolean> => api.delete<boolean>('/history/events', {
+    body: { forceDelete, ...filter },
   });
 
   const getEventDetails = async (identifier: number): Promise<HistoryEventDetail> => {

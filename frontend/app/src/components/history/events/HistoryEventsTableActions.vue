@@ -35,7 +35,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   'redecode': [payload: 'all' | 'page' | string[]];
-  'selection:action': [action: 'toggle-mode' | 'delete' | 'exit' | 'toggle-all' | 'create-rule' | 'ignore' | 'unignore'];
+  'selection:action': [action: 'toggle-mode' | 'delete' | 'exit' | 'toggle-all' | 'create-rule' | 'ignore' | 'unignore' | 'toggle-select-all-matching'];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -93,6 +93,10 @@ function handleToggleMode(): void {
 
 function handleToggleAll(): void {
   emit('selection:action', 'toggle-all');
+}
+
+function handleToggleSelectAllMatching(): void {
+  emit('selection:action', 'toggle-select-all-matching');
 }
 </script>
 
@@ -156,8 +160,9 @@ function handleToggleAll(): void {
       <RuiTooltip :open-delay="400">
         <template #activator>
           <RuiCheckbox
-            :model-value="selection.isAllSelected"
+            :model-value="selection.isAllSelected || selection.selectAllMatching"
             :indeterminate="selection.isPartiallySelected"
+            :disabled="selection.selectAllMatching"
             color="primary"
             hide-details
             size="sm"
@@ -167,14 +172,35 @@ function handleToggleAll(): void {
         {{ t('transactions.events.selection_mode.select_all_page') }}
       </RuiTooltip>
       <span
+        v-if="!selection.selectAllMatching"
         class="text-sm text-rui-text-secondary -ml-1 mr-2 select-none"
       >
         {{ t('transactions.events.selection_mode.selected_count', { count: selection.selectedCount }) }}
       </span>
       <RuiDivider
+        v-if="!selection.selectAllMatching"
         vertical
         class="mr-1 -ml-1 h-4"
       />
+      <RuiButton
+        variant="text"
+        :color="selection.selectAllMatching ? 'warning' : 'primary'"
+        size="sm"
+        class="text-sm hover:underline cursor-pointer mr-2"
+        :class="selection.selectAllMatching ? '-ml-3' : '-ml-1'"
+        @click="handleToggleSelectAllMatching()"
+      >
+        {{ selection.selectAllMatching ? t('transactions.events.selection_mode.all_matching_selected', { count: selection.totalMatchingCount }) : t('transactions.events.selection_mode.select_all_matching') }}
+        <template
+          v-if="selection.selectAllMatching"
+          #append
+        >
+          <RuiIcon
+            name="lu-x"
+            size="18"
+          />
+        </template>
+      </RuiButton>
       <RuiTooltip :open-delay="200">
         <template #activator>
           <RuiButton
@@ -198,7 +224,7 @@ function handleToggleAll(): void {
             <RuiButton
               variant="outlined"
               class="h-7 px-2.5 !rounded-r-none"
-              :disabled="selection.selectedCount === 0 || !canIgnore"
+              :disabled="selection.selectedCount === 0 || !canIgnore || selection.selectAllMatching"
               @click="handleIgnore()"
             >
               <RuiIcon
@@ -214,7 +240,7 @@ function handleToggleAll(): void {
             <RuiButton
               variant="outlined"
               class="h-7 px-2.5 !rounded-l-none -ml-[1px]"
-              :disabled="selection.selectedCount === 0 || !canUnignore"
+              :disabled="selection.selectedCount === 0 || !canUnignore || selection.selectAllMatching"
               @click="handleUnignore()"
             >
               <RuiIcon
@@ -232,7 +258,7 @@ function handleToggleAll(): void {
             color="primary"
             variant="outlined"
             class="h-7 px-2.5"
-            :disabled="selection.selectedCount === 0"
+            :disabled="selection.selectedCount === 0 || selection.selectAllMatching"
             @click="handleCreateRule()"
           >
             <RuiIcon

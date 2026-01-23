@@ -270,11 +270,11 @@ describe('composables/api/history/events/index', () => {
       );
 
       const { deleteHistoryEvent } = useHistoryEventsApi();
-      const result = await deleteHistoryEvent([1, 2, 3]);
+      const result = await deleteHistoryEvent({ identifiers: ['1', '2', '3'] });
 
       expect(capturedBody).toEqual({
         force_delete: false,
-        identifiers: [1, 2, 3],
+        identifiers: ['1', '2', '3'],
       });
       expect(result).toBe(true);
     });
@@ -293,11 +293,11 @@ describe('composables/api/history/events/index', () => {
       );
 
       const { deleteHistoryEvent } = useHistoryEventsApi();
-      await deleteHistoryEvent([1], true);
+      await deleteHistoryEvent({ identifiers: ['1'] }, true);
 
       expect(capturedBody).toEqual({
         force_delete: true,
-        identifiers: [1],
+        identifiers: ['1'],
       });
     });
 
@@ -312,7 +312,7 @@ describe('composables/api/history/events/index', () => {
 
       const { deleteHistoryEvent } = useHistoryEventsApi();
 
-      await expect(deleteHistoryEvent([999]))
+      await expect(deleteHistoryEvent({ identifiers: ['999'] }))
         .rejects
         .toThrow('Events not found');
     });

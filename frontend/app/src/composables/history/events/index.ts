@@ -164,7 +164,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     let success = false;
     let message = '';
     try {
-      success = await deleteHistoryEventCaller(eventIds, forceDelete);
+      success = await deleteHistoryEventCaller({ identifiers: eventIds.map(id => id.toString()) }, forceDelete);
     }
     catch (error: any) {
       message = error.message;

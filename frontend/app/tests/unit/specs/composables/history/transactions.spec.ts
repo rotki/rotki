@@ -135,7 +135,7 @@ describe('composables::history/events/tx', () => {
     await deleteHistoryEvent([], true);
 
     expect(deleteHistoryEventSpy).toHaveBeenCalledOnce();
-    expect(deleteHistoryEventSpy).toHaveBeenCalledWith([], true);
+    expect(deleteHistoryEventSpy).toHaveBeenCalledWith({ identifiers: [] }, true);
 
     // add a transaction and check the spy function is called
     await refreshTransactions();

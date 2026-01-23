@@ -9,6 +9,8 @@ export interface SelectionState {
   selectedCount: number;
   selectedIds: Set<number>;
   hasAvailableEvents: boolean;
+  selectAllMatching: boolean;
+  totalMatchingCount: number;
 }
 
 interface SelectionActions {
@@ -18,38 +20,54 @@ interface SelectionActions {
   toggleAll: () => void;
   toggleEvent: (eventId: number) => void;
   toggleSwap: (eventIds: number[]) => void;
+  toggleSelectAllMatching: () => void;
 }
 
 export interface UseHistoryEventsSelectionModeReturn {
   actions: SelectionActions;
   getSelectedIds: () => number[];
   setAvailableIds: (events: HistoryEventEntry[]) => void;
+  setTotalMatchingCount: (count: number) => void;
   state: ComputedRef<SelectionState>;
   isEventSelected: (eventId: number) => boolean;
   selectedEvents: Ref<Set<number>>;
   isSelectionMode: Readonly<Ref<boolean>>;
+  isSelectAllMatching: Readonly<Ref<boolean>>;
 }
 
 export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeReturn {
   const isActive = ref<boolean>(false);
   const selectedIds = ref<Set<number>>(new Set());
   const availableIds = ref<number[]>([]);
+  const selectAllMatching = ref<boolean>(false);
+  const totalMatchingCount = ref<number>(0);
 
   // Unified state object
-  const state = computed<SelectionState>(() => ({
-    hasAvailableEvents: get(availableIds).length > 0,
-    isActive: get(isActive),
-    isAllSelected: get(availableIds).length > 0
-      && get(availableIds).every(id => get(selectedIds).has(id)),
-    isPartiallySelected: get(selectedIds).size > 0
-      && get(selectedIds).size < get(availableIds).length,
-    selectedCount: get(selectedIds).size,
-    selectedIds: get(selectedIds),
-  }));
+  const state = computed<SelectionState>(() => {
+    const isSelectAll = get(selectAllMatching);
+    const availableIdsLength = get(availableIds).length;
+    const selectedIdsVal = get(selectedIds);
+    const selectedIdsLength = selectedIdsVal.size;
+
+    return {
+      hasAvailableEvents: availableIdsLength > 0,
+      isActive: get(isActive),
+      isAllSelected: availableIdsLength > 0
+        && get(availableIds).every(id => selectedIdsVal.has(id)),
+      isPartiallySelected: selectedIdsLength > 0
+        && selectedIdsLength < availableIdsLength
+        && !isSelectAll,
+      selectAllMatching: isSelectAll,
+      selectedCount: isSelectAll ? get(totalMatchingCount) : selectedIdsLength,
+      selectedIds: selectedIdsVal,
+      totalMatchingCount: get(totalMatchingCount),
+    };
+  });
 
   const actions: SelectionActions = {
     clear: () => {
       set(selectedIds, new Set());
+      set(selectAllMatching, false);
     },
     exit: () => {
       set(isActive, false);
@@ -61,12 +79,22 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
         actions.clear();
     },
     toggleAll: () => {
+      // If selectAllMatching is enabled, disable it and clear
+      if (get(selectAllMatching)) {
+        actions.clear();
+        return;
+      }
+
       if (get(state).isAllSelected)
         actions.clear();
       else
         set(selectedIds, new Set(get(availableIds)));
     },
     toggleEvent: (eventId: number) => {
+      // Disable selectAllMatching when manually toggling events
+      if (get(selectAllMatching))
+        set(selectAllMatching, false);
+
       const ids = new Set(get(selectedIds));
       if (ids.has(eventId))
         ids.delete(eventId);
@@ -76,6 +104,10 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
       set(selectedIds, ids);
     },
     toggleSwap: (eventIds: number[]) => {
+      // Disable selectAllMatching when manually toggling events
+      if (get(selectAllMatching))
+        set(selectAllMatching, false);
+
       const ids = new Set(get(selectedIds));
       const allSelected = eventIds.every(id => ids.has(id));
 
@@ -85,6 +117,13 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
         eventIds.forEach(id => ids.add(id));
 
       set(selectedIds, ids);
+    },
+    toggleSelectAllMatching: () => {
+      const newValue = !get(selectAllMatching);
+      set(selectAllMatching, newValue);
+      // When toggling off, clear the selection
+      if (!newValue)
+        set(selectedIds, new Set());
     },
   };
 
@@ -96,15 +135,21 @@ export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeRe
     set(availableIds, ids);
   };
 
-  const isEventSelected = (eventId: number): boolean => get(selectedIds).has(eventId);
+  const setTotalMatchingCount = (count: number): void => {
+    set(totalMatchingCount, count);
+  };
+
+  const isEventSelected = (eventId: number): boolean => get(selectAllMatching) || get(selectedIds).has(eventId);
 
   return {
     actions,
     getSelectedIds,
     isEventSelected,
+    isSelectAllMatching: readonly(selectAllMatching),
     isSelectionMode: readonly(isActive),
     selectedEvents: selectedIds,
     setAvailableIds,
+    setTotalMatchingCount,
     state,
   };
 }

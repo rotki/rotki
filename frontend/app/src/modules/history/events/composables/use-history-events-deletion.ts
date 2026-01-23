@@ -1,7 +1,8 @@
-import type { Ref } from 'vue';
+import type { ComputedRef, Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
+import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
-import { get, set } from '@vueuse/shared';
+import { get, objectOmit, set } from '@vueuse/shared';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
@@ -21,11 +22,12 @@ export function useHistoryEventsDeletion(
   groupedEventsByTxRef: Ref<Record<string, HistoryEventRow[]>>,
   originalGroups: Ref<HistoryEventRow[]>,
   refreshCallback: () => Promise<void>,
+  pageParams?: ComputedRef<HistoryEventRequestPayload>,
 ): UseHistoryEventsDeletionReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { show: showConfirm } = useConfirmStore();
   const { setMessage } = useMessageStore();
-  const { deleteTransactions } = useHistoryEventsApi();
+  const { deleteHistoryEvent: deleteHistoryEventApi, deleteTransactions } = useHistoryEventsApi();
   const { deleteHistoryEvent } = useHistoryEvents();
   const { getChain } = useSupportedChains();
 
@@ -96,14 +98,21 @@ export function useHistoryEventsDeletion(
     count: number,
     type: 'delete' | 'ignore',
     message?: string,
+    isGroupCount = false,
   ): void {
     const title = type === 'delete'
       ? t('transactions.events.delete.title')
       : t('transactions.events.ignore.title');
 
-    const successMessage = type === 'delete'
-      ? t('transactions.events.delete.success', { count })
-      : t('transactions.events.ignore.success', { count });
+    let successMessage: string;
+    if (type === 'delete') {
+      successMessage = isGroupCount
+        ? t('transactions.events.delete.success_groups', { count }, count)
+        : t('transactions.events.delete.success', { count }, count);
+    }
+    else {
+      successMessage = t('transactions.events.ignore.success', { count }, count);
+    }
 
     const errorTitle = type === 'delete'
       ? t('transactions.events.delete.error.title')
@@ -120,7 +129,67 @@ export function useHistoryEventsDeletion(
     });
   }
 
+  async function deleteByFilter(totalCount: number): Promise<void> {
+    if (!pageParams) {
+      return;
+    }
+
+    const filterPayload = get(pageParams);
+
+    const confirmation = {
+      message: t('transactions.events.confirmation.delete.message_all_matching', { count: totalCount }),
+      primaryAction: t('common.actions.delete'),
+      secondaryAction: t('common.actions.cancel'),
+      title: t('transactions.events.confirmation.delete.title'),
+    };
+
+    await new Promise<void>((resolve) => {
+      showConfirm(
+        confirmation,
+        async () => {
+          try {
+            // Remove pagination and sorting params for filter-based deletion
+            const filterParams = objectOmit(filterPayload, [
+              'aggregateByGroupIds',
+              'ascending',
+              'ignoreCache',
+              'limit',
+              'offset',
+              'onlyCache',
+              'orderByAttributes',
+            ]);
+            const result = await deleteHistoryEventApi(filterParams, true);
+            showDeletionResult(result, totalCount, 'delete', undefined, true);
+
+            if (result) {
+              selectionMode.actions.exit();
+              await refreshCallback();
+            }
+          }
+          catch (error: any) {
+            showDeletionResult(false, totalCount, 'delete', error.message, true);
+          }
+          resolve();
+        },
+      );
+    });
+  }
+
   async function deleteSelected(): Promise<void> {
+    const state = get(selectionMode.state);
+
+    // Handle select all matching case
+    if (state.selectAllMatching) {
+      set(isDeleting, true);
+      try {
+        await deleteByFilter(state.totalMatchingCount);
+      }
+      finally {
+        set(isDeleting, false);
+      }
+      return;
+    }
+
     const selectedIds = selectionMode.getSelectedIds();
     if (selectedIds.length === 0)
       return;

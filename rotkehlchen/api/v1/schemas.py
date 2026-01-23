@@ -3347,8 +3347,72 @@ class IdentifiersListSchema(Schema):
     identifiers = fields.List(fields.Integer(), required=True)
 
 
-class HistoryEventsDeletionSchema(IdentifiersListSchema):
+class HistoryEventsDeletionSchema(HistoryEventSchema):
+    """Schema for deleting history events.
+
+    Uses the same filter parameters as HistoryEventSchema (including identifiers).
+    All provided filters are combined (intersection) to determine which events to delete.
+    At least one filter parameter must be provided to prevent accidental mass deletion.
+    """
+    class Meta:
+        exclude = ('aggregate_by_group_ids',)
+
+    def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Return force_delete flag instead of parent's aggregate_by_group_ids."""
+        return {
+            'force_delete': data.get('force_delete', False),
+        }
+
     force_delete = fields.Boolean(load_default=False)
+    # Override to False for deletion - we should be able to delete events with ignored assets
+    exclude_ignored_assets = fields.Boolean(load_default=False)
+
+    # Fields that are not considered filters for deletion validation
+    _NON_FILTER_FIELDS: Final = frozenset((
+        'force_delete',  # deletion flag, not a filter
+        'exclude_ignored_assets',  # display preference, not a filter
+        'limit', 'offset',  # pagination
+        'order_by_attributes', 'ascending',  # ordering
+        'to_timestamp',  # default is ts_now(), which doesn't restrict results
+    ))
+
+    @validates_schema
+    def validate_deletion_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        """Validate that at least one filter parameter is provided for deletion."""
+        has_filter = False
+        for field_name, field_obj in self.fields.items():
+            if field_name in self._NON_FILTER_FIELDS:
+                continue
+
+            value = data.get(field_name)
+            default = field_obj.load_default
+
+            # Special case: from_timestamp with default 0 - only a filter if > 0
+            if field_name == 'from_timestamp':
+                if value is not None and value > 0:
+                    has_filter = True
+                    break
+                continue
+
+            # For boolean fields with False default, only True is considered a filter
+            if isinstance(field_obj, fields.Boolean) and default is False:
+                if value is True:
+                    has_filter = True
+                    break
+            # For other fields, any non-default value is a filter
+            elif value is not None and value != default:
+                has_filter = True
+                break
+
+        if not has_filter:
+            raise ValidationError(
+                message='Either identifiers or filter parameters must be provided',
+                field_name='identifiers',
+            )
 
 
 class AssetsExportingSchema(AsyncQueryArgumentSchema):

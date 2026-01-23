@@ -1986,3 +1986,146 @@ def test_add_edit_solana_swap_events(rotkehlchen_api_server: 'APIServer') -> Non
 
     # Check that fee event was removed
     assert len([e for e in edited_events if e.event_subtype == HistoryEventSubType.FEE and e.timestamp == timestamp_to_edit]) == 0  # noqa: E501
+
+
+def test_delete_events_by_filter(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test deleting history events using various filter parameters."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = DBHistoryEvents(rotki.data.db)
+
+    # Create test events with different timestamps and assets
+    ts1 = TimestampMS(1600000000000)
+    ts2 = TimestampMS(1600100000000)
+    ts3 = TimestampMS(1600200000000)
+
+    events = [
+        HistoryEvent(
+            identifier=1,
+            group_identifier='group1',
+            sequence_index=0,
+            timestamp=ts1,
+            location=Location.EXTERNAL,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            amount=FVal('1.0'),
+            notes='Event 1 - ETH at ts1',
+        ),
+        HistoryEvent(
+            identifier=2,
+            group_identifier='group2',
+            sequence_index=0,
+            timestamp=ts2,
+            location=Location.EXTERNAL,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_DAI,
+            amount=FVal('100.0'),
+            notes='Event 2 - DAI at ts2',
+        ),
+        HistoryEvent(
+            identifier=3,
+            group_identifier='group3',
+            sequence_index=0,
+            timestamp=ts2,
+            location=Location.EXTERNAL,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            amount=FVal('2.0'),
+            notes='Event 3 - ETH at ts2',
+        ),
+        HistoryEvent(
+            identifier=4,
+            group_identifier='group4',
+            sequence_index=0,
+            timestamp=ts3,
+            location=Location.EXTERNAL,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_USDC,
+            amount=FVal('500.0'),
+            notes='Event 4 - USDC at ts3',
+        ),
+    ]
+
+    # Add events to database
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        db.add_history_events(write_cursor, events)
+
+    def get_event_count() -> int:
+        with rotki.data.db.conn.read_ctx() as cursor:
+            return len(db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(),
+                aggregate_by_group_ids=False,
+            ))
+
+    assert get_event_count() == 4
+
+    # Test 1: Deletion with no filters should fail
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Either identifiers or filter parameters must be provided',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    assert get_event_count() == 4  # No events deleted
+
+    # Test 2: Deletion with only force_delete (not a filter) should fail
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'force_delete': True},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='Either identifiers or filter parameters must be provided',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    assert get_event_count() == 4  # No events deleted
+
+    # Test 3: Delete by asset filter - delete all DAI events
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'asset': A_DAI.identifier},
+    )
+    assert_simple_ok_response(response)
+    assert get_event_count() == 3  # Event 2 (DAI) deleted
+
+    # Test 4: Delete by time range - delete events at ts2
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={
+            'from_timestamp': ts2 // 1000,  # Convert to seconds
+            'to_timestamp': ts2 // 1000,
+        },
+    )
+    assert_simple_ok_response(response)
+    assert get_event_count() == 2  # Event 3 (ETH at ts2) deleted, events 1 and 4 remain
+
+    # Test 5: Delete by combined filters (identifiers + asset) - intersection
+    # Only event 1 (ETH) and event 4 (USDC) remain
+    # Try to delete identifiers [1, 4] but only where asset is ETH
+    # Should only delete event 1
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={
+            'identifiers': [1, 4],
+            'asset': A_ETH.identifier,
+        },
+    )
+    assert_simple_ok_response(response)
+    assert get_event_count() == 1  # Only event 4 (USDC) remains
+
+    # Verify the remaining event is the USDC one
+    with rotki.data.db.conn.read_ctx() as cursor:
+        remaining = db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            aggregate_by_group_ids=False,
+        )
+    assert len(remaining) == 1
+    assert remaining[0].asset == A_USDC
