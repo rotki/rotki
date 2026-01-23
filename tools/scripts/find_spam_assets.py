@@ -3,7 +3,8 @@ Find spam assets in rotki's global database.
 
 This script searches for EVM tokens marked with protocol='spam' in the global.db
 and outputs them in JSON format compatible with the spam asset updates in the
-rotki/data repository: https://github.com/rotki/data/tree/main/updates/spam_assets
+rotki/data repository: https://github.com/rotki/data/tree/main/updates/spam_assets.
+It skips tokens already present in the remote spam assets updates to avoid duplicates.
 
 Usage:
     # Print to stdout
@@ -19,14 +20,17 @@ Usage:
 import argparse
 import json
 import logging
+import os
 import sqlite3
 import sys
 from pathlib import Path
 
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.types import SPAM_PROTOCOL, ChainID
+from rotkehlchen.utils.network import query_file
 
 logging.basicConfig(
     level=logging.INFO,
@@ -36,6 +40,7 @@ logging.basicConfig(
 log = logging.getLogger(__name__)
 
 DATA_DIR_NAMES = ('data', 'develop_data')
+DEFAULT_SPAM_ASSETS_CHAIN = ChainID.ETHEREUM.to_name()
 
 
 def get_data_directories(custom_data_dir: Path | None) -> list[Path]:
@@ -55,7 +60,48 @@ def get_data_directories(custom_data_dir: Path | None) -> list[Path]:
     return directories
 
 
-def get_spam_assets_from_db(db_path: Path) -> dict[str, dict[str, str | int]]:
+def get_updates_branch() -> str:
+    if (branch := os.getenv('GITHUB_BASE_REF', 'develop')) == 'master':
+        return 'main'
+    return branch
+
+
+def spam_asset_key(address: str, chain: str | None = None) -> tuple[str, str]:
+    chain_name = (chain or DEFAULT_SPAM_ASSETS_CHAIN).lower()
+    return (chain_name, address.lower())
+
+
+def get_remote_spam_assets(branch: str) -> set[tuple[str, str]]:
+    keys: set[tuple[str, str]] = set()
+    info_url = f'https://raw.githubusercontent.com/rotki/data/{branch}/updates/info.json'
+    info = query_file(info_url, True)
+    latest = info.get('spam_assets', {}).get('latest')
+    if not isinstance(latest, int):
+        log.warning(f'Unexpected spam_assets latest value in {info_url}: {latest!r}')
+        return keys
+
+    for version in range(1, latest + 1):
+        file_url = (
+            f'https://raw.githubusercontent.com/rotki/data/{branch}/updates/spam_assets/'
+            f'v{version}.json'
+        )
+        update = query_file(file_url, True)
+        entries = update.get('spam_assets', [])
+        if not isinstance(entries, list):
+            log.warning(f'Unexpected spam_assets entries in {file_url}: {type(entries)!r}')
+            continue
+        for entry in entries:
+            address = entry.get('address')
+            if not address:
+                continue
+            keys.add(spam_asset_key(address, entry.get('chain')))
+    return keys
+
+
+def get_spam_assets_from_db(
+        db_path: Path,
+        remote_spam_assets: set[tuple[str, str]],
+) -> dict[str, dict[str, str | int]]:
     """Query spam assets from a global database."""
     spam_assets: dict[str, dict[str, str | int]] = {}
     query = """
@@ -77,6 +123,8 @@ def get_spam_assets_from_db(db_path: Path) -> dict[str, dict[str, str | int]]:
                         f'Unknown chain ID {chain_id} for token {address}: {e!s}, skipping',
                     )
                     continue
+                if spam_asset_key(address, chain_name) in remote_spam_assets:
+                    continue
 
                 spam_assets[identifier] = {
                     'address': address,
@@ -91,7 +139,10 @@ def get_spam_assets_from_db(db_path: Path) -> dict[str, dict[str, str | int]]:
     return spam_assets
 
 
-def find_all_spam_assets(data_directories: list[Path]) -> list[dict[str, str | int]]:
+def find_all_spam_assets(
+        data_directories: list[Path],
+        remote_spam_assets: set[tuple[str, str]],
+) -> list[dict[str, str | int]]:
     """Find all spam assets from global databases in the given data directories."""
     all_spam_assets: dict[str, dict[str, str | int]] = {}
     for data_dir in data_directories:
@@ -100,9 +151,24 @@ def find_all_spam_assets(data_directories: list[Path]) -> list[dict[str, str | i
             continue
 
         log.info(f'Reading spam assets from: {db_path}')
-        all_spam_assets |= get_spam_assets_from_db(db_path)
+        all_spam_assets |= get_spam_assets_from_db(
+            db_path=db_path,
+            remote_spam_assets=remote_spam_assets,
+        )
 
     return list(all_spam_assets.values())
+
+
+def format_spam_assets_json(spam_assets: list[dict[str, str | int]]) -> str:
+    if not spam_assets:
+        return '{"spam_assets":[]}'
+
+    lines = ['{"spam_assets":[']
+    for index, asset in enumerate(spam_assets):
+        suffix = ',' if index < len(spam_assets) - 1 else ''
+        lines.append(f'  {json.dumps(asset, separators=(",", ":"))}{suffix}')
+    lines.append(']}')
+    return '\n'.join(lines)
 
 
 def main() -> None:
@@ -129,7 +195,15 @@ def main() -> None:
         log.error('No valid data directories found.')
         sys.exit(1)
 
-    json_output = json.dumps({'spam_assets': find_all_spam_assets(data_directories)}, indent=2)
+    branch = get_updates_branch()
+    try:
+        remote_spam_assets = get_remote_spam_assets(branch)
+    except RemoteError as e:
+        log.warning(f'Failed to fetch remote spam assets for {branch=}: {e!s}')
+        remote_spam_assets = set()
+
+    spam_assets = find_all_spam_assets(data_directories, remote_spam_assets)
+    json_output = format_spam_assets_json(spam_assets)
     if args.output:
         args.output.write_text(json_output)
         log.info(f'Output written to: {args.output}')
