@@ -579,6 +579,7 @@ def test_eth_accumulating_validators_performance(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
+@pytest.mark.freeze_time('2025-10-22 00:00:00 GMT')
 def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
     """Test that performance to recent time also takes into account outstanding consensus pnl"""
     dbevents = DBHistoryEvents(database)
