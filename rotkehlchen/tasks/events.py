@@ -17,6 +17,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -132,7 +133,10 @@ def process_asset_movements(database: 'DBHandler') -> None:
         )
 
 
-def _load_customized_event_candidates(database: 'DBHandler') -> dict[str, list[CustomizedEventCandidate]]:  # noqa: E501
+def _load_customized_event_candidates(
+        database: 'DBHandler',
+        group_identifiers: list[str] | None = None,
+) -> dict[str, list[CustomizedEventCandidate]]:
     """Load customized and related non-customized EVM/Solana events grouped by group identifier.
 
     Query outline:
@@ -150,53 +154,83 @@ def _load_customized_event_candidates(database: 'DBHandler') -> dict[str, list[C
         HistoryBaseEntryType.SOLANA_SWAP_EVENT,
     )]
     entry_type_placeholders = ', '.join(['?'] * len(entry_type_values))
+    query = (
+        'SELECT he.identifier, he.group_identifier, he.sequence_index, he.timestamp, '
+        'he.location, he.location_label, he.asset, he.amount, he.notes, he.type, '
+        'he.subtype, he.extra_data, he.entry_type, '
+        'cei.counterparty, cei.address, '
+        'CASE WHEN hm.parent_identifier IS NULL THEN 0 ELSE 1 END AS customized '
+        'FROM history_events he '
+        'LEFT JOIN chain_events_info cei ON he.identifier=cei.identifier '
+        'LEFT JOIN history_events_mappings hm ON hm.parent_identifier=he.identifier '
+        'AND hm.name=? AND hm.value=? '
+        'WHERE EXISTS ('
+        'SELECT 1 FROM history_events he2 '
+        'JOIN history_events_mappings hm2 ON hm2.parent_identifier=he2.identifier '
+        'AND hm2.name=? AND hm2.value=? '
+        'WHERE he2.group_identifier=he.group_identifier '
+        f'AND he2.entry_type IN ({entry_type_placeholders})) '
+        f'AND he.entry_type IN ({entry_type_placeholders}) '
+    )
+    bindings_base = (
+        HISTORY_MAPPING_KEY_STATE,
+        HISTORY_MAPPING_STATE_CUSTOMIZED,
+        HISTORY_MAPPING_KEY_STATE,
+        HISTORY_MAPPING_STATE_CUSTOMIZED,
+        *entry_type_values,
+        *entry_type_values,
+    )
     with database.conn.read_ctx() as cursor:
-        for entry in cursor.execute(
-            'SELECT he.identifier, he.group_identifier, he.sequence_index, he.timestamp, '
-            'he.location, he.location_label, he.asset, he.amount, he.notes, he.type, '
-            'he.subtype, he.extra_data, he.entry_type, '
-            'cei.counterparty, cei.address, '
-            'CASE WHEN hm.parent_identifier IS NULL THEN 0 ELSE 1 END AS customized '
-            'FROM history_events he '
-            'LEFT JOIN chain_events_info cei ON he.identifier=cei.identifier '
-            'LEFT JOIN history_events_mappings hm ON hm.parent_identifier=he.identifier '
-            'AND hm.name=? AND hm.value=? '
-            'WHERE EXISTS ('
-            'SELECT 1 FROM history_events he2 '
-            'JOIN history_events_mappings hm2 ON hm2.parent_identifier=he2.identifier '
-            'AND hm2.name=? AND hm2.value=? '
-            'WHERE he2.group_identifier=he.group_identifier '
-            f'AND he2.entry_type IN ({entry_type_placeholders})) '
-            f'AND he.entry_type IN ({entry_type_placeholders}) '
-            'ORDER BY he.group_identifier, he.sequence_index',
-            (
-                HISTORY_MAPPING_KEY_STATE,
-                HISTORY_MAPPING_STATE_CUSTOMIZED,
-                HISTORY_MAPPING_KEY_STATE,
-                HISTORY_MAPPING_STATE_CUSTOMIZED,
-                *entry_type_values,
-                *entry_type_values,
-            ),
-        ):
-            event = CustomizedEventCandidate(
-                identifier=entry[0],
-                group_identifier=entry[1],
-                sequence_index=entry[2],
-                timestamp=entry[3],
-                location=entry[4],
-                location_label=entry[5],
-                asset=entry[6],
-                amount=entry[7],
-                notes=entry[8],
-                event_type=entry[9],
-                event_subtype=entry[10],
-                extra_data=entry[11],
-                entry_type=entry[12],
-                counterparty=entry[13],
-                address=entry[14],
-                customized=bool(entry[15]),
-            )
-            group_events[event.group_identifier].append(event)
+        if group_identifiers:
+            for group_id_chunk, group_id_placeholders in get_query_chunks(group_identifiers):
+                for entry in cursor.execute(
+                    f'{query} AND he.group_identifier IN ({group_id_placeholders}) '
+                    'ORDER BY he.group_identifier, he.sequence_index',
+                    (*bindings_base, *group_id_chunk),
+                ):
+                    event = CustomizedEventCandidate(
+                        identifier=entry[0],
+                        group_identifier=entry[1],
+                        sequence_index=entry[2],
+                        timestamp=entry[3],
+                        location=entry[4],
+                        location_label=entry[5],
+                        asset=entry[6],
+                        amount=entry[7],
+                        notes=entry[8],
+                        event_type=entry[9],
+                        event_subtype=entry[10],
+                        extra_data=entry[11],
+                        entry_type=entry[12],
+                        counterparty=entry[13],
+                        address=entry[14],
+                        customized=bool(entry[15]),
+                    )
+                    group_events[event.group_identifier].append(event)
+        else:
+            for entry in cursor.execute(
+                f'{query} ORDER BY he.group_identifier, he.sequence_index',
+                bindings_base,
+            ):
+                event = CustomizedEventCandidate(
+                    identifier=entry[0],
+                    group_identifier=entry[1],
+                    sequence_index=entry[2],
+                    timestamp=entry[3],
+                    location=entry[4],
+                    location_label=entry[5],
+                    asset=entry[6],
+                    amount=entry[7],
+                    notes=entry[8],
+                    event_type=entry[9],
+                    event_subtype=entry[10],
+                    extra_data=entry[11],
+                    entry_type=entry[12],
+                    counterparty=entry[13],
+                    address=entry[14],
+                    customized=bool(entry[15]),
+                )
+                group_events[event.group_identifier].append(event)
 
     return group_events
 
@@ -215,7 +249,10 @@ def find_customized_event_duplicate_groups(
     When group_identifiers is provided, results are limited to those groups.
     """
     log.debug('Detecting duplicate customized EVM events')
-    group_events = _load_customized_event_candidates(database=database)
+    group_events = _load_customized_event_candidates(
+        database=database,
+        group_identifiers=group_identifiers,
+    )
 
     auto_fix_group_ids: set[str] = set()  # groups with exact customized/non-customized matches
     manual_review_group_ids: set[str] = set()  # groups with asset+direction matches
