@@ -304,19 +304,45 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         If `web3` is None, it uses the local own node.
         Returns None if there is no local node or node cannot query historical balance.
         """
-        if (web3 := web3 if web3 is not None else self.get_own_node()) is None:
+        archive_call_order = self.get_archive_call_order()
+        if web3 is None and len(archive_call_order) == 0:
             return None
 
-        try:
-            result = web3.eth.get_balance(address, block_identifier=block_number)
-        except (
-                requests.RequestException,
-                BlockchainQueryError,
-                KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
-                Web3Exception,
-                ValueError,  # can still happen in web3py v6 for missing trieerror. Essentially historical balance call  # noqa: E501
-        ):
-            return None
+        def _get_balance(
+                node_web3: Web3,
+                address: ChecksumEvmAddress,
+                block_identifier: int,
+        ) -> int:
+            return node_web3.eth.get_balance(
+                account=address,
+                block_identifier=block_identifier,
+            )
+
+        if web3 is None:
+            try:
+                result = self._query(
+                    method=_get_balance,
+                    call_order=archive_call_order,
+                    address=address,
+                    block_identifier=block_number,
+                )
+            except RemoteError:
+                return None
+        else:
+            try:
+                result = _get_balance(
+                    node_web3=web3,
+                    address=address,
+                    block_identifier=block_number,
+                )
+            except (
+                    requests.RequestException,
+                    BlockchainQueryError,
+                    KeyError,  # saw this happen inside web3.py if resulting json contains unexpected key. Happened with mycrypto's node  # noqa: E501
+                    Web3Exception,
+                    ValueError,  # can still happen in web3py v6 for missing trieerror. Essentially historical balance call  # noqa: E501
+            ):
+                return None
 
         try:
             balance = from_wei(FVal(result))
@@ -336,6 +362,10 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         Returns None if query fails (e.g., no archive node available, contract doesn't exist
         at that block, etc.).
         """
+        archive_call_order = self.get_archive_call_order()
+        if len(archive_call_order) == 0:
+            return None
+
         try:
             raw_balance = self.call_contract(
                 contract_address=token.evm_address,
@@ -343,6 +373,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 method_name='balanceOf',
                 arguments=[address],
                 block_identifier=block_number,
+                call_order=archive_call_order,
             )
         except (RemoteError, BlockchainQueryError) as e:
             log.error(
@@ -359,6 +390,14 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
     def has_archive_node(self) -> bool:
         """Check if any connected RPC node is an archive node."""
         return any(rpc_node.is_archive for rpc_node in self.rpc_mapping.values())
+
+    def get_archive_call_order(self) -> list['WeightedNode']:
+        """Get connected archive nodes for historical queries."""
+        return [
+            WeightedNode(node_info=node, active=True, weight=ONE)
+            for node, rpc_node in self.rpc_mapping.items()
+            if rpc_node.is_archive
+        ]
 
     def _have_archive(self, web3: Web3) -> bool:
         """Returns a boolean representing if node is an archive one."""
