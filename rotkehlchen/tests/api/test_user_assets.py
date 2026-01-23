@@ -996,28 +996,21 @@ def test_exporting_user_assets_list(
                 api_url_for(
                     rotkehlchen_api_server,
                     'userassetsresource',
-                ), json={'action': 'download', 'destination': path},
+                ), json={'destination': path},
             )
         else:
             response = requests.put(
                 api_url_for(
                     rotkehlchen_api_server,
                     'userassetsresource',
-                ), json={'action': 'download'},
+                ), json={},
             )
 
         result = assert_proper_sync_response_with_result(response)
+        assert 'file_path' in result
+        zip_path = Path(result['file_path'])
         if with_custom_path:
-            # When destination is provided, file is written there and result is True
-            assert result is True
-            # Find the zip file in the destination directory
-            zip_files = list(Path(path).glob('*.zip'))
-            assert len(zip_files) == 1
-            zip_path = zip_files[0]
-        else:
-            # When no destination, result contains file_path for download
-            assert 'file_path' in result
-            zip_path = Path(result['file_path'])
+            assert path in result['file_path']
 
         zip_file = ZipFile(zip_path)
         data = json.loads(zip_file.read('assets.json'))
@@ -1053,41 +1046,31 @@ def test_exporting_user_assets_list(
             api_url_for(
                 rotkehlchen_api_server,
                 'userassetsresource',
-            ), json={'action': 'download', 'destination': path},
+            ), json={'destination': path},
         )
         result = assert_proper_sync_response_with_result(response)
-        assert result is True
+        assert 'file_path' in result
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('start_with_logged_in_user', [True])
-@pytest.mark.parametrize('method', ['post', 'put'])
 @pytest.mark.parametrize('file_type', ['zip', 'json'])
 def test_importing_user_assets_list(
         rotkehlchen_api_server: APIServer,
-        method: str,
         file_type: str,
 ) -> None:
     """Test that the endpoint for importing user assets works correctly"""
     async_query = random.choice((True, False))
     filepath = Path(__file__).resolve().parent.parent / 'data' / f'exported_assets.{file_type}'
 
-    if method == 'put':
-        response = requests.put(
+    with open(filepath, 'rb') as infile:
+        response = requests.post(
             api_url_for(
                 rotkehlchen_api_server,
                 'userassetsresource',
-            ), json={'action': 'upload', 'file': str(filepath), 'async_query': async_query},
+            ), data={'async_query': async_query},
+            files={'file': infile},
         )
-    else:
-        with open(filepath, 'rb') as infile:
-            response = requests.post(
-                api_url_for(
-                    rotkehlchen_api_server,
-                    'userassetsresource',
-                ), data={'async_query': async_query},
-                files={'file': infile},
-            )
 
     if async_query is True:
         task_id = assert_ok_async_response(response)

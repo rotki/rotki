@@ -3777,8 +3777,7 @@
       "button": "Export",
       "error": "Failed to export assets: {message}",
       "subtitle": "Create a zip archive of your assets",
-      "success": "The archive was created successfully in {directory}",
-      "success_download": "The archive was created and downloaded successfully",
+      "success": "The archive was created successfully at {filePath}",
       "title": "Export"
     },
     "import": {

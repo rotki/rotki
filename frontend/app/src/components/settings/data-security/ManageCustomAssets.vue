@@ -39,28 +39,24 @@ async function exportZip(): Promise<void> {
 
   const result = await exportCustomAssets();
 
-  let message: string;
-  let severity: Severity;
-
+  // Only show notification for errors or when running in Electron (directory provided)
+  // In web case, user sees the browser download prompt
   if ('success' in result && !result.success) {
-    message = t('manage_user_assets.export.error', { message: result.message });
-    severity = Severity.ERROR;
+    notify({
+      display: true,
+      message: t('manage_user_assets.export.error', { message: result.message }),
+      severity: Severity.ERROR,
+      title: t('manage_user_assets.export.title'),
+    });
   }
-  else if ('directory' in result && result.directory) {
-    message = t('manage_user_assets.export.success', { directory: result.directory });
-    severity = Severity.INFO;
+  else if ('filePath' in result && result.directory) {
+    notify({
+      display: true,
+      message: t('manage_user_assets.export.success', { filePath: result.filePath }),
+      severity: Severity.INFO,
+      title: t('manage_user_assets.export.title'),
+    });
   }
-  else {
-    message = t('manage_user_assets.export.success_download');
-    severity = Severity.INFO;
-  }
-
-  notify({
-    display: true,
-    message,
-    severity,
-    title: t('manage_user_assets.export.title'),
-  });
 }
 </script>
 

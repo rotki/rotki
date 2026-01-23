@@ -19,6 +19,7 @@ import { logger } from '@/utils/logging';
 
 interface ExportCustomAssetsResult {
   directory?: string;
+  filePath: string;
 }
 
 interface UseAssetsReturn {
@@ -172,15 +173,15 @@ export function useAssets(): UseAssetsReturn {
         directory = selectedDirectory;
       }
       const { taskId } = await exportCustom(directory);
-      const { result } = await awaitTask<boolean | { filePath: string }, TaskMeta>(taskId, TaskType.EXPORT_ASSET, {
+      const { result } = await awaitTask<{ filePath: string }, TaskMeta>(taskId, TaskType.EXPORT_ASSET, {
         title: t('actions.assets.export.task.title'),
       });
 
-      // For web case, download the file using the returned file path
-      if (result !== true && typeof result === 'object' && 'filePath' in result)
+      // For web case (no directory selected), download the file using the returned file path
+      if (!directory)
         await downloadCustomAssets(result.filePath);
 
-      return { directory };
+      return { directory, filePath: result.filePath };
     }
     catch (error: any) {
       if (!isTaskCancelled(error))

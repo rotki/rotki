@@ -332,16 +332,8 @@ class AssetsService:
                 'status_code': HTTPStatus.INSUFFICIENT_STORAGE,
             }
 
-        if path is None:
-            # For web case, return the file path for later download
-            return {
-                'result': {'file_path': str(zip_path)},
-                'message': '',
-                'status_code': HTTPStatus.OK,
-            }
-
         return {
-            'result': True,
+            'result': {'file_path': str(zip_path)},
             'message': '',
             'status_code': HTTPStatus.OK,
         }

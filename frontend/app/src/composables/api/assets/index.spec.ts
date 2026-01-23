@@ -337,7 +337,6 @@ describe('composables/api/assets/index', () => {
       const result = await exportCustom();
 
       expect(capturedBody).toEqual({
-        action: 'download',
         async_query: true,
       });
       expect(result.taskId).toBe(301);
@@ -360,7 +359,6 @@ describe('composables/api/assets/index', () => {
       const result = await exportCustom('/export/dir');
 
       expect(capturedBody).toEqual({
-        action: 'download',
         async_query: true,
         destination: '/export/dir',
       });

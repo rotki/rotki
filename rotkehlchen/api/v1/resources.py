@@ -35,8 +35,8 @@ from rotkehlchen.api.v1.schemas import (
     AppInfoSchema,
     AssetIconUploadSchema,
     AssetResetRequestSchema,
+    AssetsExportingSchema,
     AssetsImportingFromFormSchema,
-    AssetsImportingSchema,
     AssetsMappingSchema,
     AssetsPostSchema,
     AssetsReplaceSchema,
@@ -2756,25 +2756,16 @@ class StakingResource(BaseMethodView):
 
 
 class UserAssetsResource(BaseMethodView):
-    importing_schema = AssetsImportingSchema
+    exporting_schema = AssetsExportingSchema
     import_from_form = AssetsImportingFromFormSchema
 
     @require_loggedin_user()
-    @use_kwargs(importing_schema, location='json')
+    @use_kwargs(exporting_schema, location='json')
     def put(
             self,
             async_query: bool,
-            file: Path | None,
             destination: Path | None,
-            action: str,
     ) -> Response | dict[str, Any]:
-        if action == 'upload':
-            if file is None:
-                return api_response(wrap_in_fail_result(
-                    message='file is required for upload action.',
-                    status_code=HTTPStatus.BAD_REQUEST,
-                ))
-            return self.rest_api.import_user_assets(async_query=async_query, path=file)
         return self.rest_api.export_user_assets(async_query=async_query, path=destination)
 
     @require_loggedin_user()

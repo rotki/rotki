@@ -3349,27 +3349,8 @@ class HistoryEventsDeletionSchema(IdentifiersListSchema):
     force_delete = fields.Boolean(load_default=False)
 
 
-class AssetsImportingSchema(AsyncQueryArgumentSchema):
-    file = FileField(allowed_extensions=['.zip', '.json'], load_default=None)
+class AssetsExportingSchema(AsyncQueryArgumentSchema):
     destination = DirectoryField(load_default=None)
-    action = fields.String(
-        validate=webargs.validate.OneOf(choices=('upload', 'download')),
-        required=True,
-    )
-
-    @validates_schema
-    def validate_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        file = data.get('file')
-        action = data.get('action')
-        if action == 'upload' and file is None:
-            raise ValidationError(
-                message='A file has to be provided when action is upload',
-                field_name='action',
-            )
 
 
 class AssetsImportingFromFormSchema(AsyncQueryArgumentSchema):

@@ -81,7 +81,6 @@ export function useAssetsApi(): UseAssetApiReturn {
     const response = await api.put<PendingTask>(
       '/assets/user',
       {
-        action: 'download',
         asyncQuery: true,
         destination: directory,
       },
