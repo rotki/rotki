@@ -1,8 +1,8 @@
 # Stacks Blockchain Integration PRD
 
-**Document Version**: 1.0
+**Document Version**: 1.1
 **Date**: 2025-01-24
-**Status**: Draft - Awaiting Expert Review
+**Status**: Reviewed - Incorporating Feedback
 **Target Branch**: `develop`
 
 ---
@@ -137,7 +137,7 @@ The `StacksInquirer` needs to wrap Stacks API calls:
 
 **Data Sources**:
 - **Hiro API** (hosted): `https://api.mainnet.hiro.so`
-- **Self-hosted node**: For full decentralization
+- **Self-hosted node**: For full decentralization (deferred)
 
 **Key Endpoints**:
 | Endpoint | Purpose |
@@ -216,56 +216,128 @@ rotkehlchen/chain/stacks/
 #### Phase 1: Foundation (MVP)
 **Goal**: Users can add Stacks addresses and see balances
 
-- [ ] Type registration (`types.py` additions)
-- [ ] Address validation (SP/ST prefix, checksum)
+**Type System & Registration**:
+- [ ] Add `StacksAddress = NewType('StacksAddress', str)` to `types.py`
+- [ ] Add `SupportedBlockchain.STACKS` enum entry
+- [ ] Add `Location.STACKS` with next available int
+- [ ] Extend unions: `CHAINS_WITH_TRANSACTIONS`, `CHAINS_WITH_TX_DECODING`, `CHAINS_WITH_TRANSACTION_DECODERS`, `CHAINS_WITH_CHAIN_MANAGER`
+- [ ] Update `BlockchainAddress` union type
+
+**Core Implementation**:
+- [ ] Address validation (SP/ST prefix, c32check)
 - [ ] `StacksManager` skeleton
 - [ ] `StacksInquirer` with balance endpoints
 - [ ] STX native balance tracking
-- [ ] Integration with `ChainsAggregator`
-- [ ] Frontend: Add Stacks to chain selector
+
+**Aggregator Wiring** (critical - do early):
+- [ ] Add `stacks_manager` to `ChainsAggregator.__init__`
+- [ ] Add `self.stacks` attribute and `stacks_lock`
+- [ ] Update `rotkehlchen/rotkehlchen.py` manager instantiation
+- [ ] Audit and update ALL code using `CHAINS_WITH_*` tuples
+- [ ] Update REST API schemas to surface Stacks
+- [ ] Update test fixtures
+
+**Frontend**:
+- [ ] Add Stacks to chain selector
+- [ ] Add STX icon (verify icon mapping)
+- [ ] Address validation hints (SP/ST prefix)
+- [ ] Verify TypeScript strict mode passes
 
 **Deliverable**: Basic balance tracking, no transactions
 
 #### Phase 2: Transaction History
 **Goal**: Fetch and store transaction history
 
+**Data Layer**:
 - [ ] `StacksTransactions` class
+- [ ] Database schema (`DBStacksTx` mirroring `DBSolanaTx`)
+- [ ] DB migrations (coordinate with CI)
+- [ ] "Not decoded" query support
+- [ ] Paging, deduplication, "existing tx" filtering
+
+**API Integration**:
 - [ ] Transaction fetching from Hiro API
-- [ ] Database schema for Stacks transactions
-- [ ] Basic transaction display (no decoding)
-- [ ] SIP-10 token balance tracking
+- [ ] **Rate limiting with exponential backoff** (implement early)
+- [ ] **Response caching** (implement early)
+- [ ] Batch requests where possible
+
+**Token Support**:
+- [ ] `StacksToken` model for SIP-10 tokens
+- [ ] Token metadata caching (decimals, symbol, name)
+- [ ] Curated allowlist: sBTC, stSTX, stSTXBTC, core tokens
+- [ ] `get_or_create_stacks_token()` with tolerant defaults for unknown tokens
+- [ ] Lazy token creation for tokens discovered during decoding
+
+**Data Integrity**:
+- [ ] Only persist anchored/confirmed transactions (no microblocks)
+- [ ] Normalize all timestamps to `TimestampMS` on ingestion
 
 **Deliverable**: Full transaction history, token balances
 
 #### Phase 3: Transaction Decoding
 **Goal**: Human-readable transaction interpretation
 
+**Base Decoder**:
 - [ ] `StacksTransactionDecoder` base implementation
-- [ ] Decode STX transfers
-- [ ] Decode SIP-10 token transfers
-- [ ] Generic contract call decoding
-- [ ] Event creation with proper types/subtypes
+- [ ] Decode STX transfers → `DEPOSIT/WITHDRAWAL`
+- [ ] Decode SIP-10 token transfers → `DEPOSIT/WITHDRAWAL`
+- [ ] Generic contract call decoding (fallback)
+
+**Event Creation**:
+- [ ] Define counterparty constants (`CPT_SBTC`, `CPT_STACKING`, `CPT_LISA`)
+- [ ] Consistent `event_type`/`event_subtype` usage
+- [ ] Human-readable notes generation
+- [ ] Proper `sequence_index` ordering
 
 **Deliverable**: Decoded transactions with descriptions
 
 #### Phase 4: Protocol Modules
 **Goal**: Protocol-specific decoding for DeFi
 
-- [ ] sBTC bridge decoder (pegin/pegout)
-- [ ] Native stacking decoder
-- [ ] LISA liquid staking decoder
-- [ ] Counterparty constants (`CPT_SBTC`, `CPT_STACKING`, etc.)
+**Shared Infrastructure**:
+- [ ] Bridge utility for standardized `DEPOSIT/WITHDRAWAL + BRIDGE` semantics
+- [ ] Shared notes formatting for bridge events
+
+**sBTC Bridge** (P0):
+- [ ] Decode pegin events (BTC → sBTC)
+- [ ] Decode pegout events (sBTC → BTC)
+- [ ] Standalone events (no cross-chain correlation in v1)
+- [ ] Optional `related_tx` field for future BTC correlation
+
+**Native Stacking** (P0):
+- [ ] Decode stack-stx calls
+- [ ] Decode stacking rewards → `REWARD` with `CPT_STACKING`
+- [ ] Decode unlock events
+
+**LISA Liquid Staking** (P1):
+- [ ] Decode stSTX mint/burn
+- [ ] Decode staking rewards
 
 **Deliverable**: Full protocol support for core Stacks DeFi
 
 #### Phase 5: Polish & Testing
 **Goal**: Production readiness
 
-- [ ] Comprehensive test suite
-- [ ] Error handling hardening
-- [ ] Rate limiting for API calls
-- [ ] Documentation
-- [ ] Performance optimization
+**Testing**:
+- [ ] Comprehensive test suite with mocked data (no VCR)
+- [ ] Deterministic fixtures from real Hiro API samples
+- [ ] Verify decoding + DB persistence
+- [ ] Integration tests for full flow
+
+**Hardening**:
+- [ ] Error handling review
+- [ ] Edge case coverage (empty responses, malformed data)
+- [ ] Logging completeness
+
+**Documentation**:
+- [ ] Developer documentation
+- [ ] API endpoint documentation
+
+**Performance**:
+- [ ] Query optimization
+- [ ] Caching effectiveness review
+
+**Deliverable**: Production-ready Stacks integration
 
 ---
 
@@ -273,21 +345,20 @@ rotkehlchen/chain/stacks/
 
 ### 5.1 API Strategy
 
-**Recommendation**: Start with Hiro API, abstract for future node support
+**Decision**: Hiro API only in Phase 1, with swappable interface
 
 ```python
 class StacksInquirer:
     def __init__(self, api_url: str = 'https://api.mainnet.hiro.so'):
         self.api_url = api_url
-
-    # All methods use self.api_url, easily swappable to self-hosted node
+        # All methods use self.api_url, easily swappable later
 ```
 
-**Rationale**: Hiro API is reliable and well-documented. Self-hosted node support can be added later without architectural changes.
+**Rationale**: Hiro API is reliable and well-documented. Interface abstraction allows adding self-hosted node support later without architectural changes.
 
 ### 5.2 Transaction Decoding Approach
 
-**Recommendation**: Contract-call pattern matching (like Solana)
+**Decision**: Contract-call pattern matching (like Solana)
 
 1. Parse transaction to extract `contract_id` and `function_name`
 2. Route to protocol-specific decoder based on contract address
@@ -297,20 +368,56 @@ class StacksInquirer:
 
 ### 5.3 Token Handling
 
-**Recommendation**: Create `StacksToken` model similar to `SolanaToken`
+**Decision**: Curated allowlist + lazy creation with tolerant defaults
 
-- SIP-10 tokens have `contract_id::token_name` format
-- Store in global assets database with `STACKS` chain
-- Support for both well-known tokens and user-added custom tokens
+- **Allowlist** (known at build time): sBTC, stSTX, stSTXBTC, core SIP-10 tokens
+- **Lazy creation**: Tokens discovered during tx decoding get created on-demand
+- **Tolerant defaults**: Handle incomplete SIP-10 metadata gracefully
+- **Metadata caching**: Cache decimals/symbol/name, fall back to contract reads
+
+```python
+KNOWN_STACKS_TOKENS: Final = {
+    'SP3K8BC0PPEVCV7NZ6QSRWPQ2JE9E5B6N3PA0KBR9.sbtc-token::sbtc': {...},
+    'SM3KNVZS30WM7F89SXKVVFY4SN9RMPZZ9FX929N0V.ststx-token::ststx': {...},
+    # ...
+}
+
+def get_or_create_stacks_token(contract_id: str) -> Asset:
+    # Check known tokens first, then create with defaults
+```
 
 ### 5.4 sBTC Bridge Integration
 
-**Challenge**: sBTC pegin originates on Bitcoin, pegout originates on Stacks
+**Decision**: Standalone Stacks-side events, defer cross-chain correlation
 
-**Recommendation**:
-- Track Stacks-side events only initially
-- Correlate with Bitcoin transactions via sBTC deposit/withdrawal addresses if Bitcoin integration exists
-- Use `HistoryEventType.DEPOSIT/WITHDRAWAL` + `HistoryEventSubType.BRIDGE` pattern (matches Arbitrum/Optimism bridges)
+- Emit `DEPOSIT/WITHDRAWAL` + `BRIDGE` subtype for bridge events
+- Events are complete and meaningful on their own
+- Optional `related_tx` field prepared for future BTC correlation
+- Cross-chain auto-pairing deferred to post-v1
+
+**Rationale**: Cross-chain correlation is complex. Ensuring Stacks-side events stand alone cleanly is more valuable than incomplete pairing.
+
+### 5.5 Event Type Semantics
+
+**Decision**: Follow established patterns
+
+| Operation | event_type | event_subtype | counterparty |
+|-----------|------------|---------------|--------------|
+| STX transfer in | `DEPOSIT` | `NONE` | - |
+| STX transfer out | `WITHDRAWAL` | `NONE` | - |
+| Token transfer in | `DEPOSIT` | `NONE` | - |
+| Token transfer out | `WITHDRAWAL` | `NONE` | - |
+| Bridge deposit | `DEPOSIT` | `BRIDGE` | `CPT_SBTC` |
+| Bridge withdrawal | `WITHDRAWAL` | `BRIDGE` | `CPT_SBTC` |
+| Stacking reward | `STAKING` | `REWARD` | `CPT_STACKING` |
+
+### 5.6 Transaction Confirmation
+
+**Decision**: Anchored transactions only
+
+- Only persist transactions in anchor blocks (confirmed)
+- Do not track microblock/pending transactions
+- Avoids UX confusion from reorgs
 
 ---
 
@@ -318,43 +425,90 @@ class StacksInquirer:
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| Hiro API rate limits | Medium | Medium | Implement caching, respect rate limits |
-| Stacks API changes | Low | High | Version pin API calls, monitor changelogs |
-| Complex contract decoding | Medium | Medium | Start with known protocols, generic fallback |
-| sBTC bridge complexity | Medium | Medium | Phase 4 scope, can ship without it |
-| Testnet differences | Low | Low | Test against mainnet data |
+| **Hiro API rate limits** | Medium | Medium | Implement backoff + caching from Phase 2 |
+| **Aggregator ripple effect** | High | Medium | Audit all `CHAINS_WITH_*` usage in Phase 1 |
+| **DB schema/migrations** | Medium | Medium | Mirror `DBSolanaTx` pattern, coordinate with CI |
+| **Microblock confusion** | Medium | Low | Only persist anchored transactions |
+| **Timestamp mismatches** | Medium | High | Normalize to `TimestampMS` on ingestion |
+| **Incomplete token metadata** | High | Low | Tolerant defaults + caching + lazy reads |
+| **Stacks API changes** | Low | High | Version pin API calls, monitor changelogs |
+| **Complex contract decoding** | Medium | Medium | Start with known protocols, generic fallback |
+| **sBTC bridge complexity** | Medium | Medium | Standalone events, defer correlation |
+| **Frontend type errors** | Medium | Low | Verify strict mode passes in Phase 1 |
 
 ---
 
-## 7. Open Questions for Review
+## 7. Decisions Made (Post-Review)
 
-### Architecture Questions
+Based on technical review feedback, the following questions have been resolved:
 
-1. **Tier Selection**: We're targeting Tier 3 (Solana-like). Should we plan for Tier 2 features (accounting aggregator, module activation) from the start, or add later?
-
-2. **API Abstraction**: Should `StacksInquirer` support multiple backends (Hiro, self-hosted node) in Phase 1, or defer to later?
-
-3. **Cross-chain Correlation**: For sBTC bridge events, how should we handle correlation with Bitcoin-side transactions? Same approach as Arbitrum/Ethereum bridge correlation?
-
-### Scope Questions
-
-4. **Token Priority**: Should we support all SIP-10 tokens from Phase 2, or start with a curated list (sBTC, stSTX, etc.)?
-
-5. **NFT Support**: SIP-009 NFTs exist on Stacks. Include in scope or defer?
-
-6. **Mempool Tracking**: Should we show pending transactions, or only confirmed?
-
-### Implementation Questions
-
-7. **Solana Parity**: The Solana implementation has 3 protocol modules. For Stacks, should we target similar coverage (sBTC, stacking, LISA) or more/fewer?
-
-8. **Testing Strategy**: Solana tests use mocked data. Should we follow the same pattern, or use VCR recordings for Stacks API calls?
-
-9. **Frontend Changes**: What UI changes are needed beyond adding Stacks to the chain selector? Token icons? Protocol-specific views?
+| Question | Decision |
+|----------|----------|
+| **Tier selection** | Tier 3 for v1; add Tier 2 features (accounting aggregator) post-stability |
+| **API abstraction** | Hiro-only in Phase 1; keep interface swappable |
+| **Cross-chain correlation** | Emit standalone events; defer auto-pairing |
+| **Token priority** | Curated allowlist + lazy creation for others |
+| **NFT support** | Defer; not critical for tax/value scope |
+| **Mempool tracking** | Confirmed/anchored only; pending deferred |
+| **Protocol coverage** | Target 3 modules (sBTC, stacking, LISA); DEXes are P2 |
+| **Testing strategy** | Mocked tests (no VCR); deterministic fixtures from real samples |
+| **Frontend changes** | Chain selector + icons + address hints; existing history UI suffices |
 
 ---
 
-## 8. Appendices
+## 8. Implementation Notes
+
+### 8.1 Code Touchpoints for Phase 1
+
+**Type Registration** (`rotkehlchen/types.py`):
+- Add `StacksAddress` NewType
+- Add to `SupportedBlockchain` enum
+- Add to `Location` enum
+- Extend: `CHAINS_WITH_TRANSACTIONS`, `CHAINS_WITH_TX_DECODING`, `CHAINS_WITH_TRANSACTION_DECODERS`, `CHAINS_WITH_CHAIN_MANAGER`
+
+**Manager Wiring**:
+- `rotkehlchen/rotkehlchen.py` - Manager instantiation
+- `rotkehlchen/chain/aggregator.py` - `ChainsAggregator` constructor, attributes, locks
+- Test fixtures using chain managers
+- REST API schemas surfacing chain lists
+
+**New Package**:
+- `rotkehlchen/chain/stacks/__init__.py`
+- `rotkehlchen/chain/stacks/manager.py`
+- `rotkehlchen/chain/stacks/node_inquirer.py`
+- `rotkehlchen/chain/stacks/validation.py`
+- `rotkehlchen/chain/stacks/constants.py`
+- `rotkehlchen/chain/stacks/types.py`
+
+### 8.2 Database Schema (Phase 2)
+
+Mirror `DBSolanaTx` pattern:
+- Stacks transactions table
+- "Not decoded" query support
+- Deduplication on tx hash
+- Filtering by address/block range
+
+### 8.3 Event Semantics Reference
+
+```python
+# STX/Token transfers
+HistoryEventType.DEPOSIT / WITHDRAWAL
+HistoryEventSubType.NONE
+
+# Bridge operations
+HistoryEventType.DEPOSIT / WITHDRAWAL
+HistoryEventSubType.BRIDGE
+counterparty = CPT_SBTC
+
+# Stacking rewards
+HistoryEventType.STAKING
+HistoryEventSubType.REWARD
+counterparty = CPT_STACKING
+```
+
+---
+
+## 9. Appendices
 
 ### A. Stacks Address Format
 
@@ -375,31 +529,32 @@ class StacksInquirer:
 
 - **Free tier**: 50 requests/minute
 - **Authenticated**: 500 requests/minute
-- **Recommendation**: Implement exponential backoff and caching
+- **Mitigation**: Exponential backoff + response caching (Phase 2)
 
-### D. Related PRs/Issues
+### D. Related Code References
 
-- Solana implementation: Reference for non-EVM chain addition
+- Solana implementation: `rotkehlchen/chain/solana/`
 - Bridge decoder patterns: `rotkehlchen/chain/evm/decoding/utils.py`
+- Type unions: `rotkehlchen/types.py` lines 609-733
 
 ---
 
-## 9. Feedback Requested
+## 10. Changelog
 
-Please review and provide feedback on:
+### v1.1 (2025-01-24)
+- Incorporated technical review feedback
+- Moved rate limiting/caching from Phase 5 to Phase 2
+- Added aggregator wiring audit to Phase 1
+- Clarified token strategy (curated allowlist + lazy creation)
+- Added microblock/confirmation handling decision
+- Added timestamp normalization requirement
+- Expanded risk assessment with new items
+- Added "Decisions Made" section with resolved questions
+- Added implementation notes with specific code touchpoints
 
-1. **Accuracy of analysis** - Did we correctly understand rotki's architecture and the Solana reference implementation?
-
-2. **Approach validation** - Is Tier 3 (Solana-like) the right target? Any concerns with the proposed architecture?
-
-3. **Phase breakdown** - Does the phased approach make sense? Should phases be combined or split differently?
-
-4. **Scope concerns** - Is the scope appropriate for an initial integration? Too ambitious? Missing critical features?
-
-5. **Technical risks** - Any risks we haven't identified? Concerns about specific design decisions?
-
-6. **Timeline expectations** - Given the scope, what timeline expectations should we set?
+### v1.0 (2025-01-24)
+- Initial draft
 
 ---
 
-*This document was prepared based on static code analysis of the rotki codebase. Implementation details may need adjustment based on runtime testing and API behavior.*
+*This document was prepared based on static code analysis of the rotki codebase and technical review feedback. Implementation details may need adjustment based on runtime testing and API behavior.*
