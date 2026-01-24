@@ -2,7 +2,7 @@
 way rotki works instead of subclassing it to handle errors our way in order to keep
 it as lightweight as possible"""
 
-from typing import Union, cast, overload
+from typing import Self, Union, cast, overload
 
 from hexbytes import HexBytes as Web3HexBytes
 
@@ -44,9 +44,9 @@ class HexBytes(bytes):
         3. The representation at console is in hex
     """
     def __new__(
-            cls: type[bytes],
+            cls: type[Self],
             val: Web3HexBytes | (bytearray | (bytes | str)),
-    ) -> 'HexBytes':
+    ) -> Self:
         bytesval = to_bytes(val)
         return cast('HexBytes', super().__new__(cls, bytesval))  # type: ignore  # https://github.com/python/typeshed/issues/2630
 

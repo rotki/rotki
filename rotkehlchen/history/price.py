@@ -79,7 +79,7 @@ class PriceHistorian:
     _oracles: Sequence[HistoricalPriceOracle] | None = None
     _oracle_instances: list[HistoricalPriceOracleInstance] | None = None
 
-    def __new__(
+    def __new__(   # noqa: PYI034  # singleton is an exception
             cls,
             data_directory: Path | None = None,
             cryptocompare: Optional['Cryptocompare'] = None,

@@ -509,7 +509,7 @@ class CachedSettings:
         default=None,
     )
 
-    def __new__(cls) -> 'CachedSettings':
+    def __new__(cls) -> 'CachedSettings':   # noqa: PYI034  # singleton is an exception
         if CachedSettings.__instance is not None:
             return CachedSettings.__instance
 

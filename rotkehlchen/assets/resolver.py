@@ -35,7 +35,7 @@ class AssetResolver:
     assets_cache: LRUCacheLowerKey['AssetWithNameAndType'] = LRUCacheLowerKey(maxsize=512)
     types_cache: LRUCacheLowerKey[AssetType] = LRUCacheLowerKey(maxsize=512)
 
-    def __new__(
+    def __new__(  # noqa: PYI034 # singleton pattern should not get Self
             cls,
             globaldb: 'GlobalDBHandler | None' = None,
             constant_assets: set['Asset'] | None = None,

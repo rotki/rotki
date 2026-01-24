@@ -115,7 +115,7 @@ class GlobalDBHandler:
     packaged_db_lock: Semaphore
     msg_aggregator: 'MessagesAggregator | None' = None
 
-    def __new__(
+    def __new__(   # noqa: PYI034  # singleton is an exception
             cls,
             data_dir: Path | None = None,
             sql_vm_instructions_cb: int | None = None,

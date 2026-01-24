@@ -352,7 +352,7 @@ class Inquirer:
     weth: EvmToken
     usd: FiatAsset
 
-    def __new__(
+    def __new__(     # noqa: PYI034  # singleton is an exception
             cls,
             data_dir: Path | None = None,
             cryptocompare: Optional['Cryptocompare'] = None,

@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, Optional, Self, TypeAlias
 from uuid import uuid4
 
 import gevent
@@ -69,7 +69,7 @@ class DBCursor:
             logger.trace(f'Got next item for cursor {id(self)}')
         return result
 
-    def __enter__(self) -> 'DBCursor':
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(
