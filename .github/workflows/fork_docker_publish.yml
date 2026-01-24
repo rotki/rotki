@@ -1,0 +1,200 @@
+name: Fork Docker Publish
+
+on:
+  push:
+    branches: [develop]
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      include_arm64:
+        description: 'Include ARM64 build (slower)'
+        type: boolean
+        default: false
+      custom_tag:
+        description: 'Custom image tag (optional)'
+        type: string
+        required: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  prepare:
+    name: Prepare build configuration
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      platforms: ${{ steps.platforms.outputs.platforms }}
+      is_release: ${{ steps.check.outputs.is_release }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check if release
+        id: check
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            echo "is_release=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_release=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Determine version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # Extract version from tag (remove 'v' prefix)
+            VERSION="${GITHUB_REF#refs/tags/v}"
+          else
+            # Get version from .bumpversion.cfg and append -dev suffix
+            VERSION=$(grep 'current_version = ' .bumpversion.cfg | sed 's/current_version = //')
+            VERSION="${VERSION}-dev.$(date +'%Y%m%d')"
+          fi
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Determined version: ${VERSION}"
+
+      - name: Determine platforms
+        id: platforms
+        run: |
+          # ARM64 for releases or when explicitly requested
+          if [[ "${{ steps.check.outputs.is_release }}" == "true" ]] || [[ "${{ inputs.include_arm64 }}" == "true" ]]; then
+            echo 'platforms=["linux/amd64", "linux/arm64"]' >> "$GITHUB_OUTPUT"
+          else
+            echo 'platforms=["linux/amd64"]' >> "$GITHUB_OUTPUT"
+          fi
+
+  build:
+    name: Build ${{ matrix.platform }}
+    needs: prepare
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJson(needs.prepare.outputs.platforms) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Prepare platform pair
+        run: |
+          platform=${{ matrix.platform }}
+          echo "PLATFORM_PAIR=${platform//\//-}" >> "$GITHUB_ENV"
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: ${{ matrix.platform }}
+          provenance: mode=max
+          build-args: |
+            REVISION=${{ github.sha }}
+            ROTKI_VERSION=${{ needs.prepare.outputs.version }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=image,"name=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}",push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          mkdir -p "${{ runner.temp }}/digests"
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ env.PLATFORM_PAIR }}
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  merge:
+    name: Create multi-arch manifest
+    runs-on: ubuntu-latest
+    needs: [prepare, build]
+    steps:
+      - name: Download digests
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Determine tags
+        id: tags
+        run: |
+          VERSION="${{ needs.prepare.outputs.version }}"
+          IS_RELEASE="${{ needs.prepare.outputs.is_release }}"
+          CUSTOM_TAG="${{ inputs.custom_tag }}"
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+
+          TAGS=""
+
+          if [[ -n "${CUSTOM_TAG}" ]]; then
+            # Manual dispatch with custom tag
+            TAGS="${IMAGE}:${CUSTOM_TAG}"
+          elif [[ "${IS_RELEASE}" == "true" ]]; then
+            # Release: full version, major.minor, and latest
+            MAJOR_MINOR=$(echo "${VERSION}" | cut -d. -f1,2)
+            TAGS="${IMAGE}:${VERSION},${IMAGE}:${MAJOR_MINOR},${IMAGE}:latest"
+          else
+            # Development build on develop branch
+            TAGS="${IMAGE}:develop"
+          fi
+
+          echo "tags=${TAGS}" >> "$GITHUB_OUTPUT"
+          echo "Generated tags: ${TAGS}"
+
+      - name: Create manifest list and push
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          # Convert comma-separated tags to -t arguments
+          TAGS="${{ steps.tags.outputs.tags }}"
+          TAG_ARGS=""
+          IFS=',' read -ra TAG_ARRAY <<< "${TAGS}"
+          for tag in "${TAG_ARRAY[@]}"; do
+            TAG_ARGS="${TAG_ARGS} -t ${tag}"
+          done
+
+          docker buildx imagetools create ${TAG_ARGS} \
+            $(printf '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@sha256:%s ' *)
+
+      - name: Inspect image
+        run: |
+          FIRST_TAG=$(echo "${{ steps.tags.outputs.tags }}" | cut -d, -f1)
+          docker buildx imagetools inspect "${FIRST_TAG}"
