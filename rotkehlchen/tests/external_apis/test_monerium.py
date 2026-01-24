@@ -1,5 +1,6 @@
 import json
 from http import HTTPStatus
+from typing import Any
 from unittest.mock import patch
 
 import gevent
@@ -11,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.constants.assets import A_ETH_EURE
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.externalapis.monerium import MoneriumOAuthClient, init_monerium
@@ -23,8 +25,8 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
 
-def mock_monerium_and_run_periodic_task(database, contents):
-    def mock_orders(*_args, **_kwargs):
+def mock_monerium_and_run_periodic_task(database: DBHandler, contents: str) -> None:
+    def mock_orders(*_args: Any, **_kwargs: Any) -> MockResponse:
         return MockResponse(
             status_code=HTTPStatus.OK,
             text=json.dumps({'orders': json.loads(contents)}),
@@ -41,10 +43,11 @@ def mock_monerium_and_run_periodic_task(database, contents):
         ),
     ):
         monerium = init_monerium(database)
+        assert monerium is not None
         monerium.get_and_process_orders()
 
 
-def test_send_bank_transfer(database, monerium_credentials):  # pylint: disable=unused-argument
+def test_send_bank_transfer(database: DBHandler, monerium_credentials: Any) -> None:  # pylint: disable=unused-argument
     """Test that sending a bank transfer on-chain via monerium is seen via their API
     and the periodic task identifies the event and properly annotates it"""
     dbevents = DBHistoryEvents(database)
@@ -86,7 +89,7 @@ def test_send_bank_transfer(database, monerium_credentials):  # pylint: disable=
     assert new_events == [event]
 
 
-def test_receive_bank_transfer(database, monerium_credentials):  # pylint: disable=unused-argument
+def test_receive_bank_transfer(database: DBHandler, monerium_credentials: Any) -> None:  # pylint: disable=unused-argument
     """Test that receiving a bank transfer on-chain via monerium is seen via their API
     and the periodic task identifies the event and properly annotates it"""
     dbevents = DBHistoryEvents(database)
@@ -128,7 +131,7 @@ def test_receive_bank_transfer(database, monerium_credentials):  # pylint: disab
     assert new_events == [event]
 
 
-def test_bridge_via_monerium(database, monerium_credentials):  # pylint: disable=unused-argument
+def test_bridge_via_monerium(database: DBHandler, monerium_credentials: Any) -> None:  # pylint: disable=unused-argument
     """Test that the case where the mint is a bridging from one chain to another is handled
     correctly and that the monerium API result is processed"""
     dbevents = DBHistoryEvents(database)
@@ -194,7 +197,7 @@ def test_bridge_via_monerium(database, monerium_credentials):  # pylint: disable
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
-def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
+def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer) -> None:
     """Test that triggering a re-decode for a monerium transaction updates correctly the notes"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     database = rotki.data.db
@@ -232,7 +235,7 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
             }),
         )
 
-    def add_event(self, *args, **kwargs):  # pylint: disable=unused-argument
+    def add_event(self: Any, *args: Any, **kwargs: Any) -> list[EvmEvent]:  # pylint: disable=unused-argument
         with database.conn.read_ctx() as cursor:
             # reload data so the monerium decoder inits the api
             self.reload_data(cursor)
@@ -271,7 +274,7 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
     assert events[0].notes == 'Send 2353.57 EURe via bank transfer to Yabir Benchakhtir (ESXX KKKK OOOO IIII KKKK LLLL) with memo "Venta inversion"'  # noqa: E501
 
 
-def test_concurrent_refresh_is_serialized(database, monerium_credentials):
+def test_concurrent_refresh_is_serialized(database: DBHandler, monerium_credentials: Any) -> None:
     """Ensure concurrent Monerium queries do not refresh the token twice."""
     with database.conn.read_ctx() as cursor:
         cached_value = database.get_static_cache(
@@ -291,7 +294,7 @@ def test_concurrent_refresh_is_serialized(database, monerium_credentials):
     client = MoneriumOAuthClient(database=database, session=requests.Session())
     refresh_calls: list[int] = []
 
-    def fake_refresh(self):
+    def fake_refresh(self: MoneriumOAuthClient) -> None:
         refresh_calls.append(ts_now())
         gevent.sleep(0.1)  # give time for the second greenlet to reach the lock
         assert self._credentials is not None

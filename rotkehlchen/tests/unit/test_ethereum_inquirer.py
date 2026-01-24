@@ -1,6 +1,6 @@
 import json
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 from unittest.mock import patch
 
 import pytest
@@ -28,7 +28,13 @@ from rotkehlchen.tests.utils.ethereum import (
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import ChainID, EvmTransaction, SupportedBlockchain, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    EvmTransaction,
+    SupportedBlockchain,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -357,11 +363,11 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
         )
 
 
-BLOCKNUMBER_BY_TS: Final = 1577836800
+BLOCKNUMBER_BY_TS: Final = Timestamp(1577836800)
 BLOCKNUMBER_BY_TS_BLOCK: Final = 9193265
 
 
-def _test_get_blocknumber_by_time(ethereum_inquirer):
+def _test_get_blocknumber_by_time(ethereum_inquirer: 'EthereumInquirer') -> None:
     result = ethereum_inquirer.get_blocknumber_by_time(BLOCKNUMBER_BY_TS)
     assert result == BLOCKNUMBER_BY_TS_BLOCK
 
@@ -400,10 +406,10 @@ def _test_get_blocknumber_by_time(ethereum_inquirer):
     ],
 )
 def test_get_blocknumber_by_time(
-        ethereum_inquirer,
-        order,
-        effects,
-        expected_calls,
+        ethereum_inquirer: 'EthereumInquirer',
+        order: tuple[EvmIndexer],
+        effects: dict[str, Any],
+        expected_calls: list[str],
 ):
     cached_settings = CachedSettings()
     previous_order = cached_settings.get_entry('evm_indexers_order')
