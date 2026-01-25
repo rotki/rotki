@@ -10,8 +10,8 @@ ASSET_MOVEMENT_NO_MATCH_CACHE_VALUE: Final = -1
 
 
 class DBCacheStatic(Enum):
-    """It contains all the keys that don't depend on a variable
-    that can be stored in the `key_value_cache` table"""
+    """Contains all keys that don't depend on a variable
+    and can be stored in the `key_value_cache` table."""
     LAST_BALANCE_SAVE: Final = 'last_balance_save'
     LAST_DATA_UPLOAD_TS: Final = 'last_data_upload_ts'
     LAST_DATA_UPDATES_TS: Final = 'last_data_updates_ts'
@@ -107,8 +107,8 @@ def _deserialize_solana_token_account_from_str(value: str) -> tuple[SolanaAddres
 
 
 class DBCacheDynamic(Enum):
-    """It contains all the formattable keys that depend on a variable
-    that can be stored in the `key_value_cache` table"""
+    """Contains all formattable keys that depend on a variable
+    and can be stored in the `key_value_cache` table."""
     LAST_CRYPTOTX_OFFSET: Final = '{location}_{location_name}_last_cryptotx_offset', _deserialize_int_from_str  # noqa: E501
     LAST_QUERY_TS: Final = '{location}_{location_name}_{account_id}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
     LAST_QUERY_ID: Final = '{location}_{location_name}_{account_id}_last_query_id', lambda x: x  # return it as is, a string  # noqa: E501
@@ -156,7 +156,7 @@ class DBCacheDynamic(Enum):
     def get_db_key(self, **kwargs: Any) -> str:
         """Get the key that is used in the DB schema for the given kwargs.
 
-        May Raise KeyError if incompatible kwargs are passed. Pass the kwargs according to the
+        May raise KeyError if incompatible kwargs are passed. Pass the kwargs according to the
         supported overloads only. The potential KeyError is handled by type checking. It is
         considered a programming error and it is not handled explicitly."""
         return self.value[0].format(**kwargs)
