@@ -3552,7 +3552,7 @@ class DBHandler:
         }
 
     def get_backups(self) -> list[dict[str, Any]]:
-        """Returns a list of tuples with possible backups of the user DB"""
+        """Returns a list of dicts with possible backups of the user DB"""
         backups = []
         for root, _, files in os.walk(self.user_data_dir):
             for filename in files:
