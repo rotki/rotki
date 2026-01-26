@@ -56,8 +56,8 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
             (tx_hash,),
         ).fetchone()
 
-        if l1_fee is not None:
-            return evm_tx, tx_receipt  # type: ignore[return-value]  # all good, l1_fee is in the database
+        if l1_fee is not None and l1_fee[0] != 0:
+            return evm_tx, tx_receipt  # type: ignore[return-value]  # all good, l1_fee is valid and in the database
 
         transaction, _ = self.evm_inquirer.get_transaction_by_hash(tx_hash=tx_hash)
         transaction = cast('L2WithL1FeesTransaction', transaction)

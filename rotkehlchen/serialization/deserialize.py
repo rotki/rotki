@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
 
 from eth_utils import to_checksum_address
 from solders.solders import Pubkey, Signature
@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
 from rotkehlchen.chain.optimism.constants import OP_BEDROCK_UPGRADE
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnprocessableTradePair
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
@@ -37,6 +38,7 @@ from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_t
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 
 
 logger = logging.getLogger(__name__)
@@ -525,8 +527,9 @@ def deserialize_evm_transaction(
         data: dict[str, Any],
         internal: Literal[True],
         chain_id: ChainID,
-        evm_inquirer: Optional['EvmNodeInquirer'] = None,
-        parent_tx_hash: Optional['EVMTxHash'] = None,
+        evm_inquirer: 'EvmNodeInquirer | None' = None,
+        parent_tx_hash: 'EVMTxHash | None' = None,
+        indexer: 'EtherscanLikeApi | None' = None,
 ) -> tuple[EvmInternalTransaction, None]:
     ...
 
@@ -537,7 +540,8 @@ def deserialize_evm_transaction(
         internal: Literal[False],
         chain_id: ChainID,
         evm_inquirer: None,
-        parent_tx_hash: Optional['EVMTxHash'] = None,
+        parent_tx_hash: 'EVMTxHash | None' = None,
+        indexer: 'EtherscanLikeApi | None' = None,
 ) -> tuple[EvmTransaction, None]:
     ...
 
@@ -548,7 +552,8 @@ def deserialize_evm_transaction(
         internal: Literal[False],
         chain_id: L2ChainIdsWithL1FeesType,
         evm_inquirer: 'EvmNodeInquirer',
-        parent_tx_hash: Optional['EVMTxHash'] = None,
+        parent_tx_hash: 'EVMTxHash | None' = None,
+        indexer: 'EtherscanLikeApi | None' = None,
 ) -> tuple[L2WithL1FeesTransaction, dict[str, Any]]:
     ...
 
@@ -559,7 +564,8 @@ def deserialize_evm_transaction(
         internal: Literal[False],
         chain_id: ChainID,
         evm_inquirer: 'EvmNodeInquirer',
-        parent_tx_hash: Optional['EVMTxHash'] = None,
+        parent_tx_hash: 'EVMTxHash | None' = None,
+        indexer: 'EtherscanLikeApi | None' = None,
 ) -> tuple[EvmTransaction, dict[str, Any]]:
     ...
 
@@ -568,8 +574,9 @@ def deserialize_evm_transaction(
         data: dict[str, Any],
         internal: bool,
         chain_id: ChainID,
-        evm_inquirer: Optional['EvmNodeInquirer'] = None,
-        parent_tx_hash: Optional['EVMTxHash'] = None,
+        evm_inquirer: 'EvmNodeInquirer | None' = None,
+        parent_tx_hash: 'EVMTxHash | None' = None,
+        indexer: 'EtherscanLikeApi | None' = None,
 ) -> tuple[EvmTransaction | EvmInternalTransaction, dict[str, Any] | None]:
     """Reads dict data of a transaction and deserializes it.
     If the transaction is not from etherscan then it's missing some data
@@ -579,6 +586,9 @@ def deserialize_evm_transaction(
     https://docs.etherscan.io/api-endpoints/accounts#get-internal-transactions-by-transaction-hash)
     , that the hash is missing from the data string, so it is provided in that case
     as an argument.
+
+    For L2 chains with L1 fees, the indexer parameter is used to fetch L1 fees when called
+    from indexers, since they don't have access to evm_inquirer.
 
     Can raise DeserializationError if something is wrong
 
@@ -661,12 +671,11 @@ def deserialize_evm_transaction(
         nonce = read_integer(data, 'nonce', source)
 
         if chain_id in L2_CHAINIDS_WITH_L1_FEES:
+            l1_fee: int | None = None
             try:  # if data is from etherscan's txlist it will already include the L1 fee
                 l1_fee = int(data['L1FeesPaid'])
             except (KeyError, ValueError):  # data is not from txlist or malformed data from txlist
-                if evm_inquirer is None:
-                    l1_fee = None
-                else:
+                if evm_inquirer is not None:
                     if raw_receipt_data is None:
                         raw_receipt_data = _get_transaction_receipt(
                             tx_hash=tx_hash,
@@ -684,6 +693,21 @@ def deserialize_evm_transaction(
                             tx_hash=tx_hash,
                             block_number=block_number,
                         )
+                elif indexer is not None:  # fallback to indexers for non-Etherscan sources
+                    try:
+                        l1_fee = indexer.get_l1_fee(
+                            chain_id=chain_id,  # type: ignore[arg-type]  # L2 chain guaranteed
+                            account=from_address,
+                            tx_hash=tx_hash,
+                            block_number=block_number,
+                        )
+                    except (KeyError, RemoteError, DeserializationError) as e:
+                        log.warning(f'Failed to get L1 fee from {indexer.name} due to {e!s}')
+                else:  # should never happen
+                    log.error(
+                        f'Cannot retrieve L1 fee for {chain_id.to_name()} transaction {tx_hash!s}. '  # noqa: E501
+                        f'Both evm_inquirer and indexer are None.',
+                    )
 
             if l1_fee is None:
                 log.error(

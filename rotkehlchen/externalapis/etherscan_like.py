@@ -545,6 +545,7 @@ class EtherscanLikeApi(ABC):
                             chain_id=chain_id,
                             evm_inquirer=None,
                             parent_tx_hash=parent_tx_hash,
+                            indexer=self,
                         )
                     else:  # Handling genesis transactions
                         assert self.db is not None, 'self.db should exists at this point'

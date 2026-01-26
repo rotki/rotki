@@ -6,6 +6,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -139,3 +140,36 @@ def test_l1_fee_queried_when_missing(
         assert get_tx_receipt_mock.call_count == 1
         assert get_tx_receipt_mock.call_args_list[0].kwargs['call_order'][0].node_info.name == 'mainnet'  # noqa: E501
         assert get_l1_fees_mock.call_count == (1 if fallback_to_indexers else 0)
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xd6Ade875eEC93a7aAb7EfB7DBF13d1457443f95B']])
+def test_l1_fee_fetched_during_indexer_tx_query(
+        optimism_transactions: 'OptimismTransactions',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    """Test that L1 fees are fetched via indexer's get_l1_fee during transaction queries.
+
+    This tests the fix where get_transactions() in etherscan_like.py now calls get_l1_fee()
+    for L2 chains when using non-Etherscan indexers (Blockscout, Routescan) since these
+    indexers don't include L1 fee in their txlist response.
+    """
+    address = optimism_accounts[0]
+    expected_l1_fee = 115752642875381
+    tx_hash = deserialize_evm_tx_hash('0x6eb136db4d36cf695f4026da16f602ed4a2583b2420dbbcbd4f436943190b665')  # noqa: E501
+
+    for tx_batch in optimism_transactions.evm_inquirer.get_transactions(
+        account=address,
+        action='txlist',
+        period_or_hash=TimestampOrBlockRange(
+            range_type='blocks',
+            from_value=106757395,
+            to_value=106757395,
+        ),
+    ):
+        for tx in tx_batch:
+            if tx.tx_hash == tx_hash:
+                assert cast('L2WithL1FeesTransaction', tx).l1_fee == expected_l1_fee
+                return
+
+    raise AssertionError('Expected transaction not found')
