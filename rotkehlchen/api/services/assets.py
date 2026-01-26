@@ -217,7 +217,11 @@ class AssetsService:
         types = [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
         return {'result': types, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def add_user_asset(self, asset: AssetWithOracles) -> dict[str, Any]:
+    def add_user_asset(
+            self,
+            asset: AssetWithOracles,
+            flags: list[str] | None,
+    ) -> dict[str, Any]:
         if isinstance(asset, EvmToken):
             try:
                 asset.check_existence()
@@ -237,7 +241,7 @@ class AssetsService:
                 'status_code': HTTPStatus.CONFLICT,
             }
         try:
-            GlobalDBHandler.add_asset(asset)
+            GlobalDBHandler.add_asset(asset, flags)
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 
@@ -249,9 +253,13 @@ class AssetsService:
             'status_code': HTTPStatus.OK,
         }
 
-    def edit_user_asset(self, asset: AssetWithOracles) -> dict[str, Any]:
+    def edit_user_asset(
+            self,
+            asset: AssetWithOracles,
+            flags: list[str] | None,
+    ) -> dict[str, Any]:
         try:
-            GlobalDBHandler.edit_user_asset(asset)
+            GlobalDBHandler.edit_user_asset(asset, flags)
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
 

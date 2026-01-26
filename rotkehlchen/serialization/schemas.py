@@ -18,7 +18,6 @@ from rotkehlchen.api.v1.fields import (
     TimestampField,
 )
 from rotkehlchen.assets.asset import (
-    AssetWithNameAndType,
     CryptoAsset,
     CustomAsset,
     EvmToken,
@@ -26,6 +25,7 @@ from rotkehlchen.assets.asset import (
     SolanaToken,
     UnderlyingToken,
 )
+from rotkehlchen.assets.flags import VALID_ASSET_FLAGS
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import RemoteError
@@ -369,6 +369,7 @@ class CustomAssetWithIdentifierSchema(BaseCustomAssetSchema):
 
 class AssetSchema(Schema):
     asset_type = AssetTypeField(required=True)
+    flags = fields.List(NonEmptyStringField(), required=False, load_default=None)
 
     class Meta:
         # Set unknown = 'INCLUDE' to allow extra parameters
@@ -403,8 +404,9 @@ class AssetSchema(Schema):
             self,
             data: dict[str, Any],
             **_kwargs: Any,
-    ) -> dict[str, AssetWithNameAndType]:
+    ) -> dict[str, Any]:
         """Returns a deserialized asset based on the given asset type"""
+        flags = data.pop('flags', None)
         asset_type = data.pop('asset_type')
         if self.disallowed_asset_types is not None and asset_type in self.disallowed_asset_types:
             raise ValidationError(
@@ -440,7 +442,20 @@ class AssetSchema(Schema):
                 cryptocompare=self.cryptocompare_obj,
             ).load(data)['crypto_asset']
 
-        return {'asset': asset}
+        if flags is not None:
+            if len(flags) > 1:
+                raise ValidationError(
+                    field_name='flags',
+                    message='Only a single asset flag is supported',
+                )
+            invalid_flags = [flag for flag in flags if flag not in VALID_ASSET_FLAGS]
+            if invalid_flags:
+                raise ValidationError(
+                    field_name='flags',
+                    message=f'Unsupported asset flags: {", ".join(invalid_flags)}',
+                )
+
+        return {'asset': asset, 'flags': flags}
 
 
 class ExportedAssetsSchema(Schema):

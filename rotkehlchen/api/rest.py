@@ -1099,12 +1099,12 @@ class RestAPI:
         response_data = self.assets_service.get_asset_types()
         return make_response_from_dict(response_data)
 
-    def add_user_asset(self, asset: AssetWithOracles) -> Response:
-        response_data = self.assets_service.add_user_asset(asset)
+    def add_user_asset(self, asset: AssetWithOracles, flags: list[str] | None) -> Response:
+        response_data = self.assets_service.add_user_asset(asset, flags)
         return make_response_from_dict(response_data)
 
-    def edit_user_asset(self, asset: AssetWithOracles) -> Response:
-        response_data = self.assets_service.edit_user_asset(asset)
+    def edit_user_asset(self, asset: AssetWithOracles, flags: list[str] | None) -> Response:
+        response_data = self.assets_service.edit_user_asset(asset, flags)
         return make_response_from_dict(response_data)
 
     def delete_asset(self, identifier: str) -> Response:
@@ -3112,6 +3112,7 @@ class RestAPI:
             process_historical_balances(
                 database=self.rotkehlchen.data.db,
                 msg_aggregator=self.rotkehlchen.msg_aggregator,
+                chains_aggregator=self.rotkehlchen.chains_aggregator,
                 from_ts=stale_from_ts,
             )
         else:  # task == TaskName.ASSET_MOVEMENT_MATCHING

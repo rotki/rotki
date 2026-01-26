@@ -697,6 +697,7 @@ class TaskManager:
             method=process_historical_balances,
             database=self.database,
             msg_aggregator=self.msg_aggregator,
+            chains_aggregator=self.chains_aggregator,
             from_ts=TimestampMS(int(stale_from_ts)) if stale_from_ts else None,
         )]
 

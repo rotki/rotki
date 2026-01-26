@@ -985,12 +985,20 @@ class AllAssetsResource(BaseMethodView):
 
     @require_loggedin_user()
     @resource_parser.use_kwargs(make_add_schema, location='json')
-    def put(self, asset: AssetWithOracles) -> Response:  # is asset with oracles since we disallow custom assets  # noqa: E501
-        return self.rest_api.add_user_asset(asset)
+    def put(
+            self,
+            asset: AssetWithOracles,
+            flags: list[str] | None,
+    ) -> Response:  # is asset with oracles since we disallow custom assets
+        return self.rest_api.add_user_asset(asset, flags)
 
     @resource_parser.use_kwargs(make_edit_schema, location='json')
-    def patch(self, asset: AssetWithOracles) -> Response:  # is asset with oracles since we disallow custom assets  # noqa: E501
-        return self.rest_api.edit_user_asset(asset)
+    def patch(
+            self,
+            asset: AssetWithOracles,
+            flags: list[str] | None,
+    ) -> Response:  # is asset with oracles since we disallow custom assets
+        return self.rest_api.edit_user_asset(asset, flags)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')

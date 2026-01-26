@@ -18,6 +18,7 @@ from rotkehlchen.assets.asset import (
     SolanaToken,
     UnderlyingToken,
 )
+from rotkehlchen.assets.flags import VALID_ASSET_FLAGS
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
@@ -218,7 +219,7 @@ class GlobalDBHandler:
             )
 
     @staticmethod
-    def add_asset(asset: AssetWithNameAndType) -> None:
+    def add_asset(asset: AssetWithNameAndType, flags: list[str] | None = None) -> None:
         """
         Add an asset in the DB.
 
@@ -238,6 +239,11 @@ class GlobalDBHandler:
                     write_cursor.execute(
                         'INSERT INTO custom_assets(identifier, type, notes) VALUES(?, ?, ?)',
                         cast('CustomAsset', asset).serialize_for_db(),
+                    )
+                    GlobalDBHandler._apply_asset_flag(
+                        write_cursor=write_cursor,
+                        identifier=asset.identifier,
+                        flags=flags,
                     )
                     return
 
@@ -271,6 +277,11 @@ class GlobalDBHandler:
                         swapped_for,
                     ),
                 )
+                GlobalDBHandler._apply_asset_flag(
+                    write_cursor=write_cursor,
+                    identifier=asset.identifier,
+                    flags=flags,
+                )
         except rsqlite.IntegrityError as e:
             raise InputError(
                 f'Failed to add asset {asset.identifier} into the assets table due to {e!s}',
@@ -299,12 +310,14 @@ class GlobalDBHandler:
         COALESCE(B.protocol, S.protocol) AS protocol,
         B.chain,
         COALESCE(B.token_kind, S.token_kind) AS token_kind,
-        D.notes, D.type AS custom_asset_type
+        D.notes, D.type AS custom_asset_type,
+        F.flag
         FROM assets as A
         LEFT JOIN common_asset_details AS C ON C.identifier = A.identifier
         LEFT JOIN evm_tokens as B ON B.identifier = A.identifier
         LEFT JOIN custom_assets as D ON D.identifier = A.identifier
         LEFT JOIN solana_tokens as S ON S.identifier = A.identifier
+        LEFT JOIN asset_flags as F ON F.identifier = A.identifier
         """
         query = f'SELECT * FROM ({parent_query}) {prepared_filter_query}'
         should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
@@ -321,10 +334,16 @@ class GlobalDBHandler:
                     continue
 
                 asset_type = AssetType.deserialize_from_db(entry[1])
+                flags = (
+                    [entry[16]]
+                    if entry[16] in VALID_ASSET_FLAGS
+                    else []
+                )
                 data = {
                     'identifier': entry[0],
                     'asset_type': str(asset_type),
                     'name': entry[4],
+                    'flags': flags,
                 }
                 # for evm tokens and crypto assets
                 common_data = {
@@ -1318,7 +1337,7 @@ class GlobalDBHandler:
             AssetResolver.clean_memory_cache(identifier)
 
     @staticmethod
-    def edit_user_asset(asset: AssetWithOracles) -> None:
+    def edit_user_asset(asset: AssetWithOracles, flags: list[str] | None = None) -> None:
         """Edits an already existing user asset in the DB. Atm only AssetWithOracles are supported.
 
         May raise InputError if the token already exists or other error
@@ -1332,10 +1351,12 @@ class GlobalDBHandler:
 
         if asset.is_evm_token():
             GlobalDBHandler.edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if
+            GlobalDBHandler.set_asset_flag(identifier=asset.identifier, flags=flags)
             return
 
         if asset.is_solana_token():
             GlobalDBHandler.edit_solana_token(asset)   # type: ignore[arg-type]  # it is definitely a solana token
+            GlobalDBHandler.set_asset_flag(identifier=asset.identifier, flags=flags)
             return
 
         details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
@@ -1379,6 +1400,54 @@ class GlobalDBHandler:
                     f'Failed to update DB entry for asset with identifier {asset.identifier} '
                     f'due to a constraint being hit. Make sure the new values are valid.',
                 ) from e
+
+            GlobalDBHandler._apply_asset_flag(
+                write_cursor=write_cursor,
+                identifier=asset.identifier,
+                flags=flags,
+            )
+
+    @staticmethod
+    def set_asset_flag(identifier: str, flags: list[str] | None) -> None:
+        """Insert, replace, or clear a single asset flag."""
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            GlobalDBHandler._apply_asset_flag(
+                write_cursor=write_cursor,
+                identifier=identifier,
+                flags=flags,
+            )
+
+    @staticmethod
+    def get_asset_flag(identifier: str) -> str | None:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            row = cursor.execute(
+                'SELECT flag FROM asset_flags WHERE identifier=?',
+                (identifier,),
+            ).fetchone()
+        return row[0] if row else None
+
+    @staticmethod
+    def _apply_asset_flag(
+            write_cursor: 'DBCursor',
+            identifier: str,
+            flags: list[str] | None,
+    ) -> None:
+        if flags is None:
+            return
+        if len(flags) == 0:
+            write_cursor.execute(
+                'DELETE FROM asset_flags WHERE identifier=?',
+                (identifier,),
+            )
+            return
+        if len(flags) > 1:
+            raise InputError('Only a single asset flag is supported')
+        if (flag := flags[0]) not in VALID_ASSET_FLAGS:
+            raise InputError(f'Unsupported asset flag {flag}')
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO asset_flags(identifier, flag) VALUES(?, ?)',
+            (identifier, flag),
+        )
 
     @staticmethod
     def add_user_owned_assets(assets: list['Asset']) -> None:
