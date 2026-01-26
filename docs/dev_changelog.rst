@@ -7,6 +7,18 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Mass Delete History Events by Filter
+-------------------------------------
+
+The history events DELETE endpoint now supports deleting events using filter parameters in addition to specific identifiers.
+
+* **Modified Endpoint**: ``DELETE /api/(version)/history/events``
+
+  - Now accepts filter parameters (asset, from_timestamp, to_timestamp, event_types, location, etc.) to delete matching events.
+  - All provided filters are combined (intersection) to determine which events to delete.
+  - At least one filter parameter must be provided to prevent accidental mass deletion.
+  - The ``identifiers`` parameter is now optional when other filter parameters are provided.
+
 Trigger Async Task
 ------------------
 

@@ -373,6 +373,30 @@ class DBHistoryEvents:
             cursor.execute(query, query_bindings)
             return [row[0] for row in cursor]
 
+    def delete_history_events_by_filter(
+            self,
+            filter_query: 'HistoryBaseEntryFilterQuery',
+            force_delete: bool = False,
+            requested_identifiers: list[int] | None = None,
+    ) -> tuple[int, str | None]:
+        """Delete history events matching the given filter query.
+
+        Returns (count_deleted, error_msg). error_msg is None on success.
+        """
+        if len(ids_to_delete := self.get_history_events_identifiers(filter_query=filter_query)) == 0:  # noqa: E501
+            return 0, None
+
+        if requested_identifiers is not None and len(missing_ids := set(requested_identifiers) - set(ids_to_delete)) != 0:  # noqa: E501
+            return 0, f'Tried to remove history event(s) with id(s) {missing_ids} which do not exist'  # noqa: E501
+
+        if (error_msg := self.delete_history_events_by_identifier(
+            identifiers=ids_to_delete,
+            force_delete=force_delete,
+        )) is not None:
+            return 0, error_msg
+
+        return len(ids_to_delete), None
+
     def delete_history_events_by_identifier(
             self,
             identifiers: list[int],
@@ -390,7 +414,7 @@ class DBHistoryEvents:
         and calls redecode right after.
 
         If any identifier is missing the entire call fails and an error message
-        is returned. Otherwise None is returned.
+        is returned. Otherwise, None is returned.
         """
         for identifier in identifiers:
             if force_delete is False:
@@ -407,15 +431,12 @@ class DBHistoryEvents:
                         )
 
             with self.db.user_write() as write_cursor:
-                affected_rows = self.delete_events_and_track(
+                if self.delete_events_and_track(
                     write_cursor=write_cursor,
                     where_clause='WHERE identifier=?',
                     where_bindings=(identifier,),
-                )
-            if affected_rows != 1:
-                return (
-                    f'Tried to remove history event with id {identifier} which does not exist'
-                )
+                ) != 1:
+                    return f'Tried to remove history event with id {identifier} which does not exist'  # noqa: E501
 
         return None
 

@@ -8,7 +8,6 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.rest_helpers.history_events import edit_grouped_events_with_optional_fee
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
-from rotkehlchen.db.filtering import DBEqualsFilter, DBMultiIntegerFilter, DBTimestampFilter
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -120,40 +119,13 @@ class HistoryEventsService:
             self,
             filter_query: HistoryBaseEntryFilterQuery,
             force_delete: bool,
+            requested_identifiers: list[int] | None = None,
     ) -> dict[str, Any]:
         db = DBHistoryEvents(self.rotkehlchen.data.db)
-        ids_to_delete = db.get_history_events_identifiers(filter_query=filter_query)
-
-        # Check if identifiers were explicitly requested and verify all exist
-        # Only do this check when identifiers is the only meaningful filter (excluding timestamp
-        # filter which always exists). This preserves backward compatibility while allowing
-        # combined filters to work as an intersection.
-        requested_ids: list[int] | None = None
-        has_other_filters = False
-        for fil in filter_query.filters:
-            if isinstance(fil, DBMultiIntegerFilter) and fil.column == 'history_events_identifier':
-                requested_ids = list(fil.values)
-            elif not isinstance(fil, (DBTimestampFilter, DBEqualsFilter)):
-                # DBTimestampFilter always exists, DBEqualsFilter for ignored=0 is just a default
-                has_other_filters = True
-
-        if requested_ids is not None and not has_other_filters:
-            # Verify all requested IDs were found (check in order to report first missing)
-            found_ids = set(ids_to_delete)
-            for requested_id in requested_ids:
-                if requested_id not in found_ids:
-                    return {
-                        'result': None,
-                        'message': f'Tried to remove history event with id {requested_id} which does not exist',  # noqa: E501
-                        'status_code': HTTPStatus.CONFLICT,
-                    }
-
-        if len(ids_to_delete) == 0:
-            return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
-
-        error_msg = db.delete_history_events_by_identifier(
-            identifiers=ids_to_delete,
+        _, error_msg = db.delete_history_events_by_filter(
+            filter_query=filter_query,
             force_delete=force_delete,
+            requested_identifiers=requested_identifiers,
         )
         if error_msg is not None:
             return {

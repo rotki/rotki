@@ -1320,10 +1320,12 @@ class HistoryEventResource(BaseMethodView):
             self,
             filter_query: 'HistoryBaseEntryFilterQuery',
             force_delete: bool,
+            requested_identifiers: list[int] | None,
     ) -> Response:
         return self.rest_api.delete_history_events(
             filter_query=filter_query,
             force_delete=force_delete,
+            requested_identifiers=requested_identifiers,
         )
 
 

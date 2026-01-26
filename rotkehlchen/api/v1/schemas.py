@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
 import marshmallow
 import webargs
 from eth_utils import is_checksum_address, is_hexstr, to_checksum_address
-from marshmallow import INCLUDE, Schema, fields, post_load, validate, validates_schema
+from marshmallow import INCLUDE, Schema, fields, post_load, pre_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
 from werkzeug.datastructures import FileStorage
 
@@ -603,15 +603,12 @@ class TypesAndCounterpatiesFiltersSchema(Schema):
     )
 
 
-class HistoryEventSchema(
+class HistoryEventFilterSchema(
     TypesAndCounterpatiesFiltersSchema,
     TimestampRangeSchema,
-    DBPaginationSchema,
-    DBOrderBySchema,
 ):
-    """Schema for querying history events"""
+    """Base schema for filtering history events. Contains common filter fields and methods."""
     exclude_ignored_assets = fields.Boolean(load_default=True)
-    aggregate_by_group_ids = fields.Boolean(load_default=False)
     group_identifiers = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     location = SerializableEnumField(Location, load_default=None)
     location_labels = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
@@ -647,20 +644,6 @@ class HistoryEventSchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        valid_ordering_attr = {None, 'timestamp'}
-        if (
-            data['order_by_attributes'] is not None and
-            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
-        ):
-            error_msg = (
-                f'order_by_attributes for history event data can not be '
-                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
-            )
-            raise ValidationError(
-                message=error_msg,
-                field_name='order_by_attributes',
-            )
-
         if data['customized_events_only'] is True and data['virtual_events_only'] is True:
             raise ValidationError(
                 message='Cannot filter by both customized and virtual events',
@@ -709,11 +692,6 @@ class HistoryEventSchema(
             should_query_eth_staking_event = True
 
         common_arguments = self.make_extra_filtering_arguments(data) | {
-            'order_by_rules': create_order_by_rules_list(
-                data=data,  # descending timestamp and ascending sequence index
-                default_order_by_fields=['timestamp', 'sequence_index'],
-                default_ascending=[False, True],
-            ),
             'entry_types': entry_types,
             'from_ts': data['from_timestamp'],
             'to_ts': data['to_timestamp'],
@@ -824,11 +802,53 @@ class HistoryEventSchema(
             'filter_query': filter_query,
         }
 
-    def make_extra_filtering_arguments(self, data: dict[str, Any]) -> dict[str, Any]:
+    def make_extra_filtering_arguments(self, data: dict[str, Any]) -> dict[str, Any]:  # pylint: disable=unused-argument
         """Generates the extra fields to be included in the filter_query dictionary"""
+        return {}
+
+    def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:  # pylint: disable=unused-argument
+        """Generates extra fields that will be returned after validation"""
+        return {}
+
+
+class HistoryEventSchema(
+    HistoryEventFilterSchema,
+    DBPaginationSchema,
+    DBOrderBySchema,
+):
+    """Schema for querying history events"""
+    aggregate_by_group_ids = fields.Boolean(load_default=False)
+
+    @validates_schema
+    def validate_history_event_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        super().validate_history_event_schema(data, **_kwargs)
+        valid_ordering_attr = {None, 'timestamp'}
+        if (
+            data['order_by_attributes'] is not None and
+            not set(data['order_by_attributes']).issubset(valid_ordering_attr)
+        ):
+            error_msg = (
+                f'order_by_attributes for history event data can not be '
+                f'{",".join(set(data["order_by_attributes"]) - valid_ordering_attr)}'
+            )
+            raise ValidationError(
+                message=error_msg,
+                field_name='order_by_attributes',
+            )
+
+    def make_extra_filtering_arguments(self, data: dict[str, Any]) -> dict[str, Any]:
         return {
             'limit': data['limit'],
             'offset': data['offset'],
+            'order_by_rules': create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['timestamp', 'sequence_index'],
+                default_ascending=[False, True],
+            ),
         }
 
     def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
@@ -3347,34 +3367,50 @@ class IdentifiersListSchema(Schema):
     identifiers = fields.List(fields.Integer(), required=True)
 
 
-class HistoryEventsDeletionSchema(HistoryEventSchema):
+class HistoryEventsDeletionSchema(HistoryEventFilterSchema):
     """Schema for deleting history events.
 
-    Uses the same filter parameters as HistoryEventSchema (including identifiers).
+    Uses the same filter parameters as HistoryEventFilterSchema (including identifiers).
     All provided filters are combined (intersection) to determine which events to delete.
     At least one filter parameter must be provided to prevent accidental mass deletion.
     """
-    class Meta:
-        exclude = ('aggregate_by_group_ids',)
-
-    def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
-        """Return force_delete flag instead of parent's aggregate_by_group_ids."""
-        return {
-            'force_delete': data.get('force_delete', False),
-        }
-
     force_delete = fields.Boolean(load_default=False)
-    # Override to False for deletion - we should be able to delete events with ignored assets
-    exclude_ignored_assets = fields.Boolean(load_default=False)
+    exclude_ignored_assets = fields.Boolean(load_default=False)  # we should be able to delete events with ignored assets  # noqa: E501
 
     # Fields that are not considered filters for deletion validation
     _NON_FILTER_FIELDS: Final = frozenset((
         'force_delete',  # deletion flag, not a filter
         'exclude_ignored_assets',  # display preference, not a filter
-        'limit', 'offset',  # pagination
-        'order_by_attributes', 'ascending',  # ordering
-        'to_timestamp',  # default is ts_now(), which doesn't restrict results
     ))
+
+    def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
+        return {
+            'force_delete': data['force_delete'],
+            'requested_identifiers': data['identifiers'],
+        }
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self._explicitly_provided_fields: set[str] = set()
+
+    @pre_load
+    def save_input_fields_for_validation(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        self._explicitly_provided_fields = set(data)
+        return data
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        """Override parent's timestamp validation since timestamps are optional for deletion."""
+        if data['from_timestamp'] is not None and data['to_timestamp'] is not None:
+            super().validate_schema(data, **_kwargs)
 
     @validates_schema
     def validate_deletion_schema(
@@ -3382,33 +3418,10 @@ class HistoryEventsDeletionSchema(HistoryEventSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        """Validate that at least one filter parameter is provided for deletion."""
-        has_filter = False
-        for field_name, field_obj in self.fields.items():
-            if field_name in self._NON_FILTER_FIELDS:
-                continue
-
-            value = data.get(field_name)
-            default = field_obj.load_default
-
-            # Special case: from_timestamp with default 0 - only a filter if > 0
-            if field_name == 'from_timestamp':
-                if value is not None and value > 0:
-                    has_filter = True
-                    break
-                continue
-
-            # For boolean fields with False default, only True is considered a filter
-            if isinstance(field_obj, fields.Boolean) and default is False:
-                if value is True:
-                    has_filter = True
-                    break
-            # For other fields, any non-default value is a filter
-            elif value is not None and value != default:
-                has_filter = True
-                break
-
-        if not has_filter:
+        if not any(
+            field_name not in self._NON_FILTER_FIELDS
+            for field_name in self._explicitly_provided_fields
+        ):
             raise ValidationError(
                 message='Either identifiers or filter parameters must be provided',
                 field_name='identifiers',
@@ -4007,9 +4020,6 @@ class ExportHistoryEventSchema(HistoryEventSchema, AsyncQueryArgumentSchema):
     """Schema for querying history events"""
     directory_path = DirectoryField(required=True)
     match_exact_events = fields.Boolean(load_default=False)
-
-    def make_extra_filtering_arguments(self, data: dict[str, Any]) -> dict[str, Any]:
-        return {}
 
     def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:
         extra_fields = {'match_exact_events': data['match_exact_events']}

@@ -764,10 +764,12 @@ class RestAPI:
             self,
             filter_query: HistoryBaseEntryFilterQuery,
             force_delete: bool,
+            requested_identifiers: list[int] | None = None,
     ) -> Response:
         response_data = self.history_events_service.delete_history_events(
             filter_query=filter_query,
             force_delete=force_delete,
+            requested_identifiers=requested_identifiers,
         )
         return make_response_from_dict(response_data)
 

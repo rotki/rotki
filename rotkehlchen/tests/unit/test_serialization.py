@@ -3,6 +3,7 @@ from marshmallow.exceptions import ValidationError
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.api.v1.fields import BlockchainField
+from rotkehlchen.api.v1.schemas import HistoryEventsDeletionSchema
 from rotkehlchen.balances.manual import ManuallyTrackedBalance, add_manually_tracked_balances
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -138,3 +139,34 @@ def test_exported_assets_schema_accepts_empty_symbol():
     data = '{"version": "15", "assets": [{"asset_type": "own chain", "name": "Test Asset", "symbol": "", "identifier": "TEST123"}]}'  # noqa: E501
     result = ExportedAssetsSchema().loads(data)
     assert result['assets'][0]['asset'].symbol is None
+
+
+def test_history_events_deletion_schema_field_coverage() -> None:
+    """Test that all fields in HistoryEventsDeletionSchema are explicitly categorized.
+
+    If this test fails, add the new field to either KNOWN_FILTER_FIELDS here
+    or _NON_FILTER_FIELDS in the schema.
+    """
+    known_filter_fields = {
+        'from_timestamp',
+        'to_timestamp',
+        'event_types',
+        'event_subtypes',
+        'counterparties',
+        'group_identifiers',
+        'location',
+        'location_labels',
+        'asset',
+        'entry_types',
+        'customized_events_only',
+        'virtual_events_only',
+        'identifiers',
+        'notes_substring',
+        'tx_refs',
+        'addresses',
+        'validator_indices',
+    }
+
+    schema = HistoryEventsDeletionSchema()
+    all_fields = set(schema.fields.keys())
+    assert all_fields - known_filter_fields - schema._NON_FILTER_FIELDS == set()
