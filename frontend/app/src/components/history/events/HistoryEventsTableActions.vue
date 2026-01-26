@@ -43,6 +43,19 @@ const { t } = useI18n({ useScope: 'global' });
 const customizedEventsOnly = useRefPropVModel(toggles, 'customizedEventsOnly');
 const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
 const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
+const virtualEventsOnly = useRefPropVModel(toggles, 'virtualEventsOnly');
+
+watch(customizedEventsOnly, (newValue) => {
+  if (newValue && get(virtualEventsOnly))
+    set(virtualEventsOnly, false);
+});
+
+watch(virtualEventsOnly, (newValue) => {
+  if (newValue && get(customizedEventsOnly))
+    set(customizedEventsOnly, false);
+});
+
+const hasActiveToggles = logicOr(customizedEventsOnly, showIgnoredAssets, matchExactEvents, virtualEventsOnly);
 
 const canIgnore = computed<boolean>(() => {
   const status = props.ignoreStatus;
@@ -91,7 +104,7 @@ function handleToggleAll(): void {
     >
       <RuiBadge
         dot
-        :model-value="customizedEventsOnly || showIgnoredAssets || matchExactEvents"
+        :model-value="hasActiveToggles"
         offset-y="10"
         offset-x="-8"
       >
@@ -103,6 +116,14 @@ function handleToggleAll(): void {
               class="p-4"
               hide-details
               :label="t('transactions.filter.customized_only')"
+            />
+            <RuiDivider />
+            <RuiSwitch
+              v-model="virtualEventsOnly"
+              color="primary"
+              class="p-4"
+              hide-details
+              :label="t('transactions.filter.virtual_only')"
             />
             <RuiDivider />
             <RuiSwitch

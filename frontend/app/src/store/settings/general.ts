@@ -39,6 +39,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const oraclePenaltyDuration = useComputedRef(settings, 'oraclePenaltyDuration');
   const autoDeleteCalendarEntries = useComputedRef(settings, 'autoDeleteCalendarEntries');
   const autoCreateCalendarReminders = useComputedRef(settings, 'autoCreateCalendarReminders');
+  const autoCreateProfitEvents = useComputedRef(settings, 'autoCreateProfitEvents');
   const askUserUponSizeDiscrepancy = useComputedRef(settings, 'askUserUponSizeDiscrepancy');
   const autoDetectTokens = useComputedRef(settings, 'autoDetectTokens');
   const csvExportDelimiter = useComputedRef(settings, 'csvExportDelimiter');
@@ -63,6 +64,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     assetMovementAmountTolerance,
     assetMovementTimeRange,
     autoCreateCalendarReminders,
+    autoCreateProfitEvents,
     autoDeleteCalendarEntries,
     autoDetectTokens,
     balanceSaveFrequency,

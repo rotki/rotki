@@ -70,6 +70,7 @@ function createSettingsResponse(overrides: Record<string, unknown> = {}): Action
       asset_movement_amount_tolerance: '0.000001',
       asset_movement_time_range: 3600,
       suppress_missing_key_msg_services: [],
+      auto_create_profit_events: false,
       ...overrides,
     },
     message: '',

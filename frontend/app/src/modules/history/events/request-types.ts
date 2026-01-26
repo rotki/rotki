@@ -20,6 +20,7 @@ export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ t
   readonly excludeIgnoredAssets?: boolean;
   readonly identifiers?: string[];
   readonly notesSubstring?: string;
+  readonly virtualEventsOnly?: boolean;
 }
 
 export interface HistoryEventExportPayload extends Omit<HistoryEventRequestPayload, 'aggregateByGroupIds' | 'limit' | 'offset'> {

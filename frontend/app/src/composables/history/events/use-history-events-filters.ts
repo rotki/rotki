@@ -149,6 +149,7 @@ export function useHistoryEventsFilters(
       excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
       groupIdentifiers: get(groupIdentifiersFromQuery),
       identifiers: get(identifiersFromQuery),
+      virtualEventsOnly: get(toggles, 'virtualEventsOnly'),
     })),
     filterSchema: () => useHistoryEventFilter({
       eventSubtypes: (get(eventSubTypes) || []).length > 0,

@@ -3,7 +3,7 @@ import type { Message } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { SkippedHistoryEventsSummary } from '@/types/history/events';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
+import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useSkippedHistoryEventsApi } from '@/composables/api/history/events/skipped';
 import { useInterop } from '@/composables/electron-interop';
 import { useMessageStore } from '@/store/message';
@@ -158,16 +158,14 @@ async function reProcessSkippedEvents() {
 </script>
 
 <template>
-  <div>
-    <div class="pb-5 flex flex-wrap gap-4 items-center justify-between">
-      <SettingCategoryHeader>
-        <template #title>
-          {{ t('database_settings.skipped_events.title') }}
-        </template>
-        <template #subtitle>
-          {{ t('database_settings.skipped_events.subtitle') }}
-        </template>
-      </SettingCategoryHeader>
+  <SettingsItem>
+    <template #title>
+      {{ t('general_settings.history_event.skipped_events.title') }}
+    </template>
+    <template #subtitle>
+      {{ t('general_settings.history_event.skipped_events.subtitle') }}
+    </template>
+    <div class="flex flex-col gap-4">
       <div
         v-if="skippedEvents.total > 0"
         class="flex flex-wrap gap-2"
@@ -193,33 +191,33 @@ async function reProcessSkippedEvents() {
           {{ t('transactions.events.skipped.reprocess.action') }}
         </RuiButton>
       </div>
+      <RuiDataTable
+        :cols="headers"
+        :rows="locationsData"
+        row-attr="location"
+        dense
+        striped
+        outlined
+        class="bg-white dark:bg-transparent"
+        :empty="{
+          description: t('transactions.events.skipped.no_skipped_events'),
+        }"
+      >
+        <template #item.location="{ row }">
+          <LocationDisplay :identifier="row.location" />
+        </template>
+        <template #item.number="{ row }">
+          {{ row.number }}
+        </template>
+        <template #tfoot>
+          <tr>
+            <th>{{ t('common.total') }}</th>
+            <td class="text-end pr-12 py-2">
+              {{ skippedEvents.total }}
+            </td>
+          </tr>
+        </template>
+      </RuiDataTable>
     </div>
-    <RuiDataTable
-      :cols="headers"
-      :rows="locationsData"
-      row-attr="location"
-      dense
-      striped
-      outlined
-      class="bg-white dark:bg-transparent"
-      :empty="{
-        description: t('transactions.events.skipped.no_skipped_events'),
-      }"
-    >
-      <template #item.location="{ row }">
-        <LocationDisplay :identifier="row.location" />
-      </template>
-      <template #item.number="{ row }">
-        {{ row.number }}
-      </template>
-      <template #tfoot>
-        <tr>
-          <th>{{ t('common.total') }}</th>
-          <td class="text-end pr-12 py-2">
-            {{ skippedEvents.total }}
-          </td>
-        </tr>
-      </template>
-    </RuiDataTable>
-  </div>
+  </SettingsItem>
 </template>

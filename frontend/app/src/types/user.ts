@@ -45,6 +45,7 @@ const GeneralSettings = z.object({
   assetMovementAmountTolerance: z.string().default(Defaults.ASSET_MOVEMENT_AMOUNT_TOLERANCE),
   assetMovementTimeRange: z.number().int().min(1).default(Defaults.ASSET_MOVEMENT_TIME_RANGE),
   autoCreateCalendarReminders: z.boolean(),
+  autoCreateProfitEvents: z.boolean(),
   autoDeleteCalendarEntries: z.boolean(),
   autoDetectTokens: z.boolean(),
   balanceSaveFrequency: z.preprocess(
@@ -168,6 +169,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     assetMovementAmountTolerance: settings.assetMovementAmountTolerance,
     assetMovementTimeRange: settings.assetMovementTimeRange,
     autoCreateCalendarReminders: settings.autoCreateCalendarReminders,
+    autoCreateProfitEvents: settings.autoCreateProfitEvents,
     autoDeleteCalendarEntries: settings.autoDeleteCalendarEntries,
     autoDetectTokens: settings.autoDetectTokens,
     balanceSaveFrequency: settings.balanceSaveFrequency,

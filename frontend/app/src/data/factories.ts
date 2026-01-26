@@ -10,6 +10,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     assetMovementAmountTolerance: Defaults.ASSET_MOVEMENT_AMOUNT_TOLERANCE,
     assetMovementTimeRange: Defaults.ASSET_MOVEMENT_TIME_RANGE,
     autoCreateCalendarReminders: true,
+    autoCreateProfitEvents: false,
     autoDeleteCalendarEntries: true,
     autoDetectTokens: true,
     balanceSaveFrequency: Defaults.BALANCE_SAVE_FREQUENCY,

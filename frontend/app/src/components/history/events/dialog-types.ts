@@ -39,8 +39,9 @@ export type DialogShowOptions =
 // Common toggle options for history events filtering
 export interface HistoryEventsToggles {
   customizedEventsOnly: boolean;
-  showIgnoredAssets: boolean;
   matchExactEvents: boolean;
+  showIgnoredAssets: boolean;
+  virtualEventsOnly: boolean;
 }
 
 export interface DialogEventHandlers {

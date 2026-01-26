@@ -76,6 +76,7 @@ const toggles = ref<HistoryEventsToggles>({
   customizedEventsOnly: false,
   matchExactEvents: false,
   showIgnoredAssets: false,
+  virtualEventsOnly: false,
 });
 
 const showAlerts = ref<boolean>(false);
