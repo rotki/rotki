@@ -2042,6 +2042,10 @@
       "view_action": "View"
     },
     "chips": {
+      "added_count": "{count} new duplicate(s) detected.",
+      "all_resolved": "All duplicates in this view have been resolved.",
+      "clear_filter": "Clear filter",
+      "resolved_count": "{count} duplicate(s) resolved.",
       "viewing_auto_fixable": "Showing auto-fixable duplicate events",
       "viewing_manual_review": "Showing duplicates requiring manual review"
     }

@@ -235,7 +235,7 @@ function openMatchAssetMovementsDialog(): void {
       <div>
         <HistoryEventsAlerts
           v-model:show="showAlerts"
-          :loading="debouncedProcessing || groupLoading"
+          :loading="debouncedProcessing"
           :main-page="mainPage"
           @open:match-asset-movements="openMatchAssetMovementsDialog()"
         />

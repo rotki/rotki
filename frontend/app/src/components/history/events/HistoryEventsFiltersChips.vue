@@ -38,6 +38,52 @@ const duplicateChipText = computed<string>(() => {
   return t('customized_event_duplicates.chips.viewing_manual_review');
 });
 
+// Track the current valid group IDs from the composable
+const currentValidGroupIds = computed<string[]>(() =>
+  get(isAutoFixable) ? get(autoFixGroupIds) : get(manualReviewGroupIds),
+);
+
+// Calculate the difference between URL params and current valid IDs
+const duplicateChanges = computed<{ resolved: number; added: number; remaining: string[] }>(() => {
+  const urlIds = get(groupIdentifiers) ?? [];
+  const validIds = get(currentValidGroupIds);
+
+  if (urlIds.length === 0)
+    return { added: 0, remaining: [], resolved: 0 };
+
+  const remaining = urlIds.filter(id => validIds.includes(id));
+  const resolved = urlIds.length - remaining.length;
+  const added = validIds.filter(id => !urlIds.includes(id)).length;
+
+  return { added, remaining, resolved };
+});
+
+const hasDuplicateChanges = computed<boolean>(() => {
+  const { added, resolved } = get(duplicateChanges);
+  return resolved > 0 || added > 0;
+});
+
+const allDuplicatesResolved = computed<boolean>(() => {
+  const { remaining } = get(duplicateChanges);
+  return get(hasGroupIdentifiers) && remaining.length === 0;
+});
+
+const duplicateChangesMessage = computed<string>(() => {
+  const { added, resolved } = get(duplicateChanges);
+
+  if (get(allDuplicatesResolved))
+    return t('customized_event_duplicates.chips.all_resolved');
+
+  const messages: string[] = [];
+  if (resolved > 0)
+    messages.push(t('customized_event_duplicates.chips.resolved_count', { count: resolved }));
+
+  if (added > 0)
+    messages.push(t('customized_event_duplicates.chips.added_count', { count: added }));
+
+  return messages.join(' ');
+});
+
 function removeIdentifierParam(): void {
   const query = { ...route.query };
   delete query.identifiers;
@@ -79,29 +125,18 @@ function confirmFixDuplicate(): void {
   }, async () => fixDuplicateEvent());
 }
 
-function updateDuplicateParams(validGroupIds: string[]): void {
-  if (validGroupIds.length === 0) {
+function refreshDuplicateView(): void {
+  const validIds = get(currentValidGroupIds);
+
+  if (validIds.length === 0) {
     removeDuplicateEventsParam();
   }
   else {
-    const query = { ...route.query, groupIdentifiers: validGroupIds.join(',') };
+    const query = { ...route.query, groupIdentifiers: validIds.join(',') };
     router.replace({ query });
   }
+  emit('refresh');
 }
-
-// Watch for changes in the duplicate group IDs and validate URL params
-watch([autoFixGroupIds, manualReviewGroupIds], () => {
-  const currentIds = get(groupIdentifiers);
-
-  if (!currentIds || currentIds.length === 0)
-    return;
-
-  const validGroupIds = get(isAutoFixable) ? get(autoFixGroupIds) : get(manualReviewGroupIds);
-  const remainingIds = currentIds.filter(id => validGroupIds.includes(id));
-
-  if (remainingIds.length !== currentIds.length)
-    updateDuplicateParams(remainingIds);
-});
 </script>
 
 <template>
@@ -143,7 +178,7 @@ watch([autoFixGroupIds, manualReviewGroupIds], () => {
 
   <div
     v-if="hasGroupIdentifiers"
-    class="mb-4 flex items-center gap-2"
+    class="mb-4"
   >
     <RuiChip
       closeable
@@ -156,7 +191,7 @@ watch([autoFixGroupIds, manualReviewGroupIds], () => {
         {{ duplicateChipText }}
 
         <RuiButton
-          v-if="isAutoFixable"
+          v-if="isAutoFixable && !hasDuplicateChanges"
           size="sm"
           variant="text"
           class="!py-0 underline !text-xs gap-1"
@@ -174,5 +209,25 @@ watch([autoFixGroupIds, manualReviewGroupIds], () => {
         </RuiButton>
       </div>
     </RuiChip>
+
+    <div
+      v-if="hasDuplicateChanges"
+      class="mt-1 flex items-center gap-1 text-xs text-rui-secondary"
+    >
+      <RuiIcon
+        name="lu-info"
+        size="16"
+      />
+      <span>{{ duplicateChangesMessage }}</span>
+      <RuiButton
+        size="sm"
+        variant="text"
+        color="secondary"
+        class="!py-0 underline"
+        @click="refreshDuplicateView()"
+      >
+        {{ allDuplicatesResolved ? t('customized_event_duplicates.chips.clear_filter') : t('common.refresh') }}
+      </RuiButton>
+    </div>
   </div>
 </template>
