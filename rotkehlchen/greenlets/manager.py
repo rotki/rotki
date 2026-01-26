@@ -22,6 +22,7 @@ class GreenletManager:
 
     def add(self, task_name: str, greenlet: gevent.Greenlet, exception_is_error: bool) -> None:
         greenlet.link_exception(self._handle_killed_greenlets)
+        greenlet.link(self._handle_finished_greenlet)
         greenlet.task_name = task_name
         greenlet.exception_is_error = exception_is_error
         self.greenlets.append(greenlet)
@@ -43,7 +44,7 @@ class GreenletManager:
             method: Callable,
             **kwargs: Any,
     ) -> gevent.Greenlet:
-        log.debug(f'Spawning task manager task "{task_name}"')
+        log.debug('Spawning task manager task "%s"', task_name)
         if after_seconds is None:
             greenlet = gevent.spawn(method, **kwargs)
         else:
@@ -58,6 +59,10 @@ class GreenletManager:
                 return True
 
         return False
+
+    def _handle_finished_greenlet(self, greenlet: gevent.Greenlet) -> None:
+        task_name = getattr(greenlet, 'task_name', 'Unknown task')
+        log.debug('Finished task %s from task manager.', task_name)
 
     def _handle_killed_greenlets(self, greenlet: gevent.Greenlet) -> None:
         if not greenlet.exception:
