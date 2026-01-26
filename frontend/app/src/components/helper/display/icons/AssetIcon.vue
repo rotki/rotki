@@ -87,7 +87,13 @@ const chain = computed(() => {
 });
 const symbol = computed(() => get(asset)?.symbol);
 const name = computed(() => get(asset)?.name);
-const protocol = computed<string | undefined>(() => get(asset)?.protocol ?? undefined);
+const protocol = computed<string | undefined>(() => {
+  const protocol = get(asset)?.protocol;
+  if (!protocol || protocol === 'spam') {
+    return undefined;
+  }
+  return protocol;
+});
 
 const displayAsset = computed<string>(() => {
   const currencySymbol = get(currency);

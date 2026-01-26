@@ -2028,28 +2028,16 @@
       "fix_selected": "Auto Fix Selected Group",
       "fix_selected_confirm": "Are you sure you want to fix {count} selected duplicate event(s)?",
       "fix_single": "Fix Duplicate",
-      "fix_single_confirm": "Are you sure you want to fix this duplicate event? This will remove the duplicate on-chain event and keep your customized event.",
-      "show_all_in_history_events": "View Full Event List"
+      "fix_single_confirm": "Are you sure you want to fix this duplicate event? This will remove the duplicate on-chain event and keep your customized event."
     },
     "banner": {
-      "action": "Review Now",
-      "message": "There are {count} customized events with potential duplicates that need review."
+      "auto_fix_message": "{count} duplicate event(s) can be auto-fixed.",
+      "manual_review_message": "{count} duplicate event(s) need manual review.",
+      "view_action": "View"
     },
     "chips": {
       "viewing_auto_fixable": "Viewing auto-fixable duplicate events",
       "viewing_manual_review": "Viewing duplicates requiring manual review"
-    },
-    "dialog": {
-      "auto_fix_description": "These duplicates can be automatically fixed. The duplicate on-chain events will be removed while keeping your customized events intact.",
-      "check_duplicates": "Check Duplicate Events",
-      "manual_review_description": "These events require manual review. Please review each event and edit them as needed in the history events table.",
-      "no_auto_fix": "No auto-fixable duplicates found.",
-      "no_manual_review": "No events requiring manual review.",
-      "title": "Customized Event Duplicates"
-    },
-    "tabs": {
-      "auto_fix": "Auto-fixable",
-      "manual_review": "Manual Review"
     }
   },
   "dashboard": {
@@ -5539,7 +5527,7 @@
       "unlink_error": "Failed to unlink asset movement",
       "unlink_no_asset_movement": "No asset movement event found in this group",
       "unsupported": {
-        "description_gas_fee_only": "This transaction only contains a gas fee with no other events. This typically means the protocol is not yet supported.",
+        "description_gas_fee_only": "This transaction only contains a gas fee with no other events. This typically means we don't yet understand what this transaction does.",
         "description_incomplete_swap": "This swap appears to be incomplete. It has one side of the trade but is missing the other.",
         "location": "- Location: {location}",
         "more_detail": "More detail:",

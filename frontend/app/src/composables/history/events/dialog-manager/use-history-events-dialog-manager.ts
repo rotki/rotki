@@ -70,9 +70,6 @@ export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
       case DIALOG_TYPES.MATCH_ASSET_MOVEMENTS:
         openDialog({ data: undefined, type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
         break;
-      case DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES:
-        openDialog({ data: undefined, type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
-        break;
       default:
         break;
     }

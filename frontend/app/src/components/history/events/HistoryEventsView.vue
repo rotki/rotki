@@ -204,10 +204,6 @@ watchDebounced(route, async () => {
 function openMatchAssetMovementsDialog(): void {
   get(dialogContainer)?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
 }
-
-function openCustomizedEventDuplicatesDialog(): void {
-  get(dialogContainer)?.show({ type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
-}
 </script>
 
 <template>
@@ -229,7 +225,7 @@ function openCustomizedEventDuplicatesDialog(): void {
           :loading="anyEventsDecoding"
           :include-evm-events="includes.evmEvents"
           :main-page="mainPage"
-          :section-loading="debouncedProcessing || groupLoading"
+          :section-loading="debouncedProcessing"
           @refresh="actions.refresh.all(true, $event)"
           @show:dialog="dialogContainer?.show($event)"
         />
@@ -241,7 +237,6 @@ function openCustomizedEventDuplicatesDialog(): void {
           :loading="debouncedProcessing || groupLoading"
           :main-page="mainPage"
           @open:match-asset-movements="openMatchAssetMovementsDialog()"
-          @open:customized-event-duplicates="openCustomizedEventDuplicatesDialog()"
         />
 
         <RuiCard>

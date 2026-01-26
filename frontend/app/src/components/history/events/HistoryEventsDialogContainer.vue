@@ -75,12 +75,6 @@ const MatchAssetMovementsDialog = defineAsyncComponent({
   loadingComponent: DialogLoadingComponent,
 });
 
-const CustomizedEventDuplicatesDialog = defineAsyncComponent({
-  delay: 200,
-  loader: () => import('@/components/history/events/CustomizedEventDuplicatesDialog.vue'),
-  loadingComponent: DialogLoadingComponent,
-});
-
 const {
   closeDialog,
   currentDialog,
@@ -193,12 +187,6 @@ defineExpose({
 
     <MatchAssetMovementsDialog
       v-if="currentDialog.type === DIALOG_TYPES.MATCH_ASSET_MOVEMENTS"
-      v-model="dialogIsOpen"
-      @refresh="eventHandlers.onHistoryEventSaved?.()"
-    />
-
-    <CustomizedEventDuplicatesDialog
-      v-if="currentDialog.type === DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES"
       v-model="dialogIsOpen"
       @refresh="eventHandlers.onHistoryEventSaved?.()"
     />

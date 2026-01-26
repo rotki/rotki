@@ -11,7 +11,6 @@ import type { AccountingRuleIdentifier } from '@/types/settings/accounting';
 export const DIALOG_TYPES = {
   ADD_MISSING_RULE: 'addMissingRule',
   ADD_TRANSACTION: 'addTransaction',
-  CUSTOMIZED_EVENT_DUPLICATES: 'customizedEventDuplicates',
   DECODING_STATUS: 'decodingStatus',
   EVENT_FORM: 'eventForm',
   MATCH_ASSET_MOVEMENTS: 'matchAssetMovements',
@@ -26,7 +25,6 @@ export type DialogType = typeof DIALOG_TYPES[keyof typeof DIALOG_TYPES];
 export type DialogShowOptions =
   | { type: typeof DIALOG_TYPES.ADD_MISSING_RULE; data: AccountingRuleIdentifier }
   | { type: typeof DIALOG_TYPES.ADD_TRANSACTION }
-  | { type: typeof DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES }
   | { type: typeof DIALOG_TYPES.DECODING_STATUS; persistent?: boolean }
   | { type: typeof DIALOG_TYPES.EVENT_FORM; data: GroupEventData | StandaloneEventData }
   | { type: typeof DIALOG_TYPES.MATCH_ASSET_MOVEMENTS }

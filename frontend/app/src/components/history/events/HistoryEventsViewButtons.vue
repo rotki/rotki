@@ -33,7 +33,7 @@ const { totalCount: duplicatesCount } = useCustomizedEventDuplicates();
 const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(duplicatesCount));
 const hasIssues = computed<boolean>(() => !get(autoMatchLoading) && get(totalIssuesCount) > 0);
 const showAlertsButton = computed<boolean>(() =>
-  get(mainPage) === true && !get(sectionLoading) && getStatus(Section.HISTORY) === Status.LOADED && get(hasIssues),
+  get(mainPage) && !get(sectionLoading) && getStatus(Section.HISTORY) === Status.LOADED && get(hasIssues),
 );
 
 function toggleAlerts(): void {
@@ -161,17 +161,6 @@ function toggleAlerts(): void {
           <RuiIcon name="lu-git-compare-arrows" />
         </template>
         {{ t('asset_movement_matching.dialog.check_unmatched') }}
-      </RuiButton>
-
-      <RuiButton
-        variant="list"
-        :disabled="processing"
-        @click="emit('show:dialog', { type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES })"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-copy-check" />
-        </template>
-        {{ t('customized_event_duplicates.dialog.check_duplicates') }}
       </RuiButton>
     </div>
   </RuiMenu>
