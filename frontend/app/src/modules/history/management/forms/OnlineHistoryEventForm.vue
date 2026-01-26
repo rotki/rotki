@@ -2,23 +2,19 @@
 import type { StandaloneEventData } from '@/modules/history/management/forms/form-types';
 import type { NewOnlineHistoryEventPayload, OnlineHistoryEvent } from '@/types/history/events/schemas';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
-import useVuelidate from '@vuelidate/core';
+import { generateUUID } from '@shared/utils';
 import dayjs from 'dayjs';
-import { isEmpty } from 'es-toolkit/compat';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
-import { useFormStateWatcher } from '@/composables/form';
-import { useEditModeStateTracker } from '@/composables/history/events/edit-mode-state';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import HistoryEventTypeForm from '@/modules/history/management/forms/HistoryEventTypeForm.vue';
-import { useEventFormValidation } from '@/modules/history/management/forms/use-event-form-validation';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
-import { toMessages } from '@/utils/validation';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
@@ -46,28 +42,6 @@ const notes = ref<string>('');
 
 const errorMessages = ref<Record<string, string[]>>({});
 
-const { createCommonRules } = useEventFormValidation();
-const commonRules = createCommonRules();
-
-const rules = {
-  amount: commonRules.createRequiredAmountRule(),
-  asset: commonRules.createRequiredAssetRule(),
-  eventSubtype: commonRules.createRequiredEventSubtypeRule(),
-  eventType: commonRules.createRequiredEventTypeRule(),
-  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
-  location: commonRules.createRequiredLocationRule(),
-  locationLabel: commonRules.createExternalValidationRule(),
-  notes: commonRules.createExternalValidationRule(),
-  sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
-  timestamp: commonRules.createExternalValidationRule(),
-};
-
-const numericAmount = bigNumberifyFromRef(amount);
-
-const { saveHistoryEventHandler } = useHistoryEventsForm();
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEditModeStateTracker();
-
 const states = {
   amount,
   asset,
@@ -81,16 +55,32 @@ const states = {
   timestamp,
 };
 
-const v$ = useVuelidate(
-  rules,
+const {
+  v$,
+  captureEditModeStateFromRefs,
+  shouldSkipSaveFromRefs,
+} = useEventFormBase({
+  rules: commonRules => ({
+    amount: commonRules.createRequiredAmountRule(),
+    asset: commonRules.createRequiredAssetRule(),
+    eventSubtype: commonRules.createRequiredEventSubtypeRule(),
+    eventType: commonRules.createRequiredEventTypeRule(),
+    groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
+    location: commonRules.createRequiredLocationRule(),
+    locationLabel: commonRules.createExternalValidationRule(),
+    notes: commonRules.createExternalValidationRule(),
+    sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
+    timestamp: commonRules.createExternalValidationRule(),
+  }),
   states,
-  {
-    $autoDirty: true,
-    $externalResults: errorMessages,
-  },
-);
+  errorMessages,
+  stateUpdated,
+});
 
-useFormStateWatcher(states, stateUpdated);
+const numericAmount = bigNumberifyFromRef(amount);
+
+const { saveHistoryEventHandler } = useHistoryEventsForm();
+const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
 const locationLabelSuggestions = computed(() =>
   get(connectedExchanges)
@@ -151,7 +141,7 @@ async function save(): Promise<boolean> {
   const userNotes = get(notes).trim();
 
   // Generate UUID for eventIdentifier if not present and not in edit mode
-  const generatedGroupIdentifier = !editable && !get(groupIdentifier) ? crypto.randomUUID() : get(groupIdentifier);
+  const generatedGroupIdentifier = !editable && !get(groupIdentifier) ? generateUUID() : get(groupIdentifier);
 
   const payload: NewOnlineHistoryEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
@@ -188,11 +178,6 @@ function checkPropsData() {
   }
   reset();
 }
-
-watch(errorMessages, (errors) => {
-  if (!isEmpty(errors))
-    get(v$).$validate();
-});
 
 watch(location, (location: string) => {
   if (location)

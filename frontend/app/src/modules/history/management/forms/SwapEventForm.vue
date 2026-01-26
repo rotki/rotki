@@ -3,6 +3,7 @@ import type { GroupEventData } from '@/modules/history/management/forms/form-typ
 import type { ValidationErrors } from '@/types/api/errors';
 import type { AddSwapEventPayload, FeeEntry, SwapEvent, SwapEventUserNotes } from '@/types/history/events/schemas';
 import { assert, HistoryEventEntryType } from '@rotki/common';
+import { generateUUID } from '@shared/utils';
 import useVuelidate from '@vuelidate/core';
 import dayjs from 'dayjs';
 import { omit } from 'es-toolkit';
@@ -150,7 +151,7 @@ async function save(): Promise<boolean> {
   const userNotes = createUserNotes(model.userNotes[0], model.userNotes[1], ...model.userNotes.slice(2, 2 + feeCount));
 
   // Generate UUID for uniqueId if not present and not in edit mode
-  const uniqueId = !isEditMode && !model.uniqueId ? crypto.randomUUID() : model.uniqueId;
+  const uniqueId = !isEditMode && !model.uniqueId ? generateUUID() : model.uniqueId;
 
   const payload: AddSwapEventPayload = {
     ...omit(model, ['fees', 'userNotes', 'uniqueId']),

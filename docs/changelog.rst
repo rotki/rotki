@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11440` Users will no longer get stuck after pressing the submit button when creating history events.
 * :feature:`11334` Users can now detect and fix duplicate events that occur when customized events are re-pulled from the blockchain.
 * :feature:`11385` When authenticating for monerium on linux AppImage the cookie will no longer be shared between different accounts.
 * :feature:`11397` Users will now be able to trigger token detection for EVM address groups with multiple chains.

@@ -2,6 +2,7 @@
 import type { GroupEventData } from '@/modules/history/management/forms/form-types';
 import type { AssetMovementEvent, NewAssetMovementEventPayload } from '@/types/history/events/schemas';
 import { HistoryEventEntryType, Zero } from '@rotki/common';
+import { generateUUID } from '@shared/utils';
 import { requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { isEqual } from 'es-toolkit';
@@ -182,7 +183,7 @@ async function save(): Promise<boolean> {
   const editable = eventData.type === 'edit-group' ? eventData.eventsInGroup[0] : undefined;
 
   // Generate UUID for uniqueId if not present and not in edit mode
-  const generatedUniqueId = !editable && !get(uniqueId) ? crypto.randomUUID() : get(uniqueId);
+  const generatedUniqueId = !editable && !get(uniqueId) ? generateUUID() : get(uniqueId);
 
   let payload: NewAssetMovementEventPayload = {
     amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
