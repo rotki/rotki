@@ -905,6 +905,8 @@ CREATE INDEX IF NOT EXISTS idx_event_metrics_event ON event_metrics(event_identi
 CREATE INDEX IF NOT EXISTS idx_event_metrics_location_label ON event_metrics(location_label);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_protocol ON event_metrics(protocol);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key ON event_metrics(metric_key);
+CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_bucket ON event_metrics(metric_key, location_label, protocol, asset);
+CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_event ON event_metrics(metric_key, event_identifier);
 CREATE INDEX IF NOT EXISTS idx_event_metrics_asset ON event_metrics(asset);
 """  # noqa: E501
 

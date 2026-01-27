@@ -130,6 +130,14 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             'ON event_metrics(metric_key);',
         )
         write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_bucket '
+            'ON event_metrics(metric_key, location_label, protocol, asset);',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_event_metrics_metric_key_event '
+            'ON event_metrics(metric_key, event_identifier);',
+        )
+        write_cursor.execute(
             'CREATE INDEX IF NOT EXISTS idx_event_metrics_asset '
             'ON event_metrics(asset);',
         )
