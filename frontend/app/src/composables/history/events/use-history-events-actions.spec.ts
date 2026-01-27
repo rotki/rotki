@@ -149,7 +149,10 @@ describe('useHistoryEventsActions', () => {
 
       expect(mockRouterPush).toHaveBeenCalledWith({
         path: Routes.HISTORY_EVENTS.toString(),
-        query: { txRefs: ['0xhash1', '0xhash2'] },
+        query: {
+          txRefs: ['0xhash1', '0xhash2'],
+          disablePersist: 'txRefs',
+        },
       });
     });
   });

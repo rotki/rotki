@@ -1,7 +1,6 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef } from 'vue';
 import type { AssetSearchParams } from '@/composables/api/assets/info';
 import type { AssetNameReturn, AssetSymbolReturn } from '@/composables/assets/retrieval';
-import type { DateFormat } from '@/types/date-format';
 import {
   type AssetBalance,
   type AssetInfoWithId,
@@ -16,7 +15,6 @@ import {
 } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
-import { convertFromTimestamp, convertToTimestamp } from '@/utils/date';
 
 interface ParsedAssetKeyword {
   value: string;
@@ -226,16 +224,4 @@ export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Pro
 
 export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef<AssetInfoWithId | null>): (identifier: string) => AssetInfoWithId | null {
   return (identifier: string): AssetInfoWithId | null => get(assetInfo(identifier)) || null;
-}
-
-export function dateValidator(dateInputFormat: Ref<DateFormat>): (value: string) => boolean {
-  return (value: string) => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat)));
-}
-
-export function dateSerializer(dateInputFormat: Ref<DateFormat>): (date: string) => string {
-  return (date: string) => convertToTimestamp(date, get(dateInputFormat)).toString();
-}
-
-export function dateDeserializer(dateInputFormat: Ref<DateFormat>): (timestamp: string) => string {
-  return (timestamp: string) => convertFromTimestamp(parseInt(timestamp), get(dateInputFormat));
 }

@@ -2,12 +2,13 @@ import { HistoryEventEntryType } from '@rotki/common';
 import { get } from '@vueuse/core';
 import flushPromises from 'flush-promises';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { assert, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ref } from 'vue';
 import { useHistoryEventFilter } from '@/composables/filters/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useMainStore } from '@/store/main';
 import { assetSuggestions } from '@/utils/assets';
+import { convertToTimestamp, setupDayjs } from '@/utils/date';
 
 vi.mock('@/utils/assets', async () => {
   const mod = await vi.importActual<typeof import('@/utils/assets')>(
@@ -32,6 +33,7 @@ vi.mock('@/composables/history/events/mapping', () => mockEventMappings);
 
 describe('composables::filter/use-history-event-filter - Additional Tests', () => {
   beforeAll(async () => {
+    setupDayjs();
     setActivePinia(createPinia());
 
     mockCounterpartyMappings.useHistoryEventCounterpartyMappings.mockReturnValue({
@@ -180,6 +182,73 @@ describe('composables::filter/use-history-event-filter - Additional Tests', () =
 
     const validatorMatcher = computedMatchers.find(m => m.key === 'validator_index');
     expect(validatorMatcher).toBeUndefined();
+  });
+
+  describe('date range validation', () => {
+    // Use convertToTimestamp to get timestamps in the same timezone as the validator
+    const earlyDate = '01/01/2023';
+    const lateDate = '01/12/2023';
+
+    function getTimestamp(date: string): string {
+      return convertToTimestamp(date).toString();
+    }
+
+    it('should reject start date that is after the end date', () => {
+      const { matchers, filters } = useHistoryEventFilter({});
+      set(filters, { toTimestamp: getTimestamp(earlyDate) });
+
+      const computedMatchers = get(matchers);
+      const startMatcher = computedMatchers.find(m => m.key === 'start');
+      assert(startMatcher && 'validate' in startMatcher);
+
+      expect(startMatcher.validate(lateDate)).toBe(false);
+    });
+
+    it('should accept start date that is before the end date', () => {
+      const { matchers, filters } = useHistoryEventFilter({});
+      set(filters, { toTimestamp: getTimestamp(lateDate) });
+
+      const computedMatchers = get(matchers);
+      const startMatcher = computedMatchers.find(m => m.key === 'start');
+      assert(startMatcher && 'validate' in startMatcher);
+
+      expect(startMatcher.validate(earlyDate)).toBe(true);
+    });
+
+    it('should reject end date that is before the start date', () => {
+      const { matchers, filters } = useHistoryEventFilter({});
+      set(filters, { fromTimestamp: getTimestamp(lateDate) });
+
+      const computedMatchers = get(matchers);
+      const endMatcher = computedMatchers.find(m => m.key === 'end');
+      assert(endMatcher && 'validate' in endMatcher);
+
+      expect(endMatcher.validate(earlyDate)).toBe(false);
+    });
+
+    it('should accept end date that is after the start date', () => {
+      const { matchers, filters } = useHistoryEventFilter({});
+      set(filters, { fromTimestamp: getTimestamp(earlyDate) });
+
+      const computedMatchers = get(matchers);
+      const endMatcher = computedMatchers.find(m => m.key === 'end');
+      assert(endMatcher && 'validate' in endMatcher);
+
+      expect(endMatcher.validate(lateDate)).toBe(true);
+    });
+
+    it('should accept start or end date when no other bound is set', () => {
+      const { matchers } = useHistoryEventFilter({});
+
+      const computedMatchers = get(matchers);
+      const startMatcher = computedMatchers.find(m => m.key === 'start');
+      const endMatcher = computedMatchers.find(m => m.key === 'end');
+      assert(startMatcher && 'validate' in startMatcher);
+      assert(endMatcher && 'validate' in endMatcher);
+
+      expect(startMatcher.validate(earlyDate)).toBe(true);
+      expect(endMatcher.validate(lateDate)).toBe(true);
+    });
   });
 
   describe('send selected location to asset search', () => {

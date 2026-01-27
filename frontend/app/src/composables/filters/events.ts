@@ -18,9 +18,9 @@ import { useHistoryEventCounterpartyMappings } from '@/composables/history/event
 import { useHistoryStore } from '@/store/history';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { arrayify } from '@/utils/array';
-import { assetDeserializer, assetSuggestions, dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
+import { assetDeserializer, assetSuggestions } from '@/utils/assets';
 import { uniqueStrings } from '@/utils/data';
-import { getDateInputISOFormat } from '@/utils/date';
+import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/utils/date';
 import {
   isEthBlockEventType,
   isEthDepositEventType,
@@ -103,7 +103,7 @@ export function useHistoryEventFilter(
               serializer: dateSerializer(dateInputFormat),
               string: true,
               suggestions: () => [],
-              validate: dateValidator(dateInputFormat),
+              validate: dateRangeValidator(dateInputFormat, () => get(filters)?.toTimestamp?.toString(), 'start'),
             },
             {
               description: t('transactions.filter.end_date'),
@@ -116,7 +116,7 @@ export function useHistoryEventFilter(
               serializer: dateSerializer(dateInputFormat),
               string: true,
               suggestions: () => [],
-              validate: dateValidator(dateInputFormat),
+              validate: dateRangeValidator(dateInputFormat, () => get(filters)?.fromTimestamp?.toString(), 'end'),
             },
           ] satisfies Matcher[])),
       {

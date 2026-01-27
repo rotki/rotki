@@ -4,8 +4,7 @@ import type { KrakenStakingDateFilter } from '@/types/staking';
 import { assert } from '@rotki/common';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
-import { getDateInputISOFormat } from '@/utils/date';
+import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/utils/date';
 
 const modelValue = defineModel<KrakenStakingDateFilter>({ required: true });
 
@@ -26,32 +25,6 @@ type KrakenStakingMatcher = SearchMatcher<KrakenStakingFilterKeys, KrakenStaking
 
 type KrakenStakingFilters = MatchedKeyword<KrakenStakingFilterValueKeys>;
 
-const matchers = computed<KrakenStakingMatcher[]>(() => [{
-  description: t('common.filter.start_date'),
-  deserializer: dateDeserializer(dateInputFormat),
-  hint: t('common.filter.date_hint', {
-    format: getDateInputISOFormat(get(dateInputFormat)),
-  }),
-  key: KrakenStakingFilterKeys.START,
-  keyValue: KrakenStakingFilterValueKeys.START,
-  serializer: dateSerializer(dateInputFormat),
-  string: true,
-  suggestions: () => [],
-  validate: dateValidator(dateInputFormat),
-}, {
-  description: t('common.filter.end_date'),
-  deserializer: dateDeserializer(dateInputFormat),
-  hint: t('common.filter.date_hint', {
-    format: getDateInputISOFormat(get(dateInputFormat)),
-  }),
-  key: KrakenStakingFilterKeys.END,
-  keyValue: KrakenStakingFilterValueKeys.END,
-  serializer: dateSerializer(dateInputFormat),
-  string: true,
-  suggestions: () => [],
-  validate: dateValidator(dateInputFormat),
-}]);
-
 const matches = computed<KrakenStakingFilters>({
   get() {
     const model = get(modelValue);
@@ -71,6 +44,32 @@ const matches = computed<KrakenStakingFilters>({
     });
   },
 });
+
+const matchers = computed<KrakenStakingMatcher[]>(() => [{
+  description: t('common.filter.start_date'),
+  deserializer: dateDeserializer(dateInputFormat),
+  hint: t('common.filter.date_hint', {
+    format: getDateInputISOFormat(get(dateInputFormat)),
+  }),
+  key: KrakenStakingFilterKeys.START,
+  keyValue: KrakenStakingFilterValueKeys.START,
+  serializer: dateSerializer(dateInputFormat),
+  string: true,
+  suggestions: () => [],
+  validate: dateRangeValidator(dateInputFormat, () => get(matches)?.toTimestamp?.toString(), 'start'),
+}, {
+  description: t('common.filter.end_date'),
+  deserializer: dateDeserializer(dateInputFormat),
+  hint: t('common.filter.date_hint', {
+    format: getDateInputISOFormat(get(dateInputFormat)),
+  }),
+  key: KrakenStakingFilterKeys.END,
+  keyValue: KrakenStakingFilterValueKeys.END,
+  serializer: dateSerializer(dateInputFormat),
+  string: true,
+  suggestions: () => [],
+  validate: dateRangeValidator(dateInputFormat, () => get(matches)?.fromTimestamp?.toString(), 'end'),
+}]);
 </script>
 
 <template>

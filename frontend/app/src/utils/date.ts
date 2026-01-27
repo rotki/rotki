@@ -8,6 +8,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import weekday from 'dayjs/plugin/weekday';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
+import type { Ref } from 'vue';
 import { DateFormat } from '@/types/date-format';
 
 export function getDateInputISOFormat(format: DateFormat): string {
@@ -97,4 +98,40 @@ export function setupDayjs(): void {
 
 export function millisecondsToSeconds(milliseconds: number): number {
   return Math.floor(milliseconds / 1000);
+}
+
+export function dateValidator(dateInputFormat: Ref<DateFormat>): (value: string) => boolean {
+  return (value: string) => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat)));
+}
+
+/**
+ * Validates a date string and ensures it respects a date range boundary.
+ * For start dates, pass the end timestamp and `'start'` to ensure start <= end.
+ * For end dates, pass the start timestamp and `'end'` to ensure end >= start.
+ */
+export function dateRangeValidator(
+  dateInputFormat: Ref<DateFormat>,
+  getOtherBound: () => string | undefined,
+  type: 'start' | 'end',
+): (value: string) => boolean {
+  const baseValidator = dateValidator(dateInputFormat);
+  return (value: string): boolean => {
+    if (!baseValidator(value))
+      return false;
+
+    const otherBound = getOtherBound();
+    if (!otherBound)
+      return true;
+
+    const timestamp = convertToTimestamp(value, get(dateInputFormat));
+    return type === 'start' ? timestamp <= Number(otherBound) : timestamp >= Number(otherBound);
+  };
+}
+
+export function dateSerializer(dateInputFormat: Ref<DateFormat>): (date: string) => string {
+  return (date: string) => convertToTimestamp(date, get(dateInputFormat)).toString();
+}
+
+export function dateDeserializer(dateInputFormat: Ref<DateFormat>): (timestamp: string) => string {
+  return (timestamp: string) => convertFromTimestamp(parseInt(timestamp), get(dateInputFormat));
 }

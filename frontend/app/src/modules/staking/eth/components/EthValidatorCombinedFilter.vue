@@ -8,8 +8,7 @@ import { assert, type EthStakingCombinedFilter } from '@rotki/common';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { isValidStatus, validStatuses } from '@/composables/filters/eth-validator';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { dateDeserializer, dateSerializer, dateValidator } from '@/utils/assets';
-import { getDateInputISOFormat } from '@/utils/date';
+import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/utils/date';
 
 const filter = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });
 
@@ -52,7 +51,7 @@ const matchers = computed<Matcher[]>(() => [{
   serializer: dateSerializer(dateInputFormat),
   string: true,
   suggestions: () => [],
-  validate: dateValidator(dateInputFormat),
+  validate: dateRangeValidator(dateInputFormat, () => get(filters)?.toTimestamp?.toString(), 'start'),
 }, {
   description: t('common.filter.end_date'),
   deserializer: dateDeserializer(dateInputFormat),
@@ -64,7 +63,7 @@ const matchers = computed<Matcher[]>(() => [{
   serializer: dateSerializer(dateInputFormat),
   string: true,
   suggestions: () => [],
-  validate: dateValidator(dateInputFormat),
+  validate: dateRangeValidator(dateInputFormat, () => get(filters)?.fromTimestamp?.toString(), 'end'),
 }, {
   description: t('eth_validator_combined_filter.status'),
   key: Eth2StakingFilterKeys.STATUS,
