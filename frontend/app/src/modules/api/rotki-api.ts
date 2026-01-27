@@ -18,12 +18,16 @@ export class RotkiApi {
   private abortController: AbortController;
   private authFailureAction?: () => void;
   private _requestQueue: RequestQueue;
+  private _colibriRequestQueue: RequestQueue;
 
   constructor() {
     this._serverUrl = defaultApiUrls.coreApiUrl;
     this._baseURL = `${this._serverUrl}/api/1/`;
     this.abortController = new AbortController();
     this._requestQueue = new RequestQueue(
+      async <T>(url: string, options?: Record<string, unknown>) => this.fetchDirect<T>(url, options as Omit<RotkiFetchOptions<'json', T>, 'skipQueue' | 'priority' | 'tags' | 'dedupe' | 'maxQueueTime' | 'queueRetries'>),
+    );
+    this._colibriRequestQueue = new RequestQueue(
       async <T>(url: string, options?: Record<string, unknown>) => this.fetchDirect<T>(url, options as Omit<RotkiFetchOptions<'json', T>, 'skipQueue' | 'priority' | 'tags' | 'dedupe' | 'maxQueueTime' | 'queueRetries'>),
     );
   }
@@ -44,16 +48,33 @@ export class RotkiApi {
     return this._requestQueue.state;
   }
 
+  get colibriQueueState(): QueueState {
+    return this._colibriRequestQueue.state;
+  }
+
   cancelByTag(tag: string): void {
     this._requestQueue.cancelByTag(tag);
+    this._colibriRequestQueue.cancelByTag(tag);
   }
 
   cancelAllQueued(): void {
     this._requestQueue.cancelAll();
+    this._colibriRequestQueue.cancelAll();
   }
 
   getQueueMetrics(): QueueState {
     return this._requestQueue.getMetrics();
+  }
+
+  getColibriQueueMetrics(): QueueState {
+    return this._colibriRequestQueue.getMetrics();
+  }
+
+  private isColibriRequest(baseURL?: string): boolean {
+    if (!baseURL)
+      return false;
+    const colibriUrl = defaultApiUrls.colibriApiUrl;
+    return colibriUrl !== '' && baseURL.startsWith(colibriUrl);
   }
 
   buildUrl(path: string, query?: Record<string, unknown>): string {
@@ -103,7 +124,11 @@ export class RotkiApi {
     if (skipQueue)
       return this.fetchDirect<T>(url, restOptions);
 
-    return this._requestQueue.enqueue<T>(url, {
+    const queue = this.isColibriRequest(restOptions.baseURL)
+      ? this._colibriRequestQueue
+      : this._requestQueue;
+
+    return queue.enqueue<T>(url, {
       ...restOptions as Record<string, unknown>,
       priority: priority ?? RequestPriority.NORMAL,
       tags,

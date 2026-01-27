@@ -114,7 +114,7 @@ function startPolling(): void {
     if (!queue.isProcessing()) {
       stopPolling();
     }
-  }, 100);
+  }, 500);
 }
 
 export function useBalanceQueue(): UseBalanceQueueReturn {

@@ -50,7 +50,7 @@ describe('settings:frontend', () => {
       timeframeSetting: TimeFramePersist.REMEMBER,
       visibleTimeframes: Defaults.DEFAULT_VISIBLE_TIMEFRAMES,
       lastKnownTimeframe: TimeFramePeriod.ALL,
-      queryPeriod: 5,
+      queryPeriod: 15,
       profitLossReportPeriod: {
         year: new Date().getFullYear().toString(),
         quarter: Quarter.ALL,
@@ -115,7 +115,7 @@ describe('settings:frontend', () => {
         TimeFramePeriod.TWO_WEEKS,
         TimeFramePeriod.WEEK,
       ],
-      queryPeriod: 5,
+      queryPeriod: 15,
       profitLossReportPeriod: {
         year: '2018',
         quarter: Quarter.Q3,
@@ -200,7 +200,7 @@ describe('settings:frontend', () => {
       TimeFramePeriod.TWO_WEEKS,
       TimeFramePeriod.WEEK,
     ]);
-    expect(store.queryPeriod).toBe(5);
+    expect(store.queryPeriod).toBe(15);
     expect(store.profitLossReportPeriod).toMatchObject({
       year: '2018',
       quarter: Quarter.Q3,

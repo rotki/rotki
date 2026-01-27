@@ -30,7 +30,7 @@ describe('types/user', () => {
         TimeFramePeriod.TWO_WEEKS,
         TimeFramePeriod.WEEK,
       ],
-      queryPeriod: 5,
+      queryPeriod: 15,
       profitLossReportPeriod: {
         year: '2018',
         quarter: Quarter.Q3,

@@ -70,7 +70,7 @@ export const useMonitorStore = defineStore('monitor', () => {
       if (!restarting)
         startPromise(monitor());
 
-      activeMonitors[TASK] = setInterval(() => startPromise(monitor()), 2000);
+      activeMonitors[TASK] = setInterval(() => startPromise(monitor()), 4000);
       set(monitors, activeMonitors);
     }
   };

@@ -250,14 +250,15 @@ export function useHistoryEventsFilters(
     if (!(filterChanged || accountsChanged))
       return;
 
+    // Update locationOverview when filter location changes
+    if (filterChanged)
+      set(locationOverview, filters.location);
+
+    // When accounts change, trigger a filter update to force re-fetch with new location labels
+    // The setPage(1) is handled by usePaginationFilters watch on [filters, extraParams]
     if (accountsChanged && get(usedLocationLabels).length > 0) {
       const updatedFilter = { ...get(filters) };
       updateFilter(updatedFilter);
-    }
-
-    if (filterChanged || accountsChanged) {
-      set(locationOverview, filters.location);
-      setPage(1);
     }
   });
 

@@ -33,7 +33,7 @@ describe('settings:utils', () => {
       defiSetupDone: true,
       language: SupportedLanguage.EN,
       lastKnownTimeframe: TimeFramePeriod.ALL,
-      queryPeriod: 5,
+      queryPeriod: 15,
       profitLossReportPeriod: {
         year: new Date().getFullYear().toString(),
         quarter: Quarter.ALL,

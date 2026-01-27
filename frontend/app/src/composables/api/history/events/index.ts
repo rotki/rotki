@@ -220,6 +220,8 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
       '/history/events',
       payload,
       {
+        dedupe: true,
+        maxQueueTime: 120_000,
         timeout: 90_000,
       },
     );

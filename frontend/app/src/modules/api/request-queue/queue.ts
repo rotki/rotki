@@ -217,8 +217,9 @@ export class RequestQueue {
     this.isProcessing = true;
     try {
       while (this.queue.length > 0) {
-        if (this.activeRequests.size >= this.options.maxConcurrent)
+        if (this.activeRequests.size >= this.options.maxConcurrent) {
           break;
+        }
         if (!this.canMakeRequest()) {
           this.scheduleRateLimitRecovery();
           break;

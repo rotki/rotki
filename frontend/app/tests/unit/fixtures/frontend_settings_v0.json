@@ -54,7 +54,7 @@
     "quarter": "ALL",
     "year": "2026"
   },
-  "queryPeriod": 5,
+  "queryPeriod": 15,
   "refreshPeriod": -1,
   "renderAllNftImages": true,
   "savedFilters": {},
