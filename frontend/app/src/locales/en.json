@@ -627,6 +627,12 @@
           "title": "Fetch associated locations"
         }
       },
+      "fetch_location_labels": {
+        "error": {
+          "message": "Failed to retrieve the location labels: {message}",
+          "title": "Fetch location labels"
+        }
+      },
       "fetch_undecoded_transactions": {
         "error": {
           "message": "Failed to query breakdown for undecoded transactions: {message}"
@@ -2036,8 +2042,8 @@
       "view_action": "View"
     },
     "chips": {
-      "viewing_auto_fixable": "Viewing auto-fixable duplicate events",
-      "viewing_manual_review": "Viewing duplicates requiring manual review"
+      "viewing_auto_fixable": "Showing auto-fixable duplicate events",
+      "viewing_manual_review": "Showing duplicates requiring manual review"
     }
   },
   "dashboard": {

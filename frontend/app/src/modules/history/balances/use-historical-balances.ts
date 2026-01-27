@@ -48,7 +48,7 @@ interface UseHistoricalBalancesReturn {
 export function useHistoricalBalances(): UseHistoricalBalancesReturn {
   const historicalBalancesStore = useHistoricalBalancesStore();
   const { savedFilters } = storeToRefs(historicalBalancesStore);
-  const { setSavedFilters } = historicalBalancesStore;
+  const { setSavedFilters, triggerProcessing } = historicalBalancesStore;
 
   // Local filter state - initialized from saved filters if available
   const saved = get(savedFilters);
@@ -146,19 +146,6 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
       return t('historical_balances.task_description_asset', { timestamp: formattedTime, asset });
 
     return t('historical_balances.task_description_all', { timestamp: formattedTime });
-  }
-
-  async function triggerProcessing(): Promise<void> {
-    const { taskId } = await processHistoricalBalances();
-
-    await awaitTask<boolean, TaskMeta>(
-      taskId,
-      TaskType.PROCESS_HISTORICAL_BALANCES,
-      {
-        title: t('historical_balances.title'),
-        description: t('historical_balances.processing_description'),
-      },
-    );
   }
 
   async function queryBalances(ts: number, asset?: string, location?: string, locationLabel?: string, protocol?: string): Promise<HistoricalBalancesResponse> {

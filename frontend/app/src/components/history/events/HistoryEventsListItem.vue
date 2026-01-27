@@ -11,6 +11,7 @@ import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
+import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -38,6 +39,8 @@ const emit = defineEmits<{
 const { item } = toRefs(props);
 
 const { getChain } = useSupportedChains();
+const { assetInfo } = useAssetInfoRetrieval();
+const { useIsAssetIgnored } = useIgnoredAssetsStore();
 
 const canUnlink = computed<boolean>(() => {
   const event = get(item);
@@ -116,8 +119,11 @@ const isSelected = computed<boolean>({
 
 const eventAsset = useRefMap(item, ({ asset }) => asset);
 
-const { useIsAssetIgnored } = useIgnoredAssetsStore();
 const isIgnoredAsset = useIsAssetIgnored(eventAsset);
+const asset = assetInfo(eventAsset, { collectionParent: false });
+const isSpam = computed(() => get(asset)?.protocol === 'spam');
+
+const hiddenEvent = logicOr(isIgnoredAsset, isSpam);
 </script>
 
 <template>
@@ -127,7 +133,7 @@ const isIgnoredAsset = useIsAssetIgnored(eventAsset);
     :class="{
       'bg-rui-error/[0.05]': isHighlighted,
       'border-b': !isLast && !compact,
-      '!opacity-50': isIgnoredAsset,
+      '!opacity-50': hiddenEvent,
       'px-4': !compact,
     }"
   >

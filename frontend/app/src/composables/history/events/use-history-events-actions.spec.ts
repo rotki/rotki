@@ -151,7 +151,6 @@ describe('useHistoryEventsActions', () => {
         path: Routes.HISTORY_EVENTS.toString(),
         query: {
           txRefs: ['0xhash1', '0xhash2'],
-          disablePersist: 'txRefs',
         },
       });
     });
