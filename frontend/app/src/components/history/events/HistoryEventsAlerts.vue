@@ -62,6 +62,17 @@ async function viewDuplicates(groupIds: string[], status: DuplicateHandlingStatu
   });
 }
 
+/**
+ * Reset `show` when the alert is hidden by external conditions (e.g., loading state changes,
+ * alerts resolved). This ensures the alert only reappears on an explicit user button click,
+ * not automatically when transient conditions resolve.
+ */
+watch(showAlerts, (isShowing) => {
+  if (!isShowing && get(show)) {
+    set(show, false);
+  }
+});
+
 watchImmediate(loading, async (isLoading) => {
   if (!isLoading && get(mainPage)) {
     await Promise.all([
