@@ -98,10 +98,7 @@ function handleToggleAll(): void {
 
 <template>
   <HistoryTableActions hide-divider>
-    <template
-      v-if="!selection.isActive"
-      #filter
-    >
+    <template #filter>
       <RuiBadge
         dot
         :model-value="hasActiveToggles"
@@ -152,88 +149,110 @@ function handleToggleAll(): void {
       />
     </template>
 
-    <template v-if="selection.isActive">
-      <RuiCheckbox
-        :model-value="selection.isAllSelected"
-        :indeterminate="selection.isPartiallySelected"
-        color="primary"
-        hide-details
-        class="ml-2 pt-[1px] h-11"
-        @update:model-value="handleToggleAll()"
-      />
-      <span class="text-sm text-rui-text-secondary mr-4 select-none">
+    <div
+      v-if="selection.isActive"
+      class="flex items-center gap-1.5 h-10 bg-rui-grey-500/[0.1] rounded-md pl-3 pr-1"
+    >
+      <RuiTooltip :open-delay="400">
+        <template #activator>
+          <RuiCheckbox
+            :model-value="selection.isAllSelected"
+            :indeterminate="selection.isPartiallySelected"
+            color="primary"
+            hide-details
+            size="sm"
+            @update:model-value="handleToggleAll()"
+          />
+        </template>
+        {{ t('transactions.events.selection_mode.select_all_page') }}
+      </RuiTooltip>
+      <span
+        class="text-sm text-rui-text-secondary -ml-1 mr-2 select-none"
+      >
         {{ t('transactions.events.selection_mode.selected_count', { count: selection.selectedCount }) }}
       </span>
-      <RuiButton
-        color="error"
-        variant="outlined"
-        class="h-10"
-        :disabled="selection.selectedCount === 0"
-        @click="handleDelete()"
-      >
-        <template #prepend>
-          <RuiIcon
-            name="lu-trash-2"
-            size="20"
-          />
+      <RuiDivider
+        vertical
+        class="mr-1 -ml-1 h-4"
+      />
+      <RuiTooltip :open-delay="200">
+        <template #activator>
+          <RuiButton
+            color="error"
+            variant="outlined"
+            class="h-7 px-2.5"
+            :disabled="selection.selectedCount === 0"
+            @click="handleDelete()"
+          >
+            <RuiIcon
+              name="lu-trash-2"
+              size="16"
+            />
+          </RuiButton>
         </template>
         {{ t('transactions.events.selection_mode.delete_selected') }}
-      </RuiButton>
+      </RuiTooltip>
       <div class="flex">
-        <RuiButton
-          variant="outlined"
-          class="h-10 !rounded-r-none"
-          :disabled="selection.selectedCount === 0 || !canIgnore"
-          @click="handleIgnore()"
-        >
-          <template #prepend>
-            <RuiIcon
-              name="lu-eye-off"
-              size="20"
-            />
+        <RuiTooltip :open-delay="200">
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              class="h-7 px-2.5 !rounded-r-none"
+              :disabled="selection.selectedCount === 0 || !canIgnore"
+              @click="handleIgnore()"
+            >
+              <RuiIcon
+                name="lu-eye-off"
+                size="16"
+              />
+            </RuiButton>
           </template>
           {{ t('transactions.events.selection_mode.ignore') }}
-        </RuiButton>
-        <RuiButton
-          variant="outlined"
-          class="h-10 !rounded-l-none -ml-[1px]"
-          :disabled="selection.selectedCount === 0 || !canUnignore"
-          @click="handleUnignore()"
-        >
-          <template #prepend>
-            <RuiIcon
-              name="lu-eye"
-              size="20"
-            />
+        </RuiTooltip>
+        <RuiTooltip :open-delay="200">
+          <template #activator>
+            <RuiButton
+              variant="outlined"
+              class="h-7 px-2.5 !rounded-l-none -ml-[1px]"
+              :disabled="selection.selectedCount === 0 || !canUnignore"
+              @click="handleUnignore()"
+            >
+              <RuiIcon
+                name="lu-eye"
+                size="16"
+              />
+            </RuiButton>
           </template>
           {{ t('transactions.events.selection_mode.unignore') }}
-        </RuiButton>
+        </RuiTooltip>
       </div>
-      <RuiButton
-        color="primary"
-        variant="outlined"
-        class="h-10"
-        :disabled="selection.selectedCount === 0"
-        @click="handleCreateRule()"
-      >
-        <template #prepend>
-          <RuiIcon
-            name="lu-settings"
-            size="20"
-          />
+      <RuiTooltip :open-delay="200">
+        <template #activator>
+          <RuiButton
+            color="primary"
+            variant="outlined"
+            class="h-7 px-2.5"
+            :disabled="selection.selectedCount === 0"
+            @click="handleCreateRule()"
+          >
+            <RuiIcon
+              name="lu-file-spreadsheet"
+              size="16"
+            />
+          </RuiButton>
         </template>
         {{ t('transactions.events.selection_mode.create_rule') }}
-      </RuiButton>
+      </RuiTooltip>
       <RuiButton
         variant="text"
-        class="h-10"
+        class="h-7 px-2.5"
         @click="handleExit()"
       >
         {{ t('common.actions.cancel') }}
       </RuiButton>
-    </template>
+    </div>
     <template v-else>
-      <RuiTooltip>
+      <RuiTooltip :open-delay="200">
         <template #activator>
           <RuiButton
             variant="text"
@@ -262,15 +281,15 @@ function handleToggleAll(): void {
         :match-exact-events="toggles.matchExactEvents"
         :filters="exportParams"
       />
-
-      <LocationLabelSelector
-        v-if="!hideAccountSelector"
-        v-model="locationLabels"
-        class="w-[18rem]"
-        hide-details
-        dense
-        chips
-      />
     </template>
+
+    <LocationLabelSelector
+      v-if="!hideAccountSelector"
+      v-model="locationLabels"
+      class="w-[18rem]"
+      hide-details
+      dense
+      chips
+    />
   </HistoryTableActions>
 </template>
