@@ -170,7 +170,9 @@ export function useHistoryEventsFilters(
     },
     persistFilter: computed(() => ({
       enabled: true,
+      excludeKeys: ['identifiers', 'groupIdentifiers', 'duplicateHandlingStatus'],
       tableId: TableId.HISTORY,
+      transientKeys: ['txRefs'],
     })),
     queryParamsOnly: computed(() => {
       const duplicateHandlingStatusValue = get(duplicateHandlingStatusFromQuery);

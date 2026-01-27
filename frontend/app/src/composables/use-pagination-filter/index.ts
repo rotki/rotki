@@ -33,6 +33,10 @@ type Params<
 
 interface PersistFilterSetting {
   enabled: boolean;
+  /** Keys that are never persisted regardless of how they were set. */
+  excludeKeys?: string[];
+  /** Keys that are only persisted when set by a user action, not from programmatic navigation. */
+  transientKeys?: string[];
   tableId: TableId;
 }
 
@@ -131,6 +135,10 @@ export function usePaginationFilters<
     query,
     tableId: computed<TableId>(() => get(persistFilter)?.tableId ?? '' as TableId),
   });
+
+  // Tracks the initial values of transient keys from external navigation.
+  // Transient keys are only stripped from persistence when their values haven't changed from navigation.
+  const navigationTransientValues = ref<Record<string, string | string[]>>();
 
   const sort = computed<DataTableSortData<TItem>>({
     get() {
@@ -409,10 +417,30 @@ export function usePaginationFilters<
 
     // Only restore persisted filter if route/query is empty (route filter takes precedence)
     if (isEmpty(routeQuery)) {
+      set(navigationTransientValues, undefined);
       await restorePersistedFilter();
     }
 
     applyRouteFilter();
+
+    /**
+     * Capture transient key values after route filter is applied, so the values
+     * reflect the parsed/transformed format used by getQuery() (e.g., arrayified strings).
+     * Only capture once per navigation (when navigationTransientValues is not yet set).
+     */
+    if (!isEmpty(routeQuery) && !isDefined(navigationTransientValues)) {
+      const transientKeys = get(persistFilter)?.transientKeys;
+      if (transientKeys) {
+        const currentQuery = getQuery();
+        const captured: Record<string, string | string[]> = {};
+        for (const key of transientKeys) {
+          const value = currentQuery[key];
+          if (value)
+            captured[key] = value as string | string[];
+        }
+        set(navigationTransientValues, Object.keys(captured).length > 0 ? captured : undefined);
+      }
+    }
   });
 
   watch([filters, extraParams], ([filters, extraParams], [oldFilters, oldExtraParams]) => {
@@ -438,7 +466,28 @@ export function usePaginationFilters<
       return;
 
     const query = getQuery();
-    savePersistedFilter(query);
+    const persistSettings = get(persistFilter);
+    const keysToExclude = [...(persistSettings?.excludeKeys ?? [])];
+
+    // Only strip transient keys if their values haven't changed from the initial navigation values
+    const navValues = get(navigationTransientValues);
+    if (navValues) {
+      for (const key of persistSettings?.transientKeys ?? []) {
+        if (key in navValues && isEqual(query[key], navValues[key]))
+          keysToExclude.push(key);
+      }
+    }
+
+    if (keysToExclude.length > 0) {
+      const filteredQuery = { ...query };
+      for (const key of keysToExclude)
+        delete filteredQuery[key];
+
+      savePersistedFilter(filteredQuery);
+    }
+    else {
+      savePersistedFilter(query);
+    }
 
     await updateQuery();
     await fetchData();
