@@ -11,7 +11,6 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from requests import Response
 
@@ -81,6 +80,7 @@ from rotkehlchen.utils.misc import (
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.network import inverse_backoff_seconds, sleep_for_backoff
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -353,7 +353,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                         call_counter=self.call_counter,
                     )
                     tries -= 1
-                    gevent.sleep(backoff_in_seconds)
+                    sleep_for_backoff(backoff_in_seconds)
                     continue
 
             log.debug(
@@ -369,13 +369,13 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 result = self._query_private(method, req)
             if isinstance(result, str):
                 # Got a recoverable error
-                backoff_in_seconds = int(KRAKEN_BACKOFF_DIVIDEND / tries)
+                backoff_in_seconds = int(inverse_backoff_seconds(KRAKEN_BACKOFF_DIVIDEND, tries))
                 log.debug(
                     f'Got recoverable error {result} in a Kraken query of {method}. Will backoff '
                     f'for {backoff_in_seconds} seconds',
                 )
                 tries -= 1
-                gevent.sleep(backoff_in_seconds)
+                sleep_for_backoff(backoff_in_seconds)
                 continue
 
             # else success

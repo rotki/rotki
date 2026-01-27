@@ -4,7 +4,6 @@ from enum import StrEnum
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
 
-import gevent
 import requests
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -54,7 +53,15 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import pairwise, set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
-from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    create_session,
+    inverse_backoff_seconds,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -287,65 +294,95 @@ class Cryptocompare(
 
         tries = CRYPTOCOMPARE_QUERY_RETRY_TIMES
         timeout = CachedSettings().get_timeout_tuple()
-        while tries >= 0:
-            log.debug('Querying cryptocompare', url=url, params=params)
-            try:
-                response = self.session.get(url, timeout=timeout, params=params)
-            except requests.exceptions.RequestException as e:
-                self.penalty_info.note_failure_or_penalize()
-                raise RemoteError(f'Cryptocompare API request failed due to {e!s}') from e
+        json_ret = retry_with_backoff(
+            retries=tries,
+            backoff_state=None,
+            call=lambda: self._cryptocompare_request(
+                url=url,
+                timeout=timeout,
+                params=params,
+            ),
+            on_result=lambda result, retries_left, _backoff: self._handle_cryptocompare_response(
+                result=result,
+                url=url,
+                retries_left=retries_left,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(error),
+        )
 
-            try:
-                json_ret = jsonloads_dict(response.text)
-            except JSONDecodeError as e:
-                raise RemoteError(
-                    f'Cryptocompare returned invalid JSON response: {response.text}',
-                ) from e
+        try:
+            if json_ret.get('Response', 'Success') != 'Success':
+                error_message = f'Failed to query cryptocompare for: "{url}"'
+                if 'Message' in json_ret:
+                    error_message += f'. Error: {json_ret["Message"]}'
 
-            try:
-                # backoff and retry 3 times =  1 + 1.5 + 3 = at most 5.5 secs
-                # Failing is also fine, since all calls have secondary data sources
-                # for example coingecko
-                if json_ret.get('Message', None) == RATE_LIMIT_MSG:
-                    self.last_rate_limit = ts_now()
-                    if tries >= 1:
-                        backoff_seconds = 3 / tries
-                        log.debug(
-                            f'Got rate limited by cryptocompare. '
-                            f'Backing off for {backoff_seconds}',
-                        )
-                        gevent.sleep(backoff_seconds)
-                        tries -= 1
-                        continue
+                log.warning(
+                    'Cryptocompare query failure',
+                    url=url,
+                    error=error_message,
+                    status_code=json_ret.get('Response', 'unknown'),
+                )
+                raise RemoteError(error_message)
 
-                    # else
+            return json_ret.get('Data', json_ret)
+        except KeyError as e:
+            raise RemoteError(
+                f'Unexpected format of Cryptocompare json_response. '
+                f'Missing key entry for {e!s}',
+            ) from e
+
+    def _cryptocompare_request(
+            self,
+            url: CCApiUrl,
+            timeout: tuple[int, int],
+            params: dict[str, Any],
+    ) -> dict[str, Any]:
+        log.debug('Querying cryptocompare', url=url, params=params)
+        try:
+            response = self.session.get(url, timeout=timeout, params=params)
+        except requests.exceptions.RequestException as e:
+            self.penalty_info.note_failure_or_penalize()
+            raise RemoteError(f'Cryptocompare API request failed due to {e!s}') from e
+
+        try:
+            return jsonloads_dict(response.text)
+        except JSONDecodeError as e:
+            raise RemoteError(
+                f'Cryptocompare returned invalid JSON response: {response.text}',
+            ) from e
+
+    def _handle_cryptocompare_response(
+            self,
+            result: dict[str, Any],
+            url: CCApiUrl,
+            retries_left: int,
+    ) -> RetryDecision:
+        try:
+            # backoff and retry 3 times =  1 + 1.5 + 3 = at most 5.5 secs
+            # Failing is also fine, since all calls have secondary data sources
+            # for example coingecko
+            if result.get('Message') == RATE_LIMIT_MSG:
+                self.last_rate_limit = ts_now()
+                if retries_left >= 1:
+                    backoff_seconds = inverse_backoff_seconds(3, retries_left)
                     log.debug(
-                        f'Got rate limited by cryptocompare and did not manage to get a '
-                        f'request through even after {CRYPTOCOMPARE_QUERY_RETRY_TIMES} '
-                        f'incremental backoff retries',
+                        f'Got rate limited by cryptocompare. '
+                        f'Backing off for {backoff_seconds}',
                     )
+                    return retry_decision_retry(backoff_seconds)
 
-                if json_ret.get('Response', 'Success') != 'Success':
-                    error_message = f'Failed to query cryptocompare for: "{url}"'
-                    if 'Message' in json_ret:
-                        error_message += f'. Error: {json_ret["Message"]}'
+                log.debug(
+                    f'Got rate limited by cryptocompare and did not manage to get a '
+                    f'request through even after {CRYPTOCOMPARE_QUERY_RETRY_TIMES} '
+                    f'incremental backoff retries',
+                )
 
-                    log.warning(
-                        'Cryptocompare query failure',
-                        url=url,
-                        error=error_message,
-                        status_code=response.status_code,
-                    )
-                    raise RemoteError(error_message)
-
-                return json_ret.get('Data', json_ret)
-            except KeyError as e:
-                raise RemoteError(
-                    f'Unexpected format of Cryptocompare json_response. '
-                    f'Missing key entry for {e!s}',
-                ) from e
-
-        raise AssertionError('We should never get here')
+            return retry_decision_success(result)
+        except KeyError as e:
+            return retry_decision_fail(RemoteError(
+                f'Unexpected format of Cryptocompare json_response. '
+                f'Missing key entry for {e!s}',
+            ))
 
     @overload
     def _special_case_handling(

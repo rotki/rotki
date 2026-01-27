@@ -10,7 +10,6 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
-import gevent
 import jwt
 import requests
 from cryptography.hazmat.primitives import serialization
@@ -63,6 +62,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import combine_dicts, ts_now, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.network import sleep_for_backoff
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -296,7 +296,7 @@ class Coinbase(ExchangeInterface):
 
             if response.status_code in (401, 429) and had_4xx is False:
                 had_4xx = True
-                gevent.sleep(.5)
+                sleep_for_backoff(0.5)
                 continue  # do a single retry since they don't have info on retries
 
             if response.status_code == 403:

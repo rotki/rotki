@@ -9,7 +9,6 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, overload
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from gevent.lock import Semaphore
 from requests.adapters import Response
@@ -59,6 +58,12 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now_in_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
@@ -254,12 +259,42 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         limit = options['limit']
         results: list[HistoryBaseEntry] = []
         processed_result_ids: set[str] = set()
-        retries_left = API_REQUEST_RETRY_TIMES
-        while retries_left >= 0:
-            response = self._api_query(
-                endpoint=endpoint,
-                options=call_options,
+        while True:
+            def handle_result(
+                    result: Response,
+                    retries_left: int,
+                    _backoff: Any,
+                    call_options: dict[str, Any] = call_options,
+            ) -> RetryDecision:
+                return self._handle_bitfinex_rate_limit(
+                    result=result,
+                    case=case,
+                    retries_left=retries_left,
+                    call_options=call_options,
+                )
+
+            def handle_exception(
+                    error: Exception,
+                    _retries_left: int,
+                    _backoff: Any,
+            ) -> RetryDecision:
+                return retry_decision_success(error)
+
+            def handle_call(call_options: dict[str, Any] = call_options) -> Response:
+                return self._api_query(
+                    endpoint=endpoint,
+                    options=call_options,
+                )
+
+            response: Response = retry_with_backoff(
+                retries=API_REQUEST_RETRY_TIMES,
+                backoff_state=None,
+                call=handle_call,
+                on_result=handle_result,
+                on_exception=handle_exception,
             )
+            if isinstance(response, Exception):
+                raise response
             if response.status_code != HTTPStatus.OK:
                 try:
                     error_response = json.loads(response.text)
@@ -274,25 +309,14 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                 # Check if the rate limits have been hit (response JSON as dict)
                 if isinstance(error_response, dict):
                     if error_response.get('error', None) == API_RATE_LIMITS_ERROR_MESSAGE:
-                        if retries_left == 0:
-                            msg = (
-                                f'{self.name} {case} request failed after retrying '
-                                f'{API_REQUEST_RETRY_TIMES} times.'
-                            )
-                            self.msg_aggregator.add_error(
-                                f'Got remote error while querying {self.name} {case}: {msg}',
-                            )
-                            return results, True
-
-                        # Trigger retry
-                        log.debug(
-                            f'{self.name} {case} request reached the rate limits. Backing off',
-                            seconds=API_REQUEST_RETRY_AFTER_SECONDS,
-                            options=call_options,
+                        msg = (
+                            f'{self.name} {case} request failed after retrying '
+                            f'{API_REQUEST_RETRY_TIMES} times.'
                         )
-                        retries_left -= 1
-                        gevent.sleep(API_REQUEST_RETRY_AFTER_SECONDS)
-                        continue
+                        self.msg_aggregator.add_error(
+                            f'Got remote error while querying {self.name} {case}: {msg}',
+                        )
+                        return results, True
 
                     # Unexpected JSON dict case, better to log it
                     msg = f'Unexpected {self.name} {case} unsuccessful response JSON'
@@ -333,6 +357,35 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
             call_options.update({'start': last_item.timestamp})
 
         return results, False
+
+    def _handle_bitfinex_rate_limit(
+            self,
+            result: Response,
+            case: Literal['trades', 'asset_movements'],
+            retries_left: int,
+            call_options: dict[str, Any],
+    ) -> RetryDecision:
+        if result.status_code == HTTPStatus.OK:
+            return retry_decision_success(result)
+
+        try:
+            error_response = json.loads(result.text)
+        except JSONDecodeError:
+            return retry_decision_success(result)
+
+        if (
+                isinstance(error_response, dict) and
+                error_response.get('error', None) == API_RATE_LIMITS_ERROR_MESSAGE and
+                retries_left >= 1
+        ):
+            log.debug(
+                f'{self.name} {case} request reached the rate limits. Backing off',
+                seconds=API_REQUEST_RETRY_AFTER_SECONDS,
+                options=call_options,
+            )
+            return retry_decision_retry(API_REQUEST_RETRY_AFTER_SECONDS)
+
+        return retry_decision_success(result)
 
     def _deserialize_api_query_paginated_results(
             self,

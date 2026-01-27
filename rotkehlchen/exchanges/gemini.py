@@ -7,7 +7,6 @@ from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, overload
 
-import gevent
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -57,6 +56,14 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now_in_ms, ts_sec_to_ms
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.lockable import protect_with_lock
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    inverse_backoff_seconds,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 from rotkehlchen.utils.serialization import jsonloads_dict, jsonloads_list
 
 if TYPE_CHECKING:
@@ -193,44 +200,69 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
         url = f'{self.base_uri}{v_endpoint}'
         retries_left = CachedSettings().get_query_retry_limit()
         retry_limit = CachedSettings().get_query_retry_limit()
-        headers = None
-        while retries_left > 0:
-            if endpoint in {'mytrades', 'balances', 'transfers', 'roles', 'balances/earn'}:
-                # private endpoints
-                timestamp = str(ts_now_in_ms())
-                payload = {'request': v_endpoint, 'nonce': timestamp}
-                if options is not None:
-                    payload.update(options)
-                encoded_payload = json.dumps(payload).encode()
-                b64 = b64encode(encoded_payload)
-                signature = self.generate_hmac_signature(b64, digest_algorithm=hashlib.sha384)
+        return retry_with_backoff(
+            retries=max(retries_left - 1, 0),
+            backoff_state=None,
+            call=lambda: self._gemini_request(
+                method=method,
+                url=url,
+                endpoint=endpoint,
+                options=options,
+            ),
+            on_result=lambda result, retries_left_current, _backoff: self._handle_gemini_response(
+                result=result,
+                retries_left=retries_left_current,
+                retry_limit=retry_limit,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(
+                    f'Gemini {method} query at {url} connection error: {error!s}',
+                ),
+            ),
+        )  # pyright: ignore # we get in the loop at least once
 
-                headers = {
-                    'X-GEMINI-PAYLOAD': b64.decode(),
-                    'X-GEMINI-SIGNATURE': signature,
-                }
+    def _gemini_request(
+            self,
+            method: Literal['get', 'post'],
+            url: str,
+            endpoint: str,
+            options: dict[str, Any] | None,
+    ) -> requests.Response:
+        if endpoint in {'mytrades', 'balances', 'transfers', 'roles', 'balances/earn'}:
+            # private endpoints
+            timestamp = str(ts_now_in_ms())
+            payload = {'request': f'/v1/{endpoint}', 'nonce': timestamp}
+            if options is not None:
+                payload.update(options)
+            encoded_payload = json.dumps(payload).encode()
+            b64 = b64encode(encoded_payload)
+            signature = self.generate_hmac_signature(b64, digest_algorithm=hashlib.sha384)
 
-            try:
-                response = self.session.request(
-                    method=method,
-                    url=url,
-                    timeout=GLOBAL_REQUESTS_TIMEOUT,
-                    headers=headers,
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(
-                    f'Gemini {method} query at {url} connection error: {e!s}',
-                ) from e
+            self.session.headers.update({
+                'X-GEMINI-PAYLOAD': b64.decode(),
+                'X-GEMINI-SIGNATURE': signature,
+            })
 
-            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                # Backoff a bit by sleeping. Sleep more, the more retries have been made
-                gevent.sleep(retry_limit / retries_left)
-                retries_left -= 1
-            else:
-                # get out of the retry loop, we did not get 429 complaint
-                break
+        return self.session.request(
+            method=method,
+            url=url,
+            timeout=GLOBAL_REQUESTS_TIMEOUT,
+        )
 
-        return response  # pyright: ignore # we get in the loop at least once
+    def _handle_gemini_response(
+            self,
+            result: requests.Response,
+            retries_left: int,
+            retry_limit: int,
+    ) -> RetryDecision:
+        if result.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            if retries_left <= 0:
+                return retry_decision_success(result)
+
+            backoff_seconds = inverse_backoff_seconds(retry_limit, retries_left + 1)
+            return retry_decision_retry(backoff_seconds)
+
+        return retry_decision_success(result)
 
     def _public_api_query(
             self,

@@ -3,7 +3,6 @@ from collections.abc import Callable, Sequence
 from functools import partial
 from typing import TYPE_CHECKING, Final, TypeVar
 
-import gevent
 from httpx import HTTPStatusError, ReadTimeout
 from solana.exceptions import SolanaRpcException
 from solana.rpc.api import Client
@@ -24,7 +23,7 @@ from solders.solders import (
 from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
-from rotkehlchen.chain.evm.types import WeightedNode
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import SolanaRPCMixin
 from rotkehlchen.chain.solana.utils import (
     ExtensionType,
@@ -46,6 +45,15 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain
 from rotkehlchen.utils.misc import bytes_to_solana_address, get_chunks
+from rotkehlchen.utils.network import (
+    BackoffState,
+    RetryDecision,
+    parse_retry_after,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 
 from .constants import METADATA_LAYOUT_2022, METADATA_LAYOUT_LEGACY, METADATA_PROGRAM_IDS
 from .types import SolanaTransaction, pubkey_to_solana_address
@@ -124,37 +132,88 @@ class SolanaInquirer(SolanaRPCMixin):
                 log.debug(f'Skipping non-archive node {node_info.name} for solana query requiring only archive nodes')  # noqa: E501
                 continue
 
-            backoff, attempts = INITIAL_BACKOFF, 0
-            while True:
-                try:
-                    return method(rpc_node.rpc_client)
-                except (SolanaRpcException, RPCException, SerdeJSONError) as e:
-                    if attempts > MAX_RETRIES:
-                        log.error(f'Maximum retries reached for solana node {node_info.name}. Giving up.')  # noqa: E501
-                        break
-
-                    attempts += 1
-                    ratelimit_response = None
-                    if (
-                        (
-                            isinstance(e.__cause__, HTTPStatusError) and
-                            (ratelimit_response := e.__cause__.response).status_code == 429  # pylint: disable=no-member  # cause is an HTTPStatusError here.
-                        ) or
-                        isinstance(e.__cause__, ReadTimeout)  # Some RPCs (publicnode.com) do a read timeout instead of a proper 429 response  # noqa: E501
-                    ):
-                        if ratelimit_response is not None and (retry_after := ratelimit_response.headers.get('retry-after')) is not None:  # noqa: E501
-                            backoff = int(retry_after) + 1
-
-                        log.warning(f'Got rate limited from solana node {node_info.name}. Backing off {backoff} seconds...')  # noqa: E501
-                        gevent.sleep(backoff)
-                        backoff *= BACKOFF_MULTIPLIER
-                        continue
-
-                    log.error(f'Failed to call solana node {node_info.name} due to {e}')
-                    break
+            backoff_state = BackoffState(
+                current=float(INITIAL_BACKOFF),
+                multiplier=BACKOFF_MULTIPLIER,
+            )
+            try:
+                node_info_local = node_info
+                backoff_state_local = backoff_state
+                return retry_with_backoff(
+                    retries=MAX_RETRIES,
+                    backoff_state=backoff_state,
+                    call=lambda: method(rpc_node.rpc_client),
+                    on_result=lambda result, _retries_left, _backoff: retry_decision_success(result),  # noqa: E501
+                    on_exception=self._make_solana_exception_handler(
+                        node_info=node_info_local,
+                        backoff_state=backoff_state_local,
+                    ),
+                )
+            except Exception as e:
+                log.error(f'Failed to call solana node {node_info.name} due to {e}')
+                continue
 
         log.error(f'Tried all solana nodes in {call_order} for {method} but did not get any response')  # noqa: E501
         raise RemoteError(f'Failed to get {method}')
+
+    @staticmethod
+    def _make_solana_exception_handler(
+            node_info: NodeName,
+            backoff_state: BackoffState,
+    ) -> Callable[[Exception, int, BackoffState | None], RetryDecision]:
+        def handler(
+                error: Exception,
+                retries_left: int,
+                current_backoff: BackoffState | None,
+        ) -> RetryDecision:
+            return SolanaInquirer._handle_solana_exception(
+                error=error,
+                node_info=node_info,
+                retries_left=retries_left,
+                backoff_state=current_backoff or backoff_state,
+            )
+
+        return handler
+
+    @staticmethod
+    def _handle_solana_exception(
+            error: Exception,
+            node_info: NodeName,
+            retries_left: int,
+            backoff_state: BackoffState,
+    ) -> RetryDecision:
+        if isinstance(error, (SolanaRpcException, RPCException, SerdeJSONError)):
+            ratelimit_response = None
+            if (
+                (
+                    isinstance(error.__cause__, HTTPStatusError) and
+                    (ratelimit_response := error.__cause__.response).status_code == 429  # pylint: disable=no-member  # cause is an HTTPStatusError here.
+                ) or
+                isinstance(error.__cause__, ReadTimeout)  # Some RPCs (publicnode.com) do a read timeout instead of a proper 429 response  # noqa: E501
+            ):
+                if ratelimit_response is not None:
+                    retry_after = parse_retry_after(ratelimit_response.headers)
+                    if retry_after is not None:
+                        backoff_state.current = retry_after + 1
+
+                log.warning(
+                    f'Got rate limited from solana node {node_info.name}. '
+                    f'Backing off {backoff_state.current} seconds...',
+                )
+                return retry_decision_retry()
+
+        if retries_left == 0:
+            log.error(
+                f'Maximum retries reached for solana node {node_info.name}. Giving up.',
+            )
+
+        if retries_left > 0:
+            log.error(f'Failed to call solana node {node_info.name} due to {error}')
+            return retry_decision_fail(error)
+
+        return retry_decision_fail(
+            RemoteError(f'Failed to call solana node {node_info.name}'),
+        )
 
     def get_raw_account_info(self, pubkey: Pubkey) -> bytes:
         """Query the raw account info for the given pubkey.

@@ -1,9 +1,9 @@
 import json
 import logging
+from collections.abc import Callable
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Final
 
-import gevent
 import requests
 from gql import Client, gql
 from gql.transport.exceptions import TransportError, TransportQueryError, TransportServerError
@@ -17,6 +17,14 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ApiKey, ExternalService
+from rotkehlchen.utils.network import (
+    BackoffState,
+    RetryDecision,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -107,47 +115,74 @@ class Graph(ExternalServiceWithApiKey):
         querystr = prefix + querystr
         log.debug(f'Querying The Graph for {querystr}')
 
-        retries_left = retry_limit = CachedSettings().get_query_retry_limit()
+        retries_left = CachedSettings().get_query_retry_limit()
+        backoff_state = BackoffState(current=RETRY_BACKOFF_FACTOR * 2, multiplier=2)
         client = self._maybe_create_client()
-        while retries_left > 0:
-            try:
-                result = client.execute(gql(querystr), variable_values=param_values)
-            except (TransportServerError, TransportQueryError) as e:
+        result = retry_with_backoff(
+            retries=retries_left,
+            backoff_state=backoff_state,
+            call=lambda: client.execute(gql(querystr), variable_values=param_values),
+            on_result=lambda response, _retries_left, _backoff: retry_decision_success(response),
+            on_exception=self._handle_graph_exception(
+                querystr=querystr,
+                backoff_state=backoff_state,
+            ),
+        )
+        log.debug(f'Got result {result} from The Graph query')
+        return result
+
+    def _handle_graph_exception(
+            self,
+            querystr: str,
+            backoff_state: BackoffState,
+    ) -> Callable[[Exception, int, BackoffState | None], RetryDecision]:
+        def handler(
+                error: Exception,
+                current_retries_left: int,
+                current_backoff_state: BackoffState | None,
+        ) -> RetryDecision:
+            if isinstance(error, (TransportServerError, TransportQueryError)):
                 # https://gql.readthedocs.io/en/latest/advanced/error_handling.html
                 # Kind of guessing here ... these may be the only ones we can backoff for
                 base_msg = f'The Graph query to {self.graph_label}({self.subgraph_id}) failed'
-                error_msg = str(e)
+                error_msg = str(error)
                 if 'Subgraph not authorized by user' in error_msg:
-                    raise RemoteError(f'{base_msg} because subgraph is not authorized. {error_msg}') from e  # noqa: E501
+                    return retry_decision_fail(RemoteError(
+                        f'{base_msg} because subgraph is not authorized. {error_msg}',
+                    ))
                 if 'invalid bearer token: invalid auth token' in error_msg:
-                    raise RemoteError(f'{base_msg} because the token is not valid. {error_msg}') from e  # noqa: E501
+                    return retry_decision_fail(RemoteError(
+                        f'{base_msg} because the token is not valid. {error_msg}',
+                    ))
                 if 'malformed API key' in error_msg:
-                    raise RemoteError(f'{base_msg} because the given API key is malformed') from e
+                    return retry_decision_fail(RemoteError(
+                        f'{base_msg} because the given API key is malformed',
+                    ))
 
-                # we retry again
                 retry_base_msg = base_msg + f' with payload {querystr} due to {error_msg}'
-                retries_left -= 1
-                if (  # check if we should retry
-                        retries_left != 0 and (
-                            (isinstance(e, TransportServerError) and e.code == HTTPStatus.TOO_MANY_REQUESTS) or  # noqa: E501
-                            isinstance(e, TransportQueryError)
-                        )
-                ):
-                    sleep_seconds = RETRY_BACKOFF_FACTOR * pow(2, retry_limit - retries_left)
+                can_retry = (
+                    current_retries_left > 1 and (
+                        (isinstance(error, TransportServerError) and error.code == HTTPStatus.TOO_MANY_REQUESTS) or  # noqa: E501
+                        isinstance(error, TransportQueryError)
+                    )
+                )
+                if can_retry:
+                    state = current_backoff_state or backoff_state
+                    sleep_seconds = state.current
                     retry_msg = (
                         f'Retrying query after {sleep_seconds} seconds. '
-                        f'Retries left: {retries_left}.'
+                        f'Retries left: {current_retries_left - 1}.'
                     )
                     log.error(f'{retry_base_msg}. {retry_msg}')
-                    gevent.sleep(sleep_seconds)
-                else:
-                    raise RemoteError(f'{base_msg}. No retries left.') from e
+                    return retry_decision_retry()
 
-            except (GraphQLError, TransportError) as e:
-                raise RemoteError(f'Failed to query the graph for {querystr} due to {e}') from e
-            else:
-                break
+                return retry_decision_fail(RemoteError(f'{base_msg}. No retries left.'))
 
-        assert result  # result will always exist here.
-        log.debug(f'Got result {result} from The Graph query')
-        return result
+            if isinstance(error, (GraphQLError, TransportError)):
+                return retry_decision_fail(RemoteError(
+                    f'Failed to query the graph for {querystr} due to {error}',
+                ))
+
+            return retry_decision_fail(error)
+
+        return handler

@@ -3,7 +3,6 @@ from http import HTTPStatus
 from json import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
-import gevent
 import requests
 from base58 import b58decode
 from solders.solders import Signature
@@ -28,6 +27,13 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.utils.misc import get_chunks
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
@@ -68,37 +74,23 @@ class Helius(ExternalServiceWithRecommendedApiKey):
             log.warning('Missing Helius api key. Skipping query.')
             raise MissingAPIKey('Helius API key is missing')
 
-        retry_count = 0
         timeout = CachedSettings().get_timeout_tuple()
-        while True:
-            log.debug(f'Querying Helius: {HELIUS_API_URL}/{endpoint} with params: {params}')
-            try:
-                response = requests.post(
-                    url=f'{HELIUS_API_URL}/{endpoint}/?api-key={api_key}',
-                    json=params,
-                    timeout=timeout,
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Helius API request failed due to {e!s}') from e
-
-            if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
-                if retry_count >= RETRY_LIMIT:
-                    raise RemoteError('Getting Helius too many requests error even after retrying.')  # noqa: E501
-
-                log.debug(f'Got too many requests error from Helius. Will backoff for {BACKOFF_SECONDS} second.')  # noqa: E501
-                gevent.sleep(BACKOFF_SECONDS)
-                retry_count += 1
-                continue
-
-            if response.status_code != 200:
-                raise RemoteError(
-                    f'Helius API request {response.url} failed '
-                    f'with HTTP status code {response.status_code} and text '
-                    f'{response.text}',
-                )
-
-            # else status is 200 OK
-            break
+        response = retry_with_backoff(
+            retries=RETRY_LIMIT,
+            backoff_state=None,
+            call=lambda: requests.post(
+                url=f'{HELIUS_API_URL}/{endpoint}/?api-key={api_key}',
+                json=params,
+                timeout=timeout,
+            ),
+            on_result=lambda result, retries_left, _backoff: self._handle_helius_response(
+                result=result,
+                retries_left=retries_left,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(f'Helius API request failed due to {error!s}'),
+            ),
+        )
 
         try:
             json_ret = jsonloads_list(response.text)
@@ -109,6 +101,32 @@ class Helius(ExternalServiceWithRecommendedApiKey):
             ) from e
 
         return json_ret
+
+    def _handle_helius_response(
+            self,
+            result: requests.Response,
+            retries_left: int,
+    ) -> RetryDecision:
+        if result.status_code == HTTPStatus.TOO_MANY_REQUESTS:
+            if retries_left == 0:
+                return retry_decision_fail(RemoteError(
+                    'Getting Helius too many requests error even after retrying.',
+                ))
+
+            log.debug(
+                f'Got too many requests error from Helius. Will backoff for '
+                f'{BACKOFF_SECONDS} second.',
+            )
+            return retry_decision_retry(BACKOFF_SECONDS)
+
+        if result.status_code != 200:
+            return retry_decision_fail(RemoteError(
+                f'Helius API request {result.url} failed '
+                f'with HTTP status code {result.status_code} and text '
+                f'{result.text}',
+            ))
+
+        return retry_decision_success(result)
 
     def maybe_get_rpc_node(self) -> WeightedNode | None:
         """Returns the Helius RPC node if the user has an api key."""

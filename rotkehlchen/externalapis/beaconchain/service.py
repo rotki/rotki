@@ -4,7 +4,6 @@ from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
 
-import gevent
 import requests
 from gevent.lock import Semaphore
 
@@ -39,7 +38,16 @@ from rotkehlchen.utils.misc import (
     ts_now,
     ts_sec_to_ms,
 )
-from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    create_session,
+    linear_backoff_seconds,
+    parse_retry_after,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -111,71 +119,25 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
         timeout = (CachedSettings().get_timeout_tuple()[0], BEACONCHAIN_READ_TIMEOUT)
         backoff_in_seconds = 10
         log.debug(f'Querying beaconcha.in API for {query_str} with {data=}')
-        while True:
-            try:
-                response = self.session.request(
-                    method=method,
-                    url=query_str,
-                    json=data,
-                    timeout=timeout,
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
-
-            if response.status_code == 429:
-                minute_rate_limit = response.headers.get('x-ratelimit-limit-minute', 'unknown')
-                user_minute_rate_limit = response.headers.get('x-ratelimit-remaining-minute', 'unknown')  # noqa: E501
-                daily_rate_limit = response.headers.get('x-ratelimit-limit-day', 'unknown')
-                user_daily_rate_limit = response.headers.get('x-ratelimit-remaining-day', 'unknown')  # noqa: E501
-                month_rate_limit = response.headers.get('x-ratelimit-limit-month', 'unknown')
-                user_month_rate_limit = response.headers.get('x-ratelimit-remaining-month', 'unknown')  # noqa: E501
-                if times == 0:
-                    msg = (
-                        f'Beaconchain API request {response.url} failed '
-                        f'with HTTP status code {response.status_code} and text '
-                        f'{response.text} after {retries_num} retries'
-                    )
-                    log.debug(
-                        f'{msg} minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
-                        f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
-                        f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
-                    )
-                    raise RemoteError(msg)
-
-                retry_after = response.headers.get('retry-after', None)
-                if retry_after:
-                    retry_after_secs = int(retry_after)
-                    if retry_after_secs > MAX_WAIT_SECS:
-                        msg = (
-                            f'Beaconcha.in is rate limited when processing API request '
-                            f'{response.url}. Would need to wait for {retry_after} seconds '
-                            f'which is more than the wait limit of {MAX_WAIT_SECS} seconds. '
-                            f'Bailing out.'
-                        )
-                        log.debug(
-                            f'{msg} minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
-                            f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
-                            f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
-                        )
-                        self.ratelimited_until = Timestamp(ts_now() + retry_after_secs)
-                        raise RemoteError(msg)
-                    # else
-                    sleep_seconds = retry_after_secs
-                else:
-                    # Rate limited. Try incremental backoff since retry-after header is missing
-                    sleep_seconds = backoff_in_seconds * (retries_num - times + 1)
-                times -= 1
-                log.debug(
-                    f'Beaconcha.in is rate limited for API request {response.url}. Sleeping '
-                    f'for {sleep_seconds}. We have {times} tries left.'
-                    f'minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
-                    f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
-                    f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
-                )
-                gevent.sleep(sleep_seconds)
-                continue
-            # else
-            break
+        response = retry_with_backoff(
+            retries=times,
+            backoff_state=None,
+            call=lambda: self.session.request(
+                method=method,
+                url=query_str,
+                json=data,
+                timeout=timeout,
+            ),
+            on_result=lambda result, retries_left, _backoff: self._handle_beaconchain_response(
+                result=result,
+                retries_left=retries_left,
+                retries_num=retries_num,
+                backoff_in_seconds=backoff_in_seconds,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(f'Querying {query_str} failed due to {error!s}'),
+            ),
+        )
 
         if response.status_code != 200:
             raise RemoteError(
@@ -198,6 +160,66 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
             raise RemoteError(f'Beaconchain API did not contain a data key. Response: {json_ret}')
 
         return json_ret['data']
+
+    def _handle_beaconchain_response(
+            self,
+            result: requests.Response,
+            retries_left: int,
+            retries_num: int,
+            backoff_in_seconds: int,
+    ) -> RetryDecision:
+        if result.status_code != 429:
+            return retry_decision_success(result)
+
+        minute_rate_limit = result.headers.get('x-ratelimit-limit-minute', 'unknown')
+        user_minute_rate_limit = result.headers.get('x-ratelimit-remaining-minute', 'unknown')
+        daily_rate_limit = result.headers.get('x-ratelimit-limit-day', 'unknown')
+        user_daily_rate_limit = result.headers.get('x-ratelimit-remaining-day', 'unknown')
+        month_rate_limit = result.headers.get('x-ratelimit-limit-month', 'unknown')
+        user_month_rate_limit = result.headers.get('x-ratelimit-remaining-month', 'unknown')
+        if retries_left == 0:
+            msg = (
+                f'Beaconchain API request {result.url} failed '
+                f'with HTTP status code {result.status_code} and text '
+                f'{result.text} after {retries_num} retries'
+            )
+            log.debug(
+                f'{msg} minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
+                f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
+                f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
+            )
+            return retry_decision_fail(RemoteError(msg))
+
+        sleep_seconds: float
+        retry_after_secs = parse_retry_after(result.headers)
+        if retry_after_secs is not None:
+            if retry_after_secs > MAX_WAIT_SECS:
+                msg = (
+                    f'Beaconcha.in is rate limited when processing API request '
+                    f'{result.url}. Would need to wait for {retry_after_secs} seconds '
+                    f'which is more than the wait limit of {MAX_WAIT_SECS} seconds. '
+                    f'Bailing out.'
+                )
+                log.debug(
+                    f'{msg} minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
+                    f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
+                    f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
+                )
+                self.ratelimited_until = Timestamp(ts_now() + retry_after_secs)
+                return retry_decision_fail(RemoteError(msg))
+            sleep_seconds = retry_after_secs
+        else:
+            attempt = retries_num - retries_left + 1
+            sleep_seconds = linear_backoff_seconds(backoff_in_seconds, attempt)
+
+        log.debug(
+            f'Beaconcha.in is rate limited for API request {result.url}. Sleeping '
+            f'for {sleep_seconds}. We have {retries_left - 1} tries left.'
+            f'minute limit: {user_minute_rate_limit}/{minute_rate_limit}, '
+            f'daily limit: {user_daily_rate_limit}/{daily_rate_limit}, '
+            f'monthly limit: {user_month_rate_limit}/{month_rate_limit}',
+        )
+        return retry_decision_retry(sleep_seconds)
 
     def _query_chunked_endpoint(
             self,

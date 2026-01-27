@@ -3,7 +3,6 @@ import sys
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal, overload
 
-import gevent
 import requests
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
@@ -29,7 +28,15 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
-from rotkehlchen.utils.network import create_session
+from rotkehlchen.utils.network import (
+    RetryDecision,
+    create_session,
+    linear_backoff_seconds,
+    retry_decision_fail,
+    retry_decision_retry,
+    retry_decision_success,
+    retry_with_backoff,
+)
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -119,45 +126,25 @@ class Blockscout(EtherscanLikeApi):
         timeout = timeout or cached_settings.get_timeout_tuple()
         backoff_in_seconds = 10
 
-        while True:
-            try:
-                response = self.session.request(
-                    method=http_method,
-                    url=query_str,
-                    timeout=timeout,
-                    **{'params' if http_method == 'get' else 'json': params},  # type: ignore[arg-type]
-                )
-            except requests.exceptions.RequestException as e:
-                raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
-
-            if response.status_code == 429:
-                if times == 0:
-                    msg = (
-                        f'Blockscout API request {response.url} failed '
-                        f'with HTTP status code {response.status_code} and text '
-                        f'{response.text} after {retries_num} retries'
-                    )
-                    log.debug(msg)
-                    raise RemoteError(msg)
-
-                # Rate limited. Try incremental backoff
-                sleep_seconds = backoff_in_seconds * (retries_num - times + 1)
-                times -= 1
-                log.debug(
-                    f'Blockscout API request {response.url} got rate limited. Sleeping for '
-                    f'{sleep_seconds}. We have {times} tries left.',
-                )
-                gevent.sleep(sleep_seconds)
-                continue
-
-            if response.status_code != 200:
-                raise RemoteError(
-                    f'Blockscout API request {response.url} failed '
-                    f'with HTTP status code {response.status_code} and text '
-                    f'{response.text}',
-                )
-
-            break  # all good got a response
+        response = retry_with_backoff(
+            retries=times,
+            backoff_state=None,
+            call=lambda: self.session.request(
+                method=http_method,
+                url=query_str,
+                timeout=timeout,
+                **{'params' if http_method == 'get' else 'json': params},  # type: ignore[arg-type]
+            ),
+            on_result=lambda result, retries_left, _backoff: self._handle_blockscout_response(
+                result=result,
+                retries_left=retries_left,
+                retries_num=retries_num,
+                backoff_in_seconds=backoff_in_seconds,
+            ),
+            on_exception=lambda error, _retries_left, _backoff: retry_decision_fail(
+                RemoteError(f'Querying {query_str} failed due to {error!s}'),
+            ),
+        )
 
         try:
             json_ret = jsonloads_dict(response.text)
@@ -167,6 +154,40 @@ class Blockscout(EtherscanLikeApi):
             ) from e
 
         return json_ret  # 'txlistinternal', 'txlist', 'tokentx
+
+    def _handle_blockscout_response(
+            self,
+            result: requests.Response,
+            retries_left: int,
+            retries_num: int,
+            backoff_in_seconds: int,
+    ) -> RetryDecision:
+        if result.status_code == 429:
+            if retries_left == 0:
+                msg = (
+                    f'Blockscout API request {result.url} failed '
+                    f'with HTTP status code {result.status_code} and text '
+                    f'{result.text} after {retries_num} retries'
+                )
+                log.debug(msg)
+                return retry_decision_fail(RemoteError(msg))
+
+            attempt = retries_num - retries_left + 1
+            sleep_seconds = linear_backoff_seconds(backoff_in_seconds, attempt)
+            log.debug(
+                f'Blockscout API request {result.url} got rate limited. Sleeping for '
+                f'{sleep_seconds}. We have {retries_left - 1} tries left.',
+            )
+            return retry_decision_retry(sleep_seconds)
+
+        if result.status_code != 200:
+            return retry_decision_fail(RemoteError(
+                f'Blockscout API request {result.url} failed '
+                f'with HTTP status code {result.status_code} and text '
+                f'{result.text}',
+            ))
+
+        return retry_decision_success(result)
 
     @overload  # type: ignore[override]
     def _query(

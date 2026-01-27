@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
-import gevent
 from pysqlcipher3 import dbapi2 as sqlcipher
 from requests import Response
 
@@ -27,6 +26,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import from_gwei, ts_sec_to_ms
+from rotkehlchen.utils.network import sleep_exponential_backoff
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -114,8 +114,11 @@ class Etherscan(ExternalServiceWithRecommendedApiKey, EtherscanLikeApi):
                         f'Got response: {response.text} from {self.name} while '
                         f'querying chain {chain_id}. Will backoff for {current_backoff} seconds.',
                     )
-                    gevent.sleep(current_backoff)
-                    return current_backoff * 2
+                    _, next_backoff, _ = sleep_exponential_backoff(
+                        current_backoff=current_backoff,
+                        multiplier=2,
+                    )
+                    return int(next_backoff)
 
                 elif result.startswith('Max daily'):
                     raise RemoteError(f'{self.name} max daily rate limit reached.')
