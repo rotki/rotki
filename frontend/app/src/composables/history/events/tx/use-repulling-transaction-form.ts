@@ -10,9 +10,9 @@ export const SECONDS_PER_DAY = 24 * 60 * 60;
 /**
  * Threshold for showing confirmation dialog before repulling transactions.
  * Calculated as: number of accounts × number of days.
- * e.g., 180 = 1 account for ~6 months, or 6 accounts for ~1 month.
+ * e.g., 1825 = 1 account for ~5 years, or 5 accounts for ~1 year.
  */
-export const CONFIRMATION_THRESHOLD = 180;
+export const CONFIRMATION_THRESHOLD = 1825;
 
 export const EXCHANGES_WITHOUT_DATE_RANGE_FILTER: string[] = [
   'coinbase',

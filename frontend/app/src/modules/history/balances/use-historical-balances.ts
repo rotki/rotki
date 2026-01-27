@@ -74,7 +74,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { fetchHistoricalBalances, fetchOnchainHistoricalBalance, processHistoricalBalances } = useHistoricalBalancesApi();
+  const { fetchHistoricalBalances, fetchOnchainHistoricalBalance } = useHistoricalBalancesApi();
   const { getEvmChainName } = useSupportedChains();
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { useCollectionId, useCollectionMainAsset } = useCollectionInfo();
