@@ -359,10 +359,8 @@ def test_transfer_updates_sender_and_receiver_buckets(
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT he.timestamp, he.asset, em.location_label, em.protocol, em.metric_value '
-            'FROM event_metrics em '
-            'JOIN history_events he ON em.event_identifier = he.identifier '
-            'ORDER BY he.timestamp, em.metric_value',
+            'SELECT timestamp, asset, location_label, protocol, metric_value FROM event_metrics '
+            'ORDER BY timestamp, metric_value',
         ).fetchall() == [
             (1000, A_ETH.identifier, TEST_ADDR1, None, '10'),  # wallet1: 0 + 10 = 10
             (2000, A_ETH.identifier, TEST_ADDR2, None, '3'),  # wallet2: 0 + 3 = 3
@@ -426,10 +424,8 @@ def test_deposit_to_protocol_updates_wallet_and_protocol_buckets(
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT he.timestamp, em.location_label, em.protocol, em.metric_value '
-            'FROM event_metrics em '
-            'JOIN history_events he ON em.event_identifier = he.identifier '
-            'ORDER BY he.timestamp, em.protocol NULLS FIRST',
+            'SELECT timestamp, location_label, protocol, metric_value FROM event_metrics '
+            'ORDER BY timestamp, protocol NULLS FIRST',
         ).fetchall() == [
             (1000, TEST_ADDR1, None, '10'),  # wallet: 0 + 10 = 10
             (2000, TEST_ADDR1, None, '5'),  # wallet: 10 - 5 = 5
@@ -491,10 +487,8 @@ def test_staking_deposit_and_withdraw_updates_wallet_and_protocol_buckets(
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT he.timestamp, em.location_label, em.protocol, em.metric_value '
-            'FROM event_metrics em '
-            'JOIN history_events he ON em.event_identifier = he.identifier '
-            'ORDER BY he.timestamp, em.protocol NULLS FIRST',
+            'SELECT timestamp, location_label, protocol, metric_value FROM event_metrics '
+            'ORDER BY timestamp, protocol NULLS FIRST',
         ).fetchall() == [
             (1000, TEST_ADDR1, None, '10'),  # wallet: 0 + 10 = 10
             (2000, TEST_ADDR1, None, '6'),  # wallet: 10 - 4 = 6
@@ -565,10 +559,8 @@ def test_wrapped_deposit_and_redeem_moves_between_protocol_buckets(
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT he.timestamp, em.location_label, em.protocol, em.metric_value '
-            'FROM event_metrics em '
-            'JOIN history_events he ON em.event_identifier = he.identifier '
-            'ORDER BY he.timestamp, em.protocol',
+            'SELECT timestamp, location_label, protocol, metric_value FROM event_metrics '
+            'ORDER BY timestamp, protocol',
         ).fetchall() == [
             (1000, TEST_ADDR1, CPT_BALANCER_V2, '10'),  # 0 + 10 = 10
             (2000, TEST_ADDR1, CPT_AURA_FINANCE, '6'),  # 0 + 6 = 6
@@ -795,10 +787,8 @@ def test_staking_protocol_lp_token_received_from_untracked_address(
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT he.timestamp, em.location_label, em.protocol, em.metric_value '
-            'FROM event_metrics em '
-            'JOIN history_events he ON em.event_identifier = he.identifier '
-            'ORDER BY he.timestamp, em.protocol',
+            'SELECT timestamp, location_label, protocol, metric_value FROM event_metrics '
+            'ORDER BY timestamp, protocol',
         ).fetchall() == [
             (1000, TEST_ADDR1, CPT_HOP, '10'),  # hop bucket: 0 + 10 = 10
             (2000, TEST_ADDR1, CPT_HOP, '10'),  # hop bucket: 10 - 5 + 5 = 10 (same bucket)

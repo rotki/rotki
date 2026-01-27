@@ -231,7 +231,7 @@ def _load_bucket_balances_before_ts(
 ) -> dict[Bucket, FVal]:
     """Load the latest balance per bucket before from_ts.
 
-    We use MAX(timestamp + sequence_index) to identify the most recent row per bucket,
+    We use MAX(sort_key) to identify the most recent row per bucket,
     relying on SQLite's bare column behavior to return non-aggregated columns from
     that row. See https://www.sqlite.org/lang_select.html#bareagg
     """
@@ -239,12 +239,9 @@ def _load_bucket_balances_before_ts(
     with database.conn.read_ctx() as cursor:
         cursor.execute(
             """
-            SELECT he.location, em.location_label, em.protocol, em.asset,
-                   em.metric_value, MAX(he.timestamp + he.sequence_index)
-            FROM event_metrics em
-            INNER JOIN history_events he ON em.event_identifier = he.identifier
-            WHERE em.metric_key = ? AND he.timestamp < ?
-            GROUP BY he.location, em.location_label, em.protocol, em.asset
+            SELECT location, location_label, protocol, asset, metric_value, MAX(sort_key)
+            FROM event_metrics WHERE metric_key = ? AND timestamp < ?
+            GROUP BY location, location_label, protocol, asset
             """,
             (EventMetricKey.BALANCE.serialize(), from_ts),
         )
@@ -286,7 +283,7 @@ def process_historical_balances(
         _finalize_processing(database=database, processing_started_at=processing_started_at)
         return
 
-    metrics_batch: list[tuple[int | None, str | None, str | None, str, str, str]] = []
+    metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]] = []  # noqa: E501
     first_batch_written, send_ws_every = False, msg_aggregator.how_many_events_per_ws(total_events)
     for idx, event in enumerate(events):
         for event_to_apply in events_to_apply if (events_to_apply := _maybe_add_profit_event(
@@ -375,7 +372,7 @@ def _finalize_processing(database: 'DBHandler', processing_started_at: Timestamp
 
 def _write_metrics_batch(
         write_cursor: 'DBCursor',
-        metrics_batch: list[tuple[int | None, str | None, str | None, str, str, str]],
+        metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]],  # noqa: E501
         from_ts: TimestampMS | None,
         first_batch_written: bool,
 ) -> None:
@@ -391,8 +388,8 @@ def _write_metrics_batch(
             write_cursor.execute('DELETE FROM event_metrics')
     write_cursor.executemany(
         'INSERT OR REPLACE INTO event_metrics '
-        '(event_identifier, location_label, protocol, metric_key, metric_value, asset) '
-        'VALUES (?, ?, ?, ?, ?, ?)',
+        '(event_identifier, location, location_label, protocol, metric_key, metric_value, asset, timestamp, sequence_index, sort_key) '  # noqa: E501
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
         metrics_batch,
     )
 
@@ -401,7 +398,7 @@ def _apply_to_buckets(
         database: 'DBHandler',
         event: 'HistoryBaseEntry',
         bucket_balances: dict[Bucket, FVal],
-        metrics_batch: list[tuple[int | None, str | None, str | None, str, str, str]],
+        metrics_batch: list[tuple[int | None, str, str | None, str | None, str, str, str, int, int, int]],  # noqa: E501
         last_run_ts: Timestamp | None,
 ) -> None:
     """Apply the given event to the buckets it affects."""
@@ -436,11 +433,15 @@ def _apply_to_buckets(
         bucket_balances[bucket] = new_balance
         metrics_batch.append((
             event.identifier,
+            event.location.serialize_for_db(),
             bucket.location_label,
             bucket.protocol,
             EventMetricKey.BALANCE.serialize(),
             str(new_balance),
             bucket.asset,
+            event.timestamp,
+            event.sequence_index,
+            event.timestamp + event.sequence_index,
         ))
 
 

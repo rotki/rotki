@@ -1598,9 +1598,8 @@ def test_process_historical_balances(
 
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT em.event_identifier, em.protocol, em.metric_value, he.asset '
+            'SELECT em.event_identifier, em.protocol, em.metric_value, em.asset '
             'FROM event_metrics em '
-            'JOIN history_events he ON em.event_identifier = he.identifier '
             'ORDER BY em.event_identifier',
         ).fetchall() == [
             (event1_id, None, '10', A_ETH.identifier),

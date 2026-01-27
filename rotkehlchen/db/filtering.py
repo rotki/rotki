@@ -2433,7 +2433,7 @@ class SolanaTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
-    """Filter query for historical balances that join event_metrics with history_events."""
+    """Filter query for historical balances over event_metrics."""
 
     unprocessed_where_clause: str = ''
     unprocessed_bindings: list[Any] = field(default_factory=list)
@@ -2461,7 +2461,7 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             and_op=True,
             to_ts=timestamp,
             scaling_factor=(scaling_factor := FVal(1000)),  # timestamps are in MS
-            timestamp_field='he.timestamp',
+            timestamp_field='timestamp',
         )
         filters.append(filter_query.timestamp_filter)
         if timestamp is not None:
@@ -2484,7 +2484,6 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 and_op=True,
                 column='location',
                 value=(location_value := location.serialize_for_db()),
-                alias='he',
             )
             filters.append(location_filter)
             unprocessed_clauses.append('location = ?')
@@ -2522,7 +2521,7 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             with_group_by: bool = False,
             without_ignored_asset_filter: bool = False,
     ) -> tuple[str, list[Any]]:
-        """Prepare filters for the joined event_metrics/history_events query.
+        """Prepare filters for the event_metrics query.
 
         Overrides parent to return filter string with AND (not WHERE) since the query
         already has a WHERE clause.

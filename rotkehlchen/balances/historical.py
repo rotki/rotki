@@ -51,7 +51,7 @@ class HistoricalBalancesManager:
     ) -> tuple[bool, dict[Asset, FVal] | None]:
         """Get historical balances for all assets at a given timestamp.
 
-        The inner query gets the latest balance per bucket via MAX(timestamp + sequence_index),
+        The inner query gets the latest balance per bucket via MAX(sort_key),
         relying on SQLite's bare column behavior to return non-aggregated columns from that row.
         See https://www.sqlite.org/lang_select.html#bareagg
 
@@ -64,11 +64,13 @@ class HistoricalBalancesManager:
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
                 f"""SELECT asset, SUM(metric_value) FROM (
-                    SELECT em.asset, em.metric_value, MAX(he.timestamp + he.sequence_index)
+                    SELECT asset, metric_value, MAX(sort_key)
                     FROM event_metrics em
-                    INNER JOIN history_events he ON em.event_identifier = he.identifier
-                    WHERE he.ignored = 0 AND em.metric_key = ? {filter_str}
-                    GROUP BY he.location, em.location_label, em.protocol, em.asset
+                    WHERE metric_key = ? {filter_str}
+                    AND asset NOT IN (
+                        SELECT value FROM multisettings WHERE name='ignored_asset'
+                    )
+                    GROUP BY location, location_label, protocol, asset
                 ) GROUP BY asset HAVING SUM(metric_value) > 0
                 """,
                 query_bindings,
@@ -131,25 +133,36 @@ class HistoricalBalancesManager:
                         f"""
                         WITH all_events AS (
                             SELECT
-                                he.timestamp,
-                                he.location || COALESCE(em.location_label, '') || COALESCE(em.protocol, '') || em.asset as bucket,
-                                CAST(em.metric_value AS REAL) as balance,
-                                he.timestamp + he.sequence_index as sort_key
+                                timestamp,
+                                CAST(metric_value AS REAL) as balance,
+                                sort_key,
+                                location,
+                                location_label,
+                                protocol,
+                                asset
                             FROM event_metrics em
-                            INNER JOIN history_events he ON em.event_identifier = he.identifier
-                            WHERE em.metric_key = ? AND em.asset IN ({placeholders})
+                            WHERE metric_key = ? AND asset IN ({placeholders})
+                            AND asset NOT IN (
+                                SELECT value FROM multisettings WHERE name='ignored_asset'
+                            )
                         ),
                         with_delta AS (
                             SELECT
                                 timestamp,
                                 sort_key,
-                                balance - COALESCE(LAG(balance) OVER (PARTITION BY bucket ORDER BY sort_key), 0) as delta
+                                balance - COALESCE(
+                                    LAG(balance) OVER (
+                                        PARTITION BY location, location_label, protocol, asset
+                                        ORDER BY sort_key
+                                    ),
+                                    0
+                                ) as delta
                             FROM all_events
                         )
                         SELECT timestamp, sort_key, delta
                         FROM with_delta
                         WHERE timestamp >= ? AND timestamp <= ?
-                        """,  # noqa: E501
+                        """,
                         (metric_key, *chunk, from_ts_ms, to_ts_ms),
                     ),
                     schema=schema,
@@ -173,7 +186,7 @@ class HistoricalBalancesManager:
 
         for chunk, placeholders in get_query_chunks(data=asset_ids):
             if self._has_unprocessed_events(
-                where_clause=f'he.asset IN ({placeholders}) AND he.timestamp >= ? AND he.timestamp <= ?',  # noqa: E501
+                where_clause=f'asset IN ({placeholders}) AND timestamp >= ? AND timestamp <= ?',
                 bindings=[*chunk, from_ts_ms, to_ts_ms],
             ):
                 return True, data
@@ -199,20 +212,27 @@ class HistoricalBalancesManager:
                 cursor.execute(
                     """
                     WITH all_events AS (
-                        SELECT he.timestamp, em.asset, CAST(em.metric_value AS REAL) as balance,
-                               he.timestamp + he.sequence_index as sort_key,
-                               he.location || COALESCE(em.location_label, '') || COALESCE(em.protocol, '') || em.asset as bucket
+                        SELECT timestamp, asset, CAST(metric_value AS REAL) as balance,
+                               sort_key, location, location_label, protocol
                         FROM event_metrics em
-                        INNER JOIN history_events he ON em.event_identifier = he.identifier
-                        WHERE em.metric_key = ? AND he.ignored = 0
+                        WHERE metric_key = ?
+                        AND asset NOT IN (
+                            SELECT value FROM multisettings WHERE name='ignored_asset'
+                        )
                     ), with_delta AS (
                         SELECT timestamp, sort_key, asset,
-                               balance - COALESCE(LAG(balance) OVER (PARTITION BY bucket ORDER BY sort_key), 0) as delta
+                               balance - COALESCE(
+                                   LAG(balance) OVER (
+                                       PARTITION BY location, location_label, protocol, asset
+                                       ORDER BY sort_key
+                                   ),
+                                   0
+                               ) as delta
                         FROM all_events
                     )
                     SELECT timestamp, sort_key, asset, delta FROM with_delta
                     WHERE timestamp >= ? AND timestamp <= ?
-                    """,  # noqa: E501
+                    """,
                     (EventMetricKey.BALANCE.serialize(), from_ts_ms, to_ts_ms),
                 ),
                 schema={'timestamp': pl.Int64, 'sort_key': pl.Int64, 'asset': pl.String, 'delta': pl.Float64},  # noqa: E501
@@ -247,7 +267,7 @@ class HistoricalBalancesManager:
             data = (timestamps, balances_per_day)
 
         return self._has_unprocessed_events(
-            where_clause='he.timestamp >= ? AND he.timestamp <= ?',
+            where_clause='timestamp >= ? AND timestamp <= ?',
             bindings=[from_ts_ms, to_ts_ms],
         ), data
 
