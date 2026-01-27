@@ -5,7 +5,6 @@ import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/mod
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
-import LazyLoader from '@/components/helper/LazyLoader.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItem from '@/components/history/events/HistoryEventsListItem.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
@@ -198,6 +197,7 @@ watch(shouldExpand, () => {
     <TransitionGroup
       tag="div"
       name="list"
+      :css="!isInitialRender"
       class="relative group flex-1"
       :class="{
         'grid grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-start @5xl:min-h-[80px]': !shouldExpand,
@@ -206,10 +206,10 @@ watch(shouldExpand, () => {
         'md:pl-3': !shouldExpand,
       }"
     >
-      <LazyLoader
+      <div
         v-if="!shouldExpand"
         key="history-event-type"
-        class="col-span-10 md:col-span-4 @5xl:!col-span-5 py-4 lg:py-4.5 relative"
+        class="col-span-10 md:col-span-4 @5xl:!col-span-5 py-4 lg:py-4.5 relative event-cell"
       >
         <RuiButton
           v-if="!selection?.isSelectionMode.value && !hasHiddenIgnoredAssets"
@@ -233,7 +233,7 @@ watch(shouldExpand, () => {
           :chain="getChain(primaryEvent.location)"
           hide-customized-chip
         />
-      </LazyLoader>
+      </div>
 
       <div
         key="history-event-assets"
@@ -285,10 +285,10 @@ watch(shouldExpand, () => {
             @refresh="emit('refresh')"
           />
 
-          <LazyLoader
+          <div
             v-if="!shouldExpand && eventIndex === 0 && usedEvents.length > 1"
             key="swap-arrow"
-            class="flex items-center px-2 @md:pl-0 !h-14"
+            class="flex items-center px-2 @md:pl-0 !h-14 event-cell"
             :class="{
               'col-start-5': isSwapGroup,
               'col-start-4': !isSwapGroup,
@@ -299,19 +299,18 @@ watch(shouldExpand, () => {
               name="lu-chevron-right"
               size="24"
             />
-          </LazyLoader>
+          </div>
         </template>
       </div>
 
-      <LazyLoader
+      <div
         v-if="!shouldExpand"
         key="history-event-notes"
-        class="py-2 pt-4 md:pl-0 @5xl:!pl-0 @5xl:pt-4 col-span-10 @md:col-span-7 @5xl:!col-span-4"
+        class="py-2 pt-4 md:pl-0 @5xl:!pl-0 @5xl:pt-4 col-span-10 @md:col-span-7 @5xl:!col-span-4 event-cell"
         :class="{
           '@5xl:!col-span-4': isSwapGroup,
           '@5xl:!col-span-8': !isSwapGroup,
         }"
-        min-height="80"
       >
         <HistoryEventNote
           v-if="compactNotes"
@@ -319,13 +318,12 @@ watch(shouldExpand, () => {
           :chain="getChain(events[0].location)"
           :amount="events.map(item => item.amount)"
         />
-      </LazyLoader>
+      </div>
 
-      <LazyLoader
+      <div
         v-if="!shouldExpand && !hideActions"
         key="history-event-actions"
-        class="py-2 @5xl:!py-4 col-span-10 @md:col-span-3"
-        min-height="40"
+        class="py-2 @5xl:!py-4 col-span-10 @md:col-span-3 event-cell"
       >
         <HistoryEventsListItemAction
           :item="primaryEvent"
@@ -338,12 +336,17 @@ watch(shouldExpand, () => {
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"
           @unlink-event="emit('unlink-event', { groupIdentifier: primaryEvent.groupIdentifier })"
         />
-      </LazyLoader>
+      </div>
     </TransitionGroup>
   </div>
 </template>
 
 <style scoped>
+.event-cell {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.25rem;
+}
+
 .transition-wrapper .list-move,
 .transition-wrapper .list-enter-active,
 .transition-wrapper .list-leave-active {

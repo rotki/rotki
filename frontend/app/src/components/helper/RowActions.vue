@@ -27,15 +27,10 @@ const emit = defineEmits<{
   'delete-click': [];
 }>();
 
-const editClick = () => emit('edit-click');
-const deleteClick = () => emit('delete-click');
+const editClick = (): void => emit('edit-click');
+const deleteClick = (): void => emit('delete-click');
 
-const tooltipProps = {
-  openDelay: 400,
-  popper: { offsetDistance: 0, placement: 'top' as const },
-};
-
-const justify = computed(() => {
+const justify = computed<string>(() => {
   const justify = {
     center: 'justify-center',
     end: 'justify-end',
@@ -50,50 +45,34 @@ const justify = computed(() => {
     class="flex flex-row flex-nowrap items-center gap-1"
     :class="justify"
   >
-    <RuiTooltip
+    <RuiButton
       v-if="!noEdit"
-      v-bind="tooltipProps"
-      :disabled="!editTooltip"
-      tooltip-class="max-w-[20rem]"
+      :disabled="disabled || editDisabled"
+      :title="editTooltip || undefined"
+      variant="text"
+      data-cy="row-edit"
+      icon
+      @click="editClick()"
     >
-      <template #activator>
-        <RuiButton
-          :disabled="disabled || editDisabled"
-          variant="text"
-          data-cy="row-edit"
-          icon
-          @click="editClick()"
-        >
-          <RuiIcon
-            size="16"
-            name="lu-pencil"
-          />
-        </RuiButton>
-      </template>
-      {{ editTooltip }}
-    </RuiTooltip>
-    <RuiTooltip
+      <RuiIcon
+        size="16"
+        name="lu-pencil"
+      />
+    </RuiButton>
+    <RuiButton
       v-if="!noDelete"
-      v-bind="tooltipProps"
-      :disabled="!deleteTooltip"
-      tooltip-class="max-w-[20rem]"
+      :disabled="disabled || deleteDisabled"
+      :title="deleteTooltip || undefined"
+      variant="text"
+      data-cy="row-delete"
+      icon
+      @click="deleteClick()"
     >
-      <template #activator>
-        <RuiButton
-          :disabled="disabled || deleteDisabled"
-          variant="text"
-          data-cy="row-delete"
-          icon
-          @click="deleteClick()"
-        >
-          <RuiIcon
-            size="16"
-            name="lu-trash-2"
-          />
-        </RuiButton>
-      </template>
-      {{ deleteTooltip }}
-    </RuiTooltip>
+      <RuiIcon
+        size="16"
+        name="lu-trash-2"
+      />
+    </RuiButton>
     <slot />
   </div>
 </template>

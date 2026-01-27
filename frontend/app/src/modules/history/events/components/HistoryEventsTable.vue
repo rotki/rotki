@@ -10,7 +10,6 @@ import type {
   HistoryEventRow,
 } from '@/types/history/events/schemas';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import LazyLoader from '@/components/helper/LazyLoader.vue';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import HistoryEventsIdentifier from '@/components/history/events/HistoryEventsIdentifier.vue';
 import HistoryEventsList from '@/components/history/events/HistoryEventsList.vue';
@@ -180,25 +179,25 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
       />
     </template>
     <template #item.identifier="{ row }">
-      <LazyLoader class="flex items-center gap-2.5">
+      <div class="flex items-center gap-2.5 event-table-cell">
         <LocationIcon
           icon
           :item="row.location"
           size="20px"
         />
         <HistoryEventsIdentifier :event="row" />
-      </LazyLoader>
+      </div>
     </template>
     <template #item.timestamp="{ row }">
-      <LazyLoader>
+      <div class="event-table-cell">
         <DateDisplay
           :timestamp="row.timestamp"
           milliseconds
         />
-      </LazyLoader>
+      </div>
     </template>
     <template #item.action="{ row }">
-      <LazyLoader>
+      <div class="event-table-cell">
         <HistoryEventsAction
           :event="row"
           :loading="eventsLoading"
@@ -210,7 +209,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
           @delete-tx="confirmTxAndEventsDelete($event)"
           @fix-duplicate="emit('refresh')"
         />
-      </LazyLoader>
+      </div>
     </template>
     <template #item.expand />
     <template #expanded-item="{ row }">
@@ -258,3 +257,10 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
     @confirm="confirmRedecode($event)"
   />
 </template>
+
+<style scoped>
+.event-table-cell {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 3.25rem;
+}
+</style>

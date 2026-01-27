@@ -61,6 +61,7 @@ async function handlePasswordConfirmation(password: string): Promise<void> {
     @dismiss="dismissMessage()"
   />
   <ConfirmDialog
+    v-if="visible"
     :display="visible"
     :title="confirmation.title"
     :message="confirmation.message"
@@ -71,6 +72,7 @@ async function handlePasswordConfirmation(password: string): Promise<void> {
     @cancel="dismiss()"
   />
   <PasswordConfirmationDialog
+    v-if="needsPasswordConfirmation"
     v-model="needsPasswordConfirmation"
     :username="username"
     :error-message="passwordError"

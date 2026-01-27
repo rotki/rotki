@@ -93,45 +93,31 @@ function deleteEvent(item: HistoryEventEntry) {
     @edit-click="editEvent(item)"
     @delete-click="deleteEvent(item)"
   >
-    <RuiTooltip
+    <RuiButton
       v-if="canUnlink && collapsed"
-      :popper="{ placement: 'top', offsetDistance: 0 }"
-      :open-delay="400"
+      :title="t('transactions.events.actions.unlink')"
+      variant="text"
+      icon
+      @click="emit('unlink-event')"
     >
-      <template #activator>
-        <RuiButton
-          variant="text"
-          icon
-          @click="emit('unlink-event')"
-        >
-          <RuiIcon
-            size="16"
-            name="lu-unlink"
-          />
-        </RuiButton>
-      </template>
-      {{ t('transactions.events.actions.unlink') }}
-    </RuiTooltip>
-    <RuiTooltip
+      <RuiIcon
+        size="16"
+        name="lu-unlink"
+      />
+    </RuiButton>
+    <RuiButton
       v-else-if="isEventMissingAccountingRule(item)"
-      :popper="{ placement: 'top', offsetDistance: 0 }"
-      :open-delay="400"
+      :title="t('actions.history_events.missing_rule.title')"
+      variant="text"
+      color="warning"
+      icon
+      @click="emit('show:missing-rule-action', getEmittedEvent(item))"
     >
-      <template #activator>
-        <RuiButton
-          variant="text"
-          color="warning"
-          icon
-          @click="emit('show:missing-rule-action', getEmittedEvent(item))"
-        >
-          <RuiIcon
-            size="16"
-            name="lu-info"
-          />
-        </RuiButton>
-      </template>
-      {{ t('actions.history_events.missing_rule.title') }}
-    </RuiTooltip>
+      <RuiIcon
+        size="16"
+        name="lu-info"
+      />
+    </RuiButton>
     <HistoryEventAction
       v-else
       :event="item"

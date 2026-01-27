@@ -16,7 +16,7 @@ const { event } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
-function onEditRule() {
+function onEditRule(): void {
   const entry = get(event);
 
   const data = {
