@@ -249,6 +249,26 @@ describe('composables::filter/use-history-event-filter - Additional Tests', () =
       expect(startMatcher.validate(earlyDate)).toBe(true);
       expect(endMatcher.validate(lateDate)).toBe(true);
     });
+
+    it('should reject a future start date', () => {
+      const { matchers } = useHistoryEventFilter({});
+
+      const computedMatchers = get(matchers);
+      const startMatcher = computedMatchers.find(m => m.key === 'start');
+      assert(startMatcher && 'validate' in startMatcher);
+
+      expect(startMatcher.validate('01/01/2099')).toBe(false);
+    });
+
+    it('should reject a future end date', () => {
+      const { matchers } = useHistoryEventFilter({});
+
+      const computedMatchers = get(matchers);
+      const endMatcher = computedMatchers.find(m => m.key === 'end');
+      assert(endMatcher && 'validate' in endMatcher);
+
+      expect(endMatcher.validate('01/01/2099')).toBe(false);
+    });
   });
 
   describe('send selected location to asset search', () => {

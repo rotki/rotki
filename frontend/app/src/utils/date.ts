@@ -108,6 +108,7 @@ export function dateValidator(dateInputFormat: Ref<DateFormat>): (value: string)
  * Validates a date string and ensures it respects a date range boundary.
  * For start dates, pass the end timestamp and `'start'` to ensure start <= end.
  * For end dates, pass the start timestamp and `'end'` to ensure end >= start.
+ * Also rejects dates in the future.
  */
 export function dateRangeValidator(
   dateInputFormat: Ref<DateFormat>,
@@ -119,11 +120,16 @@ export function dateRangeValidator(
     if (!baseValidator(value))
       return false;
 
+    const timestamp = convertToTimestamp(value, get(dateInputFormat));
+
+    const now = dayjs().unix();
+    if (timestamp > now)
+      return false;
+
     const otherBound = getOtherBound();
     if (!otherBound)
       return true;
 
-    const timestamp = convertToTimestamp(value, get(dateInputFormat));
     return type === 'start' ? timestamp <= Number(otherBound) : timestamp >= Number(otherBound);
   };
 }
