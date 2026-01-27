@@ -7,5 +7,6 @@ Contents
 
    api
    websockets
+   dev_guide
    changelog
    dev_changelog
