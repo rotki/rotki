@@ -11,6 +11,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import SPAM_PROTOCOL, CacheType, ChainID, TokenKind
+from rotkehlchen.utils.data_structures import LRUCacheWithRemove, LRUSetCache
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset
@@ -23,6 +24,10 @@ log = RotkehlchenLogsAdapter(logger)
 DANGEROUS_TOKEN_SYMBOLS: Final = {'USDC': 36, 'USDT': 37}
 MISSING_NAME_SPAM_TOKEN = 'Autodetected spam token'
 MISSING_SYMBOL_SPAM_TOKEN = 'SPAM-TOKEN'
+
+_DANGEROUS_COLLECTION_MEMBERS: dict[int, set[str]] = {}  # members in the collections of DANGEROUS_TOKEN_SYMBOLS. Maps collection id to set of assets in the collection.  # noqa: E501
+_IMPERSONATION_CHECKED_TOKENS: LRUSetCache[str] = LRUSetCache(maxsize=256)  # avoid checking the same token multiple times  # noqa: E501
+_FALSE_POSITIVE_CACHE: LRUCacheWithRemove[str, bool] = LRUCacheWithRemove(maxsize=256)  # cache the false positives marked by the user  # noqa: E501
 
 
 def _save_or_update_spam_assets(
@@ -133,27 +138,37 @@ def check_token_impersonates_dangerous_tokens(
     if token.protocol == SPAM_PROTOCOL or token.started is not None:
         return
 
+    if token.identifier in _IMPERSONATION_CHECKED_TOKENS:
+        return
+
     globaldb = GlobalDBHandler()
     # Check native token impersonation (e.g., POL token that's not the real POL)
     impersonated_symbol: str | None = None
     if token.symbol == native_token.symbol and token.identifier != native_token.identifier:
         impersonated_symbol = native_token.symbol
     elif (collection_id := DANGEROUS_TOKEN_SYMBOLS.get(token.symbol)) is not None:
-        with globaldb.conn.read_ctx() as read_cursor:
-            known_tokens = _get_dangerous_token_collection_members(read_cursor, collection_id)
+        if (known_tokens := _DANGEROUS_COLLECTION_MEMBERS.get(collection_id)) is None:
+            with globaldb.conn.read_ctx() as read_cursor:
+                known_tokens = _get_dangerous_token_collection_members(read_cursor, collection_id)
+            _DANGEROUS_COLLECTION_MEMBERS[collection_id] = known_tokens
 
         # Check if this token is in the known collection (whitelist)
         if token.identifier not in known_tokens:
             impersonated_symbol = token.symbol
 
     if impersonated_symbol is not None:
-        with globaldb.conn.read_ctx() as read_cursor:
-            if globaldb_general_cache_exists(
-                cursor=read_cursor,
-                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
-                value=token.identifier,
-            ):
-                return
+        if (is_false_positive := _FALSE_POSITIVE_CACHE.get(token.identifier)) is None:
+            with globaldb.conn.read_ctx() as read_cursor:
+                is_false_positive = globaldb_general_cache_exists(
+                    cursor=read_cursor,
+                    key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+                    value=token.identifier,
+                )
+            _FALSE_POSITIVE_CACHE.add(token.identifier, is_false_positive)
+
+        if is_false_positive:
+            _IMPERSONATION_CHECKED_TOKENS.add(token.identifier)
+            return
 
         with globaldb.conn.write_ctx() as write_cursor:
             set_token_spam_protocol(
@@ -163,3 +178,4 @@ def check_token_impersonates_dangerous_tokens(
             )
 
         log.debug(f'Flagged {token} as spam trying to impersonate {impersonated_symbol}')
+    _IMPERSONATION_CHECKED_TOKENS.add(token.identifier)
