@@ -19,6 +19,17 @@ log = RotkehlchenLogsAdapter(logger)
 def migrate_to_v15(connection: 'DBConnection', progress_handler: 'DBUpgradeProgressHandler') -> None:  # noqa: E501
     """This upgrade takes place in v1.42.0"""
 
+    @progress_step('Add asset flags table.')
+    def _add_asset_flags_table(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            """CREATE TABLE IF NOT EXISTS asset_flags(
+                identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
+                flag TEXT NOT NULL,
+                FOREIGN KEY(identifier) REFERENCES assets(identifier)
+                    ON UPDATE CASCADE ON DELETE CASCADE
+            );""",
+        )
+
     @progress_step('Remove old cache keys.')
     def _remove_old_cache_keys(write_cursor: 'DBCursor') -> None:
         """Removes several cache keys that are no longer needed.

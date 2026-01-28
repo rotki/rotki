@@ -6,6 +6,7 @@ import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.flags import ASSET_FLAG_REBASING
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
@@ -14,19 +15,38 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aura_finance.constants import CPT_AURA_FINANCE
 from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    NodeName,
+    SerializableChainIndexerOrder,
+    WeightedNode,
+    string_to_evm_address,
+)
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import HistoricalBalancesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.historical_balances import process_historical_balances
-from rotkehlchen.tests.utils.ethereum import TEST_ADDR1, TEST_ADDR2
+from rotkehlchen.tests.fixtures.messages import MockRotkiNotifier
+from rotkehlchen.tests.utils.ethereum import (
+    TEST_ADDR1,
+    TEST_ADDR2,
+    get_decoded_events_of_transaction,
+)
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID, Location, Timestamp, TimestampMS
+from rotkehlchen.types import (
+    ChainID,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -881,3 +901,90 @@ def test_swapped_for_asset_tracked_under_new_identifier(
             (glm.identifier, glm.identifier, '60'),  # spend 10 GLM -> 70 - 10 = 60
             (glm.identifier, glm.identifier, '110'),  # receive 50 GLM -> 60 + 50 = 110
         ]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(order={ChainID.ARBITRUM_ONE: [EvmIndexer.BLOCKSCOUT]})}])  # noqa: E501
+@pytest.mark.parametrize(
+    ('arbitrum_one_manager_connect_at_start', 'has_archive_node'),
+    [
+        (
+            (
+                WeightedNode(
+                    node_info=NodeName(
+                        name='custom-archive',
+                        endpoint='https://arbitrum-mainnet.infura.io/v3/33457f352e1a44da89f36b2ee5dec263',
+                        owned=True,
+                        blockchain=SupportedBlockchain.ARBITRUM_ONE,
+                    ),
+                    active=True,
+                    weight=ONE,
+                ),
+            ),
+            True,
+        ),
+        ((), False),
+    ],
+)
+@pytest.mark.parametrize('arbitrum_one_accounts', [[string_to_evm_address('0x77DFFc4dd4C9fADccD5FcC1C44a7C641c9aC652a')]])  # noqa: E501
+def test_rebasing_token_historical_balances_with_archive_node(
+        blockchain,
+        database: 'DBHandler',
+        arbitrum_one_inquirer,
+        arbitrum_one_accounts,
+        has_archive_node,
+) -> None:
+    """Ensure rebasing historical balances differ with and without an archive node."""
+    database.msg_aggregator.rotki_notifier = MockRotkiNotifier()  # type: ignore[assignment]
+    user_address = arbitrum_one_accounts[0]
+    for tx_hash in (
+        deserialize_evm_tx_hash('0xd6bf62be18c1561eb86bce9275dad883899b7c46659b0576c2ea7d558e19204e'),
+        deserialize_evm_tx_hash('0x6b58d8ec77d16c003c2663581b9e4e7d5c783d43aa5e7c4201423a00a935fb97'),
+        deserialize_evm_tx_hash('0x70c052f5ae35cd767d4f03ec24a24e967638ee0109e9e407c3639bc21c521abc'),
+    ):
+        get_decoded_events_of_transaction(
+            evm_inquirer=arbitrum_one_inquirer,
+            tx_hash=tx_hash,
+            relevant_address=user_address,
+        )
+
+    GlobalDBHandler.set_asset_flag(
+        identifier='eip155:42161/erc20:0x9c4ec768c28520B50860ea7a15bd7213a9fF58bf',  # compound USDC  # noqa: E501
+        flags=[ASSET_FLAG_REBASING],
+    )
+
+    with patch.object(arbitrum_one_inquirer, 'has_archive_node', return_value=has_archive_node):
+        process_historical_balances(
+            database=database,
+            msg_aggregator=database.msg_aggregator,
+            chains_aggregator=blockchain,
+        )
+
+    messages = database.msg_aggregator.rotki_notifier.messages  # type: ignore[union-attr]
+    rebasing_messages = tuple(
+        m for m in messages
+        if (
+            m.message_type == WSMessageType.NEGATIVE_BALANCE_DETECTED and
+            getattr(m, 'data', {}).get('rebasing') is True
+        )
+    )
+    with database.conn.read_ctx() as cursor:
+        entries = cursor.execute(
+            'SELECT he.timestamp, em.location_label, em.protocol, em.metric_value '
+            'FROM event_metrics em '
+            'JOIN history_events he ON em.event_identifier = he.identifier '
+            'ORDER BY he.timestamp, em.protocol',
+        ).fetchall()
+
+    if has_archive_node:
+        assert len(rebasing_messages) == 0
+        assert entries == [
+            (1756656610000, '0x77DFFc4dd4C9fADccD5FcC1C44a7C641c9aC652a', 'compound-v3', '499.999999'),  # noqa: E501
+            (1758553533000, '0x77DFFc4dd4C9fADccD5FcC1C44a7C641c9aC652a', 'compound-v3', '199.999998'),  # noqa: E501
+            (1760133302000, '0x77DFFc4dd4C9fADccD5FcC1C44a7C641c9aC652a', 'compound-v3', '0'),
+        ]
+    else:
+        assert len(rebasing_messages) == 1
+        assert rebasing_messages[0].data['rebasing'] is True
+        assert rebasing_messages[0].data['archive_node_available'] is False
