@@ -10,6 +10,7 @@ import {
 
 const props = defineProps<{
   event: HistoryEventEntry;
+  truncate?: boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -17,6 +18,12 @@ const { t } = useI18n({ useScope: 'global' });
 const { event } = toRefs(props);
 
 const { is2xlAndUp } = useBreakpoint();
+
+const truncateLength = computed<number>(() => {
+  if (props.truncate)
+    return 8;
+  return get(is2xlAndUp) ? 0 : 8;
+});
 
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
@@ -113,7 +120,7 @@ const key = computed(() => {
         :text="eventWithTxRef.txRef"
         type="transaction"
         :location="eventWithTxRef.location"
-        :truncate-length="is2xlAndUp ? 0 : 8"
+        :truncate-length="truncateLength"
       />
       <HashLink
         v-else-if="assetMovementTransactionId"
@@ -121,7 +128,7 @@ const key = computed(() => {
         :text="assetMovementTransactionId"
         type="transaction"
         :location="assetMovementEvent?.extraData?.blockchain || undefined"
-        :truncate-length="is2xlAndUp ? 0 : 8"
+        :truncate-length="truncateLength"
         :display-mode="assetMovementEvent?.extraData?.blockchain ? 'default' : 'copy'"
       />
     </template>

@@ -21,6 +21,7 @@ const props = defineProps<{
   index: number;
   events: HistoryEventEntry[];
   eventGroup: HistoryEventEntry;
+  groupLocationLabel?: string;
   isLast: boolean;
   isHighlighted?: boolean;
   compact?: boolean;
@@ -156,6 +157,7 @@ const hiddenEvent = logicOr(isIgnoredAsset, isSpam);
           v-if="!compact"
           :event="item"
           :chain="getChain(item.location)"
+          :group-location-label="groupLocationLabel"
           class="col-span-10 md:col-span-4 @5xl:!col-span-5 pt-1.5 pb-4 @5xl:py-0"
         />
 

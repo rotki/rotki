@@ -17,6 +17,7 @@ import { isSwapTypeEvent } from '@/modules/history/management/forms/form-guards'
 const props = defineProps<{
   events: HistoryEventEntry[];
   allEvents: HistoryEventEntry[];
+  groupLocationLabel?: string;
   highlightedIdentifiers?: string[];
   selection?: UseHistoryEventsSelectionModeReturn;
   hideActions?: boolean;
@@ -224,6 +225,7 @@ watch(shouldExpand, () => {
         <HistoryEventType
           :icon="subgroupIcon"
           :event="primaryEvent"
+          :group-location-label="groupLocationLabel"
           highlight
           :chain="getChain(primaryEvent.location)"
           hide-customized-chip
@@ -269,6 +271,7 @@ watch(shouldExpand, () => {
             :events="allEvents"
             :compact="!shouldExpand"
             :event-group="events[0]"
+            :group-location-label="groupLocationLabel"
             :hide-actions="hideActions"
             :is-last="eventIndex === events.length - 1"
             :is-highlighted="highlightedIdentifiers?.includes(event.identifier.toString())"

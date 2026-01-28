@@ -10,6 +10,7 @@ import type {
   HistoryEventRow,
 } from '@/types/history/events/schemas';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import HistoryEventAccount from '@/components/history/events/HistoryEventAccount.vue';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import HistoryEventsIdentifier from '@/components/history/events/HistoryEventsIdentifier.vue';
 import HistoryEventsList from '@/components/history/events/HistoryEventsList.vue';
@@ -185,7 +186,19 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
           :item="row.location"
           size="20px"
         />
-        <HistoryEventsIdentifier :event="row" />
+        <HistoryEventsIdentifier
+          :event="row"
+          truncate
+        />
+        <template v-if="row.locationLabel">
+          <!-- eslint-disable-next-line @intlify/vue-i18n/no-raw-text -->
+          <span class="text-[10px] text-rui-text-secondary">●</span>
+          <HistoryEventAccount
+            :location="row.location"
+            :location-label="row.locationLabel"
+            class="text-sm"
+          />
+        </template>
       </div>
     </template>
     <template #item.timestamp="{ row }">
@@ -219,6 +232,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
         :all-events="allEventsMapped[row.groupIdentifier] || []"
         :displayed-events="displayedEventsMapped[row.groupIdentifier] || []"
         :event-group="row"
+        :group-location-label="row.locationLabel ?? undefined"
         :hide-actions="hideActions"
         :hide-ignored-assets="excludeIgnored"
         :loading="sectionLoading || eventsLoading"

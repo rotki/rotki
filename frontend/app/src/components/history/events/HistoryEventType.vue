@@ -1,27 +1,16 @@
 <script setup lang="ts">
 import type { Blockchain } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
-import type {
-  AssetMovementEvent,
-  HistoryEventEntry,
-  OnlineHistoryEvent,
-  SwapEvent,
-} from '@/types/history/events/schemas';
+import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import HistoryEventAccount from '@/components/history/events/HistoryEventAccount.vue';
 import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { useSupportedChains } from '@/composables/info/chains';
-import HashLink from '@/modules/common/links/HashLink.vue';
-import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
-import {
-  isAssetMovementEvent,
-  isOnlineHistoryEvent,
-} from '@/utils/history/events';
 
 const props = defineProps<{
   event: HistoryEventEntry;
   chain: Blockchain;
+  groupLocationLabel?: string;
   icon?: RuiIcons;
   highlight?: boolean;
   hideCustomizedChip?: boolean;
@@ -31,20 +20,20 @@ const { event } = toRefs(props);
 
 const { getEventTypeData } = useHistoryEventMappings();
 const attrs = getEventTypeData(event);
-const { matchChain } = useSupportedChains();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const exchangeEvent = computed<AssetMovementEvent | OnlineHistoryEvent | SwapEvent | undefined>(() => {
-  const event = props.event;
-  if (((isOnlineHistoryEvent(event) || isSwapEvent(event)) && !matchChain(event.location)) || isAssetMovementEvent(event)) {
-    return event;
-  }
+const isInformational = computed<boolean>(() => get(event).eventType === 'informational');
 
-  return undefined;
+const showLocationLabel = computed<boolean>(() => {
+  const eventLabel = get(event).locationLabel;
+  if (!eventLabel)
+    return false;
+
+  const groupLabel = props.groupLocationLabel;
+  // Show only when different from group (or no group context)
+  return !groupLabel || eventLabel !== groupLabel;
 });
-
-const isInformational = computed(() => get(event).eventType === 'informational');
 </script>
 
 <template>
@@ -74,23 +63,12 @@ const isInformational = computed(() => get(event).eventType === 'informational')
       <div class="font-bold uppercase">
         {{ attrs.label }}
       </div>
-      <div
-        v-if="event.locationLabel"
-        class="text-rui-text-secondary flex items-center"
-      >
-        <LocationIcon
-          v-if="exchangeEvent"
-          icon
-          :item="exchangeEvent.location"
-          size="16px"
-          class="mr-2"
-        />
-        <HashLink
-          :no-scramble="!!exchangeEvent"
-          :text="event.locationLabel"
-          :location="event.location"
-        />
-      </div>
+      <HistoryEventAccount
+        v-if="showLocationLabel"
+        :location="event.location"
+        :location-label="event.locationLabel!"
+        class="text-rui-text-secondary"
+      />
       <RuiChip
         v-if="event.customized && !hideCustomizedChip"
         class="mt-1"

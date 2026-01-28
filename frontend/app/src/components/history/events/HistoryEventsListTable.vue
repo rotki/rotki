@@ -11,6 +11,7 @@ interface HistoryEventsListTableProps {
   allEvents: HistoryEventRow[];
   events: HistoryEventRow[];
   eventGroup: HistoryEventEntry;
+  groupLocationLabel?: string;
   loading: boolean;
   total: number;
   hideActions?: boolean;
@@ -54,6 +55,7 @@ function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEnt
           :events="item"
           :is-last="index === events.length - 1"
           :all-events="findAllEventsFromArrayItem(item) || item"
+          :group-location-label="groupLocationLabel"
           :hide-actions="hideActions"
           :hide-ignored-assets="hideIgnoredAssets"
           :highlighted-identifiers="highlightedIdentifiers"
@@ -74,6 +76,7 @@ function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEnt
           :index="index"
           :events="flattenedAllEvents"
           :event-group="eventGroup"
+          :group-location-label="groupLocationLabel"
           :is-last="index === events.length - 1"
           :is-highlighted="highlightedIdentifiers?.includes(item.identifier.toString())"
           :selection="selection"

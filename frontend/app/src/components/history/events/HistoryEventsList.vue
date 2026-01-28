@@ -21,6 +21,7 @@ const props = withDefaults(defineProps<{
   eventGroup: HistoryEventEntry;
   allEvents: HistoryEventRow[];
   displayedEvents: HistoryEventRow[];
+  groupLocationLabel?: string;
   hasIgnoredEvent?: boolean;
   hideIgnoredAssets?: boolean;
   loading?: boolean;
@@ -29,6 +30,7 @@ const props = withDefaults(defineProps<{
   selection?: UseHistoryEventsSelectionModeReturn;
   matchExactEvents?: boolean;
 }>(), {
+  groupLocationLabel: undefined,
   loading: false,
 });
 
@@ -60,6 +62,7 @@ const {
   allEvents,
   displayedEvents,
   eventGroup,
+  groupLocationLabel,
   hasIgnoredEvent,
   hideIgnoredAssets,
   highlightedIdentifiers,
@@ -302,6 +305,7 @@ watch(() => get(eventGroup), () => {
       :all-events="combinedAllEvents"
       :total="totalBlocks"
       :loading="loading"
+      :group-location-label="groupLocationLabel"
       :hide-actions="hideActions"
       :hide-ignored-assets="hideIgnoredAssets"
       :highlighted-identifiers="highlightedIdentifiers"
