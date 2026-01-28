@@ -3,8 +3,9 @@ import type { ActionStatus } from '@/types/action';
 import type { HistoryEventCollectionRow } from '@/types/history/events/schemas';
 import type { TaskMeta } from '@/types/task';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useTaskApi } from '@/composables/api/task';
+import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useHistoryStore } from '@/store/history';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -32,7 +33,7 @@ interface UseUnmatchedAssetMovementsReturn {
   fetchUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<void>;
   matchAssetMovement: (assetMovementId: number, matchedEventId: number) => Promise<ActionStatus>;
   refreshUnmatchedAssetMovements: (skipIgnored?: boolean) => Promise<void>;
-  triggerAutoMatch: () => Promise<void>;
+  triggerAssetMovementAutoMatching: () => Promise<void>;
 }
 
 const rawUnmatchedMovements = ref<RawUnmatchedAssetMovement[]>([]);
@@ -45,14 +46,15 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   const { t } = useI18n({ useScope: 'global' });
   const { setMessage } = useMessageStore();
   const { assetInfo } = useAssetInfoRetrieval();
-  const { triggerTask } = useTaskApi();
   const { awaitTask, useIsTaskRunning } = useTaskStore();
 
+  const { fetchHistoryEvents } = useHistoryEventsApi();
   const {
-    fetchHistoryEvents,
     getUnmatchedAssetMovements,
     matchAssetMovements: matchAssetMovementsApi,
-  } = useHistoryEventsApi();
+    triggerAssetMovementMatching,
+  } = useAssetMovementMatchingApi();
+  const { signalEventsModified } = useHistoryStore();
 
   const isTaskRunning = useIsTaskRunning(TaskType.MATCH_ASSET_MOVEMENTS);
   const autoMatchLoading = logicOr(triggerAutoMatchLoading, isTaskRunning);
@@ -141,6 +143,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
           title: t('actions.asset_movement_matching.success.title'),
           success: true,
         });
+        signalEventsModified();
       }
 
       return { message: '', success };
@@ -162,10 +165,10 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     }
   };
 
-  const triggerAutoMatch = async (): Promise<void> => {
+  const triggerAssetMovementAutoMatching = async (): Promise<void> => {
     set(triggerAutoMatchLoading, true);
     try {
-      const { taskId } = await triggerTask('asset_movement_matching');
+      const { taskId } = await triggerAssetMovementMatching();
 
       await awaitTask<boolean, TaskMeta>(
         taskId,
@@ -198,7 +201,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     loading,
     matchAssetMovement,
     refreshUnmatchedAssetMovements,
-    triggerAutoMatch,
+    triggerAssetMovementAutoMatching,
     unmatchedCount,
     unmatchedMovements,
   };

@@ -41,7 +41,7 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
 </script>
 
 <template>
-  <div class="flex items-center gap-2">
+  <div class="flex items-center gap-2 text-rui-text text-sm">
     <div
       :class="useDarkModeImage ? 'p-0.5 bg-black rounded-md' : 'icon-bg'"
     >
@@ -61,7 +61,7 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
     </div>
     <div
       v-if="!icon"
-      class="uppercase text-sm"
+      class="uppercase"
     >
       {{ toHumanReadable(data.label, 'sentence') }}
     </div>

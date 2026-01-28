@@ -87,7 +87,10 @@ function createMockSelectionMode(isActive: boolean): UseHistoryEventsSelectionMo
       toggleAll: vi.fn(),
       toggleEvent: vi.fn(),
       toggleSwap: vi.fn(),
+      toggleSelectAllMatching: vi.fn(),
     },
+    setTotalMatchingCount: vi.fn(),
+    isSelectAllMatching: ref<boolean>(false),
     getSelectedIds: vi.fn(() => []),
     isEventSelected: vi.fn(() => false),
     isSelectionMode: ref<boolean>(isActive),
@@ -100,6 +103,8 @@ function createMockSelectionMode(isActive: boolean): UseHistoryEventsSelectionMo
       isPartiallySelected: false,
       selectedCount: 0,
       selectedIds: new Set<number>(),
+      selectAllMatching: false,
+      totalMatchingCount: 0,
     })),
   };
 }

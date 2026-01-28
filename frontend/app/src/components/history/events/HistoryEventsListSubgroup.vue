@@ -9,7 +9,7 @@ import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItem from '@/components/history/events/HistoryEventsListItem.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useSupportedChains } from '@/composables/info/chains';
 import { isSwapTypeEvent } from '@/modules/history/management/forms/form-guards';
@@ -42,6 +42,8 @@ const { t } = useI18n({ useScope: 'global' });
 const { getChain } = useSupportedChains();
 const { getAssetSymbol } = useAssetInfoRetrieval();
 const { getEventTypeData } = useHistoryEventMappings();
+
+const ASSET_RESOLUTION_OPTIONS: AssetResolutionOptions = { collectionParent: false };
 
 // Force expansion when the group has hidden ignored assets (to prevent broken swap display)
 const hasHiddenIgnoredAssets = computed<boolean>(() => !!props.hasIgnoredAssets && !!props.hideIgnoredAssets);
@@ -114,7 +116,7 @@ function appendFeeNotes(notes: string | undefined): string | undefined {
   if (fee.length === 0)
     return notes;
 
-  const feeText = fee.map(item => `${item.amount} ${getAssetSymbol(item.asset, { collectionParent: false })}`).join('; ');
+  const feeText = fee.map(item => `${item.amount} ${getAssetSymbol(item.asset, ASSET_RESOLUTION_OPTIONS)}`).join('; ');
   return t('history_events_list_swap.fee_description', { feeText, notes });
 }
 
@@ -127,9 +129,8 @@ const compactNotes = computed<string | undefined>(() => {
       item => item.entryType !== HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
     );
 
-    const options = { collectionParent: false };
     const amount = primary.amount;
-    const asset = getAssetSymbol(primary.asset, options);
+    const asset = getAssetSymbol(primary.asset, ASSET_RESOLUTION_OPTIONS);
     const locationLabel = primary.locationLabel ?? '';
     const address = secondary?.locationLabel ?? '';
 
@@ -147,12 +148,10 @@ const compactNotes = computed<string | undefined>(() => {
   if (spend.length === 0 || receive.length === 0)
     return undefined;
 
-  const options = { collectionParent: false };
-
   const receiveNotes = receive.length === 1
     ? {
         receiveAmount: receive[0].amount,
-        receiveAsset: getAssetSymbol(receive[0].asset, options),
+        receiveAsset: getAssetSymbol(receive[0].asset, ASSET_RESOLUTION_OPTIONS),
       }
     : {
         receiveAmount: receive.length,
@@ -162,7 +161,7 @@ const compactNotes = computed<string | undefined>(() => {
   const spendNotes = spend.length === 1
     ? {
         spendAmount: spend[0].amount,
-        spendAsset: getAssetSymbol(spend[0].asset, options),
+        spendAsset: getAssetSymbol(spend[0].asset, ASSET_RESOLUTION_OPTIONS),
       }
     : {
         spendAmount: spend.length,

@@ -83,6 +83,7 @@ function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEnt
           @edit-event="emit('edit-event', $event)"
           @delete-event="emit('delete-event', $event)"
           @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+          @unlink-event="emit('unlink-event', $event)"
           @refresh="emit('refresh')"
         />
       </template>

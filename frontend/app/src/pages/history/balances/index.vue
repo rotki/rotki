@@ -7,6 +7,7 @@ import { useRefWithDebounce } from '@/composables/ref';
 import HistoricalBalancesContent from '@/modules/history/balances/HistoricalBalancesContent.vue';
 import NegativeBalancesDialog from '@/modules/history/balances/NegativeBalancesDialog.vue';
 import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
+import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import { useTaskStore } from '@/store/tasks';
 import { NoteLocation } from '@/types/notes';
 import { TaskType } from '@/types/task-type';
@@ -24,7 +25,7 @@ const premium = usePremium();
 
 const historicalBalancesStore = useHistoricalBalancesStore();
 const { isProcessing, negativeBalances, processingPercentage, processingProgress } = storeToRefs(historicalBalancesStore);
-const { triggerProcessing } = historicalBalancesStore;
+const { triggerHistoricalBalancesProcessing } = useHistoricalBalances();
 
 const { useIsTaskRunning } = useTaskStore();
 const isProcessingTaskRunning = useIsTaskRunning(TaskType.PROCESS_HISTORICAL_BALANCES);
@@ -57,7 +58,7 @@ const hasNegativeBalances = useRefWithDebounce(
               color="primary"
               variant="outlined"
               :disabled="isProcessing || isProcessingTaskRunning"
-              @click="triggerProcessing()"
+              @click="triggerHistoricalBalancesProcessing()"
             >
               <template #prepend>
                 <RuiProgress

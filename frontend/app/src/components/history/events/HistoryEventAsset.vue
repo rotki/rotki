@@ -60,7 +60,7 @@ function openMenuHandler(event: MouseEvent): void {
   >
     <template #activator="{ attrs }">
       <div
-        class="py-2 flex items-center gap-2 overflow-hidden cursor-pointer hover:ring-1 ring-rui-grey-300 dark:ring-rui-grey-800 hover:shadow-md transition-all rounded-md group/asset -ml-1 pl-1 min-h-14"
+        class="py-2 flex items-center gap-2 overflow-hidden cursor-pointer hover:ring-1 ring-rui-grey-300 dark:ring-rui-grey-800 hover:shadow-md transition-all rounded-md group/asset -ml-1 pl-1 min-h-14 pr-14 relative"
         v-bind="attrs"
         @contextmenu="openMenuHandler($event)"
       >
@@ -97,7 +97,7 @@ function openMenuHandler(event: MouseEvent): void {
           {{ symbol }}
         </div>
 
-        <div class="bg-gradient-to-r from-transparent to-[#f9fafb] dark:to-[#121212] -my-2 pr-2 h-[calc(100%+1rem)] flex items-center opacity-0 group-hover/asset:opacity-100 z-[1]">
+        <div class="bg-gradient-to-r from-transparent to-[#f9fafb] dark:to-[#121212] -my-2 pr-2 h-[calc(100%+1rem)] flex items-center opacity-0 group-hover/asset:opacity-100 z-[1] absolute right-0">
           <RuiButton
             variant="text"
             icon

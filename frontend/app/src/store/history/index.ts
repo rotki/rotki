@@ -1,11 +1,15 @@
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/modules/messaging/types';
 import type { LocationLabel } from '@/types/location';
+import { startPromise } from '@shared/utils';
 import { useHistoryApi } from '@/composables/api/history';
 import { type TransactionStatus, useHistoryEventsApi } from '@/composables/api/history/events';
+import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
+
+const HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS = 15000;
 
 export const useHistoryStore = defineStore('history', () => {
   const associatedLocations = ref<string[]>([]);
@@ -13,6 +17,7 @@ export const useHistoryStore = defineStore('history', () => {
   const undecodedTransactionsStatus = ref<Record<string, EvmUnDecodedTransactionsData>>({});
   const protocolCacheUpdateStatus = ref<Record<string, ProtocolCacheUpdatesData>>({});
   const transactionStatusSummary = ref<TransactionStatus>();
+  const eventsModificationCounter = ref<number>(0);
 
   // Separate state for sync progress indicator - only updated by websocket messages,
   // not reset by fetchUndecodedTransactionsBreakdown
@@ -101,10 +106,6 @@ export const useHistoryStore = defineStore('history', () => {
     set(undecodedTransactionsStatus, {});
   };
 
-  const clearUndecodedTransactionsNumbers = (): void => {
-    set(undecodedTransactionsStatus, {});
-  };
-
   const resetDecodingSyncProgress = (): void => {
     set(decodingSyncProgress, {});
   };
@@ -167,9 +168,28 @@ export const useHistoryStore = defineStore('history', () => {
     }
   });
 
+  function signalEventsModified(): void {
+    set(eventsModificationCounter, get(eventsModificationCounter) + 1);
+  }
+
+  function resetEventsModifiedSignal(): void {
+    set(eventsModificationCounter, 0);
+  }
+
+  const { triggerHistoricalBalancesProcessing } = useHistoricalBalances();
+
+  watchDebounced(
+    eventsModificationCounter,
+    (counter) => {
+      if (counter > 0) {
+        startPromise(triggerHistoricalBalancesProcessing());
+      }
+    },
+    { debounce: HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS },
+  );
+
   return {
     associatedLocations,
-    clearUndecodedTransactionsNumbers,
     decodingStatus,
     decodingSyncProgress,
     decodingSyncStatus,
@@ -185,6 +205,8 @@ export const useHistoryStore = defineStore('history', () => {
     resetUndecodedTransactionsStatus,
     setProtocolCacheStatus,
     setUndecodedTransactionsStatus,
+    signalEventsModified,
+    resetEventsModifiedSignal,
     transactionStatusSummary,
     undecodedTransactionsStatus,
     updateUndecodedTransactionsStatus,

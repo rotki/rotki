@@ -2,7 +2,8 @@ import type { ComputedRef, Ref } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
-import { type CustomizedEventDuplicates, useHistoryEventsApi } from '@/composables/api/history/events';
+import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { type CustomizedEventDuplicates, useCustomizedEventDuplicatesApi } from '@/composables/api/history/events/customized-event-duplicates';
 import { useMessageStore } from '@/store/message';
 import { arrayify } from '@/utils/array';
 import { logger } from '@/utils/logging';
@@ -58,11 +59,8 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
   const { t } = useI18n({ useScope: 'global' });
   const { setMessage } = useMessageStore();
 
-  const {
-    fetchHistoryEvents,
-    fixCustomizedEventDuplicates,
-    getCustomizedEventDuplicates,
-  } = useHistoryEventsApi();
+  const { fetchHistoryEvents } = useHistoryEventsApi();
+  const { fixCustomizedEventDuplicates, getCustomizedEventDuplicates } = useCustomizedEventDuplicatesApi();
 
   const rawAutoFixGroupIds = ref<string[]>([]);
   const rawManualReviewGroupIds = ref<string[]>([]);

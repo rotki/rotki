@@ -1,10 +1,6 @@
 import type { HistoricalBalanceSource } from '@/modules/history/balances/types';
 import type { HistoricalBalanceProcessingData, NegativeBalanceDetectedData } from '@/modules/messaging/types/status-types';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { TaskMeta } from '@/types/task';
-import { useHistoricalBalancesApi } from '@/composables/api/balances/historical-balances-api';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 
 export interface SavedHistoricalBalancesFilters {
   timestamp: number;
@@ -22,11 +18,6 @@ export const useHistoricalBalancesStore = defineStore('balances/historical', () 
 
   // Saved filter state - only persisted when user clicks "Get Historical Balances"
   const savedFilters = ref<SavedHistoricalBalancesFilters>();
-
-  const { t } = useI18n({ useScope: 'global' });
-
-  const { processHistoricalBalances } = useHistoricalBalancesApi();
-  const { awaitTask } = useTaskStore();
 
   const isProcessing = computed<boolean>(() => {
     const progress = get(processingProgress);
@@ -64,19 +55,6 @@ export const useHistoricalBalancesStore = defineStore('balances/historical', () 
     set(negativeBalances, [...current, data]);
   }
 
-  async function triggerProcessing(): Promise<void> {
-    const { taskId } = await processHistoricalBalances();
-
-    await awaitTask<boolean, TaskMeta>(
-      taskId,
-      TaskType.PROCESS_HISTORICAL_BALANCES,
-      {
-        title: t('historical_balances.title'),
-        description: t('historical_balances.processing_description'),
-      },
-    );
-  }
-
   function setSavedFilters(filters: SavedHistoricalBalancesFilters): void {
     set(savedFilters, filters);
   }
@@ -90,7 +68,6 @@ export const useHistoricalBalancesStore = defineStore('balances/historical', () 
     savedFilters,
     setProcessingProgress,
     setSavedFilters,
-    triggerProcessing,
   };
 });
 

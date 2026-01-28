@@ -3,7 +3,6 @@ import type { CollectionResponse } from '@/types/collection';
 import type { QueryExchangeEventsPayload } from '@/types/exchanges';
 import { omit } from 'es-toolkit';
 import { z } from 'zod/v4';
-import { snakeCaseTransformer } from '@/modules/api';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_TASK_STATUS, VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
 import { type ActionDataEntry, ActionDataEntryArraySchema, type ActionStatus } from '@/types/action';
@@ -38,21 +37,6 @@ const TransactionStatusSchema = z.object({
 
 export type TransactionStatus = z.infer<typeof TransactionStatusSchema>;
 
-export interface AssetMovementMatchSuggestions {
-  closeMatches: number[];
-  otherEvents: number[];
-}
-
-export interface CustomizedEventDuplicates {
-  autoFixGroupIds: string[];
-  manualReviewGroupIds: string[];
-}
-
-export interface CustomizedEventDuplicatesFixResult {
-  removedEventIdentifiers: number[];
-  autoFixGroupIds: string[];
-}
-
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
   deleteTransactions: (chain: string, txRef?: string) => Promise<boolean>;
@@ -79,12 +63,6 @@ interface UseHistoryEventsApiReturn {
   deleteStakeEvents: (entryType: string) => Promise<boolean>;
   pullAndRecodeEthBlockEventRequest: (payload: PullEthBlockEventPayload) => Promise<PendingTask>;
   getTransactionStatusSummary: () => Promise<TransactionStatus>;
-  getUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<string[]>;
-  getAssetMovementMatches: (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean) => Promise<AssetMovementMatchSuggestions>;
-  matchAssetMovements: (assetMovement: number, matchedEvent?: number | null) => Promise<boolean>;
-  unlinkAssetMovement: (assetMovement: number) => Promise<boolean>;
-  getCustomizedEventDuplicates: () => Promise<CustomizedEventDuplicates>;
-  fixCustomizedEventDuplicates: (groupIdentifiers?: string[]) => Promise<CustomizedEventDuplicatesFixResult>;
 }
 
 export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
@@ -308,37 +286,6 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return TransactionStatusSchema.parse(response);
   };
 
-  const getUnmatchedAssetMovements = async (onlyIgnored?: boolean): Promise<string[]> =>
-    api.get<string[]>('/history/events/match/asset_movements', {
-      params: onlyIgnored !== undefined ? snakeCaseTransformer({ onlyIgnored }) : undefined,
-    });
-
-  const getAssetMovementMatches = async (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean): Promise<AssetMovementMatchSuggestions> =>
-    api.post<AssetMovementMatchSuggestions>('/history/events/match/asset_movements', {
-      assetMovement,
-      onlyExpectedAssets,
-      timeRange,
-    });
-
-  const matchAssetMovements = async (assetMovement: number, matchedEvent?: number | null): Promise<boolean> =>
-    api.put<boolean>('/history/events/match/asset_movements', {
-      assetMovement,
-      ...(matchedEvent != null && { matchedEvent }),
-    });
-
-  const unlinkAssetMovement = async (assetMovement: number): Promise<boolean> =>
-    api.delete<boolean>('/history/events/match/asset_movements', {
-      body: { assetMovement },
-    });
-
-  const getCustomizedEventDuplicates = async (): Promise<CustomizedEventDuplicates> =>
-    api.get<CustomizedEventDuplicates>('/history/events/duplicates/customized');
-
-  const fixCustomizedEventDuplicates = async (groupIdentifiers?: string[]): Promise<CustomizedEventDuplicatesFixResult> =>
-    api.post<CustomizedEventDuplicatesFixResult>('/history/events/duplicates/customized', {
-      ...(groupIdentifiers && { groupIdentifiers }),
-    });
-
   return {
     addHistoryEvent,
     addTransactionHash,
@@ -351,22 +298,16 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     exportHistoryEventsCSV,
     fetchHistoryEvents,
     fetchTransactionsTask,
-    fixCustomizedEventDuplicates,
-    getAssetMovementMatches,
-    getCustomizedEventDuplicates,
     getEventDetails,
     getHistoryEventCounterpartiesData,
     getTransactionStatusSummary,
     getTransactionTypeMappings,
     getUndecodedTransactionsBreakdown,
-    getUnmatchedAssetMovements,
-    matchAssetMovements,
     pullAndRecodeEthBlockEventRequest,
     pullAndRecodeTransactionRequest,
     queryExchangeEvents,
     queryOnlineHistoryEvents,
     repullingExchangeEvents,
     repullingTransactions,
-    unlinkAssetMovement,
   };
 }

@@ -43,12 +43,13 @@ interface UseHistoricalBalancesReturn {
   selectedProtocol: Ref<string | undefined>;
   source: Ref<HistoricalBalanceSource>;
   timestamp: Ref<number>;
+  triggerHistoricalBalancesProcessing: () => Promise<void>;
 }
 
 export function useHistoricalBalances(): UseHistoricalBalancesReturn {
   const historicalBalancesStore = useHistoricalBalancesStore();
   const { savedFilters } = storeToRefs(historicalBalancesStore);
-  const { setSavedFilters, triggerProcessing } = historicalBalancesStore;
+  const { setSavedFilters } = historicalBalancesStore;
 
   // Local filter state - initialized from saved filters if available
   const saved = get(savedFilters);
@@ -74,7 +75,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { fetchHistoricalBalances, fetchOnchainHistoricalBalance } = useHistoricalBalancesApi();
+  const { fetchHistoricalBalances, fetchOnchainHistoricalBalance, processHistoricalBalances } = useHistoricalBalancesApi();
   const { getEvmChainName } = useSupportedChains();
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { useCollectionId, useCollectionMainAsset } = useCollectionInfo();
@@ -202,6 +203,19 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
     return OnchainHistoricalBalanceResponse.parse(result);
   }
 
+  async function triggerHistoricalBalancesProcessing(): Promise<void> {
+    const { taskId } = await processHistoricalBalances();
+
+    await awaitTask<boolean, TaskMeta>(
+      taskId,
+      TaskType.PROCESS_HISTORICAL_BALANCES,
+      {
+        title: t('historical_balances.title'),
+        description: t('historical_balances.processing_description'),
+      },
+    );
+  }
+
   async function fetchBalances(): Promise<void> {
     const ts = get(timestamp);
     const currentSource = get(source);
@@ -236,7 +250,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
 
         // Keep triggering processing until processing_required is false
         while (result.processingRequired) {
-          await triggerProcessing();
+          await triggerHistoricalBalancesProcessing();
           result = await queryBalances(ts, asset, location, locationLabel, protocol);
         }
 
@@ -298,5 +312,6 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
     selectedProtocol,
     source,
     timestamp,
+    triggerHistoricalBalancesProcessing,
   };
 }

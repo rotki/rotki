@@ -11,6 +11,7 @@ import type {
 import { HistoryEventEntryType } from '@rotki/common';
 import { flatten } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
@@ -60,7 +61,8 @@ export function useHistoryEventsOperations(
   const { show } = useConfirmStore();
   const { getChain } = useSupportedChains();
 
-  const { deleteTransactions, unlinkAssetMovement } = useHistoryEventsApi();
+  const { deleteTransactions } = useHistoryEventsApi();
+  const { unlinkAssetMovement } = useAssetMovementMatchingApi();
   const { deleteHistoryEvent } = useHistoryEvents();
   const { ignoreSingle, toggle } = useIgnore<HistoryEventEntry>({
     toData: (item: HistoryEventEntry) => item.groupIdentifier,

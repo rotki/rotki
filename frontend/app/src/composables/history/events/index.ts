@@ -14,6 +14,7 @@ import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useHistoryStore } from '@/store/history';
 import { useNotificationsStore } from '@/store/notifications';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { arrayify } from '@/utils/array';
@@ -41,6 +42,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     fetchHistoryEvents: fetchHistoryEventsCaller,
   } = useHistoryEventsApi();
 
+  const { signalEventsModified } = useHistoryStore();
   const { fetchEnsNames } = useAddressesNamesStore();
 
   const { getChain } = useSupportedChains();
@@ -134,6 +136,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     try {
       await addHistoryEventCaller(event);
       success = true;
+      signalEventsModified();
     }
     catch (error: any) {
       message = error.message;
@@ -150,6 +153,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     try {
       await editHistoryEventCaller(event);
       success = true;
+      signalEventsModified();
     }
     catch (error: any) {
       message = error.message;
@@ -165,6 +169,8 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     let message = '';
     try {
       success = await deleteHistoryEventCaller({ identifiers: eventIds.map(id => id.toString()) }, forceDelete);
+      if (success)
+        signalEventsModified();
     }
     catch (error: any) {
       message = error.message;

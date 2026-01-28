@@ -4,6 +4,7 @@ import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/typ
 import PotentialMatchesList from '@/components/history/events/PotentialMatchesList.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
@@ -40,7 +41,8 @@ const {
   refreshUnmatchedAssetMovements,
 } = useUnmatchedAssetMovements();
 
-const { fetchHistoryEvents, getAssetMovementMatches } = useHistoryEventsApi();
+const { fetchHistoryEvents } = useHistoryEventsApi();
+const { getAssetMovementMatches } = useAssetMovementMatchingApi();
 
 const { assetMovementTimeRange } = storeToRefs(useGeneralSettingsStore());
 

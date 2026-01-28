@@ -4,7 +4,7 @@ import AssetMovementMatchingSettingsMenu from '@/components/history/events/Asset
 import PotentialMatchesDialog from '@/components/history/events/PotentialMatchesDialog.vue';
 import UnmatchedMovementsList from '@/components/history/events/UnmatchedMovementsList.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
@@ -26,10 +26,10 @@ const {
   loading,
   unmatchedMovements,
   refreshUnmatchedAssetMovements,
-  triggerAutoMatch,
+  triggerAssetMovementAutoMatching,
 } = useUnmatchedAssetMovements();
 
-const { matchAssetMovements, unlinkAssetMovement } = useHistoryEventsApi();
+const { matchAssetMovements, unlinkAssetMovement } = useAssetMovementMatchingApi();
 const { show } = useConfirmStore();
 
 const activeTab = ref<number>(0);
@@ -300,7 +300,7 @@ onBeforeMount(async () => {
                     class="!rounded-r-none h-9"
                     :disabled="unmatchedMovements.length === 0 || autoMatchLoading"
                     :loading="autoMatchLoading"
-                    @click="triggerAutoMatch()"
+                    @click="triggerAssetMovementAutoMatching()"
                   >
                     {{ t('asset_movement_matching.actions.auto_match') }}
                   </RuiButton>

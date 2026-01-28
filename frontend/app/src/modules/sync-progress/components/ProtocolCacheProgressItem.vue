@@ -87,8 +87,7 @@ const statusBorderColor = computed<string>(() => {
       <CounterpartyDisplay
         :counterparty="item.protocol"
         :size="compact ? '0.75rem' : '1rem'"
-        class="min-w-0"
-        :class="compact ? 'text-xs' : 'text-sm'"
+        class="min-w-0 !text-xs"
       />
     </div>
 

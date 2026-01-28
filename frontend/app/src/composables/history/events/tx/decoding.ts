@@ -34,9 +34,8 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
   const { awaitTask, isTaskRunning } = useTaskStore();
   const {
-    clearUndecodedTransactionsNumbers,
-    getUndecodedTransactionStatus,
     resetUndecodedTransactionsStatus,
+    getUndecodedTransactionStatus,
     updateUndecodedTransactionsStatus,
   } = useHistoryStore();
 
@@ -83,7 +82,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       else {
         // If the response is empty, it means all chains has been processed.
         // We should set the processed equal to total, so it appears as completed.
-        clearUndecodedTransactionsNumbers();
+        resetUndecodedTransactionsStatus();
       }
     }
     catch (error: any) {
