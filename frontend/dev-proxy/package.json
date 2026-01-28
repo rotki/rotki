@@ -17,7 +17,7 @@
   "devDependencies": {
     "@types/body-parser": "1.19.6",
     "@types/express": "5.0.6",
-    "@types/node": "22.19.6",
+    "@types/node": "22.19.7",
     "consola": "3.4.2",
     "tsx": "4.21.0",
     "typescript": "5.9.3"

@@ -1,7 +1,7 @@
 {
   "name": "rotki-workspace",
   "version": "1.0.0",
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@10.28.2",
   "description": "A portfolio tracking, asset analytics and tax reporting application specializing in Cryptoassets that protects your privacy",
   "type": "module",
   "license": "AGPL-3.0",
@@ -38,7 +38,7 @@
   },
   "devDependencies": {
     "@clack/prompts": "0.11.0",
-    "@intlify/eslint-plugin-vue-i18n": "4.1.0",
+    "@intlify/eslint-plugin-vue-i18n": "4.1.1",
     "@rotki/eslint-config": "4.5.0",
     "@rotki/eslint-plugin": "1.2.0",
     "cac": "6.7.14",
