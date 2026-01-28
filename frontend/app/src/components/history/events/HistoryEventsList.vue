@@ -7,8 +7,8 @@ import { get, set } from '@vueuse/core';
 import { flatten } from 'es-toolkit';
 import { computed, ref, toRefs, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
-import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
 import HistoryEventsListTable from '@/components/history/events/HistoryEventsListTable.vue';
+import { useReportIssue } from '@/composables/report-issue';
 import { isSwapEvent } from '@/modules/history/management/forms/form-guards';
 import { arrayify } from '@/utils/array';
 
@@ -52,8 +52,9 @@ const { t } = useI18n({ useScope: 'global' });
 
 const currentLimit = ref<number>(PER_BATCH);
 const containerRef = ref<HTMLElement>();
-const showReportDialog = ref<boolean>(false);
 const showingIgnoredAssets = ref<boolean>(false);
+
+const { show: showReportIssue } = useReportIssue();
 
 const {
   allEvents,
@@ -132,8 +133,6 @@ const unsupportedEventInfo = computed<UnsupportedEventInfo | null>(() => {
 
 const unsupportedEvent = computed<HistoryEventEntry | null>(() => get(unsupportedEventInfo)?.event ?? null);
 
-const reportTitle = computed<string>(() => t('transactions.events.unsupported.title'));
-
 const unsupportedDescription = computed<string>(() => {
   const info = get(unsupportedEventInfo);
   if (!info)
@@ -144,10 +143,10 @@ const unsupportedDescription = computed<string>(() => {
     : t('transactions.events.unsupported.description_gas_fee_only');
 });
 
-const reportDescription = computed<string>(() => {
+function openReportDialog(): void {
   const info = get(unsupportedEventInfo);
   if (!info)
-    return '';
+    return;
 
   const { event, type } = info;
   const txRef = 'txRef' in event ? event.txRef : '';
@@ -156,7 +155,7 @@ const reportDescription = computed<string>(() => {
     ? t('transactions.events.unsupported.report_description_intro_incomplete_swap')
     : t('transactions.events.unsupported.report_description_intro_gas_fee_only');
 
-  return [
+  const description = [
     intro,
     txRef ? t('transactions.events.unsupported.tx_hash', { hash: txRef }) : '',
     t('transactions.events.unsupported.location', { location: event.location }),
@@ -164,7 +163,12 @@ const reportDescription = computed<string>(() => {
     t('transactions.events.unsupported.more_detail'),
     t('transactions.events.unsupported.placeholder'),
   ].filter(Boolean).join('\n');
-});
+
+  showReportIssue({
+    description,
+    title: t('transactions.events.unsupported.title'),
+  });
+}
 
 // Show warning when group has hidden ignored assets
 const showIgnoredAssetsWarning = computed<boolean>(() => {
@@ -262,7 +266,7 @@ watch(() => get(eventGroup), () => {
         variant="text"
         size="sm"
         class="!py-0 !px-1 shrink-0"
-        @click="showReportDialog = true"
+        @click="openReportDialog()"
       >
         {{ t('transactions.events.unsupported.report_action') }}
       </RuiButton>
@@ -325,11 +329,5 @@ watch(() => get(eventGroup), () => {
         />
       </template>
     </RuiButton>
-
-    <ReportIssueDialog
-      v-model="showReportDialog"
-      :initial-title="reportTitle"
-      :initial-description="reportDescription"
-    />
   </div>
 </template>

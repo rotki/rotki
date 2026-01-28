@@ -2,14 +2,11 @@
 import { externalLinks, SUPPORT_EMAIL } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
 import { usePrivacyMode } from '@/composables/privacy';
+import { useReportIssue } from '@/composables/report-issue';
 import { useScrambleSetting } from '@/composables/scramble-settings';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 
-const modelValue = defineModel<boolean>({ required: true });
-const props = defineProps<{
-  initialTitle?: string;
-  initialDescription?: string;
-}>();
+const { close, initialDescription: storeDescription, initialTitle: storeTitle, visible } = useReportIssue();
 
 const MAX_TITLE_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 1500;
@@ -63,7 +60,7 @@ const encodedTitle = computed<string>(() => encodeURIComponent(get(issueTitle).s
 const encodedDescription = computed<string>(() => encodeURIComponent(get(issueDescription).slice(0, MAX_DESCRIPTION_LENGTH)));
 
 function closeDialog(): void {
-  set(modelValue, false);
+  close();
   set(issueTitle, '');
   set(issueDescription, '');
 }
@@ -102,17 +99,15 @@ function openGmail(): void {
   openUrlAndClose(`${externalLinks.gmailCompose}&to=${encodeURIComponent(SUPPORT_EMAIL)}&su=${get(encodedTitle)}&body=${get(encodedDescription)}`);
 }
 
-watch(modelValue, (isOpen) => {
-  if (isOpen) {
-    set(issueTitle, props.initialTitle ?? '');
-    set(issueDescription, props.initialDescription ?? '');
-  }
+onMounted(() => {
+  set(issueTitle, get(storeTitle));
+  set(issueDescription, get(storeDescription));
 });
 </script>
 
 <template>
   <RuiDialog
-    v-model="modelValue"
+    v-model="visible"
     max-width="600"
     persistent
   >

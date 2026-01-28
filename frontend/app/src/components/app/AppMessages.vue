@@ -6,7 +6,9 @@ import MessageDialog from '@/components/dialogs/MessageDialog.vue';
 import MacOsVersionUnsupported from '@/components/error/MacOsVersionUnsupported.vue';
 import StartupErrorScreen from '@/components/error/StartupErrorScreen.vue';
 import WinVersionUnsupported from '@/components/error/WinVersionUnsupported.vue';
+import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
 import { useAddressBookForm } from '@/composables/address-book/form';
+import { useReportIssue } from '@/composables/report-issue';
 import { useAutoLogin } from '@/composables/user/account';
 import { useBackendMessagesStore } from '@/store/backend-messages';
 import { useConfirmStore } from '@/store/confirm';
@@ -28,6 +30,8 @@ const { confirm, dismiss } = confirmStore;
 const { confirmation, visible } = storeToRefs(confirmStore);
 
 const { globalPayload, openDialog } = useAddressBookForm();
+
+const { visible: reportIssueVisible } = useReportIssue();
 
 const { confirmPassword, needsPasswordConfirmation, username } = useAutoLogin();
 
@@ -84,4 +88,5 @@ async function handlePasswordConfirmation(password: string): Promise<void> {
   />
   <MacOsVersionUnsupported v-if="isMacOsVersionUnsupported" />
   <WinVersionUnsupported v-if="isWinVersionUnsupported" />
+  <ReportIssueDialog v-if="reportIssueVisible" />
 </template>

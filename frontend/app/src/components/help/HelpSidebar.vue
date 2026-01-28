@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 import { externalLinks, TWITTER_URL } from '@shared/external-links';
-import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
 import { useInterop } from '@/composables/electron-interop';
+import { useReportIssue } from '@/composables/report-issue';
 import { useNotificationsStore } from '@/store/notifications';
 import { downloadFileByTextContent } from '@/utils/download';
 import { IndexedDb } from '@/utils/indexed-db';
@@ -17,7 +17,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const interop = useInterop();
 
-const showReportDialog = ref<boolean>(false);
+const { show: showReportIssue } = useReportIssue();
 
 interface Entry {
   readonly icon: RuiIcons;
@@ -105,7 +105,7 @@ async function downloadBrowserLog(): Promise<void> {
     <div class="py-0">
       <div
         class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 border-y border-default cursor-pointer"
-        @click="showReportDialog = true"
+        @click="showReportIssue()"
       >
         <RuiIcon
           class="text-rui-text-secondary"
@@ -185,6 +185,4 @@ async function downloadBrowserLog(): Promise<void> {
       </template>
     </div>
   </RuiNavigationDrawer>
-
-  <ReportIssueDialog v-model="showReportDialog" />
 </template>

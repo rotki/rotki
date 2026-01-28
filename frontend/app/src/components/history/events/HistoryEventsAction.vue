@@ -13,9 +13,9 @@ import type {
   SolanaSwapEvent,
   StandaloneEditableEvents,
 } from '@/types/history/events/schemas';
-import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { type DuplicateHandlingStatus, DuplicateHandlingStatus as DuplicateStatus } from '@/composables/history/events/use-history-events-filters';
+import { useReportIssue } from '@/composables/report-issue';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import {
   type DecodableEventType,
@@ -153,14 +153,12 @@ function hideAddAction(item: HistoryEvent): boolean {
   return isGroupEditableHistoryEvent(item);
 }
 
-const showReportDialog = ref<boolean>(false);
+const { show: showReportIssue } = useReportIssue();
 
-const reportTitle = computed<string>(() => t('actions.history_events.report_issue.title'));
-
-const reportDescription = computed<string>(() => {
+function openReportDialog(): void {
   const txRef = get(eventWithTxRef)?.txRef;
 
-  return [
+  const description = [
     t('actions.history_events.report_issue.description_intro'),
     txRef ? t('actions.history_events.report_issue.tx_hash', { hash: txRef }) : '',
     t('actions.history_events.report_issue.location', { location: get(event).location }),
@@ -168,7 +166,12 @@ const reportDescription = computed<string>(() => {
     t('actions.history_events.report_issue.more_detail'),
     t('actions.history_events.report_issue.placeholder'),
   ].filter(Boolean).join('\n');
-});
+
+  showReportIssue({
+    description,
+    title: t('actions.history_events.report_issue.title'),
+  });
+}
 
 async function fixDuplicateEvent(): Promise<void> {
   const groupIdentifier = get(event).groupIdentifier;
@@ -314,7 +317,7 @@ function confirmFixDuplicate(): void {
         <RuiDivider class="my-2" />
         <RuiButton
           variant="list"
-          @click="showReportDialog = true"
+          @click="openReportDialog()"
         >
           <template #prepend>
             <RuiIcon name="lu-bug" />
@@ -323,11 +326,5 @@ function confirmFixDuplicate(): void {
         </RuiButton>
       </div>
     </RuiMenu>
-
-    <ReportIssueDialog
-      v-model="showReportDialog"
-      :initial-title="reportTitle"
-      :initial-description="reportDescription"
-    />
   </div>
 </template>
