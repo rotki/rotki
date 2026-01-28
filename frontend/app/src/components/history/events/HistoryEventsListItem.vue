@@ -15,6 +15,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { isEventMissingAccountingRule } from '@/utils/history/events';
 
 const props = defineProps<{
   item: HistoryEventEntry;
@@ -125,6 +126,8 @@ const asset = assetInfo(eventAsset, { collectionParent: false });
 const isSpam = computed(() => get(asset)?.protocol === 'spam');
 
 const hiddenEvent = logicOr(isIgnoredAsset, isSpam);
+
+const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(item)));
 </script>
 
 <template>
@@ -138,7 +141,7 @@ const hiddenEvent = logicOr(isIgnoredAsset, isSpam);
       'px-4': !compact,
     }"
   >
-    <div class="transition-all duration-300 ease-in-out flex items-center">
+    <div class="group transition-all duration-300 ease-in-out flex items-center">
       <RuiCheckbox
         v-if="showCheckbox"
         v-model="isSelected"
@@ -182,7 +185,10 @@ const hiddenEvent = logicOr(isIgnoredAsset, isSpam);
 
         <HistoryEventsListItemAction
           v-if="!compact && !hideActions"
-          class="col-span-10 @md:col-span-3"
+          class="col-span-10 @md:col-span-3 transition-opacity"
+          :class="{
+            'opacity-0 group-hover:opacity-100 focus-within:opacity-100': !hasMissingRule,
+          }"
           :item="item"
           :index="index"
           :events="events"

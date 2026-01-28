@@ -36,7 +36,11 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-function hideActions(item: HistoryEventEntry, index: number): boolean {
+const { item } = toRefs(props);
+
+const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(item)));
+
+function hideEditDeleteActions(item: HistoryEventEntry, index: number): boolean {
   const isSwapButNotSpend = isSwapTypeEvent(item.entryType) && index !== 0;
   const isAssetMovementFee = isAssetMovementEvent(item) && item.eventSubtype === 'fee';
   return isAssetMovementFee || isSwapButNotSpend;
@@ -84,29 +88,41 @@ function deleteEvent(item: HistoryEventEntry) {
 </script>
 
 <template>
-  <RowActions
-    align="end"
-    :delete-tooltip="t('transactions.events.actions.delete')"
-    :edit-tooltip="t('transactions.events.actions.edit')"
-    :no-delete="hideActions(item, index)"
-    :no-edit="hideActions(item, index)"
-    @edit-click="editEvent(item)"
-    @delete-click="deleteEvent(item)"
-  >
-    <RuiButton
-      v-if="canUnlink && collapsed"
-      :title="t('transactions.events.actions.unlink')"
-      variant="text"
-      icon
-      @click="emit('unlink-event')"
+  <div class="flex items-center gap-1 justify-end">
+    <!-- Edit/Delete/Other actions - hidden on default when missing rule, visible on hover -->
+    <RowActions
+      :class="{ 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity': hasMissingRule }"
+      align="end"
+      :delete-tooltip="t('transactions.events.actions.delete')"
+      :edit-tooltip="t('transactions.events.actions.edit')"
+      :no-delete="hideEditDeleteActions(item, index)"
+      :no-edit="hideEditDeleteActions(item, index)"
+      @edit-click="editEvent(item)"
+      @delete-click="deleteEvent(item)"
     >
-      <RuiIcon
-        size="16"
-        name="lu-unlink"
+      <RuiButton
+        v-if="canUnlink && collapsed"
+        :title="t('transactions.events.actions.unlink')"
+        variant="text"
+        icon
+        @click="emit('unlink-event')"
+      >
+        <RuiIcon
+          size="16"
+          name="lu-unlink"
+        />
+      </RuiButton>
+      <HistoryEventAction
+        v-else-if="!hasMissingRule"
+        :event="item"
+        :can-unlink="canUnlink"
+        @unlink="emit('unlink-event')"
       />
-    </RuiButton>
+    </RowActions>
+
+    <!-- Warning button - always visible when there's a missing rule (shown last/rightmost) -->
     <RuiButton
-      v-else-if="isEventMissingAccountingRule(item)"
+      v-if="hasMissingRule"
       :title="t('actions.history_events.missing_rule.title')"
       variant="text"
       color="warning"
@@ -118,11 +134,5 @@ function deleteEvent(item: HistoryEventEntry) {
         name="lu-info"
       />
     </RuiButton>
-    <HistoryEventAction
-      v-else
-      :event="item"
-      :can-unlink="canUnlink"
-      @unlink="emit('unlink-event')"
-    />
-  </RowActions>
+  </div>
 </template>

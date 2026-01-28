@@ -13,6 +13,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useSupportedChains } from '@/composables/info/chains';
 import { isSwapTypeEvent } from '@/modules/history/management/forms/form-guards';
+import { isEventMissingAccountingRule } from '@/utils/history/events';
 
 const props = defineProps<{
   events: HistoryEventEntry[];
@@ -61,6 +62,8 @@ const primaryEvent = computed<HistoryEventEntry>(() => {
 });
 
 const canUnlink = computed<boolean>(() => !!get(primaryEvent).actualGroupIdentifier);
+
+const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(primaryEvent)));
 
 const subgroupIcon = computed<RuiIcons | undefined>(() => {
   if (get(isSwapGroup))
@@ -321,7 +324,10 @@ watch(shouldExpand, () => {
       <div
         v-if="!shouldExpand && !hideActions"
         key="history-event-actions"
-        class="py-2 @5xl:!py-4 col-span-10 @md:col-span-3 event-cell"
+        class="py-2 @5xl:!py-4 col-span-10 @md:col-span-3 event-cell transition-opacity"
+        :class="{
+          'opacity-0 group-hover:opacity-100 focus-within:opacity-100': !hasMissingRule,
+        }"
       >
         <HistoryEventsListItemAction
           :item="primaryEvent"
