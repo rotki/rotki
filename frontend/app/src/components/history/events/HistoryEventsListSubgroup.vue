@@ -203,20 +203,20 @@ watch(shouldExpand, () => {
         'grid grid-cols-10 gap-x-2 gap-y-1 @5xl:!grid-cols-[repeat(20,minmax(0,1fr))] items-start @5xl:min-h-[80px]': !shouldExpand,
         'flex flex-col': shouldExpand,
         'transition-wrapper': !isInitialRender,
-        'md:pl-3': !shouldExpand,
+        'md:pl-2': !shouldExpand,
       }"
     >
       <div
         v-if="!shouldExpand"
         key="history-event-type"
-        class="col-span-10 md:col-span-4 @5xl:!col-span-5 py-4 lg:py-4.5 relative event-cell"
+        class="col-span-10 md:col-span-4 @5xl:!col-span-5 py-4 lg:py-4.5 relative event-cell pl-1"
       >
         <RuiButton
           v-if="!selection?.isSelectionMode.value && !hasHiddenIgnoredAssets"
           size="sm"
           icon
           color="primary"
-          class="absolute top-2.5 -left-1 size-5 z-[6]"
+          class="absolute top-2.5 left-0 size-5 z-[6]"
           @click="expanded = !expanded"
         >
           <RuiIcon
