@@ -31,6 +31,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const flattenedAllEvents = computed<HistoryEventEntry[]>(() => flatten(props.allEvents));
+
 function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEntry[] | undefined {
   if (items.length === 0)
     return undefined;
@@ -70,7 +72,7 @@ function findAllEventsFromArrayItem(items: HistoryEventEntry[]): HistoryEventEnt
           :item="item"
           :hide-actions="hideActions"
           :index="index"
-          :events="flatten(allEvents)"
+          :events="flattenedAllEvents"
           :event-group="eventGroup"
           :is-last="index === events.length - 1"
           :is-highlighted="highlightedIdentifiers?.includes(item.identifier.toString())"

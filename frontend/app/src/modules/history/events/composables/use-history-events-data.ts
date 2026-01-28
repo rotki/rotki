@@ -57,17 +57,24 @@ export function useHistoryEventsData(
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { sectionLoading } = useHistoryEventsStatus();
 
-  const events: Ref<HistoryEventRow[]> = asyncComputed(async () => {
-    const dataValue = get(data);
+  const groupIdentifiers = computed<string[]>(() =>
+    get(data).flatMap(item => Array.isArray(item) ? item.map(i => i.groupIdentifier) : item.groupIdentifier),
+  );
 
-    if (dataValue.length === 0)
+  // Fetches all events for the currently displayed groups.
+  // limit: -1 fetches all matching events, but the scope is bounded by groupIdentifiers
+  // which only includes groups visible on the current page.
+  const events: Ref<HistoryEventRow[]> = asyncComputed(async () => {
+    const groupIds = get(groupIdentifiers);
+
+    if (groupIds.length === 0)
       return [];
 
     const response = await fetchHistoryEvents({
       ...get(pageParams),
       aggregateByGroupIds: false,
       excludeIgnoredAssets: false,
-      groupIdentifiers: dataValue.flatMap(item => Array.isArray(item) ? item.map(i => i.groupIdentifier) : item.groupIdentifier),
+      groupIdentifiers: groupIds,
       identifiers: get(identifiers),
       limit: -1,
       offset: 0,
@@ -79,32 +86,9 @@ export function useHistoryEventsData(
     lazy: true,
   });
 
-  function addEventToMapping(mapping: Record<string, HistoryEventRow[]>, eventId: string, event: HistoryEventRow): void {
-    const existing = mapping[eventId];
-    if (existing)
-      existing.push(event);
-    else
-      mapping[eventId] = [event];
-  }
-
-  function processArrayEvent(event: HistoryEventEntry[], mapping: Record<string, HistoryEventRow[]>): void {
-    const filtered = event.filter(({ hidden }) => !hidden);
-    if (filtered.length > 0) {
-      const eventId = filtered[0].groupIdentifier;
-      addEventToMapping(mapping, eventId, filtered);
-    }
-  }
-
-  function processSingleEvent(event: HistoryEventEntry, mapping: Record<string, HistoryEventRow[]>): void {
-    if (!event.hidden) {
-      const eventId = event.groupIdentifier;
-      addEventToMapping(mapping, eventId, event);
-    }
-  }
-
-  function getMappedEvents(events: HistoryEventRow[], hideIgnored: boolean): Record<string, HistoryEventRow[]> {
+  // Groups events by their groupIdentifier, filtering out hidden events
+  const allEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => {
     const eventsList = get(events);
-
     if (eventsList.length === 0)
       return {};
 
@@ -112,26 +96,46 @@ export function useHistoryEventsData(
 
     for (const event of eventsList) {
       if (Array.isArray(event)) {
-        const usedEvents = !hideIgnored ? event : event.filter(item => !isAssetIgnored(item.asset));
-        processArrayEvent(usedEvents, mapping);
-      }
-      else {
-        if (!hideIgnored || !isAssetIgnored(event.asset)) {
-          processSingleEvent(event, mapping);
+        const visible = event.filter(({ hidden }) => !hidden);
+        if (visible.length > 0) {
+          const groupId = visible[0].groupIdentifier;
+          (mapping[groupId] ??= []).push(visible);
         }
+      }
+      else if (!event.hidden) {
+        (mapping[event.groupIdentifier] ??= []).push(event);
       }
     }
 
     return mapping;
-  }
+  });
 
-  // Events grouped by the event identifiers.
-  // Hide ignored assets if `excludeIgnored` is true
-  const displayedEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => getMappedEvents(get(events), get(excludeIgnored)));
+  // Derives from allEventsMapped, filtering out ignored assets when excludeIgnored is true
+  const displayedEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => {
+    const base = get(allEventsMapped);
+    if (!get(excludeIgnored))
+      return base;
 
-  // Events grouped by the event identifiers.
-  // Always show ignored assets
-  const allEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => getMappedEvents(get(events), false));
+    const mapping: Record<string, HistoryEventRow[]> = {};
+
+    for (const [groupId, groupEvents] of Object.entries(base)) {
+      const filtered: HistoryEventRow[] = [];
+      for (const event of groupEvents) {
+        if (Array.isArray(event)) {
+          const visible = event.filter(item => !isAssetIgnored(item.asset));
+          if (visible.length > 0)
+            filtered.push(visible);
+        }
+        else if (!isAssetIgnored(event.asset)) {
+          filtered.push(event);
+        }
+      }
+      if (filtered.length > 0)
+        mapping[groupId] = filtered;
+    }
+
+    return mapping;
+  });
 
   const loading = useRefWithDebounce(logicOr(groupLoading, eventsLoading), 100);
   const hasIgnoredEvent = useArraySome(events, event => Array.isArray(event) && event.some(item => item.ignoredInAccounting));

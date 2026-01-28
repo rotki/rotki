@@ -256,7 +256,8 @@ async function fetchData() {
 - For the localization files (en.json, es.json, etc.), the keys should be ordered alphabetically.
 
 #### Testing
-- Run tests with `pnpm run test:unit` from `frontend/` directory
+- Run all tests with `pnpm run test:unit` from `frontend/` directory
+- Run a single test file: `pnpm run test:unit src/modules/path/to/file.spec.ts` (no `-- --run` needed)
 - Use Vitest for unit tests with Vue Test Utils
 - **Unit test file naming**: `.spec.ts` files should follow the naming of the tested file and be located in the same folder
   ```

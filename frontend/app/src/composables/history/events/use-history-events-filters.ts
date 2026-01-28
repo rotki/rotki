@@ -244,7 +244,7 @@ export function useHistoryEventsFilters(
     set(locationLabels, labels);
   }
 
-  watch([filters, locationLabels], ([filters, locationLabels], [oldFilters, oldLocationLabels]) => {
+  watchDebounced([filters, locationLabels], ([filters, locationLabels], [oldFilters, oldLocationLabels]) => {
     const filterChanged = !isEqual(filters, oldFilters);
     const accountsChanged = !isEqual(locationLabels, oldLocationLabels);
 
@@ -261,7 +261,7 @@ export function useHistoryEventsFilters(
       const updatedFilter = { ...get(filters) };
       updateFilter(updatedFilter);
     }
-  });
+  }, { debounce: 100 });
 
   return {
     duplicateHandlingStatus: duplicateHandlingStatusFromQuery,
