@@ -115,12 +115,13 @@ const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => {
     label: '',
   }, {
     cellClass: '!py-2',
+    class: '!py-1',
     key: 'identifier',
     label: t('transactions.events.headers.event_identifier'),
   }, {
     align: 'end',
     cellClass: 'text-no-wrap !py-2 w-[12rem]',
-    class: 'w-[12rem]',
+    class: '!py-1 w-[12rem]',
     key: 'timestamp',
     label: t('common.datetime'),
     sortable: true,
@@ -131,7 +132,7 @@ const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => {
       {
         align: 'end',
         cellClass: 'w-[1.25rem] !py-2',
-        class: 'w-[1.25rem]',
+        class: '!py-1 w-[1.25rem]',
         key: 'action',
         label: '',
       },
@@ -168,6 +169,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
     }"
     row-attr="identifier"
     outlined
+    :sticky-header="true"
   >
     <template #item.ignoredInAccounting="{ row }">
       <IgnoredInAccountingIcon
