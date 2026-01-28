@@ -37,7 +37,6 @@
     "pnl_csv_have_summary": false,
     "ssf_graph_multiplier": 0,
     "last_data_migration": 13,
-    "events_processing_frequency": 86400,
     "non_syncing_exchanges": [],
     "evmchains_to_skip_detection": [],
     "default_evm_indexer_order": [],

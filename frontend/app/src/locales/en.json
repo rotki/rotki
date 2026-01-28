@@ -3023,17 +3023,6 @@
         "error": "Error setting the display date in local time setting"
       }
     },
-    "events_processing_frequency": {
-      "label": "Frequency in hours",
-      "subtitle": "How often the background task runs to automatically match exchange deposit/withdrawal events with on-chain transactions.",
-      "title": "Asset movement matching frequency",
-      "validation": {
-        "error": "Error setting asset movement matching frequency",
-        "invalid_frequency": "Frequency must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours",
-        "success": "Asset movement matching frequency set to {frequency} hours"
-      }
-    },
     "evm_chains": {
       "deselect": "Deselect all chains",
       "select": "Select all chains"
