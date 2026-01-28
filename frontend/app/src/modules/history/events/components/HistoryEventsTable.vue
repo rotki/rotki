@@ -179,7 +179,7 @@ useRememberTableSorting<HistoryEventEntry>(TableId.HISTORY, sort, cols);
       />
     </template>
     <template #item.identifier="{ row }">
-      <div class="flex items-center gap-2.5 event-table-cell">
+      <div class="flex items-center gap-2.5 event-table-cell pl-0.5">
         <LocationIcon
           icon
           :item="row.location"
