@@ -69,45 +69,40 @@ const subgroupIcon = computed<RuiIcons | undefined>(() => {
 });
 
 const usedEvents = computed<HistoryEventEntry[]>(() => {
-  if (get(shouldExpand)) {
+  if (get(shouldExpand))
     return props.events;
-  }
 
   // For non-swap groups (like asset movements), show only the primary event
-  if (!get(isSwapGroup)) {
+  if (!get(isSwapGroup))
     return [get(primaryEvent)];
+
+  // Single pass: categorize events by subtype
+  const spendEvents: HistoryEventEntry[] = [];
+  const receiveEvents: HistoryEventEntry[] = [];
+
+  for (const event of props.events) {
+    if (event.eventSubtype === 'spend')
+      spendEvents.push(event);
+    else if (event.eventSubtype === 'receive')
+      receiveEvents.push(event);
+    // Skip fee events implicitly
   }
 
-  const filtered = props.events.filter(item => item.eventSubtype !== 'fee');
-
-  // Separate the spend and receive events
-  const spendEvents = filtered.filter(item => item.eventSubtype === 'spend');
-  const receiveEvents = filtered.filter(item => item.eventSubtype === 'receive');
-
-  // Create an alternating pattern
-  const alternating: HistoryEventEntry[] = [];
+  // Build alternating result
+  const result: HistoryEventEntry[] = [];
   const maxPairs = Math.min(spendEvents.length, receiveEvents.length);
 
   for (let i = 0; i < maxPairs; i++) {
-    if (spendEvents[i]) {
-      alternating.push(spendEvents[i]);
-    }
-    if (receiveEvents[i]) {
-      alternating.push(receiveEvents[i]);
-    }
+    result.push(spendEvents[i], receiveEvents[i]);
   }
 
-  // Add remaining spend events if any
-  if (spendEvents.length > receiveEvents.length) {
-    const remainingSpend = spendEvents.slice(receiveEvents.length);
-    alternating.push(...remainingSpend);
-  }
-  else if (receiveEvents.length > spendEvents.length) {
-    const remainingSpend = receiveEvents.slice(spendEvents.length);
-    alternating.push(...remainingSpend);
-  }
+  // Add remaining events from whichever array has more
+  if (spendEvents.length > maxPairs)
+    result.push(...spendEvents.slice(maxPairs));
+  else if (receiveEvents.length > maxPairs)
+    result.push(...receiveEvents.slice(maxPairs));
 
-  return alternating;
+  return result;
 });
 
 function appendFeeNotes(notes: string | undefined): string | undefined {
