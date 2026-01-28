@@ -8,6 +8,7 @@ import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
 } from '@/composables/history/events/use-unmatched-asset-movements';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 export interface PotentialMatchRow {
   identifier: number;
@@ -41,13 +42,17 @@ const {
 
 const { fetchHistoryEvents, getAssetMovementMatches } = useHistoryEventsApi();
 
-const DEFAULT_HOUR_RANGE = 4;
+const { assetMovementTimeRange } = storeToRefs(useGeneralSettingsStore());
+
+function getDefaultHourRange(): number {
+  return get(assetMovementTimeRange) / 3600;
+}
 
 const searchLoading = ref<boolean>(false);
 const matchingLoading = ref<boolean>(false);
 const potentialMatches = ref<PotentialMatchRow[]>([]);
 const selectedMatchId = ref<number>();
-const searchTimeRange = ref<string>(DEFAULT_HOUR_RANGE.toString());
+const searchTimeRange = ref<string>(getDefaultHourRange().toString());
 const onlyExpectedAssets = ref<boolean>(true);
 
 function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
@@ -79,7 +84,7 @@ async function searchPotentialMatches(): Promise<void> {
   try {
     const groupIdentifier = props.movement.groupIdentifier;
 
-    const hours = Number.parseInt(get(searchTimeRange), 10) || DEFAULT_HOUR_RANGE;
+    const hours = Number.parseInt(get(searchTimeRange), 10) || getDefaultHourRange();
     const timeRangeInSeconds = hours * 60 * 60;
 
     // Get match suggestions from backend
@@ -158,7 +163,7 @@ watch(modelValue, async (isOpen) => {
   if (isOpen) {
     set(potentialMatches, []);
     set(selectedMatchId, undefined);
-    set(searchTimeRange, DEFAULT_HOUR_RANGE.toString());
+    set(searchTimeRange, getDefaultHourRange().toString());
     set(onlyExpectedAssets, true);
     await searchPotentialMatches();
   }
