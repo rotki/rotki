@@ -99,7 +99,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.lido_csm import DBLidoCsm
 from rotkehlchen.db.reports import DBAccountingReports
-from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.api import (
     AuthenticationError,
@@ -3641,6 +3641,7 @@ class RestAPI:
             asset_movement_group_identifier: str,
             time_range: int,
             only_expected_assets: bool,
+            tolerance: FVal,
     ) -> Response:
         """Get possible matches for an asset movement within the given time range, limiting to only
         events with assets in the same collection depending on the `only_expected_assets` flag."""
@@ -3680,7 +3681,7 @@ class RestAPI:
                 cursor=cursor,
                 assets_in_collection=assets_in_collection,
                 blockchain_accounts=blockchain_accounts,
-                tolerance=CachedSettings().get_settings().asset_movement_amount_tolerance,
+                tolerance=tolerance,
             )]
 
             other_events = events_db.get_history_events_internal(

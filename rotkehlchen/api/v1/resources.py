@@ -3697,11 +3697,18 @@ class MatchAssetMovementsResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json')
-    def post(self, asset_movement: str, time_range: int, only_expected_assets: bool) -> Response:
+    def post(
+            self,
+            asset_movement: str,
+            time_range: int,
+            only_expected_assets: bool,
+            tolerance: FVal,
+    ) -> Response:
         return self.rest_api.get_matches_for_asset_movement(
             asset_movement_group_identifier=asset_movement,
             time_range=time_range,
             only_expected_assets=only_expected_assets,
+            tolerance=tolerance,
         )
 
     @require_loggedin_user()

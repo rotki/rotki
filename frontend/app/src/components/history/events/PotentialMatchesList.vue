@@ -9,6 +9,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
+import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { ValueDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
@@ -31,6 +32,8 @@ const selectedMatchId = defineModel<number | undefined>('selectedMatchId', { req
 const searchTimeRange = defineModel<string>('searchTimeRange', { required: true });
 
 const onlyExpectedAssets = defineModel<boolean>('onlyExpectedAssets', { required: true });
+
+const tolerancePercentage = defineModel<string>('tolerancePercentage', { required: true });
 
 const props = defineProps<{
   movement: UnmatchedAssetMovement;
@@ -153,6 +156,16 @@ watchDebounced(onlyExpectedAssets, () => {
           class="w-40"
           variant="outlined"
           dense
+        />
+        <AmountInput
+          v-model="tolerancePercentage"
+          type="number"
+          step="0.001"
+          variant="outlined"
+          hide-details
+          dense
+          :label="t('asset_movement_matching.settings.amount_tolerance.label')"
+          class="w-40"
         />
         <RuiTooltip
           :popper="{ placement: 'top' }"

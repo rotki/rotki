@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BigNumber } from '@rotki/common';
 import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
+import { type BigNumber, bigNumberify } from '@rotki/common';
 import PotentialMatchesList from '@/components/history/events/PotentialMatchesList.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
@@ -44,10 +44,18 @@ const {
 const { fetchHistoryEvents } = useHistoryEventsApi();
 const { getAssetMovementMatches } = useAssetMovementMatchingApi();
 
-const { assetMovementTimeRange } = storeToRefs(useGeneralSettingsStore());
+const { assetMovementAmountTolerance, assetMovementTimeRange } = storeToRefs(useGeneralSettingsStore());
 
 function getDefaultHourRange(): number {
   return get(assetMovementTimeRange) / 3600;
+}
+
+function getDefaultTolerancePercentage(): string {
+  return bigNumberify(get(assetMovementAmountTolerance)).multipliedBy(100).toString();
+}
+
+function percentageToDecimal(percentage: string): string {
+  return bigNumberify(percentage).dividedBy(100).toString();
 }
 
 const searchLoading = ref<boolean>(false);
@@ -56,6 +64,7 @@ const potentialMatches = ref<PotentialMatchRow[]>([]);
 const selectedMatchId = ref<number>();
 const searchTimeRange = ref<string>(getDefaultHourRange().toString());
 const onlyExpectedAssets = ref<boolean>(true);
+const tolerancePercentage = ref<string>(getDefaultTolerancePercentage());
 
 function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
   return Array.isArray(row) ? row[0] : row;
@@ -90,7 +99,7 @@ async function searchPotentialMatches(): Promise<void> {
     const timeRangeInSeconds = hours * 60 * 60;
 
     // Get match suggestions from backend
-    const suggestions = await getAssetMovementMatches(groupIdentifier, timeRangeInSeconds, get(onlyExpectedAssets));
+    const suggestions = await getAssetMovementMatches(groupIdentifier, timeRangeInSeconds, get(onlyExpectedAssets), percentageToDecimal(get(tolerancePercentage)));
     const allIdentifiers = [...suggestions.closeMatches, ...suggestions.otherEvents];
 
     if (allIdentifiers.length === 0) {
@@ -167,6 +176,7 @@ watch(modelValue, async (isOpen) => {
     set(selectedMatchId, undefined);
     set(searchTimeRange, getDefaultHourRange().toString());
     set(onlyExpectedAssets, true);
+    set(tolerancePercentage, getDefaultTolerancePercentage());
     await searchPotentialMatches();
   }
 }, { immediate: true });
@@ -177,7 +187,7 @@ watch(modelValue, async (isOpen) => {
     v-model="modelValue"
     max-width="1000"
   >
-    <RuiCard content-class="max-h-[calc(100vh-250px)]">
+    <RuiCard content-class="max-h-[calc(100vh-210px)]">
       <template #custom-header>
         <div class="flex items-center justify-between w-full px-4 pt-2">
           <CardTitle>
@@ -197,6 +207,7 @@ watch(modelValue, async (isOpen) => {
         v-model:selected-match-id="selectedMatchId"
         v-model:search-time-range="searchTimeRange"
         v-model:only-expected-assets="onlyExpectedAssets"
+        v-model:tolerance-percentage="tolerancePercentage"
         :movement="movement"
         :matches="potentialMatches"
         :loading="searchLoading"

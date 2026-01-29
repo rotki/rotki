@@ -6447,12 +6447,14 @@ Match exchange asset movements with onchain events
       {
           "asset_movement": "ef2fcd9d69e358f184e5aae29f74b39e7613a13eaaae00717bde70a165cfd69f",
           "time_range": 7200,
-          "only_expected_assets": true
+          "only_expected_assets": true,
+          "tolerance": "0.002"
       }
 
    :reqjson string asset_movement: Group identifier of the asset movement to find matches for.
    :reqjson int time_range: Time range in seconds to search for matches.
    :reqjson bool[optional] only_expected_assets: Flag indicating whether to limit the possible matches to only events with assets in the same collection as the asset movement's asset. True by default.
+   :reqjson string tolerance: The tolerance value used when matching asset movement amounts. Must be a positive decimal number.
 
    **Example Response**:
 

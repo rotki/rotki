@@ -62,7 +62,7 @@ const columns = computed<DataTableColumn<UnmatchedMovementRow>[]>(() => [
   },
   {
     key: 'actions',
-    label: '',
+    label: t('asset_movement_matching.dialog.manual_action'),
   },
 ]);
 

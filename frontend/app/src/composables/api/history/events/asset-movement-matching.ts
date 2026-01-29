@@ -10,7 +10,7 @@ export interface AssetMovementMatchSuggestions {
 
 interface UseAssetMovementMatchingApiReturn {
   getUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<string[]>;
-  getAssetMovementMatches: (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean) => Promise<AssetMovementMatchSuggestions>;
+  getAssetMovementMatches: (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean, tolerance: string) => Promise<AssetMovementMatchSuggestions>;
   matchAssetMovements: (assetMovement: number, matchedEvent?: number | null) => Promise<boolean>;
   unlinkAssetMovement: (assetMovement: number) => Promise<boolean>;
   triggerAssetMovementMatching: () => Promise<PendingTask>;
@@ -24,11 +24,12 @@ export function useAssetMovementMatchingApi(): UseAssetMovementMatchingApiReturn
       params: onlyIgnored !== undefined ? snakeCaseTransformer({ onlyIgnored }) : undefined,
     });
 
-  const getAssetMovementMatches = async (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean): Promise<AssetMovementMatchSuggestions> =>
+  const getAssetMovementMatches = async (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean, tolerance: string): Promise<AssetMovementMatchSuggestions> =>
     api.post<AssetMovementMatchSuggestions>('/history/events/match/asset_movements', {
       assetMovement,
       onlyExpectedAssets,
       timeRange,
+      tolerance,
     });
 
   const matchAssetMovements = async (assetMovement: number, matchedEvent?: number | null): Promise<boolean> =>

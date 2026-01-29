@@ -395,6 +395,7 @@ def test_get_possible_matches(rotkehlchen_api_server: 'APIServer') -> None:
                     'asset_movement': matched_movement.group_identifier,
                     'time_range': HOUR_IN_SECONDS * 2,
                     'only_expected_assets': only_expected_assets,
+                    'tolerance': '0.002',
                 },
             ),
             rotkehlchen_api_server=rotkehlchen_api_server,

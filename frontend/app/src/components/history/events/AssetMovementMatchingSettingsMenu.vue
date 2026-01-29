@@ -111,6 +111,8 @@ onMounted(() => {
         <AmountInput
           v-model="tolerancePercentage"
           variant="outlined"
+          type="number"
+          step="0.001"
           :label="t('asset_movement_matching.settings.amount_tolerance.label')"
           :hint="t('asset_movement_matching.settings.amount_tolerance.hint')"
           :error-messages="error || toMessages(v$.tolerancePercentage)"
