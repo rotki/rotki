@@ -265,10 +265,10 @@ def test_read_write_customized_events_from_db(database: DBHandler, entries_limit
             dict[str, Any],
         ]
     ] = [
-        (HistoryEventFilterQuery, {'entry_types': IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]), 'customized_events_only': True}),  # noqa: E501
-        (HistoryEventFilterQuery, {'entry_types': IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]), 'customized_events_only': True, 'from_ts': Timestamp(3)}),  # noqa: E501
-        (EvmEventFilterQuery, {'entry_types': IncludeExcludeFilterData(values=[HistoryBaseEntryType.EVM_EVENT]), 'customized_events_only': True}),  # noqa: E501
-        (EthDepositEventFilterQuery, {'entry_types': IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_DEPOSIT_EVENT]), 'customized_events_only': True}),  # noqa: E501
+        (HistoryEventFilterQuery, {'entry_types': IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]), 'state_markers': [HistoryMappingState.CUSTOMIZED]}),  # noqa: E501
+        (HistoryEventFilterQuery, {'entry_types': IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]), 'state_markers': [HistoryMappingState.CUSTOMIZED], 'from_ts': Timestamp(3)}),  # noqa: E501
+        (EvmEventFilterQuery, {'entry_types': IncludeExcludeFilterData(values=[HistoryBaseEntryType.EVM_EVENT]), 'state_markers': [HistoryMappingState.CUSTOMIZED]}),  # noqa: E501
+        (EthDepositEventFilterQuery, {'entry_types': IncludeExcludeFilterData(values=[HistoryBaseEntryType.ETH_DEPOSIT_EVENT]), 'state_markers': [HistoryMappingState.CUSTOMIZED]}),  # noqa: E501
     ]
     expected_identifiers = [
         ['TEST2', 'TEST3'],
@@ -308,7 +308,7 @@ def test_read_write_virtual_events_from_db(database: DBHandler) -> None:
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(
                 entry_types=IncludeExcludeFilterData(values=[HistoryBaseEntryType.HISTORY_EVENT]),
-                virtual_events_only=True,
+                state_markers=[HistoryMappingState.PROFIT_ADJUSTMENT],
             ),
             entries_limit=None,
             aggregate_by_group_ids=False,

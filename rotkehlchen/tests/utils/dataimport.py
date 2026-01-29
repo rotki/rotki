@@ -75,7 +75,7 @@ def assert_all_events_have_csv_marker(rotki: Rotkehlchen) -> None:
                 AND m.name = ? AND m.value = ?
             )
             LIMIT 1
-        """, (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.IMPORTED_FROM_CSV))
+        """, (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.IMPORTED_FROM_CSV.serialize_for_db()))
         assert cursor.fetchone() is None
 
 

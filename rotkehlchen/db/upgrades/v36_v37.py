@@ -34,7 +34,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     tx_hashes = [x[0] for x in write_cursor]
     write_cursor.execute(
         'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
-        (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED),
+        (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),
     )
     customized_event_ids = [x[0] for x in write_cursor]
     length = len(customized_event_ids)

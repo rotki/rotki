@@ -290,7 +290,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 # WHERE: exclude asset movements, only customized, only with counterparty
                 HistoryBaseEntryType.ASSET_MOVEMENT_EVENT.value,
                 HISTORY_MAPPING_KEY_STATE,
-                HistoryMappingState.CUSTOMIZED,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
                 HistoryEventType.DEPOSIT.serialize(),
                 HistoryEventSubType.DEPOSIT_ASSET.serialize(),
                 HistoryEventType.WITHDRAWAL.serialize(),

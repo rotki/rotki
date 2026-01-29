@@ -1,7 +1,8 @@
-from enum import Enum, IntEnum
+from enum import Enum
 from typing import Final, Literal
 
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.utils.mixins.enums import DBIntEnumMixIn
 
 KDF_ITER: Final = 64000
 
@@ -21,15 +22,11 @@ TX_SPAM: Final = 1
 HISTORY_MAPPING_KEY_STATE: Final = 'state'
 
 
-class HistoryMappingState(IntEnum):
+class HistoryMappingState(DBIntEnumMixIn):
     CUSTOMIZED = 1
     PROFIT_ADJUSTMENT = 2  # events auto-created during historical balances processing when withdrawals exceed deposits  # noqa: E501
     AUTO_MATCHED = 3  # events matched with asset movements, and fees created during matching.
     IMPORTED_FROM_CSV = 4
-
-    def serialize_for_api(self) -> str:
-        """Serializes the mapping state for the API"""
-        return self.name.lower()
 
 
 EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS: Final = 'last_queried_timestamp'

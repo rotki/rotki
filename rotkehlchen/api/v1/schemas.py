@@ -59,6 +59,7 @@ from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, Reminder
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
+    HistoryMappingState,
 )
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import (
@@ -617,8 +618,10 @@ class HistoryEventFilterSchema(
         SerializableEnumField(enum_class=HistoryBaseEntryType),
         load_default=None,
     )
-    customized_events_only = fields.Boolean(load_default=False)
-    virtual_events_only = fields.Boolean(load_default=False)
+    state_markers = DelimitedOrNormalList(
+        SerializableEnumField(enum_class=HistoryMappingState),
+        load_default=None,
+    )
     identifiers = DelimitedOrNormalList(fields.Integer(
         validate=webargs.validate.Range(
                 min=0,
@@ -637,18 +640,6 @@ class HistoryEventFilterSchema(
 
     # EthStakingEvent only
     validator_indices = DelimitedOrNormalList(fields.Integer(), load_default=None)
-
-    @validates_schema
-    def validate_history_event_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        if data['customized_events_only'] is True and data['virtual_events_only'] is True:
-            raise ValidationError(
-                message='Cannot filter by both customized and virtual events',
-                field_name='virtual_events_only',
-            )
 
     @post_load
     def make_history_event_filter(
@@ -702,8 +693,7 @@ class HistoryEventFilterSchema(
             'event_types': data['event_types'],
             'event_subtypes': data['event_subtypes'],
             'location': data['location'],
-            'customized_events_only': data['customized_events_only'],
-            'virtual_events_only': data['virtual_events_only'],
+            'state_markers': data['state_markers'],
             'identifiers': data['identifiers'],
             'notes_substring': data['notes_substring'],
         }
@@ -825,7 +815,6 @@ class HistoryEventSchema(
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        super().validate_history_event_schema(data, **_kwargs)
         valid_ordering_attr = {None, 'timestamp'}
         if (
             data['order_by_attributes'] is not None and

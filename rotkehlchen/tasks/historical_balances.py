@@ -518,7 +518,7 @@ def _maybe_add_profit_event(
             write_cursor.execute(
                 'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
                 'VALUES(?, ?, ?)',
-                (event.identifier, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.PROFIT_ADJUSTMENT),  # noqa: E501
+                (event.identifier, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.PROFIT_ADJUSTMENT.serialize_for_db()),  # noqa: E501
             )
             return (event,)
 

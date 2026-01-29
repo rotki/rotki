@@ -874,7 +874,7 @@ def test_query_transactions_check_decoded_events(
     event['event_type'] = 'spend'
     event['event_subtype'] = 'payback debt'
     event['user_notes'] = 'Edited event'
-    tx2_events[1]['states'] = [HistoryMappingState.CUSTOMIZED.serialize_for_api()]
+    tx2_events[1]['states'] = [HistoryMappingState.CUSTOMIZED.serialize()]
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json={key: value for key, value in event.items() if key != 'group_identifier'},
@@ -899,7 +899,7 @@ def test_query_transactions_check_decoded_events(
             'tx_ref': '0xccb6a445e136492b242d1c2c0221dc4afd4447c96601e88c156ec4d52e993b8f',
             'extra_data': None,
         },
-        'states': [HistoryMappingState.CUSTOMIZED.serialize_for_api()],
+        'states': [HistoryMappingState.CUSTOMIZED.serialize()],
         'event_accounting_rule_status': 'not processed',
     })
     response = requests.put(

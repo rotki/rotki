@@ -5201,8 +5201,7 @@ Dealing with History Events
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson object otherargs: Check the documentation of the remaining arguments `here <filter-request-args-label_>`_.
-   :reqjson bool customized_events_only: Optional. If enabled the search is performed only for manually customized events. Default false. Mutually exclusive with ``virtual_events_only``.
-   :reqjson bool virtual_events_only: Optional. If enabled the search is performed only for virtual events (auto-created profit events during historical balances processing). Default false. Mutually exclusive with ``customized_events_only``.
+   :reqjson list[string] state_markers: Optional. A list of state markers to filter events by. Events matching any of the specified markers will be returned. Valid values are ``customized``, ``profit adjustment``, ``auto matched``, ``imported from csv``. If not provided, no marker filtering is applied.
 
    **Example Response**:
 
@@ -5515,7 +5514,7 @@ Dealing with History Events
    :resjson bool events[].entry.is_exit: Eth withdrawal event key. A boolean denoting if the withdrawal is a full exit or not.
    :resjson int events[].entry.block_number: Eth block event key. An integer representing the number of the block for which the event is made.
    :resjson object events[].entry.extra_data: Optional. Additional data specific to the event type.
-   :resjson list events[].states: Optional. List of state tags for the event. Valid states are ``customized``, ``profit_adjustment``, ``auto_matched``, ``imported_from_csv``.
+   :resjson list events[].states: Optional. List of state tags for the event. Valid states are ``customized``, ``profit adjustment``, ``auto matched``, ``imported from csv``.
    :resjson bool events[].hidden: Optional. If true, this event should be hidden in the UI due to consolidation of events.
    :resjson bool events[].ignored_in_accounting: Set to true when the user has marked this event as ignored.
    :resjson bool events[].has_ignored_assets: Optional. Set to true when the event group contains ignored assets, indicating that some events may have been excluded by ignored assets filtering.

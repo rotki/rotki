@@ -7,6 +7,19 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+History Events Filter State Markers Parameter
+---------------------------------------------
+
+The history events filter now uses a ``state_markers`` list parameter instead of the ``customized_events_only`` boolean flag for filtering by event states.
+
+* **Modified Endpoint**: ``POST /api/(version)/history/events``
+
+  - Removed ``customized_events_only`` boolean parameter.
+  - Added ``state_markers`` list parameter that accepts any combination of marker values: ``"customized"``, ``"profit adjustment"``, ``"auto matched"``, ``"imported from csv"``.
+  - Events matching any of the specified markers are returned (OR logic).
+  - If ``state_markers`` is not provided or is empty, no marker filtering is applied.
+  - Example: ``{"state_markers": ["customized", "imported from csv"]}`` returns events with either marker.
+
 CSV Import Marker for History Events
 ------------------------------------
 

@@ -183,9 +183,9 @@ def _load_customized_event_candidates(
     )
     bindings_base = (
         HISTORY_MAPPING_KEY_STATE,
-        HistoryMappingState.CUSTOMIZED,
+        HistoryMappingState.CUSTOMIZED.serialize_for_db(),
         HISTORY_MAPPING_KEY_STATE,
-        HistoryMappingState.CUSTOMIZED,
+        HistoryMappingState.CUSTOMIZED.serialize_for_db(),
         *entry_type_values,
         *entry_type_values,
     )

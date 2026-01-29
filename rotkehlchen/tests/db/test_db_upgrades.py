@@ -2147,7 +2147,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         assert cursor.execute('SELECT COUNT(*) FROM evm_events_info').fetchone()[0] == 8
         assert cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
-            (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED),
+            (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),
         ).fetchone()[0] == 1  # one event is customized
 
         # test eth2 validators and daily stats are there
@@ -2669,7 +2669,7 @@ def test_upgrade_db_45_to_46(user_data_dir: 'Path', messages_aggregator):
         # Make the existing evm event customized so it isn't removed during the upgrade
         write_cursor.execute(
             "INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES ('35', ?, ?)",  # noqa: E501
-            (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED),
+            (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),
         )
 
     # Execute upgrade
@@ -2830,7 +2830,7 @@ def test_upgrade_db_46_to_47(user_data_dir, messages_aggregator):
         )
         write_cursor.execute(  # mark it a custom event to so event reset doesn't affect it.
             "INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES ((SELECT identifier FROM history_events WHERE event_identifier='TEST1'), ?, ?)",  # noqa: E501
-            (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED),
+            (HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),
         )
         write_cursor.executemany(
             'INSERT INTO evm_accounts_details(account, chain_id, key, value) VALUES(?, ?, ?, ?)',
@@ -3677,7 +3677,7 @@ def test_upgrade_db_49_to_50(user_data_dir, messages_aggregator):
         ]
         assert cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE parent_identifier=? AND name=? AND value=?',  # noqa: E501
-            (2, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED),
+            (2, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),
         ).fetchone()[0] == 1  # TEST_EVENT_2 is customized.
         assert not table_exists(cursor=cursor, name='accounting_rule_events')
         assert cursor.execute('SELECT type, subtype, counterparty FROM accounting_rules ORDER BY identifier').fetchall() == (rules := [  # noqa: E501

@@ -216,8 +216,8 @@ def test_gas_events_duplicate_detection(rotkehlchen_api_server: 'APIServer') -> 
         write_cursor.executemany(
             'INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES(?, ?, ?)',
             [
-                (2, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED),
-                (4, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED),
+                (2, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),
+                (4, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),
             ],
         )
 

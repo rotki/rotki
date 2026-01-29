@@ -10,7 +10,6 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
-    assert_error_response,
     assert_proper_response_with_result,
 )
 from rotkehlchen.types import Location, TimestampMS
@@ -196,15 +195,3 @@ def test_history_events_combined_filters(
     assert result['entries_found'] == 1
     assert result['entries'][0]['entry']['group_identifier'] == 'eth_event_1'
     assert result['entries'][0]['entry']['location'] == 'binance'
-
-
-def test_history_events_customized_and_virtual_mutually_exclusive(
-        rotkehlchen_api_server: 'APIServer',
-) -> None:
-    assert_error_response(
-        response=requests.post(
-            api_url_for(rotkehlchen_api_server, 'historyeventresource'),
-            json={'customized_events_only': True, 'virtual_events_only': True},
-        ),
-        contained_in_msg='Cannot filter by both customized and virtual events',
-    )

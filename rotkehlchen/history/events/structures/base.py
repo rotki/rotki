@@ -395,7 +395,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             self.identifier is not None and
             (event_states := mapping_states.get(self.identifier)) is not None
         ):
-            result['states'] = [x.serialize_for_api() for x in event_states]
+            result['states'] = [x.serialize() for x in event_states]
         if self.identifier in hidden_event_ids:
             result['hidden'] = True
         if grouped_events_num is not None:

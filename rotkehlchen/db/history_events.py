@@ -233,7 +233,7 @@ class DBHistoryEvents:
             write_cursor.executemany(
                 'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
                 'VALUES(?, ?, ?)',
-                [(identifier, k, v) for k, v in mapping_values.items()],
+                [(identifier, k, v.serialize_for_db()) for k, v in mapping_values.items()],
             )
 
         if not skip_tracking:
@@ -361,7 +361,7 @@ class DBHistoryEvents:
         write_cursor.execute(
             'INSERT OR IGNORE INTO history_events_mappings(parent_identifier, name, value) '
             'VALUES(?, ?, ?)',
-            (event.identifier, HISTORY_MAPPING_KEY_STATE, mapping_state),
+            (event.identifier, HISTORY_MAPPING_KEY_STATE, mapping_state.serialize_for_db()),
         )
         return write_cursor.rowcount == 1
 
@@ -488,8 +488,8 @@ class DBHistoryEvents:
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value IN (?, ?)',
             (customized_bindings := (
                 HISTORY_MAPPING_KEY_STATE,
-                HistoryMappingState.CUSTOMIZED,
-                HistoryMappingState.AUTO_MATCHED,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                HistoryMappingState.AUTO_MATCHED.serialize_for_db(),
             )),
         ).fetchone()[0]
         if location.is_bitcoin():
@@ -631,7 +631,7 @@ class DBHistoryEvents:
         bindings: list[Any] = [HISTORY_MAPPING_KEY_STATE]
         if mapping_state is not None:
             where_str += 'AND A.value = ? '
-            bindings.append(mapping_state)
+            bindings.append(mapping_state.serialize_for_db())
 
         if location is None:
             cursor.execute(
@@ -947,7 +947,7 @@ class DBHistoryEvents:
         data_start_idx = type_idx + 1
         failed_to_deserialize = False
         # Fixed position of group_has_ignored_assets (after entry_type, base, chain, staking).
-        # JOINs like customized_events_only may add columns at the end, so we use fixed index.
+        # JOINs like state_markers may add columns at the end, so we use fixed index.
         group_has_ignored_assets_idx = (
             type_idx + 1 + HISTORY_BASE_ENTRY_LENGTH +
             CHAIN_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH
