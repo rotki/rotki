@@ -33,6 +33,16 @@ Bypasses the normal background task scheduling and runs a task immediately. Only
 
   - Required ``task`` parameter specifying which task to run. Valid values are ``historical_balance_processing`` and ``asset_movement_matching``.
 
+Scheduler Control
+-----------------
+
+Enables or disables the periodic task scheduler. This should be called by the frontend once initial data loading is complete (transaction decoding, balances fetch, asset movement matching, historical balance processing). This ensures background tasks that require exclusive database write access (like backup sync) don't run during DB upgrades, migrations, and asset updates.
+
+* **New Endpoint**: ``PUT /api/(version)/tasks/scheduler``
+
+  - Required ``enabled`` parameter (boolean) specifying whether to enable or disable the scheduler.
+  - Example: ``{"enabled": true}``
+
 Matching Asset Movements With Onchain Events
 --------------------------------------------
 

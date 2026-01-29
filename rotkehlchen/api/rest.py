@@ -3126,6 +3126,18 @@ class RestAPI:
 
         return OK_RESULT
 
+    def set_scheduler_state(self, enabled: bool) -> Response:
+        """Enable or disable the periodic task scheduler.
+
+        This should be called by the frontend once initial data loading is complete
+        (transaction decoding, balances fetch, asset movement matching, historical
+        balance processing). This ensures background tasks that require exclusive
+        database write access (like backup sync) don't run during DB upgrades,
+        migrations, and asset updates.
+        """
+        self.rotkehlchen.task_manager.should_schedule = enabled  # type: ignore[union-attr]  # should exist here
+        return api_response(_wrap_in_ok_result(result={'enabled': enabled}))
+
     def get_historical_netvalue(
             self,
             from_timestamp: Timestamp,

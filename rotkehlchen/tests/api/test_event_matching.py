@@ -594,3 +594,19 @@ def test_trigger_matching_task(rotkehlchen_api_server: 'APIServer') -> None:
             assert_simple_ok_response(response)
 
         assert match_mock.call_count == 1
+
+
+def test_scheduler_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that the scheduler endpoint can enable and disable the task scheduler."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert rotki.task_manager is not None
+
+    for enabled in (True, False):
+        assert assert_proper_response_with_result(
+            response=requests.put(
+                api_url_for(rotkehlchen_api_server, 'schedulerresource'),
+                json={'enabled': enabled},
+            ),
+            rotkehlchen_api_server=rotkehlchen_api_server,
+        ) == {'enabled': enabled}
+        assert rotki.task_manager.should_schedule is enabled

@@ -1469,6 +1469,50 @@ Trigger an async task
         :statuscode 500: Internal Rotki error
 
 
+Enable or disable the periodic task scheduler
+=============================================
+
+.. http:put:: /api/(version)/tasks/scheduler
+
+      Enables or disables the periodic task scheduler. This should be called by the frontend
+      once initial data loading is complete (transaction decoding, balances fetch, asset
+      movement matching, historical balance processing). This ensures background tasks that
+      require exclusive database write access (like backup sync) don't run during DB upgrades,
+      migrations, and asset updates.
+
+      **Example Request:**
+
+        .. http:example:: curl wget httpie python-requests
+
+          PUT /api/(version)/tasks/scheduler HTTP/1.1
+          Host: localhost:5042
+          Content-Type: application/json;charset=UTF-8
+
+          {"enabled": true}
+
+        :reqjson bool enabled: Whether to enable (true) or disable (false) the scheduler.
+
+      **Example Response:**
+
+        .. sourcecode:: http
+
+          HTTP/1.1 200 OK
+          Content-Type: application/json
+
+          {
+            "message": "",
+            "result": {
+              "enabled": true
+            },
+            "status_code": 200
+          }
+
+        :resjson object result: Object containing the new scheduler state
+        :statuscode 200: Operation completed successfully
+        :statuscode 401: User is not logged in
+        :statuscode 500: Internal Rotki error
+
+
 Query the latest price of assets
 ===================================
 

@@ -160,6 +160,7 @@ from rotkehlchen.api.v1.schemas import (
     RpcNodeEditSchema,
     RpcNodeListDeleteSchema,
     RpcNodeSchema,
+    SchedulerSchema,
     SingleAssetIdentifierSchema,
     SingleAssetWithOraclesIdentifierSchema,
     SingleFileSchema,
@@ -3568,6 +3569,16 @@ class TriggerTaskResource(BaseMethodView):
     @use_kwargs(post_schema, location='json')
     def post(self, async_query: bool, task: TaskName) -> Response:
         return self.rest_api.trigger_task(async_query=async_query, task=task)
+
+
+class SchedulerResource(BaseMethodView):
+
+    put_schema = SchedulerSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(put_schema, location='json')
+    def put(self, enabled: bool) -> Response:
+        return self.rest_api.set_scheduler_state(enabled=enabled)
 
 
 class HistoricalPricesPerAssetResource(BaseMethodView):
