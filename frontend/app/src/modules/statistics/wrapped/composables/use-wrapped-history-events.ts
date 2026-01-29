@@ -11,7 +11,6 @@ interface UseWrappedHistoryEventsReturn {
   initializeStartFromEarliestEvent: () => Promise<void>;
   isFirstLoad: () => boolean;
   refreshing: ComputedRef<boolean>;
-  usedHistoryEventsReady: ComputedRef<boolean>;
 }
 
 export function useWrappedHistoryEvents(start: Ref<number>): UseWrappedHistoryEventsReturn {
@@ -31,8 +30,7 @@ export function useWrappedHistoryEvents(start: Ref<number>): UseWrappedHistoryEv
   );
 
   const historyEventsReady = logicAnd(!isFirstLoad(), logicNot(refreshing));
-  const debouncedHistoryEventsReady = debouncedRef(historyEventsReady, 500);
-  const usedHistoryEventsReady = logicAnd(historyEventsReady, debouncedHistoryEventsReady);
+  const usedHistoryEventsReady = refDebounced(historyEventsReady, 500);
 
   async function initializeStartFromEarliestEvent(): Promise<void> {
     const earliestEventTimestamp = await getEarliestEventTimestamp();
@@ -52,6 +50,5 @@ export function useWrappedHistoryEvents(start: Ref<number>): UseWrappedHistoryEv
     initializeStartFromEarliestEvent,
     isFirstLoad,
     refreshing,
-    usedHistoryEventsReady,
   };
 }

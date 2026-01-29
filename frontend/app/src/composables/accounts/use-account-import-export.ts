@@ -84,8 +84,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   const { progress } = storeToRefs(progressStore);
 
   const blockchainLoading = isLoading(Section.BLOCKCHAIN);
-  const blockchainLoadingDebounced = refDebounced(blockchainLoading, 2000);
-  const doneLoading = logicAnd(logicNot(blockchainLoading), logicNot(blockchainLoadingDebounced));
+  const doneLoading = refDebounced(logicNot(blockchainLoading), 2000);
 
   const csvToAccount = (acc: CSVRow): AccountPayload => ({
     address: acc.address,

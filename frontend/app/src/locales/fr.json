@@ -3550,12 +3550,6 @@
             "valid": "L'adresse dépositaire est invalide, remplissez-la avec une adresse valide"
           }
         },
-        "event_identifier": {
-          "label": "Identifiant de l'événement",
-          "validation": {
-            "non_empty": "Le champ identifiant d'événement ne peut pas être vide."
-          }
-        },
         "event_subtype": {
           "label": "Sous-type d'événement",
           "validation": {
@@ -3576,6 +3570,12 @@
           "validation": {
             "non_empty": "Le champ destinataire de commission ne peut pas être vide.",
             "valid": "L'adresse du destinataire de commission est invalide, remplissez-la avec une adresse valide"
+          }
+        },
+        "group_identifier": {
+          "label": "Identifiant de groupe",
+          "validation": {
+            "non_empty": "Le champ d'identifiant du groupe ne peut pas être vide."
           }
         },
         "is_exit": {

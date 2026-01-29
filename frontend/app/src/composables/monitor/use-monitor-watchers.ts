@@ -30,7 +30,7 @@ export function useMonitorWatchers(): void {
 
   const { showIdleMessage, longQuery, hasUndecodedTransactions } = useUnifiedProgress();
 
-  const historyEventsUnfinished = debouncedRef(logicOr(processing, showIdleMessage, longQuery, hasUndecodedTransactions), 500);
+  const historyEventsUnfinished = refDebounced(logicOr(processing, showIdleMessage, longQuery, hasUndecodedTransactions), 500);
 
   watch(balanceValueThreshold, (current, old) => {
     if (!isEqual(current[BalanceSource.MANUAL], old[BalanceSource.MANUAL])) {

@@ -31,12 +31,11 @@ const aliasName = computed<string | undefined>(() => {
       'px-4 min-h-14': !dense,
     }"
   >
-    <div class="rounded-full overflow-hidden">
-      <EnsAvatar
-        :address="address"
-        size="2rem"
-      />
-    </div>
+    <EnsAvatar
+      :address="address"
+      size="2rem"
+      avatar
+    />
     <div class="flex flex-col">
       <div
         class="font-mono text-rui-text-secondary text-sm"

@@ -73,7 +73,7 @@ export function useEventFormValidation(): UseEventFormValidationReturn {
     }),
     createRequiredGroupIdentifierRule: (condition?: () => boolean) => ({
       required: helpers.withMessage(
-        t('transactions.events.form.event_identifier.validation.non_empty'),
+        t('transactions.events.form.group_identifier.validation.non_empty'),
         condition === undefined ? required : requiredIf(condition),
       ),
     }),

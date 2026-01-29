@@ -22,7 +22,7 @@ export function useDashboardAssetData(
   sort: MaybeRefOrGetter<DataTableSortData<AssetBalanceWithPrice>>,
 ): UseDashboardAssetDataReturn {
   const search = ref<string>('');
-  const debouncedSearch = debouncedRef(search, 200);
+  const debouncedSearch = refDebounced(search, 200);
 
   const { totalNetWorth } = useDashboardStores();
   const { assetInfo, assetName, assetSymbol } = useAssetSelectInfo();

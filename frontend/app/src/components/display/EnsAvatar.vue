@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { Blockchain } from '@rotki/common';
 import { useBlockie } from '@/composables/accounts/blockie';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
@@ -10,13 +9,11 @@ defineOptions({
 const props = withDefaults(
   defineProps<{
     address: string;
-    blockchain?: Blockchain;
     avatar?: boolean;
     size?: string | number;
   }>(),
   {
     avatar: false,
-    blockchain: Blockchain.ETH,
     size: '24px',
   },
 );
@@ -26,12 +23,7 @@ const failed = ref<boolean>(false);
 
 const { getEnsAvatarUrl } = useAddressesNamesStore();
 
-const avatarUrl = computed<string | null>(() => {
-  if (props.blockchain !== Blockchain.ETH)
-    return null;
-
-  return get(getEnsAvatarUrl(props.address));
-});
+const avatarUrl = computed<string | null>(() => get(getEnsAvatarUrl(props.address)));
 
 const { getBlockie } = useBlockie();
 

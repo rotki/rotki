@@ -98,13 +98,15 @@ const blockchain = computed<string | undefined>(() => {
   }
 });
 
+const isLocationNotBlockchain = computed(() => props.location && !isDefined(blockchain));
+
 const showLink = computed<boolean>(() => props.displayMode !== 'copy' && props.displayMode !== 'text');
 const showCopy = computed<boolean>(() => props.displayMode !== 'link' && props.displayMode !== 'text');
 /**
  * Icons will only be displayed for non-numerical blockchain addresses when the text is visible.
  */
 const showIcon = computed<boolean>(() => {
-  if (props.type !== 'address' || props.hideText) {
+  if (props.type !== 'address' || props.hideText || get(isLocationNotBlockchain)) {
     return false;
   }
 
@@ -123,10 +125,7 @@ const addressBookChain = computed<string | undefined>(() => {
   return undefined;
 });
 
-const canShowAddressInfo = computed<boolean>(() => {
-  const isLocationNotBlockchain = props.location && !isDefined(blockchain);
-  return (!get(scrambleData) || props.noScramble) && props.type === 'address' && !isLocationNotBlockchain;
-});
+const canShowAddressInfo = computed<boolean>(() => (!get(scrambleData) || props.noScramble) && props.type === 'address' && !get(isLocationNotBlockchain));
 
 const aliasName = computed<string | undefined>(() => {
   if (!get(canShowAddressInfo))
@@ -196,7 +195,7 @@ const tags = useAccountTags(text);
 </script>
 
 <template>
-  <div class="flex flex-row shrink items-center gap-1 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px]">
+  <div class="flex flex-row shrink items-center gap-1.5 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px]">
     <EnsAvatar
       v-if="showIcon"
       :address="displayText"
@@ -256,7 +255,7 @@ const tags = useAccountTags(text);
 
     <div
       v-if="showLink || showCopy"
-      class="flex items-center gap-1 pl-1"
+      class="flex items-center gap-1"
     >
       <CopyButton
         v-if="showCopy"

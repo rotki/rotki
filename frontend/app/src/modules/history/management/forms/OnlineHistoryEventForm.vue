@@ -140,7 +140,7 @@ async function save(): Promise<boolean> {
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
   const userNotes = get(notes).trim();
 
-  // Generate UUID for eventIdentifier if not present and not in edit mode
+  // Generate UUID for groupIdentifier if not present and not in edit mode
   const generatedGroupIdentifier = !editable && !get(groupIdentifier) ? generateUUID() : get(groupIdentifier);
 
   const payload: NewOnlineHistoryEventPayload = {
@@ -229,7 +229,7 @@ defineExpose({
       color="primary"
       :disabled="data.type !== 'add' || hasActualGroupIdentifier"
       data-cy="groupIdentifier"
-      :label="t('transactions.events.form.event_identifier.label')"
+      :label="t('transactions.events.form.group_identifier.label')"
       :required="data.type === 'edit'"
       :error-messages="toMessages(v$.groupIdentifier)"
       @blur="v$.groupIdentifier.$touch()"

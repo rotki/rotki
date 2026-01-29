@@ -63,7 +63,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   direction: 'desc' as const,
 });
 
-const debouncedSearch = debouncedRef(search, 200);
+const debouncedSearch = refDebounced(search, 200);
 
 const { assetInfo, assetName, assetSymbol } = useAssetSelectInfo();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());

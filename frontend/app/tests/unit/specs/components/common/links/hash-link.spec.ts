@@ -203,6 +203,20 @@ describe('hashLink.vue', () => {
 
       expect(wrapper.findComponent({ name: 'EnsAvatar' }).exists()).toBe(false);
     });
+
+    it('shows EnsAvatar when location is present and is a blockchain', () => {
+      const address = '0x1234567890abcdef1234567890abcdef12345678';
+      wrapper = createWrapper({ text: address, type: 'address', location: 'ethereum' });
+
+      expect(wrapper.findComponent({ name: 'EnsAvatar' }).exists()).toBe(true);
+    });
+
+    it('hides EnsAvatar when location is present but not a blockchain', () => {
+      const address = '0x1234567890abcdef1234567890abcdef12345678';
+      wrapper = createWrapper({ text: address, type: 'address', location: 'unknown_location' });
+
+      expect(wrapper.findComponent({ name: 'EnsAvatar' }).exists()).toBe(false);
+    });
   });
 
   describe('blockchain location', () => {
@@ -456,8 +470,8 @@ describe('hashLink.vue', () => {
       wrapper = createWrapper({ text: address, location: 'eth', displayMode: 'link' });
 
       // Container should exist because showLink is true
-      const buttonContainer = wrapper.findAll('div').filter(d => d.classes().includes('pl-1'));
-      expect(buttonContainer.length).toBeGreaterThan(0);
+      const linkButton = wrapper.findComponent({ name: 'LinkButton' });
+      expect(linkButton.exists()).toBe(true);
     });
 
     it('shows button container when showCopy is true', () => {

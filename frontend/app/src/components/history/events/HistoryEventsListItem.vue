@@ -141,7 +141,7 @@ const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(
       'px-4': !compact,
     }"
   >
-    <div class="group transition-all duration-300 ease-in-out flex items-center">
+    <div class="group/item transition-all duration-300 ease-in-out flex items-center">
       <RuiCheckbox
         v-if="showCheckbox"
         v-model="isSelected"
@@ -187,7 +187,7 @@ const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(
           v-if="!compact && !hideActions"
           class="col-span-10 @md:col-span-3 transition-opacity"
           :class="{
-            'opacity-0 group-hover:opacity-100 focus-within:opacity-100': !hasMissingRule,
+            'opacity-0 group-hover/item:opacity-100 focus-within:opacity-100': !hasMissingRule,
           }"
           :item="item"
           :index="index"

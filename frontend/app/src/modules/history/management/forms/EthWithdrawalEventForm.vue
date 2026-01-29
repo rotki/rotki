@@ -248,7 +248,7 @@ defineExpose({
             color="primary"
             data-cy="groupIdentifier"
             :disabled="hasActualGroupIdentifier"
-            :label="t('transactions.events.form.event_identifier.label')"
+            :label="t('transactions.events.form.group_identifier.label')"
             :error-messages="toMessages(v$.groupIdentifier)"
             @blur="v$.groupIdentifier.$touch()"
           />

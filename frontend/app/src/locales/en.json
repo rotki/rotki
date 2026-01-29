@@ -5378,12 +5378,6 @@
             "valid": "The depositor is invalid, fill it with valid address"
           }
         },
-        "event_identifier": {
-          "label": "Event Identifier",
-          "validation": {
-            "non_empty": "The event identifier field cannot be empty."
-          }
-        },
         "event_subtype": {
           "label": "Event Subtype",
           "validation": {
@@ -5415,6 +5409,12 @@
           "validation": {
             "non_empty": "The fee recipient field cannot be empty.",
             "valid": "The fee recipient is invalid, fill it with valid address"
+          }
+        },
+        "group_identifier": {
+          "label": "Group Identifier",
+          "validation": {
+            "non_empty": "The group identifier field cannot be empty."
           }
         },
         "has_fee": {

@@ -20,6 +20,7 @@ const isExchangeLocation = computed<boolean>(() => !matchChain(props.location));
       icon
       :item="location"
       size="16px"
+      class="mr-0.5"
     />
     <HashLink
       :text="locationLabel"

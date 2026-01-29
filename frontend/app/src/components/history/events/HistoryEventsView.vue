@@ -190,7 +190,7 @@ watchImmediate(route, async ({ query }) => {
   await router.replace({ query: {} });
 });
 
-const debouncedProcessing = debouncedRef(processing, 200);
+const debouncedProcessing = refDebounced(processing, 200);
 
 watch(debouncedProcessing, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
