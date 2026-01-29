@@ -22,7 +22,7 @@ const { copied, copy } = useCopy(value);
 
 <template>
   <RuiTooltip
-    :popper="{ placement: 'top' }"
+    :popper="{ placement: 'top', scroll: false, resize: false }"
     :open-delay="200"
     :close-delay="100"
     class="text-no-wrap"

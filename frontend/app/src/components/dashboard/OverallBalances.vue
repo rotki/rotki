@@ -164,7 +164,7 @@ onMounted(() => {
         <NetWorthChart :chart-data="timeframeData" />
         <div
           v-if="isLoading"
-          class="absolute top-0 h-full w-full flex flex-col gap-3 items-center justify-center text-caption text-rui-text-secondary bg-white/[0.8] dark:bg-[#1e1e1e]/[0.9] z-[6]"
+          class="absolute top-0 h-full w-full flex flex-col gap-3 items-center justify-center text-caption text-rui-text-secondary bg-white/[0.8] dark:bg-dark-elevated/[0.9] z-[6]"
         >
           <RuiProgress
             circular

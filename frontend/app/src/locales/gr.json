@@ -1451,7 +1451,6 @@
     "title": "Manage Data"
   },
   "data_table": {
-    "items_no": "Αντικείμενα #",
     "no_data": "Δεν υπάρχουν διαθέσιμα στοιχεία",
     "rows_per_page": "Γραμμές ανα σελίδα"
   },
@@ -3147,8 +3146,6 @@
       "headers": {
         "event_identifier": "Event information"
       },
-      "loading": "Φόρτωση συμβάντων...",
-      "no_data": "Τα συμβάντα είναι κρυμμένα επειδή περιέχουν αγνοημένα στοιχεία ενεργητικού",
       "skipped": {
         "csv_export_error": "Παρουσιάστηκε σφάλμα κατά την εξαγωγή σε CSV",
         "download_failed": "Η λήψη του CSV δεν είναι δυνατή",
@@ -3168,10 +3165,6 @@
             "title": "Επεξεργασία αγνοημένων συμβάντων"
           }
         }
-      },
-      "view": {
-        "hide": "Hide events",
-        "show": "Show events ({length})"
       }
     },
     "filter": {

@@ -1644,7 +1644,6 @@
     "title": "Gérer les données"
   },
   "data_table": {
-    "items_no": "Éléments #",
     "no_data": "Aucune donnée disponible",
     "rows_per_page": "Lignes par page"
   },
@@ -3632,8 +3631,6 @@
         "evm_event": "Transaction {txRef}",
         "history_event": "Événement {location}"
       },
-      "loading": "Chargement des événements...",
-      "no_data": "Les événements sont masqués car ils contiennent des actifs ignorés",
       "skipped": {
         "csv_export_error": "Il y a eu une erreur avec l'exportation",
         "download_failed": "Le téléchargement du CSV n'est pas possible",
@@ -3653,10 +3650,6 @@
             "title": "Événements ignorés traités"
           }
         }
-      },
-      "view": {
-        "hide": "Masquer les événements",
-        "show": "Afficher les événements ({length})"
       }
     },
     "events_decoding": {

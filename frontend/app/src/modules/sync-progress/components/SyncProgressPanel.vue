@@ -74,9 +74,9 @@ watch(phase, (newPhase, oldPhase) => {
         v-if="visible"
         ref="panelRef"
         class="relative border"
-        :class="expanded ? 'border-default z-[200]' : 'border-white dark:border-[#1E1E1E]'"
+        :class="expanded ? 'border-default z-[200]' : 'border-white dark:border-dark-elevated'"
       >
-        <div class="border-b border-default bg-white dark:bg-[#1E1E1E]">
+        <div class="border-b border-default bg-white dark:bg-dark-elevated">
           <SyncProgressHeader
             :expanded="expanded"
             :can-dismiss="canDismiss"
@@ -118,7 +118,7 @@ watch(phase, (newPhase, oldPhase) => {
               class="fixed z-[200]"
               :style="detailsStyle"
             >
-              <div class="border border-t-0 border-default rounded-b-lg bg-white dark:bg-[#1E1E1E] shadow-xl max-h-[calc(100vh-8rem)] overflow-y-auto">
+              <div class="border border-t-0 border-default rounded-b-lg bg-white dark:bg-dark-elevated shadow-xl max-h-[calc(100vh-8rem)] overflow-y-auto">
                 <SyncProgressDetails />
               </div>
             </div>

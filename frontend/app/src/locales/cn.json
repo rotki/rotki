@@ -1484,7 +1484,6 @@
     "title": "管理数据"
   },
   "data_table": {
-    "items_no": "项目 #",
     "no_data": "无数据",
     "rows_per_page": "每页行数"
   },
@@ -3278,8 +3277,6 @@
       "headers": {
         "event_identifier": "事件组 ID"
       },
-      "loading": "正在加载事件...",
-      "no_data": "事件被隐藏是因为它们包含被忽略的资产",
       "skipped": {
         "csv_export_error": "导出为CSV时出错",
         "download_failed": "无法下载CSV",
@@ -3299,10 +3296,6 @@
             "title": "已处理的被跳过事件"
           }
         }
-      },
-      "view": {
-        "hide": "隐藏事件",
-        "show": "显示事件 ({length})"
       }
     },
     "filter": {

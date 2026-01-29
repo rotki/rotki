@@ -264,7 +264,7 @@ function getAccount(account: AccountWithAddressData): Account {
 
   <div
     v-if="!hint"
-    class="bg-white dark:bg-[#1E1E1E]"
+    class="bg-white dark:bg-dark-elevated"
     v-bind="getRootAttrs($attrs)"
   >
     <ReuseAutocomplete />

@@ -11,7 +11,7 @@ defineProps<{
 
 <template>
   <div class="rounded-xl my-2">
-    <div class="bg-white dark:bg-[#1E1E1E] rounded-xl p-4">
+    <div class="bg-white dark:bg-dark-elevated rounded-xl p-4">
       <HistoricalBalancesTable
         v-if="row.breakdown"
         :balances="row.breakdown"

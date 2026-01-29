@@ -91,7 +91,7 @@ function deleteEvent(item: HistoryEventEntry) {
   <div class="flex items-center gap-1 justify-end">
     <!-- Edit/Delete/Other actions - hidden on default when missing rule, visible on hover -->
     <RowActions
-      :class="{ 'opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity': hasMissingRule }"
+      :class="{ 'opacity-0 group-hover/row:opacity-100 focus-within:opacity-100 transition-opacity': hasMissingRule }"
       align="end"
       :delete-tooltip="t('transactions.events.actions.delete')"
       :edit-tooltip="t('transactions.events.actions.edit')"

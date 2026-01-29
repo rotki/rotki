@@ -206,7 +206,7 @@ const tags = useAccountTags(text);
     <RuiTooltip
       v-if="!hideText"
       ref="tooltip"
-      :popper="{ placement: 'top' }"
+      :popper="{ placement: 'top', scroll: false, resize: false }"
       :open-delay="400"
       :disabled="truncateLength === 0"
       tooltip-class="[&_*]:font-mono"

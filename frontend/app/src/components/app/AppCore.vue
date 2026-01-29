@@ -37,7 +37,7 @@ onBeforeMount(() => {
     <AppDrawer />
 
     <header
-      class="app__app-bar fixed top-0 left-0 w-full bg-white dark:bg-[#1E1E1E] md:h-16 h-[3.5rem] border-b border-rui-grey-300 dark:border-rui-grey-800"
+      class="app__app-bar fixed top-0 left-0 w-full bg-white dark:bg-dark-elevated md:h-16 h-[3.5rem] border-b border-rui-grey-300 dark:border-rui-grey-800"
     >
       <nav class="flex items-center md:h-16 h-[3.5rem] pl-2 px-4">
         <RuiButton
@@ -54,7 +54,7 @@ onBeforeMount(() => {
 
     <AppSidebars />
     <div
-      class="pt-6 pb-16 w-full transition-all min-h-[calc(100vh-64px)]"
+      class="py-4 w-full transition-all min-h-[calc(100vh-64px)]"
       :class="{
         'pl-[3.5rem]': isMini,
         'pl-[300px]': expanded,

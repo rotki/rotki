@@ -1435,7 +1435,6 @@
     "title": "Manage Data"
   },
   "data_table": {
-    "items_no": "Artículos #",
     "no_data": "No hay datos disponibles",
     "rows_per_page": "Filas por página"
   },
@@ -3132,8 +3131,6 @@
       "headers": {
         "event_identifier": "Event information"
       },
-      "loading": "Loading events...",
-      "no_data": "Los eventos están ocultos porque contienen activos ignorados",
       "skipped": {
         "csv_export_error": "Hubo un error al exportar a CSV",
         "download_failed": "No es posible descargar el CSV",
@@ -3153,10 +3150,6 @@
             "title": "Eventos omitidos procesados"
           }
         }
-      },
-      "view": {
-        "hide": "Hide events",
-        "show": "Show events ({length})"
       }
     },
     "filter": {

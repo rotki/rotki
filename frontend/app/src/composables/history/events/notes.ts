@@ -1,19 +1,10 @@
+import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRef } from 'vue';
-import {
-  type BigNumber,
-  bigNumberify,
-  Blockchain,
-  isEvmIdentifier,
-  isValidBchAddress,
-  isValidBtcAddress,
-  isValidEthAddress,
-  isValidEvmTxHash,
-  isValidSolanaAddress,
-} from '@rotki/common';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useScramble } from '@/composables/scramble';
 import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
+import { WORD_PROCESSORS, type WordProcessorContext, type WordProcessorResult } from './note-processors';
 
 export const NoteType = {
   ADDRESS: 'address',
@@ -35,7 +26,7 @@ export interface NoteFormat {
   amount?: BigNumber;
   asset?: string;
   url?: string;
-  chain?: Blockchain;
+  chain?: string;
   showHashLink?: boolean;
   showCopyOnly?: boolean;
   countryCode?: string;
@@ -62,7 +53,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
   const { scrambleData, scrambleIdentifier } = useScramble();
 
   function separateByPunctuation(word: string): string[] {
-    const result = [];
+    const result: string[] = [];
     const openParenMatch = word.match(/^\(/);
     const openParen = openParenMatch ? openParenMatch[0] : '';
 
@@ -132,7 +123,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     return notes;
   }
 
-  const mergeSequentialWords = (formats: NoteFormat[], current: NoteFormat): NoteFormat[] => {
+  function mergeSequentialWords(formats: NoteFormat[], current: NoteFormat): NoteFormat[] {
     const lastFormatEntry = formats.at(-1);
     if (!lastFormatEntry) {
       formats.push(current);
@@ -146,7 +137,57 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     }
     formats.push(current);
     return formats;
-  };
+  }
+
+  function buildValidatorIndices(
+    validatorIndex: number | undefined,
+    extraData: Record<string, any> | undefined,
+  ): string[] {
+    return [
+      validatorIndex?.toString(),
+      extraData && 'sourceValidatorIndex' in extraData ? extraData.sourceValidatorIndex.toString() : undefined,
+      extraData && 'targetValidatorIndex' in extraData ? extraData.targetValidatorIndex.toString() : undefined,
+    ].filter((v): v is string => v !== undefined);
+  }
+
+  function tokenizeNotes(notesVal: string, asset: string | undefined): string[] {
+    const words = notesVal
+      .replace(/(\d),(?=\d{3}(?!\d))/g, '$1_COMMA_')
+      .split(/[\s,]+/)
+      .map(word => word.replace(/_COMMA_/g, ','));
+
+    if (!asset)
+      return words;
+
+    // Merge multi-word asset names back together
+    const assetWords = asset.split(/\s+/);
+    const processedWords: string[] = [];
+
+    for (let i = 0; i < words.length; i++) {
+      if (i + assetWords.length <= words.length && words.slice(i, i + assetWords.length).join(' ') === asset) {
+        processedWords.push(asset);
+        i += assetWords.length - 1;
+      }
+      else {
+        processedWords.push(words[i]);
+      }
+    }
+
+    return processedWords;
+  }
+
+  function processWord(
+    ctx: Omit<WordProcessorContext, 'word' | 'index'>,
+    word: string,
+    index: number,
+  ): WordProcessorResult | undefined {
+    for (const processor of WORD_PROCESSORS) {
+      const result = processor({ ...ctx, word, index });
+      if (result)
+        return result;
+    }
+    return undefined;
+  }
 
   const formatNotes = ({
     amount,
@@ -158,230 +199,67 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     noTxRef,
     validatorIndex,
   }: FormatNoteParams): ComputedRef<NoteFormat[]> => computed<NoteFormat[]>(() => {
-    const asset = get(assetSymbol(assetId, {
-      collectionParent: false,
-    }));
-
+    const asset = get(assetSymbol(assetId, { collectionParent: false }));
     const extraDataVal = get(extraData);
 
     let notesVal = get(notes);
     if (!notesVal)
       return [];
 
+    const counterpartyVal = get(counterparty);
+
+    // Scramble IBAN for monerium
+    if (get(scrambleData) && counterpartyVal === 'monerium')
+      notesVal = findAndScrambleIBAN(notesVal);
+
+    const processedWords = tokenizeNotes(notesVal, asset);
     const formats: NoteFormat[] = [];
     let skip = false;
 
-    const counterpartyVal = get(counterparty);
-    const isMonerium = counterpartyVal === 'monerium';
-    const shouldFormatAllAmount = counterpartyVal === 'gnosis_pay';
+    // Build context values once, outside the loop
+    const amountVal = get(amount);
+    const ctx: Omit<WordProcessorContext, 'word' | 'index'> = {
+      processedWords,
+      asset: asset || undefined,
+      assetId: get(assetId),
+      amountArr: amountVal ? arrayify(amountVal) : [],
+      validatorIndices: buildValidatorIndices(get(validatorIndex), extraDataVal),
+      blockNumber: get(blockNumber),
+      counterparty: counterpartyVal,
+      noTxRef: get(noTxRef),
+      shouldFormatAllAmount: counterpartyVal === 'gnosis_pay',
+      getCleanWord,
+      getAssetSymbol: (id: string) => get(assetSymbol(id)),
+    };
 
-    // Check if we need to scramble IBAN
-    if (get(scrambleData) && isMonerium)
-      notesVal = findAndScrambleIBAN(notesVal);
-
-    const words = notesVal
-      .replace(/(\d),(?=\d{3}(?!\d))/g, '$1_COMMA_')
-      .split(/[\s,]+/)
-      .map(word => word.replace(/_COMMA_/g, ','));
-
-    const assetWords = asset ? asset.split(/\s+/) : [];
-    const processedWords: string[] = [];
-
-    for (let i = 0; i < words.length; i++) {
-      if (asset && i + assetWords.length <= words.length
-        && words.slice(i, i + assetWords.length).join(' ') === asset) {
-        processedWords.push(asset);
-        i += assetWords.length - 1;
-      }
-      else {
-        processedWords.push(words[i]);
-      }
-    }
-
-    processedWords.forEach((wordItem, index) => {
+    for (const [index, wordItem] of processedWords.entries()) {
       if (skip) {
         skip = false;
-        return;
+        continue;
       }
 
       const split = separateByPunctuation(wordItem);
       if (split.length === 0)
-        return;
+        continue;
 
-      const { leading: leadingPunctuation, trailing: trailingPunctuation, word } = parsePunctuation(split);
+      const { leading, trailing, word } = parsePunctuation(split);
+      const result = processWord(ctx, word, index);
 
-      const addLeadingPunctuation = (): void => {
-        if (leadingPunctuation) {
-          formats.push({ type: NoteType.WORD, word: leadingPunctuation });
-        }
-      };
+      if (leading)
+        formats.push({ type: NoteType.WORD, word: leading });
 
-      const addTrailingPunctuation = (): void => {
-        if (trailingPunctuation) {
-          formats.push({ type: NoteType.WORD, word: trailingPunctuation });
-        }
-      };
-
-      const isValidBch = isValidBchAddress(word);
-
-      if (isValidEthAddress(word) || isValidBtcAddress(word) || isValidBch || isValidSolanaAddress(word)) {
-        addLeadingPunctuation();
-        formats.push({
-          address: isValidBch ? word.replace(/^bitcoincash:/, '') : word,
-          showHashLink: true,
-          type: NoteType.ADDRESS,
-        });
-        return addTrailingPunctuation();
+      if (result) {
+        formats.push(result.format);
+        if (result.skipNext)
+          skip = true;
+      }
+      else {
+        formats.push({ type: NoteType.WORD, word });
       }
 
-      // Check if the word is Tx Hash
-      if (isValidEvmTxHash(word)) {
-        addLeadingPunctuation();
-        formats.push({
-          address: word,
-          showHashLink: true,
-          type: NoteType.TX,
-          showCopyOnly: get(noTxRef),
-        });
-        return addTrailingPunctuation();
-      }
-
-      const validatorIndices = [];
-      const validatorIndexVal = get(validatorIndex);
-
-      if (validatorIndexVal) {
-        validatorIndices.push(validatorIndexVal.toString());
-      }
-
-      if (extraDataVal && 'sourceValidatorIndex' in extraDataVal) {
-        validatorIndices.push(extraDataVal.sourceValidatorIndex.toString());
-      }
-
-      if (extraDataVal && 'targetValidatorIndex' in extraDataVal) {
-        validatorIndices.push(extraDataVal.targetValidatorIndex.toString());
-      }
-
-      // Check if the word is ETH2 Validator Index
-      if (validatorIndices.includes(word)) {
-        addLeadingPunctuation();
-        formats.push({
-          address: word,
-          chain: Blockchain.ETH2,
-          showHashLink: true,
-          type: NoteType.ADDRESS,
-        });
-        return addTrailingPunctuation();
-      }
-
-      // Check if the word is Block Number
-      if (get(blockNumber)?.toString() === word) {
-        addLeadingPunctuation();
-        formats.push({
-          address: word,
-          showHashLink: true,
-          type: NoteType.BLOCK,
-        });
-        return addTrailingPunctuation();
-      }
-
-      const amountVal = get(amount);
-      const amountArr: BigNumber[] = amountVal ? arrayify(amountVal) : [];
-      const wordUsed = word.replace(/(\d),(?=\d{3}(?!\d))/g, '$1');
-
-      const isAmount = (amountArr.length > 0 || shouldFormatAllAmount)
-        && !isNaN(parseFloat(wordUsed));
-
-      if (isAmount) {
-        const bigNumber = bigNumberify(wordUsed);
-        const isIncluded = amountArr.some(item => item.eq(bigNumber)) || shouldFormatAllAmount;
-
-        if (isIncluded && bigNumber.gt(0)) {
-          // Check if next word (without punctuation) is the asset
-          const isAsset = index < processedWords.length - 1
-            && getCleanWord(processedWords[index + 1]) === asset;
-
-          addLeadingPunctuation();
-          formats.push({
-            amount: bigNumber,
-            asset: isAsset ? get(assetId) : undefined,
-            type: NoteType.AMOUNT,
-          });
-
-          if (isAsset)
-            skip = true;
-
-          return addTrailingPunctuation();
-        }
-      }
-
-      // Check if the word is Markdown link format
-      const markdownLinkRegex = /^\[(.+)]\((<?https?:\/\/.+>?)\)$/;
-      const markdownLinkMatch = word.match(markdownLinkRegex);
-
-      if (markdownLinkMatch) {
-        const text = markdownLinkMatch[1];
-        let url = markdownLinkMatch[2];
-
-        if (text && url) {
-          url = url.replace(/^<+/, '').replace(/>+$/, '');
-
-          formats.push({
-            type: NoteType.URL,
-            url,
-            word: text,
-          });
-
-          addLeadingPunctuation();
-          return addTrailingPunctuation();
-        }
-      }
-
-      // Check if the word is URL
-      const urlRegex = /^(https?:\/\/.+)$/;
-
-      if (urlRegex.test(word)) {
-        addLeadingPunctuation();
-        formats.push({
-          type: NoteType.URL,
-          url: word,
-          word,
-        });
-
-        return addTrailingPunctuation();
-      }
-
-      if (isEvmIdentifier(word)) {
-        const symbol = get(assetSymbol(word));
-        if (symbol) {
-          formats.push({
-            type: NoteType.WORD,
-            word: symbol,
-          });
-          addLeadingPunctuation();
-          return addTrailingPunctuation();
-        }
-      }
-
-      // Check Gnosis Pay specific patterns (country flag and merchant code)
-      if (counterpartyVal === 'gnosis_pay') {
-        const countryFlagMatch = word.match(/:country:([A-Z]{2}):/);
-        if (countryFlagMatch) {
-          addLeadingPunctuation();
-          formats.push({ countryCode: countryFlagMatch[1]?.toLowerCase(), type: NoteType.FLAG });
-          return addTrailingPunctuation();
-        }
-        const merchantCodeMatch = word.match(/:merchant_code:(\d+):/);
-        if (merchantCodeMatch) {
-          addLeadingPunctuation();
-          formats.push({ merchantCode: merchantCodeMatch[1], type: NoteType.MERCHANT_CODE });
-          return addTrailingPunctuation();
-        }
-      }
-
-      addLeadingPunctuation();
-      formats.push({ type: NoteType.WORD, word });
-      addTrailingPunctuation();
-    });
+      if (trailing)
+        formats.push({ type: NoteType.WORD, word: trailing });
+    }
 
     return formats.reduce(mergeSequentialWords, new Array<NoteFormat>());
   });

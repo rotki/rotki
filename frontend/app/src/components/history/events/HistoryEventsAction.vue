@@ -212,8 +212,8 @@ function confirmFixDuplicate(): void {
     </RuiButton>
     <RuiMenu
       v-model="showMenu"
-      menu-class="max-w-[15rem]"
-      :popper="{ placement: 'bottom-end' }"
+      menu-class="max-w-[15rem] z-[100]"
+      :popper="{ placement: 'bottom-end', scroll: false, resize: false }"
       close-on-content-click
     >
       <template #activator="{ attrs }">
@@ -280,7 +280,7 @@ function confirmFixDuplicate(): void {
             <template #append>
               <RuiTooltip
                 v-if="evmEvent"
-                :popper="{ placement: 'top' }"
+                :popper="{ placement: 'top', scroll: false, resize: false }"
               >
                 <template #activator>
                   <RuiButton

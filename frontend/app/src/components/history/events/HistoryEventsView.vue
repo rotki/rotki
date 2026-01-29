@@ -13,7 +13,7 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
 import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
-import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
+import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
 import { useHistoryEventsSelectionActions } from '@/modules/history/events/composables/use-history-events-selection-actions';
 import { useHistoryEventsSelectionMode } from '@/modules/history/events/composables/use-selection-mode';
@@ -217,7 +217,7 @@ function openMatchAssetMovementsDialog(): void {
   <div>
     <SyncProgressPanel
       v-if="mainPage"
-      class="-mt-6 mb-4"
+      class="-mt-4 mb-4"
     />
     <TablePageLayout
       :hide-header="!mainPage"
@@ -285,7 +285,7 @@ function openMatchAssetMovementsDialog(): void {
             @refresh="actions.fetch.dataAndLocations()"
           />
 
-          <HistoryEventsTable
+          <HistoryEventsVirtualTable
             v-model:sort="sort"
             v-model:pagination="pagination"
             :group-loading="groupLoading"

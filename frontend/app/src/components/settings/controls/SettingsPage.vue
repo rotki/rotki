@@ -106,7 +106,7 @@ onUnmounted(() => {
     <template v-if="navigation.length > 0">
       <div
         v-if="isMdAndUp"
-        class="w-[200px] lg:w-[240px] sticky top-0 bg-rui-grey-50 dark:bg-[#121212] border-default border-b-0"
+        class="w-[200px] lg:w-[240px] sticky top-0 bg-rui-grey-50 dark:bg-dark-surface border-default border-b-0"
       >
         <RuiTabs
           :vertical="isMdAndUp"

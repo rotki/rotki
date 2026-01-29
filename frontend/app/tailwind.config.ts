@@ -14,7 +14,7 @@ const componentsPlugin = plugin((pluginAPI: PluginAPI) => {
       '@apply overflow-y-hidden max-h-screen antialiased': {},
     },
     'body': {
-      '@apply transition-all bg-rui-grey-50 dark:bg-[#121212] overflow-x-hidden h-[calc(100vh-4rem)] scroll-smooth scroll-pt-16 mt-16 overflow-y-auto': {},
+      '@apply transition-all bg-rui-grey-50 dark:bg-dark-surface overflow-x-hidden h-[calc(100vh-4rem)] scroll-smooth scroll-pt-16 mt-16 overflow-y-auto': {},
       '--w3m-z-index': '10000',
     },
     '@media only screen and (max-width: 767px)': {
@@ -162,6 +162,10 @@ export default {
       mono: ['Roboto Mono'],
     },
     extend: {
+      colors: {
+        'dark-surface': '#121212',
+        'dark-elevated': '#1E1E1E',
+      },
       keyframes: {
         'shake': {
           '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-4px)' },
@@ -193,7 +197,7 @@ export default {
     '!text-center',
     '[&>div>div>div]:font-normal',
     'bg-white/[0.9]',
-    'dark:bg-[#1E1E1E]/[0.9]',
+    'dark:bg-dark-elevated/[0.9]',
     'list-decimal',
     '!leading-4',
     'lg:col-span-2',

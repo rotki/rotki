@@ -73,7 +73,7 @@ const displayAddress = computed<string | undefined>(() => {
   >
     <template #icon>
       <RuiTooltip
-        :popper="{ placement: 'top' }"
+        :popper="{ placement: 'top', scroll: false, resize: false }"
         :open-delay="400"
       >
         <template #activator>

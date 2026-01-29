@@ -35,10 +35,13 @@ interface UseHistoryEventsDataReturn {
   // Event data
   allEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
   displayedEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
+  groupsWithHiddenIgnoredAssets: ComputedRef<Set<string>>;
+  groupsShowingIgnoredAssets: Ref<Set<string>>;
   hasIgnoredEvent: ComputedRef<boolean>;
   groups: ComputedRef<HistoryEventEntry[]>;
   events: ComputedRef<HistoryEventEntry[]>;
   rawEvents: Ref<HistoryEventRow[]>;
+  toggleShowIgnoredAssets: (groupId: string) => void;
 }
 
 export function useHistoryEventsData(
@@ -110,15 +113,37 @@ export function useHistoryEventsData(
     return mapping;
   });
 
+  // Track which groups have opted to show ignored assets (per-group toggle)
+  const groupsShowingIgnoredAssets = ref<Set<string>>(new Set());
+
+  function toggleShowIgnoredAssets(groupId: string): void {
+    const current = get(groupsShowingIgnoredAssets);
+    const newSet = new Set(current);
+    if (newSet.has(groupId))
+      newSet.delete(groupId);
+    else
+      newSet.add(groupId);
+
+    set(groupsShowingIgnoredAssets, newSet);
+  }
+
   // Derives from allEventsMapped, filtering out ignored assets when excludeIgnored is true
+  // but respecting per-group toggles
   const displayedEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => {
     const base = get(allEventsMapped);
     if (!get(excludeIgnored))
       return base;
 
+    const showingIgnored = get(groupsShowingIgnoredAssets);
     const mapping: Record<string, HistoryEventRow[]> = {};
 
     for (const [groupId, groupEvents] of Object.entries(base)) {
+      // If this group is showing ignored assets, include all events
+      if (showingIgnored.has(groupId)) {
+        mapping[groupId] = groupEvents;
+        continue;
+      }
+
       const filtered: HistoryEventRow[] = [];
       for (const event of groupEvents) {
         if (Array.isArray(event)) {
@@ -138,7 +163,29 @@ export function useHistoryEventsData(
   });
 
   const loading = useRefWithDebounce(logicOr(groupLoading, eventsLoading), 100);
-  const hasIgnoredEvent = useArraySome(events, event => Array.isArray(event) && event.some(item => item.ignoredInAccounting));
+  const hasIgnoredEvent = useArraySome(
+    events,
+    event => Array.isArray(event) ? event.some(item => item.ignoredInAccounting) : event.ignoredInAccounting,
+  );
+
+  // Track which groups have events hidden due to ignored assets filter
+  const groupsWithHiddenIgnoredAssets = computed<Set<string>>(() => {
+    if (!get(excludeIgnored))
+      return new Set();
+
+    const all = get(allEventsMapped);
+    const displayed = get(displayedEventsMapped);
+    const result = new Set<string>();
+
+    for (const groupId of Object.keys(all)) {
+      const allCount = all[groupId]?.length ?? 0;
+      const displayedCount = displayed[groupId]?.length ?? 0;
+      if (allCount > displayedCount)
+        result.add(groupId);
+    }
+
+    return result;
+  });
 
   const flattenedGroups = computed<HistoryEventEntry[]>(() => flatten(get(data)));
 
@@ -159,12 +206,15 @@ export function useHistoryEventsData(
     eventsLoading,
     found,
     groups: flattenedGroups,
+    groupsShowingIgnoredAssets,
+    groupsWithHiddenIgnoredAssets,
     hasIgnoredEvent,
     limit,
     loading,
     rawEvents: events,
     sectionLoading,
     showUpgradeRow,
+    toggleShowIgnoredAssets,
     total,
   };
 }

@@ -27,6 +27,7 @@ const props = withDefaults(
     iconOnly?: boolean;
     size?: string;
     forceChain?: string;
+    optimizeForVirtualScroll?: boolean;
   }>(),
   {
     changeable: false,
@@ -36,6 +37,7 @@ const props = withDefaults(
     hideMenu: false,
     iconOnly: false,
     isCollectionParent: false,
+    optimizeForVirtualScroll: false,
     showChain: true,
     size: '30px',
   },
@@ -102,13 +104,34 @@ function useContextMenu(attrs: Record<string, any>) {
       :resolution-options="{ associate: enableAssociation }"
       :show-chain="showChain"
       :force-chain="forceChain"
+      :optimize-for-virtual-scroll="optimizeForVirtualScroll"
     />
   </DefineImage>
+  <!-- Skip RuiMenu entirely when hideMenu=true to avoid popper overhead in virtualized lists -->
+  <ReuseImage
+    v-if="hideMenu && iconOnly"
+    v-bind="$attrs"
+  />
+  <ListItem
+    v-else-if="hideMenu"
+    no-padding
+    no-hover
+    class="max-w-[20rem]"
+    v-bind="$attrs"
+    :size="dense ? 'sm' : 'md'"
+    :loading="loading"
+    :title="asset.isCustomAsset ? name : symbol"
+    :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
+  >
+    <template #avatar>
+      <ReuseImage />
+    </template>
+  </ListItem>
   <RuiMenu
+    v-else
     :key="identifier"
     v-model="menuOpened"
     class="flex"
-    :disabled="hideMenu"
     menu-class="w-[16rem] max-w-[90%]"
     :popper="{ placement: 'bottom-start' }"
   >
@@ -119,7 +142,7 @@ function useContextMenu(attrs: Record<string, any>) {
       />
       <div
         v-else
-        :class="{ 'w-max flex items-center gap-3 cursor-pointer hover:ring-1 ring-rui-grey-300 dark:ring-rui-grey-800 hover:shadow-md transition-all rounded-md group -ml-1 pl-1': !hideMenu }"
+        class="w-max flex items-center gap-3 cursor-pointer hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800 rounded-md group -ml-1 pl-1"
       >
         <ListItem
           no-padding
@@ -137,7 +160,6 @@ function useContextMenu(attrs: Record<string, any>) {
         </ListItem>
 
         <RuiButton
-          v-if="!hideMenu"
           variant="text"
           icon
           class="opacity-0 group-hover:opacity-100 mr-2 !p-2"

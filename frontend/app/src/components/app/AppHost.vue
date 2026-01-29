@@ -35,7 +35,7 @@ watch(adaptiveLanguage, (language) => {
     v-if="!isPlayground"
     id="rotki"
     :key="adaptiveLanguage"
-    class="overflow-hidden !text-rui-text bg-rui-grey-50 dark:bg-[#121212]"
+    class="overflow-hidden !text-rui-text bg-rui-grey-50 dark:bg-dark-surface"
     :class="{ 'animations-disabled': !animationsEnabled }"
   >
     <slot />

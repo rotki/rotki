@@ -4,7 +4,7 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { HistoryEventRow } from '@/types/history/events/schemas';
 import { useHistoryEvents } from '@/composables/history/events';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
-import HistoryEventsTable from '@/modules/history/events/components/HistoryEventsTable.vue';
+import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 
 interface Props {
   eventIds: number[];
@@ -65,7 +65,7 @@ watch(display, (value) => {
         {{ t('accounting_settings.rule.events_dialog.title', { count: eventIds.length }) }}
       </template>
 
-      <HistoryEventsTable
+      <HistoryEventsVirtualTable
         v-model:sort="sort"
         v-model:pagination="pagination"
         hide-actions

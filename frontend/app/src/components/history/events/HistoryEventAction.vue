@@ -39,8 +39,8 @@ function onEditRule(): void {
 <template>
   <div class="flex items-center">
     <RuiMenu
-      menu-class="max-w-[15rem]"
-      :popper="{ placement: 'bottom-end' }"
+      menu-class="max-w-[15rem] z-[100]"
+      :popper="{ placement: 'bottom-end', scroll: false, resize: false }"
       close-on-content-click
     >
       <template #activator="{ attrs }">

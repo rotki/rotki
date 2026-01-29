@@ -240,12 +240,12 @@ function getIcon(action: NotificationAction): RuiIcons {
       <div
         v-if="showExpandArrow"
         class="bg-gradient-to-b from-transparent to-white absolute bottom-0 w-full"
-        :class="color ? 'dark:to-[#363636]' : 'dark:to-[#1E1E1E]'"
+        :class="color ? 'dark:to-[#363636]' : 'dark:to-dark-elevated'"
       >
         <RuiButton
           :class="[
             expandButtonClass,
-            color ? 'dark:to-[#363636]' : 'dark:to-[#1E1E1E]',
+            color ? 'dark:to-[#363636]' : 'dark:to-dark-elevated',
           ]"
           class="!p-0.5 w-full bg-gradient-to-b from-transparent to-white rounded-none !bg-transparent"
           hide-focus-indicator

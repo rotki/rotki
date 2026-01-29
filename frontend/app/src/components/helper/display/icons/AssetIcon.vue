@@ -23,6 +23,11 @@ interface AssetIconProps {
   resolutionOptions?: AssetResolutionOptions;
   chainIconSize?: string;
   forceChain?: string;
+  /**
+   * Disables scroll event listeners on tooltip popper for better performance in virtualized lists.
+   * The tooltip still works on hover, but won't recalculate position during scroll.
+   */
+  optimizeForVirtualScroll?: boolean;
 }
 
 const props = withDefaults(defineProps<AssetIconProps>(), {
@@ -31,6 +36,7 @@ const props = withDefaults(defineProps<AssetIconProps>(), {
   flat: false,
   forceChain: undefined,
   noTooltip: false,
+  optimizeForVirtualScroll: false,
   padding: '2px',
   resolutionOptions: () => ({}),
   showChain: true,
@@ -128,6 +134,13 @@ const tooltip = computed(() => {
   };
 });
 
+// Popper options - disable scroll listeners for virtualized lists to prevent reflow during scroll
+const popperOptions = computed(() => ({
+  placement: 'top' as const,
+  scroll: !props.optimizeForVirtualScroll,
+  resize: !props.optimizeForVirtualScroll,
+}));
+
 const usedChainIconSize = computed(() => get(chainIconSize) || `${(Number.parseInt(get(size)) * 50) / 100}px`);
 const usedProtocolIconSize = computed(() => get(chainIconSize) || `${(Number.parseInt(get(size)) * 40) / 100}px`);
 
@@ -167,7 +180,7 @@ const { copied, copy } = useCopy(identifier);
 
 <template>
   <RuiTooltip
-    :popper="{ placement: 'top' }"
+    :popper="popperOptions"
     :open-delay="400"
     :disabled="noTooltip"
     persist-on-tooltip-hover

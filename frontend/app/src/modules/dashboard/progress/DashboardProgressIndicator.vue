@@ -132,7 +132,7 @@ onMounted(async () => {
   >
     <div
       v-if="showSection"
-      class="w-full px-4 py-2 border-b border-default bg-white dark:bg-[#1E1E1E] text-sm text-rui-text-secondary flex items-center justify-between gap-4"
+      class="w-full px-4 py-2 border-b border-default bg-white dark:bg-dark-elevated text-sm text-rui-text-secondary flex items-center justify-between gap-4"
     >
       <div class="flex items-center gap-2">
         <!-- Balance Query Section -->

@@ -83,7 +83,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
     :cols="cols"
     :rows="sorted"
     row-attr="asset"
-    class="bg-white dark:bg-[#1E1E1E] my-2"
+    class="bg-white dark:bg-dark-elevated my-2"
   >
     <template #item.asset="{ row }">
       <AssetDetails :asset="row.asset" />

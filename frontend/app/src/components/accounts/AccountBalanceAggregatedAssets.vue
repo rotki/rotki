@@ -19,7 +19,7 @@ const balances = useBlockchainBalances(chains, groupId);
 <template>
   <AssetBalances
     v-model:selected="selected"
-    class="bg-white dark:bg-[#1E1E1E]"
+    class="bg-white dark:bg-dark-elevated"
     :balances="balances"
     show-per-protocol
     :selection-mode="selectionMode"
