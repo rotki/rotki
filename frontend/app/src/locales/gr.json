@@ -3089,7 +3089,6 @@
           }
         }
       },
-      "customized_event": "Customized event",
       "dialog": {
         "add": {
           "title": "Add Event"

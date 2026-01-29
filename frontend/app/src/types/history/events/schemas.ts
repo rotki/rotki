@@ -182,7 +182,7 @@ export interface EditEvmSwapEventPayload extends AddEvmSwapEventPayload {
 
 export type EditEvmHistoryEventPayload = Omit<
   EvmHistoryEvent,
-  'ignoredInAccounting' | 'customized' | 'groupIdentifier'
+  'ignoredInAccounting' | 'states' | 'groupIdentifier'
 > & {
   groupIdentifier: string | null;
 };
@@ -191,14 +191,14 @@ export type NewEvmHistoryEventPayload = Omit<EditEvmHistoryEventPayload, 'identi
 
 type EditSolanaEventPayload = Omit<
   SolanaEvent,
-  'ignoredInAccounting' | 'customized' | 'groupIdentifier' | 'location'
+  'ignoredInAccounting' | 'states' | 'groupIdentifier' | 'location'
 > & {
   groupIdentifier: string | null;
 };
 
 export type NewSolanaEventPayload = Omit<EditSolanaEventPayload, 'identifier'>;
 
-type EditOnlineHistoryEventPayload = Omit<OnlineHistoryEvent, 'ignoredInAccounting' | 'customized'>;
+type EditOnlineHistoryEventPayload = Omit<OnlineHistoryEvent, 'ignoredInAccounting' | 'states'>;
 
 export type NewOnlineHistoryEventPayload = Omit<EditOnlineHistoryEventPayload, 'identifier'>;
 
@@ -310,14 +310,23 @@ export enum HistoryEventAccountingRuleStatus {
 
 const HistoryEventAccountingRuleStatusEnum = z.enum(HistoryEventAccountingRuleStatus);
 
+export enum HistoryEventState {
+  AUTO_MATCHED = 'auto_matched',
+  CUSTOMIZED = 'customized',
+  IMPORTED_FROM_CSV = 'imported_from_csv',
+  PROFIT_ADJUSTMENT = 'profit_adjustment',
+}
+
+const HistoryEventStateEnum = z.enum(HistoryEventState);
+
 const HistoryEventMeta = z.object({
   ...EntryMeta.shape,
-  customized: z.boolean().optional(),
   eventAccountingRuleStatus: HistoryEventAccountingRuleStatusEnum,
   groupedEventsNum: z.number().nullish(),
   hasDetails: z.boolean().optional(),
   hasIgnoredAssets: z.boolean().optional(),
   hidden: z.boolean().optional(),
+  states: z.array(HistoryEventStateEnum).optional(),
 });
 
 type HistoryEventMeta = z.infer<typeof HistoryEventMeta>;

@@ -17,6 +17,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
 import { isTaskCancelled } from '@/utils';
+import { isCustomizedEvent } from '@/utils/history/events';
 
 interface UseHistoryEventsOperationsOptions {
   allEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
@@ -196,7 +197,7 @@ export function useHistoryEventsOperations(
 
     const groupedEvents = get(allEventsMapped)[groupIdentifier] || [];
     const childEvents = flatten(groupedEvents);
-    const isAnyCustom = childEvents.some(item => item.customized);
+    const isAnyCustom = childEvents.some(item => isCustomizedEvent(item));
 
     // If there are custom events, show dialog to ask about custom event handling
     if (isAnyCustom) {
@@ -222,7 +223,7 @@ export function useHistoryEventsOperations(
 
     const groupedEvents = get(allEventsMapped)[eventIdentifier] || [];
     const childEvents = flatten(groupedEvents);
-    const isAnyCustom = childEvents.some(item => item.customized);
+    const isAnyCustom = childEvents.some(item => isCustomizedEvent(item));
 
     // Show dialog with indexer options (only for EVM events)
     set(hasCustomEvents, isAnyCustom);

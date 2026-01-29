@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { Blockchain } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
-import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import type { HistoryEventEntry, HistoryEventState } from '@/types/history/events/schemas';
 import HistoryEventAccount from '@/components/history/events/HistoryEventAccount.vue';
+import HistoryEventStateChip from '@/components/history/events/HistoryEventStateChip.vue';
 import HistoryEventTypeCombination from '@/components/history/events/HistoryEventTypeCombination.vue';
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
@@ -13,7 +14,7 @@ const props = defineProps<{
   groupLocationLabel?: string;
   icon?: RuiIcons;
   highlight?: boolean;
-  hideCustomizedChip?: boolean;
+  hideStateChips?: boolean;
 }>();
 
 const { event } = toRefs(props);
@@ -21,9 +22,9 @@ const { event } = toRefs(props);
 const { getEventTypeData } = useHistoryEventMappings();
 const attrs = getEventTypeData(event);
 
-const { t } = useI18n({ useScope: 'global' });
-
 const isInformational = computed<boolean>(() => get(event).eventType === 'informational');
+
+const eventStates = computed<HistoryEventState[]>(() => get(event).states ?? []);
 
 const showLocationLabel = computed<boolean>(() => {
   const eventLabel = get(event).locationLabel;
@@ -69,20 +70,16 @@ const showLocationLabel = computed<boolean>(() => {
         :location-label="event.locationLabel!"
         class="text-rui-text-secondary"
       />
-      <RuiChip
-        v-if="event.customized && !hideCustomizedChip"
-        class="mt-1"
-        size="sm"
-        color="primary"
+      <div
+        v-if="eventStates.length > 0 && !hideStateChips"
+        class="flex flex-wrap gap-0.5 mt-1"
       >
-        <div class="flex items-center gap-2 text-caption font-bold">
-          <RuiIcon
-            name="lu-square-pen"
-            size="14"
-          />
-          {{ t('transactions.events.customized_event') }}
-        </div>
-      </RuiChip>
+        <HistoryEventStateChip
+          v-for="state in eventStates"
+          :key="state"
+          :state="state"
+        />
+      </div>
     </div>
   </div>
 </template>

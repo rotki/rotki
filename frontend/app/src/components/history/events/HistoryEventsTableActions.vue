@@ -45,16 +45,6 @@ const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
 const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
 const virtualEventsOnly = useRefPropVModel(toggles, 'virtualEventsOnly');
 
-watch(customizedEventsOnly, (newValue) => {
-  if (newValue && get(virtualEventsOnly))
-    set(virtualEventsOnly, false);
-});
-
-watch(virtualEventsOnly, (newValue) => {
-  if (newValue && get(customizedEventsOnly))
-    set(customizedEventsOnly, false);
-});
-
 const hasActiveToggles = logicOr(customizedEventsOnly, showIgnoredAssets, matchExactEvents, virtualEventsOnly);
 
 const canIgnore = computed<boolean>(() => {

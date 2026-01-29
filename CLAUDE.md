@@ -254,6 +254,7 @@ async function fetchData() {
 
 #### Localization
 - For the localization files (en.json, es.json, etc.), the keys should be ordered alphabetically.
+- Avoid dynamic keys for translations, as they can break the linter.
 
 #### Testing
 - Run all tests with `pnpm run test:unit` from `frontend/` directory

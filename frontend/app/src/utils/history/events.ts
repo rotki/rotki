@@ -9,6 +9,7 @@ import {
   type HistoryEvent,
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
+  HistoryEventState,
   type OnlineHistoryEvent,
   type SolanaEvent,
   type SolanaSwapEvent,
@@ -113,4 +114,12 @@ function isMissingAccountingRule(type: HistoryEventAccountingRuleStatus): boolea
 
 export function isEventMissingAccountingRule(event: HistoryEventEntry): boolean {
   return isMissingAccountingRule(event.eventAccountingRuleStatus);
+}
+
+export function hasEventState(event: HistoryEventEntry, state: HistoryEventState): boolean {
+  return event.states?.includes(state) ?? false;
+}
+
+export function isCustomizedEvent(event: HistoryEventEntry): boolean {
+  return hasEventState(event, HistoryEventState.CUSTOMIZED);
 }

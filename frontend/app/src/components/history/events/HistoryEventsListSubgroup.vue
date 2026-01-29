@@ -231,7 +231,7 @@ watch(shouldExpand, () => {
           :group-location-label="groupLocationLabel"
           highlight
           :chain="getChain(primaryEvent.location)"
-          hide-customized-chip
+          hide-state-chips
         />
       </div>
 

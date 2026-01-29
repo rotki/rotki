@@ -5308,7 +5308,6 @@
           "title": "Unlink Matched Events"
         }
       },
-      "customized_event": "Customized event",
       "delete": {
         "error": {
           "message": "Failed to delete events",
@@ -5325,6 +5324,12 @@
         "edit": {
           "title": "Edit Event"
         }
+      },
+      "event_states": {
+        "auto_matched": "Auto matched",
+        "customized": "Customized",
+        "imported_from_csv": "Imported from CSV",
+        "profit_adjustment": "Profit adjustment"
       },
       "export": {
         "confirmation_message": "Are you sure you want to export the list of events with the selected filters applied?"
@@ -5601,7 +5606,7 @@
       "start_date": "filter by the start date of the transaction period",
       "tx_hash": "filter by tx hash(es) or signature(s)",
       "validator_index": "filter by validator index(es)",
-      "virtual_only": "Show only virtual events"
+      "virtual_only": "Show only auto-generated events"
     },
     "form": {
       "account": {

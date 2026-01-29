@@ -59,7 +59,7 @@ describe('use-history-events-data', () => {
       amount: bigNumberify('100'),
       asset: 'ETH',
       counterparty: null,
-      customized: false,
+      states: [],
       entryType: HistoryEventEntryType.EVM_EVENT,
       eventAccountingRuleStatus: HistoryEventAccountingRuleStatus.PROCESSED,
       eventSubtype: 'spend',
