@@ -1247,7 +1247,6 @@
       "withdraw": "Withdraw {amount} {asset} from {locationLabel} to {address}"
     },
     "dialog": {
-      "check_unmatched": "Check Unmatched Asset Movements",
       "confirm_match": "Confirm Match",
       "description": "Select an unmatched asset movement and find a matching blockchain transaction to link them together.",
       "find_match": "Find Match",
@@ -5246,6 +5245,12 @@
       "redecode_with_options": "Redecode with options"
     },
     "alerts": {
+      "button": "Actions needed",
+      "check_duplicate_events": "Check duplicate events",
+      "check_issues": "Check issues",
+      "check_unmatched_movements": "Check unmatched movements",
+      "refresh_duplicate_events": "Refresh duplicate events",
+      "refresh_unmatched_movements": "Refresh unmatched movements",
       "title": "There are actions needed for your events"
     },
     "dialog": {

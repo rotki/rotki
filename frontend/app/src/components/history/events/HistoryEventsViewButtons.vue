@@ -8,6 +8,7 @@ import { useStatusStore } from '@/store/status';
 import { Section, Status } from '@/types/status';
 
 const showAlerts = defineModel<boolean>('showAlerts', { default: false });
+const manualIssueCheck = defineModel<boolean>('manualIssueCheck', { default: false });
 
 const props = defineProps<{
   processing: boolean;
@@ -27,41 +28,153 @@ const { mainPage, sectionLoading } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
 const { getStatus } = useStatusStore();
 
-const { autoMatchLoading, unmatchedCount } = useUnmatchedAssetMovements();
-const { totalCount: duplicatesCount } = useCustomizedEventDuplicates();
+const { autoMatchLoading, refreshUnmatchedAssetMovements, unmatchedCount } = useUnmatchedAssetMovements();
+const { fetchCustomizedEventDuplicates, totalCount: duplicatesCount } = useCustomizedEventDuplicates();
 
 const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(duplicatesCount));
 const hasIssues = computed<boolean>(() => !get(autoMatchLoading) && get(totalIssuesCount) > 0);
 const showAlertsButton = computed<boolean>(() =>
-  get(mainPage) && !get(sectionLoading) && getStatus(Section.HISTORY) === Status.LOADED && get(hasIssues),
+  get(mainPage) && (get(manualIssueCheck) || (!get(sectionLoading) && getStatus(Section.HISTORY) === Status.LOADED)) && get(hasIssues),
 );
+
+const checkingIssues = ref<boolean>(false);
 
 function toggleAlerts(): void {
   set(showAlerts, !get(showAlerts));
 }
+
+function openAlertsIfNeeded(): void {
+  if (get(showAlertsButton))
+    set(showAlerts, true);
+}
+
+async function checkIssues(): Promise<void> {
+  set(manualIssueCheck, true);
+  set(checkingIssues, true);
+  try {
+    await Promise.all([
+      refreshUnmatchedAssetMovements(),
+      fetchCustomizedEventDuplicates(),
+    ]);
+    openAlertsIfNeeded();
+  }
+  finally {
+    set(checkingIssues, false);
+  }
+}
+
+async function checkUnmatched(): Promise<void> {
+  set(manualIssueCheck, true);
+  await refreshUnmatchedAssetMovements();
+  openAlertsIfNeeded();
+}
+
+async function checkDuplicates(): Promise<void> {
+  set(manualIssueCheck, true);
+  await fetchCustomizedEventDuplicates();
+  openAlertsIfNeeded();
+}
 </script>
 
 <template>
-  <RuiBadge
-    v-if="showAlertsButton"
-    :model-value="totalIssuesCount > 0"
-    :text="totalIssuesCount.toString()"
-    color="warning"
-    placement="top"
-    offset-y="4"
-    offset-x="-4"
+  <RuiButtonGroup
+    variant="outlined"
+    :color="showAlertsButton ? 'warning' : 'primary'"
+    class="h-9"
   >
-    <RuiButton
-      variant="outlined"
+    <RuiBadge
+      v-if="showAlertsButton"
+      :model-value="totalIssuesCount > 0"
+      :text="totalIssuesCount.toString()"
       color="warning"
-      @click="toggleAlerts()"
+      placement="top"
+      offset-y="4"
+      offset-x="-4"
+    >
+      <RuiButton
+        variant="outlined"
+        color="warning"
+        class="rounded-r-none !outline-none border-r border-rui-warning/[0.5]"
+        @click="toggleAlerts()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-triangle-alert"
+            size="18"
+          />
+        </template>
+        {{ t('transactions.alerts.button') }}
+        <template #append>
+          <RuiIcon
+            name="lu-chevron-down"
+            size="16"
+            class="transition-transform duration-200"
+            :class="{ 'rotate-180': showAlerts }"
+          />
+        </template>
+      </RuiButton>
+    </RuiBadge>
+
+    <RuiButton
+      v-else
+      variant="outlined"
+      color="primary"
+      :loading="checkingIssues"
+      class="rounded-r-none !outline-none border-r border-rui-primary/[0.5]"
+      @click="checkIssues()"
     >
       <template #prepend>
-        <RuiIcon name="lu-triangle-alert" />
+        <RuiIcon
+          name="lu-search-check"
+          size="18"
+        />
       </template>
-      {{ t('transactions.alerts.title') }}
+      {{ t('transactions.alerts.check_issues') }}
     </RuiButton>
-  </RuiBadge>
+
+    <RuiMenu
+      :popper="{ placement: 'bottom-end' }"
+      menu-class="max-w-[24rem]"
+      close-on-content-click
+      wrapper-class="h-full"
+    >
+      <template #activator="{ attrs }">
+        <RuiButton
+          variant="outlined"
+          :color="showAlertsButton ? 'warning' : 'primary'"
+          class="rounded-l-none !outline-none px-3 h-9"
+          v-bind="attrs"
+        >
+          <RuiIcon
+            name="lu-chevrons-up-down"
+            size="16"
+          />
+        </RuiButton>
+      </template>
+
+      <div class="py-2">
+        <RuiButton
+          variant="list"
+          @click="checkUnmatched()"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-git-compare-arrows" />
+          </template>
+          {{ showAlertsButton ? t('transactions.alerts.refresh_unmatched_movements') : t('transactions.alerts.check_unmatched_movements') }}
+        </RuiButton>
+
+        <RuiButton
+          variant="list"
+          @click="checkDuplicates()"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-copy" />
+          </template>
+          {{ showAlertsButton ? t('transactions.alerts.refresh_duplicate_events') : t('transactions.alerts.check_duplicate_events') }}
+        </RuiButton>
+      </div>
+    </RuiMenu>
+  </RuiButtonGroup>
 
   <HistoryRefreshButton
     :processing="processing"
@@ -74,7 +187,10 @@ function toggleAlerts(): void {
     @click="emit('show:dialog', { type: DIALOG_TYPES.EVENT_FORM, data: { type: 'add', nextSequenceId: '0' } })"
   >
     <template #prepend>
-      <RuiIcon name="lu-plus" />
+      <RuiIcon
+        name="lu-plus"
+        size="18"
+      />
     </template>
     {{ t('transactions.actions.add_event') }}
   </RuiButton>
@@ -150,17 +266,6 @@ function toggleAlerts(): void {
           <RuiIcon name="lu-clock-arrow-up" />
         </template>
         {{ t('transactions.repulling.action') }}
-      </RuiButton>
-
-      <RuiButton
-        variant="list"
-        :disabled="processing"
-        @click="emit('show:dialog', { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS })"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-git-compare-arrows" />
-        </template>
-        {{ t('asset_movement_matching.dialog.check_unmatched') }}
       </RuiButton>
     </div>
   </RuiMenu>

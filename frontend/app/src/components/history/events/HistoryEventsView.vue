@@ -80,6 +80,7 @@ const toggles = ref<HistoryEventsToggles>({
 });
 
 const showAlerts = ref<boolean>(false);
+const manualIssueCheck = ref<boolean>(false);
 const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
 
 const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogContainer>>('dialogContainer');
@@ -228,6 +229,7 @@ function openMatchAssetMovementsDialog(): void {
       <template #buttons>
         <HistoryEventsViewButtons
           v-model:show-alerts="showAlerts"
+          v-model:manual-issue-check="manualIssueCheck"
           :processing="processing"
           :loading="anyEventsDecoding"
           :include-evm-events="includes.evmEvents"
@@ -243,6 +245,7 @@ function openMatchAssetMovementsDialog(): void {
           v-model:show="showAlerts"
           :loading="debouncedProcessing"
           :main-page="mainPage"
+          :manual-issue-check="manualIssueCheck"
           @open:match-asset-movements="openMatchAssetMovementsDialog()"
         />
 

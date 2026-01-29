@@ -40,7 +40,10 @@ function confirmRefresh() {
           @click="confirmRefresh()"
         >
           <template #prepend>
-            <RuiIcon name="lu-refresh-ccw" />
+            <RuiIcon
+              name="lu-refresh-ccw"
+              size="18"
+            />
           </template>
           {{ t('common.refresh') }}
         </RuiButton>

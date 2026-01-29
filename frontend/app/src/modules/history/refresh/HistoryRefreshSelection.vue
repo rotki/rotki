@@ -193,13 +193,13 @@ onMounted(() => {
       <RuiButton
         variant="outlined"
         color="primary"
-        class="px-3 py-3 rounded-l-none h-9 !outline-none"
+        class="px-3 rounded-l-none h-9 !outline-none"
         :disabled="disabled"
         v-bind="attrs"
       >
         <RuiIcon
           name="lu-chevrons-up-down"
-          class="size-4"
+          size="16"
         />
       </RuiButton>
     </template>

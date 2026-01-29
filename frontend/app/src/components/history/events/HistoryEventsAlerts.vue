@@ -11,6 +11,7 @@ const show = defineModel<boolean>('show', { required: true });
 const props = defineProps<{
   loading: boolean;
   mainPage: boolean;
+  manualIssueCheck: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -21,10 +22,11 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const { getStatus } = useStatusStore();
 
-const { loading, mainPage } = toRefs(props);
+const { loading, mainPage, manualIssueCheck } = toRefs(props);
 
 const {
   autoMatchLoading,
+  loading: unmatchedLoading,
   refreshUnmatchedAssetMovements,
   unmatchedCount,
 } = useUnmatchedAssetMovements();
@@ -33,6 +35,7 @@ const {
   autoFixCount,
   autoFixGroupIds,
   fetchCustomizedEventDuplicates,
+  loading: duplicatesLoading,
   manualReviewCount,
   manualReviewGroupIds,
 } = useCustomizedEventDuplicates();
@@ -42,9 +45,10 @@ const showAutoFixDuplicates = computed<boolean>(() => get(autoFixCount) > 0);
 const showManualReviewDuplicates = computed<boolean>(() => get(manualReviewCount) > 0);
 
 const hasAlerts = logicOr(showUnmatchedMovements, showAutoFixDuplicates, showManualReviewDuplicates);
+const refreshing = logicOr(unmatchedLoading, duplicatesLoading);
 
 const showAlerts = computed<boolean>(() =>
-  get(mainPage) && !get(loading) && getStatus(Section.HISTORY) === Status.LOADED && get(hasAlerts) && get(show),
+  get(mainPage) && (get(manualIssueCheck) || (!get(loading) && getStatus(Section.HISTORY) === Status.LOADED)) && get(hasAlerts) && get(show),
 );
 
 function closeAlerts(): void {
@@ -87,13 +91,21 @@ watchImmediate(loading, async (isLoading) => {
   <RuiAlert
     v-if="showAlerts"
     type="warning"
-    class="mb-3"
+    class="mb-3 relative overflow-hidden"
     closeable
     @close="closeAlerts()"
   >
     <template #title>
       {{ t('transactions.alerts.title') }}
     </template>
+
+    <RuiProgress
+      v-if="refreshing"
+      thickness="2"
+      color="primary"
+      variant="indeterminate"
+      class="absolute top-0 left-0 w-full"
+    />
     <ul class="list-disc pl-4">
       <li v-if="showUnmatchedMovements">
         <div class="flex items-center">
