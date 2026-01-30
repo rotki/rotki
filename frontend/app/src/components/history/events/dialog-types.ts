@@ -6,6 +6,7 @@ import type {
 } from '@/modules/history/management/forms/form-types';
 import type { Exchange } from '@/types/exchanges';
 import type { AddTransactionHashPayload, LocationAndTxRef } from '@/types/history/events';
+import type { HistoryEventState } from '@/types/history/events/schemas';
 import type { AccountingRuleIdentifier } from '@/types/settings/accounting';
 
 export const DIALOG_TYPES = {
@@ -36,10 +37,9 @@ export type DialogShowOptions =
 // Type-safe event handlers based on dialog types
 // Common toggle options for history events filtering
 export interface HistoryEventsToggles {
-  customizedEventsOnly: boolean;
   matchExactEvents: boolean;
   showIgnoredAssets: boolean;
-  virtualEventsOnly: boolean;
+  stateMarkers: HistoryEventState[];
 }
 
 export interface DialogEventHandlers {

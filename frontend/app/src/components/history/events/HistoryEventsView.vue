@@ -73,10 +73,9 @@ const {
 } = toRefs(props);
 
 const toggles = ref<HistoryEventsToggles>({
-  customizedEventsOnly: false,
   matchExactEvents: false,
   showIgnoredAssets: false,
-  virtualEventsOnly: false,
+  stateMarkers: [],
 });
 
 const showAlerts = ref<boolean>(false);

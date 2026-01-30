@@ -8,6 +8,7 @@ import { type Account, type HistoryEventEntryType, toSnakeCase, type Writeable }
 import { isEqual } from 'es-toolkit';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
 import { useHistoryEvents } from '@/composables/history/events';
+import { isValidHistoryEventState } from '@/composables/history/events/mapping/state';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { TableId } from '@/modules/table/use-remember-table-sorting';
 import { RouterLocationLabelsSchema } from '@/types/route';
@@ -144,13 +145,15 @@ export function useHistoryEventsFilters(
       }
       return {};
     }),
-    extraParams: computed(() => ({
-      customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
-      excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
-      groupIdentifiers: get(groupIdentifiersFromQuery),
-      identifiers: get(identifiersFromQuery),
-      virtualEventsOnly: get(toggles, 'virtualEventsOnly'),
-    })),
+    extraParams: computed(() => {
+      const stateMarkers = get(toggles, 'stateMarkers');
+      return {
+        excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
+        groupIdentifiers: get(groupIdentifiersFromQuery),
+        identifiers: get(identifiersFromQuery),
+        ...(stateMarkers.length > 0 ? { stateMarkers } : {}),
+      };
+    }),
     filterSchema: () => useHistoryEventFilter({
       eventSubtypes: (get(eventSubTypes) || []).length > 0,
       eventTypes: (get(eventTypes) || []).length > 0,
@@ -167,6 +170,14 @@ export function useHistoryEventsFilters(
         set(locationLabels, []);
       else
         set(locationLabels, locationLabelsParsed);
+
+      const stateMarkersParam = query.stateMarkers;
+      if (stateMarkersParam && typeof stateMarkersParam === 'string') {
+        set(toggles, {
+          ...get(toggles),
+          stateMarkers: stateMarkersParam.split(',').filter(isValidHistoryEventState),
+        });
+      }
     },
     persistFilter: computed(() => ({
       enabled: true,
@@ -178,10 +189,12 @@ export function useHistoryEventsFilters(
       const duplicateHandlingStatusValue = get(duplicateHandlingStatusFromQuery);
       const groupIdentifiersValue = get(groupIdentifiersFromQuery);
 
+      const stateMarkersValue = get(toggles, 'stateMarkers');
       return {
         duplicateHandlingStatus: duplicateHandlingStatusValue,
         groupIdentifiers: groupIdentifiersValue?.join(','),
         locationLabels: get(usedLocationLabels),
+        ...(stateMarkersValue.length > 0 ? { stateMarkers: stateMarkersValue.join(',') } : {}),
       };
     }),
     requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {

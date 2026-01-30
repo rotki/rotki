@@ -3,14 +3,13 @@ import type { HistoryEventsToggles } from '@/components/history/events/dialog-ty
 import type { IgnoreStatus } from '@/modules/history/events/composables/use-history-events-selection-actions';
 import type { SelectionState } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import TableStatusFilter from '@/components/helper/TableStatusFilter.vue';
 import HistoryEventsExport from '@/components/history/events/HistoryEventsExport.vue';
+import HistoryEventsStateFilter from '@/components/history/events/HistoryEventsStateFilter.vue';
 import HistoryTableActions from '@/components/history/HistoryTableActions.vue';
 import LocationLabelSelector from '@/components/history/LocationLabelSelector.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import HistoryRedecodeButton from '@/modules/history/redecode/HistoryRedecodeButton.vue';
 import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatcher } from '@/types/filtering';
-import { useRefPropVModel } from '@/utils/model';
 
 const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { required: true });
 
@@ -39,13 +38,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const customizedEventsOnly = useRefPropVModel(toggles, 'customizedEventsOnly');
-const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
-const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
-const virtualEventsOnly = useRefPropVModel(toggles, 'virtualEventsOnly');
-
-const hasActiveToggles = logicOr(customizedEventsOnly, showIgnoredAssets, matchExactEvents, virtualEventsOnly);
 
 const canIgnore = computed<boolean>(() => {
   const status = props.ignoreStatus;
@@ -93,48 +85,7 @@ function handleToggleSelectAllMatching(): void {
 <template>
   <HistoryTableActions hide-divider>
     <template #filter>
-      <RuiBadge
-        dot
-        :model-value="hasActiveToggles"
-        offset-y="10"
-        offset-x="-8"
-      >
-        <TableStatusFilter>
-          <div class="py-1 max-w-[16rem]">
-            <RuiSwitch
-              v-model="customizedEventsOnly"
-              color="primary"
-              class="p-4"
-              hide-details
-              :label="t('transactions.filter.customized_only')"
-            />
-            <RuiDivider />
-            <RuiSwitch
-              v-model="virtualEventsOnly"
-              color="primary"
-              class="p-4"
-              hide-details
-              :label="t('transactions.filter.virtual_only')"
-            />
-            <RuiDivider />
-            <RuiSwitch
-              v-model="showIgnoredAssets"
-              color="primary"
-              class="p-4"
-              hide-details
-              :label="t('transactions.filter.show_ignored_assets')"
-            />
-            <RuiDivider />
-            <RuiSwitch
-              v-model="matchExactEvents"
-              color="primary"
-              class="p-4"
-              :label="t('transactions.filter.match_exact_filter')"
-              :hint="t('transactions.filter.match_exact_filter_hint')"
-            />
-          </div>
-        </TableStatusFilter>
-      </RuiBadge>
+      <HistoryEventsStateFilter v-model:toggles="toggles" />
       <TableFilter
         v-model:matches="filters"
         class="min-w-[12rem] md:min-w-[24rem]"

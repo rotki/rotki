@@ -16,11 +16,10 @@ export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ t
   readonly entryTypes?: FilterObjectWithBehaviour<string | string[]>;
   readonly txHashes?: string | string[];
   readonly validatorIndices?: string | string[];
-  readonly customizedEventsOnly?: boolean;
   readonly excludeIgnoredAssets?: boolean;
   readonly identifiers?: string[];
   readonly notesSubstring?: string;
-  readonly virtualEventsOnly?: boolean;
+  readonly stateMarkers?: string[];
 }
 
 export interface HistoryEventExportPayload extends Omit<HistoryEventRequestPayload, 'aggregateByGroupIds' | 'limit' | 'offset'> {

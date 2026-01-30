@@ -3683,7 +3683,6 @@
       "account": "Filtrer par compte",
       "address": "filtrer par adresse de contrepartie",
       "asset": "filtrer par l'actif des événements",
-      "customized_only": "Afficher uniquement les événements personnalisés",
       "date_hint": "format {format} HH:mm:ss (les secondes sont optionnelles)",
       "end_date": "filtrer par la date de fin de la période des transactions",
       "entry_type": "filtrer par type d'entrée",
