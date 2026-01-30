@@ -43,6 +43,8 @@ interface Props {
   symbol?: SymbolDisplay;
   /** Override the displayed currency (e.g., 'USD', 'EUR'). If omitted, uses user's main currency. */
   currency?: string;
+  /** Skip scrambling even when privacy mode is enabled */
+  noScramble?: boolean;
 }
 
 defineOptions({
@@ -57,7 +59,7 @@ const props = withDefaults(defineProps<Props>(), {
   timestamp: undefined,
 });
 
-const { from, timestamp, value, loading: loadingProp } = toRefs(props);
+const { from, timestamp, value, loading: loadingProp, noScramble } = toRefs(props);
 
 // Composables
 const { converted, loading } = useFiatConversion({
@@ -67,7 +69,7 @@ const { converted, loading } = useFiatConversion({
 });
 const { currency: userCurrency } = useAmountDisplaySettings();
 const { findCurrency } = useCurrencies();
-const { scrambledValue } = useScrambledValue({ value: converted });
+const { scrambledValue } = useScrambledValue({ value: converted, noScramble });
 
 // Computed
 const resolvedCurrency = computed<Currency>(() => {

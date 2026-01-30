@@ -37,6 +37,7 @@ export interface NoteFormat {
   url?: string;
   chain?: Blockchain;
   showHashLink?: boolean;
+  showCopyOnly?: boolean;
   countryCode?: string;
   merchantCode?: string;
 }
@@ -234,12 +235,13 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       }
 
       // Check if the word is Tx Hash
-      if (isValidEvmTxHash(word) && !get(noTxRef)) {
+      if (isValidEvmTxHash(word)) {
         addLeadingPunctuation();
         formats.push({
           address: word,
           showHashLink: true,
           type: NoteType.TX,
+          showCopyOnly: get(noTxRef),
         });
         return addTrailingPunctuation();
       }

@@ -6,6 +6,7 @@ import { useAmountDisplaySettings } from './use-amount-display-settings';
 
 export interface UseScrambledValueOptions {
   value: MaybeRef<BigNumber>;
+  noScramble?: MaybeRef<boolean>;
 }
 
 export interface UseScrambledValueReturn {
@@ -18,7 +19,7 @@ export interface UseScrambledValueReturn {
  * Use this for personal values (balances, totals) - not for prices.
  */
 export function useScrambledValue(options: UseScrambledValueOptions): UseScrambledValueReturn {
-  const { value } = options;
+  const { value, noScramble } = options;
 
   const {
     scrambleData,
@@ -38,7 +39,7 @@ export function useScrambledValue(options: UseScrambledValueOptions): UseScrambl
   const valueRef = isRef(value) ? value : ref(value);
 
   const scrambledValue = useNumberScrambler({
-    enabled: computed<boolean>(() => get(scrambleData) || !get(shouldShowAmount)),
+    enabled: computed<boolean>(() => !get(noScramble) && (get(scrambleData) || !get(shouldShowAmount))),
     multiplier: scrambleMultiplier,
     value: valueRef as ComputedRef<BigNumber>,
   });

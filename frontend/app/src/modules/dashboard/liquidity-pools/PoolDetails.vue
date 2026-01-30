@@ -92,6 +92,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
       <FiatDisplay
         v-if="row.usdPrice && row.usdPrice.gte(0)"
         :value="row.usdPrice"
+        no-scramble
         from="USD"
       />
       <span v-else>-</span>

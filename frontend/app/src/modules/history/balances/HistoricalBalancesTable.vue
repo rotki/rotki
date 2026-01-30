@@ -104,6 +104,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
     <template #item.usdPrice="{ row }">
       <FiatDisplay
         :value="row.usdPrice"
+        no-scramble
         :loading="isPriceLoading(row.asset)"
       />
     </template>

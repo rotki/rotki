@@ -170,6 +170,7 @@ const mediaStyle = computed<StyleValue>(() => {
         <FiatDisplay
           class="text-rui-text-secondary"
           :value="item.price"
+          no-scramble
           symbol="ticker"
         />
       </div>

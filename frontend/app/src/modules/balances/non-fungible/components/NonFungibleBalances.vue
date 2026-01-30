@@ -112,7 +112,10 @@ watch(sectionLoading, async (isLoading, wasLoading) => {
           <span v-else>-</span>
         </template>
         <template #item.price="{ row }">
-          <FiatDisplay :value="row.price" />
+          <FiatDisplay
+            :value="row.price"
+            no-scramble
+          />
         </template>
         <template #item.actions="{ row }">
           <RowActions

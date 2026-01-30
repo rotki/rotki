@@ -309,7 +309,10 @@ onMounted(async () => {
         </template>
 
         <template #item.price="{ row }">
-          <FiatDisplay :value="row.price" />
+          <FiatDisplay
+            :value="row.price"
+            no-scramble
+          />
         </template>
 
         <template #item.detectedAt="{ row }">

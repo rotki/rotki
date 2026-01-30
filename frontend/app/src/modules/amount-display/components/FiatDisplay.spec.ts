@@ -129,6 +129,21 @@ describe('modules/amount-display/components/FiatDisplay', () => {
       await nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe('1.445280012');
     });
+
+    it('should not scramble the value when noScramble is true', async () => {
+      wrapper = mount(FiatDisplay, {
+        global: { plugins: [pinia] },
+        props: {
+          from: 'USD',
+          noScramble: true,
+          value: bigNumberify(1.20440001),
+        },
+      });
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toMatch('1.44');
+      await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
+      await nextTick();
+      expect(wrapper.find('[data-cy="display-full-value"]').text()).toMatch('1.445280012');
+    });
   });
 
   describe('historic prices', () => {

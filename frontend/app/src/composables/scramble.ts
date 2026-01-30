@@ -85,20 +85,26 @@ export function useScramble(): UseScrambleReturn {
     if (!get(scrambleData))
       return timestamp;
 
-    const currentTimestamp = Date.now();
-    const normalizedTimestamps = (milliseconds ? timestamp : timestamp * 1000);
-    const diff = normalizedTimestamps - currentTimestamp;
     let multiplier = +get(scrambleMultiplier);
     if (multiplier < 1)
       multiplier += 1;
 
-    const maxDiffTimestamps = 50e8; // Approximately 2 months
-    const diffTimestamps = diff * multiplier;
-    const isNegative = diffTimestamps < 0;
+    /**
+     * Deterministic offset using prime-based factors to ensure all date
+     * components (day, month, year, hour, minute, second) are scrambled.
+     * Past dates stay in the past, future dates stay in the future.
+     * Pure offset preserves ordering: if A < B then scramble(A) < scramble(B).
+     */
+    const offsetSeconds = multiplier * 13 * 86400
+      + multiplier * 7 * 3600
+      + multiplier * 23 * 60
+      + multiplier * 37;
 
-    // the diff should not be more than `maxDiffTimestamps`
-    const max = Math.min(Math.abs(diffTimestamps), maxDiffTimestamps);
-    return Math.round(normalizedTimestamps + (max * (isNegative ? -1 : 1)) / (milliseconds ? 1 : 1000));
+    const nowSeconds = Math.round(Date.now() / 1000);
+    const tsSeconds = milliseconds ? Math.round(timestamp / 1000) : timestamp;
+    const direction = tsSeconds <= nowSeconds ? -1 : 1;
+
+    return Math.round(timestamp + direction * offsetSeconds * (milliseconds ? 1000 : 1));
   };
 
   return {

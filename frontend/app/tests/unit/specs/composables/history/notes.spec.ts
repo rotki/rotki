@@ -283,7 +283,13 @@ describe('composables::history/notes', () => {
       const expected: NoteFormat[] = [
         {
           type: NoteType.WORD,
-          word: `TxHash ${txHash}`,
+          word: 'TxHash',
+        },
+        {
+          type: NoteType.TX,
+          address: txHash,
+          showHashLink: true,
+          showCopyOnly: true,
         },
       ];
 

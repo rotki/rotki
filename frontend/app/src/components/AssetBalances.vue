@@ -218,6 +218,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get
         :value="row.usdPrice"
         :loading="!row.usdPrice || row.usdPrice.lt(0)"
         from="USD"
+        no-scramble
       />
     </template>
     <template #item.amount="{ row }">

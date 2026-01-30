@@ -215,6 +215,7 @@ watchDebounced(
           v-if="!row.assetIsMissing"
           :loading="!row.usdPrice || row.usdPrice.lt(0)"
           :value="row.usdPrice"
+          no-scramble
         />
         <template v-else>
           -

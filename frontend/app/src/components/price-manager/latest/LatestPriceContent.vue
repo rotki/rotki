@@ -179,6 +179,7 @@ onMounted(async () => {
           <FiatDisplay
             :value="row.usdPrice"
             :loading="!row.usdPrice || row.usdPrice.lt(0)"
+            no-scramble
             from="USD"
           />
         </template>

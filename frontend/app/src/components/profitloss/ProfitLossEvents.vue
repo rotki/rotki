@@ -256,6 +256,7 @@ onMounted(async () => {
       <template #item.price="{ row }">
         <FiatDisplay
           :value="row.price"
+          no-scramble
           :currency="report.settings.profitCurrency ?? undefined"
         />
       </template>

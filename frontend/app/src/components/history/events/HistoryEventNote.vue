@@ -93,6 +93,7 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
         :text="note.address"
         :type="note.type"
         :location="note.chain ?? chain"
+        :display-mode="note.showCopyOnly ? 'copy' : 'default'"
       />
       <template v-else-if="note.type === NoteType.AMOUNT">
         <AssetAmountDisplay
