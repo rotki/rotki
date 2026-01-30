@@ -1766,3 +1766,68 @@ def test_ignore_updated_at_ts(function_scope_coinbase):
         coinbase.query_history_events()
 
     assert tx_query_mock.call_count == 1
+
+
+def test_pro_withdrawal_skipped_when_coinbasepro_events_exist(
+        database: 'DBHandler',
+        function_scope_coinbase,
+):
+    """Test pro_withdrawal/pro_deposit are skipped when coinbasepro events exist.
+
+    1. No coinbasepro events -> pro_withdrawal processed as deposit
+    2. Coinbasepro events exist -> pro_withdrawal skipped
+    """
+    coinbase = function_scope_coinbase
+
+    def mock_api_query(endpoint: str, **kwargs: Any) -> list:
+        if endpoint == 'accounts':
+            return [{'id': 'acc1', 'updated_at': '2024-01-16T00:00:00Z'}]
+        if '/transactions' in endpoint:
+            return [{
+                'id': 'pro_tx_1',
+                'type': 'pro_withdrawal',
+                'status': 'completed',
+                'amount': {'amount': '1.5', 'currency': 'ETH'},
+                'native_amount': {'amount': '3000', 'currency': 'USD'},
+                'created_at': '2024-01-15T10:00:00Z',
+                'details': {'title': 'Transfer from Coinbase Pro'},
+            }]
+        return []
+
+    # Test 1: No coinbasepro events -> pro_withdrawal should be processed
+    with patch.object(coinbase, '_api_query', side_effect=mock_api_query):
+        coinbase.query_history_events()
+
+    with database.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
+        )
+    assert len(events) == 1  # pro_withdrawal processed
+
+    # Clean up for next test
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM history_events WHERE location = ?',
+            (Location.COINBASE.serialize_for_db(),),
+        )
+        write_cursor.execute('DELETE FROM key_value_cache')
+
+    # Test 2: Add coinbasepro event, then pro_withdrawal should be skipped
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO history_events (entry_type, group_identifier, sequence_index, timestamp, '
+            'location, asset, amount, type, subtype) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (1, 'cbp_grp', 0, 1705312800000, Location.COINBASEPRO.serialize_for_db(),
+             'ETH', '1.5', 'withdrawal', 'none'),
+        )
+
+    with patch.object(coinbase, '_api_query', side_effect=mock_api_query):
+        coinbase.query_history_events()
+
+    with database.conn.read_ctx() as cursor:
+        events = DBHistoryEvents(database).get_history_events_internal(
+            cursor,
+            filter_query=HistoryEventFilterQuery.make(location=Location.COINBASE),
+        )
+    assert len(events) == 0  # pro_withdrawal skipped due to existing coinbasepro events

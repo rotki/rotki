@@ -3762,7 +3762,7 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
     subtype_migration_query = (
         'SELECT h.identifier, h.type, h.subtype, c.counterparty '
         'FROM history_events h LEFT JOIN chain_events_info c ON h.identifier = c.identifier '
-        'WHERE h.identifier >= 5 ORDER BY h.identifier'
+        'WHERE h.identifier >= 5 AND h.identifier < 10 ORDER BY h.identifier'
     )
     db_v50 = _init_db_with_target_version(
         target_version=50,
@@ -3784,6 +3784,8 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
             (7, '0x111222333444', 0, 'ETH'),
             (8, '0x555666777888', 0, 'ETH'),
             (9, '0x999888777666', 0, 'ETH'),
+            (10, 'CB_DUP_EVENT_1', 0, 'ETH'),  # coinbase duplicate (will be deleted)
+            (11, 'CBP_DUP_EVENT_1', 0, 'ETH'),  # coinbase pro (will be kept)
         ])
         assert cursor.execute(subtype_migration_query).fetchall() == [
             (5, 'deposit', 'deposit asset', 'aave-v3'),  # customized + counterparty
@@ -3832,7 +3834,7 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
         assert not column_exists(cursor=cursor, table_name='history_events', column_name='event_identifier')  # noqa: E501
         assert column_exists(cursor=cursor, table_name='history_events', column_name='group_identifier')  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) FROM chain_events_info').fetchone()[0] == 5
-        assert cursor.execute('SELECT identifier, group_identifier, sequence_index, asset FROM history_events ORDER BY identifier').fetchall() == result  # noqa: E501
+        assert cursor.execute('SELECT identifier, group_identifier, sequence_index, asset FROM history_events ORDER BY identifier').fetchall() == result[:9] + result[10:]  # entry 10 (coinbase duplicate) deleted  # noqa: E501
         assert cursor.execute(  # Verify the unique constraint was updated
             "SELECT sql FROM sqlite_master WHERE type='table' AND name='history_events'",
         ).fetchone()[0].find('UNIQUE(group_identifier, sequence_index)') != -1

@@ -155,6 +155,7 @@ class Coinbase(ExchangeInterface):
         # skipped when both the debit and credit part of the trade is present.
         self.advanced_orders_to_currency: dict[str, str] = {}
         self.staking_events: set[tuple[TimestampMS, Asset, FVal]] = set()
+        self._has_coinbasepro_events: bool = False
 
     def first_connection(self) -> None:
         self.first_connection_made = True
@@ -420,6 +421,11 @@ class Coinbase(ExchangeInterface):
 
         now = ts_now()
         self.staking_events = set()
+        with self.db.conn.read_ctx() as cursor:
+            self._has_coinbasepro_events = cursor.execute(
+                'SELECT COUNT(*) FROM history_events WHERE location = ?',
+                (Location.COINBASEPRO.serialize_for_db(),),
+            ).fetchone()[0] > 0
         conversion_pairs: defaultdict[str, list[dict]] = defaultdict(list)
         all_events: list[HistoryBaseEntry] = []
         for account_id in account_info:
@@ -532,9 +538,9 @@ class Coinbase(ExchangeInterface):
             # 'tx' represents uncategorized transactions that don't fit other specific types.
             # Used as fallback when a transaction's nature is unclear.
             # See: https://docs.cdp.coinbase.com/coinbase-app/docs/api-transactions#transaction-types
-            elif tx_type in (
-                'send', 'fiat_deposit', 'fiat_withdrawal',
-                'pro_withdrawal', 'pro_deposit', 'tx',
+            elif (
+                tx_type in ('send', 'fiat_deposit', 'fiat_withdrawal', 'tx') or
+                (not self._has_coinbasepro_events and tx_type in ('pro_withdrawal', 'pro_deposit'))
             ):
                 # Their docs don't list all possible types. Added some I saw in the wild
                 # and some I assume would exist (exchange_withdrawal, since I saw exchange_deposit)

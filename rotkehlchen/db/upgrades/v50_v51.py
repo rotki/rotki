@@ -18,6 +18,7 @@ from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
+from rotkehlchen.types import Location
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
 if TYPE_CHECKING:
@@ -313,5 +314,23 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 HistoryEventSubType.REMOVE_ASSET.serialize(),
             ),
         )
+
+    @progress_step(description='Removing duplicate Coinbase/Coinbase Pro events.')
+    def _remove_coinbase_coinbasepro_duplicates(write_cursor: 'DBCursor') -> None:
+        """Remove duplicate events between Coinbase and Coinbase Pro.
+
+        When a user had both exchanges connected, transfers between them created
+        duplicate events. We keep the Coinbase Pro version. Duplicates are
+        identified by same timestamp, asset, amount, and type.
+        """
+        if (deleted_count := write_cursor.execute(
+            'DELETE FROM history_events WHERE identifier IN ('
+            'SELECT cb.identifier FROM history_events cb '
+            'INNER JOIN history_events cbp ON cb.asset = cbp.asset AND cb.amount = cbp.amount '
+            'AND cb.timestamp = cbp.timestamp AND cb.type = cbp.type '
+            'WHERE cb.location = ? AND cbp.location = ?)',
+            (Location.COINBASE.serialize_for_db(), Location.COINBASEPRO.serialize_for_db()),
+        ).rowcount) > 0:
+            log.debug(f'Deleted {deleted_count} duplicate Coinbase events that had matching Coinbase Pro events')  # noqa: E501
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
