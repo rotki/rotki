@@ -5,6 +5,7 @@ from rotkehlchen.chain.base.modules.aerodrome.decoder import ROUTER
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME
+from rotkehlchen.chain.evm.decoding.zerox.constants import CPT_ZEROX
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     SerializableChainIndexerOrder,
@@ -638,3 +639,51 @@ def test_swap(base_transaction_decoder, base_accounts, load_global_caches):
         address=string_to_evm_address('0x4F9Dc2229f2357B27C22db56cB39582c854Ad6d5'),
         notes=f'Receive {receive_amount} WETH as the result of a swap in aerodrome',
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_swap_via_settler_router_on_base(base_transaction_decoder, base_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x3a02a2df62ec9d633e73771b48806c2fc8a47f64bf97058cc561e20c6fe037c4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_transaction_decoder.evm_inquirer,
+        tx_hash=tx_hash,
+    )
+    expected_events = [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1769195677000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000002425034605404')),
+        location_label=(user_address := base_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:8453/erc20:0x18b6f6049A0af4Ed2BBe0090319174EeeF89f53a'),
+        amount=(swap_amount := FVal('46.75')),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} RUNNER via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=(settler_address := string_to_evm_address('0x49fb9C16B9b2a19452633573603c837673fD7E04')),  # noqa: E501
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'),
+        amount=(received_amount := FVal('10.631562')),
+        location_label=user_address,
+        notes=f'Receive {received_amount} USDC as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=settler_address,
+    )]
+    assert events == expected_events
