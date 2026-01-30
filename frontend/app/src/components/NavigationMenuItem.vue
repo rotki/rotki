@@ -66,6 +66,11 @@ function onBodyClick(): void {
     toggleExpand();
   }
 }
+
+onMounted(() => {
+  if (props.parent && props.active)
+    set(subMenuExpanded, true);
+});
 </script>
 
 <template>
@@ -77,7 +82,7 @@ function onBodyClick(): void {
         'font-medium bg-transparent !text-rui-primary': active && parent,
         'pl-12 pr-0 text-sm': subMenu && !mini,
         'px-0 justify-center': mini,
-        'pl-0': mini && subMenu,
+        'pl-3': mini && subMenu,
       }"
       @click="onBodyClick()"
     >

@@ -310,7 +310,7 @@ function isRouteMatch(location: RouteLocationRaw) {
               :to="navItem.items[0]?.route"
               parent
             >
-              <div :class="{ 'bg-rui-grey-200 dark:bg-rui-grey-800': isMini }">
+              <div :class="{ 'bg-rui-grey-200 dark:bg-rui-grey-800 rounded-md': isMini }">
                 <RouterLink
                   v-for="(subNavItem, si) in navItem.items"
                   :key="si"
