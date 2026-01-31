@@ -680,6 +680,7 @@ class DBHistoryEvents:
             entries_limit: int | None,
             aggregate_by_group_ids: bool = False,
             match_exact_events: bool = True,
+            include_order: bool = True,
     ) -> tuple[str, list]:
         """Returns the sql queries and bindings for the history events without pagination."""
         # group_has_ignored_assets is added at the END so existing slicing logic is not affected.
@@ -690,13 +691,13 @@ class DBHistoryEvents:
             filters, query_bindings = filter_query.prepare(
                 with_group_by=True,
                 with_pagination=False,
-                with_order=match_exact_events is True,  # skip order when we want the whole group of events since we order in an outer part of the query later  # noqa: E501
+                with_order=match_exact_events is True and include_order is True,  # skip order when we want the whole group of events since we order in an outer part of the query later  # noqa: E501
                 without_ignored_asset_filter=True,
             )
             prefix = 'SELECT COUNT(*), *'
         else:
             filters, query_bindings = filter_query.prepare(
-                with_order=match_exact_events is True,  # same as above
+                with_order=match_exact_events is True and include_order is True,  # same as above
                 with_pagination=False,
             )
             prefix = 'SELECT *'
@@ -711,7 +712,7 @@ class DBHistoryEvents:
             ), [entries_limit]
 
         if match_exact_events is False:  # return all group events instead of just the filtered ones.  # noqa: E501
-            if filter_query.order_by is not None:
+            if include_order is True and filter_query.order_by is not None:
                 order_by = filter_query.order_by.prepare()
             else:
                 order_by = ''
@@ -934,6 +935,7 @@ class DBHistoryEvents:
             aggregate_by_group_ids=aggregate_by_group_ids,
             match_exact_events=match_exact_events,
             entries_limit=entries_limit,
+            include_order=True,
         )
         if filter_query.pagination is not None:
             base_query = f'SELECT * FROM ({base_query}) {filter_query.pagination.prepare()}'
@@ -1368,6 +1370,7 @@ class DBHistoryEvents:
             filter_query=query_filter,
             aggregate_by_group_ids=aggregate_by_group_ids,
             entries_limit=None,
+            include_order=False,
         )
         count_without_limit = cursor.execute(
             f'SELECT COUNT(*) FROM ({query_without_limit})',
@@ -1384,6 +1387,7 @@ class DBHistoryEvents:
             filter_query=query_filter,
             aggregate_by_group_ids=aggregate_by_group_ids,
             entries_limit=entries_limit,
+            include_order=False,
         )
         count_with_limit = cursor.execute(
             f'SELECT COUNT(*) FROM ({query_with_limit})',
