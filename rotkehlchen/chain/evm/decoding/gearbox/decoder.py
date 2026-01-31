@@ -78,11 +78,16 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
         )
         self.staking_contract = staking_contract
         self.gear_token_identifier = gear_token_identifier
+        self.farming_pool_tokens: set[str] = set()
 
     @property
     def pools(self) -> dict[ChecksumEvmAddress, GearboxPoolData]:
         assert isinstance(self.cache_data[0], dict), 'GearboxCommonDecoder cache_data[0] is not a dict'  # noqa: E501
-        return self.cache_data[0]
+        pools = self.cache_data[0]
+        for pool_data in pools.values():
+            if pool_data.farming_pool_token:
+                self.farming_pool_tokens.add(pool_data.farming_pool_token)
+        return pools
 
     def _cache_mapping_methods(self) -> tuple[Callable[[DecoderContext], EvmDecodingOutput]]:
         return (self._decode_pool_events,)
@@ -313,6 +318,7 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 self.base.is_tracked(context.event.location_label) and  # type: ignore[arg-type]  # it is a  valid checksum address
                 (
                     context.event.address in self.pools or
+                    context.event.address in self.farming_pool_tokens or
                     any((
                         tx_log.topics[0] == REWARD_CLAIMED and
                         context.event.amount == token_normalized_value_decimals(token_amount=int.from_bytes(tx_log.data), token_decimals=DEFAULT_TOKEN_DECIMALS)  # noqa: E501

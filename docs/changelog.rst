@@ -2,8 +2,9 @@
 Changelog
 =========
 
+* :bug:`-` More Gearbox reward claims will now be automatically decoded in the history view.
 * :bug:`11483` Coinbase swaps where the spend/receive asset and amount are identical will no longer be shown.
-* :bug:`-` Additional base 0x swaps will now be decoded
+* :bug:`-` Additional base 0x swaps will now be automatically decoded in the history view.
 * :bug:`11440` Users will no longer get stuck after pressing the submit button when creating history events.
 * :feature:`11334` Users can now detect and fix duplicate events that occur when customized events are re-pulled from the blockchain.
 * :feature:`11385` When authenticating for monerium on linux AppImage the cookie will no longer be shared between different accounts.
