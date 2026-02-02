@@ -172,12 +172,12 @@ export function useHistoryEventsFilters(
         set(locationLabels, locationLabelsParsed);
 
       const stateMarkersParam = query.stateMarkers;
-      if (stateMarkersParam && typeof stateMarkersParam === 'string') {
-        set(toggles, {
-          ...get(toggles),
-          stateMarkers: stateMarkersParam.split(',').filter(isValidHistoryEventState),
-        });
-      }
+      set(toggles, {
+        ...get(toggles),
+        stateMarkers: stateMarkersParam && typeof stateMarkersParam === 'string'
+          ? stateMarkersParam.split(',').filter(isValidHistoryEventState)
+          : [],
+      });
     },
     persistFilter: computed(() => ({
       enabled: true,

@@ -39,6 +39,7 @@ function toggleState(state: HistoryEventState): void {
 <template>
   <RuiBadge
     dot
+    size="lg"
     :model-value="hasActiveToggles"
     offset-y="10"
     offset-x="-8"
