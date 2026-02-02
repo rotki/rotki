@@ -85,21 +85,23 @@ async function regenerateReport() {
       <ReportHeader :period="{ start: selectedReport.startTs, end: selectedReport.endTs }" />
       <AccountingSettingsDisplay :accounting-settings="settings" />
       <div class="flex gap-2">
-        <template v-if="latest">
-          <ExportReportCsv />
-          <ReportActionable
-            :report="selectedReport"
-            :initial-open="initialOpenReportActionable"
-            @regenerate="regenerateReport()"
-          />
-        </template>
+        <ExportReportCsv :report-id="reportId" />
+        <ReportActionable
+          v-if="latest"
+          :report="selectedReport"
+          :initial-open="initialOpenReportActionable"
+          @regenerate="regenerateReport()"
+        />
         <RuiButton
           color="primary"
           variant="outlined"
           @click="regenerateReport()"
         >
           <template #prepend>
-            <RuiIcon name="lu-refresh-ccw" />
+            <RuiIcon
+              name="lu-refresh-ccw"
+              size="18"
+            />
           </template>
           {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
         </RuiButton>

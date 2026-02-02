@@ -62,7 +62,7 @@ describe('composables/api/reports/index', () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
-        http.get(`${backendUrl}/api/1/history/export`, ({ request }) => {
+        http.get(`${backendUrl}/api/1/reports/:reportId/export`, ({ request }) => {
           const url = new URL(request.url);
           capturedParams = url.searchParams;
           return HttpResponse.json({
@@ -73,7 +73,7 @@ describe('composables/api/reports/index', () => {
       );
 
       const { exportReportCSV } = useReportsApi();
-      const result = await exportReportCSV('/home/user/reports');
+      const result = await exportReportCSV(1, '/home/user/reports');
 
       expect(capturedParams!.get('directory_path')).toBe('/home/user/reports');
       expect(result).toBe(true);
@@ -81,7 +81,7 @@ describe('composables/api/reports/index', () => {
 
     it('throws error on failure', async () => {
       server.use(
-        http.get(`${backendUrl}/api/1/history/export`, () =>
+        http.get(`${backendUrl}/api/1/reports/:reportId/export`, () =>
           HttpResponse.json({
             result: null,
             message: 'Export failed',
@@ -90,7 +90,7 @@ describe('composables/api/reports/index', () => {
 
       const { exportReportCSV } = useReportsApi();
 
-      await expect(exportReportCSV('/invalid'))
+      await expect(exportReportCSV(1, '/invalid'))
         .rejects
         .toThrow('Export failed');
     });
@@ -99,7 +99,7 @@ describe('composables/api/reports/index', () => {
   describe('downloadReportCSV', () => {
     it('returns success on 200 response', async () => {
       server.use(
-        http.get(`${backendUrl}/api/1/history/download`, () =>
+        http.get(`${backendUrl}/api/1/reports/:reportId/download`, () =>
           new HttpResponse(new Blob(['zip content'], { type: 'application/zip' }), {
             status: 200,
             headers: {
@@ -109,14 +109,14 @@ describe('composables/api/reports/index', () => {
       );
 
       const { downloadReportCSV } = useReportsApi();
-      const result = await downloadReportCSV();
+      const result = await downloadReportCSV(1);
 
       expect(result.success).toBe(true);
     });
 
     it('returns failure with message on error response', async () => {
       server.use(
-        http.get(`${backendUrl}/api/1/history/download`, () =>
+        http.get(`${backendUrl}/api/1/reports/:reportId/download`, () =>
           HttpResponse.json({
             result: null,
             message: 'No report available',
@@ -127,7 +127,7 @@ describe('composables/api/reports/index', () => {
       );
 
       const { downloadReportCSV } = useReportsApi();
-      const result = await downloadReportCSV();
+      const result = await downloadReportCSV(1);
 
       expect(result.success).toBe(false);
       if (!result.success)

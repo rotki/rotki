@@ -19,7 +19,7 @@ interface ReportData extends Report {
 
 const expanded = ref<ReportData[]>([]);
 const reportStore = useReportsStore();
-const { deleteReport, fetchReports, isLatestReport } = reportStore;
+const { deleteReport, fetchReports } = reportStore;
 const { reports } = storeToRefs(reportStore);
 const { t } = useI18n({ useScope: 'global' });
 
@@ -87,8 +87,6 @@ function getReportUrl(identifier: number): RouteLocationRaw {
     },
   };
 }
-
-const latestReport = (reportId: number) => get(isLatestReport(reportId));
 
 const sort = ref<DataTableSortColumn<ReportData>>({
   column: 'timestamp',
@@ -171,7 +169,7 @@ useRememberTableSorting<ReportData>(TableId.REPORTS, sort, tableHeaders);
           </RouterLink>
 
           <ReportsTableMoreAction
-            :show-export-button="latestReport(row.identifier)"
+            :report-id="row.identifier"
             @delete="deleteReport(row.identifier)"
           />
         </div>

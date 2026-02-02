@@ -4,9 +4,10 @@ import { useInterop } from '@/composables/electron-interop';
 import { useMessageStore } from '@/store/message';
 import { useReportsStore } from '@/store/reports';
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     list?: boolean;
+    reportId: number;
   }>(),
   {
     list: false,
@@ -36,10 +37,10 @@ async function exportCSV() {
       if (!directory)
         return;
 
-      await createCsv(directory);
+      await createCsv(props.reportId, directory);
     }
     else {
-      const result = await downloadReportCSV();
+      const result = await downloadReportCSV(props.reportId);
       if (!result.success)
         showMessage(result.message ?? t('profit_loss_report.download_failed'));
     }

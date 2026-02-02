@@ -2,7 +2,7 @@
 import ExportReportCsv from '@/components/profitloss/ExportReportCsv.vue';
 
 defineProps<{
-  showExportButton: boolean;
+  reportId: number;
 }>();
 
 const emit = defineEmits<{
@@ -33,7 +33,7 @@ const { t } = useI18n({ useScope: 'global' });
     </template>
     <div class="py-2">
       <ExportReportCsv
-        v-if="showExportButton"
+        :report-id="reportId"
         list
       />
       <RuiButton

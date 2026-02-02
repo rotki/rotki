@@ -18,8 +18,8 @@ import { downloadFileByUrl } from '@/utils/download';
 
 interface UseReportsApi {
   generateReport: ({ end, start }: ProfitLossReportPeriod) => Promise<PendingTask>;
-  exportReportCSV: (directoryPath: string) => Promise<boolean>;
-  downloadReportCSV: () => Promise<ActionStatus>;
+  exportReportCSV: (reportId: number, directoryPath: string) => Promise<boolean>;
+  downloadReportCSV: (reportId: number) => Promise<ActionStatus>;
   importReportData: (filepath: string) => Promise<PendingTask>;
   exportReportData: (payload: ProfitLossReportDebugPayload) => Promise<PendingTask>;
   uploadReportData: (filepath: File) => Promise<PendingTask>;
@@ -42,13 +42,13 @@ export function useReportsApi(): UseReportsApi {
     return PendingTaskSchema.parse(response);
   };
 
-  const exportReportCSV = async (directoryPath: string): Promise<boolean> => api.get<boolean>('/history/export', {
+  const exportReportCSV = async (reportId: number, directoryPath: string): Promise<boolean> => api.get<boolean>(`/reports/${reportId}/export`, {
     query: { directoryPath },
   });
 
-  const downloadReportCSV = async (): Promise<ActionStatus> => {
+  const downloadReportCSV = async (reportId: number): Promise<ActionStatus> => {
     try {
-      const blob = await api.fetchBlob('/history/download', {
+      const blob = await api.fetchBlob(`/reports/${reportId}/download`, {
         method: 'GET',
       });
 

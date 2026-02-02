@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users can now export CSV reports for any PnL report, including the old ones.
 * :bug:`-` More Gearbox reward claims will now be automatically decoded in the history view.
 * :bug:`11483` Coinbase swaps where the spend/receive asset and amount are identical will no longer be shown.
 * :bug:`-` Additional base 0x swaps will now be automatically decoded in the history view.

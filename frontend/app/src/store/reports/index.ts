@@ -104,10 +104,10 @@ export const useReportsStore = defineStore('reports', () => {
     return interval;
   };
 
-  const createCsv = async (path: string): Promise<void> => {
+  const createCsv = async (reportId: number, path: string): Promise<void> => {
     let message: Message;
     try {
-      const success = await exportReportCSV(path);
+      const success = await exportReportCSV(reportId, path);
       message = {
         description: success
           ? t('actions.reports.csv_export.message.success')
