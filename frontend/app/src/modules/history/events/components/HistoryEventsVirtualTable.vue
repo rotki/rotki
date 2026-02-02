@@ -85,9 +85,14 @@ const { containerProps, list: virtualList, wrapperProps, scrollTo } = useVirtual
   overscan: 15, // Render 15 extra items above/below viewport for smoother fast scrolling
 });
 
-// Scroll to top when pagination changes
-watch(pagination, () => {
-  scrollTo(0);
+// Scroll to top only when pagination values actually change
+watch(pagination, (current, previous) => {
+  if (!previous)
+    return;
+
+  if (current.page !== previous.page || current.limit !== previous.limit || current.total !== previous.total) {
+    scrollTo(0);
+  }
 });
 
 // Event operations (delete, redecode, etc.)
