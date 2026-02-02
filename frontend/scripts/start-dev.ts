@@ -25,7 +25,6 @@ const DEFAULT_BACKEND_PORT = 4242;
 const DEFAULT_COLIBRI_PORT = 4343;
 
 const PROXY = 'proxy';
-const COMMON = '@rotki/common';
 const ROTKI = 'rotki';
 const BACKEND = 'backend';
 const COLIBRI = 'colibri';
@@ -305,10 +304,6 @@ async function startDevelopmentEnvironment(
     logger.info('Starting dev-proxy');
     startProcess('pnpm run --filter @rotki/dev-proxy serve', colors.green(PROXY), PROXY);
   }
-
-  logger.info('Starting @rotki/common watch');
-
-  startProcess('pnpm run --filter @rotki/common watch', colors.blue(COMMON), COMMON);
 
   let backendEnv: BackendEnv | undefined;
 

@@ -1,3 +1,5 @@
+/// <reference lib="dom" />
+
 /**
  *
  * @param {string} string - String to convert

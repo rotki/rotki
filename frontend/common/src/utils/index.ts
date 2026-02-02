@@ -8,7 +8,7 @@ interface PromiseFunction {
   (): PromiseLike<void>;
 }
 
-export type Awaitable = VoidFunction | PromiseFunction;
+export type Awaitable = (() => void) | PromiseFunction;
 
 export type MaybePromise<T> = T | Promise<T>;
 

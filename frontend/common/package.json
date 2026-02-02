@@ -8,15 +8,20 @@
   "repository": "https://github.com/rotki/rotki",
   "author": "Rotki Solutions GmbH <info@rotki.com>",
   "files": [
-    "lib/"
+    "src"
   ],
-  "main": "lib/index.js",
-  "module": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./src/index.ts"
+    }
+  },
+  "sideEffects": false,
   "scripts": {
-    "prepare": "pnpm run build",
-    "build": "tsup --tsconfig tsconfig.lib.json",
-    "watch": "tsup --watch --tsconfig tsconfig.lib.json"
+    "typecheck": "tsc --noEmit"
   },
   "peerDependencies": {
     "@vueuse/core": ">=10.11.0",
@@ -27,7 +32,6 @@
   "devDependencies": {
     "@vueuse/core": "13.9.0",
     "bignumber.js": "9.3.1",
-    "tsup": "8.5.1",
     "typescript": "5.9.3",
     "vue": "3.5.27",
     "zod": "3.25.76"

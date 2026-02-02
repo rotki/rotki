@@ -1,13 +1,11 @@
 {
   "compilerOptions": {
-    "module": "NodeNext"
+    "module": "ESNext",
+    "moduleResolution": "bundler"
   },
   "references": [
     {
       "path": "tsconfig.lib.json"
-    },
-    {
-      "path": "tsconfig.node.json"
     }
   ],
   "files": []

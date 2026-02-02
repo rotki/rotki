@@ -1,10 +1,9 @@
-import type { Account } from '@rotki/common/src/account';
 import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { Collection } from '@/types/collection';
 import type { HistoryEvent, HistoryEventRow } from '@/types/history/events/schemas';
-import { Blockchain } from '@rotki/common';
+import { type Account, Blockchain } from '@rotki/common';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
