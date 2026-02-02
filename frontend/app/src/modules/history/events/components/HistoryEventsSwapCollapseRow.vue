@@ -5,7 +5,8 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  collapse: [];
+  'collapse': [];
+  'unlink-event': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -39,5 +40,21 @@ const isMovement = computed<boolean>(() => props.labelType === 'movement');
           : t('history_events_list_swap.swap_expanded', { count: eventCount })
       }}
     </span>
+    <RuiButton
+      v-if="isMovement"
+      class="ml-auto"
+      variant="text"
+      size="sm"
+      color="warning"
+      @click="emit('unlink-event')"
+    >
+      <template #prepend>
+        <RuiIcon
+          name="lu-unlink"
+          size="14"
+        />
+      </template>
+      {{ t('transactions.events.actions.unlink') }}
+    </RuiButton>
   </div>
 </template>

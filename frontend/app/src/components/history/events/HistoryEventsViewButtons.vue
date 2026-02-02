@@ -38,6 +38,11 @@ const showAlertsButton = computed<boolean>(() =>
 );
 
 const checkingIssues = ref<boolean>(false);
+const noIssuesFound = ref<boolean>(false);
+
+const { start: startNoIssuesTimeout, stop: stopNoIssuesTimeout } = useTimeoutFn(() => {
+  set(noIssuesFound, false);
+}, 2000, { immediate: false });
 
 function toggleAlerts(): void {
   set(showAlerts, !get(showAlerts));
@@ -46,6 +51,12 @@ function toggleAlerts(): void {
 function openAlertsIfNeeded(): void {
   if (get(showAlertsButton))
     set(showAlerts, true);
+}
+
+function showNoIssuesFeedback(): void {
+  stopNoIssuesTimeout();
+  set(noIssuesFound, true);
+  startNoIssuesTimeout();
 }
 
 async function checkIssues(): Promise<void> {
@@ -57,6 +68,8 @@ async function checkIssues(): Promise<void> {
       fetchCustomizedEventDuplicates(),
     ]);
     openAlertsIfNeeded();
+    if (!get(hasIssues))
+      showNoIssuesFeedback();
   }
   finally {
     set(checkingIssues, false);
@@ -67,19 +80,23 @@ async function checkUnmatched(): Promise<void> {
   set(manualIssueCheck, true);
   await refreshUnmatchedAssetMovements();
   openAlertsIfNeeded();
+  if (!get(hasIssues))
+    showNoIssuesFeedback();
 }
 
 async function checkDuplicates(): Promise<void> {
   set(manualIssueCheck, true);
   await fetchCustomizedEventDuplicates();
   openAlertsIfNeeded();
+  if (!get(hasIssues))
+    showNoIssuesFeedback();
 }
 </script>
 
 <template>
   <RuiButtonGroup
     variant="outlined"
-    :color="showAlertsButton ? 'warning' : 'primary'"
+    :color="showAlertsButton ? 'warning' : noIssuesFound ? 'success' : 'primary'"
     class="h-9"
   >
     <RuiBadge
@@ -118,18 +135,19 @@ async function checkDuplicates(): Promise<void> {
     <RuiButton
       v-else
       variant="outlined"
-      color="primary"
+      :color="noIssuesFound ? 'success' : 'primary'"
       :loading="checkingIssues"
-      class="rounded-r-none !outline-none border-r border-rui-primary/[0.5]"
+      class="rounded-r-none !outline-none border-r"
+      :class="noIssuesFound ? 'border-rui-success/[0.5]' : 'border-rui-primary/[0.5]'"
       @click="checkIssues()"
     >
       <template #prepend>
         <RuiIcon
-          name="lu-search-check"
+          :name="noIssuesFound ? 'lu-circle-check' : 'lu-search-check'"
           size="18"
         />
       </template>
-      {{ t('transactions.alerts.check_issues') }}
+      {{ noIssuesFound ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_issues') }}
     </RuiButton>
 
     <RuiMenu
@@ -141,7 +159,7 @@ async function checkDuplicates(): Promise<void> {
       <template #activator="{ attrs }">
         <RuiButton
           variant="outlined"
-          :color="showAlertsButton ? 'warning' : 'primary'"
+          :color="showAlertsButton ? 'warning' : noIssuesFound ? 'success' : 'primary'"
           class="rounded-l-none !outline-none px-3 h-9"
           v-bind="attrs"
         >

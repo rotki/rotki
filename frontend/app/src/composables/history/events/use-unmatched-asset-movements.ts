@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { ActionStatus } from '@/types/action';
-import type { HistoryEventCollectionRow } from '@/types/history/events/schemas';
+import type { HistoryEventCollectionRow, HistoryEventEntry } from '@/types/history/events/schemas';
 import type { TaskMeta } from '@/types/task';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
@@ -20,6 +20,12 @@ interface RawUnmatchedAssetMovement {
 
 export interface UnmatchedAssetMovement extends RawUnmatchedAssetMovement {
   isFiat: boolean;
+}
+
+export interface PotentialMatchRow {
+  identifier: number;
+  entry: HistoryEventEntry;
+  isCloseMatch: boolean;
 }
 
 interface UseUnmatchedAssetMovementsReturn {
@@ -179,6 +185,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
       );
 
       await refreshUnmatchedAssetMovements(true);
+      signalEventsModified();
     }
     catch (error: any) {
       logger.error('Failed to trigger auto match:', error);

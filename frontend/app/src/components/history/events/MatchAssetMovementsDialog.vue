@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import type { HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
 import AssetMovementMatchingSettingsMenu from '@/components/history/events/AssetMovementMatchingSettingsMenu.vue';
-import PotentialMatchesDialog from '@/components/history/events/PotentialMatchesDialog.vue';
 import UnmatchedMovementsList from '@/components/history/events/UnmatchedMovementsList.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
@@ -14,7 +13,8 @@ import { useConfirmStore } from '@/store/confirm';
 const modelValue = defineModel<boolean>({ required: true });
 
 const emit = defineEmits<{
-  refresh: [];
+  'find-match': [movement: UnmatchedAssetMovement];
+  'refresh': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -33,8 +33,6 @@ const { matchAssetMovements, unlinkAssetMovement } = useAssetMovementMatchingApi
 const { show } = useConfirmStore();
 
 const activeTab = ref<number>(0);
-const selectedMovement = ref<UnmatchedAssetMovement>();
-const showPotentialMatchesDialog = ref<boolean>(false);
 const ignoreLoading = ref<boolean>(false);
 const selectedUnmatched = ref<string[]>([]);
 const selectedIgnored = ref<string[]>([]);
@@ -48,8 +46,7 @@ const fiatMovements = computed<UnmatchedAssetMovement[]>(() =>
 );
 
 function selectMovement(movement: UnmatchedAssetMovement): void {
-  set(selectedMovement, movement);
-  set(showPotentialMatchesDialog, true);
+  emit('find-match', movement);
 }
 
 async function ignoreMovement(movement: UnmatchedAssetMovement): Promise<void> {
@@ -74,11 +71,6 @@ async function restoreMovement(movement: UnmatchedAssetMovement): Promise<void> 
   finally {
     set(ignoreLoading, false);
   }
-}
-
-function onMatched(): void {
-  set(selectedMovement, undefined);
-  emit('refresh');
 }
 
 function closeDialog(): void {
@@ -343,11 +335,4 @@ onBeforeMount(async () => {
       </template>
     </RuiCard>
   </RuiDialog>
-
-  <PotentialMatchesDialog
-    v-if="selectedMovement"
-    v-model="showPotentialMatchesDialog"
-    :movement="selectedMovement"
-    @matched="onMatched()"
-  />
 </template>

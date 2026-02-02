@@ -14,6 +14,7 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
+import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
@@ -64,6 +65,7 @@ export function useHistoryEventsOperations(
 
   const { deleteTransactions } = useHistoryEventsApi();
   const { unlinkAssetMovement } = useAssetMovementMatchingApi();
+  const { refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
   const { deleteHistoryEvent } = useHistoryEvents();
   const { ignoreSingle, toggle } = useIgnore<HistoryEventEntry>({
     toData: (item: HistoryEventEntry) => item.groupIdentifier,
@@ -115,22 +117,8 @@ export function useHistoryEventsOperations(
 
   async function onConfirmUnlink(payload: HistoryEventUnlinkPayload): Promise<void> {
     try {
-      const groupedEvents = get(allEventsMapped)[payload.groupIdentifier] || [];
-      const childEvents = flatten(groupedEvents);
-      const assetMovementEvent = childEvents.find(
-        e => e.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT && e.eventSubtype !== 'fee',
-      );
-
-      if (!assetMovementEvent) {
-        notify({
-          display: true,
-          message: t('transactions.events.unlink_no_asset_movement'),
-          title: t('transactions.events.unlink_error'),
-        });
-        return;
-      }
-
-      await unlinkAssetMovement(assetMovementEvent.identifier);
+      await unlinkAssetMovement(payload.identifier);
+      await refreshUnmatchedAssetMovements();
       emit('refresh');
     }
     catch (error: any) {

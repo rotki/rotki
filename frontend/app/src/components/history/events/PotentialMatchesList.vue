@@ -1,31 +1,23 @@
 <script setup lang="ts">
-import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
-import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
+import type {
+  PotentialMatchRow,
+  UnmatchedAssetMovement,
+} from '@/composables/history/events/use-unmatched-asset-movements';
+import type {
+  HistoryEventCollectionRow,
+  HistoryEventEntry,
+  HistoryEventEntryWithMeta,
+} from '@/types/history/events/schemas';
 import SimpleTable from '@/components/common/SimpleTable.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { ValueDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
-
-interface PotentialMatchRow {
-  identifier: number;
-  asset: string;
-  amount: BigNumber;
-  location: string;
-  locationLabel?: string;
-  timestamp: number;
-  txRef?: string;
-  eventType: string;
-  eventSubtype: string;
-  isCloseMatch: boolean;
-}
 
 const selectedMatchId = defineModel<number | undefined>('selectedMatchId', { required: true });
 
@@ -65,11 +57,6 @@ const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => [
     label: `${t('transactions.events.form.event_type.label')} -\n${t('transactions.events.form.event_subtype.label')}`,
   },
   {
-    align: 'end',
-    key: 'amount',
-    label: t('common.amount'),
-  },
-  {
     key: 'asset',
     label: t('common.asset'),
   },
@@ -84,10 +71,13 @@ function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMet
 }
 
 function isSelected(row: PotentialMatchRow): boolean {
-  return get(selectedMatchId) === row.identifier;
+  return get(selectedMatchId) === row.entry.identifier;
 }
 
-const movementEntry = computed(() => getEventEntry(props.movement.events).entry);
+const movementEntry = computed<HistoryEventEntry>(() => {
+  const { entry, ...meta } = getEventEntry(props.movement.events);
+  return { ...entry, ...meta };
+});
 
 watchDebounced(onlyExpectedAssets, () => {
   emit('search');
@@ -108,9 +98,6 @@ watchDebounced(onlyExpectedAssets, () => {
               {{ t('common.exchange') }}
             </th>
             <th>{{ t('common.type') }}</th>
-            <th class="!text-end">
-              {{ t('common.amount') }}
-            </th>
             <th>{{ t('common.asset') }}</th>
           </tr>
         </thead>
@@ -130,11 +117,8 @@ watchDebounced(onlyExpectedAssets, () => {
                 {{ movementEntry.eventType }}
               </BadgeDisplay>
             </td>
-            <td class="text-end">
-              <ValueDisplay :value="movementEntry.amount" />
-            </td>
             <td>
-              <AssetDetails :asset="movementEntry.asset" />
+              <HistoryEventAsset :event="movementEntry" />
             </td>
           </tr>
         </tbody>
@@ -197,7 +181,7 @@ watchDebounced(onlyExpectedAssets, () => {
       :cols="columns"
       :rows="matches"
       row-attr="identifier"
-      class="table-inside-dialog !max-h-[calc(100vh-32rem)]"
+      class="table-inside-dialog !max-h-[calc(100vh-33rem)]"
       dense
       outlined
       :empty="{ label: t('asset_movement_matching.dialog.no_matches_found') }"
@@ -209,38 +193,35 @@ watchDebounced(onlyExpectedAssets, () => {
             horizontal
             icon
             size="1.25rem"
-            :item="row.location"
+            :item="row.entry.location"
           />
           <HashLink
-            v-if="row.txRef"
-            :text="row.txRef"
+            v-if="'txRef' in row.entry && row.entry.txRef"
+            :text="row.entry.txRef"
             type="transaction"
-            :location="row.location"
+            :location="row.entry.location"
           />
           <span v-else>-</span>
         </div>
         <div class="pt-1">
           <HashLink
-            v-if="row.locationLabel"
-            :text="row.locationLabel"
-            :location="row.location"
+            v-if="row.entry.locationLabel"
+            :text="row.entry.locationLabel"
+            :location="row.entry.location"
           />
           <span v-else>-</span>
         </div>
       </template>
       <template #item.asset="{ row }">
-        <AssetDetails :asset="row.asset" />
+        <HistoryEventAsset :event="row.entry" />
       </template>
       <template #item.eventTypeAndSubtype="{ row }">
-        <div>{{ getHistoryEventTypeName(row.eventType) }} -</div>
-        <div>{{ getHistoryEventSubTypeName(row.eventSubtype) }}</div>
-      </template>
-      <template #item.amount="{ row }">
-        <ValueDisplay :value="row.amount" />
+        <div>{{ getHistoryEventTypeName(row.entry.eventType) }} -</div>
+        <div>{{ getHistoryEventSubTypeName(row.entry.eventSubtype) }}</div>
       </template>
       <template #item.timestamp="{ row }">
         <DateDisplay
-          :timestamp="row.timestamp"
+          :timestamp="row.entry.timestamp"
           milliseconds
         />
       </template>
@@ -264,7 +245,7 @@ watchDebounced(onlyExpectedAssets, () => {
             :color="isSelected(row) ? 'success' : 'primary'"
             :variant="isSelected(row) ? 'default' : 'outlined'"
             class="min-w-24"
-            @click="selectedMatchId = row.identifier"
+            @click="selectedMatchId = row.entry.identifier"
           >
             <template
               v-if="isSelected(row)"

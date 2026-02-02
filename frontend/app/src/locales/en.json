@@ -5249,6 +5249,7 @@
       "check_duplicate_events": "Check duplicate events",
       "check_issues": "Check issues",
       "check_unmatched_movements": "Check unmatched movements",
+      "no_issues_found": "No issues found",
       "refresh_duplicate_events": "Refresh duplicate events",
       "refresh_unmatched_movements": "Refresh unmatched movements",
       "title": "There are actions needed for your events"
@@ -5548,7 +5549,6 @@
         }
       },
       "unlink_error": "Failed to unlink asset movement",
-      "unlink_no_asset_movement": "No asset movement event found in this group",
       "view": {
         "load_more": "Load more events ({length})"
       }

@@ -13,6 +13,7 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
 import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
+import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
 import { useHistoryEventsSelectionActions } from '@/modules/history/events/composables/use-history-events-selection-actions';
@@ -164,6 +165,10 @@ const {
   selectionMode,
 });
 
+const debouncedProcessing = refDebounced(processing, 200);
+const { autoMatchLoading, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
+const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading);
+
 // Handle updating available event IDs from the table
 function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }): void {
   // Create mock event entries with just the identifiers
@@ -174,6 +179,15 @@ function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds
   set(groupedEventsByTxRef, groupedEvents);
   // Store the original groups data - prefer rawEvents if available, otherwise use groups.data
   set(originalGroups, rawEvents || get(groups).data);
+}
+
+function openMatchAssetMovementsDialog(): void {
+  get(dialogContainer)?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+}
+
+async function handleMovementChanged(): Promise<void> {
+  await refreshUnmatchedAssetMovements();
+  await actions.fetch.dataAndLocations();
 }
 
 // Set total matching count from groups
@@ -196,9 +210,7 @@ watchImmediate(route, async ({ query }) => {
   await router.replace({ query: {} });
 });
 
-const debouncedProcessing = refDebounced(processing, 200);
-
-watch(debouncedProcessing, async (isLoading, wasLoading) => {
+watch(backgroundLoading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
     await actions.fetch.dataAndLocations();
 });
@@ -207,10 +219,6 @@ watch(debouncedProcessing, async (isLoading, wasLoading) => {
 watchDebounced(route, async () => {
   await actions.refresh.all();
 }, { debounce: 500, immediate: true, once: true });
-
-function openMatchAssetMovementsDialog(): void {
-  get(dialogContainer)?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
-}
 </script>
 
 <template>
@@ -315,6 +323,7 @@ function openMatchAssetMovementsDialog(): void {
           :event-handlers="actions.dialogHandlers"
           :selected-event-ids="selectedEventIds"
           @accounting-rule-refresh="handleAccountingRuleRefresh()"
+          @movement-matched="handleMovementChanged()"
         />
       </div>
     </TablePageLayout>

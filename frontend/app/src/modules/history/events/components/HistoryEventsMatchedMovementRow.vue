@@ -3,7 +3,7 @@ import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/even
 import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
-import { HistoryEventEntryType } from '@rotki/common';
+import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
@@ -44,9 +44,18 @@ const primaryEvent = computed<HistoryEventEntry>(() => {
   return assetMovementEvent ?? props.events[0];
 });
 
+// Secondary event is the one that's NOT an asset movement event (e.g., EVM event, Solana event)
+const secondaryEvent = computed<HistoryEventEntry | undefined>(() => props.events.find(
+  item => item.entryType !== HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
+));
+
 const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(primaryEvent)));
 
-const chain = computed(() => getChain(get(primaryEvent).location));
+const chain = computed<Blockchain>(() => {
+  const primary = get(primaryEvent);
+  const secondary = get(secondaryEvent);
+  return getChain(secondary?.location || primary.location);
+});
 
 const showCheckbox = computed<boolean>(() => {
   if (!props.selection)
@@ -85,10 +94,7 @@ const canUnlink = computed<boolean>(() => {
 // Build compact notes for asset movements with fee
 const compactNotes = computed<string | undefined>(() => {
   const primary = get(primaryEvent);
-  // Secondary event is the one that's NOT an asset movement event (e.g., EVM event, Solana event)
-  const secondary = props.events.find(
-    item => item.entryType !== HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-  );
+  const secondary = get(secondaryEvent);
 
   const amount = primary.amount;
   const asset = getAssetSymbol(primary.asset, ASSET_RESOLUTION_OPTIONS);
@@ -183,7 +189,7 @@ const compactNotes = computed<string | undefined>(() => {
       @edit-event="emit('edit-event', $event)"
       @delete-event="emit('delete-event', $event)"
       @show:missing-rule-action="emit('show:missing-rule-action', $event)"
-      @unlink-event="emit('unlink-event', { groupIdentifier: primaryEvent.groupIdentifier })"
+      @unlink-event="emit('unlink-event', { identifier: primaryEvent.identifier })"
     />
   </div>
 </template>
