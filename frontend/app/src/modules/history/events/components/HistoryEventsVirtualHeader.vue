@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import { type DataTableSortData, type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 
 const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
@@ -12,6 +12,8 @@ defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const { isSmAndDown } = useBreakpoint();
 
 function getSortArray() {
   const sortData = get(sort);
@@ -75,14 +77,14 @@ const limits = [10, 25, 50, 100];
 </script>
 
 <template>
-  <div class="flex items-center justify-between gap-4 px-4 h-12 border-b border-default bg-rui-grey-50 dark:bg-dark-elevated/[0.9] sticky top-0">
-    <!-- Left side: Column headers -->
-    <div class="flex items-center text-sm text-rui-text-secondary font-medium">
+  <div class="flex items-center justify-between gap-2 md:gap-4 px-3 md:px-4 h-10 lg:h-12 border-b border-default bg-rui-grey-50 dark:bg-dark-elevated/[0.9] sticky top-0 z-10">
+    <!-- Left side: Column headers - hidden on mobile -->
+    <div class="hidden md:flex items-center text-sm text-rui-text-secondary font-medium">
       <span>{{ t('transactions.events.headers.event_identifier') }}</span>
     </div>
 
     <!-- Right side: Sort + Pagination -->
-    <div class="flex items-center gap-3">
+    <div class="flex items-center gap-2 md:gap-3 flex-1 md:flex-initial justify-between md:justify-end">
       <!-- Sort by timestamp -->
       <RuiButton
         variant="text"
@@ -90,7 +92,12 @@ const limits = [10, 25, 50, 100];
         class="text-sm"
         @click="toggleSort()"
       >
-        {{ t('common.datetime') }}
+        <span class="hidden sm:inline">{{ t('common.datetime') }}</span>
+        <RuiIcon
+          class="sm:hidden"
+          name="lu-calendar"
+          size="16"
+        />
         <template #append>
           <RuiIcon
             :name="sortDirection === 'asc' ? 'lu-arrow-up' : 'lu-arrow-down'"
@@ -106,27 +113,35 @@ const limits = [10, 25, 50, 100];
       />
 
       <!-- Items per page -->
-      <div class="flex items-center gap-2">
-        <span class="text-sm text-rui-text-secondary">{{ t('data_table.rows_per_page') }}</span>
+      <div class="flex items-center gap-1 md:gap-2">
+        <span class="hidden lg:inline text-sm text-rui-text-secondary">{{ t('data_table.rows_per_page') }}</span>
+        <RuiIcon
+          class="lg:hidden text-rui-text-secondary"
+          name="lu-rows-3"
+          size="16"
+        />
         <RuiMenuSelect
           v-model="itemsPerPage"
           :options="limits"
           dense
           hide-details
-          class="w-20"
+          class="w-16 md:w-20"
         />
       </div>
 
       <RuiDivider
         vertical
-        class="h-4"
+        class="h-4 hidden sm:block"
       />
 
-      <!-- Pagination info -->
-      <span class="text-sm text-rui-text-secondary whitespace-nowrap">
-        {{ (currentPage - 1) * itemsPerPage + 1 }}-{{ Math.min(currentPage * itemsPerPage, pagination.total) }}
+      <!-- Pagination info - hidden on small screens -->
+      <span
+        v-if="!isSmAndDown"
+        class="text-sm text-rui-text-secondary whitespace-nowrap"
+      >
+        {{ ((currentPage - 1) * itemsPerPage + 1).toLocaleString() }}-{{ Math.min(currentPage * itemsPerPage, pagination.total).toLocaleString() }}
         {{ t('common.of') }}
-        {{ pagination.total }}
+        {{ pagination.total.toLocaleString() }}
       </span>
 
       <!-- Pagination buttons -->

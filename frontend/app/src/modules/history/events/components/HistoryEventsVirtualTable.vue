@@ -1,23 +1,23 @@
 <script setup lang="ts">
-import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { DuplicateHandlingStatus } from '@/composables/history/events/use-history-events-filters';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventsTableEmits } from '@/modules/history/events/types';
 import type { Collection } from '@/types/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import { type DataTableSortData, type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 import { useVirtualList } from '@vueuse/core';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useHistoryEventsData } from '../composables/use-history-events-data';
 import { useHistoryEventsForms } from '../composables/use-history-events-forms';
 import { useHistoryEventsOperations } from '../composables/use-history-events-operations';
 import { useVirtualRows } from '../composables/use-virtual-rows';
-import HistoryEventsDetailRow from './HistoryEventsDetailRow.vue';
-import HistoryEventsGroupRow from './HistoryEventsGroupRow.vue';
+import HistoryEventsDetailItem from './HistoryEventsDetailItem.vue';
+import HistoryEventsGroupItem from './HistoryEventsGroupItem.vue';
 import HistoryEventsLoadMoreRow from './HistoryEventsLoadMoreRow.vue';
-import HistoryEventsMatchedMovementRow from './HistoryEventsMatchedMovementRow.vue';
+import HistoryEventsMatchedMovementItem from './HistoryEventsMatchedMovementItem.vue';
 import HistoryEventsSwapCollapseRow from './HistoryEventsSwapCollapseRow.vue';
-import HistoryEventsSwapRow from './HistoryEventsSwapRow.vue';
+import HistoryEventsSwapItem from './HistoryEventsSwapItem.vue';
 import HistoryEventsVirtualHeader from './HistoryEventsVirtualHeader.vue';
 
 const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
@@ -43,6 +43,12 @@ defineSlots<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+// Responsive breakpoint for mobile layout
+const { isSmAndDown } = useBreakpoint();
+
+// Variant based on breakpoint
+const itemVariant = computed<'row' | 'card'>(() => get(isSmAndDown) ? 'card' : 'row');
 
 const RedecodeConfirmationDialog = defineAsyncComponent(() => import('./RedecodeConfirmationDialog.vue'));
 const { groupLoading, groups: rawGroups, pageParams } = toRefs(props);
@@ -74,14 +80,19 @@ const {
 
 // Virtual rows - flatten groups into virtual row list
 // Use displayedEventsMapped for display (respects excludeIgnored filter)
-const { flattenedRows, getRowHeight, loadMoreEvents, toggleMovementExpanded, toggleSwapExpanded } = useVirtualRows(
+const { flattenedRows, getCardHeight, getRowHeight, loadMoreEvents, toggleMovementExpanded, toggleSwapExpanded } = useVirtualRows(
   groups,
   displayedEventsMapped,
 );
 
+// Use card heights for mobile layout
+const getItemHeight = computed<(index: number) => number>(() =>
+  get(isSmAndDown) ? getCardHeight : getRowHeight,
+);
+
 // Virtual list with dynamic item heights
 const { containerProps, list: virtualList, wrapperProps, scrollTo } = useVirtualList(flattenedRows, {
-  itemHeight: getRowHeight,
+  itemHeight: (index: number) => get(getItemHeight)(index),
   overscan: 15, // Render 15 extra items above/below viewport for smoother fast scrolling
 });
 
@@ -232,7 +243,7 @@ function unlinkGroup(groupId: string): void {
     <!-- Loading state -->
     <div
       v-if="loading && groups.length === 0"
-      class="flex items-center justify-center h-[calc(100vh-390px)] dark:bg-dark-surface"
+      class="flex items-center justify-center h-[calc(100vh-350px)] lg:h-[calc(100vh-390px)] dark:bg-dark-surface"
     >
       <RuiProgress
         circular
@@ -245,7 +256,7 @@ function unlinkGroup(groupId: string): void {
     <!-- Empty state -->
     <div
       v-else-if="!loading && groups.length === 0"
-      class="flex items-center justify-center h-[calc(100vh-390px)] text-rui-text-secondary "
+      class="flex items-center justify-center h-[calc(100vh-350px)] lg:h-[calc(100vh-390px)] text-rui-text-secondary"
     >
       {{ t('data_table.no_data') }}
     </div>
@@ -254,15 +265,15 @@ function unlinkGroup(groupId: string): void {
     <div
       v-else
       v-bind="containerProps"
-      class="overflow-auto h-[calc(100vh-390px)] will-change-transform dark:bg-dark-surface"
+      class="overflow-auto h-[calc(100vh-350px)] lg:h-[calc(100vh-390px)] will-change-transform dark:bg-dark-surface"
     >
       <div v-bind="wrapperProps">
         <template
           v-for="{ data: row, index } in virtualList"
           :key="`${row.type}-${row.groupId}-${index}`"
         >
-          <!-- Group Header Row (52px) -->
-          <HistoryEventsGroupRow
+          <!-- Group Header -->
+          <HistoryEventsGroupItem
             v-if="row.type === 'group-header'"
             :group="row.data"
             :hide-actions="hideActions"
@@ -270,6 +281,7 @@ function unlinkGroup(groupId: string): void {
             :duplicate-handling-status="duplicateHandlingStatus"
             :has-hidden-ignored-assets="hasHiddenIgnoredAssets(row.groupId)"
             :showing-ignored-assets="isShowingIgnoredAssets(row.groupId)"
+            :variant="itemVariant"
             @add-event="addEvent($event, row.data)"
             @toggle-ignore="toggle($event)"
             @toggle-show-ignored-assets="toggleShowIgnoredAssets(row.groupId)"
@@ -279,38 +291,53 @@ function unlinkGroup(groupId: string): void {
             @fix-duplicate="emit('refresh')"
           />
 
-          <!-- Event Placeholder Row (80px) - shown while loading -->
+          <!-- Event Placeholder -->
           <div
             v-else-if="row.type === 'event-placeholder'"
-            class="h-20 flex items-center gap-4 border-b border-default px-4 pl-8 animate-pulse contain-content"
+            class="animate-pulse contain-content"
+            :class="isSmAndDown ? 'p-3 border-b border-default' : 'h-[72px] flex items-center gap-4 border-b border-default px-4 pl-8'"
           >
-            <!-- Type placeholder -->
-            <div class="w-44 shrink-0 flex items-center gap-3">
-              <div class="size-10 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700" />
-              <div class="flex flex-col gap-1.5">
+            <template v-if="isSmAndDown">
+              <div class="flex items-center gap-2 mb-2">
+                <div class="size-5 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
                 <div class="h-4 w-20 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
-                <div class="h-3 w-14 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
-              </div>
-            </div>
-            <!-- Asset placeholder -->
-            <div class="w-60 shrink-0 flex items-center gap-2">
-              <div class="size-8 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700" />
-              <div class="flex flex-col gap-1.5">
-                <div class="h-4 w-24 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
+                <div class="flex-1" />
                 <div class="h-3 w-16 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
               </div>
-            </div>
-            <!-- Notes placeholder -->
-            <div class="flex-1 min-w-0 flex flex-col gap-1.5">
-              <div class="h-3.5 w-3/4 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
-              <div class="h-3 w-1/2 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
-            </div>
-            <!-- Actions placeholder -->
-            <div class="w-24 shrink-0" />
+              <div class="flex items-center gap-2 mb-2">
+                <div class="size-8 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700" />
+                <div class="flex flex-col gap-1">
+                  <div class="h-4 w-24 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
+                  <div class="h-3 w-16 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
+                </div>
+              </div>
+              <div class="h-3 w-3/4 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
+            </template>
+            <template v-else>
+              <div class="w-44 shrink-0 flex items-center gap-3">
+                <div class="size-10 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700" />
+                <div class="flex flex-col gap-1.5">
+                  <div class="h-4 w-20 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
+                  <div class="h-3 w-14 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
+                </div>
+              </div>
+              <div class="w-60 shrink-0 flex items-center gap-2">
+                <div class="size-8 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700" />
+                <div class="flex flex-col gap-1.5">
+                  <div class="h-4 w-24 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
+                  <div class="h-3 w-16 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
+                </div>
+              </div>
+              <div class="flex-1 min-w-0 flex flex-col gap-1.5">
+                <div class="h-3.5 w-3/4 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
+                <div class="h-3 w-1/2 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
+              </div>
+              <div class="w-24 shrink-0" />
+            </template>
           </div>
 
-          <!-- Event Detail Row (80px) -->
-          <HistoryEventsDetailRow
+          <!-- Event Detail -->
+          <HistoryEventsDetailItem
             v-else-if="row.type === 'event-row'"
             :event="row.data"
             :index="row.index"
@@ -319,15 +346,15 @@ function unlinkGroup(groupId: string): void {
             :hide-actions="hideActions"
             :highlight="isHighlighted(row.data)"
             :selection="selection"
+            :variant="itemVariant"
             @edit-event="handleEditEvent($event, row.groupId)"
             @delete-event="confirmDelete($event)"
             @show:missing-rule-action="handleMissingRuleAction($event, row.groupId)"
-            @unlink-event="confirmUnlink($event)"
             @refresh="emit('refresh')"
           />
 
-          <!-- Swap Row (80px) -->
-          <HistoryEventsSwapRow
+          <!-- Swap -->
+          <HistoryEventsSwapItem
             v-else-if="row.type === 'swap-row'"
             :events="row.events"
             :all-events="getGroupEvents(row.groupId)"
@@ -335,6 +362,7 @@ function unlinkGroup(groupId: string): void {
             :hide-actions="hideActions"
             :highlight="isSwapHighlighted(row.events)"
             :selection="selection"
+            :variant="itemVariant"
             @edit-event="handleEditEvent($event, row.groupId)"
             @delete-event="confirmDelete($event)"
             @show:missing-rule-action="handleMissingRuleAction($event, row.groupId)"
@@ -342,15 +370,15 @@ function unlinkGroup(groupId: string): void {
             @toggle-expand="toggleSwapExpanded(row.swapKey)"
           />
 
-          <!-- Swap Collapse Row (36px) -->
+          <!-- Swap Collapse -->
           <HistoryEventsSwapCollapseRow
             v-else-if="row.type === 'swap-collapse'"
             :event-count="row.eventCount"
             @collapse="toggleSwapExpanded(row.swapKey)"
           />
 
-          <!-- Matched Movement Row (80px) -->
-          <HistoryEventsMatchedMovementRow
+          <!-- Matched Movement -->
+          <HistoryEventsMatchedMovementItem
             v-else-if="row.type === 'matched-movement-row'"
             :events="row.events"
             :all-events="getGroupEvents(row.groupId)"
@@ -358,6 +386,7 @@ function unlinkGroup(groupId: string): void {
             :hide-actions="hideActions"
             :highlight="isSwapHighlighted(row.events)"
             :selection="selection"
+            :variant="itemVariant"
             @edit-event="handleEditEvent($event, row.groupId)"
             @delete-event="confirmDelete($event)"
             @show:missing-rule-action="handleMissingRuleAction($event, row.groupId)"
@@ -366,7 +395,7 @@ function unlinkGroup(groupId: string): void {
             @toggle-expand="toggleMovementExpanded(row.movementKey)"
           />
 
-          <!-- Matched Movement Collapse Row (36px) -->
+          <!-- Matched Movement Collapse -->
           <HistoryEventsSwapCollapseRow
             v-else-if="row.type === 'matched-movement-collapse'"
             :event-count="row.eventCount"
@@ -375,7 +404,7 @@ function unlinkGroup(groupId: string): void {
             @collapse="toggleMovementExpanded(row.movementKey)"
           />
 
-          <!-- Load More Row (36px) -->
+          <!-- Load More -->
           <HistoryEventsLoadMoreRow
             v-else-if="row.type === 'load-more'"
             :hidden-count="row.hiddenCount"

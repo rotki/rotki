@@ -9,14 +9,17 @@ import HistoryEventsIdentifier from '@/components/history/events/HistoryEventsId
 import IgnoredInAccountingIcon from '@/components/history/IgnoredInAccountingIcon.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   group: HistoryEventEntry;
   hideActions?: boolean;
   loading?: boolean;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
   hasHiddenIgnoredAssets?: boolean;
   showingIgnoredAssets?: boolean;
-}>();
+  variant?: 'row' | 'card';
+}>(), {
+  variant: 'row',
+});
 
 const emit = defineEmits<{
   'add-event': [event: StandaloneEditableEvents];
@@ -38,11 +41,102 @@ const showIgnoredAssetsIndicator = computed<boolean>(() =>
 );
 
 const { group } = toRefs(props);
+
+const isCard = computed<boolean>(() => props.variant === 'card');
 </script>
 
 <template>
-  <div class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-1 pr-4 bg-rui-grey-100 dark:bg-dark-elevated contain-content">
-    <!-- Ignored indicator -->
+  <!-- Card Layout -->
+  <div
+    v-if="isCard"
+    class="p-3 border-b-2 border-rui-grey-300 dark:border-rui-grey-600 bg-rui-grey-100 dark:bg-dark-elevated contain-content"
+  >
+    <!-- Top row: Location + Identifier + Actions -->
+    <div class="flex items-center justify-between gap-2 mb-1">
+      <div class="flex items-center gap-2 min-w-0 flex-1">
+        <IgnoredInAccountingIcon
+          v-if="group.ignoredInAccounting"
+          class="shrink-0"
+        />
+
+        <RuiTooltip
+          v-if="showIgnoredAssetsIndicator"
+          :popper="{ placement: 'top', scroll: false, resize: false }"
+          :open-delay="400"
+        >
+          <template #activator>
+            <button
+              type="button"
+              class="p-0.5 rounded hover:bg-rui-grey-300 dark:hover:bg-rui-grey-700 transition-colors shrink-0"
+              @click="emit('toggle-show-ignored-assets')"
+            >
+              <RuiIcon
+                :name="showingIgnoredAssets ? 'lu-eye' : 'lu-eye-off'"
+                class="text-rui-warning shrink-0"
+                size="16"
+              />
+            </button>
+          </template>
+          {{
+            showingIgnoredAssets
+              ? t('transactions.events.showing_ignored_assets')
+              : t('transactions.events.hidden_ignored_assets_warning')
+          }}
+        </RuiTooltip>
+
+        <LocationIcon
+          icon
+          :item="group.location"
+          size="18px"
+          class="shrink-0"
+        />
+
+        <HistoryEventsIdentifier
+          :event="group"
+          truncate
+          class="min-w-0 flex-1"
+        />
+      </div>
+
+      <HistoryEventsAction
+        v-if="!hideActions"
+        :event="group"
+        :loading="loading"
+        :duplicate-handling-status="duplicateHandlingStatus"
+        class="shrink-0"
+        @add-event="emit('add-event', $event)"
+        @toggle-ignore="emit('toggle-ignore', $event)"
+        @redecode="emit('redecode', $event)"
+        @redecode-with-options="emit('redecode-with-options', $event)"
+        @delete-tx="emit('delete-tx', $event)"
+        @fix-duplicate="emit('fix-duplicate')"
+      />
+    </div>
+
+    <!-- Bottom row: Account + Timestamp -->
+    <div class="flex items-center justify-between gap-2">
+      <div class="flex items-center gap-1.5 min-w-0">
+        <HistoryEventAccount
+          v-if="group.locationLabel"
+          :location="group.location"
+          :location-label="group.locationLabel"
+          class="text-sm text-rui-text-secondary truncate"
+        />
+      </div>
+
+      <DateDisplay
+        :timestamp="group.timestamp"
+        milliseconds
+        class="text-xs text-rui-text-secondary shrink-0"
+      />
+    </div>
+  </div>
+
+  <!-- Row Layout -->
+  <div
+    v-else
+    class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-1 pr-4 bg-rui-grey-100 dark:bg-dark-elevated contain-content"
+  >
     <IgnoredInAccountingIcon
       v-if="group.ignoredInAccounting"
       class="shrink-0"
@@ -52,7 +146,6 @@ const { group } = toRefs(props);
       class="w-4 shrink-0"
     />
 
-    <!-- Hidden ignored assets toggle -->
     <RuiTooltip
       v-if="showIgnoredAssetsIndicator"
       :popper="{ placement: 'top', scroll: false, resize: false }"
@@ -78,7 +171,6 @@ const { group } = toRefs(props);
       }}
     </RuiTooltip>
 
-    <!-- Location icon -->
     <LocationIcon
       icon
       :item="group.location"
@@ -86,7 +178,6 @@ const { group } = toRefs(props);
       class="shrink-0"
     />
 
-    <!-- Event identifier + Account grouped together -->
     <div class="flex items-center gap-2.5 min-w-0 flex-1">
       <HistoryEventsIdentifier
         :event="group"
@@ -94,7 +185,6 @@ const { group } = toRefs(props);
         class="min-w-0"
       />
 
-      <!-- Account -->
       <template v-if="group.locationLabel">
         <!-- eslint-disable-next-line @intlify/vue-i18n/no-raw-text -->
         <span class="text-[10px] text-rui-text-secondary shrink-0">●</span>
@@ -106,14 +196,12 @@ const { group } = toRefs(props);
       </template>
     </div>
 
-    <!-- Timestamp -->
     <DateDisplay
       :timestamp="group.timestamp"
       milliseconds
       class="w-40 text-right shrink-0 text-sm"
     />
 
-    <!-- Actions -->
     <HistoryEventsAction
       v-if="!hideActions"
       :event="group"

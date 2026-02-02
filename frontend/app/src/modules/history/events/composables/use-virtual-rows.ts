@@ -4,13 +4,25 @@ import { HistoryEventEntryType } from '@rotki/common';
 
 export const ROW_HEIGHTS = {
   'group-header': 48,
-  'event-row': 80,
-  'event-placeholder': 80,
-  'swap-row': 80,
-  'matched-movement-row': 80,
+  'event-row': 72,
+  'event-placeholder': 72,
+  'swap-row': 72,
+  'matched-movement-row': 72,
   'swap-collapse': 36,
   'matched-movement-collapse': 36,
   'load-more': 36,
+} as const;
+
+// Card heights for mobile layout
+export const CARD_HEIGHTS = {
+  'group-header': 72,
+  'event-row': 140,
+  'event-placeholder': 140,
+  'swap-row': 160,
+  'matched-movement-row': 160,
+  'swap-collapse': 40,
+  'matched-movement-collapse': 40,
+  'load-more': 40,
 } as const;
 
 const INITIAL_EVENTS_LIMIT = 6;
@@ -94,6 +106,7 @@ interface UseVirtualRowsReturn {
   toggleSwapExpanded: (swapKey: string) => void;
   toggleMovementExpanded: (movementKey: string) => void;
   getRowHeight: (index: number) => number;
+  getCardHeight: (index: number) => number;
 }
 
 export function useVirtualRows(
@@ -278,10 +291,16 @@ export function useVirtualRows(
     return row ? ROW_HEIGHTS[row.type] : ROW_HEIGHTS['event-row'];
   }
 
+  function getCardHeight(index: number): number {
+    const row = get(flattenedRows)[index];
+    return row ? CARD_HEIGHTS[row.type] : CARD_HEIGHTS['event-row'];
+  }
+
   return {
     expandedMovements,
     expandedSwaps,
     flattenedRows,
+    getCardHeight,
     getRowHeight,
     groupVisibleCounts,
     loadMoreEvents,
