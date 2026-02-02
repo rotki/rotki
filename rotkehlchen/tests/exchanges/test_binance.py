@@ -28,7 +28,7 @@ from rotkehlchen.exchanges.binance import (
 from rotkehlchen.exchanges.data_structures import Location
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_ADA, A_AXS, A_BUSD, A_LUNA, A_RDN
 from rotkehlchen.tests.utils.exchanges import (
@@ -1194,3 +1194,188 @@ def test_binance_query_convert_trades(function_scope_binance: 'Binance') -> None
 
     assert len(function_scope_binance.msg_aggregator.consume_errors()) == 0
     assert len(function_scope_binance.msg_aggregator.consume_warnings()) == 0
+
+
+def test_deserialize_asset_movement_with_network(function_scope_binance: 'Binance') -> None:
+    """Test that the network field in deposit/withdrawal data is correctly mapped
+    to the blockchain field in extra_data."""
+    binance = function_scope_binance
+
+    # Test deposit with known network (ETH)
+    raw_deposit_with_network = {
+        'insertTime': 1508198532000,
+        'amount': 0.5,
+        'coin': 'ETH',
+        'address': '0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b',
+        'txId': '0xabc123',
+        'network': 'ETH',
+        'status': 1,
+    }
+    movements = binance._deserialize_asset_movement(raw_deposit_with_network)
+    assert len(movements) == 1
+    assert movements[0].extra_data is not None
+    assert movements[0].extra_data['blockchain'] == 'eth'
+    assert movements[0].extra_data['address'] == '0x6915f16F8791d0A1CC2BF47c13a6B2A92000504B'
+    assert movements[0].extra_data['transaction_id'] == '0xabc123'
+
+    # Test deposit with BSC network
+    raw_deposit_bsc = {
+        'insertTime': 1508198532000,
+        'amount': 1.0,
+        'coin': 'BNB',
+        'address': '0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b',
+        'txId': '0xdef456',
+        'network': 'BSC',
+        'status': 1,
+    }
+    movements = binance._deserialize_asset_movement(raw_deposit_bsc)
+    assert len(movements) == 1
+    assert movements[0].extra_data is not None
+    assert movements[0].extra_data['blockchain'] == 'binance_sc'
+
+    # Test deposit with unknown network - should not have blockchain in extra_data
+    raw_deposit_unknown_network = {
+        'insertTime': 1508198532000,
+        'amount': 0.5,
+        'coin': 'ETH',
+        'address': '0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b',
+        'txId': '0xghi789',
+        'network': 'UNKNOWN_NETWORK',
+        'status': 1,
+    }
+    movements = binance._deserialize_asset_movement(raw_deposit_unknown_network)
+    assert len(movements) == 1
+    assert movements[0].extra_data is not None
+    assert 'blockchain' not in movements[0].extra_data
+
+    # Test withdrawal with known network
+    raw_withdrawal_with_network = {
+        'id': 'abc123',
+        'amount': 0.99,
+        'transactionFee': 0.01,
+        'address': '0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b',
+        'coin': 'ETH',
+        'txId': '0xjkl012',
+        'network': 'ARBITRUM',
+        'applyTime': '2017-10-17 00:02:12',
+        'status': 4,
+    }
+    movements = binance._deserialize_asset_movement(raw_withdrawal_with_network)
+    assert len(movements) == 2  # withdrawal + fee
+    assert movements[0].extra_data is not None
+    assert movements[0].extra_data['blockchain'] == 'arbitrum_one'
+
+    # Test deposit without network field at all
+    raw_deposit_no_network = {
+        'insertTime': 1508198532000,
+        'amount': 0.5,
+        'coin': 'ETH',
+        'address': '0x6915f16f8791d0a1cc2bf47c13a6b2a92000504b',
+        'txId': '0xmno345',
+        'status': 1,
+    }
+    movements = binance._deserialize_asset_movement(raw_deposit_no_network)
+    assert len(movements) == 1
+    assert movements[0].extra_data is not None
+    assert 'blockchain' not in movements[0].extra_data
+
+
+def test_binance_fiat_query_failure_graceful(function_scope_binance: 'Binance') -> None:
+    """Test that when fiat deposit/withdrawal queries fail with RemoteError,
+    the error is caught and other movements are still returned."""
+    start_ts = 1508022000
+    end_ts = 1636400907
+    binance = function_scope_binance
+
+    def mock_get_history_events(url, params, **kwargs):  # pylint: disable=unused-argument
+        from_ts, to_ts = params.get('startTime'), params.get('endTime')
+        if 'capital/deposit' in url:
+            if from_ts >= 1508022000000 and to_ts <= 1515797999999:
+                response_str = BINANCE_DEPOSITS_HISTORY_RESPONSE
+            else:
+                response_str = '[]'
+        elif 'capital/withdraw' in url:
+            if from_ts <= 1508198532000 <= to_ts:
+                response_str = BINANCE_WITHDRAWALS_HISTORY_RESPONSE
+            else:
+                response_str = '[]'
+        elif 'fiat/orders' in url:
+            raise requests.exceptions.ConnectionError('Connection refused')
+        elif 'myTrades' in url or 'fiat/payments' in url or 'convert/tradeFlow' in url:
+            response_str = '[]'
+        else:
+            raise AssertionError('Unexpected binance request in test')
+
+        return MockResponse(200, response_str)
+
+    with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
+        movements, _ = binance.query_online_history_events(
+            start_ts=Timestamp(start_ts),
+            end_ts=Timestamp(end_ts),
+        )
+
+    errors = binance.msg_aggregator.consume_errors()
+    warnings = binance.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    # Should still have crypto deposit/withdrawal movements (6 events) but no fiat
+    assert_binance_asset_movements_result(
+        movements=cast('list[AssetMovement]', movements),
+        location=Location.BINANCE,
+        got_fiat=False,
+    )
+
+
+def test_binance_withdraw_query_failure_graceful(function_scope_binance: 'Binance') -> None:
+    """Test that when the crypto withdrawal endpoint fails, deposits and fiat
+    movements are still returned."""
+    start_ts = 1508022000
+    end_ts = 1636400907
+    binance = function_scope_binance
+
+    def mock_get_history_events(url, params, **kwargs):  # pylint: disable=unused-argument
+        from_ts, to_ts = params.get('startTime'), params.get('endTime')
+        if 'capital/deposit' in url:
+            if from_ts >= 1508022000000 and to_ts <= 1515797999999:
+                response_str = BINANCE_DEPOSITS_HISTORY_RESPONSE
+            else:
+                response_str = '[]'
+        elif 'capital/withdraw' in url:
+            raise requests.exceptions.ConnectionError('Connection refused')
+        elif 'fiat/orders' in url:
+            if params.get('transactionType') == 0:
+                if from_ts < 1626144956000 < to_ts:
+                    response_str = BINANCE_FIATDEPOSITS_RESPONSE
+                else:
+                    response_str = '[]'
+            elif params.get('transactionType') == 1:
+                if from_ts < 1636144956000 < to_ts:
+                    response_str = BINANCE_FIATWITHDRAWS_RESPONSE
+                else:
+                    response_str = '[]'
+            else:
+                raise AssertionError('Unexpected binance request in test')
+        elif 'myTrades' in url or 'fiat/payments' in url or 'convert/tradeFlow' in url:
+            response_str = '[]'
+        else:
+            raise AssertionError('Unexpected binance request in test')
+
+        return MockResponse(200, response_str)
+
+    with patch.object(binance.session, 'request', side_effect=mock_get_history_events):
+        movements, _ = binance.query_online_history_events(
+            start_ts=Timestamp(start_ts),
+            end_ts=Timestamp(end_ts),
+        )
+
+    errors = binance.msg_aggregator.consume_errors()
+    warnings = binance.msg_aggregator.consume_warnings()
+    assert len(errors) == 0
+    assert len(warnings) == 0
+
+    # Should have deposits (2 events) + fiat deposit (1) + fiat withdrawal (2 with fee)
+    # but no crypto withdrawals
+    assert len(movements) == 5
+    deposit_movements = [m for m in movements if m.event_type == HistoryEventType.DEPOSIT]
+    assert len(deposit_movements) == 3  # 2 crypto deposits + 1 fiat deposit

@@ -70,6 +70,7 @@ from rotkehlchen.types import (
     AssetAmount,
     ExchangeAuthCredentials,
     Location,
+    SupportedBlockchain,
     Timestamp,
     TimestampMS,
 )
@@ -119,6 +120,22 @@ BINANCE_BASE_URL: Final = 'binance.com/'
 BINANCEUS_BASE_URL: Final = 'binance.us/'
 
 BINANCE_ASSETS_STARTING_WITH_LD: Final = ('LDO',)
+# Mapping of Binance network names to SupportedBlockchain
+BINANCE_NETWORK_TO_BLOCKCHAIN: Final[dict[str, SupportedBlockchain]] = {
+    'BSC': SupportedBlockchain.BINANCE_SC,
+    'ETH': SupportedBlockchain.ETHEREUM,
+    'ARBITRUM': SupportedBlockchain.ARBITRUM_ONE,
+    'SOL': SupportedBlockchain.SOLANA,
+    'OPTIMISM': SupportedBlockchain.OPTIMISM,
+    'POL': SupportedBlockchain.POLYGON_POS,
+    'DOT': SupportedBlockchain.POLKADOT,
+    'SCROLL': SupportedBlockchain.SCROLL,
+    'BTC': SupportedBlockchain.BITCOIN,
+    'BCH': SupportedBlockchain.BITCOIN_CASH,
+    'BASE': SupportedBlockchain.BASE,
+    'AVAX': SupportedBlockchain.AVALANCHE,
+    'KUSAMA': SupportedBlockchain.KUSAMA,
+}
 
 
 class BinancePermissionError(RemoteError):
@@ -1508,19 +1525,27 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         tx_id = get_key_if_has_val(raw_data, 'txId')
         internal_id = get_key_if_has_val(raw_data, 'id')
         unique_id = str(internal_id) if internal_id else str(tx_id) if tx_id else ''
+        asset = asset_from_binance(raw_data['coin'])
+        extra_data = maybe_set_transaction_extra_data(
+            address=deserialize_asset_movement_address(raw_data, 'address', asset),
+            transaction_id=tx_id,
+        )
+        network = raw_data.get('network')
+        if network and (blockchain := BINANCE_NETWORK_TO_BLOCKCHAIN.get(network)):
+            if extra_data is None:
+                extra_data = {}
+            extra_data['blockchain'] = blockchain.serialize()
+
         return create_asset_movement_with_fee(
             location=self.location,
             location_label=self.name,
             event_type=event_type,
             timestamp=timestamp,
-            asset=(asset := asset_from_binance(raw_data['coin'])),
+            asset=asset,
             amount=deserialize_fval_force_positive(raw_data['amount']),
             fee=AssetAmount(asset=asset, amount=fee),
             unique_id=unique_id,
-            extra_data=maybe_set_transaction_extra_data(
-                address=deserialize_asset_movement_address(raw_data, 'address', asset),
-                transaction_id=tx_id,
-            ),
+            extra_data=extra_data,
         )
 
     def _api_query_list_within_time_delta(
@@ -1621,46 +1646,60 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         https://binance-docs.github.io/apidocs/spot/en/#deposit-history-user_data
         https://binance-docs.github.io/apidocs/spot/en/#withdraw-history-user_data
         """
-        deposits = self._api_query_list_within_time_delta(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
-            api_type='sapi',
-            method='capital/deposit/hisrec',
-        )
-        log.debug(f'{self.name} deposit history result', results_num=len(deposits))
+        deposits: list[dict[str, Any]] = []
+        withdraws: list[dict[str, Any]] = []
+        fiat_deposits: list[dict[str, Any]] = []
+        fiat_withdraws: list[dict[str, Any]] = []
+        try:
+            deposits = self._api_query_list_within_time_delta(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+                api_type='sapi',
+                method='capital/deposit/hisrec',
+            )
+            log.debug(f'{self.name} deposit history result', results_num=len(deposits))
+        except RemoteError as e:
+            log.warning(f'Failed to query {self.name} deposits due to {e!s}. Skipping.')
 
-        withdraws = self._api_query_list_within_time_delta(
-            start_ts=start_ts,
-            end_ts=end_ts,
-            time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
-            api_type='sapi',
-            method='capital/withdraw/history',
-        )
-        log.debug(f'{self.name} withdraw history result', results_num=len(withdraws))
-
+        try:
+            withdraws = self._api_query_list_within_time_delta(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+                api_type='sapi',
+                method='capital/withdraw/history',
+            )
+            log.debug(f'{self.name} withdraw history result', results_num=len(withdraws))
+        except RemoteError as e:
+            log.warning(f'Failed to query {self.name} withdrawals due to {e!s}. Skipping.')
         if self.location != Location.BINANCEUS:
             # dont exist for Binance US: https://github.com/rotki/rotki/issues/3664
-            fiat_deposits = self._api_query_list_within_time_delta(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
-                api_type='sapi',
-                method='fiat/orders',
-                additional_options={'transactionType': 0},
-            )
-            log.debug(f'{self.name} fiat deposit history result', results_num=len(fiat_deposits))
-            fiat_withdraws = self._api_query_list_within_time_delta(
-                start_ts=start_ts,
-                end_ts=end_ts,
-                time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
-                api_type='sapi',
-                method='fiat/orders',
-                additional_options={'transactionType': 1},
-            )
-            log.debug(f'{self.name} fiat withdraw history result', results_num=len(fiat_withdraws))
-        else:
-            fiat_deposits, fiat_withdraws = [], []
+            try:
+                fiat_deposits = self._api_query_list_within_time_delta(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+                    api_type='sapi',
+                    method='fiat/orders',
+                    additional_options={'transactionType': 0},
+                )
+                log.debug(f'{self.name} fiat deposit history', results_num=len(fiat_deposits))
+            except RemoteError as e:
+                log.warning(f'Failed to query {self.name} fiat deposits due to {e!s}. Skipping.')
+
+            try:
+                fiat_withdraws = self._api_query_list_within_time_delta(
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    time_delta=API_TIME_INTERVAL_CONSTRAINT_TS,
+                    api_type='sapi',
+                    method='fiat/orders',
+                    additional_options={'transactionType': 1},
+                )
+                log.debug(f'{self.name} fiat withdraw history', results_num=len(fiat_withdraws))
+            except RemoteError as e:
+                log.warning(f'Failed to query {self.name} fiat withdraws due to {e!s}. Skipping.')
 
         movements = []
         for raw_movement in deposits + withdraws:
