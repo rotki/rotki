@@ -2554,7 +2554,7 @@ class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
 
 
 class StringAccountSchema(Schema):
-    accounts = fields.List(NonEmptyStringField(), required=True)
+    accounts = NonEmptyList(NonEmptyStringField(), required=True)
 
 
 class BlockchainTypeAccountsDeleteSchema(ChainTypeSchema, StringAccountSchema):
@@ -3433,7 +3433,7 @@ class AssetsImportingFromFormSchema(AsyncQueryArgumentSchema):
 
 
 class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    ethereum_addresses = fields.List(EvmAddressField(), required=True)
+    ethereum_addresses = NonEmptyList(EvmAddressField(), required=True)
 
 
 class ResolveEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
@@ -3523,9 +3523,8 @@ class BaseAddressbookSchema(Schema):
 
 class AddressbookAddressesSchema(
     BaseAddressbookSchema,
-    OptionalAddressesWithBlockchainsListSchema,
 ):
-    ...
+    addresses = NonEmptyList(fields.Nested(AddressWithOptionalBlockchainSchema), required=True)
 
 
 class QueryAddressbookSchema(

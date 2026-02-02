@@ -151,6 +151,19 @@ def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
                 rotkehlchen_api_server,
                 'reverseensresource',
             ),
+            json={'ethereum_addresses': []},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='"ethereum_addresses": ["List cant be empty"]',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
+
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'reverseensresource',
+            ),
             json={'ethereum_addresses': addrs_1 + addrs_2[1:], 'ignore_cache': True},
         )
         assert_proper_sync_response_with_result(response)

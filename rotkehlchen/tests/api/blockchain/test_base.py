@@ -808,10 +808,13 @@ def test_blockchain_accounts_endpoint_errors(
             api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='ETH'),
             json={'accounts': []},
     ) as response:
-        verb = 'add' if method == 'PUT' else 'remove'
+        if method == 'DELETE':
+            contained_in_msg = '"accounts": ["List cant be empty"]'
+        else:
+            contained_in_msg = 'Empty list of blockchain accounts to add was given'
         assert_error_response(
             response=response,
-            contained_in_msg=f'Empty list of blockchain accounts to {verb} was given',
+            contained_in_msg=contained_in_msg,
         )
 
     # Provide invalid ETH account (more bytes)

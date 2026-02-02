@@ -612,6 +612,22 @@ def test_delete_addressbook(
                 filter_query=AddressbookFilterQuery.make(),
             )[0],
         ) == set(generated_entries[1:3] + generated_entries[4:])
+
+        response = requests.delete(
+            api_url_for(
+                rotkehlchen_api_server,
+                'addressbookresource',
+                book_type=book_type,
+            ),
+            json={
+                'addresses': [],
+            },
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg='"addresses": ["List cant be empty"]',
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
         nonexistent_addresses = [ADDRESS_ETH, ADDRESS_OP]
 
         data_before_bad_request = db_addressbook.get_addressbook_entries(cursor, filter_query=AddressbookFilterQuery.make())[0]  # noqa: E501
