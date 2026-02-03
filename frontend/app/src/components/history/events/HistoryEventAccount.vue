@@ -14,18 +14,19 @@ const isExchangeLocation = computed<boolean>(() => !matchChain(props.location));
 </script>
 
 <template>
-  <div class="flex items-center gap-1">
+  <div class="flex items-center gap-1 min-w-0">
     <LocationIcon
       v-if="isExchangeLocation"
       icon
       :item="location"
       size="16px"
-      class="mr-0.5"
+      class="mr-0.5 shrink-0"
     />
     <HashLink
       :text="locationLabel"
       :location="location"
       :no-scramble="isExchangeLocation"
+      class="truncate"
     />
   </div>
 </template>

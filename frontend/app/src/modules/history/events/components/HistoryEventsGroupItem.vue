@@ -49,10 +49,10 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <!-- Card Layout -->
   <div
     v-if="isCard"
-    class="p-3 border-b-2 border-rui-grey-300 dark:border-rui-grey-600 bg-rui-grey-100 dark:bg-dark-elevated contain-content"
+    class="pt-1 pb-2 px-3 border-b border-rui-grey-200 dark:border-rui-grey-800 bg-rui-grey-100 dark:bg-dark-elevated"
   >
     <!-- Top row: Location + Identifier + Actions -->
-    <div class="flex items-center justify-between gap-2 mb-1">
+    <div class="flex items-center justify-between gap-2 mb-0.5">
       <div class="flex items-center gap-2 min-w-0 flex-1">
         <IgnoredInAccountingIcon
           v-if="group.ignoredInAccounting"
@@ -115,14 +115,12 @@ const isCard = computed<boolean>(() => props.variant === 'card');
 
     <!-- Bottom row: Account + Timestamp -->
     <div class="flex items-center justify-between gap-2">
-      <div class="flex items-center gap-1.5 min-w-0">
-        <HistoryEventAccount
-          v-if="group.locationLabel"
-          :location="group.location"
-          :location-label="group.locationLabel"
-          class="text-sm text-rui-text-secondary truncate"
-        />
-      </div>
+      <HistoryEventAccount
+        v-if="group.locationLabel"
+        :location="group.location"
+        :location-label="group.locationLabel"
+        class="text-sm text-rui-text-secondary min-w-0"
+      />
 
       <DateDisplay
         :timestamp="group.timestamp"
