@@ -44,13 +44,27 @@ const { start: startNoIssuesTimeout, stop: stopNoIssuesTimeout } = useTimeoutFn(
   set(noIssuesFound, false);
 }, 2000, { immediate: false });
 
+const hasOnlyUnmatchedMovements = computed<boolean>(() => get(unmatchedCount) > 0 && get(duplicatesCount) === 0);
+
 function toggleAlerts(): void {
-  set(showAlerts, !get(showAlerts));
+  if (get(hasOnlyUnmatchedMovements)) {
+    emit('show:dialog', { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+  }
+  else {
+    set(showAlerts, !get(showAlerts));
+  }
 }
 
 function openAlertsIfNeeded(): void {
-  if (get(showAlertsButton))
+  if (!get(showAlertsButton))
+    return;
+
+  if (get(hasOnlyUnmatchedMovements)) {
+    emit('show:dialog', { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+  }
+  else {
     set(showAlerts, true);
+  }
 }
 
 function showNoIssuesFeedback(): void {
