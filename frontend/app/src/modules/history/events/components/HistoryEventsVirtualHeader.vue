@@ -77,7 +77,14 @@ const limits = [10, 25, 50, 100];
 </script>
 
 <template>
-  <div class="flex items-center justify-between gap-2 md:gap-4 px-3 md:px-4 h-10 lg:h-12 border-b border-default bg-rui-grey-50 dark:bg-dark-elevated/[0.9] sticky top-0 z-10">
+  <div class="relative flex items-center justify-between gap-2 md:gap-4 px-3 md:px-4 h-10 lg:h-12 border-b border-default bg-rui-grey-50 dark:bg-dark-elevated/[0.9] sticky top-0 z-5">
+    <RuiProgress
+      v-if="loading"
+      class="!absolute -bottom-0.5 left-0 w-full pointer-events-none"
+      color="primary"
+      variant="indeterminate"
+      thickness="2"
+    />
     <!-- Left side: Column headers - hidden on mobile -->
     <div class="hidden md:flex items-center text-sm text-rui-text-secondary font-medium">
       <span>{{ t('transactions.events.headers.event_identifier') }}</span>
@@ -151,6 +158,18 @@ const limits = [10, 25, 50, 100];
           icon
           size="sm"
           :disabled="currentPage <= 1"
+          @click="currentPage = 1"
+        >
+          <RuiIcon
+            name="lu-chevrons-left"
+            size="18"
+          />
+        </RuiButton>
+        <RuiButton
+          variant="text"
+          icon
+          size="sm"
+          :disabled="currentPage <= 1"
           @click="currentPage = currentPage - 1"
         >
           <RuiIcon
@@ -167,6 +186,18 @@ const limits = [10, 25, 50, 100];
         >
           <RuiIcon
             name="lu-chevron-right"
+            size="18"
+          />
+        </RuiButton>
+        <RuiButton
+          variant="text"
+          icon
+          size="sm"
+          :disabled="currentPage >= totalPages"
+          @click="currentPage = totalPages"
+        >
+          <RuiIcon
+            name="lu-chevrons-right"
             size="18"
           />
         </RuiButton>

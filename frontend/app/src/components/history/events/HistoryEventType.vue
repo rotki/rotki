@@ -61,7 +61,7 @@ const showLocationLabel = computed<boolean>(() => {
     />
 
     <div class="ml-3.5">
-      <div class="font-bold uppercase text-sm">
+      <div class="font-medium uppercase text-sm">
         {{ attrs.label }}
       </div>
       <HistoryEventAccount
@@ -72,7 +72,7 @@ const showLocationLabel = computed<boolean>(() => {
       />
       <div
         v-if="eventStates.length > 0 && !hideStateChips"
-        class="flex flex-wrap gap-0.5 mt-1"
+        class="flex flex-wrap gap-0.5"
       >
         <HistoryEventStateChip
           v-for="state in eventStates"

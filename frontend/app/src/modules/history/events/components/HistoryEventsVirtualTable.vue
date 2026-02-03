@@ -399,6 +399,7 @@ function unlinkGroup(groupId: string): void {
           <HistoryEventsSwapCollapseRow
             v-else-if="row.type === 'matched-movement-collapse'"
             :event-count="row.eventCount"
+            :events="getGroupEvents(row.groupId)"
             label-type="movement"
             @unlink-event="unlinkGroup(row.groupId)"
             @collapse="toggleMovementExpanded(row.movementKey)"

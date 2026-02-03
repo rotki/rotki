@@ -1,7 +1,11 @@
 <script setup lang="ts">
+import type { HistoryEventEntry } from '@/types/history/events/schemas';
+import HashLink from '@/modules/common/links/HashLink.vue';
+
 const props = defineProps<{
   eventCount: number;
   labelType?: 'swap' | 'movement';
+  events?: HistoryEventEntry[];
 }>();
 
 const emit = defineEmits<{
@@ -12,6 +16,23 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const isMovement = computed<boolean>(() => props.labelType === 'movement');
+
+const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
+  const events = props.events;
+  if (!events)
+    return undefined;
+
+  for (const event of events) {
+    const isDepositOrWithdrawal = event.eventType === 'deposit' || event.eventType === 'withdrawal';
+    if (isDepositOrWithdrawal && 'txRef' in event && event.txRef) {
+      return {
+        location: event.location,
+        txRef: event.txRef,
+      };
+    }
+  }
+  return undefined;
+});
 </script>
 
 <template>
@@ -40,6 +61,16 @@ const isMovement = computed<boolean>(() => props.labelType === 'movement');
           : t('history_events_list_swap.swap_expanded', { count: eventCount })
       }}
     </span>
+
+    <!-- Transaction hash -->
+    <HashLink
+      v-if="eventWithTxRef"
+      class="bg-rui-grey-200 dark:bg-rui-grey-800 pr-1 pl-2 rounded-full text-xs"
+      :text="eventWithTxRef.txRef"
+      type="transaction"
+      :location="eventWithTxRef.location"
+      :truncate-length="8"
+    />
     <RuiButton
       v-if="isMovement"
       class="ml-auto"

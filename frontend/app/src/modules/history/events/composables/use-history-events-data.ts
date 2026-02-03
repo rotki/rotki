@@ -162,7 +162,7 @@ export function useHistoryEventsData(
     return mapping;
   });
 
-  const loading = useRefWithDebounce(logicOr(groupLoading, eventsLoading), 100);
+  const loading = useRefWithDebounce(logicOr(groupLoading, eventsLoading), 200);
   const hasIgnoredEvent = useArraySome(
     events,
     event => Array.isArray(event) ? event.some(item => item.ignoredInAccounting) : event.ignoredInAccounting,

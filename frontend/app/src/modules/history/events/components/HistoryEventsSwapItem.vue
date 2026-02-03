@@ -201,7 +201,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
       class="shrink-0 -ml-2"
     />
 
-    <div>
+    <div class="relative -top-2">
       <RuiButton
         size="sm"
         icon
@@ -224,7 +224,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
         :highlight="highlight"
         icon="lu-arrow-right-left"
         hide-state-chips
-        class="w-44 shrink-0 self-center"
+        class="w-44 xl:w-52 shrink-0 self-center"
       />
     </div>
 

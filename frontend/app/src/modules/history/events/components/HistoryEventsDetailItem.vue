@@ -160,7 +160,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
       :chain="chain"
       :group-location-label="groupLocationLabel"
       :highlight="highlight"
-      class="w-44 shrink-0"
+      class="w-44 xl:w-52 shrink-0"
     />
 
     <HistoryEventAsset

@@ -12,17 +12,19 @@ const config = computed(() => stateConfigs[props.state]);
 </script>
 
 <template>
-  <RuiChip
-    size="sm"
-    :color="config.color"
-    class="px-1"
-  >
-    <div class="flex items-center gap-1 text-caption font-bold !text-xs">
-      <RuiIcon
-        :name="config.icon"
-        size="14"
-      />
-      {{ config.label }}
-    </div>
-  </RuiChip>
+  <RuiTooltip :popper="{ placement: 'top', scroll: false, resize: false }">
+    <template #activator>
+      <RuiChip
+        size="sm"
+        :color="config.color"
+        class="!p-0.5"
+      >
+        <RuiIcon
+          :name="config.icon"
+          size="14"
+        />
+      </RuiChip>
+    </template>
+    {{ config.label }}
+  </RuiTooltip>
 </template>
