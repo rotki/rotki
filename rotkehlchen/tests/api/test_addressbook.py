@@ -618,10 +618,7 @@ def test_delete_addressbook(
                 rotkehlchen_api_server,
                 'addressbookresource',
                 book_type=book_type,
-            ),
-            json={
-                'addresses': [],
-            },
+            ), json={'addresses': []},
         )
         assert_error_response(
             response=response,

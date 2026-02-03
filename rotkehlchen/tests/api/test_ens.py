@@ -147,10 +147,7 @@ def test_reverse_ens(rotkehlchen_api_server: 'APIServer') -> None:
         )
 
         response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server,
-                'reverseensresource',
-            ),
+            api_url_for(rotkehlchen_api_server, 'reverseensresource'),
             json={'ethereum_addresses': []},
         )
         assert_error_response(
