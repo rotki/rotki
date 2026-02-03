@@ -117,16 +117,18 @@ const taskRunning = useIsTaskRunning(TaskType.EXPORT_HISTORY_EVENTS);
 </script>
 
 <template>
-  <RuiButton
-    color="primary"
-    variant="outlined"
-    class="!py-2"
-    :disabled="taskRunning"
-    @click="showConfirmation()"
-  >
-    <template #prepend>
-      <RuiIcon name="lu-file-down" />
+  <RuiTooltip :open-delay="400">
+    <template #activator>
+      <RuiButton
+        color="primary"
+        variant="outlined"
+        class="!p-2"
+        :disabled="taskRunning"
+        @click="showConfirmation()"
+      >
+        <RuiIcon name="lu-file-down" />
+      </RuiButton>
     </template>
     {{ t('common.actions.export_csv') }}
-  </RuiButton>
+  </RuiTooltip>
 </template>

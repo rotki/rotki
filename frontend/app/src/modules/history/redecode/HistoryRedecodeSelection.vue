@@ -1,25 +1,25 @@
 <script setup lang="ts">
 import type { EvmChainInfo } from '@/types/api/chains';
 import { getTextToken } from '@rotki/common';
-import { checkIfDevelopment } from '@shared/utils';
 import { useSupportedChains } from '@/composables/info/chains';
 import HistoryRedecodeChainItem from '@/modules/history/redecode/HistoryRedecodeChainItem.vue';
 
 withDefaults(defineProps<{
   loading: boolean;
   disabled?: boolean;
+  showRedecodePage?: boolean;
 }>(), {
   disabled: false,
+  showRedecodePage: false,
 });
 
-const emit = defineEmits<{ redecode: [payload: string[]] }>();
+const emit = defineEmits<{
+  redecode: [payload: string[] | 'page'];
+}>();
 
 const open = ref<boolean>(false);
 const search = ref<string>('');
 const selection = ref<string[]>([]);
-
-const isDemoMode = import.meta.env.VITE_DEMO_MODE !== undefined;
-const isDevelopment = checkIfDevelopment();
 
 const { t } = useI18n({ useScope: 'global' });
 const { txEvmChains } = useSupportedChains();
@@ -80,9 +80,6 @@ function redecode() {
       <RuiButton
         color="primary"
         class="px-3 py-3 rounded-l-none -ml-[1px] border-l border-rui-primary-darker disabled:border-rui-grey-200 disabled:dark:border-rui-grey-800"
-        :class="{
-          'rounded-r-none': isDevelopment && !isDemoMode,
-        }"
         :disabled="disabled"
         v-bind="attrs"
       >
@@ -152,6 +149,26 @@ function redecode() {
           {{ t('history_redecode_selection.redecode', { total: selection.length }) }}
         </RuiButton>
       </div>
+    </div>
+
+    <div
+      v-if="showRedecodePage"
+      class="px-4 py-2 border-t border-default"
+    >
+      <RuiButton
+        variant="text"
+        size="sm"
+        class="w-full !justify-start"
+        @click="emit('redecode', 'page'); reset()"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-file-text"
+            size="16"
+          />
+        </template>
+        {{ t('transactions.actions.redecode_page') }}
+      </RuiButton>
     </div>
   </RuiMenu>
 </template>

@@ -5571,6 +5571,7 @@
       "fetching": "Checking transaction decoding status",
       "preparing": "Decoding transactions, please wait...",
       "progress": "Progress",
+      "redecode": "Redecode",
       "redecode_all": "Redecode All Transactions",
       "title": "Transaction decoding status",
       "transactions_processed": "{processed} / {total} transactions processed",

@@ -25,21 +25,20 @@ const isDevelopment = checkIfDevelopment();
       class="!py-2"
       @click="emit('redecode', 'all')"
     >
-      {{ t('transactions.events_decoding.redecode_all') }}
+      <template #prepend>
+        <RuiIcon
+          name="lu-refresh-cw"
+          size="16"
+        />
+      </template>
+      {{ t('transactions.events_decoding.redecode') }}
     </RuiButton>
 
     <HistoryRedecodeSelection
       :loading="processing"
       :disabled="processing"
+      :show-redecode-page="isDevelopment && !isDemoMode"
       @redecode="emit('redecode', $event)"
     />
-
-    <RuiButton
-      v-if="isDevelopment && !isDemoMode"
-      class="!py-2"
-      @click="emit('redecode', 'page')"
-    >
-      {{ t('transactions.actions.redecode_page') }}
-    </RuiButton>
   </RuiButtonGroup>
 </template>
