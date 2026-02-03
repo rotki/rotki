@@ -121,7 +121,7 @@ const limits = [10, 25, 50, 100];
 
       <!-- Items per page -->
       <div class="flex items-center gap-1 md:gap-2">
-        <span class="hidden lg:inline text-sm text-rui-text-secondary">{{ t('data_table.rows_per_page') }}</span>
+        <span class="hidden lg:inline text-xs text-rui-text-secondary whitespace-nowrap">{{ t('data_table.rows_per_page') }}</span>
         <RuiIcon
           class="lg:hidden text-rui-text-secondary"
           name="lu-rows-3"

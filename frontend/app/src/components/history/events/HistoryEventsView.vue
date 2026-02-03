@@ -14,7 +14,6 @@ import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/hi
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
 import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
-import { useRefWithDebounce } from '@/composables/ref';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
 import { useHistoryEventsSelectionActions } from '@/modules/history/events/composables/use-history-events-selection-actions';
@@ -169,7 +168,6 @@ const {
 const debouncedProcessing = refDebounced(processing, 200);
 const { autoMatchLoading, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading);
-const debouncedBackgroundLoading = useRefWithDebounce(logicOr(processing, autoMatchLoading), 200);
 
 // Handle updating available event IDs from the table
 function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds: number[]; groupedEvents: Record<string, HistoryEventRow[]>; rawEvents?: HistoryEventRow[] }): void {
@@ -252,7 +250,7 @@ watchDebounced(route, async () => {
       <div>
         <HistoryEventsAlerts
           v-model:show="showAlerts"
-          :loading="debouncedBackgroundLoading"
+          :processing="processing"
           :main-page="mainPage"
           :manual-issue-check="manualIssueCheck"
           @open:match-asset-movements="openMatchAssetMovementsDialog()"

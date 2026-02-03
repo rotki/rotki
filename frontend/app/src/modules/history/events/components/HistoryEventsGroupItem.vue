@@ -189,7 +189,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
         <HistoryEventAccount
           :location="group.location"
           :location-label="group.locationLabel"
-          class="text-sm shrink-0"
+          class="text-sm min-w-0"
         />
       </template>
     </div>

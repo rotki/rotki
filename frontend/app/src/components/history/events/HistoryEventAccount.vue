@@ -26,7 +26,7 @@ const isExchangeLocation = computed<boolean>(() => !matchChain(props.location));
       :text="locationLabel"
       :location="location"
       :no-scramble="isExchangeLocation"
-      class="truncate"
+      class="min-w-0"
     />
   </div>
 </template>

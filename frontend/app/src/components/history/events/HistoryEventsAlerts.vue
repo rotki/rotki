@@ -2,6 +2,7 @@
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { DuplicateHandlingStatus } from '@/composables/history/events/use-history-events-filters';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
+import { useRefWithDebounce } from '@/composables/ref';
 import { Routes } from '@/router/routes';
 import { useStatusStore } from '@/store/status';
 import { Section, Status } from '@/types/status';
@@ -9,7 +10,7 @@ import { Section, Status } from '@/types/status';
 const show = defineModel<boolean>('show', { required: true });
 
 const props = defineProps<{
-  loading: boolean;
+  processing: boolean;
   mainPage: boolean;
   manualIssueCheck: boolean;
 }>();
@@ -22,7 +23,7 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const { getStatus } = useStatusStore();
 
-const { loading, mainPage, manualIssueCheck } = toRefs(props);
+const { mainPage, manualIssueCheck, processing } = toRefs(props);
 
 const {
   autoMatchLoading,
@@ -30,6 +31,8 @@ const {
   refreshUnmatchedAssetMovements,
   unmatchedCount,
 } = useUnmatchedAssetMovements();
+
+const loading = useRefWithDebounce(logicOr(processing, autoMatchLoading), 200);
 
 const {
   autoFixCount,

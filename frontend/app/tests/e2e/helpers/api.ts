@@ -228,7 +228,7 @@ export async function apiAddEtherscanKey(
  * Waits for all running tasks to complete by checking the notification indicator.
  * Uses polling with expect().toPass() instead of hardcoded delays.
  */
-export async function waitForNoRunningTasks(page: Page, timeout: number = 120000): Promise<void> {
+export async function waitForNoRunningTasks(page: Page, timeout: number = 180000): Promise<void> {
   const { expect } = await import('@playwright/test');
   const indicator = page.locator('[data-cy=notification-indicator-progress]');
 

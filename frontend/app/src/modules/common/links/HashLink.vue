@@ -195,17 +195,19 @@ const tags = useAccountTags(text);
 </script>
 
 <template>
-  <div class="flex flex-row shrink items-center gap-1.5 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px]">
+  <div class="flex flex-row shrink items-center gap-1.5 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px] min-w-0">
     <EnsAvatar
       v-if="showIcon"
       :address="displayText"
       avatar
       size="22px"
+      class="shrink-0 aspect-square"
     />
 
     <RuiTooltip
       v-if="!hideText"
       ref="tooltip"
+      class="min-w-0 overflow-hidden"
       :popper="{ placement: 'top', scroll: false, resize: false }"
       :open-delay="400"
       :disabled="truncateLength === 0"
@@ -213,9 +215,12 @@ const tags = useAccountTags(text);
       persist-on-tooltip-hover
     >
       <template #activator>
-        <div :class="{ blur: !shouldShowAmount }">
+        <span
+          class="block truncate"
+          :class="{ blur: !shouldShowAmount }"
+        >
           {{ finalDisplayText }}
-        </div>
+        </span>
       </template>
 
       <TagDisplay
@@ -255,7 +260,7 @@ const tags = useAccountTags(text);
 
     <div
       v-if="showLink || showCopy"
-      class="flex items-center gap-1"
+      class="flex items-center gap-1 shrink-0"
     >
       <CopyButton
         v-if="showCopy"

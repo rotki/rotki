@@ -30,6 +30,7 @@ const { getBlockie } = useBlockie();
 const style = computed(() => ({
   height: props.size,
   width: props.size,
+  minWidth: props.size,
 }));
 </script>
 
