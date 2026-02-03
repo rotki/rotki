@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any
 from unittest.mock import patch
 
@@ -17,6 +18,7 @@ from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingSt
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import (
     EthDepositEventFilterQuery,
+    EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
     HistoryEventFilterQuery,
 )
@@ -132,7 +134,7 @@ def add_history_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[str, Tim
             )
 
 
-def add_evm_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, TimestampMS, FVal, str, str, dict | None]]) -> None:  # noqa: E501
+def add_evm_events_to_db(db: DBHistoryEvents, data: Mapping[int, tuple[EVMTxHash, TimestampMS, FVal, str, str, dict | None]]) -> None:  # noqa: E501
     """Helper function to create EvmEvent fixtures"""
     with db.db.user_write() as write_cursor:
         for entry in data.values():
@@ -170,6 +172,45 @@ def add_eth2_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[EVMTxHash, 
                     depositor=string_to_evm_address(entry[3]),
                 ),
                 mapping_values=entry[4],
+            )
+
+
+def add_eth_deposit_events_to_db(
+        db: DBHistoryEvents,
+        data: dict[int, tuple[EVMTxHash, TimestampMS, FVal, str, int]],
+) -> None:
+    """Helper function to create fixtures for eth deposit events with custom validators."""
+    with db.db.user_write() as write_cursor:
+        for entry in data.values():
+            db.add_history_event(
+                write_cursor=write_cursor,
+                event=EthDepositEvent(
+                    tx_ref=entry[0],
+                    validator_index=entry[4],
+                    sequence_index=1,
+                    timestamp=entry[1],
+                    amount=entry[2],
+                    depositor=string_to_evm_address(entry[3]),
+                ),
+            )
+
+
+def add_eth_withdrawal_events_to_db(
+        db: DBHistoryEvents,
+        data: dict[int, tuple[int, TimestampMS, FVal, str, bool]],
+) -> None:
+    """Helper function to create fixtures for eth withdrawal events with custom validators."""
+    with db.db.user_write() as write_cursor:
+        for entry in data.values():
+            db.add_history_event(
+                write_cursor=write_cursor,
+                event=EthWithdrawalEvent(
+                    validator_index=entry[0],
+                    timestamp=entry[1],
+                    amount=entry[2],
+                    withdrawal_address=string_to_evm_address(entry[3]),
+                    is_exit=entry[4],
+                ),
             )
 
 
@@ -229,7 +270,113 @@ def test_read_write_events_from_db(database):
                         counterparty=data_entry[3],
                         address=data_entry[4],
                     )
-                assert event == expected_event
+                    assert event == expected_event
+
+
+def test_history_events_count_with_chain_filters(database: DBHandler) -> None:
+    """Ensure count queries work with chain fields (counterparty/address) filters."""
+    db = DBHistoryEvents(database)
+    evm_data = {
+        1: (make_evm_tx_hash(), TimestampMS(1), ONE, 'aave', '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501
+        2: (make_evm_tx_hash(), TimestampMS(2), ONE, 'aave', '0x85222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', None),  # noqa: E501
+        3: (make_evm_tx_hash(), TimestampMS(3), ONE, 'liquity', '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe4', None),  # noqa: E501
+    }
+    add_evm_events_to_db(db, evm_data)
+    add_history_events_to_db(db, {4: ('BASE1', TimestampMS(4), ONE, None)})
+
+    query = EvmEventFilterQuery.make(
+        counterparties=['aave'],
+        addresses=[string_to_evm_address(evm_data[1][4])],
+    )
+    with db.db.conn.read_ctx() as cursor:
+        count_without_limit, count_with_limit = db.get_history_events_count(
+            cursor=cursor,
+            query_filter=query,
+            aggregate_by_group_ids=False,
+            entries_limit=None,
+        )
+        assert count_without_limit == 1
+        assert count_with_limit == 1
+
+        events = db.get_history_events(
+            cursor=cursor,
+            filter_query=query,
+            entries_limit=None,
+            aggregate_by_group_ids=False,
+        )
+        assert len(events) == 1
+        assert isinstance(events[0], EvmEvent)
+        assert events[0].counterparty == 'aave'
+        assert events[0].address == string_to_evm_address(evm_data[1][4])
+
+
+def test_history_events_count_with_eth_deposit_filters(database: DBHandler) -> None:
+    """Ensure count queries work with eth deposit tx_ref filters."""
+    db = DBHistoryEvents(database)
+    tx_hash_1 = make_evm_tx_hash()
+    tx_hash_2 = make_evm_tx_hash()
+    deposit_data = {
+        1: (tx_hash_1, TimestampMS(10), ONE, '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', 42),
+        2: (tx_hash_2, TimestampMS(11), ONE, '0x85222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', 84),
+    }
+    add_eth_deposit_events_to_db(db, deposit_data)
+
+    query = EthDepositEventFilterQuery.make(
+        tx_hashes=[tx_hash_1],
+    )
+    with db.db.conn.read_ctx() as cursor:
+        count_without_limit, count_with_limit = db.get_history_events_count(
+            cursor=cursor,
+            query_filter=query,
+            aggregate_by_group_ids=False,
+            entries_limit=None,
+        )
+        assert count_without_limit == 1
+        assert count_with_limit == 1
+
+        events = db.get_history_events(
+            cursor=cursor,
+            filter_query=query,
+            entries_limit=None,
+            aggregate_by_group_ids=False,
+        )
+        assert len(events) == 1
+        assert isinstance(events[0], EthDepositEvent)
+        assert events[0].validator_index == 42
+        assert events[0].tx_ref == tx_hash_1
+
+
+def test_history_events_count_with_eth_withdrawal_filters(database: DBHandler) -> None:
+    """Ensure count queries work with eth withdrawal validator filters."""
+    db = DBHistoryEvents(database)
+    withdrawal_data = {
+        1: (7, TimestampMS(20), ONE, '0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', True),
+        2: (9, TimestampMS(21), ONE, '0x85222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5', False),
+    }
+    add_eth_withdrawal_events_to_db(db, withdrawal_data)
+
+    query = EthWithdrawalFilterQuery.make(
+        validator_indices=[7],
+    )
+    with db.db.conn.read_ctx() as cursor:
+        count_without_limit, count_with_limit = db.get_history_events_count(
+            cursor=cursor,
+            query_filter=query,
+            aggregate_by_group_ids=False,
+            entries_limit=None,
+        )
+        assert count_without_limit == 1
+        assert count_with_limit == 1
+
+        events = db.get_history_events(
+            cursor=cursor,
+            filter_query=query,
+            entries_limit=None,
+            aggregate_by_group_ids=False,
+        )
+        assert len(events) == 1
+        assert isinstance(events[0], EthWithdrawalEvent)
+        assert events[0].validator_index == 7
 
 
 @pytest.mark.parametrize(

@@ -17,8 +17,10 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import ASSET_MOVEMENT_NO_MATCH_CACHE_VALUE, DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
+    CHAIN_EVENT_NULL_FIELDS,
     CHAIN_FIELD_LENGTH,
     ETH_STAKING_EVENT_FIELDS,
+    ETH_STAKING_EVENT_NULL_FIELDS,
     ETH_STAKING_FIELD_LENGTH,
     GROUP_HAS_IGNORED_ASSETS_FIELD,
     HISTORY_BASE_ENTRY_FIELDS,
@@ -30,6 +32,7 @@ from rotkehlchen.db.constants import (
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
     EVENTS_WITH_COUNTERPARTY_JOIN,
+    DBMultiIntegerFilter,
     EthDepositEventFilterQuery,
     EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
@@ -44,6 +47,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.constants import CHAIN_ENTRY_TYPES, STAKING_ENTRY_TYPES
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntry,
@@ -683,10 +687,13 @@ class DBHistoryEvents:
             include_order: bool = True,
     ) -> tuple[str, list]:
         """Returns the sql queries and bindings for the history events without pagination."""
+        chain_fields, staking_fields, join_clause = DBHistoryEvents._build_events_query_parts(
+            filter_query=filter_query,
+        )
         # group_has_ignored_assets is added at the END so existing slicing logic is not affected.
         # It's computed via a window function to detect groups with ignored assets even when
         # those rows are filtered out by exclude_ignored_assets.
-        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS}, {GROUP_HAS_IGNORED_ASSETS_FIELD} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
+        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {chain_fields}, {staking_fields}, {GROUP_HAS_IGNORED_ASSETS_FIELD} {join_clause}'  # noqa: E501
         if aggregate_by_group_ids:
             filters, query_bindings = filter_query.prepare(
                 with_group_by=True,
@@ -726,6 +733,54 @@ class DBHistoryEvents:
             )
 
         return f'{prefix} FROM (SELECT {suffix}) {filters}', limit + query_bindings
+
+    @staticmethod
+    def _build_events_query_parts(
+            filter_query: HistoryBaseEntryFilterQuery,
+    ) -> tuple[str, str, str]:
+        entry_type_filter_values: Sequence[int] | None = None
+        for filter_ in filter_query.filters:
+            if (
+                isinstance(filter_, DBMultiIntegerFilter) and
+                filter_.column == 'entry_type' and
+                filter_.operator == 'IN'
+            ):
+                entry_type_filter_values = filter_.values
+                break
+
+        include_chain = include_staking = False
+        if entry_type_filter_values is None:
+            include_chain = include_staking = True
+        else:
+            entry_types = {HistoryBaseEntryType(value) for value in entry_type_filter_values}
+            include_chain = len(entry_types & CHAIN_ENTRY_TYPES) > 0
+            include_staking = len(entry_types & STAKING_ENTRY_TYPES) > 0
+
+        if include_chain:
+            chain_fields = CHAIN_EVENT_FIELDS
+            chain_join = (
+                'LEFT JOIN chain_events_info ON '
+                'history_events.identifier=chain_events_info.identifier '
+            )
+        else:
+            chain_fields = CHAIN_EVENT_NULL_FIELDS
+            chain_join = ''
+
+        if include_staking:
+            staking_fields = ETH_STAKING_EVENT_FIELDS
+            staking_join = (
+                'LEFT JOIN eth_staking_events_info ON '
+                'history_events.identifier=eth_staking_events_info.identifier '
+            )
+        else:
+            staking_fields = ETH_STAKING_EVENT_NULL_FIELDS
+            staking_join = ''
+
+        return (
+            chain_fields,
+            staking_fields,
+            f'FROM history_events {chain_join}{staking_join}',
+        )
 
     @staticmethod
     def _create_history_events_count_query(
