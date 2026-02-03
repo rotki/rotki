@@ -727,6 +727,38 @@ class DBHistoryEvents:
 
         return f'{prefix} FROM (SELECT {suffix}) {filters}', limit + query_bindings
 
+    @staticmethod
+    def _create_history_events_count_query(
+            filter_query: HistoryBaseEntryFilterQuery,
+            entries_limit: int | None,
+            aggregate_by_group_ids: bool = False,
+    ) -> tuple[str, list]:
+        """Returns a lightweight sql query for counting history events."""
+        base_suffix = f'{filter_query.get_columns()} {filter_query.get_join_query()}'
+        if aggregate_by_group_ids:
+            filters, query_bindings = filter_query.prepare(
+                with_group_by=True,
+                with_pagination=False,
+                with_order=False,
+                without_ignored_asset_filter=True,
+            )
+        else:
+            filters, query_bindings = filter_query.prepare(
+                with_order=False,
+                with_pagination=False,
+            )
+
+        if entries_limit is None:
+            suffix, limit = base_suffix, []
+        else:
+            suffix, limit = (
+                f'* FROM (SELECT {base_suffix}) WHERE group_identifier IN ('
+                'SELECT DISTINCT group_identifier FROM history_events '
+                'ORDER BY timestamp DESC, sequence_index ASC LIMIT ?)'
+            ), [entries_limit]
+
+        return f'SELECT * FROM (SELECT {suffix}) {filters}', limit + query_bindings
+
     @overload
     def get_history_events(
             self,
@@ -1366,11 +1398,12 @@ class DBHistoryEvents:
         the number of events if any limit is applied, otherwise the second value matches
         the first.
         """
-        query_without_limit, query_without_limit_bindings = self._create_history_events_query(
-            filter_query=query_filter,
-            aggregate_by_group_ids=aggregate_by_group_ids,
-            entries_limit=None,
-            include_order=False,
+        query_without_limit, query_without_limit_bindings = (
+            self._create_history_events_count_query(
+                filter_query=query_filter,
+                aggregate_by_group_ids=aggregate_by_group_ids,
+                entries_limit=None,
+            )
         )
         count_without_limit = cursor.execute(
             f'SELECT COUNT(*) FROM ({query_without_limit})',
@@ -1383,11 +1416,10 @@ class DBHistoryEvents:
             return count_without_limit, count_without_limit
 
         # Otherwise, get the limited count
-        query_with_limit, query_with_limit_bindings = self._create_history_events_query(
+        query_with_limit, query_with_limit_bindings = self._create_history_events_count_query(
             filter_query=query_filter,
             aggregate_by_group_ids=aggregate_by_group_ids,
             entries_limit=entries_limit,
-            include_order=False,
         )
         count_with_limit = cursor.execute(
             f'SELECT COUNT(*) FROM ({query_with_limit})',
