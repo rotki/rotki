@@ -60,8 +60,8 @@ const showLocationLabel = computed<boolean>(() => {
       :show-info="isInformational"
     />
 
-    <div class="ml-4">
-      <div class="font-bold uppercase">
+    <div class="ml-3.5">
+      <div class="font-bold uppercase text-sm">
         {{ attrs.label }}
       </div>
       <HistoryEventAccount

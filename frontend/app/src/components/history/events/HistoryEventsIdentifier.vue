@@ -82,7 +82,7 @@ const key = computed(() => {
     scope="global"
     :keypath="translationKey"
     tag="div"
-    class="flex flex-wrap items-center gap-x-1.5 gap-y-1"
+    class="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-sm"
   >
     <template #location>
       {{ toSentenceCase(event.location) }}

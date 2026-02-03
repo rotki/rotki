@@ -100,6 +100,6 @@ const aliasName = computed<string | null>(() => {
         </div>
       </div>
     </template>
-    {{ account.address }}
+    {{ address }}
   </RuiTooltip>
 </template>
