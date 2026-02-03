@@ -132,7 +132,8 @@ const limits = [10, 25, 50, 100];
           :options="limits"
           dense
           hide-details
-          class="w-16 md:w-20"
+          label-class="!text-xs"
+          class="w-18"
         />
       </div>
 

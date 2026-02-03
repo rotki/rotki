@@ -119,8 +119,8 @@ export function useHistoryMatchedMovementItem(
   const eventTypeLabel = computed<string>(() => {
     const primary = get(primaryEvent);
     return primary.eventType === 'deposit'
-      ? t('transactions.events.form.event_type.deposit')
-      : t('transactions.events.form.event_type.withdrawal');
+      ? t('backend_mappings.events.history_event_type.deposit')
+      : t('backend_mappings.events.history_event_type.withdrawal');
   });
 
   return {

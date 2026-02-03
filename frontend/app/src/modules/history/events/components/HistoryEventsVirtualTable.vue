@@ -1,12 +1,12 @@
 <script setup lang="ts">
+import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { DuplicateHandlingStatus } from '@/composables/history/events/use-history-events-filters';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventsTableEmits } from '@/modules/history/events/types';
 import type { Collection } from '@/types/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
-import { type DataTableSortData, type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
-import { useVirtualList } from '@vueuse/core';
+import { useMediaQuery, useVirtualList } from '@vueuse/core';
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import { useHistoryEventsData } from '../composables/use-history-events-data';
 import { useHistoryEventsForms } from '../composables/use-history-events-forms';
@@ -44,11 +44,11 @@ defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-// Responsive breakpoint for mobile layout
-const { isSmAndDown } = useBreakpoint();
+// Responsive breakpoint for card layout (840px)
+const isCardLayout = useMediaQuery('(max-width: 860px)');
 
 // Variant based on breakpoint
-const itemVariant = computed<'row' | 'card'>(() => get(isSmAndDown) ? 'card' : 'row');
+const itemVariant = computed<'row' | 'card'>(() => get(isCardLayout) ? 'card' : 'row');
 
 const RedecodeConfirmationDialog = defineAsyncComponent(() => import('./RedecodeConfirmationDialog.vue'));
 const { groupLoading, groups: rawGroups, pageParams } = toRefs(props);
@@ -87,7 +87,7 @@ const { flattenedRows, getCardHeight, getRowHeight, loadMoreEvents, toggleMoveme
 
 // Use card heights for mobile layout
 const getItemHeight = computed<(index: number) => number>(() =>
-  get(isSmAndDown) ? getCardHeight : getRowHeight,
+  get(isCardLayout) ? getCardHeight : getRowHeight,
 );
 
 // Virtual list with dynamic item heights
@@ -295,15 +295,18 @@ function unlinkGroup(groupId: string): void {
           <div
             v-else-if="row.type === 'event-placeholder'"
             class="animate-pulse contain-content"
-            :class="isSmAndDown ? 'p-3 border-b border-default' : 'h-[72px] flex items-center gap-4 border-b border-default px-4 pl-8'"
+            :class="isCardLayout ? 'p-3 border-b border-default' : 'h-[72px] flex items-center gap-4 border-b border-default px-4 pl-8'"
           >
-            <template v-if="isSmAndDown">
-              <div class="flex items-center gap-2 mb-2">
-                <div class="size-5 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
-                <div class="h-4 w-20 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
-                <div class="flex-1" />
-                <div class="h-3 w-16 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
+            <template v-if="isCardLayout">
+              <!-- Top row: Event type with icon -->
+              <div class="flex items-center gap-3 mb-2">
+                <div class="size-10 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700 shrink-0" />
+                <div class="flex flex-col gap-1">
+                  <div class="h-4 w-20 rounded bg-rui-grey-300 dark:bg-rui-grey-700" />
+                  <div class="h-3 w-14 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
+                </div>
               </div>
+              <!-- Middle row: Asset & Amount -->
               <div class="flex items-center gap-2 mb-2">
                 <div class="size-8 rounded-full bg-rui-grey-300 dark:bg-rui-grey-700" />
                 <div class="flex flex-col gap-1">
@@ -311,6 +314,7 @@ function unlinkGroup(groupId: string): void {
                   <div class="h-3 w-16 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
                 </div>
               </div>
+              <!-- Bottom row: Notes -->
               <div class="h-3 w-3/4 rounded bg-rui-grey-200 dark:bg-rui-grey-800" />
             </template>
             <template v-else>

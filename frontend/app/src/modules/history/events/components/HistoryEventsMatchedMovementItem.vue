@@ -3,12 +3,10 @@ import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/even
 import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
-import DateDisplay from '@/components/display/DateDisplay.vue';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useHistoryMatchedMovementItem } from '../composables/use-history-matched-movement-item';
 
 const props = withDefaults(defineProps<{
@@ -38,7 +36,6 @@ const {
   canUnlink,
   chain,
   compactNotes,
-  eventTypeLabel,
   hasMissingRule,
   isCheckboxDisabled,
   isSelected,
@@ -65,7 +62,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <!-- Card Layout -->
   <div
     v-if="isCard"
-    class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content"
+    class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content group"
     :class="{ 'opacity-50': primaryEvent.ignoredInAccounting }"
   >
     <!-- Top row: Checkbox, Location, Movement badge, Event count, Timestamp -->
@@ -80,41 +77,29 @@ const isCard = computed<boolean>(() => props.variant === 'card');
           class="shrink-0"
         />
 
-        <LocationIcon
-          icon
-          :item="primaryEvent.location"
-          size="18px"
-          class="shrink-0"
+        <HistoryEventType
+          :event="primaryEvent"
+          :chain="chain"
+          :group-location-label="groupLocationLabel"
+          :highlight="highlight"
+          class="min-w-0 flex-1"
         />
-
-        <div class="flex items-center gap-1.5 px-2 py-0.5 bg-rui-info/10 rounded text-rui-info text-sm font-medium">
-          <RuiIcon
-            :name="primaryEvent.eventType === 'deposit' ? 'lu-download' : 'lu-upload'"
-            size="14"
-          />
-          <span>{{ eventTypeLabel }}</span>
-        </div>
 
         <RuiButton
           size="sm"
-          variant="outlined"
-          class="!px-2 !py-0.5 !min-w-0"
+          icon
+          color="primary"
+          class="size-5"
           @click="emit('toggle-expand')"
         >
-          <span class="text-xs">{{ events.length }}</span>
           <RuiIcon
+            class="hidden group-hover:block"
             name="lu-unfold-vertical"
-            size="12"
-            class="ml-1"
+            size="14"
           />
+          <span class="group-hover:hidden text-xs">{{ events.length }}</span>
         </RuiButton>
       </div>
-
-      <DateDisplay
-        :timestamp="primaryEvent.timestamp"
-        milliseconds
-        class="text-xs text-rui-text-secondary shrink-0"
-      />
     </div>
 
     <!-- Middle row: Asset & Amount -->

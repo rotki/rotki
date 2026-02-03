@@ -3,12 +3,10 @@ import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/even
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
-import DateDisplay from '@/components/display/DateDisplay.vue';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useHistorySwapItem } from '../composables/use-history-swap-item';
 
 const props = withDefaults(defineProps<{
@@ -30,8 +28,6 @@ const emit = defineEmits<{
   'refresh': [];
   'toggle-expand': [];
 }>();
-
-const { t } = useI18n({ useScope: 'global' });
 
 const events = computed<HistoryEventEntry[]>(() => props.events);
 
@@ -86,41 +82,29 @@ const isCard = computed<boolean>(() => props.variant === 'card');
           class="shrink-0"
         />
 
-        <LocationIcon
-          icon
-          :item="primaryEvent.location"
-          size="18px"
-          class="shrink-0"
+        <HistoryEventType
+          :event="primaryEvent"
+          :chain="chain"
+          :group-location-label="groupLocationLabel"
+          :highlight="highlight"
+          class="min-w-0 flex-1"
         />
-
-        <div class="flex items-center gap-1.5 px-2 py-0.5 bg-rui-primary/10 rounded text-rui-primary text-sm font-medium">
-          <RuiIcon
-            name="lu-arrow-right-left"
-            size="14"
-          />
-          <span>{{ t('transactions.events.form.event_type.swap') }}</span>
-        </div>
 
         <RuiButton
           size="sm"
-          variant="outlined"
-          class="!px-2 !py-0.5 !min-w-0"
+          icon
+          color="primary"
+          class="size-5"
           @click="emit('toggle-expand')"
         >
-          <span class="text-xs">{{ events.length }}</span>
           <RuiIcon
+            class="hidden group-hover:block"
             name="lu-unfold-vertical"
-            size="12"
-            class="ml-1"
+            size="14"
           />
+          <span class="group-hover:hidden text-xs">{{ events.length }}</span>
         </RuiButton>
       </div>
-
-      <DateDisplay
-        :timestamp="primaryEvent.timestamp"
-        milliseconds
-        class="text-xs text-rui-text-secondary shrink-0"
-      />
     </div>
 
     <!-- Middle row: Spend → Receive -->

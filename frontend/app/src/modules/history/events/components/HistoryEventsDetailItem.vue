@@ -3,12 +3,10 @@ import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/even
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
-import DateDisplay from '@/components/display/DateDisplay.vue';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
-import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useHistoryEventItem } from '../composables/use-history-event-item';
 
 const props = withDefaults(defineProps<{
@@ -81,13 +79,6 @@ const isCard = computed<boolean>(() => props.variant === 'card');
           class="shrink-0"
         />
 
-        <LocationIcon
-          icon
-          :item="event.location"
-          size="18px"
-          class="shrink-0"
-        />
-
         <HistoryEventType
           :event="event"
           :chain="chain"
@@ -96,12 +87,6 @@ const isCard = computed<boolean>(() => props.variant === 'card');
           class="min-w-0 flex-1"
         />
       </div>
-
-      <DateDisplay
-        :timestamp="event.timestamp"
-        milliseconds
-        class="text-xs text-rui-text-secondary shrink-0"
-      />
     </div>
 
     <!-- Middle row: Asset & Amount -->
