@@ -3,16 +3,15 @@ import { useCustomizedEventDuplicates } from '@/composables/history/events/use-c
 import { DuplicateHandlingStatus } from '@/composables/history/events/use-history-events-filters';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useRefWithDebounce } from '@/composables/ref';
+import { useStatusUpdater } from '@/composables/status';
 import { Routes } from '@/router/routes';
-import { useStatusStore } from '@/store/status';
-import { Section, Status } from '@/types/status';
+import { Section } from '@/types/status';
 
 const show = defineModel<boolean>('show', { required: true });
 
 const props = defineProps<{
   processing: boolean;
   mainPage: boolean;
-  manualIssueCheck: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -21,9 +20,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
-const { getStatus } = useStatusStore();
 
-const { mainPage, manualIssueCheck, processing } = toRefs(props);
+const { mainPage, processing } = toRefs(props);
+
+const { isFirstLoad } = useStatusUpdater(Section.HISTORY);
 
 const {
   autoMatchLoading,
@@ -50,12 +50,15 @@ const showManualReviewDuplicates = computed<boolean>(() => get(manualReviewCount
 const hasAlerts = logicOr(showUnmatchedMovements, showAutoFixDuplicates, showManualReviewDuplicates);
 const refreshing = logicOr(unmatchedLoading, duplicatesLoading);
 
-const showAlerts = computed<boolean>(() =>
-  get(mainPage) && (get(manualIssueCheck) || (!get(loading) && getStatus(Section.HISTORY) === Status.LOADED)) && get(hasAlerts) && get(show),
-);
+const showAlerts = logicAnd(mainPage, hasAlerts, show);
 
 function closeAlerts(): void {
   set(show, false);
+}
+
+function openMatchAssetMovements(): void {
+  closeAlerts();
+  emit('open:match-asset-movements');
 }
 
 async function viewDuplicates(groupIds: string[], status: DuplicateHandlingStatus): Promise<void> {
@@ -69,19 +72,8 @@ async function viewDuplicates(groupIds: string[], status: DuplicateHandlingStatu
   });
 }
 
-/**
- * Reset `show` when the alert is hidden by external conditions (e.g., loading state changes,
- * alerts resolved). This ensures the alert only reappears on an explicit user button click,
- * not automatically when transient conditions resolve.
- */
-watch(showAlerts, (isShowing) => {
-  if (!isShowing && get(show)) {
-    set(show, false);
-  }
-});
-
 watchImmediate(loading, async (isLoading) => {
-  if (!isLoading && get(mainPage)) {
+  if (!isLoading && get(mainPage) && !isFirstLoad()) {
     await Promise.all([
       refreshUnmatchedAssetMovements(),
       fetchCustomizedEventDuplicates(),
@@ -128,7 +120,7 @@ watchImmediate(loading, async (isLoading) => {
               color="warning"
               size="sm"
               class="ml-2 underline"
-              @click="emit('open:match-asset-movements')"
+              @click="openMatchAssetMovements()"
             >
               {{ t('asset_movement_matching.banner.action') }}
             </RuiButton>

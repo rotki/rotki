@@ -214,7 +214,7 @@ defineExpose({
     />
 
     <PotentialMatchesDialog
-      v-if="potentialMatchMovement"
+      v-if="potentialMatchMovement && showPotentialMatchesDialog"
       v-model="showPotentialMatchesDialog"
       :movement="potentialMatchMovement"
       @matched="onPotentialMatchMatched()"

@@ -5250,8 +5250,6 @@
       "check_issues": "Check issues",
       "check_unmatched_movements": "Check unmatched movements",
       "no_issues_found": "No issues found",
-      "refresh_duplicate_events": "Refresh duplicate events",
-      "refresh_unmatched_movements": "Refresh unmatched movements",
       "title": "There are actions needed for your events"
     },
     "dialog": {

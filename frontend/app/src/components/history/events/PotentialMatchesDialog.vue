@@ -169,7 +169,6 @@ watch(modelValue, async (isOpen) => {
   <RuiDialog
     v-model="modelValue"
     max-width="1000"
-    :z-index="10000"
   >
     <RuiCard content-class="max-h-[calc(100vh-210px)]">
       <template #custom-header>
