@@ -10,11 +10,19 @@
       "@electron/*": ["./electron/*"]
     }
   },
+  "vueCompilerOptions": {
+    "plugins": [
+      {
+        "name": "vue-router/volar/sfc-typed-router",
+        "options": { "rootDir": "./" }
+      },
+      "vue-router/volar/sfc-route-blocks"
+    ]
+  },
   "include": [
     "env.d.ts",
     "components.d.ts",
     "auto-imports.d.ts",
-    "typed-router.d.ts",
     "src/**/*",
     "src/**/*.vue",
     "shared/**/*",

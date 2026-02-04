@@ -7,11 +7,11 @@ import { ruiIconsPlugin } from '@rotki/ui-library/vite-plugin';
 import vue from '@vitejs/plugin-vue';
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
-import { VueRouterAutoImports } from 'unplugin-vue-router';
-import VueRouter from 'unplugin-vue-router/vite';
 import checker from 'vite-plugin-checker';
 import vueDevTools from 'vite-plugin-vue-devtools';
 import { defineConfig } from 'vitest/config';
+import { VueRouterAutoImports } from 'vue-router/unplugin';
+import VueRouter from 'vue-router/vite';
 import { backendIcons } from './backend-icons.generated';
 import { backendIconsCachePlugin } from './scripts/extract-backend-icons';
 
@@ -91,6 +91,7 @@ export default defineConfig({
     backendIconsCachePlugin(PROJECT_ROOT),
     VueRouter({
       importMode: 'async',
+      dts: './src/route-map.d.ts',
     }),
     vue(),
     checker(enableChecker
