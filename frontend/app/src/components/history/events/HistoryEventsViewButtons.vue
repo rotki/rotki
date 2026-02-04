@@ -36,6 +36,7 @@ const { t } = useI18n({ useScope: 'global' });
 
   <RuiButton
     color="primary"
+    class="h-9"
     data-cy="history-events__add"
     @click="emit('show:dialog', { type: DIALOG_TYPES.EVENT_FORM, data: { type: 'add', nextSequenceId: '0' } })"
   >
@@ -45,7 +46,7 @@ const { t } = useI18n({ useScope: 'global' });
         size="18"
       />
     </template>
-    {{ t('transactions.actions.add_event') }}
+    <span class="hidden lg:inline">{{ t('transactions.actions.add_event') }}</span>
   </RuiButton>
 
   <RuiMenu

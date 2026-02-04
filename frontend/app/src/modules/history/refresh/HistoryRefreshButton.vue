@@ -45,7 +45,7 @@ function confirmRefresh() {
               size="18"
             />
           </template>
-          {{ t('common.refresh') }}
+          <span class="hidden lg:inline">{{ t('common.refresh') }}</span>
         </RuiButton>
       </template>
 

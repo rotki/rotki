@@ -160,7 +160,7 @@ watch(showWarningButton, (value) => {
             size="18"
           />
         </template>
-        {{ t('transactions.alerts.button') }}
+        <span class="hidden md:inline">{{ t('transactions.alerts.button') }}</span>
         <template #append>
           <RuiIcon
             name="lu-chevron-down"
@@ -188,7 +188,7 @@ watch(showWarningButton, (value) => {
           size="18"
         />
       </template>
-      {{ noIssuesFound ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_issues') }}
+      <span class="hidden md:inline">{{ noIssuesFound ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_issues') }}</span>
     </RuiButton>
 
     <RuiMenu
