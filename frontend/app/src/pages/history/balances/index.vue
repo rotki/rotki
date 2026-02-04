@@ -18,6 +18,7 @@ definePage({
     noteLocation: NoteLocation.HISTORY,
   },
   name: 'history-balances',
+  redirect: '/history/events',
 });
 
 const { t } = useI18n({ useScope: 'global' });

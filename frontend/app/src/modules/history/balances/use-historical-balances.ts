@@ -204,6 +204,9 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
   }
 
   async function triggerHistoricalBalancesProcessing(): Promise<void> {
+    if (!import.meta.env.VITE_ENABLE_HISTORICAL_BALANCES) {
+      return;
+    }
     const { taskId } = await processHistoricalBalances();
 
     await awaitTask<boolean, TaskMeta>(
