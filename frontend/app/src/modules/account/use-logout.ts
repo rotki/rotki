@@ -3,6 +3,7 @@ import { promiseTimeout } from '@vueuse/core';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
+import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { api } from '@/modules/api';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useMessageStore } from '@/store/message';
@@ -21,11 +22,15 @@ export function useLogout(): UseLogoutReturn {
   const { notifyUserLogout, resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
   const { disconnect: disconnectWallet } = useWalletStore();
+  const { reset: resetSchedulerState } = useSchedulerState();
 
   const logout = async (navigate: boolean = true): Promise<void> => {
     // Cancel all pending API requests first to prevent race conditions
     api.cancelAllQueued();
     api.cancel();
+
+    // Reset scheduler state (backend resets scheduler separately)
+    resetSchedulerState();
 
     // Notify electron to cleanup wallet bridge connections BEFORE disconnecting
     notifyUserLogout();

@@ -12,11 +12,16 @@ import { type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResult
 
 export type TriggerTaskType = 'historical_balance_processing' | 'asset_movement_matching';
 
+interface SchedulerStateResponse {
+  enabled: boolean;
+}
+
 interface UseTaskApiReturn {
   queryTasks: () => Promise<TaskStatus>;
   queryTaskResult: <T>(id: number) => Promise<ActionResult<T>>;
   cancelAsyncTask: (id: number) => Promise<boolean>;
   triggerTask: (task: TriggerTaskType) => Promise<PendingTask>;
+  setSchedulerState: (enabled: boolean) => Promise<SchedulerStateResponse>;
 }
 
 export function useTaskApi(): UseTaskApiReturn {
@@ -121,10 +126,20 @@ export function useTaskApi(): UseTaskApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
+  /**
+   * Enables or disables the periodic task scheduler.
+   * Should be called once initial data loading is complete.
+   * @param enabled - Whether to enable the scheduler
+   * @returns The new scheduler state
+   */
+  const setSchedulerState = async (enabled: boolean): Promise<SchedulerStateResponse> =>
+    api.put<SchedulerStateResponse>('/tasks/scheduler', { enabled });
+
   return {
     cancelAsyncTask,
     queryTaskResult,
     queryTasks,
+    setSchedulerState,
     triggerTask,
   };
 }

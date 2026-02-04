@@ -6,6 +6,7 @@ import { useRefreshHandlers } from '@/composables/history/events/tx/refresh-hand
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
 import { useTransactionSync } from '@/composables/history/events/tx/use-transaction-sync';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { useStatusUpdater } from '@/composables/status';
 import { useHistoryStore } from '@/store/history';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
@@ -34,6 +35,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
   const { syncTransactionsByChains } = useTransactionSync();
   const { queryAllExchangeEvents, queryOnlineEvent } = useRefreshHandlers();
+  const { onHistoryFinished, onHistoryStarted } = useSchedulerState();
 
   const {
     addPendingAccounts,
@@ -121,6 +123,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
     if (accountsToRefresh.length > 0 || exchangesToRefresh.length > 0) {
       startRefresh(accountsToRefresh, exchangesToRefresh);
+      onHistoryStarted();
       if (accountsToRefresh.length > 0 && shouldShowSyncProgress) {
         initializeQueryStatus(decodableAccounts);
         resetUndecodedTransactionsStatus();
@@ -174,6 +177,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
     finally {
       finishRefresh();
       setStatus(Status.LOADED);
+      onHistoryFinished();
     }
 
     // After refresh is complete, check if there are pending accounts or exchanges to refresh

@@ -1,6 +1,7 @@
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useBalances } from '@/composables/balances';
+import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { useStatusUpdater } from '@/composables/status';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -25,6 +26,8 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { refreshPrices } = usePriceRefresh();
   const { setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
 
+  const { onBalancesLoaded } = useSchedulerState();
+
   const refreshData = async (): Promise<void> => {
     logger.info('Refreshing data');
 
@@ -35,6 +38,7 @@ export function useDataLoader(): UseDataLoaderReturn {
       fetchNetValue(),
     ]);
     await refreshPrices();
+    onBalancesLoaded();
   };
 
   const load = (): void => {
