@@ -41,7 +41,7 @@ from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.history import prices
 from rotkehlchen.tests.utils.pnl_report import query_api_create_and_get_report
 from rotkehlchen.types import Location, SupportedBlockchain, Timestamp, TimestampMS
-from rotkehlchen.utils.misc import create_timestamp
+from rotkehlchen.utils.misc import create_timestamp, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -301,11 +301,11 @@ def test_report_export_uses_transient_db(
     report, _ = accounting_history_process(
         rotki.accountant,
         start_ts=Timestamp(0),
-        end_ts=Timestamp(10),
+        end_ts=Timestamp((now := ts_now()) + 1),
         history_list=[HistoryEvent(
             group_identifier='report_export_test',
             sequence_index=0,
-            timestamp=TimestampMS(1000),
+            timestamp=ts_sec_to_ms(now),
             location=Location.ETHEREUM,
             asset=A_EUR,
             amount=FVal('1.5'),
