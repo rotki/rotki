@@ -54,7 +54,7 @@ export default defineConfig({
   },
   build: {
     sourcemap: isDevelopment ? 'inline' : false,
-    target: 'node22',
+    target: 'node24',
     outDir: 'dist',
     assetsDir: '.',
     ssr: true,
@@ -82,6 +82,6 @@ export default defineConfig({
     emptyOutDir: false,
   },
   esbuild: {
-    target: 'node22',
+    target: 'node24',
   },
 });

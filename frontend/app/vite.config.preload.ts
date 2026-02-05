@@ -19,7 +19,7 @@ export default defineConfig({
     sourcemap: isDevelopment ? 'inline' : false,
     outDir: 'dist',
     assetsDir: '.',
-    target: 'node22',
+    target: 'node24',
     ssr: true,
     minify: !isDevelopment,
     lib: {
@@ -35,6 +35,6 @@ export default defineConfig({
     emptyOutDir: false,
   },
   esbuild: {
-    target: 'node22',
+    target: 'node24',
   },
 });
