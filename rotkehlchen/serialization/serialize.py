@@ -9,7 +9,7 @@ from web3.datastructures import AttributeDict
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceType
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, Nft
 from rotkehlchen.balances.manual import ManuallyTrackedBalanceWithValue
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
@@ -78,6 +78,7 @@ def _process_dict(entry: dict) -> dict:
 HANDLERS: dict[type, Callable[[Any], Any]] = {
     HexBytes: lambda x: x.to_0x_hex(),
     Asset: lambda x: x.identifier,
+    Nft: lambda x: x.identifier,
     ChainID: lambda x: x.to_name(),
     LocationData: lambda entry: {
         'time': entry.time,
