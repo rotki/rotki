@@ -1,22 +1,19 @@
-import type { NotificationHandler } from '../interfaces';
+import type { MessageHandler } from '../interfaces';
 import type { UnmatchedAssetMovementsData } from '@/modules/messaging/types';
 import { type Notification, NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
 import { Routes } from '@/router/routes';
 import { useNotificationsStore } from '@/store/notifications';
 
-export function createUnmatchedAssetMovementsHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<UnmatchedAssetMovementsData> {
+export function createUnmatchedAssetMovementsHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): MessageHandler<UnmatchedAssetMovementsData> {
   const { removeMatching } = useNotificationsStore();
 
   return {
-    async handle(data: UnmatchedAssetMovementsData): Promise<Notification> {
+    async handle(data: UnmatchedAssetMovementsData): Promise<Notification | null> {
       removeMatching(notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS);
 
-      if (data.count === 0) {
-        return {
-          display: false,
-          message: '',
-          title: '',
-        };
+      const currentPath = get(router.currentRoute).path;
+      if (data.count === 0 || currentPath === Routes.HISTORY_EVENTS.toString()) {
+        return null;
       }
 
       return {

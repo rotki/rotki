@@ -1,7 +1,10 @@
+import { NotificationGroup } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { createRouter, createWebHashHistory, type RouteLocationRaw } from 'vue-router';
 import { handleHotUpdate, routes } from 'vue-router/auto-routes';
 import NotFound from '@/pages/404.vue';
+import { Routes } from '@/router/routes';
+import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
 
 const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
@@ -72,6 +75,13 @@ router.beforeEach((to, from, next) => {
   }
   else {
     next('/user/login');
+  }
+});
+
+router.afterEach((to) => {
+  if (to.path === Routes.HISTORY_EVENTS.toString()) {
+    const { removeMatching } = useNotificationsStore();
+    removeMatching(notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS);
   }
 });
 

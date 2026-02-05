@@ -172,7 +172,11 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   };
 
   const triggerAssetMovementAutoMatching = async (): Promise<void> => {
+    if (get(isTaskRunning))
+      return;
+
     set(triggerAutoMatchLoading, true);
+
     try {
       const { taskId } = await triggerAssetMovementMatching();
 
