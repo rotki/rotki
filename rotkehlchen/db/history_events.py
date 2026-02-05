@@ -982,11 +982,7 @@ class DBHistoryEvents:
         list[tuple[int, EthDepositEvent]] | list[EthDepositEvent] |
         list[tuple[int, EthWithdrawalEvent]] | list[EthWithdrawalEvent]
     ):
-        """Get all events from the DB, deserialized depending on the event type
-
-        TODO: To not query all columns with all joins for all cases, we perhaps can
-        peek on the entry type of the filter and adjust the SELECT fields accordingly?
-        """
+        """Get all events from the DB, deserialized depending on the event type."""
         result = self._get_history_events_with_ignored_groups(
             cursor=cursor,
             filter_query=filter_query,

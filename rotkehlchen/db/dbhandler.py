@@ -224,6 +224,7 @@ class DBHandler:
         # Lock to make sure that 2 callers of get_or_create_evm_token do not go in at the same time
         self.get_or_create_token_lock = Semaphore()
         self.match_asset_movements_lock = Semaphore()
+        self._ignored_asset_ids_cache: dict[bool, set[str]] = {}
         self.password = password
         self._connect()
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
@@ -1131,6 +1132,7 @@ class DBHandler:
             'UPDATE history_events SET ignored=? WHERE asset=?',
             (1, asset.identifier),
         )
+        self.invalidate_ignored_assets_cache()
 
     def ignore_multiple_assets(self, write_cursor: 'DBCursor', assets: list[str]) -> None:
         """Add the provided identifiers to the list of ignored assets. If any asset was already
@@ -1146,6 +1148,7 @@ class DBHandler:
                 f'UPDATE history_events SET ignored=1 WHERE asset IN ({placeholders})',
                 chunk,
             )
+        self.invalidate_ignored_assets_cache()
 
     def remove_from_ignored_assets(self, write_cursor: 'DBCursor', asset: Asset) -> None:
         """Remove an asset from the ignored assets and un-ignore history events with this asset."""
@@ -1157,6 +1160,10 @@ class DBHandler:
             'UPDATE history_events SET ignored=? WHERE asset=?',
             (0, asset.identifier),
         )
+        self.invalidate_ignored_assets_cache()
+
+    def invalidate_ignored_assets_cache(self) -> None:
+        self._ignored_asset_ids_cache.clear()
 
     def get_ignored_asset_ids(self, cursor: 'DBCursor', only_nfts: bool = False) -> set[str]:
         """Gets the ignored asset ids without converting each one of them to an asset object
@@ -1164,13 +1171,24 @@ class DBHandler:
         We used to have a heavier version which converted them to an asset but removed
         it due to unnecessary roundtrips to the global DB for each asset initialization
         """
+        if (cached := self._ignored_asset_ids_cache.get(only_nfts)) is not None:
+            return set(cached)
+        if (
+                only_nfts is True and
+                (all_cached := self._ignored_asset_ids_cache.get(False)) is not None
+        ):
+            nfts_only = {asset_id for asset_id in all_cached if asset_id.startswith(NFT_DIRECTIVE)}
+            self._ignored_asset_ids_cache[True] = nfts_only
+            return set(nfts_only)
         bindings = []
         query = "SELECT value FROM multisettings WHERE name='ignored_asset' "
         if only_nfts is True:
             query += 'AND value LIKE ?'
             bindings.append(f'{NFT_DIRECTIVE}%')
         cursor.execute(query, bindings)
-        return {x[0] for x in cursor}
+        result = {x[0] for x in cursor}
+        self._ignored_asset_ids_cache[only_nfts] = result
+        return set(result)
 
     def add_to_ignored_action_ids(
             self,
