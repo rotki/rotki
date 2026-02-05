@@ -5531,7 +5531,7 @@
         "unignore": "Unignore in accounting"
       },
       "show_missing_acquisition": "Showing event for missing acquisition",
-      "show_negative_balance": "Showing event where negative balances detected",
+      "show_negative_balance": "Highlighting event where negative balances detected",
       "showing_ignored_assets": "Showing all events including those with ignored assets. Click to hide.",
       "skipped": {
         "csv_export_error": "There was an error with export",

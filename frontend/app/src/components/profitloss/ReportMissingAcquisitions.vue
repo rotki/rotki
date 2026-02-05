@@ -149,7 +149,7 @@ async function showInHistoryEvent(identifier: number) {
   await router.push({
     path: Routes.HISTORY_EVENTS.toString(),
     query: {
-      identifiers: identifier.toString(),
+      missingAcquisitionIdentifier: identifier.toString(),
     },
   });
 }

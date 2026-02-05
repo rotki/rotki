@@ -4,14 +4,11 @@ import type { Pinned } from '@/types/session';
 import { startPromise } from '@shared/utils';
 import MatchAssetMovementsContent from '@/components/history/events/MatchAssetMovementsContent.vue';
 import PotentialMatchesContent from '@/components/history/events/PotentialMatchesContent.vue';
-import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
 import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
 } from '@/composables/history/events/use-unmatched-asset-movements';
-import { useItemsPerPage } from '@/composables/session/use-items-per-page';
-import { Routes } from '@/router/routes';
-import { useNotificationsStore } from '@/store/notifications';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { getEventEntryFromCollection } from '@/utils/history/events';
 
@@ -30,10 +27,8 @@ const activePotentialMatchIdentifier = ref<number | undefined>(props.highlighted
 const potentialMatchMovement = ref<UnmatchedAssetMovement>();
 const showPotentialMatchesDrawer = ref<boolean>(false);
 
-const { getHistoryEventGroupPosition } = useHistoryEventsApi();
-const { notify } = useNotificationsStore();
 const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
-const itemsPerPage = useItemsPerPage();
+const { requestNavigation } = useHistoryEventNavigation();
 
 const {
   ignoredMovements,
@@ -43,57 +38,13 @@ const {
 async function clearHighlight(): Promise<void> {
   set(activeGroupIdentifier, undefined);
   set(activePotentialMatchIdentifier, undefined);
-  const { highlightedIdentifier, highlightedPotentialMatch, ...remainingQuery } = get(route).query;
-  if (highlightedIdentifier || highlightedPotentialMatch) {
+  const { highlightedAssetMovement, highlightedPotentialMatch, ...remainingQuery } = get(route).query;
+  if (highlightedAssetMovement || highlightedPotentialMatch) {
     await router.replace({ query: remainingQuery });
   }
 }
 
-function getCurrentLimit(): number {
-  const routeLimit = Number(get(router.currentRoute).query.limit);
-  return routeLimit > 0 ? routeLimit : get(itemsPerPage);
-}
-
-function notifyNavigationError(error: Error): void {
-  notify({
-    display: true,
-    message: error.message,
-    title: t('asset_movement_matching.dialog.show_in_events'),
-  });
-}
-
-/**
- * Navigate to the history events page and scroll to the specified event.
- * Uses Vue Router v5's `force` option to ensure navigation triggers even when
- * navigating to the same route.
- */
-async function navigateToHistoryEvent(
-  groupIdentifier: string,
-  identifier: number,
-  additionalQuery?: Record<string, string>,
-): Promise<void> {
-  try {
-    const position = await getHistoryEventGroupPosition(groupIdentifier);
-    const limit = getCurrentLimit();
-    const page = Math.floor(position / limit) + 1;
-
-    await router.push({
-      force: true,
-      path: Routes.HISTORY_EVENTS.toString(),
-      query: {
-        highlightedIdentifier: identifier.toString(),
-        limit: limit.toString(),
-        page: page.toString(),
-        ...additionalQuery,
-      },
-    });
-  }
-  catch (error: any) {
-    notifyNavigationError(error);
-  }
-}
-
-async function selectMovement(movement: UnmatchedAssetMovement): Promise<void> {
+function selectMovement(movement: UnmatchedAssetMovement): void {
   const identifier = getEventEntryFromCollection(movement.events).entry.identifier;
 
   set(potentialMatchMovement, movement);
@@ -101,7 +52,10 @@ async function selectMovement(movement: UnmatchedAssetMovement): Promise<void> {
   set(activePotentialMatchIdentifier, undefined);
   set(activeGroupIdentifier, movement.groupIdentifier);
 
-  await navigateToHistoryEvent(movement.groupIdentifier, identifier);
+  requestNavigation({
+    highlightedAssetMovement: identifier,
+    targetGroupIdentifier: movement.groupIdentifier,
+  });
 }
 
 async function closePotentialMatchesDrawer(): Promise<void> {
@@ -134,48 +88,32 @@ function closePinnedSidebar(): void {
   set(showPinned, false);
 }
 
-async function showInHistoryEvents(movement: UnmatchedAssetMovement): Promise<void> {
+function showInHistoryEvents(movement: UnmatchedAssetMovement): void {
   const identifier = getEventEntryFromCollection(movement.events).entry.identifier;
 
   set(activeGroupIdentifier, movement.groupIdentifier);
   set(activePotentialMatchIdentifier, undefined);
 
-  await navigateToHistoryEvent(movement.groupIdentifier, identifier);
+  requestNavigation({
+    highlightedAssetMovement: identifier,
+    targetGroupIdentifier: movement.groupIdentifier,
+  });
 }
 
-/**
- * Navigate to show the potential match event while preserving the yellow highlight.
- */
-async function showPotentialMatchInHistoryEvents(
+function showPotentialMatchInHistoryEvents(
   data: { identifier: number; groupIdentifier: string },
   unmatchedIdentifier?: number,
-): Promise<void> {
+): void {
   set(activePotentialMatchIdentifier, data.identifier);
 
-  // Preserve the existing highlightedIdentifier (yellow) when adding the green highlight
-  // Use provided unmatchedIdentifier or fall back to route query
-  const yellowHighlight = unmatchedIdentifier?.toString()
-    || get(route).query.highlightedIdentifier as string | undefined;
+  const yellowHighlight = unmatchedIdentifier
+    ?? (Number(get(route).query.highlightedAssetMovement) || undefined);
 
-  try {
-    const position = await getHistoryEventGroupPosition(data.groupIdentifier);
-    const limit = getCurrentLimit();
-    const page = Math.floor(position / limit) + 1;
-
-    await router.push({
-      force: true,
-      path: Routes.HISTORY_EVENTS.toString(),
-      query: {
-        ...(yellowHighlight ? { highlightedIdentifier: yellowHighlight } : {}),
-        highlightedPotentialMatch: data.identifier.toString(),
-        limit: limit.toString(),
-        page: page.toString(),
-      },
-    });
-  }
-  catch (error: any) {
-    notifyNavigationError(error);
-  }
+  requestNavigation({
+    highlightedAssetMovement: yellowHighlight,
+    highlightedPotentialMatch: data.identifier,
+    targetGroupIdentifier: data.groupIdentifier,
+  });
 }
 
 const hasNavigatedToInitialHighlight = ref<boolean>(false);
@@ -198,16 +136,16 @@ function navigateToHighlightedMovement(targetGroupIdentifier: string): boolean {
       set(potentialMatchMovement, movement);
       set(showPotentialMatchesDrawer, true);
       set(activeGroupIdentifier, movement.groupIdentifier);
-      startPromise(showPotentialMatchInHistoryEvents(
+      showPotentialMatchInHistoryEvents(
         {
           groupIdentifier: props.potentialMatchGroupIdentifier,
           identifier: props.highlightedPotentialMatchIdentifier,
         },
         identifier,
-      ));
+      );
     }
     else {
-      startPromise(showInHistoryEvents(movement));
+      showInHistoryEvents(movement);
     }
     return true;
   }

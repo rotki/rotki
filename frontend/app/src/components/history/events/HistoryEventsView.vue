@@ -11,7 +11,7 @@ import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsV
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
-import { useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
+import { useHistoryEventNavigationConsumer, useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
@@ -179,6 +179,7 @@ const {
 const debouncedProcessing = refDebounced(processing, 200);
 const { autoMatchLoading, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 const { eventsModificationCounter } = storeToRefs(useHistoryStore());
+useHistoryEventNavigationConsumer(pagination);
 const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading);
 
 // Handle updating available event IDs from the table

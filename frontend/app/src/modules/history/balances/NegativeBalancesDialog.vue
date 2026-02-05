@@ -39,24 +39,13 @@ const headers = computed<DataTableColumn<NegativeBalanceDetectedData>[]>(() => [
 ]);
 
 async function navigateToEvent(row: NegativeBalanceDetectedData): Promise<void> {
-  const { bucket } = row;
-  const query: Record<string, string> = {
-    asset: bucket.asset,
-    location: bucket.location,
-    negativeBalanceEvent: row.eventIdentifier.toString(),
-    negativeBalanceGroup: row.groupIdentifier,
-  };
-
-  if (bucket.protocol)
-    query.counterparties = bucket.protocol;
-
-  if (bucket.locationLabel)
-    query.locationLabels = bucket.locationLabel;
-
   set(modelValue, false);
   await router.push({
     path: `${Routes.HISTORY_EVENTS}`,
-    query,
+    query: {
+      highlightedNegativeBalanceEvent: row.eventIdentifier.toString(),
+      targetGroupIdentifier: row.groupIdentifier,
+    },
   });
 }
 </script>

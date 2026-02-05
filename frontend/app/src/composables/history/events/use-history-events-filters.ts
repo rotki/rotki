@@ -1,4 +1,4 @@
-import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { ContextColorsType, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
@@ -17,6 +17,8 @@ import {
   isEvmEventType,
   isOnlineHistoryEventType,
 } from '@/utils/history/events';
+
+export { useHistoryEventNavigationConsumer } from '@/composables/history/events/use-history-event-navigation';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
@@ -40,7 +42,19 @@ interface HistoryEventsFiltersOptions {
   validators: Ref<number[] | undefined>;
 }
 
-export type HighlightType = 'warning' | 'success';
+export type HighlightType = ContextColorsType;
+
+export const HIGHLIGHT_CLASSES: Partial<Record<HighlightType, string>> = {
+  error: '!bg-rui-error/15',
+  success: '!bg-rui-success/15',
+  warning: '!bg-rui-warning/15',
+};
+
+export function getHighlightClass(highlightType?: HighlightType): string | undefined {
+  if (!highlightType)
+    return undefined;
+  return HIGHLIGHT_CLASSES[highlightType];
+}
 
 interface UseHistoryEventsFiltersReturn {
   duplicateHandlingStatus: ComputedRef<DuplicateHandlingStatus | undefined>;
@@ -91,10 +105,10 @@ export function useHistoryEventsFilters(
   const router = useRouter();
   const { fetchHistoryEvents } = useHistoryEvents();
 
-  // Define these early since they're used in extraParams
-  const identifiersFromQuery = computed<string[] | undefined>(() => {
-    const { identifiers } = get(route).query;
-    return identifiers ? [identifiers as string] : undefined;
+  // Define these early since they're used in extraParams / requestParams
+  const missingAcquisitionFromQuery = computed<string[] | undefined>(() => {
+    const { missingAcquisitionIdentifier } = get(route).query;
+    return missingAcquisitionIdentifier ? [missingAcquisitionIdentifier as string] : undefined;
   });
 
   const groupIdentifiersFromQuery = computed<string[] | undefined>(() => {
@@ -155,7 +169,6 @@ export function useHistoryEventsFilters(
       return {
         excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
         groupIdentifiers: get(groupIdentifiersFromQuery),
-        identifiers: get(identifiersFromQuery),
         ...(stateMarkers.length > 0 ? { stateMarkers } : {}),
       };
     }),
@@ -186,7 +199,7 @@ export function useHistoryEventsFilters(
     },
     persistFilter: computed(() => ({
       enabled: true,
-      excludeKeys: ['identifiers', 'groupIdentifiers', 'duplicateHandlingStatus'],
+      excludeKeys: ['missingAcquisitionIdentifier', 'groupIdentifiers', 'duplicateHandlingStatus'],
       tableId: TableId.HISTORY,
       transientKeys: ['txRefs'],
     })),
@@ -194,16 +207,18 @@ export function useHistoryEventsFilters(
     queryParamsOnly: computed(() => {
       const duplicateHandlingStatusValue = get(duplicateHandlingStatusFromQuery);
       const groupIdentifiersValue = get(groupIdentifiersFromQuery);
-      const { highlightedIdentifier, highlightedPotentialMatch, negativeBalanceEvent } = get(route).query;
+      const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
 
+      const missingAcquisitionValue = get(missingAcquisitionFromQuery);
       const stateMarkersValue = get(toggles, 'stateMarkers');
       return {
         duplicateHandlingStatus: duplicateHandlingStatusValue,
         groupIdentifiers: groupIdentifiersValue?.join(','),
-        highlightedIdentifier,
+        highlightedAssetMovement,
+        highlightedNegativeBalanceEvent,
         highlightedPotentialMatch,
         locationLabels: get(usedLocationLabels),
-        negativeBalanceEvent,
+        missingAcquisitionIdentifier: missingAcquisitionValue?.join(','),
         ...(stateMarkersValue.length > 0 ? { stateMarkers: stateMarkersValue.join(',') } : {}),
       };
     }),
@@ -213,6 +228,7 @@ export function useHistoryEventsFilters(
         counterparties: get(protocols),
         eventSubtypes: get(eventSubTypes),
         eventTypes: get(eventTypes),
+        identifiers: get(missingAcquisitionFromQuery),
       };
 
       const accountsValue = get(usedLocationLabels);
@@ -251,27 +267,27 @@ export function useHistoryEventsFilters(
   });
 
   const highlightedIdentifiers = computed<string[] | undefined>(() => {
-    const { highlightedIdentifier, highlightedPotentialMatch, negativeBalanceEvent } = get(route).query;
+    const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
     const identifiers: string[] = [];
 
-    if (highlightedIdentifier)
-      identifiers.push(highlightedIdentifier.toString());
+    if (highlightedAssetMovement)
+      identifiers.push(highlightedAssetMovement.toString());
     if (highlightedPotentialMatch)
       identifiers.push(highlightedPotentialMatch.toString());
-    if (negativeBalanceEvent)
-      identifiers.push(negativeBalanceEvent.toString());
+    if (highlightedNegativeBalanceEvent)
+      identifiers.push(highlightedNegativeBalanceEvent.toString());
 
     return identifiers.length > 0 ? identifiers : undefined;
   });
 
   const highlightTypes = computed<Record<string, HighlightType>>(() => {
-    const { highlightedIdentifier, highlightedPotentialMatch, negativeBalanceEvent } = get(route).query;
+    const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
     const types: Record<string, HighlightType> = {};
 
-    if (highlightedIdentifier)
-      types[highlightedIdentifier.toString()] = 'warning';
-    if (negativeBalanceEvent)
-      types[negativeBalanceEvent.toString()] = 'warning';
+    if (highlightedAssetMovement)
+      types[highlightedAssetMovement.toString()] = 'warning';
+    if (highlightedNegativeBalanceEvent)
+      types[highlightedNegativeBalanceEvent.toString()] = 'error';
     if (highlightedPotentialMatch)
       types[highlightedPotentialMatch.toString()] = 'success';
 
@@ -299,8 +315,8 @@ export function useHistoryEventsFilters(
       return;
 
     // Clear highlight when non-pagination filters change
-    const { highlightedIdentifier, highlightedPotentialMatch, ...remainingQuery } = get(route).query;
-    if (highlightedIdentifier || highlightedPotentialMatch) {
+    const { highlightedAssetMovement, highlightedNegativeBalanceEvent, highlightedPotentialMatch, ...remainingQuery } = get(route).query;
+    if (highlightedAssetMovement || highlightedPotentialMatch || highlightedNegativeBalanceEvent) {
       startPromise(router.replace({
         query: remainingQuery,
       }));
@@ -327,7 +343,7 @@ export function useHistoryEventsFilters(
     groups,
     highlightedIdentifiers,
     highlightTypes,
-    identifiers: identifiersFromQuery,
+    identifiers: missingAcquisitionFromQuery,
     includes,
     locationLabels,
     locationOverview,

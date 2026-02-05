@@ -142,7 +142,7 @@ function useContextMenu(attrs: Record<string, any>) {
       />
       <div
         v-else
-        class="w-max flex items-center gap-3 cursor-pointer hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800 rounded-md group -ml-1 pl-1"
+        class="w-max flex items-center gap-3 cursor-pointer hover:bg-rui-grey-300 dark:hover:bg-rui-grey-800 rounded-md group -ml-1 pl-1"
       >
         <ListItem
           no-padding

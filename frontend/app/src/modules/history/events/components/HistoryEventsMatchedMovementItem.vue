@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HighlightType } from '@/composables/history/events/use-history-events-filters';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventDeletePayload, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
@@ -8,6 +7,7 @@ import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
+import { getHighlightClass, type HighlightType } from '@/composables/history/events/use-history-events-filters';
 import { useHistoryMatchedMovementItem } from '../composables/use-history-matched-movement-item';
 
 const props = withDefaults(defineProps<{
@@ -65,11 +65,10 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <div
     v-if="isCard"
     class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content group transition-all"
-    :class="{
-      'opacity-50': primaryEvent.ignoredInAccounting,
-      '!bg-rui-warning/15': highlight && highlightType === 'warning',
-      '!bg-rui-success/15': highlight && highlightType === 'success',
-    }"
+    :class="[
+      { 'opacity-50': primaryEvent.ignoredInAccounting },
+      highlight && getHighlightClass(highlightType),
+    ]"
   >
     <!-- Top row: Checkbox, Location, Movement badge, Event count, Timestamp -->
     <div class="flex items-center justify-between gap-2 mb-2">

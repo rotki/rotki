@@ -204,6 +204,7 @@ export default {
     'min-h-[560px]',
     '!pt-0',
     'h-[30rem]',
+    '!bg-rui-error/15',
   ],
   plugins: [generated, componentsPlugin, containerQueryPlugin],
 } satisfies Config;

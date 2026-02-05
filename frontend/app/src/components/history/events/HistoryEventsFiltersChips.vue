@@ -84,16 +84,16 @@ const duplicateChangesMessage = computed<string>(() => {
   return messages.join(' ');
 });
 
-function removeIdentifierParam(): void {
+function removeMissingAcquisitionParam(): void {
   const query = { ...route.query };
-  delete query.identifiers;
+  delete query.missingAcquisitionIdentifier;
   router.push({ query });
 }
 
 function removeNegativeBalanceParam(): void {
   const query = { ...route.query };
-  delete query.negativeBalanceGroup;
-  delete query.negativeBalanceEvent;
+  delete query.highlightedNegativeBalanceEvent;
+  delete query.targetGroupIdentifier;
   router.push({ query });
 }
 
@@ -142,7 +142,7 @@ function refreshDuplicateView(): void {
 <template>
   <div>
     <div
-      v-if="route.query.identifiers"
+      v-if="route.query.missingAcquisitionIdentifier"
       class="mb-4"
     >
       <RuiChip
@@ -150,14 +150,14 @@ function refreshDuplicateView(): void {
         color="primary"
         size="sm"
         variant="outlined"
-        @click:close="removeIdentifierParam()"
+        @click:close="removeMissingAcquisitionParam()"
       >
         {{ t('transactions.events.show_missing_acquisition') }}
       </RuiChip>
     </div>
 
     <RuiTooltip
-      v-if="route.query.negativeBalanceGroup"
+      v-if="route.query.highlightedNegativeBalanceEvent"
       class="mb-4"
       :popper="{ placement: 'bottom' }"
       :open-delay="400"

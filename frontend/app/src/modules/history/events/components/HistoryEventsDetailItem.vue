@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { HighlightType } from '@/composables/history/events/use-history-events-filters';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventDeletePayload } from '@/modules/history/events/types';
 import type { HistoryEventEditData } from '@/modules/history/management/forms/form-types';
@@ -8,6 +7,7 @@ import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
+import { getHighlightClass, type HighlightType } from '@/composables/history/events/use-history-events-filters';
 import { useHistoryEventItem } from '../composables/use-history-event-item';
 
 const props = withDefaults(defineProps<{
@@ -67,11 +67,10 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <div
     v-if="isCard"
     class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content transition-all"
-    :class="{
-      'opacity-50': hiddenEvent,
-      '!bg-rui-warning/15': highlight && highlightType === 'warning',
-      '!bg-rui-success/15': highlight && highlightType === 'success',
-    }"
+    :class="[
+      { 'opacity-50': hiddenEvent },
+      highlight && getHighlightClass(highlightType),
+    ]"
   >
     <!-- Top row: Checkbox, Location + Event Type + Timestamp -->
     <div class="flex items-center justify-between gap-2 mb-2">
@@ -135,11 +134,10 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <div
     v-else
     class="h-[72px] flex items-center gap-4 border-b border-default px-4 pl-8 group/row contain-content"
-    :class="{
-      'opacity-50': hiddenEvent,
-      '!bg-rui-warning/15': highlight && highlightType === 'warning',
-      '!bg-rui-success/15': highlight && highlightType === 'success',
-    }"
+    :class="[
+      { 'opacity-50': hiddenEvent },
+      highlight && getHighlightClass(highlightType),
+    ]"
   >
     <RuiCheckbox
       v-if="showCheckbox"
