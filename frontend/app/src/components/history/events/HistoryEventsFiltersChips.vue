@@ -140,94 +140,96 @@ function refreshDuplicateView(): void {
 </script>
 
 <template>
-  <div
-    v-if="route.query.identifiers"
-    class="mb-4"
-  >
-    <RuiChip
-      closeable
-      color="primary"
-      size="sm"
-      variant="outlined"
-      @click:close="removeIdentifierParam()"
+  <div>
+    <div
+      v-if="route.query.identifiers"
+      class="mb-4"
     >
-      {{ t('transactions.events.show_missing_acquisition') }}
-    </RuiChip>
-  </div>
-
-  <RuiTooltip
-    v-if="route.query.negativeBalanceGroup"
-    class="mb-4"
-    :popper="{ placement: 'bottom' }"
-    :open-delay="400"
-    tooltip-class="max-w-80"
-  >
-    <template #activator>
       <RuiChip
         closeable
-        color="error"
+        color="primary"
         size="sm"
         variant="outlined"
-        @click:close="removeNegativeBalanceParam()"
+        @click:close="removeIdentifierParam()"
       >
-        {{ t('transactions.events.show_negative_balance') }}
+        {{ t('transactions.events.show_missing_acquisition') }}
       </RuiChip>
-    </template>
-    {{ t('historical_balances.negative_balances.view_event_tooltip') }}
-  </RuiTooltip>
+    </div>
 
-  <div
-    v-if="hasGroupIdentifiers"
-    class="mb-4"
-  >
-    <RuiChip
-      closeable
-      color="warning"
-      size="sm"
-      variant="outlined"
-      @click:close="removeDuplicateEventsParam()"
+    <RuiTooltip
+      v-if="route.query.negativeBalanceGroup"
+      class="mb-4"
+      :popper="{ placement: 'bottom' }"
+      :open-delay="400"
+      tooltip-class="max-w-80"
     >
-      <div class="flex gap-1">
-        {{ duplicateChipText }}
-
-        <RuiButton
-          v-if="isAutoFixable && !hasDuplicateChanges"
+      <template #activator>
+        <RuiChip
+          closeable
+          color="error"
           size="sm"
-          variant="text"
-          class="!py-0 underline !text-xs gap-1"
-          color="primary"
-          :loading="fixLoading"
-          @click="confirmFixDuplicate()"
+          variant="outlined"
+          @click:close="removeNegativeBalanceParam()"
         >
-          <template #prepend>
-            <RuiIcon
-              name="lu-wand-sparkles"
-              size="10"
-            />
-          </template>
-          {{ t('customized_event_duplicates.actions.fix_all_shown') }}
-        </RuiButton>
-      </div>
-    </RuiChip>
+          {{ t('transactions.events.show_negative_balance') }}
+        </RuiChip>
+      </template>
+      {{ t('historical_balances.negative_balances.view_event_tooltip') }}
+    </RuiTooltip>
 
     <div
-      v-if="hasDuplicateChanges"
-      class="mt-1 flex items-center gap-1 text-xs text-rui-secondary"
+      v-if="hasGroupIdentifiers"
+      class="mb-4"
     >
-      <RuiIcon
-        name="lu-info"
-        size="16"
-      />
-      <span>{{ duplicateChangesMessage }}</span>
-      <RuiButton
+      <RuiChip
+        closeable
+        color="warning"
         size="sm"
-        variant="text"
-        color="secondary"
-        class="!py-0 underline"
-        @click="refreshDuplicateView()"
+        variant="outlined"
+        @click:close="removeDuplicateEventsParam()"
       >
-        {{ allDuplicatesResolved ? t('customized_event_duplicates.chips.clear_filter') : t('common.refresh') }}
-      </RuiButton>
+        <div class="flex gap-1">
+          {{ duplicateChipText }}
+
+          <RuiButton
+            v-if="isAutoFixable && !hasDuplicateChanges"
+            size="sm"
+            variant="text"
+            class="!py-0 underline !text-xs gap-1"
+            color="primary"
+            :loading="fixLoading"
+            @click="confirmFixDuplicate()"
+          >
+            <template #prepend>
+              <RuiIcon
+                name="lu-wand-sparkles"
+                size="10"
+              />
+            </template>
+            {{ t('customized_event_duplicates.actions.fix_all_shown') }}
+          </RuiButton>
+        </div>
+      </RuiChip>
+
+      <div
+        v-if="hasDuplicateChanges"
+        class="mt-1 flex items-center gap-1 text-xs text-rui-secondary"
+      >
+        <RuiIcon
+          name="lu-info"
+          size="16"
+        />
+        <span>{{ duplicateChangesMessage }}</span>
+        <RuiButton
+          size="sm"
+          variant="text"
+          color="secondary"
+          class="!py-0 underline"
+          @click="refreshDuplicateView()"
+        >
+          {{ allDuplicatesResolved ? t('customized_event_duplicates.chips.clear_filter') : t('common.refresh') }}
+        </RuiButton>
+      </div>
     </div>
   </div>
 </template>

@@ -17,6 +17,8 @@ const { t } = useI18n({ useScope: 'global' });
 
 const isMovement = computed<boolean>(() => props.labelType === 'movement');
 
+const { isMdAndUp } = useBreakpoint();
+
 const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
   const events = props.events;
   if (!events)
@@ -36,13 +38,15 @@ const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>
 </script>
 
 <template>
-  <div class="h-9 flex items-center gap-2 border-b border-default px-4 pl-8 bg-rui-grey-50 dark:bg-rui-grey-900 group/row relative">
+  <div
+    class="h-9 flex items-center gap-2 border-default pr-4 pl-2 bg-gradient-to-b from-rui-grey-100 to-transparent dark:from-rui-grey-900 group/row relative mx-4 rounded-t-2xl mt-0.5"
+  >
     <!-- Collapse button (absolute top-left like expand) -->
     <RuiButton
       size="sm"
       icon
       color="primary"
-      class="size-5 absolute top-1.5 left-2 z-[6]"
+      class="size-5 z-[6]"
       @click="emit('collapse')"
     >
       <RuiIcon
@@ -71,21 +75,30 @@ const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>
       :location="eventWithTxRef.location"
       :truncate-length="8"
     />
-    <RuiButton
-      v-if="isMovement"
+    <RuiTooltip
+      :open-delay="200"
+      :disabled="isMdAndUp"
       class="ml-auto"
-      variant="text"
-      size="sm"
-      color="warning"
-      @click="emit('unlink-event')"
     >
-      <template #prepend>
-        <RuiIcon
-          name="lu-unlink"
-          size="14"
-        />
+      <template #activator>
+        <RuiButton
+          v-if="isMovement"
+          class="!h-6 [&>span]:!hidden md:[&>span]:!inline"
+          variant="text"
+          size="sm"
+          color="warning"
+          @click="emit('unlink-event')"
+        >
+          <template #prepend>
+            <RuiIcon
+              name="lu-unlink"
+              size="14"
+            />
+          </template>
+          {{ t('transactions.events.actions.unlink') }}
+        </RuiButton>
       </template>
       {{ t('transactions.events.actions.unlink') }}
-    </RuiButton>
+    </RuiTooltip>
   </div>
 </template>

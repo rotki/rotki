@@ -151,7 +151,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
       class="shrink-0 -ml-2"
     />
 
-    <div class="relative -top-2">
+    <div class="relative -top-2.5">
       <RuiButton
         size="sm"
         icon

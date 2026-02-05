@@ -83,6 +83,17 @@ const showAlerts = ref<boolean>(false);
 const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
 
 const dialogContainer = useTemplateRef<InstanceType<typeof HistoryEventsDialogContainer>>('dialogContainer');
+const syncProgressPanelEl = useTemplateRef<ComponentPublicInstance>('syncProgressPanel');
+const tableActionsEl = useTemplateRef<ComponentPublicInstance>('tableActions');
+const filtersChipsEl = useTemplateRef<ComponentPublicInstance>('filtersChips');
+
+const { height: syncProgressHeight } = useElementSize(syncProgressPanelEl);
+const { height: tableActionsHeight } = useElementSize(tableActionsEl);
+const { height: filtersChipsHeight } = useElementSize(filtersChipsEl);
+
+const BASE_TABLE_HEIGHT_OFFSET = 252;
+
+const tableHeightOffset = computed<number>(() => get(syncProgressHeight) + get(tableActionsHeight) + get(filtersChipsHeight) + BASE_TABLE_HEIGHT_OFFSET);
 
 const {
   anyEventsDecoding,
@@ -224,6 +235,7 @@ watchDebounced(route, async () => {
   <div>
     <SyncProgressPanel
       v-if="mainPage"
+      ref="syncProgressPanel"
       class="-mt-4 mb-4"
     />
     <TablePageLayout
@@ -268,6 +280,7 @@ watchDebounced(route, async () => {
           </template>
 
           <HistoryEventsTableActions
+            ref="tableActions"
             v-model:filters="filters"
             v-model:toggles="toggles"
             :location-labels="locationLabels"
@@ -284,6 +297,7 @@ watchDebounced(route, async () => {
           />
 
           <HistoryEventsFiltersChips
+            ref="filtersChips"
             :group-identifiers="groupIdentifiers"
             :duplicate-handling-status="duplicateHandlingStatus"
             @refresh="actions.fetch.dataAndLocations()"
@@ -292,6 +306,7 @@ watchDebounced(route, async () => {
           <HistoryEventsVirtualTable
             v-model:sort="sort"
             v-model:pagination="pagination"
+            :table-height-offset="tableHeightOffset"
             :group-loading="groupLoading"
             :groups="groups"
             :page-params="toggles.matchExactEvents ? pageParams : undefined"

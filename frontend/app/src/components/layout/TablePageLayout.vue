@@ -9,7 +9,7 @@ withDefaults(defineProps<{ hideHeader?: boolean; child?: boolean; title?: string
     <div class="flex flex-col gap-4">
       <div
         v-if="!hideHeader"
-        class="flex flex-row flex-wrap items-center gap-4 min-h-[2.25rem]"
+        class="flex flex-row flex-wrap items-center gap-2 lg:gap-4 min-h-[2.25rem]"
       >
         <div
           v-if="title"

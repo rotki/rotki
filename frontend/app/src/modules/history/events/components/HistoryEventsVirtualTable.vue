@@ -28,6 +28,7 @@ const props = defineProps<{
   pageParams: HistoryEventRequestPayload | undefined;
   excludeIgnored: boolean;
   groupLoading: boolean;
+  tableHeightOffset?: number;
   identifiers?: string[];
   highlightedIdentifiers?: string[];
   hideActions?: boolean;
@@ -49,6 +50,12 @@ const isCardLayout = useMediaQuery('(max-width: 860px)');
 
 // Variant based on breakpoint
 const itemVariant = computed<'row' | 'card'>(() => get(isCardLayout) ? 'card' : 'row');
+
+const DEFAULT_TABLE_HEIGHT_OFFSET = 390;
+
+const tableContainerStyle = computed<{ height: string }>(() => ({
+  height: `calc(100vh - ${props.tableHeightOffset ?? DEFAULT_TABLE_HEIGHT_OFFSET}px)`,
+}));
 
 const RedecodeConfirmationDialog = defineAsyncComponent(() => import('./RedecodeConfirmationDialog.vue'));
 const { groupLoading, groups: rawGroups, pageParams } = toRefs(props);
@@ -243,7 +250,8 @@ function unlinkGroup(groupId: string): void {
     <!-- Loading state -->
     <div
       v-if="loading && groups.length === 0"
-      class="flex items-center justify-center h-[calc(100vh-350px)] lg:h-[calc(100vh-390px)] dark:bg-dark-surface"
+      :style="tableContainerStyle"
+      class="flex items-center justify-center dark:bg-dark-surface"
     >
       <RuiProgress
         circular
@@ -256,7 +264,8 @@ function unlinkGroup(groupId: string): void {
     <!-- Empty state -->
     <div
       v-else-if="!loading && groups.length === 0"
-      class="flex items-center justify-center h-[calc(100vh-350px)] lg:h-[calc(100vh-390px)] text-rui-text-secondary"
+      :style="tableContainerStyle"
+      class="flex items-center justify-center text-rui-text-secondary"
     >
       {{ t('data_table.no_data') }}
     </div>
@@ -265,7 +274,8 @@ function unlinkGroup(groupId: string): void {
     <div
       v-else
       v-bind="containerProps"
-      class="overflow-auto h-[calc(100vh-350px)] lg:h-[calc(100vh-390px)] will-change-transform dark:bg-dark-surface"
+      :style="tableContainerStyle"
+      class="overflow-auto will-change-transform dark:bg-dark-surface"
     >
       <div v-bind="wrapperProps">
         <template

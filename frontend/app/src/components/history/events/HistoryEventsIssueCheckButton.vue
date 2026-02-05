@@ -22,7 +22,6 @@ const { mainPage, processing } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
 const { getStatus } = useStatusStore();
 
-const manualIssueCheck = ref<boolean>(false);
 const checkingIssues = ref<boolean>(false);
 const noIssuesFound = ref<boolean>(false);
 
@@ -35,7 +34,7 @@ const hasOnlyUnmatchedMovements = computed<boolean>(() => get(unmatchedCount) > 
 
 const debouncedProcessing = useRefWithDebounce(processing, 200);
 const issueButtonEnabled = computed<boolean>(() => !get(debouncedProcessing) && getStatus(Section.HISTORY) === Status.LOADED);
-const showWarningButton = logicAnd(issueButtonEnabled, mainPage, logicOr(manualIssueCheck, hasIssues));
+const showWarningButton = logicAnd(issueButtonEnabled, mainPage, hasIssues);
 
 const buttonColor = computed<'warning' | 'success' | 'primary'>(() => {
   if (!get(issueButtonEnabled))
@@ -79,7 +78,6 @@ function openAlertsIfNeeded(): void {
 }
 
 async function checkIssues(): Promise<void> {
-  set(manualIssueCheck, true);
   set(checkingIssues, true);
   try {
     await Promise.all([
@@ -96,7 +94,6 @@ async function checkIssues(): Promise<void> {
 }
 
 async function checkUnmatched(): Promise<void> {
-  set(manualIssueCheck, true);
   set(checkingIssues, true);
   try {
     await refreshUnmatchedAssetMovements();
@@ -108,7 +105,6 @@ async function checkUnmatched(): Promise<void> {
 }
 
 async function checkDuplicates(): Promise<void> {
-  set(manualIssueCheck, true);
   set(checkingIssues, true);
   try {
     await fetchCustomizedEventDuplicates();
