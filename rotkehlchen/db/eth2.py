@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Collection
 from typing import TYPE_CHECKING, Literal
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.ethereum.modules.eth2.constants import CPT_ETH2, MIN_EFFECTIVE_BALANCE

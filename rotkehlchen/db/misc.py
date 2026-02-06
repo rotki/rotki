@@ -4,7 +4,7 @@ imported if trace level has been setup"""
 
 import re
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 
 def get_sqlcipher_version_string() -> str:

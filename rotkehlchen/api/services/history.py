@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from flask import Response, send_file
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.constants import EVENT_GROUPING_ORDER
 from rotkehlchen.accounting.debugimporter.json import DebugHistoryImporter

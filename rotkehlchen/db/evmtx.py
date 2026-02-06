@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, ClassVar, get_args
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_GENESIS
 from rotkehlchen.chain.base.constants import BASE_GENESIS
@@ -204,7 +204,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         the given filter query
 
         This function can raise:
-        - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to invalid
+        - sqlcipher3.dbapi2.OperationalError if the SQL query fails due to invalid
         filtering arguments.
         """
         query, bindings = filter_.prepare()
@@ -320,7 +320,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         May raise:
         - Key Error if any of the expected fields are missing
         - DeserializationError if there is a problem deserializing a value
-        - pysqlcipher3.dbapi2.IntegrityError if the transaction hash is not in the DB:
+        - sqlcipher3.dbapi2.IntegrityError if the transaction hash is not in the DB:
         """
         tx_hash_b = hexstring_to_bytes(data['transactionHash'])
         # some nodes miss the type field for older non EIP1559 transactions. So assume legacy (0)

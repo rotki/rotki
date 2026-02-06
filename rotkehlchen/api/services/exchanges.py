@@ -3,7 +3,7 @@ from __future__ import annotations
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError

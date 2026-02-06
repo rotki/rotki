@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.filtering import (
     DBEqualsFilter,

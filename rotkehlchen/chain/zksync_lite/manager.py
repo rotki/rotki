@@ -8,7 +8,7 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
-from pysqlcipher3.dbapi2 import IntegrityError
+from sqlcipher3.dbapi2 import IntegrityError
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType

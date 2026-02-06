@@ -665,7 +665,7 @@ def test_sqlcipher_detect_version():
         def set_progress_handler(self, a, b) -> None:
             pass
 
-    with patch('pysqlcipher3.dbapi2.connect') as sql_mock:
+    with patch('sqlcipher3.dbapi2.connect') as sql_mock:
         sql_mock.return_value = ConnectionMock('4.0.0 community')
         assert detect_sqlcipher_version() == 4
         sql_mock.return_value = ConnectionMock('4.0.1 something')

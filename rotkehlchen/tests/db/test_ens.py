@@ -1,7 +1,7 @@
 import datetime
 
 import pytest
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.ens import DBEns
 from rotkehlchen.tests.utils.factories import make_evm_address

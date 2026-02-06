@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, Unpack, cast, overload
 
 from gevent.lock import Semaphore
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, EvmToken

@@ -3,7 +3,7 @@ import logging
 from json import JSONDecodeError
 from typing import TYPE_CHECKING
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN, CPT_POLONIEX, CPT_UPHOLD
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG

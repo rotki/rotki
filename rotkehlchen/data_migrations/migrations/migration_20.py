@@ -4,7 +4,7 @@ import shutil
 from collections import defaultdict
 from typing import TYPE_CHECKING, NamedTuple
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType

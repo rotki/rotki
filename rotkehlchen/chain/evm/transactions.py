@@ -199,7 +199,7 @@ class EvmTransactions(ABC):  # noqa: B024
         May raise:
         - RemoteError if etherscan is used and there is a problem with reaching it or
         with parsing the response.
-        - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to
+        - sqlcipher3.dbapi2.OperationalError if the SQL query fails due to
         invalid filtering arguments.
         """
         for address in addresses:
@@ -934,7 +934,7 @@ class EvmTransactions(ABC):  # noqa: B024
         evm transaction must have a corresponding receipt entry in the database.
 
         This function can raise:
-        - pysqlcipher3.dbapi2.OperationalError if the SQL query fails due to invalid
+        - sqlcipher3.dbapi2.OperationalError if the SQL query fails due to invalid
         filtering arguments.
         - RemoteError if there is a problem querying the data source.
         - DeserializationError if the transaction cannot be deserialized from the DB.
@@ -1177,7 +1177,7 @@ class EvmTransactions(ABC):  # noqa: B024
 
        May raise:
        - DeserializationError
-       - pysqlcipher3.dbapi2.OperationalError
+       - sqlcipher3.dbapi2.OperationalError
        - RemoteError if any of the remote queries fail.
        """
         period = TimestampOrBlockRange(

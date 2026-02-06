@@ -2,7 +2,7 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmOperatorType
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmNodeOperatorStats

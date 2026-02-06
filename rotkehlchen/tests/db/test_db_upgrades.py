@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings

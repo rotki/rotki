@@ -2,7 +2,7 @@ import json
 import logging
 from typing import TYPE_CHECKING, Literal
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.resolver import (
     ETHEREUM_DIRECTIVE,

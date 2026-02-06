@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 from more_itertools import peekable
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.chain.decoding.constants import CPT_GAS

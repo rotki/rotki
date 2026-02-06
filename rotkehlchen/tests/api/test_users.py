@@ -11,7 +11,7 @@ from unittest.mock import patch
 import gevent
 import pytest
 import requests
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic

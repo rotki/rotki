@@ -3,7 +3,7 @@ import logging
 from typing import TYPE_CHECKING
 from uuid import uuid4
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import (

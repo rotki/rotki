@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import InputError

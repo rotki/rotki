@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.errors.asset import UnknownAsset

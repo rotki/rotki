@@ -2,7 +2,7 @@ import logging
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Optional
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants import ONE, ZERO

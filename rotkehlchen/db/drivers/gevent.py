@@ -13,7 +13,7 @@ from uuid import uuid4
 
 import gevent
 import rsqlite
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_INDEXES, MINIMIZED_USER_DB_SCHEMA

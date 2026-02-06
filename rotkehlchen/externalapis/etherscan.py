@@ -2,8 +2,8 @@ import logging
 from typing import TYPE_CHECKING, Any, Final
 
 import gevent
-from pysqlcipher3 import dbapi2 as sqlcipher
 from requests import Response
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange

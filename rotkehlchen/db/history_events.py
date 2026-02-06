@@ -5,8 +5,8 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, cast, overload
 
-from pysqlcipher3 import dbapi2 as sqlcipher
 from solders.solders import Signature
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset

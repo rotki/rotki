@@ -3,7 +3,7 @@ from collections.abc import Callable
 from copy import deepcopy
 from typing import TYPE_CHECKING, Any, Literal, overload
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.accounting.pnl import PnlTotals
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent

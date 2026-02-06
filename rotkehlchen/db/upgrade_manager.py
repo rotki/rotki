@@ -4,7 +4,7 @@ import shutil
 import traceback
 from typing import TYPE_CHECKING
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.constants.misc import USERDB_NAME
 from rotkehlchen.db.cache import DBCacheStatic

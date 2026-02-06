@@ -5,7 +5,7 @@ from collections import defaultdict
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any, Literal, cast
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM

@@ -6,7 +6,7 @@ from shutil import copyfile
 from typing import TYPE_CHECKING, Any
 from unittest.mock import _patch, patch
 
-from pysqlcipher3 import dbapi2 as sqlcipher
+from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.balances.manual import ManuallyTrackedBalance

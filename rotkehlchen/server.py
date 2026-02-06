@@ -53,7 +53,7 @@ class RotkehlchenServer:
         # log version of some special dependencies
         log.info(f'sqlite version: {rsqlite.sqlite_version}')
         log.info(f'gevent version: {gevent.__version__}')
-        log.info(f'rotki-pysqlcipher version: {importlib.metadata.version("rotki-pysqlcipher3")}')
+        log.info(f'rotki-pysqlcipher version: {importlib.metadata.version("sqlcipher3")}')
         log.info(f'SQLCipher version: {get_sqlcipher_version_string()}')
         # disable printing hub exceptions in stderr. With using the hub to do various
         # tasks that should raise exceptions and have them handled outside the hub
