@@ -6,7 +6,7 @@ import PendingTask from '@/components/status/notifications/PendingTask.vue';
 import { useConfirmStore } from '@/store/confirm';
 import { useTaskStore } from '@/store/tasks';
 
-const expanded = ref(false);
+const expanded = defineModel<boolean>({ required: true });
 
 const { t } = useI18n({ useScope: 'global' });
 const store = useTaskStore();

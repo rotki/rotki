@@ -199,7 +199,15 @@ export function useHistoryEventsFilters(
     },
     persistFilter: computed(() => ({
       enabled: true,
-      excludeKeys: ['missingAcquisitionIdentifier', 'groupIdentifiers', 'duplicateHandlingStatus'],
+      excludeKeys: [
+        'missingAcquisitionIdentifier',
+        'groupIdentifiers',
+        'duplicateHandlingStatus',
+        'targetGroupIdentifier',
+        'highlightedAssetMovement',
+        'highlightedPotentialMatch',
+        'highlightedNegativeBalanceEvent',
+      ],
       tableId: TableId.HISTORY,
       transientKeys: ['txRefs'],
     })),

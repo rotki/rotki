@@ -20,6 +20,7 @@ enum TabCategory {
 const contentWrapper = ref();
 const selectedTab = ref<TabCategory>(TabCategory.VIEW_ALL);
 const initialAppear = ref<boolean>(false);
+const pendingTasksExpanded = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -74,6 +75,11 @@ function showConfirmation() {
     type: 'info',
   }, clear);
 }
+
+watchDebounced(hasRunningTasks, (running) => {
+  if (!running)
+    set(pendingTasksExpanded, false);
+}, { debounce: 1000 });
 
 watch(
   [y, selectedTab, selectedNotifications],
@@ -130,7 +136,7 @@ watch(
         v-else
         class="flex flex-col h-[calc(100%-133px)]"
       >
-        <PendingTasks />
+        <PendingTasks v-model="pendingTasksExpanded" />
         <div class="border-b border-default mx-4">
           <RuiTabs
             v-model="selectedTab"
