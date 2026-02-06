@@ -477,11 +477,11 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                 write_cursor.execute(
                     'INSERT INTO zksynclite_transactions(tx_hash, type, timestamp, block_number, '
                     'from_address, to_address, asset, amount, fee) '
-                    'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING identifier',
+                    'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     transaction.serialize_for_db(),
                 )
                 if transaction.tx_type == ZKSyncLiteTXType.SWAP:
-                    identifier = write_cursor.fetchone()[0]
+                    identifier = write_cursor.lastrowid
                     write_cursor.execute(
                         'INSERT INTO zksynclite_swaps(tx_id, from_asset, from_amount, '
                         'to_asset, to_amount) VALUES(?, ?, ?, ?, ?)',
