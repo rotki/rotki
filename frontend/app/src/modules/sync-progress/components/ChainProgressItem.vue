@@ -110,7 +110,7 @@ function showMore(): void {
       </div>
 
       <span
-        class="tabular-nums"
+        class="tabular-nums text-right min-w-[3rem]"
         :class="[
           compact ? 'text-xs' : 'text-sm',
           isComplete ? 'text-rui-text-disabled' : 'text-rui-text-secondary',
