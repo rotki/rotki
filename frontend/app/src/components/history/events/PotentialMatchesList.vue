@@ -13,11 +13,11 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { type ColumnClassConfig, usePinnedColumnClass } from '@/composables/history/events/use-pinned-column-class';
+import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass, usePinnedSimpleTableClass } from '@/composables/history/events/use-pinned-column-class';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { getEventEntryFromCollection } from '@/utils/history/events';
 
-const selectedMatchId = defineModel<number | undefined>('selectedMatchId', { required: true });
+const selectedMatchIds = defineModel<number[]>('selectedMatchIds', { required: true });
 
 const searchTimeRange = defineModel<string>('searchTimeRange', { required: true });
 
@@ -41,13 +41,17 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const { isPinned } = toRefs(props);
+
 const { getHistoryEventSubTypeName, getHistoryEventTypeName } = useHistoryEventMappings();
 
 const [DefineRowActions, ReuseRowActions] = createReusableTemplate<{ row: PotentialMatchRow }>();
 
-const pinnedColumnClass = usePinnedColumnClass(toRef(props, 'isPinned'));
+const pinnedColumnClass = usePinnedColumnClass(isPinned);
+const pinnedAssetColumnClass = usePinnedAssetColumnClass(isPinned);
+const pinnedSimpleTableClass = usePinnedSimpleTableClass(isPinned);
 
-function createColumns(isPinned: boolean, baseClass: ColumnClassConfig): DataTableColumn<PotentialMatchRow>[] {
+function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetClass: ColumnClassConfig): DataTableColumn<PotentialMatchRow>[] {
   const columns: DataTableColumn<PotentialMatchRow>[] = [
     {
       key: 'timestamp',
@@ -77,7 +81,7 @@ function createColumns(isPinned: boolean, baseClass: ColumnClassConfig): DataTab
     {
       key: 'asset',
       label: t('common.asset'),
-      ...(isPinned ? { cellClass: '!pl-1 !pr-0', class: '!pl-1 !pr-0' } : {}),
+      ...assetClass,
     },
   );
 
@@ -88,10 +92,21 @@ function createColumns(isPinned: boolean, baseClass: ColumnClassConfig): DataTab
   return columns;
 }
 
-const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => createColumns(props.isPinned ?? false, get(pinnedColumnClass)));
+const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => createColumns(props.isPinned ?? false, get(pinnedColumnClass), get(pinnedAssetColumnClass)));
 
 function isSelected(row: PotentialMatchRow): boolean {
-  return get(selectedMatchId) === row.entry.identifier;
+  return get(selectedMatchIds).includes(row.entry.identifier);
+}
+
+function toggleSelection(row: PotentialMatchRow): void {
+  const ids = get(selectedMatchIds);
+  const identifier = row.entry.identifier;
+  if (ids.includes(identifier)) {
+    set(selectedMatchIds, ids.filter(id => id !== identifier));
+  }
+  else {
+    set(selectedMatchIds, [...ids, identifier]);
+  }
 }
 
 function getRowClass(row: PotentialMatchRow): string {
@@ -105,7 +120,7 @@ const movementEntry = computed<HistoryEventEntry>(() => {
 
 const tableClass = computed<string>(() => {
   if (props.isPinned)
-    return '!overflow-auto !max-h-none !h-[calc(100vh-35rem)]';
+    return '!overflow-auto !max-h-none !h-[calc(100vh-32.25rem)]';
   return 'table-inside-dialog !max-h-[calc(100vh-33rem)]';
 });
 
@@ -159,7 +174,7 @@ watchDebounced(onlyExpectedAssets, () => {
         :color="isSelected(row) ? 'success' : 'primary'"
         :variant="isSelected(row) ? 'default' : 'outlined'"
         class="min-w-24"
-        @click="selectedMatchId = row.entry.identifier"
+        @click="toggleSelection(row)"
       >
         <template
           v-if="isSelected(row)"
@@ -178,12 +193,15 @@ watchDebounced(onlyExpectedAssets, () => {
     </div>
   </DefineRowActions>
 
-  <div>
-    <div class="mb-4">
+  <div class="flex flex-col gap-4">
+    <div>
       <p class="text-body-2 font-medium mb-2">
         {{ t('asset_movement_matching.dialog.matching_for') }}
       </p>
-      <SimpleTable :class="{ '!text-xs [&_th]:!px-2 [&_td]:!px-2': isPinned }">
+      <SimpleTable
+        :class="pinnedSimpleTableClass"
+        class="[&_td]:!py-0"
+      >
         <thead>
           <tr>
             <th>{{ t('common.datetime') }}</th>
@@ -222,7 +240,10 @@ watchDebounced(onlyExpectedAssets, () => {
               v-if="!isPinned"
               class="text-center"
             >
-              <LocationDisplay :identifier="movementEntry.location" />
+              <LocationDisplay
+                horizontal
+                :identifier="movementEntry.location"
+              />
             </td>
             <td>
               <HistoryEventAsset
@@ -258,12 +279,12 @@ watchDebounced(onlyExpectedAssets, () => {
         </tbody>
       </SimpleTable>
     </div>
-    <div class="border-t border-default pt-4">
+    <div>
       <div class="text-body-2 font-medium mb-4">
         {{ t('asset_movement_matching.dialog.search_description') }}
       </div>
       <div
-        class="flex items-center mb-4 flex-wrap"
+        class="flex items-center flex-wrap"
         :class="isPinned ? 'gap-2' : 'gap-4'"
       >
         <RuiTextField
@@ -274,7 +295,7 @@ watchDebounced(onlyExpectedAssets, () => {
           hide-details
           max="168"
           :label="t('asset_movement_matching.dialog.time_range_hours')"
-          class="w-40"
+          class="w-36"
           variant="outlined"
           dense
         />
@@ -286,7 +307,7 @@ watchDebounced(onlyExpectedAssets, () => {
           hide-details
           dense
           :label="t('asset_movement_matching.settings.amount_tolerance.label')"
-          class="w-40"
+          class="w-36"
         />
         <RuiTooltip
           :popper="{ placement: 'top' }"
@@ -298,112 +319,137 @@ watchDebounced(onlyExpectedAssets, () => {
               color="primary"
               hide-details
               size="sm"
+              class="!my-0 [&_span]:!text-sm [&_span]:!my-0 [&_label]:!items-center"
+              :class="{ 'whitespace-break-spaces': isPinned }"
             >
               {{ t('asset_movement_matching.dialog.only_expected_assets') }}
             </RuiCheckbox>
           </template>
           {{ t('asset_movement_matching.dialog.only_expected_assets_hint') }}
         </RuiTooltip>
-        <RuiButton
-          class="!h-10"
-          :loading="loading"
-          @click="emit('search')"
+        <RuiTooltip
+          :open-delay="200"
+          :disabled="!isPinned"
         >
+          <template #activator>
+            <RuiButton
+              class="!h-10 ml-3"
+              :loading="loading"
+              :size="isPinned ? 'sm' : undefined"
+              :class="isPinned ? '[&>span]:!hidden !px-2.5' : '[&>span]:!inline'"
+              @click="emit('search')"
+            >
+              <template #prepend>
+                <RuiIcon
+                  name="lu-search"
+                  size="18"
+                />
+              </template>
+              {{ t('common.actions.search') }}
+            </RuiButton>
+          </template>
           {{ t('common.actions.search') }}
-        </RuiButton>
+        </RuiTooltip>
       </div>
     </div>
 
-    <RuiDataTable
-      :cols="columns"
-      :rows="matches"
-      row-attr="identifier"
-      :class="tableClass"
-      :item-class="getRowClass"
-      dense
-      outlined
-      :empty="{ label: t('asset_movement_matching.dialog.no_matches_found') }"
-      :loading="loading"
-    >
-      <template #item.timestamp="{ row }">
-        <div class="flex flex-col gap-1">
-          <DateDisplay
-            :timestamp="row.entry.timestamp"
-            milliseconds
-          />
-          <div
-            v-if="isPinned"
-            class="font-bold"
-          >
-            {{ getHistoryEventTypeName(row.entry.eventType) }} -
-            {{ getHistoryEventSubTypeName(row.entry.eventSubtype) }}
+    <div>
+      <p class="text-body-2 font-medium mb-2">
+        {{ t('asset_movement_matching.dialog.matching_hint') }}
+      </p>
+
+      <RuiDataTable
+        :cols="columns"
+        :rows="matches"
+        row-attr="identifier"
+        :class="tableClass"
+        :item-class="getRowClass"
+        dense
+        outlined
+        :empty="{ label: t('asset_movement_matching.dialog.no_matches_found') }"
+        :loading="loading"
+      >
+        <template #item.timestamp="{ row }">
+          <div class="flex flex-col gap-1">
+            <DateDisplay
+              :timestamp="row.entry.timestamp"
+              milliseconds
+            />
+            <div
+              v-if="isPinned"
+              class="font-bold"
+            >
+              {{ getHistoryEventTypeName(row.entry.eventType) }} -
+              {{ getHistoryEventSubTypeName(row.entry.eventSubtype) }}
+            </div>
           </div>
-        </div>
-      </template>
-      <template #item.eventTypeAndSubtype="{ row }">
-        <div>{{ getHistoryEventTypeName(row.entry.eventType) }} -</div>
-        <div>{{ getHistoryEventSubTypeName(row.entry.eventSubtype) }}</div>
-      </template>
-      <template #item.txRef="{ row }">
-        <div
-          class="flex items-center"
-          :class="isPinned ? 'gap-2' : 'gap-1'"
-        >
-          <LocationIcon
-            horizontal
-            icon
-            size="1.25rem"
-            :item="row.entry.location"
-            :class="{ '!text-xs': isPinned }"
-          />
-          <HashLink
-            v-if="'txRef' in row.entry && row.entry.txRef"
-            :text="row.entry.txRef"
-            type="transaction"
-            :location="row.entry.location"
-            :class="{ '!text-[10px]': isPinned }"
-          />
-          <span v-else>-</span>
-        </div>
-        <div>
-          <HashLink
-            v-if="row.entry.locationLabel"
-            :text="row.entry.locationLabel"
-            :location="row.entry.location"
-            :class="{ '!text-[10px]': isPinned }"
-          />
-          <span v-else>-</span>
-        </div>
-      </template>
-      <template #item.asset="{ row }">
-        <div class="flex items-center gap-2">
-          <HistoryEventAsset
-            :dense="isPinned"
-            disable-options
-            :event="row.entry"
-          />
-          <RuiTooltip
-            v-if="row.isCloseMatch && isPinned"
-            :open-delay="200"
+        </template>
+        <template #item.eventTypeAndSubtype="{ row }">
+          <div>{{ getHistoryEventTypeName(row.entry.eventType) }} -</div>
+          <div>{{ getHistoryEventSubTypeName(row.entry.eventSubtype) }}</div>
+        </template>
+        <template #item.txRef="{ row }">
+          <div
+            class="flex items-center"
+            :class="isPinned ? 'gap-2' : 'gap-1'"
           >
-            <template #activator>
-              <RuiIcon
-                name="lu-thumbs-up"
-                size="16"
-                color="success"
-              />
-            </template>
-            {{ t('asset_movement_matching.dialog.recommended') }}
-          </RuiTooltip>
-        </div>
-        <ReuseRowActions
-          v-if="isPinned"
-          :row="row"
-        />
-      </template>
-      <template #item.actions="{ row }">
-        <ReuseRowActions :row="row" />
-      </template>
-    </RuiDataTable>
+            <LocationIcon
+              horizontal
+              icon
+              size="1.25rem"
+              :item="row.entry.location"
+              :class="{ '!text-xs': isPinned }"
+            />
+            <HashLink
+              v-if="'txRef' in row.entry && row.entry.txRef"
+              :text="row.entry.txRef"
+              type="transaction"
+              :location="row.entry.location"
+              :class="{ '!text-[10px]': isPinned }"
+            />
+            <span v-else>-</span>
+          </div>
+          <div>
+            <HashLink
+              v-if="row.entry.locationLabel"
+              :text="row.entry.locationLabel"
+              :location="row.entry.location"
+              :class="{ '!text-[10px]': isPinned }"
+            />
+            <span v-else>-</span>
+          </div>
+        </template>
+        <template #item.asset="{ row }">
+          <div class="flex items-center gap-2">
+            <HistoryEventAsset
+              :dense="isPinned"
+              :class="{ '-mt-2 -mb-1': isPinned }"
+              disable-options
+              :event="row.entry"
+            />
+            <RuiTooltip
+              v-if="row.isCloseMatch && isPinned"
+              :open-delay="200"
+            >
+              <template #activator>
+                <RuiIcon
+                  name="lu-thumbs-up"
+                  size="16"
+                  color="success"
+                />
+              </template>
+              {{ t('asset_movement_matching.dialog.recommended') }}
+            </RuiTooltip>
+          </div>
+          <ReuseRowActions
+            v-if="isPinned"
+            :row="row"
+          />
+        </template>
+        <template #item.actions="{ row }">
+          <ReuseRowActions :row="row" />
+        </template>
+      </RuiDataTable>
+    </div>
   </div>
 </template>

@@ -290,7 +290,7 @@ onUnmounted(() => {
               @close="closePotentialMatchesDrawer()"
               @matched="onPinnedMatched()"
               @show-in-events="showPotentialMatchInHistoryEvents($event)"
-              @show-unmatched-in-events="showInHistoryEvents(potentialMatchMovement!)"
+              @show-unmatched-in-events="showInHistoryEvents(potentialMatchMovement)"
             />
           </div>
         </RuiCard>

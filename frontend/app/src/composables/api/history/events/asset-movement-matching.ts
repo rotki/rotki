@@ -11,7 +11,7 @@ export interface AssetMovementMatchSuggestions {
 interface UseAssetMovementMatchingApiReturn {
   getUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<string[]>;
   getAssetMovementMatches: (assetMovement: string, timeRange: number, onlyExpectedAssets: boolean, tolerance: string) => Promise<AssetMovementMatchSuggestions>;
-  matchAssetMovements: (assetMovement: number, matchedEvent?: number | null) => Promise<boolean>;
+  matchAssetMovements: (assetMovement: number, matchedEvents?: number[]) => Promise<boolean>;
   unlinkAssetMovement: (identifier: number) => Promise<boolean>;
   triggerAssetMovementMatching: () => Promise<PendingTask>;
 }
@@ -32,10 +32,10 @@ export function useAssetMovementMatchingApi(): UseAssetMovementMatchingApiReturn
       tolerance,
     });
 
-  const matchAssetMovements = async (assetMovement: number, matchedEvent?: number | null): Promise<boolean> =>
+  const matchAssetMovements = async (assetMovement: number, matchedEvents?: number[]): Promise<boolean> =>
     api.put<boolean>('/history/events/match/asset_movements', {
       assetMovement,
-      ...(matchedEvent != null && { matchedEvent }),
+      ...(matchedEvents && matchedEvents.length > 0 && { matchedEvents }),
     });
 
   const unlinkAssetMovement = async (identifier: number): Promise<boolean> =>

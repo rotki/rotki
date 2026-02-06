@@ -49,7 +49,7 @@ function getDefaultTolerancePercentage(): string {
 const searchLoading = ref<boolean>(false);
 const matchingLoading = ref<boolean>(false);
 const potentialMatches = ref<PotentialMatchRow[]>([]);
-const selectedMatchId = ref<number>();
+const selectedMatchIds = ref<number[]>([]);
 const searchTimeRange = ref<string>(getDefaultHourRange().toString());
 const onlyExpectedAssets = ref<boolean>(true);
 const tolerancePercentage = ref<string>(getDefaultTolerancePercentage());
@@ -116,9 +116,9 @@ async function searchPotentialMatches(): Promise<void> {
 }
 
 async function confirmMatch(): Promise<void> {
-  const matchId = get(selectedMatchId);
+  const matchIds = get(selectedMatchIds);
 
-  if (!matchId)
+  if (matchIds.length === 0)
     return;
 
   set(matchingLoading, true);
@@ -130,7 +130,7 @@ async function confirmMatch(): Promise<void> {
     if (!assetMovementId)
       return;
 
-    const result = await matchAssetMovement(assetMovementId, matchId);
+    const result = await matchAssetMovement(assetMovementId, matchIds);
 
     if (result.success) {
       await refreshUnmatchedAssetMovements(true);
@@ -148,7 +148,7 @@ function close(): void {
 
 watchImmediate(() => props.movement, async () => {
   set(potentialMatches, []);
-  set(selectedMatchId, undefined);
+  set(selectedMatchIds, []);
   set(searchTimeRange, getDefaultHourRange().toString());
   set(onlyExpectedAssets, true);
   set(tolerancePercentage, getDefaultTolerancePercentage());
@@ -163,7 +163,7 @@ watchImmediate(() => props.movement, async () => {
       :class="isPinned ? 'px-4 py-2' : ''"
     >
       <PotentialMatchesList
-        v-model:selected-match-id="selectedMatchId"
+        v-model:selected-match-ids="selectedMatchIds"
         v-model:search-time-range="searchTimeRange"
         v-model:only-expected-assets="onlyExpectedAssets"
         v-model:tolerance-percentage="tolerancePercentage"
@@ -192,11 +192,18 @@ watchImmediate(() => props.movement, async () => {
       <RuiButton
         color="primary"
         :size="buttonSize"
-        :disabled="!selectedMatchId"
+        :disabled="selectedMatchIds.length === 0"
         :loading="matchingLoading"
         @click="confirmMatch()"
       >
         {{ t('asset_movement_matching.dialog.confirm_match') }}
+        <RuiChip
+          v-if="selectedMatchIds.length > 1"
+          size="sm"
+          class="ml-2 !py-0"
+        >
+          {{ selectedMatchIds.length }}
+        </RuiChip>
       </RuiButton>
     </div>
   </div>

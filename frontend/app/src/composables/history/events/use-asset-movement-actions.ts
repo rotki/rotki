@@ -15,7 +15,7 @@ interface UseAssetMovementActionsReturn {
   selectedUnmatched: Ref<string[]>;
   confirmIgnoreAllFiat: () => void;
   confirmIgnoreSelected: () => void;
-  confirmUnignoreSelected: () => void;
+  confirmRestoreSelected: () => void;
   ignoreMovement: (movement: UnmatchedAssetMovement) => Promise<void>;
   restoreMovement: (movement: UnmatchedAssetMovement) => Promise<void>;
 }
@@ -111,12 +111,12 @@ export function useAssetMovementActions(
     }, async () => ignoreSelectedMovements(get(selectedUnmatched)));
   }
 
-  function confirmUnignoreSelected(): void {
+  function confirmRestoreSelected(): void {
     const count = get(selectedIgnored).length;
     show({
-      message: t('asset_movement_matching.actions.unignore_selected_confirm', { count }),
+      message: t('asset_movement_matching.actions.restore_selected_confirm', { count }),
       primaryAction: t('common.actions.confirm'),
-      title: t('asset_movement_matching.actions.unignore_selected'),
+      title: t('asset_movement_matching.actions.restore_selected'),
     }, async () => unignoreSelectedMovements(get(selectedIgnored)));
   }
 
@@ -146,7 +146,7 @@ export function useAssetMovementActions(
   return {
     confirmIgnoreAllFiat,
     confirmIgnoreSelected,
-    confirmUnignoreSelected,
+    confirmRestoreSelected,
     fiatMovements,
     ignoreLoading,
     ignoreMovement,

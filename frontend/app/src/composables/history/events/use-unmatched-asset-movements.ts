@@ -37,7 +37,7 @@ interface UseUnmatchedAssetMovementsReturn {
   ignoredLoading: Ref<boolean>;
   autoMatchLoading: ComputedRef<boolean>;
   fetchUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<void>;
-  matchAssetMovement: (assetMovementId: number, matchedEventId: number) => Promise<ActionStatus>;
+  matchAssetMovement: (assetMovementId: number, matchedEventIds: number[]) => Promise<ActionStatus>;
   refreshUnmatchedAssetMovements: (skipIgnored?: boolean) => Promise<void>;
   triggerAssetMovementAutoMatching: () => Promise<void>;
 }
@@ -138,10 +138,10 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
   const matchAssetMovement = async (
     assetMovementId: number,
-    matchedEventId: number,
+    matchedEventIds: number[],
   ): Promise<ActionStatus> => {
     try {
-      const success = await matchAssetMovementsApi(assetMovementId, matchedEventId);
+      const success = await matchAssetMovementsApi(assetMovementId, matchedEventIds);
 
       if (success) {
         setMessage({

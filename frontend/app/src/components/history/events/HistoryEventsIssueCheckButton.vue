@@ -129,7 +129,7 @@ watch(showWarningButton, (value) => {
     variant="outlined"
     :color="buttonColor"
     class="h-9 [&>div]:!border-none"
-    :class="{ '!outline-rui-grey-500/[0.5]': !issueButtonEnabled }"
+    :class="{ '!outline-rui-grey-500 dark:!outline-rui-grey-600': !issueButtonEnabled }"
     :disabled="!issueButtonEnabled"
   >
     <RuiBadge

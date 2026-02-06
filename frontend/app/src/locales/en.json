@@ -1242,8 +1242,8 @@
       "ignore_fiat_tooltip": "Ignore all fiat currency movements (e.g., USD, EUR). These typically don't have corresponding on-chain events.",
       "ignore_selected": "Ignore Selected",
       "ignore_selected_confirm": "Are you sure you want to ignore {count} selected asset movement(s)? This action marks them as having no corresponding on-chain event.",
-      "unignore_selected": "Unignore Selected",
-      "unignore_selected_confirm": "Are you sure you want to restore {count} selected asset movement(s) to the unmatched list?"
+      "restore_selected": "Restore Selected",
+      "restore_selected_confirm": "Are you sure you want to restore {count} selected asset movement(s) to the unmatched list?"
     },
     "actions_pin": {
       "pin_section": "Pin Section",
@@ -1264,18 +1264,19 @@
     },
     "dialog": {
       "confirm_match": "Confirm Match",
-      "description": "Select an unmatched asset movement and find a matching blockchain transaction to link them together.",
+      "description": "Select an unmatched asset movement and find matching blockchain transactions to link them together.",
       "find_match": "Find Match",
       "ignore": "Ignore",
       "ignore_tooltip": "Mark this asset movement as having no corresponding on-chain event.",
       "ignored_description": "These asset movements have been marked as having no corresponding on-chain event. Restore them to retry matching.",
       "info_column": "Info",
       "manual_action": "Manual Action",
-      "matching_for": "Matching for:",
+      "matching_for": "Finding matches for the following asset movement.",
+      "matching_hint": "You can select one or more on-chain events to link.",
       "no_ignored": "No ignored asset movements.",
       "no_matches_found": "No potential matches found. Try adjusting the time range.",
       "no_unmatched": "All asset movements have been matched.",
-      "only_expected_assets": "Only show same assets",
+      "only_expected_assets": "Only show \nsame assets",
       "only_expected_assets_hint": "When enabled, only show events that are from or to addresses that belong to your tracked accounts, with matching amounts and timestamps.",
       "recommended": "Recommended",
       "restore": "Restore",

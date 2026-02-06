@@ -34,7 +34,7 @@ const {
 const {
   confirmIgnoreAllFiat,
   confirmIgnoreSelected,
-  confirmUnignoreSelected,
+  confirmRestoreSelected,
   fiatMovements,
   ignoreLoading,
   ignoreMovement,
@@ -82,7 +82,8 @@ onBeforeMount(async () => {
 
   <RuiTabItems
     v-model="activeTab"
-    :class="isPinned ? 'my-4 px-4' : 'my-4'"
+    class="my-4"
+    :class="isPinned ? 'px-4' : 'px-2'"
   >
     <RuiTabItem>
       <UnmatchedMovementsList
@@ -120,13 +121,13 @@ onBeforeMount(async () => {
   >
     <div
       v-if="activeTab === 0"
-      class="flex gap-2"
-      :class="{ 'flex-wrap': isPinned }"
+      class="flex"
     >
       <RuiButton
         variant="outlined"
         color="primary"
         :size="buttonSize"
+        class="rounded-r-none"
         :class="{ 'h-[30px]': isPinned }"
         :disabled="selectedUnmatched.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
@@ -152,6 +153,7 @@ onBeforeMount(async () => {
             variant="outlined"
             color="warning"
             :size="buttonSize"
+            class="rounded-l-none -ml-[1px]"
             :class="{ 'h-[30px]': isPinned }"
             :disabled="fiatMovements.length === 0 || ignoreLoading"
             :loading="ignoreLoading"
@@ -164,7 +166,7 @@ onBeforeMount(async () => {
       </RuiTooltip>
       <RuiButtonGroup
         color="primary"
-        :class="{ 'pl-3': !isPinned }"
+        :class="isPinned ? '!pl-2' : 'pl-3' "
         :disabled="autoMatchLoading"
       >
         <RuiTooltip
@@ -176,6 +178,7 @@ onBeforeMount(async () => {
             <RuiButton
               color="primary"
               class="!rounded-r-none"
+              :size="buttonSize"
               :class="isPinned ? 'h-[30px] !px-3' : 'h-9'"
               :disabled="unmatchedMovements.length === 0 || autoMatchLoading"
               :loading="autoMatchLoading"
@@ -203,9 +206,9 @@ onBeforeMount(async () => {
         :size="buttonSize"
         :disabled="selectedIgnored.length === 0 || ignoreLoading"
         :loading="ignoreLoading"
-        @click="confirmUnignoreSelected()"
+        @click="confirmRestoreSelected()"
       >
-        {{ t('asset_movement_matching.actions.unignore_selected') }}
+        {{ t('asset_movement_matching.actions.restore_selected') }}
         <RuiChip
           v-if="!isPinned && selectedIgnored.length > 0"
           size="sm"
