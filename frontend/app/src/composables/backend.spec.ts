@@ -1,9 +1,10 @@
 import { createTestingPinia } from '@pinia/testing';
 import { assert } from '@rotki/common';
+import { LogLevel } from '@shared/log-level';
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useBackendManagement } from '@/composables/backend';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { clearUserOptions, saveUserOptions, useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
 import { useMainStore } from '@/store/main';
 import { getBackendUrl } from '@/utils/account-management';
@@ -26,6 +27,13 @@ vi.mock('@/utils/account-management', () => ({
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';
 
+function getStoredOptions(): Record<string, unknown> | null {
+  const raw = localStorage.getItem(BACKEND_OPTIONS);
+  if (!raw)
+    return null;
+  return JSON.parse(raw);
+}
+
 describe('composables::backend', () => {
   beforeAll(() => {
     const pinia = createTestingPinia();
@@ -35,6 +43,88 @@ describe('composables::backend', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.removeItem(BACKEND_OPTIONS);
+  });
+
+  afterEach(() => {
+    localStorage.removeItem(BACKEND_OPTIONS);
+  });
+
+  describe('saveUserOptions', () => {
+    it('should save options to localStorage', () => {
+      saveUserOptions({ dataDirectory: '/test/data' });
+
+      const stored = getStoredOptions();
+      expect(stored).not.toBeNull();
+      expect(stored!.dataDirectory).toBe('/test/data');
+    });
+
+    it('should merge new options with existing ones', () => {
+      saveUserOptions({ dataDirectory: '/test/data' });
+      saveUserOptions({ loglevel: LogLevel.DEBUG });
+
+      const stored = getStoredOptions();
+      expect(stored!.dataDirectory).toBe('/test/data');
+      expect(stored!.loglevel).toBe(LogLevel.DEBUG);
+    });
+
+    it('should override existing values when the same key is saved', () => {
+      saveUserOptions({ dataDirectory: '/old/path' });
+      saveUserOptions({ dataDirectory: '/new/path' });
+
+      const stored = getStoredOptions();
+      expect(stored!.dataDirectory).toBe('/new/path');
+    });
+
+    it('should not clear existing options when saving empty config', () => {
+      saveUserOptions({ dataDirectory: '/test/data', loglevel: LogLevel.DEBUG });
+      saveUserOptions({});
+
+      const stored = getStoredOptions();
+      expect(stored!.dataDirectory).toBe('/test/data');
+      expect(stored!.loglevel).toBe(LogLevel.DEBUG);
+    });
+  });
+
+  describe('clearUserOptions', () => {
+    it('should remove all options from localStorage', () => {
+      saveUserOptions({ dataDirectory: '/test/data', loglevel: LogLevel.DEBUG });
+      expect(localStorage.getItem(BACKEND_OPTIONS)).not.toBeNull();
+
+      clearUserOptions();
+      expect(localStorage.getItem(BACKEND_OPTIONS)).toBeNull();
+    });
+
+    it('should not throw when localStorage is already empty', () => {
+      expect(localStorage.getItem(BACKEND_OPTIONS)).toBeNull();
+      expect(() => clearUserOptions()).not.toThrow();
+    });
+  });
+
+  describe('reset regression', () => {
+    it('should not restore old values when saving empty config after clear', () => {
+      saveUserOptions({ dataDirectory: '/custom/data' });
+      expect(getStoredOptions()!.dataDirectory).toBe('/custom/data');
+
+      clearUserOptions();
+      expect(localStorage.getItem(BACKEND_OPTIONS)).toBeNull();
+
+      // After clear, a subsequent saveUserOptions({}) must not bring back old values.
+      // This is the exact scenario that caused the bug: resetOptions used to call
+      // saveUserOptions({}) which merged {} with existing localStorage, preserving
+      // the old dataDirectory.
+      saveUserOptions({});
+      const stored = getStoredOptions();
+      expect(stored!.dataDirectory).toBeUndefined();
+    });
+
+    it('should allow saving new options after clear', () => {
+      saveUserOptions({ dataDirectory: '/old/path' });
+      clearUserOptions();
+
+      saveUserOptions({ dataDirectory: '/new/path' });
+      const stored = getStoredOptions();
+      expect(stored!.dataDirectory).toBe('/new/path');
+    });
   });
 
   describe('with file config', () => {
@@ -75,7 +165,7 @@ describe('composables::backend', () => {
     it('should get saved data in localStorage', async () => {
       const loaded = vi.fn();
       const savedOptions = {
-        loglevel: 'critical',
+        loglevel: LogLevel.CRITICAL,
         maxSizeInMbAllLogs: 10,
         sqliteInstructions: 100,
         maxLogfilesNum: 1000,
@@ -99,7 +189,7 @@ describe('composables::backend', () => {
 
       expect(get(options)).toStrictEqual({
         logDirectory: '/Users/home/rotki/logs',
-        loglevel: 'critical',
+        loglevel: LogLevel.CRITICAL,
         maxLogfilesNum: 1000,
         maxSizeInMbAllLogs: 10,
         sqliteInstructions: 100,
@@ -166,7 +256,7 @@ describe('composables::backend', () => {
       expect(useInterop().restartBackend).toBeCalledWith(expect.objectContaining(newOptions));
     });
 
-    it('should reset options', async () => {
+    it('should reset options and clear localStorage', async () => {
       vi.mocked(useInterop().config).mockResolvedValue({});
       let backendManagement: ReturnType<typeof useBackendManagement> | undefined;
 
@@ -185,9 +275,34 @@ describe('composables::backend', () => {
 
       await resetOptions();
 
-      expect(JSON.parse(localStorage.getItem(BACKEND_OPTIONS) || '')).toStrictEqual({});
+      expect(localStorage.getItem(BACKEND_OPTIONS)).toBeNull();
 
       expect(useInterop().restartBackend).toBeCalledWith({});
+    });
+
+    it('should clear persisted options so they do not reappear after reset', async () => {
+      localStorage.setItem(BACKEND_OPTIONS, JSON.stringify({ dataDirectory: '/custom/data' }));
+
+      let backendManagement: ReturnType<typeof useBackendManagement> | undefined;
+
+      mount({
+        template: '<div/>',
+        setup() {
+          backendManagement = useBackendManagement();
+        },
+      });
+
+      await nextTick();
+      await flushPromises();
+
+      assert(backendManagement);
+      const { resetOptions } = backendManagement;
+
+      await resetOptions();
+
+      // After reset, localStorage must be fully cleared so that stale options
+      // (like a custom dataDirectory) don't persist across sessions.
+      expect(localStorage.getItem(BACKEND_OPTIONS)).toBeNull();
     });
 
     it('should not restart backend session', async () => {

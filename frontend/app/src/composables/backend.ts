@@ -32,6 +32,10 @@ export function saveUserOptions(config: Partial<BackendOptions>): void {
   localStorage.setItem(BACKEND_OPTIONS, options);
 }
 
+export function clearUserOptions(): void {
+  localStorage.removeItem(BACKEND_OPTIONS);
+}
+
 interface UseBackendManagementReturn {
   applyUserOptions: (config: Partial<BackendOptions>, skipRestart: boolean) => Promise<void>;
   logLevel: Ref<LogLevel>;
@@ -100,7 +104,9 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   };
 
   const resetOptions = async (): Promise<void> => {
-    await applyUserOptions({});
+    clearUserOptions();
+    set(userOptions, {});
+    await restartBackendWithOptions(get(options));
   };
 
   const restartBackend = async (): Promise<void> => {
