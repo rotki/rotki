@@ -118,7 +118,7 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             left_event_id INTEGER NOT NULL,
             right_event_id INTEGER NOT NULL,
             link_type INTEGER NOT NULL,
-            PRIMARY KEY (left_event_id, link_type),
+            PRIMARY KEY (left_event_id, right_event_id, link_type),
             FOREIGN KEY(left_event_id) REFERENCES history_events(identifier) ON DELETE CASCADE,
             FOREIGN KEY(right_event_id) REFERENCES history_events(identifier) ON DELETE CASCADE
         );

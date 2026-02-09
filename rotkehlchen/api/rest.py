@@ -3531,13 +3531,13 @@ class RestAPI:
     def match_asset_movements(
             self,
             asset_movement_identifier: int,
-            matched_event_identifier: int | None,
+            matched_event_identifiers: list[int] | None,
     ) -> Response:
-        """Match an exchange asset movement to an onchain event, or mark the movement as having
-        no match if the matched_event_identifier is None.
+        """Match an exchange asset movement to one or more onchain events, or mark the movement
+        as having no match if matched_event_identifiers is None or empty.
         """
-        if matched_event_identifier is None:
-            # No matched event specified. Mark as having no match so this movement will be ignored.
+        if not matched_event_identifiers:
+            # No matched events specified. Mark as no match so this movement will be ignored.
             with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
                 write_cursor.execute(
                     'INSERT OR IGNORE INTO history_event_link_ignores(event_id, link_type) '
@@ -3547,22 +3547,22 @@ class RestAPI:
             return api_response(OK_RESULT)
 
         events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
-        asset_movement = matched_event = fee_event = None
+        asset_movement = fee_event = None
+        matched_events: dict[int, HistoryBaseEntry] = {}
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             for event in events_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
-                    identifiers=[asset_movement_identifier, matched_event_identifier],
+                    identifiers=[asset_movement_identifier, *matched_event_identifiers],
                 ),
             ):
                 if event.identifier == asset_movement_identifier:
                     asset_movement = event
-                elif event.identifier == matched_event_identifier:
-                    matched_event = event
+                elif event.identifier in matched_event_identifiers:
+                    matched_events[event.identifier] = event
 
             if (
                 asset_movement is not None and
-                matched_event is not None and
                 len(fee_events := events_db.get_history_events_internal(
                     cursor=cursor,
                     filter_query=HistoryEventFilterQuery.make(
@@ -3577,21 +3577,51 @@ class RestAPI:
                 fee_event = fee_events[0]  # Asset movements only support one fee
 
         if asset_movement is None or not isinstance(asset_movement, AssetMovement):
-            error_msg = f'No asset movement event found in the DB for identifier {asset_movement_identifier}'  # noqa: E501
-        elif matched_event is None:
-            error_msg = f'No event found in the DB for identifier {matched_event_identifier}'
-        else:
+            return api_response(wrap_in_fail_result(
+                message=f'No asset movement event found in the DB for identifier {asset_movement_identifier}',  # noqa: E501
+            ), HTTPStatus.BAD_REQUEST)
+
+        missing_ids = [eid for eid in matched_event_identifiers if eid not in matched_events]
+        if missing_ids:
+            return api_response(wrap_in_fail_result(
+                message=f'No events found in the DB for identifiers {missing_ids}',
+            ), HTTPStatus.BAD_REQUEST)
+
+        is_deposit = asset_movement.event_type == HistoryEventType.DEPOSIT
+        for matched_event in matched_events.values():
             success, error_msg = update_asset_movement_matched_event(
                 events_db=events_db,
                 asset_movement=asset_movement,
                 fee_event=fee_event,  # type: ignore[arg-type]  # Will be asset movement fee. Query is filtered by entry type above.
                 matched_event=matched_event,
-                is_deposit=asset_movement.event_type == HistoryEventType.DEPOSIT,
+                is_deposit=is_deposit,
             )
-            if success:
-                return api_response(OK_RESULT)
+            if not success:
+                return api_response(wrap_in_fail_result(message=error_msg), HTTPStatus.BAD_REQUEST)
 
-        return api_response(wrap_in_fail_result(message=error_msg), HTTPStatus.BAD_REQUEST)
+        # Move non-movement matched events into the asset movement's group so they all
+        # appear together. Auto-matching uses query-time joining via joined_group_ids,
+        # but manual matching physically moves events for proper 1:n grouping.
+        events_to_move = [
+            e for e in matched_events.values()
+            if not isinstance(e, AssetMovement)
+        ]
+        if events_to_move:
+            with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+                next_seq = write_cursor.execute(
+                    'SELECT COALESCE(MAX(sequence_index), -1) FROM history_events '
+                    'WHERE group_identifier = ?',
+                    (asset_movement.group_identifier,),
+                ).fetchone()[0] + 1
+                for event in events_to_move:
+                    write_cursor.execute(
+                        'UPDATE history_events SET group_identifier = ?, sequence_index = ? '
+                        'WHERE identifier = ?',
+                        (asset_movement.group_identifier, next_seq, event.identifier),
+                    )
+                    next_seq += 1
+
+        return api_response(OK_RESULT)
 
     def get_unmatched_asset_movements(self, only_ignored: bool) -> Response:
         """Get the group identifiers of unmatched asset movements.
@@ -3676,20 +3706,27 @@ class RestAPI:
         would risk overwriting user changes. For onchain events at least, the user can manually
         delete the event and redecode the tx to reset it if needed.
         """
+        link_type_db = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if (result := cursor.execute(
-                'SELECT left_event_id, right_event_id FROM history_event_links '
+                'SELECT left_event_id FROM history_event_links '
                 'WHERE link_type=? AND (left_event_id=? OR right_event_id=?)',
-                (HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(), identifier, identifier),  # noqa: E501
+                (link_type_db, identifier, identifier),
             ).fetchone()) is not None:
-                asset_movement_identifier, matched_event_identifier = result
+                asset_movement_identifier = result[0]
+                # Fetch ALL matched events for this movement (handles 1:n matching)
+                matched_event_identifiers = [row[0] for row in cursor.execute(
+                    'SELECT right_event_id FROM history_event_links '
+                    'WHERE left_event_id=? AND link_type=?',
+                    (asset_movement_identifier, link_type_db),
+                )]
             elif cursor.execute(
                 'SELECT 1 FROM history_event_link_ignores '
                 'WHERE event_id=? AND link_type=?',
-                (identifier, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()),
+                (identifier, link_type_db),
             ).fetchone() is not None:
                 asset_movement_identifier = identifier
-                matched_event_identifier = None
+                matched_event_identifiers = []
             else:
                 return api_response(wrap_in_fail_result(message=(
                     f'The specified identifier {identifier} does not correspond to either the '
@@ -3697,46 +3734,42 @@ class RestAPI:
                 )), HTTPStatus.BAD_REQUEST)
 
         with self.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
-            if matched_event_identifier is None:
+            if len(matched_event_identifiers) == 0:
                 write_cursor.execute(
                     'DELETE FROM history_event_link_ignores WHERE event_id=? AND link_type=?',
-                    (asset_movement_identifier, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()),  # noqa: E501
+                    (asset_movement_identifier, link_type_db),
                 )
             else:
                 write_cursor.execute(
                     'DELETE FROM history_event_links WHERE left_event_id=? AND link_type=?',
-                    (asset_movement_identifier, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()),  # noqa: E501
+                    (asset_movement_identifier, link_type_db),
                 )
-                write_cursor.execute(
-                    'DELETE FROM history_event_links WHERE left_event_id=? AND right_event_id=? '
-                    'AND link_type=?',
-                    (
-                        matched_event_identifier,
-                        asset_movement_identifier,
-                        HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db(),
-                    ),
-                )
+                for matched_event_identifier in matched_event_identifiers:
+                    write_cursor.execute(
+                        'DELETE FROM history_event_links WHERE left_event_id=? '
+                        'AND right_event_id=? AND link_type=?',
+                        (matched_event_identifier, asset_movement_identifier, link_type_db),
+                    )
                 # Remove any adjustment event that was added during matching
                 write_cursor.execute(
-                    'DELETE FROM history_events WHERE type=? AND group_identifier IN '
-                    '(SELECT group_identifier FROM history_events WHERE identifier IN (?, ?))'
+                    'DELETE FROM history_events WHERE type=? AND group_identifier='
+                    '(SELECT group_identifier FROM history_events WHERE identifier=?) '
                     'AND identifier IN (SELECT parent_identifier FROM history_events_mappings '
                     'WHERE name=? AND value=?)',
                     (
                         HistoryEventType.EXCHANGE_ADJUSTMENT.serialize(),
                         asset_movement_identifier,
-                        matched_event_identifier,
                         HISTORY_MAPPING_KEY_STATE,
                         HistoryMappingState.AUTO_MATCHED.serialize_for_db(),
                     ),
                 )
-                for id_to_restore in (matched_event_identifier, asset_movement_identifier):
+                for id_to_restore in (*matched_event_identifiers, asset_movement_identifier):
                     # Restore event from the backup created before matching
                     DBHistoryEvents.maybe_restore_history_event_from_backup(
                         write_cursor=write_cursor,
                         identifier=id_to_restore,
                     )
-                    # Remove the auto-matched event state
+                    # Remove the auto-matched event state and original seq idx cache
                     write_cursor.execute(
                         'DELETE FROM history_events_mappings '
                         'WHERE parent_identifier=? AND name=? AND value=?',
@@ -3745,6 +3778,11 @@ class RestAPI:
                             HISTORY_MAPPING_KEY_STATE,
                             HistoryMappingState.AUTO_MATCHED.serialize_for_db(),
                         ),
+                    )
+                    write_cursor.execute(
+                        "DELETE FROM key_value_cache WHERE "
+                        "name LIKE 'customized_event_original_%' AND value=?",
+                        (str(id_to_restore),),
                     )
 
         return api_response(OK_RESULT)

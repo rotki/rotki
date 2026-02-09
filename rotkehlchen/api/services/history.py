@@ -699,11 +699,15 @@ class HistoryService:
                 entries.append(serialized)
                 continue
 
+            is_matched_event = (
+                event.extra_data is not None and
+                'matched_asset_movement' in event.extra_data
+            )
             if (
-                replacement_group_id is not None and
+                (replacement_group_id is not None or is_matched_event) and
                 event.group_identifier != current_asset_movement_group_id and
                 ((  # this is the matched event
-                    event.extra_data is not None and
+                    is_matched_event and
                     (current_asset_movement_group_id := event.extra_data.get('matched_asset_movement', {}).get('group_identifier')) is not None  # noqa: E501
                 ) or (  # or the matched event was an asset movement and this is its fee event
                     event.entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT and
@@ -717,16 +721,30 @@ class HistoryService:
                     entries.append(current_group)
                     current_group, already_grouped_event_count, last_subtype_index = [], 0, None
 
+                if replacement_group_id is None and is_matched_event:
+                    # Manually matched event (physically moved to movement's group). Set
+                    # actual_group_identifier from extra_data since joined_group_ids won't have it.
+                    serialized['entry']['actual_group_identifier'] = event.extra_data['matched_asset_movement']['actual_group_identifier']  # noqa: E501
+
                 # Append to current_group and increment already_grouped_event_count so the logic
                 # below using the EVENT_GROUPING_ORDER works correctly for the asset movement.
                 current_group.append(serialized)
                 already_grouped_event_count += 1
+            elif (
+                current_asset_movement_group_id is not None and
+                event.group_identifier == current_asset_movement_group_id
+            ):  # Any event in same group as a matched movement (fee, adjustment, etc.)
+                if replacement_group_id is None and 'actual_group_identifier' not in serialized['entry']:  # noqa: E501
+                    # For events not moved (e.g. the movement, its fee, adjustment),
+                    # their actual_group_identifier is their current group_identifier.
+                    if is_matched_event:
+                        serialized['entry']['actual_group_identifier'] = event.extra_data['matched_asset_movement']['actual_group_identifier']  # noqa: E501
+                    else:
+                        serialized['entry']['actual_group_identifier'] = event.group_identifier
+                current_group.append(serialized)
             elif (event.entry_type in (
                 HistoryBaseEntryType.EVM_SWAP_EVENT,
                 HistoryBaseEntryType.SOLANA_SWAP_EVENT,
-            ) or (
-                event.group_identifier == current_asset_movement_group_id and
-                event.entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT
             )):
                 if (event_subtype_index := EVENT_GROUPING_ORDER[event.event_type].get(event.event_subtype)) is None:  # noqa: E501
                     log.error(

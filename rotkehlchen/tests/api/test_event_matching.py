@@ -70,7 +70,7 @@ def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
 
     assert_simple_ok_response(requests.put(
         url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
-        json={'asset_movement': 1, 'matched_event': 2},
+        json={'asset_movement': 1, 'matched_events': [2]},
     ))
     assert asset_movement.identifier is not None
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -84,7 +84,8 @@ def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
             filter_query=HistoryEventFilterQuery.make(),
         )
 
-    # Check that the matched event was properly updated
+    # Check that the matched event was properly updated and moved to the movement's group
+    original_group_identifier = matched_event.group_identifier
     matched_event.event_type = HistoryEventType.DEPOSIT
     matched_event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
     matched_event.counterparty = 'kraken'
@@ -93,7 +94,10 @@ def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
         'group_identifier': asset_movement.group_identifier,
         'exchange': 'kraken',
         'exchange_name': 'Kraken 1',
+        'actual_group_identifier': original_group_identifier,
     }}
+    matched_event.group_identifier = asset_movement.group_identifier
+    matched_event.sequence_index = 1  # next available in movement's group (movement has 0)
     assert events == [asset_movement, matched_event]
 
 
@@ -102,7 +106,7 @@ def test_match_asset_movements_errors(rotkehlchen_api_server: 'APIServer') -> No
     assert_error_response(
         response=requests.put(
             url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
-            json={'asset_movement': 1, 'matched_event': 2},
+            json={'asset_movement': 1, 'matched_events': [2]},
         ),
         status_code=HTTPStatus.BAD_REQUEST,
         contained_in_msg='No asset movement event found in the DB for identifier 1',
@@ -128,10 +132,10 @@ def test_match_asset_movements_errors(rotkehlchen_api_server: 'APIServer') -> No
     assert_error_response(
         response=requests.put(
             url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
-            json={'asset_movement': 1, 'matched_event': 2},
+            json={'asset_movement': 1, 'matched_events': [2]},
         ),
         status_code=HTTPStatus.BAD_REQUEST,
-        contained_in_msg='No event found in the DB for identifier 2',
+        contained_in_msg='No events found in the DB for identifiers [2]',
     )
 
 

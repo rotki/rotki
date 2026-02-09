@@ -366,7 +366,7 @@ class DBHistoryEvents:
             mapping_state=mapping_state,
         ) and isinstance(event, OnchainEvent):
             write_cursor.execute(
-                'INSERT INTO key_value_cache (name, value) VALUES (?, ?)',
+                'INSERT OR IGNORE INTO key_value_cache (name, value) VALUES (?, ?)',
                 (DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(
                     group_identifier=event.group_identifier,
                     sequence_index=old_data[6],
@@ -1929,6 +1929,8 @@ class DBHistoryEvents:
             movement_entry_type,
             match_entry_type,
         ) in matched_rows:
+            if movement_group_identifier == match_group_identifier:
+                continue  # Already in the same group, no joining needed
             movement_group_count = group_counts.get(movement_group_identifier, 0)
             match_group_count = group_counts.get(match_group_identifier, 0)
             if (

@@ -649,17 +649,9 @@ def update_asset_movement_matched_event(
         'group_identifier': asset_movement.group_identifier,
         'exchange': asset_movement.location.serialize(),
         'exchange_name': asset_movement.location_label,
+        'actual_group_identifier': matched_event.group_identifier,
     }
 
-    _maybe_add_adjustment_event(
-        events_db=events_db,
-        asset_movement=asset_movement,
-        fee_event=fee_event,
-        matched_event=matched_event,
-        is_deposit=is_deposit,
-    )
-
-    # Save the event and cache the matched identifiers
     with events_db.db.conn.write_ctx() as write_cursor:
         events_db.edit_history_event(
             write_cursor=write_cursor,
@@ -684,6 +676,14 @@ def update_asset_movement_matched_event(
             'MATCH_DEBUG: cached match movement_id='
             f'{asset_movement.identifier} matched_id={matched_event.identifier}',
         )
+
+    _maybe_add_adjustment_event(
+        events_db=events_db,
+        asset_movement=asset_movement,
+        fee_event=fee_event,
+        matched_event=matched_event,
+        is_deposit=is_deposit,
+    )
 
     return True, ''
 
