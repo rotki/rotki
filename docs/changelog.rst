@@ -21,7 +21,6 @@ Changelog
 * :bug:`11245` Users will now be able to select February in the date picker when the current date's day is greater than 28.
 * :bug:`-` Tags will no longer be duplicated in the assets view for EVM accounts.
 * :feature:`-` rotki is now available in Russian.
-* :feature:`11253` Premium users can now view their historical asset balances at any point in time, calculated from their transaction history.
 * :feature:`-` Users can now add smart contract addresses to all EVM chains at once. Contracts are automatically detected and tagged with a reserved "Contract" system tag. If users previously had a custom "Contract" tag, it will be updated to "Contract (Custom)".
 * :feature:`1606` Users can now query their Kraken Futures balances by providing Futures API keys in the exchange settings.
 * :feature:`11225` Transactions you send to your own address are now shown as neutral self-transactions.
