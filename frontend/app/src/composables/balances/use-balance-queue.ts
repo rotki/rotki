@@ -55,19 +55,24 @@ const sharedStats = ref<QueueStats>({
 
 const sharedItems = ref<Map<string, BalanceQueryQueueItem>>(new Map());
 
-// Singleton balance queue instance
+// Cached reference to the balance queue singleton
 let balanceQueue: BalanceQueueService<BalanceQueueMetadata> | null = null;
 let pollInterval: NodeJS.Timeout | null = null;
 
 function getBalanceQueue(): BalanceQueueService<BalanceQueueMetadata> {
-  if (!balanceQueue) {
-    balanceQueue = BalanceQueueService.getInstance<BalanceQueueMetadata>(2);
+  const current = BalanceQueueService.getInstance<BalanceQueueMetadata>(2);
 
-    // Set up progress callback to update shared state
+  // Detect if the singleton was reset (e.g. on logout) and reinitialize
+  if (current !== balanceQueue) {
+    stopPolling();
+    balanceQueue = current;
     balanceQueue.setOnProgress(() => {
       updateSharedState();
     });
+    set(sharedStats, { completed: 0, failed: 0, pending: 0, running: 0, total: 0 });
+    set(sharedItems, new Map());
   }
+
   return balanceQueue;
 }
 

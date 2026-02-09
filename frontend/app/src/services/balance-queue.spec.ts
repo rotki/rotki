@@ -201,7 +201,7 @@ describe('balanceQueueService', () => {
 
       queue.clear();
 
-      await expect(batchPromise).rejects.toThrow('Queue cleared');
+      await expect(batchPromise).resolves.toBeUndefined();
 
       expect(queue.getStats()).toMatchObject({
         pending: 0,
@@ -551,6 +551,46 @@ describe('balanceQueueService', () => {
       const instance2 = BalanceQueueService.getInstance<TestMetadata>();
 
       expect(instance1).not.toBe(instance2);
+    });
+
+    it('should have clean state on new instance after reset', async () => {
+      const instance1 = BalanceQueueService.getInstance<TestMetadata>();
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      // Process items including a failure to populate completedItems and failedItems
+      const items: QueueItem<TestMetadata>[] = [
+        {
+          executeFn: vi.fn().mockResolvedValue(undefined),
+          id: 'test-1',
+          metadata: { chain: 'eth' },
+          type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
+        },
+        {
+          executeFn: vi.fn().mockRejectedValue(new Error('fail')),
+          id: 'test-2',
+          metadata: { chain: 'btc' },
+          type: TaskType.QUERY_BLOCKCHAIN_BALANCES,
+        },
+      ];
+
+      await instance1.enqueueBatch(items);
+      expect(instance1.getStats().completed).toBe(1);
+      expect(instance1.getStats().failed).toBe(1);
+
+      BalanceQueueService.resetInstance();
+      const instance2 = BalanceQueueService.getInstance<TestMetadata>();
+
+      // New instance should have completely clean state
+      expect(instance2.getStats()).toEqual({
+        completed: 0,
+        failed: 0,
+        pending: 0,
+        running: 0,
+        total: 0,
+      });
+      expect(instance2.getAllItems()).toHaveLength(0);
+
+      consoleError.mockRestore();
     });
   });
 

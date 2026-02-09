@@ -237,15 +237,15 @@ export class BalanceQueueService<T extends QueueItemMetadata = QueueItemMetadata
     this.queue = [];
     this.runningItems.clear();
 
-    // Reject all pending item promises
+    // Resolve all pending item promises (clearing is intentional, not an error)
     for (const [, promise] of this.itemPromises) {
-      promise.reject(new Error('Queue cleared'));
+      promise.resolve();
     }
     this.itemPromises.clear();
 
-    // Reject all pending batch promises
+    // Resolve all pending batch promises
     for (const [, promise] of this.batchPromises) {
-      promise.reject(new Error('Queue cleared'));
+      promise.resolve();
     }
 
     this.batches.clear();
