@@ -10,7 +10,8 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { TableId } from '@/modules/table/use-remember-table-sorting';
 import { arrayify } from '@/utils/array';
 
-const { restorePersistedFilterSpy, savePersistedFilterSpy, useRouteMock, useRouterMock } = vi.hoisted(() => ({
+const { cancelByTagSpy, restorePersistedFilterSpy, savePersistedFilterSpy, useRouteMock, useRouterMock } = vi.hoisted(() => ({
+  cancelByTagSpy: vi.fn<(tag: string) => void>(),
   restorePersistedFilterSpy: vi.fn<() => Promise<void>>(),
   savePersistedFilterSpy: vi.fn<(query: Record<string, unknown>) => void>(),
   useRouteMock: vi.fn(),
@@ -22,6 +23,18 @@ vi.mock('@/modules/table/use-remember-table-filter', () => ({
     savePersistedFilter: savePersistedFilterSpy,
     restorePersistedFilter: restorePersistedFilterSpy,
   }),
+}));
+
+vi.mock('@/modules/api', () => ({
+  RequestCancelledError: class RequestCancelledError extends Error {
+    constructor(message: string = 'Request was cancelled') {
+      super(message);
+      this.name = 'RequestCancelledError';
+    }
+  },
+  api: {
+    cancelByTag: (tag: string): void => cancelByTagSpy(tag),
+  },
 }));
 
 vi.mock('vue-router', () => ({
@@ -41,6 +54,10 @@ interface TestItem {
 }
 
 type TestPayload = PaginationRequestPayload<TestItem>;
+
+interface TestPayloadWithLabels extends PaginationRequestPayload<TestItem> {
+  locationLabels?: string[];
+}
 
 interface TestFilters extends MatchedKeywordWithBehaviour<string> {
   asset?: string;
@@ -720,6 +737,305 @@ describe('composables::use-pagination-filter', () => {
         expect(savedQuery).toHaveProperty('asset');
         expect(savedQuery).not.toHaveProperty('txRefs');
       });
+    });
+  });
+
+  describe('fetchDebounce', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should debounce fetchData when fetchDebounce is set', async () => {
+      const requestFn = vi.fn().mockResolvedValue({
+        data: [],
+        found: 0,
+        limit: -1,
+        total: 0,
+      });
+
+      const { filters } = scope.run(() => usePaginationFilters<TestItem, TestPayload, TestFilters, TestMatcher>(requestFn, {
+        fetchDebounce: 200,
+        history: 'router',
+        filterSchema: () => createTestFilterSchema(),
+      }))!;
+
+      await nextTick();
+      await flushPromises();
+      requestFn.mockClear();
+
+      // Rapid filter changes within the debounce window
+      set(filters, { asset: 'ETH' });
+      await nextTick();
+      set(filters, { asset: 'BTC' });
+      await nextTick();
+      set(filters, { asset: 'USDT' });
+      await nextTick();
+
+      // Before debounce fires, no fetch should have been made
+      expect(requestFn).not.toHaveBeenCalled();
+
+      // Advance past the debounce window
+      await vi.advanceTimersByTimeAsync(250);
+      await flushPromises();
+
+      // Only one fetch should have been made (the final value)
+      expect(requestFn).toHaveBeenCalledTimes(1);
+    });
+
+    it('should fetch immediately when fetchDebounce is 0 (default)', async () => {
+      const requestFn = vi.fn().mockResolvedValue({
+        data: [],
+        found: 0,
+        limit: -1,
+        total: 0,
+      });
+
+      const { filters } = scope.run(() => usePaginationFilters<TestItem, TestPayload, TestFilters, TestMatcher>(requestFn, {
+        history: 'router',
+        filterSchema: () => createTestFilterSchema(),
+      }))!;
+
+      await nextTick();
+      await flushPromises();
+      requestFn.mockClear();
+
+      set(filters, { asset: 'ETH' });
+      await nextTick();
+      await flushPromises();
+
+      // Should fetch immediately without waiting for debounce
+      expect(requestFn).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('cancelTag', () => {
+    it('should call api.cancelByTag before each fetchData when cancelTag is set', async () => {
+      const requestFn = vi.fn().mockResolvedValue({
+        data: [],
+        found: 0,
+        limit: -1,
+        total: 0,
+      });
+
+      const { filters } = scope.run(() => usePaginationFilters<TestItem, TestPayload, TestFilters, TestMatcher>(requestFn, {
+        cancelTag: 'test-cancel-tag',
+        history: 'router',
+        filterSchema: () => createTestFilterSchema(),
+      }))!;
+
+      await nextTick();
+      await flushPromises();
+      cancelByTagSpy.mockClear();
+
+      set(filters, { asset: 'ETH' });
+      await nextTick();
+      await flushPromises();
+
+      expect(cancelByTagSpy).toHaveBeenCalledWith('test-cancel-tag');
+    });
+
+    it('should not call api.cancelByTag when cancelTag is not set', async () => {
+      const requestFn = vi.fn().mockResolvedValue({
+        data: [],
+        found: 0,
+        limit: -1,
+        total: 0,
+      });
+
+      const { filters } = scope.run(() => usePaginationFilters<TestItem, TestPayload, TestFilters, TestMatcher>(requestFn, {
+        history: 'router',
+        filterSchema: () => createTestFilterSchema(),
+      }))!;
+
+      await nextTick();
+      await flushPromises();
+      cancelByTagSpy.mockClear();
+
+      set(filters, { asset: 'ETH' });
+      await nextTick();
+      await flushPromises();
+
+      expect(cancelByTagSpy).not.toHaveBeenCalled();
+    });
+
+    it('should silently ignore RequestCancelledError in onError', async () => {
+      const { RequestCancelledError: MockRequestCancelledError } = await import('@/modules/api');
+      const requestFn = vi.fn().mockRejectedValue(new MockRequestCancelledError());
+
+      scope.run(() => usePaginationFilters<TestItem, TestPayload, TestFilters, TestMatcher>(requestFn, {
+        cancelTag: 'test-cancel-tag',
+        history: 'router',
+        filterSchema: () => createTestFilterSchema(),
+      }));
+
+      await nextTick();
+      await flushPromises();
+
+      // Should not throw and state should remain at default (empty collection)
+      // The test passes if no unhandled error is thrown
+    });
+
+    it('should still fetch when queryParamsOnly and requestParams change from the same source', async () => {
+      vi.useFakeTimers();
+
+      const requestFn = vi.fn().mockResolvedValue({
+        data: [],
+        found: 0,
+        limit: -1,
+        total: 0,
+      });
+
+      const locationLabels = ref<string[]>([]);
+
+      scope.run(() => usePaginationFilters<TestItem, TestPayloadWithLabels, TestFilters, TestMatcher>(requestFn, {
+        fetchDebounce: 200,
+        history: 'router',
+        filterSchema: () => createTestFilterSchema(),
+        requestParams: computed<Partial<{ locationLabels: string[] }>>(() => {
+          const labels = get(locationLabels);
+          return labels.length > 0 ? { locationLabels: labels } : {};
+        }),
+        queryParamsOnly: computed(() => ({
+          locationLabels: get(locationLabels),
+        })),
+      }));
+
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(250);
+      await flushPromises();
+      requestFn.mockClear();
+
+      // Simulate account filter change — this triggers both requestParams
+      // (which feeds into pageParams) and queryParamsOnly (which pushes the URL).
+      // Without the selfPush guard, the route push would trigger applyRouteFilter
+      // which re-sets filters/pagination, causing pageParams to recompute and
+      // overwrite watchDebounced's old value — making it skip the fetch.
+      set(locationLabels, ['0x1aEa862845522cFF463D11B9371EedEa73e458bE']);
+      await nextTick();
+      await flushPromises();
+
+      await vi.advanceTimersByTimeAsync(250);
+      await flushPromises();
+
+      expect(requestFn).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
+    });
+
+    it('should fetch when clearing locationLabels after having values', async () => {
+      vi.useFakeTimers();
+
+      const requestFn = vi.fn().mockResolvedValue({
+        data: [],
+        found: 0,
+        limit: -1,
+        total: 0,
+      });
+
+      const locationLabels = ref<string[]>(['0x1aEa862845522cFF463D11B9371EedEa73e458bE']);
+
+      scope.run(() => usePaginationFilters<TestItem, TestPayloadWithLabels, TestFilters, TestMatcher>(requestFn, {
+        fetchDebounce: 200,
+        history: 'router',
+        filterSchema: () => createTestFilterSchema(),
+        requestParams: computed<Partial<{ locationLabels: string[] }>>(() => {
+          const labels = get(locationLabels);
+          return labels.length > 0 ? { locationLabels: labels } : {};
+        }),
+        queryParamsOnly: computed(() => ({
+          locationLabels: get(locationLabels),
+        })),
+      }));
+
+      await nextTick();
+      await vi.advanceTimersByTimeAsync(250);
+      await flushPromises();
+      requestFn.mockClear();
+
+      // Clear the account filter
+      set(locationLabels, []);
+      await nextTick();
+      await flushPromises();
+
+      await vi.advanceTimersByTimeAsync(250);
+      await flushPromises();
+
+      expect(requestFn).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
+    });
+
+    it('should apply route filter on external navigation (browser back/forward)', async () => {
+      const requestFn = vi.fn().mockResolvedValue({
+        data: [],
+        found: 0,
+        limit: -1,
+        total: 0,
+      });
+
+      const { filters } = scope.run(() => usePaginationFilters<TestItem, TestPayload, TestFilters, TestMatcher>(requestFn, {
+        history: 'router',
+        filterSchema: () => createTestFilterSchema(),
+      }))!;
+
+      await nextTick();
+      await flushPromises();
+
+      // Simulate external navigation (browser back/forward) by directly changing the route
+      // This should apply filters from the route, unlike self-pushes which skip applyRouteFilter
+      set(mockRoute, { query: { asset: 'ETH', limit: '10' } });
+      await nextTick();
+      await flushPromises();
+
+      expect(get(filters)).toEqual(expect.objectContaining({ asset: 'ETH' }));
+    });
+
+    it('should cancel before fetching when combined with fetchDebounce', async () => {
+      vi.useFakeTimers();
+
+      const requestFn = vi.fn().mockResolvedValue({
+        data: [],
+        found: 0,
+        limit: -1,
+        total: 0,
+      });
+
+      const { filters } = scope.run(() => usePaginationFilters<TestItem, TestPayload, TestFilters, TestMatcher>(requestFn, {
+        cancelTag: 'debounced-cancel-tag',
+        fetchDebounce: 200,
+        history: 'router',
+        filterSchema: () => createTestFilterSchema(),
+      }))!;
+
+      await nextTick();
+      await flushPromises();
+      cancelByTagSpy.mockClear();
+      requestFn.mockClear();
+
+      set(filters, { asset: 'ETH' });
+      await nextTick();
+
+      // Before debounce, cancel should not have been called yet
+      expect(cancelByTagSpy).not.toHaveBeenCalled();
+
+      // Advance past debounce
+      await vi.advanceTimersByTimeAsync(250);
+      await flushPromises();
+
+      // Cancel should be called before the fetch
+      expect(cancelByTagSpy).toHaveBeenCalledWith('debounced-cancel-tag');
+      expect(requestFn).toHaveBeenCalledTimes(1);
+
+      // Verify cancel was called before fetch (cancel call index < request call index)
+      const cancelOrder = cancelByTagSpy.mock.invocationCallOrder[0];
+      const fetchOrder = requestFn.mock.invocationCallOrder[0];
+      expect(cancelOrder).toBeLessThan(fetchOrder);
+
+      vi.useRealTimers();
     });
   });
 });

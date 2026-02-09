@@ -13,6 +13,7 @@ import type {
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
+import { RequestCancelledError } from '@/modules/api/request-queue/errors';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useHistoryStore } from '@/store/history';
 import { useNotificationsStore } from '@/store/notifications';
@@ -24,7 +25,7 @@ import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';
 
 interface UseHistoryEventsReturn {
-  fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEventRow>>;
+  fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>, options?: { tags?: string[] }) => Promise<Collection<HistoryEventRow>>;
   addHistoryEvent: (event: AddHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
   editHistoryEvent: (event: ModifyHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
   deleteHistoryEvent: (eventIds: number[], forceDelete?: boolean) => Promise<ActionStatus>;
@@ -85,13 +86,14 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
 
   const fetchHistoryEvents = async (
     payload: MaybeRef<HistoryEventRequestPayload>,
+    options?: { tags?: string[] },
   ): Promise<Collection<HistoryEventRow>> => {
     try {
       const requestData = get(payload);
       const collection = mapCollectionResponse<
         HistoryEventCollectionRow,
         HistoryEventsCollectionResponse
-      >(await fetchHistoryEventsCaller(requestData));
+      >(await fetchHistoryEventsCaller(requestData, options));
 
       if (!requestData.aggregateByGroupIds) {
         populateAddressBook(collection);
@@ -118,6 +120,9 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
       return { data: flatData, ...others };
     }
     catch (error: any) {
+      if (error instanceof RequestCancelledError)
+        throw error;
+
       logger.error(error);
       notify({
         display: true,

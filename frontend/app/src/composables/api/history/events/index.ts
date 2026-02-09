@@ -56,7 +56,7 @@ interface UseHistoryEventsApiReturn {
   repullingExchangeEvents: (payload: RepullingExchangeEventsPayload) => Promise<PendingTask>;
   getTransactionTypeMappings: () => Promise<HistoryEventTypeData>;
   getHistoryEventCounterpartiesData: () => Promise<ActionDataEntry[]>;
-  fetchHistoryEvents: (payload: HistoryEventRequestPayload) => Promise<CollectionResponse<HistoryEventCollectionRow>>;
+  fetchHistoryEvents: (payload: HistoryEventRequestPayload, options?: { tags?: string[] }) => Promise<CollectionResponse<HistoryEventCollectionRow>>;
   queryOnlineHistoryEvents: (payload: OnlineHistoryEventsRequestPayload) => Promise<PendingTask>;
   queryExchangeEvents: (payload: QueryExchangeEventsPayload) => Promise<PendingTask>;
   exportHistoryEventsCSV: (filters: HistoryEventExportPayload, directoryPath?: string) => Promise<PendingTask>;
@@ -210,6 +210,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
 
   const fetchHistoryEvents = async (
     payload: HistoryEventRequestPayload,
+    options?: { tags?: string[] },
   ): Promise<CollectionResponse<HistoryEventCollectionRow>> => {
     const response = await api.post<CollectionResponse<HistoryEventCollectionRow>>(
       '/history/events',
@@ -217,6 +218,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
       {
         dedupe: true,
         maxQueueTime: 120_000,
+        tags: options?.tags,
         timeout: 90_000,
       },
     );

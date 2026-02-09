@@ -19,6 +19,7 @@ import {
   parseQueryHistory,
   parseQueryPagination,
 } from '@/composables/use-pagination-filter/utils';
+import { api, RequestCancelledError } from '@/modules/api';
 import { useRememberTableFilter } from '@/modules/table/use-remember-table-filter';
 import { useNotificationsStore } from '@/store/notifications';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
@@ -57,6 +58,8 @@ interface UsePaginationFiltersOptions<
   query?: Ref<LocationQuery>;
   queryParamsOnly?: ComputedRef<RawLocationQuery>;
   persistFilter?: ComputedRef<PersistFilterSetting>;
+  fetchDebounce?: number;
+  cancelTag?: string;
 }
 
 interface UsePaginationFilterReturn<
@@ -105,10 +108,12 @@ export function usePaginationFilters<
   const internalPagination = ref<TablePaginationData>(applyPaginationDefaults(get(itemsPerPage)));
 
   const {
+    cancelTag,
     defaultParams,
     defaultSortBy,
     // giving it a default value since it is watched, for cases where there are no extra params
     extraParams = computed<LocationQuery>(() => ({})),
+    fetchDebounce = 0,
     filterSchema = (): FilterSchema<TFilter, TSuggestionMatcher> => ({
       filters: ref({}) as Ref<TFilter>,
       matchers: computed<TSuggestionMatcher[]>(() => []),
@@ -247,6 +252,9 @@ export function usePaginationFilters<
       delay: 0,
       immediate: false,
       onError(e) {
+        if (e instanceof RequestCancelledError)
+          return;
+
         const error = e as FetchError<{ message: string }>;
         const path = error.request?.toString() ?? '';
         const code = error.statusCode?.toString() ?? '';
@@ -366,6 +374,9 @@ export function usePaginationFilters<
    * @returns {Promise<void>}
    */
   const fetchData = async (): Promise<void> => {
+    if (cancelTag)
+      api.cancelByTag(cancelTag);
+
     await execute(0, pageParams);
   };
 
@@ -389,6 +400,8 @@ export function usePaginationFilters<
     set(filters, newFilter);
   };
 
+  let selfPush = false;
+
   async function updateQuery(): Promise<void> {
     const hasHistory = get(history);
     const isHistoryEnabled = hasHistory !== false;
@@ -399,11 +412,17 @@ export function usePaginationFilters<
 
     const routeQuery = getQuery();
     if (!isEqual(route.query, routeQuery)) {
-      if (hasHistory === 'router') {
-        await router.push({ query: routeQuery });
+      selfPush = true;
+      try {
+        if (hasHistory === 'router') {
+          await router.push({ query: routeQuery });
+        }
+        else {
+          set(query, routeQuery);
+        }
       }
-      else {
-        set(query, routeQuery);
+      finally {
+        selfPush = false;
       }
       set(userAction, false);
     }
@@ -421,7 +440,9 @@ export function usePaginationFilters<
       await restorePersistedFilter();
     }
 
-    applyRouteFilter();
+    // Skip re-applying filters when we ourselves pushed the route — state is already correct.
+    if (!selfPush)
+      applyRouteFilter();
 
     /**
      * Capture transient key values after route filter is applied, so the values
@@ -461,7 +482,7 @@ export function usePaginationFilters<
     await updateQuery();
   });
 
-  watch(pageParams, async (params, op) => {
+  const fetchHandler = async (params: TPayload, op: TPayload): Promise<void> => {
     if (isEqual(params, op))
       return;
 
@@ -491,7 +512,14 @@ export function usePaginationFilters<
 
     await updateQuery();
     await fetchData();
-  });
+  };
+
+  if (fetchDebounce > 0) {
+    watchDebounced(pageParams, fetchHandler, { debounce: fetchDebounce });
+  }
+  else {
+    watch(pageParams, fetchHandler);
+  }
 
   return {
     fetchData,

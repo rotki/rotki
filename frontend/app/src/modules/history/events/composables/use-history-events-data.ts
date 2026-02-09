@@ -3,13 +3,17 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import type { Collection } from '@/types/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import { startPromise } from '@shared/utils';
 import { flatten } from 'es-toolkit';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useRefWithDebounce } from '@/composables/ref';
+import { RequestCancelledError } from '@/modules/api/request-queue/errors';
+import { api } from '@/modules/api/rotki-api';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
+import { logger } from '@/utils/logging';
 
 interface UseHistoryEventsDataOptions {
   groups: Ref<Collection<HistoryEventRow>>;
@@ -41,6 +45,7 @@ interface UseHistoryEventsDataReturn {
   groups: ComputedRef<HistoryEventEntry[]>;
   events: ComputedRef<HistoryEventEntry[]>;
   rawEvents: Ref<HistoryEventRow[]>;
+  fetchEvents: () => Promise<void>;
   toggleShowIgnoredAssets: (groupId: string) => void;
 }
 
@@ -51,6 +56,8 @@ export function useHistoryEventsData(
   const { excludeIgnored, groupLoading, groups, identifiers, pageParams } = options;
 
   const eventsLoading = ref<boolean>(false);
+  const events = ref<HistoryEventRow[]>([]);
+  let fetchVersion = 0;
 
   // Extract collection data
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
@@ -64,30 +71,45 @@ export function useHistoryEventsData(
     get(data).flatMap(item => Array.isArray(item) ? item.map(i => i.groupIdentifier) : item.groupIdentifier),
   );
 
+  const EVENTS_CANCEL_TAG = 'history-events-detail';
+
   // Fetches all events for the currently displayed groups.
   // limit: -1 fetches all matching events, but the scope is bounded by groupIdentifiers
   // which only includes groups visible on the current page.
-  const events: Ref<HistoryEventRow[]> = asyncComputed(async () => {
+  async function fetchEvents(): Promise<void> {
     const groupIds = get(groupIdentifiers);
+    if (groupIds.length === 0) {
+      set(events, []);
+      return;
+    }
 
-    if (groupIds.length === 0)
-      return [];
+    const currentVersion = ++fetchVersion;
+    set(eventsLoading, true);
+    api.cancelByTag(EVENTS_CANCEL_TAG);
 
-    const response = await fetchHistoryEvents({
-      ...get(pageParams),
-      aggregateByGroupIds: false,
-      excludeIgnoredAssets: false,
-      groupIdentifiers: groupIds,
-      identifiers: get(identifiers),
-      limit: -1,
-      offset: 0,
-    });
+    try {
+      const response = await fetchHistoryEvents({
+        ...get(pageParams),
+        aggregateByGroupIds: false,
+        excludeIgnoredAssets: false,
+        groupIdentifiers: groupIds,
+        identifiers: get(identifiers),
+        limit: -1,
+        offset: 0,
+      }, { tags: [EVENTS_CANCEL_TAG] });
 
-    return response.data;
-  }, [], {
-    evaluating: eventsLoading,
-    lazy: true,
-  });
+      if (currentVersion === fetchVersion)
+        set(events, response.data);
+    }
+    catch (error: any) {
+      if (!(error instanceof RequestCancelledError))
+        logger.error(error);
+    }
+    finally {
+      if (currentVersion === fetchVersion)
+        set(eventsLoading, false);
+    }
+  }
 
   // Groups events by their groupIdentifier, filtering out hidden events
   const allEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => {
@@ -198,12 +220,24 @@ export function useHistoryEventsData(
     }
   });
 
+  // Cancel stale events fetch as soon as new groups fetch starts
+  watch(groupLoading, (loading) => {
+    if (loading)
+      api.cancelByTag(EVENTS_CANCEL_TAG);
+  });
+
+  // Trigger events fetch when groups change (tied to fetchData completion in pagination filter)
+  watchImmediate(data, () => {
+    startPromise(fetchEvents());
+  });
+
   return {
     allEventsMapped,
     displayedEventsMapped,
     entriesFoundTotal,
     events: flattenedEvents,
     eventsLoading,
+    fetchEvents,
     found,
     groups: flattenedGroups,
     groupsShowingIgnoredAssets,

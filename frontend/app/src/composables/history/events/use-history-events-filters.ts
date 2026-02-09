@@ -1,5 +1,5 @@
 import type { ContextColorsType, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRef, Ref } from 'vue';
 import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { Collection } from '@/types/collection';
@@ -101,9 +101,16 @@ export function useHistoryEventsFilters(
   const locationLabels = ref<string[]>([]);
   const locationOverview = ref(get(location));
 
+  const GROUPS_CANCEL_TAG = 'history-events-groups';
+
   const route = useRoute();
   const router = useRouter();
   const { fetchHistoryEvents } = useHistoryEvents();
+
+  const fetchHistoryEventsTagged = async (
+    payload: MaybeRef<HistoryEventRequestPayload>,
+  ): Promise<Collection<HistoryEventRow>> =>
+    fetchHistoryEvents(payload, { tags: [GROUPS_CANCEL_TAG] });
 
   // Define these early since they're used in extraParams / requestParams
   const missingAcquisitionFromQuery = computed<string[] | undefined>(() => {
@@ -153,7 +160,8 @@ export function useHistoryEventsFilters(
     HistoryEventRequestPayload,
     Filters,
     Matcher
-  >(fetchHistoryEvents, {
+  >(fetchHistoryEventsTagged, {
+    cancelTag: GROUPS_CANCEL_TAG,
     defaultParams: computed(() => {
       if (isDefined(entryTypes) && get(entryTypes)) {
         return {
@@ -164,6 +172,7 @@ export function useHistoryEventsFilters(
       }
       return {};
     }),
+    fetchDebounce: 200,
     extraParams: computed(() => {
       const stateMarkers = get(toggles, 'stateMarkers');
       return {
@@ -333,13 +342,6 @@ export function useHistoryEventsFilters(
     // Update locationOverview when filter location changes
     if (filterChanged)
       set(locationOverview, filters.location);
-
-    // When accounts change, trigger a filter update to force re-fetch with new location labels
-    // The setPage(1) is handled by usePaginationFilters watch on [filters, extraParams]
-    if (accountsChanged && get(usedLocationLabels).length > 0) {
-      const updatedFilter = { ...get(filters) };
-      updateFilter(updatedFilter);
-    }
   }, { debounce: 100 });
 
   return {
