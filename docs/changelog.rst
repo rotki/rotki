@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` The Kraken staking page will no longer get stuck on the loading screen when the backend is unresponsive.
 * :feature:`-` Users can now export CSV reports for any PnL report, including the old ones.
 * :bug:`11551` Unrelated ENS events should no longer appear in your events if bundled in a transaction affecting you.
 * :bug:`-` More Gearbox reward claims will now be automatically decoded in the history view.

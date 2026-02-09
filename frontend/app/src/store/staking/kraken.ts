@@ -76,7 +76,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
 
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
-  const { isFirstLoad, loading, resetStatus, setStatus } = useStatusUpdater(Section.STAKING_KRAKEN);
+  const { isFirstLoad, loading, setStatus } = useStatusUpdater(Section.STAKING_KRAKEN);
 
   const refreshEvents = async (): Promise<void> => {
     const { taskId } = await api.refreshKrakenStaking();
@@ -120,7 +120,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     }
     catch (error: any) {
       logger.error(error);
-      resetStatus();
+      setStatus(Status.LOADED);
       notify({
         display: true,
         message: t('actions.kraken_staking.error.message', {
