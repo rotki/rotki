@@ -101,6 +101,101 @@ def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
     assert events == [asset_movement, matched_event]
 
 
+def test_match_asset_movements_1_to_n(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test matching one asset movement to multiple onchain events (1:n matching)."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                (asset_movement := AssetMovement(
+                    identifier=1,
+                    location=Location.KRAKEN,
+                    event_type=HistoryEventType.WITHDRAWAL,
+                    timestamp=TimestampMS(1510000000000),
+                    asset=A_ETH,
+                    amount=FVal('1.0'),
+                    unique_id='1',
+                    location_label='Kraken 1',
+                )),
+                EvmEvent(
+                    identifier=2,
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(1510000000001),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_ETH,
+                    amount=FVal('0.6'),
+                    location_label=(user_address := make_evm_address()),
+                ),
+                EvmEvent(
+                    identifier=3,
+                    tx_ref=make_evm_tx_hash(),
+                    sequence_index=0,
+                    timestamp=TimestampMS(1510000000002),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_ETH,
+                    amount=FVal('0.4'),
+                    location_label=user_address,
+                ),
+            ],
+        )
+
+    # Match 1 movement to 2 events (1:n)
+    assert_simple_ok_response(requests.put(
+        url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+        json={'asset_movement': 1, 'matched_events': [2, 3]},
+    ))
+
+    # Verify both links exist
+    with rotki.data.db.conn.read_ctx() as cursor:
+        link_type_db = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
+        linked_ids = sorted([row[0] for row in cursor.execute(
+            'SELECT right_event_id FROM history_event_links '
+            'WHERE left_event_id=? AND link_type=?',
+            (1, link_type_db),
+        )])
+        assert linked_ids == [2, 3]
+
+        # Verify both events were moved to the movement's group
+        events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+
+    # Amounts sum to exactly 1.0 (0.6 + 0.4), so no adjustment event should exist
+    assert len(events) == 3
+    assert events[0] == asset_movement
+
+    # Both matched events should be in the movement's group
+    for event in events[1:]:
+        assert event.group_identifier == asset_movement.group_identifier
+        assert event.extra_data is not None
+        assert 'matched_asset_movement' in event.extra_data
+
+    # Unlink and verify all events are restored
+    assert_simple_ok_response(requests.delete(
+        url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+        json={'identifier': 2},
+    ))
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_event_links WHERE left_event_id=? AND link_type=?',
+            (1, link_type_db),
+        ).fetchone()[0] == 0
+        events_after_unlink = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+        )
+    # All events should be restored to their original state
+    assert len(events_after_unlink) == 3
+
+
 def test_match_asset_movements_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test error cases when matching asset movements."""
     assert_error_response(

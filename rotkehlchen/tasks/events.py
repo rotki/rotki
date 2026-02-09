@@ -496,15 +496,20 @@ def get_unmatched_asset_movements(
     return asset_movements, fee_events
 
 
-def _maybe_add_adjustment_event(
+def maybe_add_adjustment_event(
         events_db: DBHistoryEvents,
         asset_movement: AssetMovement,
         fee_event: AssetMovement | None,
-        matched_event: HistoryBaseEntry,
+        matched_amount: FVal,
+        matched_group_identifiers: list[str],
         is_deposit: bool,
 ) -> None:
     """Add an event to cover the difference between the amounts of the movement and its match.
     Takes no action if the amounts match or if existing events already cover the difference.
+
+    Args:
+        matched_amount: The total matched amount (sum of all matched events for 1:n matching).
+        matched_group_identifiers: Group identifiers to check for existing adjustment events.
     """
     # Include the fee amount only for deposits since for withdrawals the matched event happens
     # after the fee has already been deducted.
@@ -513,20 +518,21 @@ def _maybe_add_adjustment_event(
         fee_event is not None and
         fee_event.asset == asset_movement.asset
     ) else asset_movement.amount
-    if matched_event.amount in (movement_amount_with_fee, asset_movement.amount):
+    if matched_amount in (movement_amount_with_fee, asset_movement.amount):
         return  # Don't add an adjustment if the amount is an exact match
 
     # Get any existing events
     with events_db.db.conn.read_ctx() as cursor:
-        amount_diff = abs(movement_amount_with_fee - matched_event.amount)
+        amount_diff = abs(movement_amount_with_fee - matched_amount)
+        group_placeholders = ','.join('?' for _ in matched_group_identifiers)
         has_correct_adjustment_event, events_to_delete = False, []
         for adjustment_id, adjustment_amount in cursor.execute(
             'SELECT identifier, amount FROM history_events WHERE entry_type=? '
-            'AND group_identifier IN (?,?) AND asset=? AND type=? AND subtype IN (?,?)',
+            f'AND group_identifier IN ({group_placeholders}) '
+            'AND asset=? AND type=? AND subtype IN (?,?)',
             (
                 HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
-                asset_movement.group_identifier,
-                matched_event.group_identifier,  # include the matched event since it may also be an asset movement.  # noqa: E501
+                *matched_group_identifiers,
                 asset_movement.asset.identifier,
                 HistoryEventType.EXCHANGE_ADJUSTMENT.serialize(),
                 HistoryEventSubType.SPEND.serialize(),
@@ -581,8 +587,8 @@ def _maybe_add_adjustment_event(
                 location=asset_movement.location,
                 event_type=HistoryEventType.EXCHANGE_ADJUSTMENT,
                 event_subtype=HistoryEventSubType.SPEND if (
-                    (is_deposit and movement_amount_with_fee > matched_event.amount) or
-                    (not is_deposit and movement_amount_with_fee < matched_event.amount)
+                    (is_deposit and movement_amount_with_fee > matched_amount) or
+                    (not is_deposit and movement_amount_with_fee < matched_amount)
                 ) else HistoryEventSubType.RECEIVE,
                 asset=asset_movement.asset,
                 amount=amount_diff,
@@ -602,10 +608,15 @@ def update_asset_movement_matched_event(
         fee_event: AssetMovement | None,
         matched_event: HistoryBaseEntry,
         is_deposit: bool,
+        create_adjustment: bool = True,
 ) -> tuple[bool, str]:
     """Update the given matched event with proper event_type, counterparty, etc and cache the
     event identifiers. Returns a tuple containing a boolean indicating success and a string
     containing any error message.
+
+    If create_adjustment is False, the caller is responsible for calling
+    maybe_add_adjustment_event separately (used for 1:n matching where the
+    adjustment should be based on the aggregate matched amount).
     """
     should_edit_notes = True
     if isinstance(matched_event, OnchainEvent):
@@ -673,17 +684,22 @@ def update_asset_movement_matched_event(
             ),
         )
         log.debug(
-            'MATCH_DEBUG: cached match movement_id='
+            f'Cached asset movement match movement_id='
             f'{asset_movement.identifier} matched_id={matched_event.identifier}',
         )
 
-    _maybe_add_adjustment_event(
-        events_db=events_db,
-        asset_movement=asset_movement,
-        fee_event=fee_event,
-        matched_event=matched_event,
-        is_deposit=is_deposit,
-    )
+    if create_adjustment:
+        maybe_add_adjustment_event(
+            events_db=events_db,
+            asset_movement=asset_movement,
+            fee_event=fee_event,
+            matched_amount=matched_event.amount,
+            matched_group_identifiers=[
+                asset_movement.group_identifier,
+                matched_event.group_identifier,
+            ],
+            is_deposit=is_deposit,
+        )
 
     return True, ''
 

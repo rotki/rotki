@@ -157,6 +157,7 @@ from rotkehlchen.tasks.events import (
     find_customized_event_duplicate_groups,
     get_already_matched_event_ids,
     get_unmatched_asset_movements,
+    maybe_add_adjustment_event,
     process_asset_movements,
     should_exclude_possible_match,
     update_asset_movement_matched_event,
@@ -3549,6 +3550,7 @@ class RestAPI:
         events_db = DBHistoryEvents(database=self.rotkehlchen.data.db)
         asset_movement = fee_event = None
         matched_events: dict[int, HistoryBaseEntry] = {}
+        matched_id_set = set(matched_event_identifiers)
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             for event in events_db.get_history_events_internal(
                 cursor=cursor,
@@ -3558,7 +3560,7 @@ class RestAPI:
             ):
                 if event.identifier == asset_movement_identifier:
                     asset_movement = event
-                elif event.identifier in matched_event_identifiers:
+                elif event.identifier in matched_id_set:
                     matched_events[event.identifier] = event
 
             if (
@@ -3588,6 +3590,7 @@ class RestAPI:
             ), HTTPStatus.BAD_REQUEST)
 
         is_deposit = asset_movement.event_type == HistoryEventType.DEPOSIT
+        is_multi_match = len(matched_events) > 1
         for matched_event in matched_events.values():
             success, error_msg = update_asset_movement_matched_event(
                 events_db=events_db,
@@ -3595,6 +3598,7 @@ class RestAPI:
                 fee_event=fee_event,  # type: ignore[arg-type]  # Will be asset movement fee. Query is filtered by entry type above.
                 matched_event=matched_event,
                 is_deposit=is_deposit,
+                create_adjustment=not is_multi_match,
             )
             if not success:
                 return api_response(wrap_in_fail_result(message=error_msg), HTTPStatus.BAD_REQUEST)
@@ -3620,6 +3624,22 @@ class RestAPI:
                         (asset_movement.group_identifier, next_seq, event.identifier),
                     )
                     next_seq += 1
+
+        if is_multi_match:
+            # For 1:n matching, create a single adjustment based on the aggregate
+            # matched amount rather than per-event adjustments.
+            total_matched_amount = sum(e.amount for e in matched_events.values())
+            maybe_add_adjustment_event(
+                events_db=events_db,
+                asset_movement=asset_movement,
+                fee_event=fee_event,  # type: ignore[arg-type]
+                matched_amount=total_matched_amount,
+                matched_group_identifiers=list({
+                    asset_movement.group_identifier,
+                    *(e.group_identifier for e in matched_events.values()),
+                }),
+                is_deposit=is_deposit,
+            )
 
         return api_response(OK_RESULT)
 

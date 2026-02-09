@@ -322,7 +322,7 @@ class DBHistoryEvents:
     ) -> None:
         """
         Edit a history entry to the DB with information provided by the user.
-        NOTE: It edits all the fields except the extra_data one.
+        NOTE: It edits all fields including extra_data.
         Marks the event with the specified mapping state.
         Only tracks modification for balance cache invalidation if balance-affecting
         fields change (timestamp, asset, amount, type, subtype, location_label).
@@ -1921,6 +1921,7 @@ class DBHistoryEvents:
                 group_counts[row[0]] = row[1]
 
         asset_movement_entry_type = HistoryBaseEntryType.ASSET_MOVEMENT_EVENT.serialize_for_db()
+        same_group_match_ids: dict[str, set[int]] = defaultdict(set)
         for (
             movement_id,
             match_id,
@@ -1930,7 +1931,11 @@ class DBHistoryEvents:
             match_entry_type,
         ) in matched_rows:
             if movement_group_identifier == match_group_identifier:
-                continue  # Already in the same group, no joining needed
+                # Manually matched events physically moved to the movement's group.
+                # Track their IDs so we can reorder them to appear before the movement
+                # during serialization (the serialization needs matched events first).
+                same_group_match_ids[movement_group_identifier].add(match_id)
+                continue
             movement_group_count = group_counts.get(movement_group_identifier, 0)
             match_group_count = group_counts.get(match_group_identifier, 0)
             if (
@@ -2026,7 +2031,14 @@ class DBHistoryEvents:
                 )
 
             for group_identifier, events in events_by_group.items():
-                if (
+                if (match_ids := same_group_match_ids.get(group_identifier)):
+                    # Manually matched 1:n events in same group. Reorder so matched events
+                    # appear before the movement, allowing serialization to detect them first.
+                    matched = [e for e in events if e.identifier in match_ids]
+                    others = [e for e in events if e.identifier not in match_ids]
+                    processed_events_result.extend(matched + others)  # type: ignore[arg-type]
+                    continue
+                elif (
                     (movement_info := match_group_to_movement_info.get(group_identifier)) is not None and  # noqa: E501
                     (match_info := movement_group_to_match_info.get(movement_group_id := movement_info[0])) is not None and  # noqa: E501
                     len(match_events := [x for x in events if x.identifier == match_info[0]]) == 1
