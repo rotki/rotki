@@ -1086,7 +1086,7 @@ class GlobalDBHandler:
                 details = EvmTokenDetectionData(
                     identifier=identifier,
                     address=address,
-                    decimals=decimals if decimals is not None else DEFAULT_TOKEN_DECIMALS,  # TODO: at least two tokens are missing the decimals in my DB and also the EvmToken class allows decimals to be None. We need to think if that is correct and if we should enforce or not for all the erc20s to have decimals.  # noqa: E501
+                    decimals=decimals if decimals is not None else DEFAULT_TOKEN_DECIMALS,  # TODO: At least two tokens are missing decimals in my DB, and the EvmToken class allows decimals to be None. We need to determine if this is correct and whether we should enforce decimals for all ERC20 tokens.  # noqa: E501
                 )
                 if token_kind == erc721_token_kind:
                     erc721_tokens.append(details)
