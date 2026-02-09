@@ -210,6 +210,16 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             return 1
 
         if self.event_subtype == HistoryEventSubType.FEE:
+            event_settings, _ = accounting.events_accountant.rules_manager.get_event_settings(self)
+            if event_settings is None:
+                taxable = True
+                count_entire_amount_spend = True
+                count_cost_basis_pnl = True
+            else:
+                taxable = event_settings.taxable
+                count_entire_amount_spend = event_settings.count_entire_amount_spend
+                count_cost_basis_pnl = event_settings.count_cost_basis_pnl
+
             accounting.add_out_event(
                 originating_event_id=self.identifier,
                 event_type=AccountingEventType.ASSET_MOVEMENT,
@@ -218,9 +228,9 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
                 timestamp=ts_ms_to_sec(self.timestamp),
                 asset=self.asset,
                 amount=self.amount,
-                taxable=True,
-                count_entire_amount_spend=True,
-                count_cost_basis_pnl=True,
+                taxable=taxable,
+                count_entire_amount_spend=count_entire_amount_spend,
+                count_cost_basis_pnl=count_cost_basis_pnl,
             )
 
         return 1
