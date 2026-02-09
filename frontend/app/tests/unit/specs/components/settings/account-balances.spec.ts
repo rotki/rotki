@@ -21,7 +21,10 @@ vi.mock('vue-router', () => ({
         offset: '0',
       },
     })),
-  useRouter: vi.fn(),
+  useRouter: vi.fn().mockImplementation(() => ({
+    currentRoute: ref({ path: '' }),
+    push: vi.fn(),
+  })),
   createRouter: vi.fn().mockImplementation(() => ({
     beforeEach: vi.fn(),
   })),

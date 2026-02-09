@@ -3,21 +3,10 @@ import { bigNumberify } from '@rotki/common';
 import { createCustomPinia } from '@test/utils/create-pinia';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import ValueDisplay from '@/modules/amount-display/components/ValueDisplay.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useCurrencies } from '@/types/currencies';
-
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn(),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(),
-  }),
-  createRouter: vi.fn().mockImplementation(() => ({
-    beforeEach: vi.fn(),
-  })),
-  createWebHashHistory: vi.fn(),
-}));
 
 describe('modules/amount-display/components/ValueDisplay', () => {
   let wrapper: VueWrapper<InstanceType<typeof ValueDisplay>>;

@@ -14,17 +14,6 @@ vi.mock('@/composables/electron-interop', () => ({
   }),
 }));
 
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn(),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(),
-  }),
-  createRouter: vi.fn().mockImplementation(() => ({
-    beforeEach: vi.fn(),
-  })),
-  createWebHashHistory: vi.fn(),
-}));
-
 let saveOptions = vi.fn();
 let applyUserOptions = vi.fn();
 vi.mock('@/composables/backend', async () => {

@@ -13,11 +13,16 @@ const mockCheckMissingEventsAndRedecode = vi.fn();
 const mockNotify = vi.fn();
 const mockRouterPush = vi.fn();
 
-vi.mock('vue-router', () => ({
-  useRouter: vi.fn(() => ({
-    push: mockRouterPush,
-  })),
-}));
+vi.mock('vue-router', async () => {
+  const { ref } = await import('vue');
+  return {
+    useRoute: vi.fn().mockReturnValue(ref({})),
+    useRouter: vi.fn(() => ({
+      currentRoute: ref({ path: '' }),
+      push: mockRouterPush,
+    })),
+  };
+});
 
 vi.mock('@/composables/history/events/tx', () => ({
   useHistoryTransactions: vi.fn(() => ({

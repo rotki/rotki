@@ -10,17 +10,6 @@ import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
 
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn(),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(),
-  }),
-  createRouter: vi.fn().mockImplementation(() => ({
-    beforeEach: vi.fn(),
-  })),
-  createWebHashHistory: vi.fn(),
-}));
-
 const mockAssetInfo = vi.fn().mockImplementation(() => computed(() => ({ symbol: 'ETH' })));
 
 vi.mock('@/composables/assets/retrieval', () => ({

@@ -9,23 +9,6 @@ import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { type Filters, type Matcher, useAssetFilter } from '@/composables/filters/assets';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 
-vi.mock('vue-router', async () => {
-  const { reactive } = await import('vue');
-  return ({
-    useRoute: vi.fn().mockReturnValue(
-      reactive({
-        query: {},
-      }),
-    ),
-    useRouter: vi.fn().mockReturnValue({
-      push: vi.fn(({ query }) => {
-        useRoute().query = query;
-        return true;
-      }),
-    }),
-  });
-});
-
 vi.mock('vue', async () => {
   const mod = await vi.importActual<typeof Vue>('vue');
 
@@ -149,7 +132,7 @@ describe('composables::assets/filter-paginate', () => {
 
       expect(pushSpy).toHaveBeenCalledOnce();
       expect(pushSpy).toHaveBeenCalledWith({ query });
-      expect(route.query).toEqual(query);
+      expect(get(route).query).toEqual(query);
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(isLoading)).toBe(false);

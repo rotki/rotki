@@ -1,3 +1,4 @@
+import { NotificationGroup } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
@@ -8,8 +9,10 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { Routes } from '@/router/routes';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useHistoryStore } from '@/store/history';
+import { useNotificationsStore } from '@/store/notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { BalanceSource } from '@/types/settings/frontend-settings';
@@ -24,6 +27,8 @@ export function useMonitorWatchers(): void {
   const { triggerAssetMovementAutoMatching } = useUnmatchedAssetMovements();
   const { triggerHistoricalBalancesProcessing } = useHistoricalBalances();
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+  const { removeMatching } = useNotificationsStore();
+  const router = useRouter();
 
   const frontendStore = useFrontendSettingsStore();
   const { balanceValueThreshold } = storeToRefs(frontendStore);
@@ -69,6 +74,12 @@ export function useMonitorWatchers(): void {
       resetEventsModifiedSignal();
       await triggerHistoricalBalancesProcessing();
       await triggerAssetMovementAutoMatching();
+    }
+  });
+
+  watchImmediate(router.currentRoute, (to) => {
+    if (to.path === Routes.HISTORY_EVENTS.toString()) {
+      removeMatching(notification => notification.group === NotificationGroup.UNMATCHED_ASSET_MOVEMENTS);
     }
   });
 }

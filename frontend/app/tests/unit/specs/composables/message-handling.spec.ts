@@ -8,17 +8,6 @@ import { SocketMessageType } from '@/modules/messaging/types';
 import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
 
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn(),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(),
-  }),
-  createRouter: vi.fn().mockImplementation(() => ({
-    beforeEach: vi.fn(),
-  })),
-  createWebHashHistory: vi.fn(),
-}));
-
 vi.mock('@/store/notifications', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
     notify: vi.fn(),

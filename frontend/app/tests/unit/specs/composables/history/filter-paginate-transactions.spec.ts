@@ -13,23 +13,6 @@ import { useMainStore } from '@/store/main';
 import { FilterBehaviour } from '@/types/filtering';
 import { type LocationQuery, RouterAccountsSchema } from '@/types/route';
 
-vi.mock('vue-router', async () => {
-  const { ref } = await import('vue');
-  const { set } = await import('@vueuse/core');
-  const route = ref({
-    query: {},
-  });
-  return {
-    useRoute: vi.fn().mockReturnValue(route),
-    useRouter: vi.fn().mockReturnValue({
-      push: vi.fn(({ query }) => {
-        set(route, { query });
-        return true;
-      }),
-    }),
-  };
-});
-
 vi.mock('vue', async () => {
   const mod = await vi.importActual<typeof Vue>('vue');
 

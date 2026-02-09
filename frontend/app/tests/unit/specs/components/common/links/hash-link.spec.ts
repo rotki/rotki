@@ -9,17 +9,6 @@ import { computed } from 'vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn(),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(),
-  }),
-  createRouter: vi.fn().mockImplementation(() => ({
-    beforeEach: vi.fn(),
-  })),
-  createWebHashHistory: vi.fn(),
-}));
-
 vi.mock('@/composables/info/chains', () => ({
   useSupportedChains: vi.fn().mockReturnValue({
     getChain: () => Blockchain.ETH,

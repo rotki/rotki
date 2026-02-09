@@ -8,23 +8,6 @@ import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectT
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
 
-vi.mock('vue-router', async () => {
-  const { ref } = await import('vue');
-  const { set } = await import('@vueuse/core');
-  const route = ref({
-    query: {},
-  });
-  return {
-    useRoute: vi.fn().mockReturnValue(route),
-    useRouter: vi.fn().mockReturnValue({
-      push: vi.fn(({ query }) => {
-        set(route, { query });
-        return true;
-      }),
-    }),
-  };
-});
-
 vi.mock('vue', async () => {
   const mod = await vi.importActual<typeof Vue>('vue');
 

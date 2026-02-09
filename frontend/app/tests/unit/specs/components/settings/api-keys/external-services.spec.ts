@@ -33,15 +33,6 @@ vi.mock('@/composables/info/chains', () => ({
   }),
 }));
 
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn().mockImplementation(() => ref({ hash: '' })),
-  useRouter: vi.fn(),
-  createRouter: vi.fn().mockImplementation(() => ({
-    beforeEach: vi.fn(),
-  })),
-  createWebHashHistory: vi.fn(),
-}));
-
 vi.mock('@/composables/api/settings/external-services-api', () => ({
   useExternalServicesApi: vi.fn().mockReturnValue({
     queryExternalServices: vi.fn(),

@@ -11,17 +11,6 @@ import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useCurrencies } from '@/types/currencies';
 
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn(),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(),
-  }),
-  createRouter: vi.fn().mockImplementation(() => ({
-    beforeEach: vi.fn(),
-  })),
-  createWebHashHistory: vi.fn(),
-}));
-
 describe('modules/amount-display/components/FiatDisplay', () => {
   let wrapper: VueWrapper<InstanceType<typeof FiatDisplay>>;
   let pinia: Pinia;

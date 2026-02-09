@@ -14,17 +14,6 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { BalanceType } from '@/types/balances';
 
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn(),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(),
-  }),
-  createRouter: vi.fn().mockImplementation(() => ({
-    beforeEach: vi.fn(),
-  })),
-  createWebHashHistory: vi.fn(),
-}));
-
 vi.mock('@/composables/info/chains', async () => {
   const { computed } = await import('vue');
   const { Blockchain } = await import('@rotki/common');

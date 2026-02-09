@@ -6,13 +6,6 @@ import { useLogin } from '@/modules/account/use-login';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn(),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(),
-  }),
-}));
-
 vi.mock('@/modules/account/use-login', () => ({
   useLogin: vi.fn().mockReturnValue({
     login: vi.fn(),

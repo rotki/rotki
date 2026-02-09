@@ -35,7 +35,7 @@ let mockRoute: Ref<{ path: string; query: Record<string, unknown> }>;
 function setupMockRoute(path: string = '/history/events', query: Record<string, unknown> = {}): void {
   mockRoute = ref({ path, query });
   useRouteMock.mockReturnValue(mockRoute);
-  useRouterMock.mockReturnValue({ push: mockRouterPush });
+  useRouterMock.mockReturnValue({ currentRoute: mockRoute, push: mockRouterPush });
 }
 
 describe('use-history-event-navigation', () => {

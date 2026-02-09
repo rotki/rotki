@@ -31,6 +31,7 @@ vi.mock('vue-router', () => ({
 
 let mockRoute: Ref<{ query: Record<string, unknown> }>;
 let mockRouter: {
+  currentRoute: Ref<{ query: Record<string, unknown> }>;
   push: Mock<(options: { query: Record<string, unknown> }) => Promise<void>>;
   replace: Mock<(options: { query: Record<string, unknown> }) => Promise<void>>;
 };
@@ -93,6 +94,7 @@ describe('composables::use-pagination-filter', () => {
     scope = effectScope();
     mockRoute = ref<{ query: Record<string, unknown> }>({ query: {} });
     mockRouter = {
+      currentRoute: mockRoute,
       push: vi.fn(async ({ query }: { query: Record<string, unknown> }) => {
         set(mockRoute, { query });
       }),

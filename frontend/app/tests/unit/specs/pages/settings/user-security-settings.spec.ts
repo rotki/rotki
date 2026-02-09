@@ -1,19 +1,8 @@
 import { libraryDefaults } from '@test/utils/provide-defaults';
 import { mount, type VueWrapper } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import AccountSettings from '@/pages/settings/account/index.vue';
 import { usePremiumStore } from '@/store/session/premium';
-
-vi.mock('vue-router', () => ({
-  useRoute: vi.fn().mockImplementation(() => ref({})),
-  useRouter: vi.fn().mockReturnValue({
-    push: vi.fn(),
-  }),
-  createRouter: vi.fn().mockImplementation(() => ({
-    beforeEach: vi.fn(),
-  })),
-  createWebHashHistory: vi.fn(),
-}));
 
 describe('userSecuritySettings.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof AccountSettings>>;
