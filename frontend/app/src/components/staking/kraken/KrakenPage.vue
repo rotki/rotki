@@ -7,6 +7,8 @@ import InternalLink from '@/components/helper/InternalLink.vue';
 import ProgressScreen from '@/components/helper/ProgressScreen.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
+import KrakenStakingPagePlaceholder from '@/components/staking/kraken/KrakenStakingPagePlaceholder.vue';
+import { usePremium } from '@/composables/premium';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { Routes } from '@/router/routes';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
@@ -29,6 +31,8 @@ const { refreshPrices } = usePriceRefresh();
 
 const { t } = useI18n({ useScope: 'global' });
 
+const premium = usePremium();
+
 const addKrakenApiKeysLink: RouteLocationRaw = {
   path: `${Routes.API_KEYS_EXCHANGES}`,
   query: {
@@ -39,12 +43,12 @@ const addKrakenApiKeysLink: RouteLocationRaw = {
 const loading = shouldShowLoadingScreen(Section.STAKING_KRAKEN);
 const refreshing = isLoading(Section.STAKING_KRAKEN);
 
-const isKrakenConnected = computed(() => {
+const isKrakenConnected = computed<boolean>(() => {
   const exchanges = get(connectedExchanges);
   return exchanges.some(({ location }) => location === 'kraken');
 });
 
-async function refresh(ignoreCache: boolean = false) {
+async function refresh(ignoreCache: boolean = false): Promise<void> {
   resetProtocolStatsPriceQueryStatus('kraken');
   await load(ignoreCache, get(filters));
   const assets = get(events).received.map(item => item.asset);
@@ -69,7 +73,7 @@ onUnmounted(() => {
   >
     <template #buttons>
       <RuiTooltip
-        v-if="isKrakenConnected"
+        v-if="premium && isKrakenConnected"
         :open-delay="400"
       >
         <template #activator>
@@ -89,8 +93,9 @@ onUnmounted(() => {
       </RuiTooltip>
     </template>
 
+    <KrakenStakingPagePlaceholder v-if="!premium" />
     <FullSizeContent
-      v-if="!isKrakenConnected"
+      v-else-if="!isKrakenConnected"
       class="gap-4"
     >
       <span class="font-bold text-h5">

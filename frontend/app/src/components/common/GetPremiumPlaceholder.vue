@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
+import { Routes } from '@/router/routes';
 
 defineProps<{
   title: string;
@@ -27,6 +28,18 @@ const { t } = useI18n({ useScope: 'global' });
         {{ description || t('premium_settings.chart_limit.description') }}
       </div>
     </div>
-    <GetPremiumButton />
+    <div class="flex items-center gap-2 flex-wrap">
+      <GetPremiumButton />
+      <RouterLink :to="Routes.API_KEYS_ROTKI_PREMIUM">
+        <RuiButton
+          class="lg:!py-2"
+        >
+          <template #prepend>
+            <RuiIcon name="lu-key-round" />
+          </template>
+          {{ t('premium_settings.actions.setup_premium_key') }}
+        </RuiButton>
+      </RouterLink>
+    </div>
   </div>
 </template>

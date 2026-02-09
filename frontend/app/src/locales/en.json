@@ -3632,6 +3632,7 @@
   },
   "kraken_page": {
     "loading": "Your Kraken staking information is loading...",
+    "no_premium": "Upgrade to premium to access Kraken staking information",
     "page": {
       "api_key": "API key",
       "description": "To see your staking information you need to add a Kraken {link}",
@@ -4554,6 +4555,7 @@
       "delete": "Delete Key",
       "replace": "Replace Key",
       "setup": "Setup",
+      "setup_premium_key": "Setup Premium Key",
       "sync": "Allow data sync with rotki Server",
       "sync_hint": "Your data is encrypted before being synced to the rotki server and cannot be read by anyone except you."
     },
