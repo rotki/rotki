@@ -60,6 +60,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.settings import DBSettings
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -127,6 +128,18 @@ class CustomizedEventCandidate:
             )
         except DeserializationError:
             return None
+
+
+@dataclass
+class MovementMatchingState:
+    """Shared mutable state for asset movement matching and retry processing."""
+    already_matched_event_ids: set[int]
+    unresolved_ambiguous_movements: dict[int, AssetMovement]
+    ambiguous_movement_candidate_ids: dict[int, set[int]]
+    candidate_to_ambiguous_movement_ids: dict[int, set[int]]
+    movements_to_retry: set[int]
+    movement_ids_to_ignore: list[int]
+    unmatched_asset_movements: list[AssetMovement]
 
 
 def process_eth2_events(
@@ -365,6 +378,222 @@ def _should_auto_ignore_movement(asset_movement: AssetMovement) -> bool:
     return False
 
 
+def _get_assets_in_collection(
+        asset_movement: AssetMovement,
+        assets_in_collection_cache: dict[str, tuple['Asset', ...]],
+) -> tuple['Asset', ...]:
+    """Get assets in collection for movement asset, using cache."""
+    asset_identifier = asset_movement.asset.identifier
+    assets_in_collection = assets_in_collection_cache.get(asset_identifier)
+    if assets_in_collection is None:
+        assets_in_collection = GlobalDBHandler.get_assets_in_same_collection(
+            identifier=asset_identifier,
+        )
+        if (
+            asset_movement.asset in {A_DAI, A_SAI} and
+            ts_ms_to_sec(asset_movement.timestamp) >= SAI_DAI_MIGRATION_TS
+        ):
+            assets_in_collection = tuple(set(assets_in_collection) | {A_DAI, A_SAI})
+        assets_in_collection_cache[asset_identifier] = assets_in_collection
+
+    return assets_in_collection
+
+
+def _get_movement_match_window(asset_movement: AssetMovement, default_match_window: int) -> int:
+    """Get match window for movement, with legacy exchange override."""
+    if (
+        default_match_window < LEGACY_EXCHANGE_MATCH_WINDOW and
+        ts_ms_to_sec(asset_movement.timestamp) < LEGACY_EXCHANGE_MATCH_CUTOFF_TS
+    ):
+        # Some exchanges had unusually long credit windows for certain events in 2017.
+        return LEGACY_EXCHANGE_MATCH_WINDOW
+
+    return default_match_window
+
+
+def _assets_are_only_unsupported_chains(assets_in_collection: tuple['Asset', ...]) -> bool:
+    """Return True if none of the assets belong to chains we can query txs for."""
+    return not any(
+        (
+            asset.identifier in NATIVE_TOKEN_IDS_OF_CHAINS_WITH_TXS or
+            asset.identifier.startswith(f'{SOLANA_CHAIN_DIRECTIVE}/') or
+            identifier_to_evm_chain(asset.identifier) in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+        ) for asset in assets_in_collection
+    )
+
+
+def _clear_ambiguous_candidate_mappings(
+        movement_id: int,
+        ambiguous_movement_candidate_ids: dict[int, set[int]],
+        candidate_to_ambiguous_movement_ids: dict[int, set[int]],
+) -> None:
+    """Remove reverse mappings for an ambiguous movement's candidate ids."""
+    for event_id in ambiguous_movement_candidate_ids.pop(movement_id, set()):
+        candidate_to_ambiguous_movement_ids[event_id].discard(movement_id)
+
+
+def _set_ambiguous_candidate_mappings(
+        movement_id: int,
+        matched_events: list[HistoryBaseEntry],
+        ambiguous_movement_candidate_ids: dict[int, set[int]],
+        candidate_to_ambiguous_movement_ids: dict[int, set[int]],
+) -> None:
+    """Set reverse mappings for an ambiguous movement's current candidate ids."""
+    new_candidate_ids = {
+        event_id
+        for match in matched_events
+        if (event_id := match.identifier) is not None
+    }
+    old_candidate_ids = ambiguous_movement_candidate_ids.get(movement_id, set())
+
+    for event_id in old_candidate_ids - new_candidate_ids:
+        candidate_to_ambiguous_movement_ids[event_id].discard(movement_id)
+    for event_id in new_candidate_ids - old_candidate_ids:
+        candidate_to_ambiguous_movement_ids[event_id].add(movement_id)
+
+    if len(new_candidate_ids) == 0:
+        ambiguous_movement_candidate_ids.pop(movement_id, None)
+    else:
+        ambiguous_movement_candidate_ids[movement_id] = new_candidate_ids
+
+
+def _remove_unresolved_movement(
+        movement_id: int | None,
+        unresolved_ambiguous_movements: dict[int, AssetMovement],
+        ambiguous_movement_candidate_ids: dict[int, set[int]],
+        candidate_to_ambiguous_movement_ids: dict[int, set[int]],
+) -> None:
+    """Remove unresolved movement and its candidate mappings if present."""
+    if movement_id is None:
+        return
+
+    unresolved_ambiguous_movements.pop(movement_id, None)
+    _clear_ambiguous_candidate_mappings(
+        movement_id=movement_id,
+        ambiguous_movement_candidate_ids=ambiguous_movement_candidate_ids,
+        candidate_to_ambiguous_movement_ids=candidate_to_ambiguous_movement_ids,
+    )
+
+
+def _process_movement_candidate_set(
+        events_db: DBHistoryEvents,
+        asset_movement: AssetMovement,
+        fee_events: dict[str, AssetMovement],
+        settings: 'DBSettings',
+        assets_in_collection_cache: dict[str, tuple['Asset', ...]],
+        cursor: 'DBCursor',
+        blockchain_accounts: BlockchainAccounts,
+        all_asset_movements: list[AssetMovement],
+        matching_state: MovementMatchingState,
+        from_retry: bool,
+) -> None:
+    """Process one movement and update retry/ignore/unmatched collections."""
+    movement_id = asset_movement.identifier
+    if _should_auto_ignore_movement(asset_movement=asset_movement):
+        _remove_unresolved_movement(
+            movement_id=movement_id,
+            unresolved_ambiguous_movements=matching_state.unresolved_ambiguous_movements,
+            ambiguous_movement_candidate_ids=matching_state.ambiguous_movement_candidate_ids,
+            candidate_to_ambiguous_movement_ids=matching_state.candidate_to_ambiguous_movement_ids,
+        )
+        if movement_id is not None:
+            matching_state.movement_ids_to_ignore.append(movement_id)
+        return
+
+    assets_in_collection = _get_assets_in_collection(
+        asset_movement=asset_movement,
+        assets_in_collection_cache=assets_in_collection_cache,
+    )
+    match_window = _get_movement_match_window(
+        asset_movement=asset_movement,
+        default_match_window=settings.asset_movement_time_range,
+    )
+
+    matched_events = find_asset_movement_matches(
+        events_db=events_db,
+        asset_movement=asset_movement,
+        is_deposit=(is_deposit := asset_movement.event_type == HistoryEventType.DEPOSIT),
+        fee_event=(fee_event := fee_events.get(asset_movement.group_identifier)),
+        match_window=match_window,
+        cursor=cursor,
+        assets_in_collection=assets_in_collection,
+        blockchain_accounts=blockchain_accounts,
+        already_matched_event_ids=matching_state.already_matched_event_ids,
+        tolerance=settings.asset_movement_amount_tolerance,
+    )
+    if len(matched_events) > 1 and _has_related_movement(
+        asset_movement=asset_movement,
+        other_movements=all_asset_movements,
+        match_window_ms=match_window * 1000,
+        tolerance=settings.asset_movement_amount_tolerance,
+    ):
+        # Heuristic: if multiple related movements exist, pick the closest amount match.
+        matched_events = _pick_closest_amount_match(
+            asset_movement=asset_movement,
+            matches=matched_events,
+            is_deposit=is_deposit,
+            fee_event=fee_event,
+        )
+
+    match_count = len(matched_events)
+    if from_retry and movement_id is not None and match_count != 1:
+        _set_ambiguous_candidate_mappings(
+            movement_id=movement_id,
+            matched_events=matched_events,
+            ambiguous_movement_candidate_ids=matching_state.ambiguous_movement_candidate_ids,
+            candidate_to_ambiguous_movement_ids=matching_state.candidate_to_ambiguous_movement_ids,
+        )
+
+    if match_count == 1:
+        matched_event = matched_events[0]
+        update_asset_movement_matched_event(
+            events_db=events_db,
+            asset_movement=asset_movement,
+            fee_event=fee_event,
+            matched_event=matched_event,
+            is_deposit=is_deposit,
+        )
+        _remove_unresolved_movement(
+            movement_id=movement_id,
+            unresolved_ambiguous_movements=matching_state.unresolved_ambiguous_movements,
+            ambiguous_movement_candidate_ids=matching_state.ambiguous_movement_candidate_ids,
+            candidate_to_ambiguous_movement_ids=matching_state.candidate_to_ambiguous_movement_ids,
+        )
+        if (matched_event_id := matched_event.identifier) is not None:
+            matching_state.already_matched_event_ids.add(matched_event_id)
+            matching_state.movements_to_retry.update(
+                matching_state.candidate_to_ambiguous_movement_ids[matched_event_id],
+            )
+        return
+
+    if match_count > 1:
+        if movement_id is not None:
+            matching_state.unresolved_ambiguous_movements[movement_id] = asset_movement
+            if not from_retry:
+                _set_ambiguous_candidate_mappings(
+                    movement_id=movement_id,
+                    matched_events=matched_events,
+                    ambiguous_movement_candidate_ids=matching_state.ambiguous_movement_candidate_ids,
+                    candidate_to_ambiguous_movement_ids=matching_state.candidate_to_ambiguous_movement_ids,
+                )
+        return
+
+    if _assets_are_only_unsupported_chains(assets_in_collection):
+        _remove_unresolved_movement(
+            movement_id=movement_id,
+            unresolved_ambiguous_movements=matching_state.unresolved_ambiguous_movements,
+            ambiguous_movement_candidate_ids=matching_state.ambiguous_movement_candidate_ids,
+            candidate_to_ambiguous_movement_ids=matching_state.candidate_to_ambiguous_movement_ids,
+        )
+        if movement_id is not None:
+            matching_state.movement_ids_to_ignore.append(movement_id)
+        return
+
+    if not from_retry:
+        matching_state.unmatched_asset_movements.append(asset_movement)
+    return
+
+
 def match_asset_movements(database: 'DBHandler') -> None:
     """Analyze asset movements and find corresponding onchain events, then update those onchain
     events with proper event_type, counterparty, etc and cache the matched identifiers.
@@ -373,99 +602,68 @@ def match_asset_movements(database: 'DBHandler') -> None:
     events_db = DBHistoryEvents(database=database)
     asset_movements, fee_events = get_unmatched_asset_movements(database)
     settings = CachedSettings().get_settings()
-    unmatched_asset_movements, movement_ids_to_ignore = [], []
     assets_in_collection_cache: dict[str, tuple[Asset, ...]] = {}
     with events_db.db.conn.read_ctx() as cursor:
         blockchain_accounts = events_db.db.get_blockchain_accounts(cursor=cursor)
-        already_matched_event_ids = get_already_matched_event_ids(cursor=cursor)
+        matching_state = MovementMatchingState(
+            already_matched_event_ids=get_already_matched_event_ids(cursor=cursor),
+            unresolved_ambiguous_movements={},
+            ambiguous_movement_candidate_ids={},
+            candidate_to_ambiguous_movement_ids=defaultdict(set),
+            movements_to_retry=set(),
+            movement_ids_to_ignore=[],
+            unmatched_asset_movements=[],
+        )
         for asset_movement in asset_movements:
-            if _should_auto_ignore_movement(asset_movement=asset_movement):
-                movement_ids_to_ignore.append(asset_movement.identifier)
-                continue
-
-            asset_identifier = asset_movement.asset.identifier
-            assets_in_collection = assets_in_collection_cache.get(asset_identifier)
-            if assets_in_collection is None:
-                assets_in_collection = GlobalDBHandler.get_assets_in_same_collection(
-                    identifier=asset_identifier,
-                )
-                if (
-                    asset_movement.asset in {A_DAI, A_SAI} and
-                    ts_ms_to_sec(asset_movement.timestamp) >= SAI_DAI_MIGRATION_TS
-                ):
-                    assets_in_collection = tuple(set(assets_in_collection) | {A_DAI, A_SAI})
-                assets_in_collection_cache[asset_identifier] = assets_in_collection
-
-            match_window = settings.asset_movement_time_range
-            if (
-                match_window < LEGACY_EXCHANGE_MATCH_WINDOW and
-                ts_ms_to_sec(asset_movement.timestamp) < LEGACY_EXCHANGE_MATCH_CUTOFF_TS
-            ):
-                # Some exchanges had unusually long credit windows for certain events in 2017.
-                match_window = LEGACY_EXCHANGE_MATCH_WINDOW
-
-            if (match_count := len(matched_events := find_asset_movement_matches(
+            _process_movement_candidate_set(
                 events_db=events_db,
                 asset_movement=asset_movement,
-                is_deposit=(is_deposit := asset_movement.event_type == HistoryEventType.DEPOSIT),
-                fee_event=(fee_event := fee_events.get(asset_movement.group_identifier)),
-                match_window=match_window,
+                fee_events=fee_events,
+                settings=settings,
+                assets_in_collection_cache=assets_in_collection_cache,
                 cursor=cursor,
-                assets_in_collection=assets_in_collection,
                 blockchain_accounts=blockchain_accounts,
-                already_matched_event_ids=already_matched_event_ids,
-                tolerance=settings.asset_movement_amount_tolerance,
-            ))) > 1 and _has_related_movement(
+                all_asset_movements=asset_movements,
+                matching_state=matching_state,
+                from_retry=False,
+            )
+
+        # Retry previously ambiguous movements when any of their candidate events gets matched.
+        while len(matching_state.movements_to_retry) > 0:
+            movement_id = matching_state.movements_to_retry.pop()
+            if movement_id not in matching_state.unresolved_ambiguous_movements:
+                continue
+
+            asset_movement = matching_state.unresolved_ambiguous_movements[movement_id]
+            _process_movement_candidate_set(
+                events_db=events_db,
                 asset_movement=asset_movement,
-                other_movements=asset_movements,
-                match_window_ms=match_window * 1000,
-                tolerance=settings.asset_movement_amount_tolerance,
-            ):
-                # Heuristic: if multiple related movements exist, pick the closest amount match.
-                matched_events = _pick_closest_amount_match(
-                    asset_movement=asset_movement,
-                    matches=matched_events,
-                    is_deposit=is_deposit,
-                    fee_event=fee_event,
-                )
-                match_count = len(matched_events)
+                fee_events=fee_events,
+                settings=settings,
+                assets_in_collection_cache=assets_in_collection_cache,
+                cursor=cursor,
+                blockchain_accounts=blockchain_accounts,
+                all_asset_movements=asset_movements,
+                matching_state=matching_state,
+                from_retry=True,
+            )
 
-            if match_count == 1:
-                update_asset_movement_matched_event(
-                    events_db=events_db,
-                    asset_movement=asset_movement,
-                    fee_event=fee_event,
-                    matched_event=(matched_event := matched_events[0]),
-                    is_deposit=is_deposit,
-                )
-                already_matched_event_ids.add(matched_event.identifier)  # type: ignore[arg-type]  # ids from db will not be none
-                continue
-            elif match_count == 0 and not any(
-                (
-                    asset.identifier in NATIVE_TOKEN_IDS_OF_CHAINS_WITH_TXS or
-                    asset.identifier.startswith(f'{SOLANA_CHAIN_DIRECTIVE}/') or
-                    identifier_to_evm_chain(asset.identifier) in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-                ) for asset in assets_in_collection
-            ):  # Only auto ignore movements with unsupported assets after actually finding no
-                # match, since it may be an exchange to exchange movement or there may be manually
-                # added or csv imported events to match with.
-                movement_ids_to_ignore.append(asset_movement.identifier)
-                continue
+        matching_state.unmatched_asset_movements.extend(
+            matching_state.unresolved_ambiguous_movements.values(),
+        )
 
-            unmatched_asset_movements.append(asset_movement)
-
-    if len(movement_ids_to_ignore) > 0:
+    if len(matching_state.movement_ids_to_ignore) > 0:
         with events_db.db.conn.write_ctx() as write_cursor:
             write_cursor.executemany(
                 'INSERT OR IGNORE INTO history_event_link_ignores(event_id, link_type) '
                 'VALUES(?, ?)',
                 [
                     (movement_id, HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db())
-                    for movement_id in movement_ids_to_ignore
+                    for movement_id in matching_state.movement_ids_to_ignore
                 ],
             )
 
-    if (unmatched_count := len(unmatched_asset_movements)) > 0:
+    if (unmatched_count := len(matching_state.unmatched_asset_movements)) > 0:
         log.warning(f'Failed to match {unmatched_count} asset movements')
         database.msg_aggregator.add_message(
             message_type=WSMessageType.UNMATCHED_ASSET_MOVEMENTS,

@@ -44,6 +44,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tasks import events as task_events
 from rotkehlchen.tasks.events import match_asset_movements
 from rotkehlchen.tests.fixtures import MockedWsMessage
 from rotkehlchen.tests.unit.test_eth2 import HOUR_IN_MILLISECONDS
@@ -1206,6 +1207,232 @@ def test_match_by_transaction_id_without_0x_prefix(database: 'DBHandler') -> Non
         )
 
     _match_and_check(database=database, expected_matches=[(movement_id, match_id)])
+
+
+def test_reprocess_ambiguous_movement_after_candidate_gets_matched(database: 'DBHandler') -> None:
+    """Retry ambiguous movements when one of their candidates gets matched later."""
+    tx_ref = make_evm_tx_hash()
+    tx_ref_str = str(tx_ref)
+    with database.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[AssetMovement(  # Processed first (newer timestamp): two close matches.
+                identifier=(ambiguous_movement_id := 1),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=TimestampMS(1700004000000),
+                asset=A_USDC,
+                amount=(amount := FVal('110')),
+                unique_id='kraken_withdrawal_ambiguous',
+                location_label='Kraken 1',
+            ), AssetMovement(  # Processed later, but uniquely matched by tx hash.
+                identifier=(tx_ref_movement_id := 2),
+                location=Location.COINBASEPRO,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=TimestampMS(1700003000000),
+                asset=A_USDC,
+                amount=amount,
+                unique_id='coinbasepro_withdrawal_txref',
+                extra_data=AssetMovementExtraData(
+                    transaction_id=tx_ref_str[2:],
+                    address=make_evm_address(),
+                ),
+                location_label='Coinbase Pro 1',
+            ), EvmEvent(  # Candidate 1: tx-ref movement should pick this one.
+                identifier=(tx_ref_match_id := 3),
+                tx_ref=tx_ref,
+                sequence_index=0,
+                timestamp=TimestampMS(1700003005000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=amount,
+                location_label=make_evm_address(),
+            ), EvmEvent(  # Candidate 2: remaining match for the previously ambiguous movement.
+                identifier=(remaining_match_id := 4),
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700003006000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=amount,
+                location_label=make_evm_address(),
+            )],
+        )
+
+    _match_and_check(
+        database=database,
+        expected_matches=[
+            (tx_ref_movement_id, tx_ref_match_id),
+            (ambiguous_movement_id, remaining_match_id),
+        ],
+    )
+
+
+def test_retry_ambiguous_movement_stays_ambiguous(database: 'DBHandler') -> None:
+    """Retry path should update candidate mappings when ambiguity remains."""
+    with database.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[AssetMovement(  # Processed first: 3 matching candidates.
+                identifier=(ambiguous_movement_id := 1),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=TimestampMS(1700005000000),
+                asset=A_USDC,
+                amount=(amount := FVal('110')),
+                unique_id='kraken_withdrawal_ambiguous',
+                location_label='Kraken 1',
+            ), AssetMovement(  # Processed second: uniquely matches candidate 1 by tx hash.
+                identifier=(tx_ref_movement_id := 2),
+                location=Location.COINBASEPRO,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=TimestampMS(1700004000000),
+                asset=A_USDC,
+                amount=amount,
+                unique_id='coinbasepro_withdrawal_txref',
+                extra_data=AssetMovementExtraData(
+                    transaction_id=str(tx_ref := make_evm_tx_hash())[2:],
+                    address=make_evm_address(),
+                ),
+                location_label='Coinbase Pro 1',
+            ), EvmEvent(  # Candidate 1: matched by tx-ref movement.
+                identifier=(tx_ref_match_id := 3),
+                tx_ref=tx_ref,
+                sequence_index=0,
+                timestamp=TimestampMS(1700004005000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=amount,
+                location_label=make_evm_address(),
+            ), EvmEvent(  # Candidate 2: remains for ambiguous movement after retry.
+                identifier=4,
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700004006000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=amount,
+                location_label=make_evm_address(),
+            ), EvmEvent(  # Candidate 3: remains for ambiguous movement after retry.
+                identifier=5,
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700004007000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=amount,
+                location_label=make_evm_address(),
+            )],
+        )
+
+    with patch(
+        'rotkehlchen.tasks.events._set_ambiguous_candidate_mappings',
+        wraps=task_events._set_ambiguous_candidate_mappings,
+    ) as set_mappings_mock:
+        match_asset_movements(database=database)
+
+    with database.conn.read_ctx() as cursor:
+        assert _get_match_for_movement(cursor=cursor, movement_id=tx_ref_movement_id) == tx_ref_match_id  # noqa: E501
+        assert _get_match_for_movement(cursor=cursor, movement_id=ambiguous_movement_id) is None
+
+    ambiguous_calls = [
+        call for call in set_mappings_mock.call_args_list
+        if call.kwargs['movement_id'] == ambiguous_movement_id
+    ]
+    assert [len(call.kwargs['matched_events']) for call in ambiguous_calls] == [3, 2]
+
+
+def test_retry_ambiguous_movement_loses_all_candidates(database: 'DBHandler') -> None:
+    """Retry path should clear candidate mappings when no candidates remain."""
+    with database.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(database).add_history_events(
+            write_cursor=write_cursor,
+            history=[AssetMovement(  # Processed first: 2 matching candidates.
+                identifier=(ambiguous_movement_id := 1),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=TimestampMS(1700005000000),
+                asset=A_USDC,
+                amount=(amount := FVal('110')),
+                unique_id='kraken_withdrawal_ambiguous',
+                location_label='Kraken 1',
+            ), AssetMovement(  # Uniquely matches candidate 1 by tx hash.
+                identifier=(tx_ref_movement_id_1 := 2),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=TimestampMS(1700004000000),
+                asset=A_USDC,
+                amount=amount,
+                unique_id='coinbasepro_withdrawal_txref_1',
+                extra_data=AssetMovementExtraData(
+                    transaction_id=str(tx_ref_1 := make_evm_tx_hash())[2:],
+                    address=make_evm_address(),
+                ),
+                location_label='Kraken 2',
+            ), AssetMovement(  # Uniquely matches candidate 2 by tx hash.
+                identifier=(tx_ref_movement_id_2 := 3),
+                location=Location.KRAKEN,
+                event_type=HistoryEventType.WITHDRAWAL,
+                timestamp=TimestampMS(1700003990000),
+                asset=A_USDC,
+                amount=amount,
+                unique_id='coinbasepro_withdrawal_txref_2',
+                extra_data=AssetMovementExtraData(
+                    transaction_id=str(tx_ref_2 := make_evm_tx_hash())[2:],
+                    address=make_evm_address(),
+                ),
+                location_label='Kraken 3',
+            ), EvmEvent(  # Candidate 1
+                identifier=(tx_ref_match_id_1 := 4),
+                tx_ref=tx_ref_1,
+                sequence_index=0,
+                timestamp=TimestampMS(1700004005000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=amount,
+                location_label=make_evm_address(),
+            ), EvmEvent(  # Candidate 2
+                identifier=(tx_ref_match_id_2 := 5),
+                tx_ref=tx_ref_2,
+                sequence_index=0,
+                timestamp=TimestampMS(1700003995000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_USDC,
+                amount=amount,
+                location_label=make_evm_address(),
+            )],
+        )
+
+    with patch(
+        'rotkehlchen.tasks.events._set_ambiguous_candidate_mappings',
+        wraps=task_events._set_ambiguous_candidate_mappings,
+    ) as set_mappings_mock:
+        match_asset_movements(database=database)
+
+    with database.conn.read_ctx() as cursor:
+        assert _get_match_for_movement(cursor=cursor, movement_id=tx_ref_movement_id_1) == tx_ref_match_id_1  # noqa: E501
+        assert _get_match_for_movement(cursor=cursor, movement_id=tx_ref_movement_id_2) == tx_ref_match_id_2  # noqa: E501
+        assert _get_match_for_movement(cursor=cursor, movement_id=ambiguous_movement_id) is None
+
+    ambiguous_calls = [
+        call for call in set_mappings_mock.call_args_list
+        if call.kwargs['movement_id'] == ambiguous_movement_id
+    ]
+    assert [len(call.kwargs['matched_events']) for call in ambiguous_calls] == [2, 0]
 
 
 def test_match_coinbasepro_coinbase_transfer(database: 'DBHandler') -> None:
