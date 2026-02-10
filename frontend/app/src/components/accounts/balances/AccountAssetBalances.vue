@@ -115,7 +115,7 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
         <FiatDisplay
           :value="row.usdPrice"
           :loading="!row.usdPrice || row.usdPrice.lt(0)"
-          no-scramble
+          :price-asset="row.asset"
           from="USD"
         />
       </template>

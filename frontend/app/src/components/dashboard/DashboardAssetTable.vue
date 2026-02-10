@@ -121,7 +121,7 @@ watch(search, () => setPage(1));
         </template>
         <FiatDisplay
           v-else
-          no-scramble
+          :price-asset="row.asset"
           :value="row.usdPrice"
           :loading="!row.usdPrice || row.usdPrice.lt(0)"
           from="USD"

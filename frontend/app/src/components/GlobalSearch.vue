@@ -537,7 +537,7 @@ onBeforeMount(async () => {
                 {{ t('common.price') }}:
               </div>
               <FiatDisplay
-                no-scramble
+                :price-asset="item.asset"
                 :value="item.price"
                 class="font-bold"
               />

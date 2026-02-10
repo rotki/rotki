@@ -18,7 +18,11 @@ export function useOracleInfo(options: OracleInfoOptions): OracleInfoReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { getAssetPriceOracle, isManualAssetPrice } = usePriceUtils();
 
-  const isManualPrice = isManualAssetPrice(priceAsset);
+  const isManualPrice = computed<boolean>(() => {
+    if (!get(isAssetPrice) || !get(priceAsset))
+      return false;
+    return get(isManualAssetPrice(priceAsset));
+  });
 
   const assetOracle = computed<string | undefined>(() => {
     if (!get(isAssetPrice) || !get(priceAsset)) {

@@ -24,9 +24,12 @@
  */
 import type { BigNumber } from '@rotki/common';
 import type { SymbolDisplay, Timestamp } from '@/modules/amount-display/types';
-import { useAmountDisplaySettings, useFiatConversion, useScrambledValue } from '@/modules/amount-display';
+import { createReusableTemplate } from '@vueuse/core';
+import { useAmountDisplaySettings, useFiatConversion, useOracleInfo, useScrambledValue } from '@/modules/amount-display';
 import { type Currency, useCurrencies } from '@/types/currencies';
 import AmountDisplayBase from './AmountDisplayBase.vue';
+import ManualPriceIndicator from './ManualPriceIndicator.vue';
+import OracleBadge from './OracleBadge.vue';
 
 interface Props {
   /** The fiat value to display */
@@ -45,6 +48,8 @@ interface Props {
   currency?: string;
   /** Skip scrambling even when privacy mode is enabled */
   noScramble?: boolean;
+  /** Asset identifier for price display - skips scrambling and shows manual price indicator if applicable */
+  priceAsset?: string;
 }
 
 defineOptions({
@@ -59,7 +64,9 @@ const props = withDefaults(defineProps<Props>(), {
   timestamp: undefined,
 });
 
-const { from, timestamp, value, loading: loadingProp, noScramble } = toRefs(props);
+const { from, timestamp, value, loading: loadingProp, noScramble: noScrambleProp, priceAsset } = toRefs(props);
+
+const [DefineAmountDisplay, ReuseAmountDisplay] = createReusableTemplate();
 
 // Composables
 const { converted, loading } = useFiatConversion({
@@ -69,7 +76,23 @@ const { converted, loading } = useFiatConversion({
 });
 const { currency: userCurrency } = useAmountDisplaySettings();
 const { findCurrency } = useCurrencies();
+
+const hasPriceAsset = computed<boolean>(() => !!get(priceAsset));
+const noScramble = computed<boolean>(() => get(noScrambleProp) || get(hasPriceAsset));
 const { scrambledValue } = useScrambledValue({ value: converted, noScramble });
+
+const { assetOracle, isManualPrice } = useOracleInfo({
+  isAssetPrice: hasPriceAsset,
+  priceAsset: computed<string>(() => get(priceAsset) ?? ''),
+});
+
+const showManualIndicator = computed<boolean>(() =>
+  get(hasPriceAsset) && get(isManualPrice),
+);
+
+const showAssetOracle = computed<boolean>(() =>
+  get(hasPriceAsset) && isDefined(assetOracle),
+);
 
 // Computed
 const resolvedCurrency = computed<Currency>(() => {
@@ -93,15 +116,38 @@ const displaySymbol = computed<string>(() => {
 </script>
 
 <template>
-  <AmountDisplayBase
-    :value="scrambledValue"
-    :symbol="displaySymbol"
-    :loading="loading || loadingProp"
-    :pnl="pnl"
-    v-bind="$attrs"
+  <DefineAmountDisplay>
+    <AmountDisplayBase
+      :value="scrambledValue"
+      :symbol="displaySymbol"
+      :loading="loading || loadingProp"
+      :pnl="pnl"
+      v-bind="$attrs"
+    >
+      <template
+        v-if="showAssetOracle"
+        #tooltip
+      >
+        <OracleBadge
+          v-if="assetOracle"
+          :oracle="assetOracle"
+        />
+      </template>
+      <template
+        v-else
+        #tooltip
+      >
+        <slot name="tooltip" />
+      </template>
+    </AmountDisplayBase>
+  </DefineAmountDisplay>
+
+  <div
+    v-if="showManualIndicator"
+    class="inline-flex items-baseline"
   >
-    <template #tooltip>
-      <slot name="tooltip" />
-    </template>
-  </AmountDisplayBase>
+    <ManualPriceIndicator />
+    <ReuseAmountDisplay />
+  </div>
+  <ReuseAmountDisplay v-else />
 </template>

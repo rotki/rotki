@@ -98,6 +98,7 @@ function reset() {
           >
             <ChainIcon
               :chain="item.chain"
+              class="!bg-transparent"
               size="1"
             />
             <div

@@ -311,7 +311,7 @@ onMounted(async () => {
         <template #item.price="{ row }">
           <FiatDisplay
             :value="row.price"
-            no-scramble
+            :price-asset="row.tokenIdentifier"
           />
         </template>
 

@@ -36,7 +36,7 @@ const selections: { value: RoundingMode; text: string; description: string }[] =
 </script>
 
 <template>
-  <div class="flex gap-4 flex-start">
+  <div class="flex gap-4 items-start">
     <RuiMenuSelect
       v-bind="$attrs"
       v-model="modelValue"
