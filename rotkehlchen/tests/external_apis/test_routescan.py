@@ -119,3 +119,13 @@ def test_routescan_internal_by_txhash_uses_lower_offset(routescan: Routescan) ->
     query_options = query_mock.call_args.kwargs['options']
     assert query_options['page'] == '1'
     assert query_options['offset'] == '100'
+
+
+def test_routescan_maybe_paginate_uses_request_offset(routescan: Routescan) -> None:
+    result = [{'blockNumber': str(i)} for i in range(100)]
+    options = {'offset': '100'}
+
+    new_options = routescan._maybe_paginate(result=result, options=options)
+
+    assert new_options is not None
+    assert new_options['startblock'] == '99'

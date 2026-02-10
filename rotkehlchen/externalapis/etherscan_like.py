@@ -4,6 +4,7 @@ import logging
 import operator
 from abc import ABC
 from collections.abc import Iterator
+from contextlib import suppress
 from enum import Enum, auto
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
@@ -463,7 +464,12 @@ class EtherscanLikeApi(ABC):
     ) -> dict[str, Any] | None:
         """Check if the results have hit the pagination limit.
         If yes adjust the options accordingly. Otherwise signal we are done"""
-        if len(result) != self.pagination_limit:
+        expected_page_size = self.pagination_limit
+        if (offset := options.get('offset')) is not None:
+            with suppress(TypeError, ValueError):
+                expected_page_size = int(offset)
+
+        if len(result) != expected_page_size:
             return None
 
         # else we hit the limit. Query once more with startblock being the last
