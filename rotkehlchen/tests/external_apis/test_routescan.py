@@ -9,7 +9,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.routescan import ROUTESCAN_SUPPORTED_CHAINS, Routescan
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, Timestamp
+from rotkehlchen.types import ChainID, Timestamp, deserialize_evm_tx_hash
 
 
 @pytest.fixture(name='routescan')
@@ -103,3 +103,19 @@ def test_routescan_account_queries_use_explicit_pagination(
     query_options = query_mock.call_args.kwargs['options']
     assert query_options['page'] == '1'
     assert query_options['offset'] == str(routescan.pagination_limit)
+
+
+def test_routescan_internal_by_txhash_uses_lower_offset(routescan: Routescan) -> None:
+    with patch.object(EtherscanLikeApi, '_query', return_value=[]) as query_mock:
+        list(routescan.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=None,
+            action='txlistinternal',
+            period_or_hash=deserialize_evm_tx_hash(
+                '0x2cb9dcf83b3fd1bbbec4cd5f8d0b688bfc3f6aadd99081f28eaccafcd26c4243',
+            ),
+        ))
+
+    query_options = query_mock.call_args.kwargs['options']
+    assert query_options['page'] == '1'
+    assert query_options['offset'] == '100'

@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import gevent
 from requests import Response
@@ -77,8 +77,14 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
         """Routescan doesn't need chainid in params since it's in the URL."""
         return {'module': module, 'action': action, 'apikey': api_key}
 
-    def _get_account_pagination_options(self, action: str) -> dict[str, str] | None:
+    def _get_account_pagination_options(
+            self,
+            action: str,
+            options: dict[str, Any],
+    ) -> dict[str, str] | None:
         """RouteScan defaults to small pages if page/offset are omitted."""
+        if action == 'txlistinternal' and 'txhash' in options:
+            return {'page': '1', 'offset': '100'}
         if action in {'txlist', 'txlistinternal', 'tokentx'}:
             return {'page': '1', 'offset': str(self.pagination_limit)}
         return None
