@@ -91,6 +91,12 @@ export interface RepullingTransactionResponse {
   newTransactions: Record<string, string[]>;
 }
 
+export interface RepullingEthStakingPayload extends TimeRange {
+  readonly entryType: string;
+  readonly validatorIndices?: number[];
+  readonly addresses?: string[];
+}
+
 export interface RepullingExchangeEventsPayload extends TimeRange {
   location: string;
   name: string;

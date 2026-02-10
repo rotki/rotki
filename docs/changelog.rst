@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`11583` Users can now re-pull missing ETH staking withdrawal events for specific validators or addresses within a chosen time range.
+* :feature:`11582` Users can now re-pull missing ETH staking block production events for specific validators or addresses within a chosen time range.
 * :bug:`-` The Kraken staking page will no longer get stuck on the loading screen when the backend is unresponsive.
 * :feature:`-` Users can now export CSV reports for any PnL report, including the old ones.
 * :bug:`11551` Unrelated ENS events should no longer appear in your events if bundled in a transaction affecting you.

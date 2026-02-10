@@ -1,6 +1,7 @@
 import type { ActionStatus } from '@/types/action';
 import type {
   AddTransactionHashPayload,
+  RepullingEthStakingPayload,
   RepullingExchangeEventsPayload,
   RepullingExchangeEventsResponse,
   RepullingTransactionPayload,
@@ -29,6 +30,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { notify } = useNotificationsStore();
   const {
     addTransactionHash: addTransactionHashCaller,
+    repullingEthStakingEvents: repullingEthStakingEventsCaller,
     repullingExchangeEvents: repullingExchangeEventsCaller,
     repullingTransactions: repullingTransactionsCaller,
   } = useHistoryEventsApi();
@@ -154,9 +156,52 @@ export const useHistoryTransactions = createSharedComposable(() => {
     return false;
   };
 
+  const repullingEthStakingEvents = async (payload: RepullingEthStakingPayload): Promise<boolean> => {
+    const taskType = TaskType.REPULLING_TXS;
+    const { taskId } = await repullingEthStakingEventsCaller(payload);
+
+    const dateRange = buildDateRange(payload.fromTimestamp, payload.toTimestamp);
+    const messagePayload = {
+      dateRange,
+      entryType: toHumanReadable(payload.entryType),
+    };
+
+    const taskMeta = {
+      description: t('actions.repulling_eth_staking.task.description', messagePayload),
+      title: t('actions.repulling_eth_staking.task.title'),
+    };
+
+    try {
+      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
+      if (result) {
+        notify({
+          display: true,
+          message: t('actions.repulling_eth_staking.success.description', messagePayload),
+          severity: Severity.INFO,
+          title: t('actions.repulling_eth_staking.task.title'),
+        });
+      }
+
+      return result;
+    }
+    catch (error: any) {
+      if (isTaskCancelled(error)) {
+        return false;
+      }
+      logger.error(error);
+      notify({
+        display: true,
+        message: t('actions.repulling_eth_staking.error.description', messagePayload),
+        title: t('actions.repulling_eth_staking.task.title'),
+      });
+    }
+    return false;
+  };
+
   return {
     addTransactionHash,
     refreshTransactions,
+    repullingEthStakingEvents,
     repullingExchangeEvents,
     repullingTransactions,
   };

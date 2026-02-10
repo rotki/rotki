@@ -788,6 +788,18 @@
         }
       }
     },
+    "repulling_eth_staking": {
+      "error": {
+        "description": "Failed to re-pull {entryType} events"
+      },
+      "success": {
+        "description": "Successfully re-pulled {entryType} events"
+      },
+      "task": {
+        "description": "Re-pulling {entryType} events {dateRange}",
+        "title": "Re-pulling ETH staking events"
+      }
+    },
     "repulling_exchange_events": {
       "error": {
         "description": "Failed to re-pull events for {exchange}"
@@ -5638,6 +5650,20 @@
       "confirmation": {
         "message": "This action may take some time to complete. Are you sure you want to proceed?",
         "title": "Confirm re-pull"
+      },
+      "eth_staking": {
+        "addresses_hint": "Optional. Leave empty to refetch for all tracked withdrawal addresses.",
+        "addresses_label": "Withdrawal Addresses",
+        "block_productions_warning": "Refetching block productions requires extensive beaconcha.in API usage. This may take a while and consume a significant number of API calls.",
+        "filter_by_label": "Filter By",
+        "filter_mode": {
+          "addresses": "Withdrawal Addresses",
+          "validator_indices": "Validator Indices"
+        },
+        "no_validators": "You don't have any ETH validators tracked. Please add validators first.",
+        "tab": "ETH Staking",
+        "type_label": "Event Type",
+        "validator_indices_hint": "Optional. Leave empty to refetch for all tracked validators."
       },
       "loading_tooltip": "Re-pulling is currently disabled because the transactions are still being fetched. Please wait a moment.",
       "no_accounts": "You don't have any blockchain accounts registered. Please {link} first.",

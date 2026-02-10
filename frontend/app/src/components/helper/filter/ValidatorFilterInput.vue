@@ -2,17 +2,19 @@
 import type { Eth2ValidatorEntry } from '@rotki/common';
 import ValidatorDisplay from '@/components/display/ValidatorDisplay.vue';
 
-defineOptions({
-  inheritAttrs: false,
-});
-
 const model = defineModel<Eth2ValidatorEntry[]>({ required: true });
 
 withDefaults(defineProps<{
   items: Eth2ValidatorEntry[];
   loading?: boolean;
+  dense?: boolean;
+  hideDetails?: boolean;
+  hint?: string;
 }>(), {
   loading: false,
+  dense: false,
+  hideDetails: false,
+  hint: undefined,
 });
 
 const { t } = useI18n({ useScope: 'global' });
@@ -24,12 +26,13 @@ const { t } = useI18n({ useScope: 'global' });
     :options="items"
     :loading="loading"
     :disabled="loading"
-    hide-details
+    :dense="dense"
+    :hide-details="hideDetails"
+    :hint="hint"
     hide-selected
     hide-no-data
     chips
     clearable
-    dense
     auto-select-first
     return-object
     key-attr="publicKey"
@@ -40,7 +43,6 @@ const { t } = useI18n({ useScope: 'global' });
   >
     <template #item="{ item }">
       <ValidatorDisplay
-        class="py-2"
         :validator="item"
       />
     </template>

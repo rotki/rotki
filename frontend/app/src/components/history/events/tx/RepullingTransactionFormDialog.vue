@@ -1,9 +1,10 @@
 <script lang="ts" setup>
 import type { Exchange } from '@/types/exchanges';
-import type { RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/types/history/events';
+import type { RepullingEthStakingPayload, RepullingExchangeEventsPayload, RepullingTransactionPayload } from '@/types/history/events';
+import dayjs from 'dayjs';
 import { useTemplateRef } from 'vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import RepullingTransactionForm from '@/components/history/events/tx/RepullingTransactionForm.vue';
+import RepullingTransactionForm, { type AccountType } from '@/components/history/events/tx/RepullingTransactionForm.vue';
 import { type RepullingTransactionResult, useHistoryTransactions } from '@/composables/history/events/tx';
 import { useRepullingTransactionForm } from '@/composables/history/events/tx/use-repulling-transaction-form';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
@@ -12,6 +13,7 @@ import { useHistoryStore } from '@/store/history';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError } from '@/types/api/errors';
+import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 
@@ -28,7 +30,7 @@ const props = withDefaults(defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const accountType = ref<'blockchain' | 'exchange'>('blockchain');
+const accountType = ref<AccountType>('blockchain');
 
 const submitting = ref<boolean>(false);
 const errorMessages = ref<Record<string, string[]>>({});
@@ -37,7 +39,7 @@ const stateUpdated = ref<boolean>(false);
 
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
-const { repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
+const { repullingEthStakingEvents, repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
 const { useIsTaskRunning } = useTaskStore();
 const { createDefaultFormData, shouldShowConfirmation } = useRepullingTransactionForm();
 const { resetUndecodedTransactionsStatus } = useHistoryStore();
@@ -46,8 +48,19 @@ const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
 
 const formData = ref(createDefaultFormData());
 
+function createDefaultEthStakingData(): RepullingEthStakingPayload {
+  return {
+    entryType: OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
+    fromTimestamp: dayjs().subtract(1, 'year').unix(),
+    toTimestamp: dayjs().unix(),
+  };
+}
+
+const ethStakingData = ref<RepullingEthStakingPayload>(createDefaultEthStakingData());
+
 function resetForm(): void {
   set(formData, createDefaultFormData());
+  set(ethStakingData, createDefaultEthStakingData());
   set(accountType, 'blockchain');
 }
 
@@ -110,6 +123,11 @@ async function handleBlockchainSubmission(data: RepullingTransactionPayload): Pr
   }
 }
 
+async function handleEthStakingSubmission(): Promise<void> {
+  set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
+  await repullingEthStakingEvents(get(ethStakingData));
+}
+
 async function performSubmission(): Promise<void> {
   const formRef = get(form);
   const data = get(formData);
@@ -121,6 +139,8 @@ async function performSubmission(): Promise<void> {
 
     if (type === 'exchange')
       await handleExchangeSubmission(data, formRef);
+    else if (type === 'eth_staking')
+      await handleEthStakingSubmission();
     else
       await handleBlockchainSubmission(data);
 
@@ -174,6 +194,7 @@ async function submit(): Promise<void> {
       v-model:account-type="accountType"
       v-model:error-messages="errorMessages"
       v-model:state-updated="stateUpdated"
+      v-model:eth-staking-data="ethStakingData"
     />
   </BigDialog>
 </template>

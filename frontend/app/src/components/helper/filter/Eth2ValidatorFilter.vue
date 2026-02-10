@@ -44,6 +44,8 @@ watch(accounts, accounts => updateAccounts(accounts));
     v-else
     :model-value="modelValue.validators"
     :items="ethStakingValidators"
+    dense
+    hide-details
     @update:model-value="updateValidators($event)"
   />
 </template>

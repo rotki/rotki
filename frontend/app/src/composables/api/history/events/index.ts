@@ -4,13 +4,18 @@ import type { QueryExchangeEventsPayload } from '@/types/exchanges';
 import { omit } from 'es-toolkit';
 import { z } from 'zod/v4';
 import { api } from '@/modules/api/rotki-api';
-import { VALID_TASK_STATUS, VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
+import {
+  VALID_TASK_STATUS,
+  VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
+  VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
+} from '@/modules/api/utils';
 import { type ActionDataEntry, ActionDataEntryArraySchema, type ActionStatus } from '@/types/action';
 import {
   type AddTransactionHashPayload,
   HistoryEventDetail,
   type PullEthBlockEventPayload,
   type PullTransactionPayload,
+  type RepullingEthStakingPayload,
   type RepullingExchangeEventsPayload,
   type RepullingTransactionPayload,
   type TransactionRequestPayload,
@@ -53,6 +58,7 @@ interface UseHistoryEventsApiReturn {
   getHistoryEventGroupPosition: (groupIdentifier: string, payload?: Partial<HistoryEventRequestPayload>) => Promise<number>;
   addTransactionHash: (payload: AddTransactionHashPayload) => Promise<boolean>;
   repullingTransactions: (payload: RepullingTransactionPayload) => Promise<PendingTask>;
+  repullingEthStakingEvents: (payload: RepullingEthStakingPayload) => Promise<PendingTask>;
   repullingExchangeEvents: (payload: RepullingExchangeEventsPayload) => Promise<PendingTask>;
   getTransactionTypeMappings: () => Promise<HistoryEventTypeData>;
   getHistoryEventCounterpartiesData: () => Promise<ActionDataEntry[]>;
@@ -179,6 +185,21 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
       },
       {
         validStatuses: VALID_TASK_STATUS,
+      },
+    );
+
+    return PendingTaskSchema.parse(response);
+  };
+
+  const repullingEthStakingEvents = async (payload: RepullingEthStakingPayload): Promise<PendingTask> => {
+    const response = await api.post<PendingTask>(
+      '/blockchains/eth2/events/refetch',
+      {
+        ...payload,
+        asyncQuery: true,
+      },
+      {
+        validStatuses: VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
       },
     );
 
@@ -321,6 +342,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     pullAndRecodeTransactionRequest,
     queryExchangeEvents,
     queryOnlineHistoryEvents,
+    repullingEthStakingEvents,
     repullingExchangeEvents,
     repullingTransactions,
   };
