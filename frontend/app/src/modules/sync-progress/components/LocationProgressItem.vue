@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toSentenceCase } from '@rotki/common';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { type LocationProgress, LocationStatus } from '../types';
 
@@ -36,7 +37,7 @@ const statusText = computed<string>(() => {
 
   if (get(isQuerying)) {
     if (props.location.eventType) {
-      return t('sync_progress.status.querying_event_type', { type: props.location.eventType });
+      return t('sync_progress.status.querying_event_type', { type: toSentenceCase(props.location.eventType) });
     }
     return t('sync_progress.status.querying');
   }
