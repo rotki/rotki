@@ -6,7 +6,7 @@ import pytest
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DAY_IN_SECONDS
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.etherscan_like import HasChainActivity
+from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.routescan import ROUTESCAN_SUPPORTED_CHAINS, Routescan
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, Timestamp
@@ -78,3 +78,30 @@ def test_routescan_rate_limits(routescan: Routescan) -> None:
             pytest.raises(RemoteError, match=expected_msg),
         ):
             routescan.get_blocknumber_by_time(chain_id=ChainID.ETHEREUM, ts=Timestamp(1700000000))
+
+
+def test_routescan_transactions_query_uses_explicit_pagination(routescan: Routescan) -> None:
+    """RouteScan defaults to very small pages if offset/page are omitted."""
+    with patch.object(EtherscanLikeApi, '_query', return_value=[]) as query_mock:
+        list(routescan.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=string_to_evm_address('0x56a1A34F0d33788ebA53e2706854A37A5F275536'),
+            action='txlist',
+        ))
+
+    query_options = query_mock.call_args.kwargs['options']
+    assert query_options['page'] == '1'
+    assert query_options['offset'] == str(routescan.pagination_limit)
+
+
+def test_routescan_tokentx_query_uses_explicit_pagination(routescan: Routescan) -> None:
+    """Ensure token tx hash queries don't get truncated by provider defaults."""
+    with patch.object(EtherscanLikeApi, '_query', return_value=[]) as query_mock:
+        list(routescan.get_token_transaction_hashes(
+            chain_id=ChainID.ETHEREUM,
+            account=string_to_evm_address('0x56a1A34F0d33788ebA53e2706854A37A5F275536'),
+        ))
+
+    query_options = query_mock.call_args.kwargs['options']
+    assert query_options['page'] == '1'
+    assert query_options['offset'] == str(routescan.pagination_limit)

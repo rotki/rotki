@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING, Any, Final
 
 import gevent
 from requests import Response
@@ -77,6 +77,29 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
         """Routescan doesn't need chainid in params since it's in the URL."""
         return {'module': module, 'action': action, 'apikey': api_key}
 
+    def _query(  # type: ignore[override]
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            module: str,
+            action: str,
+            options: dict[str, Any] | None = None,
+            timeout: tuple[int, int] | None = None,
+    ) -> list[dict[str, Any]] | str | int | dict[str, Any] | None:
+        """RouteScan defaults to small page sizes if pagination args are omitted."""
+        final_options = options
+        if module == 'account' and action in {'txlist', 'txlistinternal', 'tokentx'}:
+            final_options = dict(options) if options is not None else {}
+            final_options.setdefault('page', '1')
+            final_options.setdefault('offset', str(self.pagination_limit))
+
+        return super()._query(  # type: ignore[call-overload]
+            chain_id=chain_id,
+            module=module,
+            action=action,
+            options=final_options,
+            timeout=timeout,
+        )
+
     def _handle_rate_limit(
             self,
             response: Response,
@@ -139,6 +162,8 @@ class Routescan(ExternalServiceWithApiKey, EtherscanLikeApi):
             options={'txhash': str(tx_hash)},
         )) is None:
             raise RemoteError(f'Failed to get receipt data from {self.name} for tx {tx_hash!s}')
+        if not isinstance(raw_receipt_data, dict):
+            raise RemoteError(f'Unexpected receipt data from {self.name} for tx {tx_hash!s}')
 
         try:
             return maybe_read_integer(data=raw_receipt_data, key='l1Fee', api=self.name)
