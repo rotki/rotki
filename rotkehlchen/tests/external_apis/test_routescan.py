@@ -80,27 +80,25 @@ def test_routescan_rate_limits(routescan: Routescan) -> None:
             routescan.get_blocknumber_by_time(chain_id=ChainID.ETHEREUM, ts=Timestamp(1700000000))
 
 
-def test_routescan_transactions_query_uses_explicit_pagination(routescan: Routescan) -> None:
-    """RouteScan defaults to very small pages if offset/page are omitted."""
+@pytest.mark.parametrize('action', ['txlist', None])
+def test_routescan_account_queries_use_explicit_pagination(
+        routescan: Routescan,
+        action: str | None,
+) -> None:
+    """RouteScan account endpoints should always include explicit page and offset."""
     with patch.object(EtherscanLikeApi, '_query', return_value=[]) as query_mock:
-        list(routescan.get_transactions(
-            chain_id=ChainID.ETHEREUM,
-            account=string_to_evm_address('0x56a1A34F0d33788ebA53e2706854A37A5F275536'),
-            action='txlist',
-        ))
-
-    query_options = query_mock.call_args.kwargs['options']
-    assert query_options['page'] == '1'
-    assert query_options['offset'] == str(routescan.pagination_limit)
-
-
-def test_routescan_tokentx_query_uses_explicit_pagination(routescan: Routescan) -> None:
-    """Ensure token tx hash queries don't get truncated by provider defaults."""
-    with patch.object(EtherscanLikeApi, '_query', return_value=[]) as query_mock:
-        list(routescan.get_token_transaction_hashes(
-            chain_id=ChainID.ETHEREUM,
-            account=string_to_evm_address('0x56a1A34F0d33788ebA53e2706854A37A5F275536'),
-        ))
+        account = string_to_evm_address('0x56a1A34F0d33788ebA53e2706854A37A5F275536')
+        if action is None:
+            list(routescan.get_token_transaction_hashes(
+                chain_id=ChainID.ETHEREUM,
+                account=account,
+            ))
+        else:
+            list(routescan.get_transactions(
+                chain_id=ChainID.ETHEREUM,
+                account=account,
+                action='txlist',
+            ))
 
     query_options = query_mock.call_args.kwargs['options']
     assert query_options['page'] == '1'
