@@ -8,7 +8,9 @@ from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME
 from rotkehlchen.chain.evm.decoding.zerox.constants import CPT_ZEROX
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
+    NodeName,
     SerializableChainIndexerOrder,
+    WeightedNode,
     string_to_evm_address,
 )
 from rotkehlchen.constants import ONE, ZERO
@@ -27,6 +29,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     Location,
+    SupportedBlockchain,
     TimestampMS,
     TokenKind,
     deserialize_evm_tx_hash,
@@ -59,6 +62,16 @@ def _add_aerodrome_pool(pool: ChecksumEvmAddress) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
 @pytest.mark.parametrize('db_settings', [{
     'evm_indexers_order': SerializableChainIndexerOrder({ChainID.BASE: [EvmIndexer.ROUTESCAN]}),
 }])
@@ -149,6 +162,16 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
 @pytest.mark.parametrize('db_settings', [{
     'evm_indexers_order': SerializableChainIndexerOrder({ChainID.BASE: [EvmIndexer.ROUTESCAN]}),
 }])
@@ -213,6 +236,16 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
 @pytest.mark.parametrize('db_settings', [{
     'evm_indexers_order': SerializableChainIndexerOrder({ChainID.BASE: [EvmIndexer.ROUTESCAN]}),
 }])
