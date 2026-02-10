@@ -18,7 +18,7 @@ describe('modules/api/rotki-api', () => {
 
     // Mock window.location
     Object.defineProperty(window, 'location', {
-      value: { href: '' },
+      value: { href: '', origin: 'http://localhost:3000' },
       writable: true,
     });
   });
@@ -72,6 +72,15 @@ describe('modules/api/rotki-api', () => {
       expect(url).toContain('limit=10');
       expect(url).not.toContain('filter');
       expect(url).not.toContain('search');
+    });
+
+    it('handles relative base URL by using window.location.origin', () => {
+      const relativeApi = new RotkiApi();
+      // Simulate a relative base URL (e.g., when VITE_PUBLIC_PATH is set)
+      relativeApi.setup('/rotki');
+
+      const url = relativeApi.buildUrl('avatars/ens/vitalik.eth');
+      expect(url).toBe('http://localhost:3000/rotki/api/1/avatars/ens/vitalik.eth');
     });
   });
 

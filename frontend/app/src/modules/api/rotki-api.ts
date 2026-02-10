@@ -78,7 +78,8 @@ export class RotkiApi {
   }
 
   buildUrl(path: string, query?: Record<string, unknown>): string {
-    const url = new URL(path, this._baseURL);
+    const base = /^https?:\/\//.test(this._baseURL) ? this._baseURL : `${window.location.origin}${this._baseURL}`;
+    const url = new URL(path, base);
     if (query) {
       const transformedQuery = queryTransformer(query);
       for (const [key, value] of Object.entries(transformedQuery)) {
