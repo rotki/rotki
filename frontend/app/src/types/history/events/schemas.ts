@@ -249,7 +249,7 @@ interface EditAssetMovementEventPayload {
   identifier: number;
   timestamp: number;
   amount: BigNumber;
-  eventType: string;
+  eventSubtype: string;
   location: string;
   locationLabel: string | null;
   groupIdentifier: string | null;

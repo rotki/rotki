@@ -1,4 +1,8 @@
-import type { EvmSwapEvent, SolanaSwapEvent, SwapSubEventModel } from '@/types/history/events/schemas';
+import type {
+  EvmSwapEvent,
+  SolanaSwapEvent,
+  SwapSubEventModel,
+} from '@/types/history/events/schemas';
 
 export function toSubEvent(event: EvmSwapEvent | SolanaSwapEvent): Required<SwapSubEventModel> {
   return {
@@ -8,4 +12,11 @@ export function toSubEvent(event: EvmSwapEvent | SolanaSwapEvent): Required<Swap
     locationLabel: event.locationLabel ?? '',
     userNotes: event.userNotes ?? '',
   };
+}
+
+export function getAssetMovementsType(eventSubtype: string): 'deposit' | 'withdrawal' {
+  if (eventSubtype === 'receive') {
+    return 'deposit';
+  }
+  return 'withdrawal';
 }

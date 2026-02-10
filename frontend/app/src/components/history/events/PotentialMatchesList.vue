@@ -15,6 +15,7 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass, usePinnedSimpleTableClass } from '@/composables/history/events/use-pinned-column-class';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
 import { getEventEntryFromCollection } from '@/utils/history/events';
 
 const selectedMatchIds = defineModel<number[]>('selectedMatchIds', { required: true });
@@ -226,7 +227,7 @@ watchDebounced(onlyExpectedAssets, () => {
             </td>
             <td>
               <BadgeDisplay :class="{ '!leading-6 mb-1': isPinned }">
-                {{ movementEntry.eventType }}
+                {{ getAssetMovementsType(movementEntry.eventSubtype) }}
               </BadgeDisplay>
               <LocationDisplay
                 v-if="isPinned"

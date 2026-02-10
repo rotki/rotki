@@ -103,7 +103,7 @@ export function useHistoryMatchedMovementItem(
     const locationLabel = primary.locationLabel ?? '';
     const address = secondary?.locationLabel ?? '';
 
-    const notes = primary.eventType === 'deposit'
+    const notes = primary.eventSubtype === 'receive'
       ? t('asset_movement_matching.compact_notes.deposit', { address, amount, asset, locationLabel })
       : t('asset_movement_matching.compact_notes.withdraw', { address, amount, asset, locationLabel });
 
@@ -118,7 +118,7 @@ export function useHistoryMatchedMovementItem(
 
   const eventTypeLabel = computed<string>(() => {
     const primary = get(primaryEvent);
-    return primary.eventType === 'deposit'
+    return primary.eventSubtype === 'receive'
       ? t('backend_mappings.events.history_event_type.deposit')
       : t('backend_mappings.events.history_event_type.withdrawal');
   });

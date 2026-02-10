@@ -8,13 +8,12 @@ import dayjs from 'dayjs';
 import { isEqual } from 'es-toolkit';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import LocationSelector from '@/components/helper/LocationSelector.vue';
-import AmountInput from '@/components/inputs/AmountInput.vue';
-import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSearchSync.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useHistoryEventsForm } from '@/composables/history/events/form';
 import { refIsTruthy } from '@/composables/ref';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import AssetMovementFeeEntry from '@/modules/history/management/forms/common/AssetMovementFeeEntry.vue';
 import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
 import HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -33,11 +32,11 @@ const { t } = useI18n({ useScope: 'global' });
 const { data } = toRefs(props);
 
 const historyEventTypesData = [{
-  identifier: 'deposit',
-  label: t('backend_mappings.events.history_event_type.deposit'),
+  identifier: 'receive',
+  label: `${t('backend_mappings.events.history_event_subtype.receive')} (${t('backend_mappings.events.history_event_type.deposit')})`,
 }, {
-  identifier: 'withdrawal',
-  label: t('backend_mappings.events.history_event_type.withdrawal'),
+  identifier: 'spend',
+  label: `${t('backend_mappings.events.history_event_subtype.spend')} (${t('backend_mappings.events.history_event_type.withdrawal')})`,
 }];
 
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
@@ -46,7 +45,7 @@ const groupIdentifier = ref<string>('');
 const timestamp = ref<number>(0);
 const location = ref<string>('');
 const locationLabel = ref<string>('');
-const eventType = ref<string>('');
+const eventSubtype = ref<string>('');
 const asset = ref<string>('');
 const amount = ref<string>('');
 const notes = ref<[string, string] | [string]>(['']);
@@ -64,7 +63,7 @@ const states = {
   amount,
   asset,
   blockchain,
-  eventType,
+  eventSubtype,
   fee,
   feeAsset,
   groupIdentifier,
@@ -82,7 +81,7 @@ const { v$, captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEventFor
     amount: commonRules.createRequiredAmountRule(),
     asset: commonRules.createRequiredAssetRule(),
     blockchain: commonRules.createExternalValidationRule(),
-    eventType: commonRules.createRequiredEventTypeRule(),
+    eventSubtype: commonRules.createRequiredEventTypeRule(),
     fee: commonRules.createRequiredFeeRule(requiredIf(logicAnd(hasFee, refIsTruthy(feeAsset)))),
     feeAsset: commonRules.createRequiredFeeAssetRule(requiredIf(logicAnd(hasFee, refIsTruthy(fee)))),
     groupIdentifier: commonRules.createExternalValidationRule(),
@@ -120,7 +119,7 @@ function reset() {
   set(timestamp, dayjs().valueOf());
   set(location, get(lastLocation));
   set(locationLabel, '');
-  set(eventType, 'deposit');
+  set(eventSubtype, 'receive');
   set(asset, '');
   set(amount, '0');
   set(notes, ['']);
@@ -143,7 +142,7 @@ function applyEditableData(entry: AssetMovementEvent, feeEvent?: AssetMovementEv
   set(timestamp, entry.timestamp);
   set(location, entry.location);
   set(locationLabel, entry.locationLabel ?? '');
-  set(eventType, entry.eventType);
+  set(eventSubtype, entry.eventSubtype);
   set(asset, entry.asset ?? '');
   set(amount, entry.amount.toFixed());
 
@@ -190,7 +189,7 @@ async function save(): Promise<boolean> {
     asset: get(asset),
     blockchain: get(blockchain),
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-    eventType: get(eventType),
+    eventSubtype: get(eventSubtype),
     fee: null,
     feeAsset: null,
     groupIdentifier: get(groupIdentifier),
@@ -298,17 +297,17 @@ defineExpose({
     </div>
 
     <RuiAutoComplete
-      v-model="eventType"
+      v-model="eventSubtype"
       variant="outlined"
       :label="t('transactions.events.form.event_type.label')"
       required
       :options="historyEventTypesData"
       key-attr="identifier"
       text-attr="label"
-      data-cy="eventType"
+      data-cy="eventSubtype"
       auto-select-first
-      :error-messages="toMessages(v$.eventType)"
-      @blur="v$.eventType.$touch()"
+      :error-messages="toMessages(v$.eventSubtype)"
+      @blur="v$.eventSubtype.$touch()"
     />
 
     <RuiDivider class="mb-6 mt-2" />
@@ -324,33 +323,12 @@ defineExpose({
 
     <RuiDivider class="mb-6 mt-2" />
 
-    <RuiCheckbox
-      v-model="hasFee"
-      data-cy="has-fee"
-      label="Has Fee"
-      color="primary"
+    <AssetMovementFeeEntry
+      v-model:has-fee="hasFee"
+      v-model:fee="fee"
+      v-model:fee-asset="feeAsset"
+      :error-messages="{ fee: toMessages(v$.fee), feeAsset: toMessages(v$.feeAsset) }"
     />
-
-    <div class="grid md:grid-cols-2 gap-4">
-      <AmountInput
-        v-model="fee"
-        :disabled="!hasFee"
-        clearable
-        variant="outlined"
-        data-cy="fee-amount"
-        :label="t('common.fee')"
-        :error-messages="toMessages(v$.fee)"
-      />
-      <AssetSelect
-        v-model="feeAsset"
-        :disabled="!hasFee"
-        outlined
-        clearable
-        data-cy="fee-asset"
-        :label="t('transactions.events.form.fee_asset.label')"
-        :error-messages="toMessages(v$.feeAsset)"
-      />
-    </div>
 
     <RuiDivider class="mb-6 mt-2" />
 

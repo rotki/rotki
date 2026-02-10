@@ -7,12 +7,13 @@ import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass } from '@/composables/history/events/use-pinned-column-class';
+import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
 import { getEventEntryFromCollection } from '@/utils/history/events';
 
 interface UnmatchedMovementRow {
   groupIdentifier: string;
   entry: HistoryEventEntry;
-  eventType: string;
+  eventSubtype: string;
   isFiat: boolean;
   location: string;
   timestamp: number;
@@ -59,7 +60,7 @@ function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetCla
   if (!isPinned) {
     columns.push(
       {
-        key: 'eventType',
+        key: 'eventSubtype',
         label: t('common.type'),
         ...baseClass,
       },
@@ -96,7 +97,7 @@ const rows = computed<UnmatchedMovementRow[]>(() =>
     const eventEntry = { ...entry, ...meta };
     return {
       entry: eventEntry,
-      eventType: entry.eventType,
+      eventSubtype: entry.eventSubtype,
       groupIdentifier: movement.groupIdentifier,
       isFiat: movement.isFiat,
       location: entry.location,
@@ -182,9 +183,9 @@ function getRowClass(row: UnmatchedMovementRow): string {
           </RuiTooltip>
         </div>
       </template>
-      <template #item.eventType="{ row }">
+      <template #item.eventSubtype="{ row }">
         <BadgeDisplay>
-          {{ row.eventType }}
+          {{ getAssetMovementsType(row.eventSubtype) }}
         </BadgeDisplay>
       </template>
       <template #item.location="{ row }">
@@ -200,7 +201,7 @@ function getRowClass(row: UnmatchedMovementRow): string {
         />
         <template v-if="isPinned">
           <BadgeDisplay class="!leading-6 my-1">
-            {{ row.eventType }}
+            {{ getAssetMovementsType(row.eventSubtype) }}
           </BadgeDisplay>
           <LocationDisplay
             class="[&_div]:!justify-start"

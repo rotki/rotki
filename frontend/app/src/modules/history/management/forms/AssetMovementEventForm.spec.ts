@@ -59,7 +59,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     amount: bigNumberify(10),
     asset: asset.symbol,
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-    eventSubtype: 'remove asset',
+    eventSubtype: 'spend',
     eventType: 'withdrawal',
     extraData: {
       blockchain: 'optimism',
@@ -162,7 +162,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     const nowInMs = now.valueOf();
     await wrapper.find('[data-cy=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
     await wrapper.find('[data-cy=groupIdentifier] input').setValue('TEST123');
-    await wrapper.find('[data-cy=eventType] input').setValue('deposit');
+    await wrapper.find('[data-cy=eventSubtype] input').setValue('receive');
     await wrapper.find('[data-cy=locationLabel] input').setValue('Kraken 1');
     await wrapper.find('[data-cy=location] input').setValue('kraken');
     await wrapper.find('[data-cy=asset] input').setValue('BTC');
@@ -189,7 +189,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       asset: 'BTC',
       blockchain: '',
       entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-      eventType: 'deposit',
+      eventSubtype: 'receive',
       fee,
       feeAsset,
       groupIdentifier: 'TEST123',
@@ -274,7 +274,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
         amount: bigNumberify('250'),
         asset: 'USD',
         entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-        eventType: event.eventType,
+        eventSubtype: 'spend',
         fee: null,
         feeAsset: null,
         groupIdentifier: event.groupIdentifier,
@@ -310,7 +310,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
       asset: 'ETH',
       blockchain: event.extraData?.blockchain,
       entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-      eventType: event.eventType,
+      eventSubtype: 'spend',
       fee: fee.amount.toString(),
       feeAsset: fee.asset,
       groupIdentifier: event.groupIdentifier,
@@ -343,7 +343,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
         amount: bigNumberify('10'),
         asset: 'ETH',
         entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-        eventType: event.eventType,
+        eventSubtype: 'spend',
         fee: null,
         feeAsset: null,
         groupIdentifier: event.groupIdentifier,
@@ -367,7 +367,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     const now = dayjs();
     const nowInMs = now.valueOf();
     await wrapper.find('[data-cy=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
-    await wrapper.find('[data-cy=eventType] input').setValue('deposit');
+    await wrapper.find('[data-cy=eventSubtype] input').setValue('receive');
     await wrapper.find('[data-cy=location] input').setValue('kraken');
     await wrapper.find('[data-cy=asset] input').setValue('BTC');
     await wrapper.find('[data-cy=amount] input').setValue('2.5');
@@ -391,7 +391,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await vi.advanceTimersToNextTimerAsync();
     await flushPromises();
 
-    expect(wrapper.findAll('[data-cy=eventType] .selections span')).toHaveLength(2);
+    expect(wrapper.findAll('[data-cy=eventSubtype] .selections span')).toHaveLength(2);
   });
 
   describe('actualGroupIdentifier', () => {
