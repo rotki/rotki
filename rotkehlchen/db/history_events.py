@@ -433,7 +433,7 @@ class DBHistoryEvents:
             write_cursor=write_cursor,
             event=event,
             mapping_state=mapping_state,
-        ) and isinstance(event, OnchainEvent):
+        ) and mapping_state == HistoryMappingState.CUSTOMIZED and isinstance(event, OnchainEvent):
             write_cursor.execute(
                 'INSERT INTO key_value_cache (name, value) VALUES (?, ?)',
                 (DBCacheDynamic.CUSTOMIZED_EVENT_ORIGINAL_SEQ_IDX.get_db_key(

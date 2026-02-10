@@ -1093,7 +1093,11 @@ class CreateHistoryEventSchema(Schema):
     class CreateAssetMovementEventSchema(BaseSchema):
         event_type = SerializableEnumField(
             enum_class=HistoryEventType,
-            allow_only=[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+            allow_only=[
+                HistoryEventType.DEPOSIT,
+                HistoryEventType.WITHDRAWAL,
+                HistoryEventType.EXCHANGE_TRANSFER,
+            ],
             required=True,
         )
         fee = AmountField(load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501

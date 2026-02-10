@@ -50,6 +50,39 @@ class AssetMovementExtraData(TypedDict):
     matched_asset_movement: NotRequired[dict[str, Any]]
 
 
+def _normalize_asset_movement_type_and_subtype(
+        event_type: HistoryEventType,
+        event_subtype: HistoryEventSubType | None,
+        is_fee: bool,
+) -> tuple[HistoryEventType, HistoryEventSubType]:
+    """Normalize legacy and new asset movement type/subtype pairs."""
+    if is_fee:
+        return HistoryEventType.EXCHANGE_TRANSFER, HistoryEventSubType.FEE
+
+    if event_type == HistoryEventType.DEPOSIT:
+        return HistoryEventType.EXCHANGE_TRANSFER, HistoryEventSubType.RECEIVE
+    if event_type == HistoryEventType.WITHDRAWAL:
+        return HistoryEventType.EXCHANGE_TRANSFER, HistoryEventSubType.SPEND
+
+    if event_type != HistoryEventType.EXCHANGE_TRANSFER:
+        raise DeserializationError(
+            f'Unsupported asset movement event type {event_type}. '
+            f'Expected DEPOSIT, WITHDRAWAL or EXCHANGE_TRANSFER',
+        )
+
+    if event_subtype in (HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND):
+        return event_type, event_subtype
+    if event_subtype == HistoryEventSubType.DEPOSIT_ASSET:
+        return event_type, HistoryEventSubType.RECEIVE
+    if event_subtype == HistoryEventSubType.REMOVE_ASSET:
+        return event_type, HistoryEventSubType.SPEND
+
+    raise DeserializationError(
+        f'Unsupported asset movement event subtype {event_subtype}. '
+        f'Expected RECEIVE or SPEND',
+    )
+
+
 class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
     """Asset movement event representing deposits and withdrawals on exchanges."""
 
@@ -59,7 +92,11 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             self,
             timestamp: TimestampMS,
             location: Location,
-            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+            event_type: Literal[
+                HistoryEventType.DEPOSIT,
+                HistoryEventType.WITHDRAWAL,
+                HistoryEventType.EXCHANGE_TRANSFER,
+            ],
             asset: Asset,
             amount: FVal,
             identifier: int | None = None,
@@ -67,6 +104,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             unique_id: str | None = None,
             extra_data: AssetMovementExtraData | None = None,
             is_fee: bool = False,
+            event_subtype: HistoryEventSubType | None = None,
             location_label: str | None = None,
             notes: str | None = None,
     ) -> None:
@@ -84,15 +122,12 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
 
         May raise UnknownAsset.
         """
-        if is_fee:
-            sequence_index = 1
-            event_subtype = HistoryEventSubType.FEE
-        else:
-            sequence_index = 0
-            if event_type == HistoryEventType.DEPOSIT:
-                event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-            else:
-                event_subtype = HistoryEventSubType.REMOVE_ASSET
+        sequence_index = 1 if is_fee else 0
+        normalized_event_type, normalized_subtype = _normalize_asset_movement_type_and_subtype(
+            event_type=event_type,
+            event_subtype=event_subtype,
+            is_fee=is_fee,
+        )
 
         super().__init__(
             group_identifier=group_identifier if group_identifier is not None else create_group_identifier(  # noqa: E501
@@ -105,8 +140,8 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             sequence_index=sequence_index,
             timestamp=timestamp,
             location=location,
-            event_type=event_type,
-            event_subtype=event_subtype,
+            event_type=normalized_event_type,
+            event_subtype=normalized_subtype,
             asset=asset,
             amount=amount,
             notes=notes,
@@ -138,8 +173,9 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             timestamp=TimestampMS(entry[3]),
             location=Location.deserialize_from_db(entry[4]),
             location_label=entry[5],
-            event_type=HistoryEventType.deserialize(entry[9]),  # type: ignore  # should always be correct from the DB
-            is_fee=(HistoryEventSubType.deserialize(entry[10]) == HistoryEventSubType.FEE),
+            event_type=HistoryEventType.deserialize(entry[9]),  # type: ignore[arg-type]  # should always be correct from the DB
+            is_fee=(event_subtype := HistoryEventSubType.deserialize(entry[10])) == HistoryEventSubType.FEE,  # noqa: E501
+            event_subtype=event_subtype,
             asset=Asset(entry[6]).check_existence(),
             amount=amount,
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
@@ -156,9 +192,9 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
         asset_symbol = self.asset.symbol_or_name()
         if self.event_subtype == HistoryEventSubType.FEE:
             auto_notes = f'Pay {self.amount} {asset_symbol} as {location_name} {str(self.event_type).lower()} fee'  # noqa: E501
-        elif self.event_type == HistoryEventType.DEPOSIT:
+        elif self.event_subtype == HistoryEventSubType.RECEIVE:
             auto_notes = f'Deposit {self.amount} {asset_symbol} to {location_name}'
-        else:  # withdrawal
+        else:  # spend
             auto_notes = f'Withdraw {self.amount} {asset_symbol} from {location_name}'
 
         serialized_data['auto_notes'] = auto_notes
@@ -170,10 +206,11 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
         if (event_type := base_data['event_type']) not in {
             HistoryEventType.DEPOSIT,
             HistoryEventType.WITHDRAWAL,
+            HistoryEventType.EXCHANGE_TRANSFER,
         }:
             raise DeserializationError(
                 f'Unsupported asset movement event type {event_type}. '
-                f'Expected DEPOSIT or WITHDRAWAL',
+                f'Expected DEPOSIT, WITHDRAWAL or EXCHANGE_TRANSFER',
             )
 
         return cls(
@@ -182,8 +219,9 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             timestamp=base_data['timestamp'],
             location=base_data['location'],
             location_label=base_data['location_label'],
-            event_type=event_type,  # type: ignore  # just confirmed it's a DEPOSIT or WITHDRAWAL above
+            event_type=event_type,  # type: ignore[arg-type]  # checked just above
             is_fee=(base_data['event_subtype'] == HistoryEventSubType.FEE),
+            event_subtype=base_data['event_subtype'],
             asset=base_data['asset'],
             amount=base_data['amount'],
             extra_data=base_data['extra_data'],
@@ -237,9 +275,14 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
 def create_asset_movement_with_fee(
         timestamp: TimestampMS,
         location: Location,
-        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+        event_type: Literal[
+            HistoryEventType.DEPOSIT,
+            HistoryEventType.WITHDRAWAL,
+            HistoryEventType.EXCHANGE_TRANSFER,
+        ],
         asset: Asset,
         amount: 'FVal',
+        event_subtype: Literal[HistoryEventSubType.SPEND, HistoryEventSubType.RECEIVE] | None = None,  # noqa: E501
         fee: AssetAmount | None = None,
         location_label: str | None = None,
         unique_id: str | None = None,
@@ -256,6 +299,7 @@ def create_asset_movement_with_fee(
     events = [AssetMovement(
         location=location,
         event_type=event_type,
+        event_subtype=event_subtype,
         timestamp=timestamp,
         asset=asset,
         amount=amount,

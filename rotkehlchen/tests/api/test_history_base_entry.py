@@ -215,6 +215,15 @@ def test_add_edit_delete_entries(
 
     for group in grouped_entries:
         json_data = entries_to_input_dict(group, include_identifier=False)
+        if (
+            json_data.get('entry_type') == 'asset movement event' and
+            json_data.get('event_type') == 'exchange transfer'
+        ):
+            json_data['event_type'] = (
+                'withdrawal'
+                if group[0].event_subtype == HistoryEventSubType.SPEND else
+                'deposit'
+            )
         if isinstance(event := group[0], EvmEvent):
             add_test_evm_tx(database=rotki.data.db, tx_hash=event.tx_ref)
         response = requests.put(
@@ -396,6 +405,15 @@ def test_add_edit_delete_entries(
             for entry in group:
                 entry.group_identifier = f'new_eventid{idx}'
             json_data = entries_to_input_dict(group, include_identifier=True)
+            if (
+                json_data.get('entry_type') == 'asset movement event' and
+                json_data.get('event_type') == 'exchange transfer'
+            ):
+                json_data['event_type'] = (
+                    'withdrawal'
+                    if group[0].event_subtype == HistoryEventSubType.SPEND else
+                    'deposit'
+                )
             json_data['group_identifier'] = f'new_eventid{idx}'
             response = requests.patch(
                 api_url_for(rotkehlchen_api_server, 'historyeventresource'),
@@ -866,7 +884,7 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
             filter_query=HistoryEventFilterQuery.make(),
             aggregate_by_group_ids=False,
         )) == 3  # including the fee event.
-        assert events[1].event_subtype == HistoryEventSubType.REMOVE_ASSET
+        assert events[1].event_subtype == HistoryEventSubType.SPEND
         assert events[1].notes == 'Main event note'
         assert events[2].event_subtype == HistoryEventSubType.FEE
         assert events[2].notes == 'Fee event note'
@@ -877,8 +895,8 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
     # Check event serialization.
     assert generate_events_response(data=[events[1]])[0]['entry'] == {
         'timestamp': 1669924575000,
-        'event_type': 'withdrawal',
-        'event_subtype': 'remove asset',
+        'event_type': 'exchange transfer',
+        'event_subtype': 'spend',
         'location': 'bitfinex',
         'location_label': None,
         'asset': 'ETH',
@@ -933,12 +951,13 @@ def test_add_edit_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
                     'asset': 'ETH',
                     'amount': '0.000004',
                     'entry_type': 'asset movement event',
-                    'event_type': 'withdrawal',
+                    'event_type': 'exchange transfer',
                     'identifier': 3,
                     'location': 'bitfinex',
                 }
             else:
                 expected_event = entries[idx].copy()
+                expected_event['event_type'] = 'exchange transfer'
 
             for field in fields_to_exclude:
                 serialized_event.pop(field, None)

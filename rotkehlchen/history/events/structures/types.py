@@ -54,6 +54,7 @@ class HistoryEventType(SerializableEnumNameMixin):
     MARGIN = auto()
     TRANSACTION_TO_SELF = auto()
     EXCHANGE_ADJUSTMENT = auto()
+    EXCHANGE_TRANSFER = auto()
 
 
 class HistoryEventSubType(SerializableEnumNameMixin):
@@ -182,8 +183,8 @@ class EventCategory(Enum):
     RECEIVE_PAYMENT = 41, EventDirection.IN
     RECEIVE_GRANT = 42, EventDirection.IN
     INTEREST = 43, EventDirection.IN
-    CEX_DEPOSIT = 44, EventDirection.NEUTRAL
-    CEX_WITHDRAWAL = 45, EventDirection.NEUTRAL
+    CEX_DEPOSIT = 44, EventDirection.IN
+    CEX_WITHDRAWAL = 45, EventDirection.OUT
     CASHBACK = 46, EventDirection.IN
     HACK_LOSS = 47, EventDirection.OUT
     CLAWBACK = 48, EventDirection.OUT

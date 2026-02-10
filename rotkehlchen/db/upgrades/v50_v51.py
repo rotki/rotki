@@ -304,6 +304,32 @@ def upgrade_v50_to_v51(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             ),
         )
 
+    @progress_step(description='Migrate asset movement type/subtype to exchange_transfer.')
+    def _migrate_asset_movement_types(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            """
+            UPDATE history_events
+            SET type = ?,
+                subtype = CASE
+                    WHEN subtype = ? THEN ?
+                    WHEN subtype = ? THEN ?
+                    ELSE subtype
+                END
+            WHERE entry_type = ?
+              AND type IN (?, ?)
+            """,
+            (
+                HistoryEventType.EXCHANGE_TRANSFER.serialize(),
+                HistoryEventSubType.DEPOSIT_ASSET.serialize(),
+                HistoryEventSubType.RECEIVE.serialize(),
+                HistoryEventSubType.REMOVE_ASSET.serialize(),
+                HistoryEventSubType.SPEND.serialize(),
+                HistoryBaseEntryType.ASSET_MOVEMENT_EVENT.serialize_for_db(),
+                HistoryEventType.DEPOSIT.serialize(),
+                HistoryEventType.WITHDRAWAL.serialize(),
+            ),
+        )
+
     @progress_step(description='Remove Coinbase swaps with identical spend/receive amounts and assets.')  # noqa: E501
     def _remove_same_asset_same_amount_coinbase_swaps(write_cursor: 'DBCursor') -> None:
         """Removes any Coinbase swaps where the spend and receive have the same amount and asset.

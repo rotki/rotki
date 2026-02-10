@@ -151,6 +151,20 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.SPEND: {DEFAULT: EventCategory.SEND},
         HistoryEventSubType.RECEIVE: {DEFAULT: EventCategory.RECEIVE},
     },
+    HistoryEventType.EXCHANGE_TRANSFER: {
+        # Categories are side-aware:
+        # - onchain side uses account deposit/withdraw labels
+        # - exchange side uses cex deposit/withdraw labels
+        HistoryEventSubType.SPEND: {
+            DEFAULT: EventCategory.ACCOUNT_WITHDRAWAL,
+            EXCHANGE: EventCategory.CEX_WITHDRAWAL,
+        },
+        HistoryEventSubType.RECEIVE: {
+            DEFAULT: EventCategory.ACCOUNT_DEPOSIT,
+            EXCHANGE: EventCategory.CEX_DEPOSIT,
+        },
+        HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
+    },
 }
 
 EVENT_GROUPING_ORDER = {  # Determines how to group events when serializing for the api
@@ -166,6 +180,11 @@ EVENT_GROUPING_ORDER = {  # Determines how to group events when serializing for 
     },
     HistoryEventType.WITHDRAWAL: {
         HistoryEventSubType.REMOVE_ASSET: 0,
+        HistoryEventSubType.FEE: 1,
+    },
+    HistoryEventType.EXCHANGE_TRANSFER: {
+        HistoryEventSubType.SPEND: 0,
+        HistoryEventSubType.RECEIVE: 0,
         HistoryEventSubType.FEE: 1,
     },
 }

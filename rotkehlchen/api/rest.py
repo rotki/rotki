@@ -3608,7 +3608,10 @@ class RestAPI:
                     asset_movement=asset_movement,
                     fee_event=fee_event,  # type: ignore[arg-type]  # Will be asset movement fee. Query is filtered by entry type above.
                     matched_event=matched_event,
-                    is_deposit=asset_movement.event_type == HistoryEventType.DEPOSIT,
+                    is_deposit=asset_movement.event_subtype in (
+                        HistoryEventSubType.RECEIVE,
+                        HistoryEventSubType.DEPOSIT_ASSET,  # legacy
+                    ) or asset_movement.event_type == HistoryEventType.DEPOSIT,  # legacy
                     allow_adding_adjustments=allow_adding_adjustments,
                 )
             return api_response(OK_RESULT)
@@ -3692,11 +3695,8 @@ class RestAPI:
         the matched event's identifier since it could be two asset movements matched to each other
         in which case there is an entry for both.
 
-        Note that the matched event is not modified to revert the changes to its event type, notes,
-        counterparty, etc since this info is no longer available. While we could have this stored
-        in the extra data, the event may also have been edited by user since the matching, and we
-        would risk overwriting user changes. For onchain events at least, the user can manually
-        delete the event and redecode the tx to reset it if needed.
+        For matches created by this app, events are restored from backups saved prior to matching,
+        including event type/subtype, notes, and counterparty.
         """
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             linked_ids = defaultdict(list)
@@ -3809,7 +3809,10 @@ class RestAPI:
             close_match_identifiers = [x.identifier for x in find_asset_movement_matches(
                 events_db=events_db,
                 asset_movement=asset_movement,  # type: ignore  # filtered by entry_types
-                is_deposit=asset_movement.event_type == HistoryEventType.DEPOSIT,
+                is_deposit=asset_movement.event_subtype in (
+                    HistoryEventSubType.RECEIVE,
+                    HistoryEventSubType.DEPOSIT_ASSET,  # legacy
+                ) or asset_movement.event_type == HistoryEventType.DEPOSIT,  # legacy
                 fee_event=fee_event,  # type: ignore  # filtered by entry_types
                 match_window=time_range,
                 cursor=cursor,

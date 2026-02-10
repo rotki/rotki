@@ -512,7 +512,7 @@ def _process_movement_candidate_set(
     matched_events = find_asset_movement_matches(
         events_db=events_db,
         asset_movement=asset_movement,
-        is_deposit=(is_deposit := asset_movement.event_type == HistoryEventType.DEPOSIT),
+        is_deposit=(is_deposit := asset_movement.event_subtype == HistoryEventSubType.RECEIVE),
         fee_event=(fee_event := fee_events.get(asset_movement.group_identifier)),
         match_window=match_window,
         cursor=cursor,
@@ -831,25 +831,29 @@ def update_asset_movement_matched_event(
 
     # Modify the matched event
     if is_deposit:
-        matched_event.event_type = HistoryEventType.WITHDRAWAL
-        matched_event.event_subtype = HistoryEventSubType.REMOVE_ASSET
-        notes = 'Withdraw {amount} {asset} from {location_label}'
-        from_to_exchange = ' to {exchange}'
+        matched_event.event_type = HistoryEventType.EXCHANGE_TRANSFER
+        matched_event.event_subtype = HistoryEventSubType.SPEND
+        notes = 'Send {amount} {asset}'
+        address_hint = ' from {location_label}'
+        exchange_hint = ' to {exchange}'
     else:
-        matched_event.event_type = HistoryEventType.DEPOSIT
-        matched_event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-        notes = 'Deposit {amount} {asset} to {location_label}'
-        from_to_exchange = ' from {exchange}'
+        matched_event.event_type = HistoryEventType.EXCHANGE_TRANSFER
+        matched_event.event_subtype = HistoryEventSubType.RECEIVE
+        notes = 'Receive {amount} {asset}'
+        address_hint = ' in {location_label}'
+        exchange_hint = ' from {exchange}'
 
     if should_edit_notes:
         format_args = {
             'amount': matched_event.amount,
             'asset': matched_event.asset.resolve_to_asset_with_symbol().symbol,
-            'location_label': matched_event.location_label,
         }
+        if matched_event.location_label is not None:
+            notes += address_hint
+            format_args['location_label'] = matched_event.location_label
         if asset_movement.location_label is not None:
             format_args['exchange'] = asset_movement.location_label
-            notes += from_to_exchange
+            notes += exchange_hint
 
         matched_event.notes = notes.format(**format_args)
 
@@ -931,6 +935,8 @@ def should_exclude_possible_match(
     if event.location == asset_movement.location:
         return True  # only allow exchange-to-exchange between different exchanges
 
+    is_deposit = asset_movement.event_subtype == HistoryEventSubType.RECEIVE
+
     if isinstance(event, OnchainEvent):
         if (
             event.event_type == HistoryEventType.SPEND and
@@ -944,13 +950,27 @@ def should_exclude_possible_match(
             event.extra_data.get('matched_asset_movement') is None
         ) and (
             (
-                asset_movement.event_type == HistoryEventType.WITHDRAWAL and
-                event.event_type == HistoryEventType.DEPOSIT and
-                event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+                is_deposit and
+                (
+                    (
+                        event.event_type == HistoryEventType.EXCHANGE_TRANSFER and
+                        event.event_subtype == HistoryEventSubType.RECEIVE
+                    ) or (
+                        event.event_type == HistoryEventType.WITHDRAWAL and
+                        event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+                    )
+                )
             ) or (
-                asset_movement.event_type == HistoryEventType.DEPOSIT and
-                event.event_type == HistoryEventType.WITHDRAWAL and
-                event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+                not is_deposit and
+                (
+                    (
+                        event.event_type == HistoryEventType.EXCHANGE_TRANSFER and
+                        event.event_subtype == HistoryEventSubType.SPEND
+                    ) or (
+                        event.event_type == HistoryEventType.DEPOSIT and
+                        event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
+                    )
+                )
             )
         ):
             return True
@@ -979,7 +999,7 @@ def should_exclude_possible_match(
     if exclude_unexpected_direction:
         expected_direction = (
             EventDirection.OUT
-            if asset_movement.event_type == HistoryEventType.DEPOSIT
+            if is_deposit
             else EventDirection.IN
         )
         if event.maybe_get_direction() not in {EventDirection.NEUTRAL, expected_direction}:
@@ -1182,7 +1202,7 @@ def _find_close_matches(
     if len(close_matches) > 1:  # Multiple close matches. Prefer expected direction, then other heuristics.  # noqa: E501
         expected_direction = (
             EventDirection.OUT
-            if asset_movement.event_type == HistoryEventType.DEPOSIT
+            if is_deposit
             else EventDirection.IN
         )
         direction_matches = [

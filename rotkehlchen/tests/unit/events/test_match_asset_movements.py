@@ -276,8 +276,8 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
 
     assert len(events) == 8
     # Corresponding event for deposit2
-    assert (deposit2_matched_event := events[0]).event_type == HistoryEventType.WITHDRAWAL
-    assert deposit2_matched_event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+    assert (deposit2_matched_event := events[0]).event_type == HistoryEventType.EXCHANGE_TRANSFER
+    assert deposit2_matched_event.event_subtype == HistoryEventSubType.SPEND
     assert deposit2_matched_event.notes == 'Important info'  # Notes shouldn't be updated on monerium events.  # noqa: E501
     assert deposit2_matched_event.counterparty == Location.GEMINI.name.lower()
     # Second event matching deposit2 but with the wrong ref. Unmodified.
@@ -285,9 +285,9 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
     deposit_2_wrong_ref_event.identifier = events[1].identifier
     assert events[1] == deposit_2_wrong_ref_event
     # Corresponding event for withdrawal1
-    assert (withdrawal1_matched_event := events[2]).event_type == HistoryEventType.DEPOSIT
-    assert withdrawal1_matched_event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET
-    assert withdrawal1_matched_event.notes == f'Deposit 0.2 USDC to {withdrawal1_user_address} from Coinbase 1'  # noqa: E501
+    assert (withdrawal1_matched_event := events[2]).event_type == HistoryEventType.EXCHANGE_TRANSFER  # noqa: E501
+    assert withdrawal1_matched_event.event_subtype == HistoryEventSubType.RECEIVE
+    assert withdrawal1_matched_event.notes == f'Receive 0.2 USDC in {withdrawal1_user_address} from Coinbase 1'  # noqa: E501
     assert withdrawal1_matched_event.counterparty == Location.COINBASE.name.lower()
     # Second event matching withdrawal1 but with the wrong amount. Unmodified.
     withdrawal1_wrong_amount_event.identifier = events[3].identifier
@@ -299,11 +299,11 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
     # but neither are modified since both match.
     assert all(event.notes is None for event in events[5:7])
     # Corresponding event for deposit3
-    assert (deposit3_matched_event := events[7]).event_type == HistoryEventType.WITHDRAWAL
-    assert deposit3_matched_event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+    assert (deposit3_matched_event := events[7]).event_type == HistoryEventType.EXCHANGE_TRANSFER
+    assert deposit3_matched_event.event_subtype == HistoryEventSubType.SPEND
     # Check that the note has been updated but doesn't include the 'to {exchange}' part since
     # deposit3 doesn't have a location_label set.
-    assert deposit3_matched_event.notes == f'Withdraw 100 USDC from {deposit3_user_address}'
+    assert deposit3_matched_event.notes == f'Send 100 USDC from {deposit3_user_address}'
     assert deposit3_matched_event.counterparty == Location.BYBIT.name.lower()
 
     # Last two events should be withdrawal4's matched event and a new adjustment event to cover the
@@ -1007,10 +1007,10 @@ def test_exchange_deposit_delayed_credit(database: 'DBHandler') -> None:
             filter_query=HistoryEventFilterQuery.make(identifiers=[match_id]),
         )[0]
 
-    assert matched_event.event_type == HistoryEventType.WITHDRAWAL
-    assert matched_event.event_subtype == HistoryEventSubType.REMOVE_ASSET
+    assert matched_event.event_type == HistoryEventType.EXCHANGE_TRANSFER
+    assert matched_event.event_subtype == HistoryEventSubType.SPEND
     assert matched_event.counterparty == 'poloniex'  # type: ignore[attr-defined]
-    assert matched_event.notes == f'Withdraw 1 ETH from {user_address} to Poloniex 1'
+    assert matched_event.notes == f'Send 1 ETH from {user_address} to Poloniex 1'
     assert matched_event.extra_data == {'matched_asset_movement': {
         'group_identifier': asset_movement.group_identifier,
         'exchange': 'poloniex',

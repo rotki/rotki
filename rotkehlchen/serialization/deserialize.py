@@ -287,7 +287,11 @@ def get_pair_position_str(pair: TradePair, position: str) -> str:
 
 def deserialize_asset_movement_event_type(
         value: str,
-) -> Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]:
+) -> Literal[
+    HistoryEventType.DEPOSIT,
+    HistoryEventType.WITHDRAWAL,
+    HistoryEventType.EXCHANGE_TRANSFER,
+]:
     """Takes a string and determines whether to accept it as an asset movement event_type
 
     Can throw DeserializationError if value is not as expected
@@ -297,6 +301,8 @@ def deserialize_asset_movement_event_type(
             return HistoryEventType.DEPOSIT
         if lowered_value in {'withdraw', 'withdrawal'}:
             return HistoryEventType.WITHDRAWAL
+        if lowered_value in {'exchange_transfer', 'exchange transfer'}:
+            return HistoryEventType.EXCHANGE_TRANSFER
         raise DeserializationError(
             f'Failed to deserialize asset movement category symbol. Unknown {value}',
         )
