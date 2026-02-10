@@ -178,6 +178,13 @@ class EtherscanLikeApi(ABC):
         """
         return False  # no-op by default
 
+    def _get_account_pagination_options(
+            self,
+            action: str,
+    ) -> dict[str, str] | None:
+        """Return optional account endpoint pagination params for an indexer."""
+        return None
+
     @overload
     def _query(
             self,
@@ -505,6 +512,8 @@ class EtherscanLikeApi(ABC):
         is not in the expected format
         """
         options = {'sort': 'asc'}
+        if (pagination_options := self._get_account_pagination_options(action=action)) is not None:
+            options.update(pagination_options)
         parent_tx_hash = None
         if account:
             options['address'] = str(account)
@@ -613,6 +622,10 @@ class EtherscanLikeApi(ABC):
             to_block: int | None = None,
     ) -> Iterator[list[EVMTxHash]]:
         options = {'address': str(account), 'sort': 'asc'}
+        if (pagination_options := self._get_account_pagination_options(
+            action='tokentx',
+        )) is not None:
+            options.update(pagination_options)
         if from_block is not None:
             options['startblock'] = str(from_block)
         if to_block is not None:
