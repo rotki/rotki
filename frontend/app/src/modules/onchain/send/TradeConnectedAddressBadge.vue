@@ -70,6 +70,7 @@ const chain = computed<string | undefined>(() => {
           :location="chain"
           :text="connectedAddress"
           copy-only
+          no-scramble
         />
       </div>
     </template>

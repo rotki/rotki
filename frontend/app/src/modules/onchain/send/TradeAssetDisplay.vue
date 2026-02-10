@@ -66,10 +66,16 @@ const name = assetName(props.data.asset, { collectionParent: false });
 
         <template v-else>
           <div>
-            <ValueDisplay :value="amount" />
+            <ValueDisplay
+              :value="amount"
+              no-scramble
+            />
           </div>
           <div>
-            (<FiatDisplay :value="data.price.multipliedBy(amount)" />)
+            (<FiatDisplay
+              no-scramble
+              :value="data.price.multipliedBy(amount)"
+            />)
           </div>
           <div>
             <RuiButton

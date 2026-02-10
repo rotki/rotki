@@ -94,6 +94,18 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
       });
       expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe('1.50');
     });
+
+    it('should not scramble the amount when noScramble is true', async () => {
+      wrapper = mount(AssetAmountDisplay, {
+        global: { plugins: [pinia] },
+        props: {
+          amount: bigNumberify(1.5),
+          asset: 'ETH',
+          noScramble: true,
+        },
+      });
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.50');
+    });
   });
 
   describe('currency location', () => {

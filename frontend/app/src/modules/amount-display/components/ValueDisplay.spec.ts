@@ -96,6 +96,17 @@ describe('modules/amount-display/components/ValueDisplay', () => {
       });
       expect(wrapper.find('[data-cy="display-amount"]').text()).not.toBe('1.50');
     });
+
+    it('should not scramble the value when noScramble is true', async () => {
+      wrapper = mount(ValueDisplay, {
+        global: { plugins: [pinia] },
+        props: {
+          noScramble: true,
+          value: bigNumberify(1.5),
+        },
+      });
+      expect(wrapper.find('[data-cy="display-amount"]').text()).toBe('1.50');
+    });
   });
 
   describe('format options', () => {

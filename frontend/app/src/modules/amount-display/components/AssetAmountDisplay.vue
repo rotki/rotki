@@ -34,6 +34,8 @@ interface Props {
   noCollectionParent?: boolean;
   /** Disable truncation on currency symbol */
   noTruncate?: boolean;
+  /** Skip scrambling even when privacy mode is enabled */
+  noScramble?: boolean;
 }
 
 defineOptions({
@@ -47,13 +49,13 @@ const props = withDefaults(defineProps<Props>(), {
   noTruncate: false,
 });
 
-const { amount, asset, noCollectionParent } = toRefs(props);
+const { amount, asset, noCollectionParent, noScramble } = toRefs(props);
 
 // Composables
 const { assetInfo } = useAssetInfoRetrieval();
 const resolutionOptions = computed(() => ({ collectionParent: !get(noCollectionParent) }));
 const info = assetInfo(asset, resolutionOptions);
-const { scrambledValue } = useScrambledValue({ value: amount });
+const { scrambledValue } = useScrambledValue({ value: amount, noScramble });
 
 // Computed - returns empty string if no asset provided
 const assetSymbol = computed<string>(() => {

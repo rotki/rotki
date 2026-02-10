@@ -25,6 +25,8 @@ interface Props {
   loading?: boolean;
   /** Disable tooltip */
   noTooltip?: boolean;
+  /** Skip scrambling even when privacy mode is enabled */
+  noScramble?: boolean;
 }
 
 defineOptions({
@@ -37,10 +39,10 @@ const props = withDefaults(defineProps<Props>(), {
   noTooltip: false,
 });
 
-const { value } = toRefs(props);
+const { value, noScramble } = toRefs(props);
 
 // Apply scrambling for privacy
-const { scrambledValue } = useScrambledValue({ value });
+const { scrambledValue } = useScrambledValue({ value, noScramble });
 
 // Merge format with amountRoundingMode
 const formatWithRounding = computed<FormatOptions>(() => ({
