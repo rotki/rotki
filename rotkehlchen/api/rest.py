@@ -1974,7 +1974,7 @@ class RestAPI:
     @async_api_call()
     def refetch_staking_events(
             self,
-            entry_type: Literal[HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT],  # noqa: E501
+            entry_type: Literal[HistoryEventQueryType.BLOCK_PRODUCTIONS, HistoryEventQueryType.ETH_WITHDRAWALS],  # noqa: E501
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             validator_indices: list[int],

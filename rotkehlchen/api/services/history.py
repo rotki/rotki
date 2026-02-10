@@ -765,7 +765,7 @@ class HistoryService:
 
     def refetch_staking_events(
             self,
-            entry_type: Literal[HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT],  # noqa: E501
+            entry_type: Literal[HistoryEventQueryType.BLOCK_PRODUCTIONS, HistoryEventQueryType.ETH_WITHDRAWALS],  # noqa: E501
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             validator_indices: list[int],
@@ -788,7 +788,7 @@ class HistoryService:
             }
 
         try:
-            if entry_type == HistoryBaseEntryType.ETH_BLOCK_EVENT:
+            if entry_type == HistoryEventQueryType.BLOCK_PRODUCTIONS:
                 log.debug(f'Refetching block production events for validator indices {validator_indices}')  # noqa: E501
                 eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks(
                     indices=validator_indices,

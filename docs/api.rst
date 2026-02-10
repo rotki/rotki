@@ -15129,7 +15129,7 @@ Refetch ETH staking events
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": false, "entry_type": "eth_block_event", "validator_indices": [12345, 67890]}
+      {"async_query": false, "entry_type": "block productions", "validator_indices": [12345, 67890]}
 
    **Example Request (withdrawals by addresses)**:
 
@@ -15139,12 +15139,12 @@ Refetch ETH staking events
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": false, "entry_type": "eth_withdrawal_event", "addresses": ["0x4c66C2055f6A7A01e102Bde8d8d71d1D36667e21"], "from_timestamp": 1640995200, "to_timestamp": 1672531200}
+      {"async_query": false, "entry_type": "eth withdrawals", "addresses": ["0x4c66C2055f6A7A01e102Bde8d8d71d1D36667e21"], "from_timestamp": 1640995200, "to_timestamp": 1672531200}
 
    :reqjson bool async_query: If true, the query will be processed asynchronously.
-   :reqjson string entry_type: The type of staking events to refetch. Must be either ``eth_block_event`` or ``eth_withdrawal_event``.
-   :reqjson list[int] validator_indices: Optional. A non-empty list of validator indices to refetch events for. Exactly one of ``validator_indices`` or ``addresses`` must be provided.
-   :reqjson list[string] addresses: Optional. A non-empty list of withdrawal addresses to refetch events for. Exactly one of ``validator_indices`` or ``addresses`` must be provided.
+   :reqjson string entry_type: The type of staking events to refetch. Must be either ``block productions`` or ``eth withdrawals``.
+   :reqjson list[int] validator_indices: Optional. A list of one or more validator indices to refetch events for. Exactly one of ``validator_indices`` or ``addresses`` must be provided.
+   :reqjson list[string] addresses: Optional. A list of one or more withdrawal addresses to refetch events for. Exactly one of ``validator_indices`` or ``addresses`` must be provided.
    :reqjson int from_timestamp: Optional. Start of the time period. Defaults to 0. Only meaningful for withdrawal events since beaconcha.in does not support time range filtering.
    :reqjson int to_timestamp: Optional. End of the time period. Defaults to current time. Only meaningful for withdrawal events since beaconcha.in does not support time range filtering.
 

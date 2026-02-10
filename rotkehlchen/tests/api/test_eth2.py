@@ -1385,7 +1385,7 @@ def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') 
     assert_error_response(  # neither validator_indices nor addresses provided
         response=requests.post(url, json={
             'async_query': False,
-            'entry_type': 'eth_block_event',
+            'entry_type': 'block productions',
         }),
         contained_in_msg='Exactly one of validator_indices or addresses must be provided',
         status_code=HTTPStatus.BAD_REQUEST,
@@ -1393,7 +1393,7 @@ def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') 
     assert_error_response(  # both provided
         response=requests.post(url, json={
             'async_query': False,
-            'entry_type': 'eth_block_event',
+            'entry_type': 'block productions',
             'validator_indices': [1],
             'addresses': ['0x4c66c2055f6a7a01e102bde8d8d71d1d36667e21'],
         }),
@@ -1403,7 +1403,7 @@ def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') 
     assert_error_response(  # empty validator_indices
         response=requests.post(url, json={
             'async_query': False,
-            'entry_type': 'eth_block_event',
+            'entry_type': 'block productions',
             'validator_indices': [],
         }),
         contained_in_msg='Exactly one of validator_indices or addresses must be provided',
@@ -1412,7 +1412,7 @@ def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') 
     assert_error_response(  # non-existent validator index
         response=requests.post(url, json={
             'async_query': False,
-            'entry_type': 'eth_block_event',
+            'entry_type': 'block productions',
             'validator_indices': [999999],
         }),
         contained_in_msg='are not tracked by rotki',
@@ -1421,7 +1421,7 @@ def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') 
     assert_error_response(  # non-existent address
         response=requests.post(url, json={
             'async_query': False,
-            'entry_type': 'eth_withdrawal_event',
+            'entry_type': 'eth withdrawals',
             'addresses': ['0x4c66c2055f6a7a01e102bde8d8d71d1d36667e21'],
         }),
         contained_in_msg='have no associated validators tracked by rotki',
@@ -1483,7 +1483,7 @@ def test_refetch_block_production_events(rotkehlchen_api_server: 'APIServer') ->
             api_url_for(rotkehlchen_api_server, 'refetchstakingeventsresource'),
             json={
                 'async_query': False,
-                'entry_type': 'eth_block_event',
+                'entry_type': 'block productions',
                 'validator_indices': [v_index],
             },
         )
@@ -1554,7 +1554,7 @@ def test_refetch_withdrawal_events(rotkehlchen_api_server: 'APIServer') -> None:
             api_url_for(rotkehlchen_api_server, 'refetchstakingeventsresource'),
             json={
                 'async_query': False,
-                'entry_type': 'eth_withdrawal_event',
+                'entry_type': 'eth withdrawals',
                 'addresses': [withdrawal_address],
                 'from_timestamp': 1709800000,
                 'to_timestamp': 1710200000,

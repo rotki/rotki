@@ -4711,8 +4711,8 @@ class Eth2StakingEventsResetSchema(Schema):
 
 class RefetchStakingEventsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
     entry_type = SerializableEnumField(
-        enum_class=HistoryBaseEntryType,
-        allow_only=(HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT),  # noqa: E501
+        enum_class=HistoryEventQueryType,
+        allow_only=(HistoryEventQueryType.BLOCK_PRODUCTIONS, HistoryEventQueryType.ETH_WITHDRAWALS),  # noqa: E501
         required=True,
     )
     validator_indices = fields.List(
