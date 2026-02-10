@@ -37,7 +37,11 @@ const statusText = computed<string>(() => {
 
   if (get(isQuerying)) {
     if (props.location.eventType) {
-      return t('sync_progress.status.querying_event_type', { type: toSentenceCase(props.location.eventType) });
+      const eventType = props.location.eventType;
+      const type = eventType === 'history_query'
+        ? t('common.events')
+        : toSentenceCase(props.location.eventType);
+      return t('sync_progress.status.querying_event_type', { type });
     }
     return t('sync_progress.status.querying');
   }
