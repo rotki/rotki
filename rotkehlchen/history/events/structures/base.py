@@ -66,9 +66,9 @@ def get_event_direction(
         return EventDirection.NEUTRAL
     if event_type == HistoryEventType.EXCHANGE_TRANSFER:
         if event_subtype == HistoryEventSubType.SPEND:
-            return EventDirection.OUT
+            return EventDirection.OUT if for_balance_tracking else EventDirection.NEUTRAL
         if event_subtype == HistoryEventSubType.RECEIVE:
-            return EventDirection.IN
+            return EventDirection.IN if for_balance_tracking else EventDirection.NEUTRAL
         if event_subtype == HistoryEventSubType.FEE:
             return EventDirection.OUT
 

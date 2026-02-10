@@ -174,14 +174,6 @@ EVENT_GROUPING_ORDER = {  # Determines how to group events when serializing for 
         HistoryEventSubType.FEE: 2,
     }),
     HistoryEventType.MULTI_TRADE: spend_receive_fee,
-    HistoryEventType.DEPOSIT: {
-        HistoryEventSubType.DEPOSIT_ASSET: 0,
-        HistoryEventSubType.FEE: 1,
-    },
-    HistoryEventType.WITHDRAWAL: {
-        HistoryEventSubType.REMOVE_ASSET: 0,
-        HistoryEventSubType.FEE: 1,
-    },
     HistoryEventType.EXCHANGE_TRANSFER: {
         HistoryEventSubType.SPEND: 0,
         HistoryEventSubType.RECEIVE: 0,

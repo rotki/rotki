@@ -465,7 +465,8 @@ def test_poloniex_deposits_withdrawal_null_fee(poloniex: 'Poloniex'):
         )
 
     assert len(asset_movements) == 1
-    assert asset_movements[0].event_type == HistoryEventType.WITHDRAWAL
+    assert asset_movements[0].event_type == HistoryEventType.EXCHANGE_TRANSFER
+    assert asset_movements[0].event_subtype == HistoryEventSubType.SPEND
     assert asset_movements[0].timestamp == TimestampMS(1478994442000)
     assert asset_movements[0].asset == Asset('FAIR')
     assert asset_movements[0].amount == FVal('100.5')

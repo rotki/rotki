@@ -253,7 +253,7 @@ def test_querying_deposits_withdrawals(kraken):
             filter_query=HistoryEventFilterQuery.make(
                 location=Location.KRAKEN,
                 from_ts=Timestamp(1439994442),
-                event_types=[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+                event_types=[HistoryEventType.EXCHANGE_TRANSFER],
                 entry_types=IncludeExcludeFilterData(
                     values=[HistoryBaseEntryType.ASSET_MOVEMENT_EVENT],
                 ),
@@ -347,8 +347,8 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
     assert movements[0].location_label == kraken.name
     assert movements[0].asset == A_ETH
     assert movements[0].amount == ONE
-    assert movements[0].event_type == HistoryEventType.WITHDRAWAL
-    assert movements[0].event_subtype == HistoryEventSubType.REMOVE_ASSET
+    assert movements[0].event_type == HistoryEventType.EXCHANGE_TRANSFER
+    assert movements[0].event_subtype == HistoryEventSubType.SPEND
     assert movements[1].group_identifier == movements[0].group_identifier
     assert movements[1].sequence_index == 1
     assert movements[1].timestamp == TimestampMS(1439994442000)
@@ -356,11 +356,11 @@ def test_kraken_query_deposit_withdrawals_unknown_asset(kraken):
     assert movements[1].location_label == kraken.name
     assert movements[1].asset == A_ETH
     assert movements[1].amount == FVal('0.0035')
-    assert movements[1].event_type == HistoryEventType.WITHDRAWAL
+    assert movements[1].event_type == HistoryEventType.EXCHANGE_TRANSFER
     assert movements[1].event_subtype == HistoryEventSubType.FEE
     assert movements[2].asset == A_EUR
     assert movements[2].amount == FVal('4000000')
-    assert movements[2].event_type == HistoryEventType.DEPOSIT
+    assert movements[2].event_type == HistoryEventType.EXCHANGE_TRANSFER
     assert movements[3].event_subtype == HistoryEventSubType.FEE
     errors = kraken.msg_aggregator.consume_errors()
     assert len(errors) == 1
@@ -1132,7 +1132,7 @@ def test_kraken_event_serialization_with_custom_asset(database):
             assert asset_movements[0].serialize()['auto_notes'] == 'Deposit 1 Gold Bar to Kraken'
         else:
             assert asset_movements[0].serialize()['auto_notes'] == 'Withdraw 1 Gold Bar from Kraken'  # noqa: E501
-        assert asset_movements[1].serialize()['auto_notes'] == f'Pay 1 Gold Bar as Kraken {event_type.name.lower()} fee'  # noqa: E501
+        assert asset_movements[1].serialize()['auto_notes'] == 'Pay 1 Gold Bar as Kraken exchange transfer fee'  # noqa: E501
 
     for event_type, event_subtype, expected_notes in (
             (HistoryEventType.STAKING, HistoryEventSubType.REWARD, 'Gain 1 Gold Bar from Kraken staking'),  # noqa: E501

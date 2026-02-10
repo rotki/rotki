@@ -34,7 +34,7 @@ KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
     HistoryBaseEntryType.ETH_DEPOSIT_EVENT: {'tx_ref', 'validator_index', 'sequence_index', 'group_identifier'},  # noqa: E501
     HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: {'validator_index', 'is_exit_or_blocknumber', 'is_exit'},  # noqa: E501
     HistoryBaseEntryType.EVM_EVENT: {'tx_ref', 'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'counterparty', 'product', 'address', 'extra_data', 'group_identifier'},  # noqa: E501
-    HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: {'location', 'event_type', 'asset', 'group_identifier', 'extra_data'},  # noqa: E501
+    HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: {'location', 'event_type', 'event_subtype', 'asset', 'group_identifier', 'extra_data'},  # noqa: E501
     HistoryBaseEntryType.SWAP_EVENT: {'location', 'asset', 'group_identifier'},
 }
 

@@ -1100,6 +1100,17 @@ class CreateHistoryEventSchema(Schema):
             ],
             required=True,
         )
+        event_subtype = SerializableEnumField(
+            enum_class=HistoryEventSubType,
+            allow_only=[
+                HistoryEventSubType.RECEIVE,
+                HistoryEventSubType.SPEND,
+                HistoryEventSubType.DEPOSIT_ASSET,
+                HistoryEventSubType.REMOVE_ASSET,
+            ],
+            required=False,
+            load_default=None,
+        )
         fee = AmountField(load_default=None, validate=validate.Range(min=ZERO, min_inclusive=False))  # noqa: E501
         location = LocationField(required=True)
         location_label = EmptyAsNoneStringField(load_default=None)
@@ -1135,6 +1146,17 @@ class CreateHistoryEventSchema(Schema):
                     message='fee_notes may only be provided when fee_amount is present',
                     field_name='fee_notes',
                 )
+            if (
+                data['event_type'] == HistoryEventType.EXCHANGE_TRANSFER and
+                data['event_subtype'] is None
+            ):
+                raise ValidationError(
+                    message=(
+                        'event_subtype must be provided for exchange transfer and '
+                        'must be either spend or receive'
+                    ),
+                    field_name='event_subtype',
+                )
 
             extra_data: AssetMovementExtraData = {}
             if (address := data['address']) is not None:
@@ -1156,6 +1178,7 @@ class CreateHistoryEventSchema(Schema):
                 unique_id=unique_id,
                 timestamp=data['timestamp'],
                 event_type=data['event_type'],
+                event_subtype=data['event_subtype'],
                 identifier=data.get('identifier'),
                 group_identifier=data['group_identifier'],
                 amount=data['amount'],
@@ -1177,6 +1200,7 @@ class CreateHistoryEventSchema(Schema):
                 timestamp=data['timestamp'],
                 identifier=data.get('identifier'),
                 event_type=data['event_type'],
+                event_subtype=data['event_subtype'],
                 extra_data=extra_data,
                 group_identifier=data['group_identifier'],
                 location_label=data['location_label'],

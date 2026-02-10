@@ -272,7 +272,8 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
     )
     assert len(deposit_movements) == 1
     processed_deposited = deposit_movements[0]
-    assert processed_deposited.event_type == HistoryEventType.DEPOSIT
+    assert processed_deposited.event_type == HistoryEventType.EXCHANGE_TRANSFER
+    assert processed_deposited.event_subtype == HistoryEventSubType.RECEIVE
     assert processed_deposited.asset == A_ETH
     assert processed_deposited.location_label == function_scope_coinbaseprime.name
     assert processed_deposited.amount == FVal(100)
@@ -314,7 +315,8 @@ def test_process_movements(function_scope_coinbaseprime: Coinbaseprime):
     )
     assert len(withdrawal_movements) == 1
     processed_withdrawal = withdrawal_movements[0]
-    assert processed_withdrawal.event_type == HistoryEventType.WITHDRAWAL
+    assert processed_withdrawal.event_type == HistoryEventType.EXCHANGE_TRANSFER
+    assert processed_withdrawal.event_subtype == HistoryEventSubType.SPEND
     assert processed_withdrawal.asset == Asset('ICP')
     assert processed_deposited.location_label == function_scope_coinbaseprime.name
     assert processed_withdrawal.amount == FVal(250)

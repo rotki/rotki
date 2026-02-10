@@ -3877,7 +3877,7 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
             (5, 'deposit', 'deposit to protocol', 'aave-v3'),  # migrated
             (6, 'withdrawal', 'withdraw from protocol', 'aave-v3'),  # migrated
             (7, 'deposit', 'deposit asset', 'compound'),  # not customized
-            (8, 'deposit', 'deposit asset', None),  # asset movement
+            (8, 'exchange transfer', 'receive', None),  # asset movement
             (9, 'deposit', 'deposit asset', None),  # no counterparty
         ]
         assert json.loads(cursor.execute(

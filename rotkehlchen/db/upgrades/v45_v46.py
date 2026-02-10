@@ -1,10 +1,10 @@
 import json
 import logging
 import urllib.parse
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.constants import ALLASSETIMAGESDIR_NAME, ASSETIMAGESDIR_NAME, IMAGESDIR_NAME
+from rotkehlchen.constants import ALLASSETIMAGESDIR_NAME, ASSETIMAGESDIR_NAME, IMAGESDIR_NAME, ZERO
 from rotkehlchen.constants.assets import A_COW, A_GNOSIS_COW, A_LQTY
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
@@ -13,11 +13,11 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
-    create_asset_movement_with_fee,
+    AssetMovementExtraData,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import AssetAmount, Location
+from rotkehlchen.types import AssetAmount, Location, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.progress import perform_userdb_upgrade_steps, progress_step
 
@@ -28,6 +28,57 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+def _create_legacy_asset_movement_with_fee(
+        timestamp: TimestampMS,
+        location: Location,
+        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+        asset: Asset,
+        amount: FVal,
+        fee: AssetAmount | None = None,
+        location_label: str | None = None,
+        extra_data: AssetMovementExtraData | None = None,
+) -> list[AssetMovement]:
+    """Create asset movements using the legacy type/subtype representation.
+
+    This upgrade must preserve historical output as it was in v45->v46.
+    """
+    subtype = (
+        HistoryEventSubType.DEPOSIT_ASSET
+        if event_type == HistoryEventType.DEPOSIT else
+        HistoryEventSubType.REMOVE_ASSET
+    )
+    events = [AssetMovement(
+        timestamp=timestamp,
+        location=location,
+        location_label=location_label,
+        event_type=event_type,
+        event_subtype=subtype,
+        asset=asset,
+        amount=amount,
+        extra_data=extra_data,
+    )]
+    # Keep legacy type/subtype in the upgraded output.
+    events[0].event_type = event_type
+    events[0].event_subtype = subtype
+
+    if fee is not None and fee.amount != ZERO:
+        fee_event = AssetMovement(
+            timestamp=timestamp,
+            location=location,
+            location_label=location_label,
+            event_type=event_type,
+            is_fee=True,
+            asset=fee.asset,
+            amount=fee.amount,
+            group_identifier=events[0].group_identifier,
+        )
+        fee_event.event_type = event_type
+        fee_event.event_subtype = HistoryEventSubType.FEE
+        events.append(fee_event)
+
+    return events
 
 
 @enter_exit_debug_log(name='UserDB v45->v46 upgrade')
@@ -105,13 +156,16 @@ def upgrade_v45_to_v46(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
                 (label := event_identifier_to_label.get(row[10])) is not None
             ):
                 location_label = label
+            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = (
+                HistoryEventType.DEPOSIT if row[2] == 'A' else HistoryEventType.WITHDRAWAL
+            )
 
             try:
-                new_events.extend(create_asset_movement_with_fee(
+                new_events.extend(_create_legacy_asset_movement_with_fee(
                     timestamp=ts_sec_to_ms(row[5]),
                     location=location,
                     location_label=location_label,
-                    event_type=HistoryEventType.DEPOSIT if row[2] == 'A' else HistoryEventType.WITHDRAWAL,  # noqa: E501
+                    event_type=event_type,
                     asset=Asset(row[6]).check_existence(),  # Added existence check here since AssetMovement has been changed to no longer resolve the asset on initialization  # noqa: E501
                     amount=FVal(row[7]),
                     fee=AssetAmount(asset=Asset(row[8]), amount=FVal(row[9])),

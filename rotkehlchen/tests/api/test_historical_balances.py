@@ -89,14 +89,16 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
         AssetMovement(
             timestamp=ts_sec_to_ms(day_3_ts := Timestamp(START_TS + DAY_IN_SECONDS * 2)),
             location=Location.COINBASE,
-            event_type=HistoryEventType.DEPOSIT,
+            event_type=HistoryEventType.EXCHANGE_TRANSFER,
+            event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=ONE,
         ),
         AssetMovement(
             timestamp=ts_sec_to_ms(Timestamp(day_3_ts + 1)),
             location=Location.COINBASE,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_type=HistoryEventType.EXCHANGE_TRANSFER,
+            event_subtype=HistoryEventSubType.SPEND,
             asset=A_BTC,
             amount=ONE,
         ),
@@ -380,9 +382,10 @@ def test_get_historical_asset_amounts_over_time(
     # Check all balance amount change points are present with correct amounts
     assert len(result['times']) == len(result['values'])
     assert 'last_group_identifier' not in result
+    day_3_ts = START_TS + DAY_IN_SECONDS * 2
     for ts, amount in zip(result['times'], result['values'], strict=True):
-        assert ts in {START_TS, START_TS + DAY_IN_SECONDS * 2, START_TS + DAY_IN_SECONDS * 3}
-        assert amount in {'2', '1.5', '3.5'}
+        assert ts in {START_TS, day_3_ts, day_3_ts + 1, START_TS + DAY_IN_SECONDS * 3}
+        assert amount in {'2', '2.5', '1.5', '3.5'}
 
 
 @pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
@@ -482,13 +485,15 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['times']) == len(result['values'])
-    assert len(result['times']) == 2
+    assert len(result['times']) == 3
 
     assert result['last_group_identifier'] == [7, events[0].group_identifier]
     assert result['times'][0] == START_TS  # Initial timestamp
-    assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend
+    assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend and exchange receive
+    assert result['times'][2] == START_TS + DAY_IN_SECONDS * 2 + 1  # Exchange transfer spend
     assert result['values'][0] == '2'  # Initial balance
     assert result['values'][1] == '1.5'  # Balance after first spend
+    assert result['values'][2] == '1.5'  # Balance after exchange transfer spend
 
 
 @pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')

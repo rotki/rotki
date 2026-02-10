@@ -215,15 +215,6 @@ def test_add_edit_delete_entries(
 
     for group in grouped_entries:
         json_data = entries_to_input_dict(group, include_identifier=False)
-        if (
-            json_data.get('entry_type') == 'asset movement event' and
-            json_data.get('event_type') == 'exchange transfer'
-        ):
-            json_data['event_type'] = (
-                'withdrawal'
-                if group[0].event_subtype == HistoryEventSubType.SPEND else
-                'deposit'
-            )
         if isinstance(event := group[0], EvmEvent):
             add_test_evm_tx(database=rotki.data.db, tx_hash=event.tx_ref)
         response = requests.put(
@@ -405,15 +396,6 @@ def test_add_edit_delete_entries(
             for entry in group:
                 entry.group_identifier = f'new_eventid{idx}'
             json_data = entries_to_input_dict(group, include_identifier=True)
-            if (
-                json_data.get('entry_type') == 'asset movement event' and
-                json_data.get('event_type') == 'exchange transfer'
-            ):
-                json_data['event_type'] = (
-                    'withdrawal'
-                    if group[0].event_subtype == HistoryEventSubType.SPEND else
-                    'deposit'
-                )
             json_data['group_identifier'] = f'new_eventid{idx}'
             response = requests.patch(
                 api_url_for(rotkehlchen_api_server, 'historyeventresource'),

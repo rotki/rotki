@@ -3809,10 +3809,7 @@ class RestAPI:
             close_match_identifiers = [x.identifier for x in find_asset_movement_matches(
                 events_db=events_db,
                 asset_movement=asset_movement,  # type: ignore  # filtered by entry_types
-                is_deposit=asset_movement.event_subtype in (
-                    HistoryEventSubType.RECEIVE,
-                    HistoryEventSubType.DEPOSIT_ASSET,  # legacy
-                ) or asset_movement.event_type == HistoryEventType.DEPOSIT,  # legacy
+                is_deposit=asset_movement.event_subtype == HistoryEventSubType.RECEIVE,
                 fee_event=fee_event,  # type: ignore  # filtered by entry_types
                 match_window=time_range,
                 cursor=cursor,
