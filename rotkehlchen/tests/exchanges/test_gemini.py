@@ -16,7 +16,7 @@ from rotkehlchen.exchanges.gemini import gemini_symbol_to_base_quote
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_KEY,
@@ -332,7 +332,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         identifier=1,
         location=Location.GEMINI,
         location_label=sandbox_gemini.name,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1535451930000),
         asset=A_USD,
         amount=FVal('1.00'),
@@ -345,7 +345,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         identifier=6,
         location=Location.GEMINI,
         location_label=sandbox_gemini.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1507913541000),
         asset=A_USD,
         amount=FVal('36.00'),
@@ -354,7 +354,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         identifier=5,
         location=Location.GEMINI,
         location_label=sandbox_gemini.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1499990797000),
         asset=A_ETH,
         amount=FVal('100'),
@@ -364,7 +364,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         identifier=4,
         location=Location.GEMINI,
         location_label=sandbox_gemini.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1495550176000),
         asset=A_BTC,
         amount=FVal('1500'),
@@ -374,7 +374,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         identifier=3,
         location=Location.GEMINI,
         location_label=sandbox_gemini.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1458862076000),
         asset=A_USD,
         amount=FVal('500.00'),
@@ -383,7 +383,7 @@ def test_gemini_query_deposits_withdrawals(sandbox_gemini):
         identifier=2,
         location=Location.GEMINI,
         location_label=sandbox_gemini.name,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1450403787000),
         asset=A_BTC,
         amount=FVal('5'),

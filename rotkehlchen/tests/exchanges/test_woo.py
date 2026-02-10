@@ -15,7 +15,7 @@ from rotkehlchen.exchanges.woo import API_MAX_LIMIT, Woo
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.constants import A_SOL
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
@@ -420,7 +420,7 @@ def test_deserialize_asset_movement_deposit(mock_woo: 'Woo') -> None:
     assert result == [AssetMovement(
         location=Location.WOO,
         location_label=mock_woo.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1579399877000),
         asset=A_ETH,
         amount=FVal(1000),
@@ -457,7 +457,7 @@ def test_deserialize_asset_movement_withdrawal(mock_woo: 'Woo') -> None:
     assert result == [AssetMovement(
         location=Location.WOO,
         location_label=mock_woo.name,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1686677756000),
         asset=A_SOL,
         amount=FVal(12.71),

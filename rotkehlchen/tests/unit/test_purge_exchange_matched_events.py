@@ -36,7 +36,7 @@ def test_purge_exchange_restores_matched_events(database: 'DBHandler') -> None:
             write_cursor=write_cursor,
             history=[AssetMovement(
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1600000000000),
                 asset=A_ETH,
                 amount=FVal('1.5'),
@@ -126,7 +126,7 @@ def test_purge_exchange_with_adjustment_event(database: 'DBHandler') -> None:
             write_cursor=write_cursor,
             history=[AssetMovement(
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1600000000000),
                 asset=A_ETH,
                 amount=FVal('2.0'),

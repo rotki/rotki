@@ -36,7 +36,7 @@ from rotkehlchen.history.events.structures.swap import (
     create_swap_events,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -455,13 +455,12 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         asset = asset_from_bitfinex(bitfinex_name=raw_result[1])
 
         amount = deserialize_fval(raw_result[12])
-        event_type: Final = (
-            HistoryEventType.DEPOSIT
+        event_subtype: Final = (
+            HistoryEventSubType.RECEIVE
             if amount > ZERO
-            else HistoryEventType.WITHDRAWAL
+            else HistoryEventSubType.SPEND
         )
-        address = None
-        transaction_id = None
+        address = transaction_id = None
         if asset.is_fiat() is False:
             address = str(raw_result[16])
             transaction_id = str(raw_result[20])
@@ -469,7 +468,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
         return create_asset_movement_with_fee(
             location=self.location,
             location_label=self.name,
-            event_type=event_type,
+            event_subtype=event_subtype,
             timestamp=TimestampMS(deserialize_timestamp(raw_result[5])),
             asset=asset,
             amount=abs(amount),

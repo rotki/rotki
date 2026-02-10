@@ -28,7 +28,7 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -290,7 +290,11 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
             return []
 
         movements = []
-        event_type: Final = HistoryEventType.DEPOSIT if query_for == 'deposit' else HistoryEventType.WITHDRAWAL  # noqa: E501
+        movement_subtype: Final = (
+            HistoryEventSubType.RECEIVE
+            if query_for == 'deposit' else
+            HistoryEventSubType.SPEND
+        )
         for movement in raw_data:
             if (timestamp_raw := movement.get('created-at')) is not None:
                 timestamp = ts_ms_to_sec(TimestampMS(int(timestamp_raw)))
@@ -305,7 +309,7 @@ class Htx(ExchangeInterface, SignatureGeneratorMixin):
                     timestamp=ts_sec_to_ms(timestamp),
                     location=self.location,
                     location_label=self.name,
-                    event_type=event_type,
+                    event_subtype=movement_subtype,
                     asset=(coin := asset_from_htx(movement['currency'])),
                     amount=deserialize_fval(movement['amount']),
                     fee=AssetAmount(

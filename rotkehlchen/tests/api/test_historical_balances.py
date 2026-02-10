@@ -89,7 +89,6 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
         AssetMovement(
             timestamp=ts_sec_to_ms(day_3_ts := Timestamp(START_TS + DAY_IN_SECONDS * 2)),
             location=Location.COINBASE,
-            event_type=HistoryEventType.EXCHANGE_TRANSFER,
             event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=ONE,
@@ -97,7 +96,6 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
         AssetMovement(
             timestamp=ts_sec_to_ms(Timestamp(day_3_ts + 1)),
             location=Location.COINBASE,
-            event_type=HistoryEventType.EXCHANGE_TRANSFER,
             event_subtype=HistoryEventSubType.SPEND,
             asset=A_BTC,
             amount=ONE,

@@ -28,7 +28,7 @@ from rotkehlchen.history.events.structures.swap import (
     create_swap_events,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -220,7 +220,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
     def _deserialize_asset_movement(
             self,
             raw_result: dict[str, Any],
-            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+            event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND],
     ) -> list[AssetMovement]:
         """Process an asset movement from Crypto.com and deserialize it.
 
@@ -230,23 +230,25 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
          - UnsupportedAsset
          - KeyError
         """
+        raw_fee = raw_result.get('fee')
+        raw_txid = raw_result.get('txid')
         return create_asset_movement_with_fee(
             location=self.location,
             location_label=self.name,
-            event_type=event_type,
+            event_subtype=event_subtype,
             timestamp=deserialize_timestamp_ms_from_intms(raw_result['create_time']),
             asset=(asset := asset_from_cryptocom(raw_result['currency'])),
             amount=deserialize_fval(raw_result['amount']),
             fee=AssetAmount(
                 asset=asset,
                 amount=deserialize_fval(raw_fee),
-            ) if (raw_fee := raw_result.get('fee')) is not None else None,
+            ) if raw_fee is not None else None,
             unique_id=str(raw_result['id']),
             extra_data=maybe_set_transaction_extra_data(
                 address=raw_result.get('address'),
                 # the txid field from the api sometimes contains something like `/27` at the end
                 # so only take the actual hash (`0x` + 64 chars) from the beginning of the string.
-                transaction_id=txid[:66] if (txid := raw_result.get('txid')) is not None else None,
+                transaction_id=raw_txid[:66] if raw_txid is not None else None,
                 extra_data=AssetMovementExtraData({'reference': str(raw_result['id'])}),
             ),
         )
@@ -378,7 +380,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             method: Literal['private/get-deposit-history', 'private/get-withdrawal-history'],
             query_type: Literal['deposit', 'withdrawal'],
             success_status: Literal['1', '5'],
-            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+            event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND],
     ) -> list['HistoryBaseEntry']:
         """Query deposits and withdrawals from the API."""
         return self._query_paginated(
@@ -396,7 +398,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             result_key=f'{query_type}_list',  # type: ignore[arg-type]  # will be a valid key
             deserialize_fn=lambda raw_result: self._deserialize_asset_movement(
                 raw_result=raw_result,
-                event_type=event_type,
+                event_subtype=event_subtype,
             ),
         )
 
@@ -511,7 +513,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             query_type='deposit',
             method='private/get-deposit-history',
             success_status=DEPOSIT_ARRIVED_STATUS,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
         )
         events.extend(self._query_deposits_withdrawals(
             start_ts=start_ts_ms,
@@ -519,7 +521,7 @@ class Cryptocom(ExchangeInterface, SignatureGeneratorMixin):
             query_type='withdrawal',
             method='private/get-withdrawal-history',
             success_status=WITHDRAWAL_COMPLETED_STATUS,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.SPEND,
         ))
         events.extend(self._query_trades(start_ts=start_ts_ms, end_ts=end_ts_ms))
         return events, end_ts

@@ -115,7 +115,7 @@ Activity from uphold with uphold transaction id:
             if origin_asset == destination_asset:  # Withdrawals
                 events = [AssetMovement(
                     location=Location.UPHOLD,
-                    event_type=HistoryEventType.WITHDRAWAL,
+                    event_subtype=HistoryEventSubType.SPEND,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=origin_asset,
                     amount=origin_amount,
@@ -124,11 +124,10 @@ Activity from uphold with uphold transaction id:
                     events.append(AssetMovement(
                         group_identifier=events[0].group_identifier,
                         location=Location.UPHOLD,
-                        event_type=HistoryEventType.WITHDRAWAL,
                         timestamp=ts_sec_to_ms(timestamp),
                         asset=fee_asset,
                         amount=fee,
-                        is_fee=True,
+                        event_subtype=HistoryEventSubType.FEE,
                     ))
                 self.add_history_events(write_cursor, events)
             elif origin_amount > 0:  # Trades (sell)
@@ -151,7 +150,7 @@ Activity from uphold with uphold transaction id:
             if origin_asset == destination_asset:  # Deposits
                 events = [AssetMovement(
                     location=Location.UPHOLD,
-                    event_type=HistoryEventType.DEPOSIT,
+                    event_subtype=HistoryEventSubType.RECEIVE,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=origin_asset,
                     amount=origin_amount,
@@ -160,11 +159,10 @@ Activity from uphold with uphold transaction id:
                     events.append(AssetMovement(
                         group_identifier=events[0].group_identifier,
                         location=Location.UPHOLD,
-                        event_type=HistoryEventType.DEPOSIT,
                         timestamp=ts_sec_to_ms(timestamp),
                         asset=fee_asset,
                         amount=fee,
-                        is_fee=True,
+                        event_subtype=HistoryEventSubType.FEE,
                     ))
                 self.add_history_events(write_cursor, events)
             elif destination_amount > 0:  # Trades (buy)

@@ -38,6 +38,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     AssetMovementExtraData,
+    AssetMovementSubtype,
 )
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -94,7 +95,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
             write_cursor=write_cursor,
             history=[AssetMovement(  # deposit1, Fiat, should be auto ignored
                 location=Location.GEMINI,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1500000000000),
                 asset=A_USD,
                 amount=FVal('100'),
@@ -102,7 +103,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 location_label='Gemini 1',
             ), (deposit2 := AssetMovement(  # deposit2, two matches, one with tx ref
                 location=Location.GEMINI,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1510000000000),
                 asset=A_ETH,
                 amount=FVal('0.1'),
@@ -135,7 +136,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 amount=FVal('0.1'),
             )), (withdrawal1 := AssetMovement(  # withdrawal1, with matched event
                 location=Location.COINBASE,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=A_USDC,
                 amount=FVal('0.2'),
@@ -171,7 +172,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 amount=FVal('0.2'),
             )), (withdrawal2 := AssetMovement(  # withdrawal2, with two similar events
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1530000000000),
                 asset=A_USDC,
                 amount=FVal('0.3'),
@@ -197,7 +198,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 amount=FVal('0.3'),
             ), (withdrawal3 := AssetMovement(  # withdrawal3, no matched events
                 location=Location.BYBIT,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1540000000000),
                 asset=A_BTC,
                 amount=FVal('0.4'),
@@ -205,19 +206,18 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 location_label='Bybit 1',
             )), (deposit3 := AssetMovement(  # deposit3, with fee
                 location=Location.BYBIT,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1550000000000),
                 asset=A_USDC,
                 amount=FVal('99'),
                 unique_id='6',
             )), AssetMovement(  # deposit3 fee
                 location=Location.BYBIT,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.FEE,
                 timestamp=TimestampMS(1550000000000),
                 asset=A_USDC,
                 amount=ONE,
                 unique_id='6',
-                is_fee=True,
             ), SolanaEvent(  # deposit3 match, amount includes fee
                 tx_ref=make_solana_signature(),
                 sequence_index=0,
@@ -230,7 +230,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 location_label=(deposit3_user_address := make_solana_address()),
             ), AssetMovement(  # deposit5, for blockchain that will have no transactions
                 location=Location.GEMINI,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1555000000000),
                 asset=A_ETH,
                 amount=FVal('0.6'),
@@ -239,7 +239,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 extra_data=AssetMovementExtraData(blockchain='monero'),
             ), (withdrawal4 := AssetMovement(  # withdrawal4, with another asset movement for the matched event  # noqa: E501
                 location=Location.BITSTAMP,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1560000000000),
                 asset=A_USDC,
                 amount=FVal('5.5'),
@@ -247,7 +247,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
                 location_label='Bitstamp 1',
             )), (withdrawal4_matched_event := AssetMovement(  # withdrawal4's matched event
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1560000000001),
                 asset=A_USDC,
                 amount=FVal('5.49'),  # Slightly different amount but within the tolerance so will still auto match and add a fee event to cover the difference. # noqa: E501
@@ -418,7 +418,7 @@ def test_withdrawal_fee(
             write_cursor=write_cursor,
             history=[(withdrawal_movement := AssetMovement(
                 location=Location.POLONIEX,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700001000000),
                 asset=A_AAVE,
                 amount=FVal('64.57557962'),
@@ -426,13 +426,12 @@ def test_withdrawal_fee(
                 location_label='Poloniex 1',
             )), AssetMovement(
                 location=Location.POLONIEX,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.FEE,
                 timestamp=TimestampMS(1700001000000),
                 asset=A_AAVE,
                 amount=FVal('0.32548608'),
                 unique_id='polo_withdrawal_1',
                 location_label='Poloniex 1',
-                is_fee=True,
             ), (receive_event := EvmEvent(
                 tx_ref=make_evm_tx_hash(),
                 sequence_index=0,
@@ -517,7 +516,7 @@ def test_multiple_close_matches_clustered(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=(movement_1_id := 3),
                 location=Location.POLONIEX,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700000000000 + 2 * 60 * 1000),
                 asset=A_ETH,
                 amount=FVal('25.59'),
@@ -526,7 +525,7 @@ def test_multiple_close_matches_clustered(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=(movement_2_id := 4),
                 location=Location.POLONIEX,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700000000000 + 4 * 60 * 1000),
                 asset=A_ETH,
                 amount=FVal('25.45'),
@@ -579,7 +578,7 @@ def test_customized_deposit(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=(movement_id := 3),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700002060000),
                 asset=A_ETH,
                 amount=FVal('0.997109827'),
@@ -667,7 +666,7 @@ def test_deposit_withdrawal_direction(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=(movement_id := 2),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700003001000),
                 asset=A_ETH,
                 amount=ONE,
@@ -713,7 +712,7 @@ def test_gno_kraken_flow(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=(deposit_id := 3),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700004060000),
                 asset=A_GNO,
                 amount=FVal('64'),
@@ -722,7 +721,7 @@ def test_gno_kraken_flow(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=(withdrawal_id := 4),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700005000000),
                 asset=A_GNO,
                 amount=FVal('64'),
@@ -731,13 +730,12 @@ def test_gno_kraken_flow(database: 'DBHandler') -> None:
             ), AssetMovement(  # withdrawal fee
                 identifier=5,
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.FEE,
                 timestamp=TimestampMS(1700005000000),
                 asset=A_GNO,
                 amount=FVal('0.01'),
                 unique_id='kraken_gno_withdrawal_1',
                 location_label='Kraken 1',
-                is_fee=True,
             ), EvmEvent(  # onchain received after withdrawal
                 identifier=(withdraw_event_id := 6),
                 tx_ref=make_evm_tx_hash(),
@@ -781,7 +779,7 @@ def test_match_asset_movements_settings(database: 'DBHandler') -> None:
             history=[(movement_event := AssetMovement(
                 identifier=(movement_id := 1),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=A_USDC,
                 amount=FVal('0.2'),
@@ -849,7 +847,7 @@ def test_auto_ignore_by_asset(database: 'DBHandler') -> None:
             history=[AssetMovement(
                 identifier=idx + 1,
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=asset,
                 amount=ONE,
@@ -890,7 +888,7 @@ def test_ignore_transfers_between_tracked_accounts(
             history=[(movement_event := AssetMovement(
                 identifier=(movement_id := 1),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=A_USDC,
                 amount=FVal('25'),
@@ -938,7 +936,7 @@ def test_timestamp_tolerance(database: 'DBHandler') -> None:
             history=[(movement_event := AssetMovement(
                 identifier=(movement_id := 1),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=A_USDC,
                 amount=FVal('25'),
@@ -991,7 +989,7 @@ def test_exchange_deposit_delayed_credit(database: 'DBHandler') -> None:
             )), (asset_movement := AssetMovement(
                 identifier=(movement_id := 2),
                 location=Location.POLONIEX,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1488974400000),  # 2017-03-08 12:00:00 UTC
                 asset=A_ETH,
                 amount=ONE,
@@ -1038,7 +1036,7 @@ def test_exchange_deposit_sai_to_dai_credit(database: 'DBHandler') -> None:
             )), AssetMovement(
                 identifier=(movement_id := 2),
                 location=Location.POLONIEX,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(ts_sec_to_ms(Timestamp(SAI_DAI_MIGRATION_TS + 2))),
                 asset=A_DAI,
                 amount=FVal('25'),
@@ -1055,15 +1053,16 @@ def test_adjustments(database: 'DBHandler') -> None:
     events_db = DBHistoryEvents(database)
 
     events_to_add = []
-    for idx, (asset, movement_type, movement_amount, match_amount) in enumerate([
-        (A_ETH, HistoryEventType.DEPOSIT, 5.49, 5.5),
-        (A_BTC, HistoryEventType.DEPOSIT, 5.5, 5.49),
-        (A_USDC, HistoryEventType.WITHDRAWAL, 5.49, 5.5),
-        (A_WSOL, HistoryEventType.WITHDRAWAL, 5.5, 5.49),
-    ]):
+    movement_data: list[tuple[Asset, AssetMovementSubtype, float, float]] = [
+        (A_ETH, HistoryEventSubType.RECEIVE, 5.49, 5.5),
+        (A_BTC, HistoryEventSubType.RECEIVE, 5.5, 5.49),
+        (A_USDC, HistoryEventSubType.SPEND, 5.49, 5.5),
+        (A_WSOL, HistoryEventSubType.SPEND, 5.5, 5.49),
+    ]
+    for idx, (asset, movement_subtype, movement_amount, match_amount) in enumerate(movement_data):
         events_to_add.extend([(movement_event := AssetMovement(
             location=Location.KRAKEN,
-            event_type=movement_type,  # type: ignore[arg-type]  # will be deposit or withdrawal
+            event_subtype=movement_subtype,
             timestamp=TimestampMS(1600000000000 + idx),
             asset=asset,
             amount=FVal(movement_amount),
@@ -1083,7 +1082,7 @@ def test_adjustments(database: 'DBHandler') -> None:
             timestamp=movement_event.timestamp,
             location=Location.OPTIMISM,
             event_type=(
-                HistoryEventType.SPEND if movement_type == HistoryEventType.DEPOSIT
+                HistoryEventType.SPEND if movement_subtype == HistoryEventSubType.RECEIVE
                 else HistoryEventType.RECEIVE
             ),
             event_subtype=HistoryEventSubType.NONE,
@@ -1127,7 +1126,7 @@ def test_match_by_balance_tracking_event_direction(database: 'DBHandler') -> Non
             history=[(movement_event := AssetMovement(
                 identifier=(movement_id := 1),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1520000000000),
                 asset=A_USDC,
                 amount=FVal('25'),
@@ -1171,7 +1170,7 @@ def test_match_by_transaction_id_without_0x_prefix(database: 'DBHandler') -> Non
             history=[AssetMovement(
                 identifier=(movement_id := 1),
                 location=Location.COINBASEPRO,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=ts,
                 asset=A_USDC,
                 amount=amount,
@@ -1219,7 +1218,7 @@ def test_reprocess_ambiguous_movement_after_candidate_gets_matched(database: 'DB
             history=[AssetMovement(  # Processed first (newer timestamp): two close matches.
                 identifier=(ambiguous_movement_id := 1),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700004000000),
                 asset=A_USDC,
                 amount=(amount := FVal('110')),
@@ -1228,7 +1227,7 @@ def test_reprocess_ambiguous_movement_after_candidate_gets_matched(database: 'DB
             ), AssetMovement(  # Processed later, but uniquely matched by tx hash.
                 identifier=(tx_ref_movement_id := 2),
                 location=Location.COINBASEPRO,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700003000000),
                 asset=A_USDC,
                 amount=amount,
@@ -1280,7 +1279,7 @@ def test_retry_ambiguous_movement_stays_ambiguous(database: 'DBHandler') -> None
             history=[AssetMovement(  # Processed first: 3 matching candidates.
                 identifier=(ambiguous_movement_id := 1),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700005000000),
                 asset=A_USDC,
                 amount=(amount := FVal('110')),
@@ -1289,7 +1288,7 @@ def test_retry_ambiguous_movement_stays_ambiguous(database: 'DBHandler') -> None
             ), AssetMovement(  # Processed second: uniquely matches candidate 1 by tx hash.
                 identifier=(tx_ref_movement_id := 2),
                 location=Location.COINBASEPRO,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700004000000),
                 asset=A_USDC,
                 amount=amount,
@@ -1360,7 +1359,7 @@ def test_retry_ambiguous_movement_loses_all_candidates(database: 'DBHandler') ->
             history=[AssetMovement(  # Processed first: 2 matching candidates.
                 identifier=(ambiguous_movement_id := 1),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700005000000),
                 asset=A_USDC,
                 amount=(amount := FVal('110')),
@@ -1369,7 +1368,7 @@ def test_retry_ambiguous_movement_loses_all_candidates(database: 'DBHandler') ->
             ), AssetMovement(  # Uniquely matches candidate 1 by tx hash.
                 identifier=(tx_ref_movement_id_1 := 2),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700004000000),
                 asset=A_USDC,
                 amount=amount,
@@ -1382,7 +1381,7 @@ def test_retry_ambiguous_movement_loses_all_candidates(database: 'DBHandler') ->
             ), AssetMovement(  # Uniquely matches candidate 2 by tx hash.
                 identifier=(tx_ref_movement_id_2 := 3),
                 location=Location.KRAKEN,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700003990000),
                 asset=A_USDC,
                 amount=amount,
@@ -1446,7 +1445,7 @@ def test_match_coinbasepro_coinbase_transfer(database: 'DBHandler') -> None:
             history=[AssetMovement(
                 identifier=1,
                 location=Location.COINBASEPRO,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1670000330000),
                 asset=A_USDC,
                 amount=FVal('2.256789'),
@@ -1454,7 +1453,7 @@ def test_match_coinbasepro_coinbase_transfer(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=2,
                 location=Location.COINBASE,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1670000329000),
                 asset=A_USDC,
                 amount=FVal('2.256789'),
@@ -1463,7 +1462,7 @@ def test_match_coinbasepro_coinbase_transfer(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=3,
                 location=Location.COINBASEPRO,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1670000315000),
                 asset=Asset('ICP'),
                 amount=FVal('0.0098765'),
@@ -1471,7 +1470,7 @@ def test_match_coinbasepro_coinbase_transfer(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=4,
                 location=Location.COINBASE,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1670000313000),
                 asset=Asset('ICP'),
                 amount=FVal('0.0098765'),
@@ -1504,7 +1503,7 @@ def test_coinbasepro_transfer_with_onchain_event(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=(movement_id := 2),
                 location=Location.COINBASEPRO,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700012005000),
                 asset=A_ETH,
                 amount=ONE,
@@ -1513,7 +1512,7 @@ def test_coinbasepro_transfer_with_onchain_event(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=(movement_id_2 := 3),
                 location=Location.COINBASEPRO,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700013000000),
                 asset=A_ETH,
                 amount=ONE,
@@ -1523,7 +1522,7 @@ def test_coinbasepro_transfer_with_onchain_event(database: 'DBHandler') -> None:
             ), AssetMovement(
                 identifier=(match_id_2 := 4),
                 location=Location.COINBASE,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700013001000),
                 asset=A_ETH,
                 amount=ONE,
@@ -1567,7 +1566,7 @@ def test_deposit_to_anon(database: 'DBHandler') -> None:
                 address=make_evm_address(),
             )), (deposit_movement := AssetMovement(
                 location=Location.COINBASE,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=TimestampMS(1700000050000),
                 asset=A_USDC,
                 amount=FVal('100'),
@@ -1575,7 +1574,7 @@ def test_deposit_to_anon(database: 'DBHandler') -> None:
                 location_label='Coinbase 1',
             )), (withdrawal_movement := AssetMovement(
                 location=Location.COINBASE,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=TimestampMS(1700000300000),
                 asset=A_USDC,
                 amount=FVal('100'),

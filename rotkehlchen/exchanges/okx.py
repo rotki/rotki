@@ -34,7 +34,7 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -384,12 +384,12 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         for raw_movement in deposits:
             events.extend(self.asset_movement_from_okx(
                 raw_movement=raw_movement,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
             ))
         for raw_movement in withdrawals:
             events.extend(self.asset_movement_from_okx(
                 raw_movement=raw_movement,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
             ))
         for raw_trade in trades:
             events.extend(self.swap_events_from_okx(raw_trade))
@@ -462,7 +462,7 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     def asset_movement_from_okx(
             self,
             raw_movement: dict[str, Any],
-            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+            event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND],
     ) -> list[AssetMovement]:
         """
         Converts a raw asset movement from OKX into an AssetMovement object.
@@ -472,14 +472,14 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             return create_asset_movement_with_fee(
                 location=self.location,
                 location_label=self.name,
-                event_type=event_type,
+                event_subtype=event_subtype,
                 timestamp=TimestampMS(int(raw_movement['ts'])),
                 asset=(asset := asset_from_okx(raw_movement['ccy'])),
                 amount=deserialize_fval(raw_movement['amt']),
                 fee=AssetAmount(
                     asset=asset,
                     amount=deserialize_fval_or_zero(raw_movement['fee']),
-                ) if event_type is HistoryEventType.WITHDRAWAL else None,
+                ) if event_subtype == HistoryEventSubType.SPEND else None,
                 unique_id=(tx_hash := raw_movement['txId']),
                 extra_data=maybe_set_transaction_extra_data(
                     address=deserialize_asset_movement_address(raw_movement, 'to', asset),

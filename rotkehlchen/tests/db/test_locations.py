@@ -3,7 +3,7 @@ from rotkehlchen.constants.assets import A_ETH, A_EUR, A_USDC
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
@@ -22,57 +22,57 @@ def test_associated_locations(database):
                 timestamp=TimestampMS(1595833195000),
                 location=Location.CRYPTOCOM,
                 asset=A_EUR,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 amount=ONE,
             ), AssetMovement(
                 timestamp=TimestampMS(1587825824000),
                 location=Location.CRYPTOCOM,
                 asset=A_ETH,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 amount=FVal('50.0'),
             ), AssetMovement(
                 timestamp=TimestampMS(1596014214000),
                 location=Location.BLOCKFI,
                 asset=A_ETH,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 amount=FVal('50.0'),
             ), AssetMovement(
                 timestamp=TimestampMS(1565888464000),
                 location=Location.NEXO,
                 asset=A_ETH,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 amount=FVal('50.0'),
             ), AssetMovement(
                 timestamp=TimestampMS(1596014214000),
                 location=Location.NEXO,
                 asset=A_ETH,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 amount=FVal('50.0'),
                 notes='',
             ), AssetMovement(
                 timestamp=TimestampMS(1612051199000),
                 location=Location.BLOCKFI,
                 asset=A_USDC,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 amount=FVal('6404.6'),
                 notes='One Time',
             ), AssetMovement(
                 timestamp=TimestampMS(1595833195000),
                 location=Location.POLONIEX,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_ETH,
                 amount=ONE,
             ), AssetMovement(
                 timestamp=TimestampMS(1596429934000),
                 location=Location.COINBASE,
                 asset=A_ETH,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 amount=FVal('0.00061475'),
             ), AssetMovement(
                 timestamp=TimestampMS(1596429934000),
                 location=Location.EXTERNAL,
                 asset=A_ETH,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 amount=ONE,
             )],
         )

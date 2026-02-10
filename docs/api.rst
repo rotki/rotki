@@ -5800,7 +5800,7 @@ Dealing with History Events
 
             {
                 "entry_type": "asset movement event",
-                "event_type": "deposit",
+                "event_subtype": "receive",
                 "timestamp": 1569924574,
                 "amount": "0.5",
                 "asset": "ETH",
@@ -5813,7 +5813,7 @@ Dealing with History Events
                 "group_identifier": "AM_xxxxxxxxxx"
             }
 
-         :reqjson string event_type: The type of asset movement event ("deposit" or "withdrawal")
+         :reqjson string event_subtype: The direction subtype of the movement. Must be ``"receive"`` or ``"spend"``.
          :reqjson object amount: The amount being moved.
          :reqjson string asset: The identifier of the asset being moved (e.g. "ETH", "BTC")
          :reqjson string location: The location/exchange where the movement occurred

@@ -12,7 +12,10 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.asset_movement import AssetMovement
+from rotkehlchen.history.events.structures.asset_movement import (
+    AssetMovement,
+    AssetMovementExtraData,
+)
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntry,
     HistoryBaseEntryType,
@@ -34,7 +37,7 @@ KEYS_IN_ENTRY_TYPE: dict[HistoryBaseEntryType, set[str]] = {
     HistoryBaseEntryType.ETH_DEPOSIT_EVENT: {'tx_ref', 'validator_index', 'sequence_index', 'group_identifier'},  # noqa: E501
     HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT: {'validator_index', 'is_exit_or_blocknumber', 'is_exit'},  # noqa: E501
     HistoryBaseEntryType.EVM_EVENT: {'tx_ref', 'sequence_index', 'location', 'event_type', 'event_subtype', 'asset', 'user_notes', 'counterparty', 'product', 'address', 'extra_data', 'group_identifier'},  # noqa: E501
-    HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: {'location', 'event_type', 'event_subtype', 'asset', 'group_identifier', 'extra_data'},  # noqa: E501
+    HistoryBaseEntryType.ASSET_MOVEMENT_EVENT: {'location', 'event_subtype', 'asset', 'group_identifier', 'extra_data'},  # noqa: E501
     HistoryBaseEntryType.SWAP_EVENT: {'location', 'asset', 'group_identifier'},
 }
 
@@ -219,25 +222,24 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
     ), AssetMovement(
         timestamp=TimestampMS(1701654218000),
         location=Location.COINBASE,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=FVal('0.0586453'),
         unique_id='MOVEMENT1',
         location_label='Coinbase 1',
-        extra_data={
-            'address': '0x6dcD6449dbCa615e40d696328209686eA95327b2',
-            'transaction_id': '0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169',
-            'reference': 'MOVEMENT1',
-        },
+        extra_data=AssetMovementExtraData(
+            address='0x6dcD6449dbCa615e40d696328209686eA95327b2',
+            transaction_id='0x558bfa4d2a4ef598ddb92233459c00eda9e6c14cda75e6773b90208cb6938169',
+            reference='MOVEMENT1',
+        ),
     ), AssetMovement(
         timestamp=TimestampMS(1701654218000),
         location=Location.COINBASE,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('0.000423'),
         unique_id='MOVEMENT1',
         location_label='Coinbase 1',
-        is_fee=True,
     ), SwapEvent(
         timestamp=TimestampMS(1722153221000),
         location=Location.OKX,

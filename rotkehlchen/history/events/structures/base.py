@@ -64,13 +64,6 @@ def get_event_direction(
     """
     if event_type == HistoryEventType.INFORMATIONAL:
         return EventDirection.NEUTRAL
-    if event_type == HistoryEventType.EXCHANGE_TRANSFER:
-        if event_subtype == HistoryEventSubType.SPEND:
-            return EventDirection.OUT if for_balance_tracking else EventDirection.NEUTRAL
-        if event_subtype == HistoryEventSubType.RECEIVE:
-            return EventDirection.IN if for_balance_tracking else EventDirection.NEUTRAL
-        if event_subtype == HistoryEventSubType.FEE:
-            return EventDirection.OUT
 
     try:
         category_mapping = EVENT_CATEGORY_MAPPINGS[event_type][event_subtype]
@@ -97,6 +90,14 @@ def get_event_direction(
             return EventDirection.IN
         if (event_type, event_subtype) == (HistoryEventType.TRANSFER, HistoryEventSubType.NONE):
             return EventDirection.OUT
+
+        if event_type == HistoryEventType.EXCHANGE_TRANSFER:
+            if event_subtype == HistoryEventSubType.SPEND:
+                return EventDirection.OUT
+            if event_subtype == HistoryEventSubType.RECEIVE:
+                return EventDirection.IN
+            if event_subtype == HistoryEventSubType.FEE:
+                return EventDirection.OUT
 
     return direction
 

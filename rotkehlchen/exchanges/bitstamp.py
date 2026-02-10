@@ -33,7 +33,7 @@ from rotkehlchen.history.events.structures.swap import (
     create_swap_events,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -413,7 +413,11 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
             asset_movements = [
                 self._deserialize_asset_movement_from_crypto_transaction(
                     raw_movement=entry,
-                    event_type=event_type,  # type: ignore  # will only be deposit or withdrawal
+                    event_subtype=(
+                        HistoryEventSubType.RECEIVE
+                        if event_type == HistoryEventType.DEPOSIT else
+                        HistoryEventSubType.SPEND
+                    ),
                 )
                 for entry_key, event_type in [
                     ('deposits', HistoryEventType.DEPOSIT),
@@ -703,11 +707,10 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         https://www.bitstamp.net/api/#user-transactions
         """
         type_ = deserialize_int_from_str(raw_movement['type'], 'bitstamp asset movement')
-        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
         if type_ == 0:
-            event_type = HistoryEventType.DEPOSIT
+            event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND] = HistoryEventSubType.RECEIVE  # noqa: E501
         elif type_ == 1:
-            event_type = HistoryEventType.WITHDRAWAL
+            event_subtype = HistoryEventSubType.SPEND
         else:
             raise AssertionError(f'Unexpected Bitstamp asset movement case: {type_}.')
 
@@ -741,7 +744,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         return create_asset_movement_with_fee(
             location=self.location,
             location_label=self.name,
-            event_type=event_type,
+            event_subtype=event_subtype,
             timestamp=timestamp,
             asset=fee_asset,
             amount=abs(amount),
@@ -759,7 +762,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
     @staticmethod
     def _deserialize_asset_movement_from_crypto_transaction(
             raw_movement: dict[str, Any],
-            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+            event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND],
     ) -> AssetMovement:
         """Process a deposit/withdrawal crypto transaction from Bitstamp and
         deserialize it.
@@ -781,7 +784,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
         return AssetMovement(
             timestamp=ts_sec_to_ms(timestamp),
             location=Location.BITSTAMP,
-            event_type=event_type,
+            event_subtype=event_subtype,
             asset=asset,
             amount=abs(amount),
             unique_id=transaction_id,

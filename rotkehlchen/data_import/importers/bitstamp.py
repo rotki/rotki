@@ -18,7 +18,7 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
     deserialize_fval_or_zero,
@@ -84,7 +84,11 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
         elif csv_row['Type'] in {'Deposit', 'Withdrawal'}:
             events.append(AssetMovement(
                 group_identifier=group_identifier,
-                event_type=HistoryEventType.DEPOSIT if csv_row['Type'] == 'Deposit' else HistoryEventType.WITHDRAWAL,  # noqa: E501
+                event_subtype=(
+                    HistoryEventSubType.RECEIVE
+                    if csv_row['Type'] == 'Deposit' else
+                    HistoryEventSubType.SPEND
+                ),
                 timestamp=timestamp,
                 location=Location.BITSTAMP,
                 asset=asset_from_bitstamp(amount_symbol),

@@ -19,7 +19,7 @@ from rotkehlchen.exchanges.kucoin import Kucoin, KucoinCase
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_BSV, A_KCS, A_NANO, A_SOL
 from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
@@ -432,7 +432,7 @@ def test_deserialize_asset_movement_deposit(mock_kucoin: 'Kucoin') -> None:
         timestamp=TimestampMS(1612556794259),
         location=Location.KUCOIN,
         location_label=mock_kucoin.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_ETH,
         amount=ONE,
         unique_id='3e2414d82acce78d38be7fe9',
@@ -444,11 +444,10 @@ def test_deserialize_asset_movement_deposit(mock_kucoin: 'Kucoin') -> None:
         timestamp=TimestampMS(1612556794259),
         location=Location.KUCOIN,
         location_label=mock_kucoin.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('0.01'),
         unique_id='3e2414d82acce78d38be7fe9',
-        is_fee=True,
     )]
     asset_movement = mock_kucoin._deserialize_asset_movement(
         raw_result=raw_result,
@@ -476,7 +475,7 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin: 'Kucoin') -> None:
         timestamp=TimestampMS(1612556794259),
         location=Location.KUCOIN,
         location_label=mock_kucoin.name,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.SPEND,
         asset=A_ETH,
         amount=ONE,
         unique_id='5c2dc64e03aa675aa263f1ac',
@@ -488,11 +487,10 @@ def test_deserialize_asset_movement_withdrawal(mock_kucoin: 'Kucoin') -> None:
         timestamp=TimestampMS(1612556794259),
         location=Location.KUCOIN,
         location_label=mock_kucoin.name,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.FEE,
         asset=A_ETH,
         amount=FVal('0.01'),
         unique_id='5c2dc64e03aa675aa263f1ac',
-        is_fee=True,
     )]
     asset_movement = mock_kucoin._deserialize_asset_movement(
         raw_result=raw_result,
@@ -1023,7 +1021,7 @@ def test_query_asset_movements(
     expected_asset_movements = [AssetMovement(
         location=Location.KUCOIN,
         location_label=mock_kucoin.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1612556652000),
         asset=A_KCS,
         amount=ONE,
@@ -1035,16 +1033,15 @@ def test_query_asset_movements(
     ), AssetMovement(
         location=Location.KUCOIN,
         location_label=mock_kucoin.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1612556652000),
         asset=A_KCS,
         amount=FVal('0.0001'),
         unique_id='5bbb57386d99522d9f954c5a',
-        is_fee=True,
     ), AssetMovement(
         location=Location.KUCOIN,
         location_label=mock_kucoin.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1612556651000),
         asset=A_LINK,
         amount=FVal('1000'),
@@ -1056,16 +1053,15 @@ def test_query_asset_movements(
     ), AssetMovement(
         location=Location.KUCOIN,
         location_label=mock_kucoin.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1612556651000),
         asset=A_LINK,
         amount=FVal('0.01'),
         unique_id='5bbb57386d99522d9f954c5b',
-        is_fee=True,
     ), AssetMovement(
         location=Location.KUCOIN,
         location_label=mock_kucoin.name,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1612556652000),
         asset=A_BSV,
         amount=FVal('2.5'),
@@ -1077,12 +1073,11 @@ def test_query_asset_movements(
     ), AssetMovement(
         location=Location.KUCOIN,
         location_label=mock_kucoin.name,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1612556652000),
         asset=A_BSV,
         amount=FVal('0.25'),
         unique_id='5c2dc64e03aa675aa263f1a4',
-        is_fee=True,
     )]
 
     def get_endpoints_response() -> Generator[str, None, None]:

@@ -104,7 +104,7 @@
       "amount": "444.44",
       "event_type": "deposit",
       "accounting_event_type": "asset movement",
-      "event_subtype": "deposit asset",
+      "event_subtype": "receive",
       "location_label": "",
       "notes": "Deposit 444.44 BASED to Binance"
     },

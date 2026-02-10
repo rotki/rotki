@@ -37,7 +37,7 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -503,10 +503,12 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             asset = asset_from_poloniex(movement_data['currency'])
             amount = deserialize_fval_force_positive(movement_data['amount'])
             if movement_type == HistoryEventType.DEPOSIT:
+                movement_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND] = HistoryEventSubType.RECEIVE  # noqa: E501
                 fee = None
                 uid_key = 'depositNumber'
                 transaction_id = get_key_if_has_val(movement_data, 'txid')
             else:
+                movement_subtype = HistoryEventSubType.SPEND
                 fee = AssetAmount(
                     asset=asset,
                     amount=deserialize_fval_or_zero(movement_data['fee']),
@@ -530,7 +532,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             return create_asset_movement_with_fee(
                 location=self.location,
                 location_label=self.name,
-                event_type=movement_type,
+                event_subtype=movement_subtype,
                 timestamp=ts_sec_to_ms(deserialize_timestamp(movement_data['timestamp'])),
                 asset=asset,
                 amount=amount,

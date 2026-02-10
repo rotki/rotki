@@ -30,7 +30,7 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -393,18 +393,17 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
         - UnknownAsset
         - KeyError
         """
-        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
         asset = asset_from_woo(movement['token'])
         if movement['token_side'] == 'DEPOSIT':
             address = movement['source_address']
-            event_type = HistoryEventType.DEPOSIT
+            event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND] = HistoryEventSubType.RECEIVE  # noqa: E501
         else:
             address = movement['target_address']
-            event_type = HistoryEventType.WITHDRAWAL
+            event_subtype = HistoryEventSubType.SPEND
         return create_asset_movement_with_fee(
             location=self.location,
             location_label=self.name,
-            event_type=event_type,
+            event_subtype=event_subtype,
             timestamp=ts_sec_to_ms(deserialize_timestamp_from_floatstr(movement['created_time'])),
             asset=asset,
             amount=deserialize_fval(movement['amount']),

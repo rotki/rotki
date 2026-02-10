@@ -34,7 +34,7 @@ from rotkehlchen.exchanges.woo import Woo
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.factories import (
     make_api_key,
@@ -526,7 +526,7 @@ def assert_binance_asset_movements_result(
             timestamp=TimestampMS(1508198532000),
             location=location,
             location_label=location_label,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_ETH,
             amount=FVal('0.04670582'),
             extra_data={
@@ -538,7 +538,7 @@ def assert_binance_asset_movements_result(
             timestamp=TimestampMS(1508398632000),
             location=location,
             location_label=location_label,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_XMR,
             amount=FVal('1000'),
             extra_data={
@@ -550,7 +550,7 @@ def assert_binance_asset_movements_result(
             timestamp=TimestampMS(1508198532000),
             location=location,
             location_label=location_label,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.SPEND,
             asset=A_ETH,
             amount=FVal('0.99'),
             extra_data={
@@ -562,16 +562,15 @@ def assert_binance_asset_movements_result(
             timestamp=TimestampMS(1508198532000),
             location=location,
             location_label=location_label,
-            event_type=HistoryEventType.WITHDRAWAL,
             asset=A_ETH,
             amount=FVal('0.01'),
-            is_fee=True,
+            event_subtype=HistoryEventSubType.FEE,
         ), AssetMovement(
             group_identifier='x',
             timestamp=TimestampMS(1508198532000),
             location=location,
             location_label=location_label,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.SPEND,
             asset=A_XMR,
             amount=FVal('999.9999'),
             extra_data={
@@ -583,10 +582,9 @@ def assert_binance_asset_movements_result(
             timestamp=TimestampMS(1508198532000),
             location=location,
             location_label=location_label,
-            event_type=HistoryEventType.WITHDRAWAL,
             asset=A_XMR,
             amount=FVal('0.0001'),
-            is_fee=True,
+            event_subtype=HistoryEventSubType.FEE,
         ),
     ]
 
@@ -598,7 +596,7 @@ def assert_binance_asset_movements_result(
         timestamp=TimestampMS(1626144956000),
         location=location,
         location_label=location_label,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('10.00'),
         extra_data={'transaction_id': '7d76d611-0568-4f43-afb6-24cac7767365'},
@@ -607,7 +605,7 @@ def assert_binance_asset_movements_result(
         timestamp=TimestampMS(1636144956000),
         location=location,
         location_label=location_label,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.SPEND,
         asset=A_EUR,
         amount=FVal('10.00'),
         extra_data={'transaction_id': '8e76d611-0568-4f43-afb6-24cac7767365'},
@@ -616,10 +614,9 @@ def assert_binance_asset_movements_result(
         timestamp=TimestampMS(1636144956000),
         location=location,
         location_label=location_label,
-        event_type=HistoryEventType.WITHDRAWAL,
         asset=A_EUR,
         amount=FVal('0.02'),
-        is_fee=True,
+        event_subtype=HistoryEventSubType.FEE,
     )]
 
 
@@ -1171,7 +1168,7 @@ def mock_exchange_data_in_db(exchange_locations, rotki) -> None:
                     timestamp=TimestampMS(1),
                     location=exchange_location,
                     asset=A_BTC,
-                    event_type=HistoryEventType.DEPOSIT,
+                    event_subtype=HistoryEventSubType.RECEIVE,
                     amount=ONE,
                     notes='boo',
                 )])

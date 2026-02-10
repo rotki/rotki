@@ -34,7 +34,7 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -559,11 +559,13 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
             timestamp_key = 'successAt'
             fee_key = 'depositFee'
             id_key = 'txID'
+            movement_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND] = HistoryEventSubType.RECEIVE  # noqa: E501
         else:
             endpoint = 'asset/withdraw/query-record'
             timestamp_key = 'updateTime'
             fee_key = 'withdrawFee'
             id_key = 'withdrawId'
+            movement_subtype = HistoryEventSubType.SPEND
 
         raw_data = self._paginated_api_query(
             endpoint=endpoint,  # type: ignore  # mypy doesn't detect that the string is assigned once
@@ -590,7 +592,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
                     timestamp=ts_sec_to_ms(timestamp),
                     location=Location.BYBIT,
                     location_label=self.name,
-                    event_type=query_for,
+                    event_subtype=movement_subtype,
                     asset=coin,
                     amount=deserialize_fval(movement['amount']),
                     fee=AssetAmount(

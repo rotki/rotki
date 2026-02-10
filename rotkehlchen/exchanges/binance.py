@@ -1457,7 +1457,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
     def _deserialize_fiat_movement(
             self,
             raw_data: dict[str, Any],
-            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL],
+            event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND],
     ) -> list[AssetMovement]:
         """Processes a single deposit/withdrawal from binance and deserializes it
 
@@ -1472,7 +1472,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         return create_asset_movement_with_fee(
             location=self.location,
             location_label=self.name,
-            event_type=event_type,
+            event_subtype=event_subtype,
             timestamp=ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['createTime'])),
             asset=(asset := asset_from_binance(raw_data['fiatCurrency'])),
             amount=deserialize_fval_force_positive(raw_data['amount']),
@@ -1490,13 +1490,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         Can log error/warning and return an empty list if something went wrong at deserialization
         """
-        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
+        event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND]
         if 'insertTime' in raw_data:
-            event_type = HistoryEventType.DEPOSIT
+            event_subtype = HistoryEventSubType.RECEIVE
             timestamp = ts_sec_to_ms(deserialize_timestamp_from_intms(raw_data['insertTime']))
             fee = ZERO
         else:
-            event_type = HistoryEventType.WITHDRAWAL
+            event_subtype = HistoryEventSubType.SPEND
             timestamp = ts_sec_to_ms(deserialize_timestamp_from_date(
                 date=raw_data['applyTime'],
                 formatstr='%Y-%m-%d %H:%M:%S',
@@ -1511,7 +1511,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         return create_asset_movement_with_fee(
             location=self.location,
             location_label=self.name,
-            event_type=event_type,
+            event_subtype=event_subtype,
             timestamp=timestamp,
             asset=(asset := asset_from_binance(raw_data['coin'])),
             amount=deserialize_fval_force_positive(raw_data['amount']),
@@ -1669,7 +1669,11 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
         for idx, fiat_movement in enumerate(fiat_deposits + fiat_withdraws):
             movements.extend(self._deserialize_fiat_movement(
                 raw_data=fiat_movement,
-                event_type=HistoryEventType.DEPOSIT if idx < len(fiat_deposits) else HistoryEventType.WITHDRAWAL,  # noqa: E501
+                event_subtype=(
+                    HistoryEventSubType.RECEIVE
+                    if idx < len(fiat_deposits) else
+                    HistoryEventSubType.SPEND
+                ),
             ))
 
         return movements

@@ -142,8 +142,8 @@ def _process_deposit_withdrawal(
         if event_data['status'] not in COMPLETED_TRANSACTION_STATUS:
             return []
 
-        event_type = deserialize_asset_movement_event_type(event_data['type'])
-        if event_type == HistoryEventType.DEPOSIT:
+        event_subtype = deserialize_asset_movement_event_type(event_data['type'])
+        if event_subtype == HistoryEventSubType.RECEIVE:
             address = event_data.get('transfer_from', {}).get('value')
         else:
             address = event_data.get('transfer_to', {}).get('value')
@@ -162,7 +162,7 @@ def _process_deposit_withdrawal(
         return create_asset_movement_with_fee(
             location=Location.COINBASEPRIME,
             location_label=exchange_name,
-            event_type=event_type,
+            event_subtype=event_subtype,
             timestamp=ts_sec_to_ms(timestamp),
             asset=asset,
             amount=amount,

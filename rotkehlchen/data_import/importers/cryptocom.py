@@ -142,16 +142,19 @@ class CryptocomImporter(BaseExchangeImporter):
             'viban_card_top_up',
         }:
             if row_type in {'crypto_withdrawal', 'viban_deposit', 'viban_card_top_up'}:
-                movement_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = HistoryEventType.WITHDRAWAL  # noqa: E501
+                movement_subtype: Literal[
+                    HistoryEventSubType.RECEIVE,
+                    HistoryEventSubType.SPEND,
+                ] = HistoryEventSubType.SPEND
                 amount = deserialize_fval_force_positive(csv_row['Amount'])
             else:
-                movement_type = HistoryEventType.DEPOSIT
+                movement_subtype = HistoryEventSubType.RECEIVE
                 amount = deserialize_fval(csv_row['Amount'])
 
             asset = asset_from_cryptocom(csv_row['Currency'])
             self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.CRYPTOCOM,
-                event_type=movement_type,
+                event_subtype=movement_subtype,
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
@@ -207,7 +210,7 @@ class CryptocomImporter(BaseExchangeImporter):
             amount = abs(deserialize_fval(csv_row['Amount']))
             self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.CRYPTOCOM,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,
@@ -218,7 +221,7 @@ class CryptocomImporter(BaseExchangeImporter):
             amount = deserialize_fval(csv_row['Amount'])
             self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.CRYPTOCOM,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=timestamp,
                 asset=asset,
                 amount=amount,

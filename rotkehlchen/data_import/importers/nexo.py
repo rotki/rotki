@@ -97,7 +97,7 @@ class NexoImporter(BaseExchangeImporter):
             self.add_history_events(write_cursor, [AssetMovement(
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 asset=asset,
                 amount=amount,
                 unique_id=transaction,
@@ -106,7 +106,7 @@ class NexoImporter(BaseExchangeImporter):
             self.add_history_events(write_cursor, [AssetMovement(
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 asset=asset,
                 amount=amount,
                 unique_id=transaction,
@@ -115,11 +115,10 @@ class NexoImporter(BaseExchangeImporter):
             self.add_history_events(write_cursor, [AssetMovement(
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
-                event_type=HistoryEventType.WITHDRAWAL,
                 asset=asset,
                 amount=amount,
                 unique_id=transaction,
-                is_fee=True,
+                event_subtype=HistoryEventSubType.FEE,
             )])
         elif entry_type in {'Interest', 'Bonus', 'Dividend', 'Fixed Term Interest', 'Cashback', 'Exchange Cashback', 'Referral Bonus'}:  # noqa: E501
             # A user shared a CSV file where some entries marked as interest had negative amounts.

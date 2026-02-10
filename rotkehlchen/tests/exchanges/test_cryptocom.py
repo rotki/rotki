@@ -13,7 +13,7 @@ from rotkehlchen.exchanges.cryptocom import Cryptocom
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_SOL
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -194,7 +194,7 @@ def test_query_deposits_withdrawals(mock_cryptocom):
             group_identifier='b8c8a7320bd804ebd989a2b602186716d217b0dfde736add740d13f709146239',
             timestamp=TimestampMS(1755883811000),
             location=Location.CRYPTOCOM,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDC,
             amount=FVal(100),
             location_label=mock_cryptocom.name,
@@ -207,7 +207,7 @@ def test_query_deposits_withdrawals(mock_cryptocom):
             group_identifier='36dc8fa45695e0fdbc31612faaf5841eb181e8e1a5139363fabe2ba7f182759f',
             timestamp=TimestampMS(1607063412000),
             location=Location.CRYPTOCOM,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.SPEND,
             asset=A_USDT,
             amount=FVal(25),
             location_label=mock_cryptocom.name,
@@ -216,11 +216,10 @@ def test_query_deposits_withdrawals(mock_cryptocom):
             group_identifier='36dc8fa45695e0fdbc31612faaf5841eb181e8e1a5139363fabe2ba7f182759f',
             timestamp=TimestampMS(1607063412000),
             location=Location.CRYPTOCOM,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.FEE,
             asset=A_USDT,
             amount=FVal(1.0),
             location_label=mock_cryptocom.name,
-            is_fee=True,
         )]
 
 

@@ -19,7 +19,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovement,
     create_asset_movement_with_fee,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -93,7 +93,11 @@ class BitMEXImporter(BaseExchangeImporter):
         asset = A_BTC.resolve_to_asset_with_oracles()
         amount = deserialize_fval_force_positive(csv_row['amount'])
         transact_type = csv_row['transactType']
-        event_type: Final = HistoryEventType.DEPOSIT if transact_type == 'Deposit' else HistoryEventType.WITHDRAWAL  # noqa: E501
+        event_subtype: Final = (
+            HistoryEventSubType.RECEIVE
+            if transact_type == 'Deposit' else
+            HistoryEventSubType.SPEND
+        )
         amount = satoshis_to_btc(amount)  # bitmex stores amounts in satoshis
         ts = deserialize_timestamp_from_date(
             date=csv_row['transactTime'],
@@ -110,7 +114,7 @@ class BitMEXImporter(BaseExchangeImporter):
                 address=deserialize_asset_movement_address(csv_row, 'address', asset),
                 transaction_id=transaction_id,
             ),
-            event_type=event_type,
+            event_subtype=event_subtype,
             fee=AssetAmount(
                 asset=asset,
                 amount=satoshis_to_btc(deserialize_fval(csv_row['fee'])),

@@ -230,7 +230,7 @@ def test_process_events_with_duplicate_timestamps(
     history: list[HistoryBaseEntry] = [AssetMovement(
         timestamp=TimestampMS(1500000000000),
         location=Location.KRAKEN,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         asset=A_EUR,
         amount=FVal('100'),
     )]
@@ -351,7 +351,7 @@ def test_deposit_asset_is_neutral(rotkehlchen_api_server: 'APIServer') -> None:
             ), AssetMovement(
                 timestamp=TimestampMS(1539713238000),
                 location=Location.EXTERNAL,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 asset=A_ETH,
                 amount=eth_amount,
             ), HistoryEvent(

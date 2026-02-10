@@ -1047,12 +1047,19 @@ class Kraken(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
                 if asset != A_KFEE:
                     # Process asset movements - there are no KFEE deposit/withdrawal events
                     if event_type in {HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL}:
+                        if event_type == HistoryEventType.DEPOSIT:
+                            movement_subtype: Literal[
+                                HistoryEventSubType.RECEIVE,
+                                HistoryEventSubType.SPEND,
+                            ] = HistoryEventSubType.RECEIVE
+                        else:
+                            movement_subtype = HistoryEventSubType.SPEND
                         group_events.extend(
                             (idx, event) for event in create_asset_movement_with_fee(
                                 timestamp=timestamp,
                                 location=self.location,
                                 location_label=self.name,
-                                event_type=event_type,  # type: ignore  # will be deposit or withdrawal
+                                event_subtype=movement_subtype,
                                 asset=asset,
                                 amount=abs(raw_amount),
                                 fee=AssetAmount(asset=asset, amount=abs(fee_amount)),

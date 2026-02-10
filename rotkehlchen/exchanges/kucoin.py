@@ -36,7 +36,7 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -527,11 +527,11 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
         - UnknownAsset
         - UnsupportedAsset
         """
-        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
+        event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND]
         if case == KucoinCase.DEPOSITS:
-            event_type = HistoryEventType.DEPOSIT
+            event_subtype = HistoryEventSubType.RECEIVE
         elif case == KucoinCase.WITHDRAWALS:
-            event_type = HistoryEventType.WITHDRAWAL
+            event_subtype = HistoryEventSubType.SPEND
         else:
             raise AssertionError(f'Unexpected case: {case}')
 
@@ -553,7 +553,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
             timestamp=timestamp,
             location=self.location,
             location_label=self.name,
-            event_type=event_type,
+            event_subtype=event_subtype,
             asset=fee_asset,
             amount=amount,
             fee=AssetAmount(asset=fee_asset, amount=fee),

@@ -11,7 +11,7 @@ from rotkehlchen.exchanges.okx import Okx, OkxEndpoint
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_SOL, A_XMR
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
@@ -906,7 +906,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
         AssetMovement(
             location=Location.OKX,
             location_label=mock_okx.name,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1669963555000),
             asset=A_USDT,
             amount=FVal(2500.180327),
@@ -919,7 +919,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
         AssetMovement(
             location=Location.OKX,
             location_label=mock_okx.name,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1669405596000),
             asset=A_USDC,
             amount=FVal(990.795352),
@@ -932,7 +932,7 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
         AssetMovement(
             location=Location.OKX,
             location_label=mock_okx.name,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.SPEND,
             timestamp=TimestampMS(1671542569000),
             asset=A_SOL,
             amount=FVal(49.86051649),
@@ -945,17 +945,16 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
         AssetMovement(
             location=Location.OKX,
             location_label=mock_okx.name,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.FEE,
             timestamp=TimestampMS(1671542569000),
             asset=A_SOL,
             amount=FVal(0.008),
             unique_id='46tgp3RHNuQqQrHbms1NtPFkRRwsabCajvEUPXBryVuH6qJmQysn1V9VhTYBEJmVQq8s8fbfv4WFW3oj2LtwRzyU',
-            is_fee=True,
         ),
         AssetMovement(
             location=Location.OKX,
             location_label=mock_okx.name,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.SPEND,
             timestamp=TimestampMS(1670953159000),
             asset=A_USDT,
             amount=FVal(421.169831),
@@ -968,12 +967,11 @@ def test_okx_query_deposits_withdrawals(mock_okx: 'Okx') -> None:
         AssetMovement(
             location=Location.OKX,
             location_label=mock_okx.name,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.FEE,
             timestamp=TimestampMS(1670953159000),
             asset=A_USDT,
             amount=FVal(0.1),
             unique_id='0x9444b018c33c5adb58ee171bc18e61c56078495e37ae88833007a46c02b4552f',
-            is_fee=True,
         ),
     ]
 

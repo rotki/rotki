@@ -741,7 +741,7 @@ def test_delete_external_exchange_data_works(
 
     events = [AssetMovement(
         location=x,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(0),
         asset=A_BTC,
         amount=FVal(100),

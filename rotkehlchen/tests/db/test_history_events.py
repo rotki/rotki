@@ -508,7 +508,7 @@ def test_get_history_events_free_filter(database: 'DBHandler'):
             group_identifier=group_identifiers[5],
             timestamp=TimestampMS(1000),
             location=Location.KRAKEN,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_BTC,
             amount=ONE,
         ), HistoryEvent(

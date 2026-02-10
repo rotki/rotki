@@ -30,7 +30,7 @@ from rotkehlchen.history.events.structures.swap import (
     create_swap_events,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -82,7 +82,7 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
     - KeyError
     """
     log.debug(f'Processing raw IndependentReserve transaction: {raw_tx}')
-    movement_type = deserialize_asset_movement_event_type(raw_tx['Type'])
+    movement_subtype = deserialize_asset_movement_event_type(raw_tx['Type'])
     asset = independentreserve_asset(raw_tx['CurrencyCode'])
     bitcoin_tx_id = raw_tx.get('BitcoinTransactionId')
     eth_tx_id = raw_tx.get('EthereumTransactionId')
@@ -98,7 +98,7 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
     if comment is not None and comment.startswith('Withdrawing to'):
         address = comment.rsplit()[-1]
 
-    raw_amount = raw_tx.get('Credit') if movement_type == HistoryEventType.DEPOSIT else raw_tx.get('Debit')  # noqa: E501
+    raw_amount = raw_tx.get('Credit') if movement_subtype == HistoryEventSubType.RECEIVE else raw_tx.get('Debit')  # noqa: E501
 
     if raw_amount is None:  # skip
         return None   # Can end up being None for some things like this: 'Comment': 'Initial balance after Bitcoin fork'  # noqa: E501
@@ -110,7 +110,7 @@ def _asset_movement_from_independentreserve(raw_tx: dict) -> AssetMovement | Non
 
     return AssetMovement(
         location=Location.INDEPENDENTRESERVE,
-        event_type=movement_type,
+        event_subtype=movement_subtype,
         timestamp=ts_sec_to_ms(deserialize_timestamp_from_date(
             date=timestamp_field,
             formatstr='iso8601',

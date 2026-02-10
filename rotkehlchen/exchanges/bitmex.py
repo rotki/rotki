@@ -26,7 +26,7 @@ from rotkehlchen.exchanges.utils import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.asset_movement import create_asset_movement_with_fee
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_fval_or_zero
@@ -368,9 +368,9 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
 
                 transaction_type = movement['transactType']
                 if transaction_type == 'Deposit':
-                    event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = HistoryEventType.DEPOSIT  # noqa: E501
+                    event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND] = HistoryEventSubType.RECEIVE  # noqa: E501
                 elif transaction_type == 'Withdrawal':
-                    event_type = HistoryEventType.WITHDRAWAL
+                    event_subtype = HistoryEventSubType.SPEND
                 else:
                     continue
 
@@ -395,7 +395,7 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
                 movements.extend(create_asset_movement_with_fee(
                     location=self.location,
                     location_label=self.name,
-                    event_type=event_type,
+                    event_subtype=event_subtype,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=asset,
                     amount=normalized_fval_value_decimals(amount=raw_amount, decimals=decimals),

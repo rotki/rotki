@@ -17,7 +17,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
 from rotkehlchen.externalapis.utils import read_hash, read_integer
 from rotkehlchen.fval import AcceptableFValInitInput, FVal
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     BTCTxId,
@@ -285,30 +285,25 @@ def get_pair_position_str(pair: TradePair, position: str) -> str:
     return base_str if position == 'first' else quote_str
 
 
-def deserialize_asset_movement_event_type(
-        value: str,
-) -> Literal[
-    HistoryEventType.DEPOSIT,
-    HistoryEventType.WITHDRAWAL,
-    HistoryEventType.EXCHANGE_TRANSFER,
+def deserialize_asset_movement_event_type(value: str) -> Literal[
+        HistoryEventSubType.RECEIVE,
+        HistoryEventSubType.SPEND,
 ]:
-    """Takes a string and determines whether to accept it as an asset movement event_type
+    """Takes a string and determines the asset movement direction subtype.
 
     Can throw DeserializationError if value is not as expected
     """
-    if isinstance(value, str):
-        if (lowered_value := value.lower()) == 'deposit':
-            return HistoryEventType.DEPOSIT
-        if lowered_value in {'withdraw', 'withdrawal'}:
-            return HistoryEventType.WITHDRAWAL
-        if lowered_value in {'exchange_transfer', 'exchange transfer'}:
-            return HistoryEventType.EXCHANGE_TRANSFER
+    if not isinstance(value, str):
         raise DeserializationError(
-            f'Failed to deserialize asset movement category symbol. Unknown {value}',
+            f'Failed to deserialize asset movement category from {type(value)} entry',
         )
 
+    if (lowered_value := value.lower()) == 'deposit':
+        return HistoryEventSubType.RECEIVE
+    if lowered_value in {'withdraw', 'withdrawal'}:
+        return HistoryEventSubType.SPEND
     raise DeserializationError(
-        f'Failed to deserialize asset movement category from {type(value)} entry',
+        f'Failed to deserialize asset movement category symbol. Unknown {value}',
     )
 
 

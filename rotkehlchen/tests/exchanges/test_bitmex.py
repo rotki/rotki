@@ -12,7 +12,7 @@ from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.data_structures import Location, MarginPosition
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
@@ -80,7 +80,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
         group_identifier='ccc9482b81ec668e8846054933f14426bb99fae1d31a1d753187962454544a1c',
         location=Location.BITMEX,
         location_label=sandbox_bitmex.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1536486278000),
         asset=A_BTC,
         amount=FVal('0.46966992'),
@@ -89,7 +89,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
         group_identifier='e0f2ca47943d1769d568c8a7a5348ffdbd0ed11a98e3444eebc3370f1fc1f52d',
         location=Location.BITMEX,
         location_label=sandbox_bitmex.name,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.SPEND,
         timestamp=TimestampMS(1536536707000),
         asset=A_BTC,
         amount=FVal('0.007'),
@@ -99,17 +99,16 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
         group_identifier='e0f2ca47943d1769d568c8a7a5348ffdbd0ed11a98e3444eebc3370f1fc1f52d',
         location=Location.BITMEX,
         location_label=sandbox_bitmex.name,
-        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.FEE,
         timestamp=TimestampMS(1536536707000),
         asset=A_BTC,
         amount=FVal('0.003'),
-        is_fee=True,
     ), AssetMovement(
         identifier=2,
         group_identifier='290836ed7b44d7921bc7ab2f8d189f456e266769fa6517e6361e407f4ef4fbc9',
         location=Location.BITMEX,
         location_label=sandbox_bitmex.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1536563759000),
         asset=A_BTC,
         amount=FVal('0.38474377'),
@@ -118,7 +117,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(
         group_identifier='d4307315ea24915446578e8f8015a5ea95e30194769a62ce8f92f43c2b876bac',
         location=Location.BITMEX,
         location_label=sandbox_bitmex.name,
-        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.RECEIVE,
         timestamp=TimestampMS(1537014656000),
         asset=A_BTC,
         amount=FVal(0.16960386),

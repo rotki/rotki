@@ -72,7 +72,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
         if entry_type in {'Deposit', 'Wire Deposit', 'ACH Deposit'}:
             self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.BLOCKFI,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
                 amount=abs_amount,
@@ -80,7 +80,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
         elif entry_type in {'Withdrawal', 'Wire Withdrawal', 'ACH Withdrawal'}:
             self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.BLOCKFI,
-                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.SPEND,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
                 amount=abs_amount,
@@ -88,11 +88,10 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
         elif entry_type == 'Withdrawal Fee':
             self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.BLOCKFI,
-                event_type=HistoryEventType.WITHDRAWAL,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
                 amount=abs_amount,
-                is_fee=True,
+                event_subtype=HistoryEventSubType.FEE,
             )])
         elif entry_type in {'Interest Payment', 'Bonus Payment', 'Referral Bonus'}:
             event = HistoryEvent(
@@ -110,7 +109,11 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
         elif entry_type == 'Crypto Transfer':
             self.add_history_events(write_cursor, [AssetMovement(
                 location=Location.BLOCKFI,
-                event_type=HistoryEventType.WITHDRAWAL if raw_amount < ZERO else HistoryEventType.DEPOSIT,  # noqa: E501
+                event_subtype=(
+                    HistoryEventSubType.SPEND
+                    if raw_amount < ZERO else
+                    HistoryEventSubType.RECEIVE
+                ),
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
                 amount=abs_amount,

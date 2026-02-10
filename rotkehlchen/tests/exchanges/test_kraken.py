@@ -1119,16 +1119,16 @@ def test_kraken_event_serialization_with_custom_asset(database):
     )):
         assert swap_events[idx].serialize()['auto_notes'] == expected_notes
 
-    for event_type in {HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL}:
+    for movement_subtype in {HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND}:
         asset_movements = create_asset_movement_with_fee(
             timestamp=TimestampMS(10000000000),
             location=Location.KRAKEN,
-            event_type=event_type,
+            event_subtype=movement_subtype,
             asset=custom_asset,
             amount=ONE,
             fee=AssetAmount(asset=custom_asset, amount=ONE),
         )
-        if event_type == HistoryEventType.DEPOSIT:
+        if movement_subtype == HistoryEventSubType.RECEIVE:
             assert asset_movements[0].serialize()['auto_notes'] == 'Deposit 1 Gold Bar to Kraken'
         else:
             assert asset_movements[0].serialize()['auto_notes'] == 'Withdraw 1 Gold Bar from Kraken'  # noqa: E501

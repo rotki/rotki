@@ -902,21 +902,26 @@ class Coinbase(ExchangeInterface):
             transaction_id, transaction_hash = raw_data.get('id'), None
             notes, fee = None, None
             tx_type = raw_data['type']  # not sure if fiat
-            event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
             amount_data = raw_data['amount']
             # 'pro_deposit' is treated as withdrawal since it debits funds from Coinbase
             # See: https://docs.cdp.coinbase.com/coinbase-app/docs/api-transactions#parameters
             if tx_type == 'fiat_withdrawal':
-                event_type = HistoryEventType.WITHDRAWAL
+                event_subtype: Literal[
+                    HistoryEventSubType.RECEIVE,
+                    HistoryEventSubType.SPEND,
+                ] = HistoryEventSubType.SPEND
             elif tx_type == 'pro_deposit':
                 notes = 'Transfer funds to CoinbasePro'
-                event_type = HistoryEventType.WITHDRAWAL
+                event_subtype = HistoryEventSubType.SPEND
             elif tx_type in ('send', 'tx'):
-                event_type = HistoryEventType.WITHDRAWAL if amount_data['amount'].startswith('-') else HistoryEventType.DEPOSIT  # noqa: E501
+                if amount_data['amount'].startswith('-'):
+                    event_subtype = HistoryEventSubType.SPEND
+                else:
+                    event_subtype = HistoryEventSubType.RECEIVE
             elif tx_type == 'fiat_deposit':
-                event_type = HistoryEventType.DEPOSIT
+                event_subtype = HistoryEventSubType.RECEIVE
             elif tx_type == 'pro_withdrawal':
-                event_type = HistoryEventType.DEPOSIT
+                event_subtype = HistoryEventSubType.RECEIVE
                 notes = 'Transfer funds from CoinbasePro'
             else:
                 log.error(
@@ -959,7 +964,7 @@ class Coinbase(ExchangeInterface):
                 return None  # Can ignore. https://github.com/rotki/rotki/issues/3901
 
             if 'from' in raw_data:
-                event_type = HistoryEventType.DEPOSIT
+                event_subtype = HistoryEventSubType.RECEIVE
 
         except UnknownAsset as e:
             self.send_unknown_asset_message(
@@ -987,7 +992,7 @@ class Coinbase(ExchangeInterface):
             return create_asset_movement_with_fee(
                 location=self.location,
                 location_label=self.name,
-                event_type=event_type,
+                event_subtype=event_subtype,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset,
                 amount=amount,

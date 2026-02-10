@@ -16,7 +16,7 @@ from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.tests.utils.constants import A_DOGE
 from rotkehlchen.tests.utils.globaldb import is_asset_symbol_unsupported
@@ -120,7 +120,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
         AssetMovement(
             location=Location.HTX,
             location_label=htx_exchange.name,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1612820394000),
             asset=A_ZRX,
             amount=FVal('597.0018'),
@@ -132,7 +132,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
         ), AssetMovement(
             location=Location.HTX,
             location_label=htx_exchange.name,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
             timestamp=TimestampMS(1710153143000),
             asset=A_DAI,
             amount=FVal('1064.437'),
@@ -144,7 +144,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
         ), AssetMovement(
             location=Location.HTX,
             location_label=htx_exchange.name,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.SPEND,
             timestamp=TimestampMS(1631140110000),
             asset=A_ZRX,
             amount=FVal('1174.49047'),
@@ -156,12 +156,11 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
         ), AssetMovement(
             location=Location.HTX,
             location_label=htx_exchange.name,
-            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.FEE,
             timestamp=TimestampMS(1631140110000),
             asset=A_ZRX,
             amount=FVal('13.778201'),
             unique_id='52360978',
-            is_fee=True,
         ),
     ]
     assert movements == expected_movements

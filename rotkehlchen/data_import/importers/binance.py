@@ -406,7 +406,11 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
         asset = data['Coin']
         importer.add_history_events(write_cursor, [AssetMovement(
             location=Location.BINANCE,
-            event_type=HistoryEventType.WITHDRAWAL if data['Operation'] == 'Withdraw' else HistoryEventType.DEPOSIT,  # else clause also covers 'Buy Crypto' & 'Fiat Deposit'  # noqa: E501
+            event_subtype=(
+                HistoryEventSubType.SPEND
+                if data['Operation'] == 'Withdraw' else
+                HistoryEventSubType.RECEIVE
+            ),  # else clause also covers 'Buy Crypto' & 'Fiat Deposit'
             timestamp=ts_sec_to_ms(timestamp),
             asset=asset,
             amount=abs(data['Change']),

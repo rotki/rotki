@@ -17,7 +17,7 @@ from rotkehlchen.exchanges.bybit import Bybit, bybit_symbol_to_base_quote
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.tests.utils.constants import A_SOL, A_XRP
 from rotkehlchen.types import Location, Timestamp, TimestampMS
 from rotkehlchen.utils.misc import ts_now
@@ -274,7 +274,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
             timestamp=TimestampMS(1701200911000),
             location=Location.BYBIT,
             location_label=bybit_exchange.name,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDC,
             amount=FVal('79.993947'),
             unique_id='0xe9bce05f14cb35eeb762ed5ce109ab4676ed1459480f6196c82060c4e0c63b27',
@@ -283,7 +283,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
             timestamp=TimestampMS(1701200780000),
             location=Location.BYBIT,
             location_label=bybit_exchange.name,
-            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.RECEIVE,
             asset=A_USDC,
             amount=FVal('20'),
             unique_id='0xc2433faf5938e4be896127a15815952e99b41412b8aa0fbe239ce24c8bc435ab',

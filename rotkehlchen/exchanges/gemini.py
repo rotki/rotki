@@ -551,7 +551,7 @@ class Gemini(ExchangeInterface, SignatureGeneratorMixin):
                 movement = AssetMovement(
                     location=Location.GEMINI,
                     location_label=self.name,
-                    event_type=deserialize_asset_movement_event_type(entry['type']),
+                    event_subtype=deserialize_asset_movement_event_type(entry['type']),
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=asset,
                     amount=deserialize_fval_force_positive(entry['amount']),

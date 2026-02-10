@@ -158,11 +158,14 @@ class CointrackingImporter(BaseExchangeImporter):
             if row_type == 'Deposit':
                 amount = deserialize_fval(csv_row['Buy'])
                 asset = asset_resolver(csv_row['Cur.Buy'])
-                movement_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = HistoryEventType.DEPOSIT  # noqa: E501
+                movement_subtype: Literal[
+                    HistoryEventSubType.RECEIVE,
+                    HistoryEventSubType.SPEND,
+                ] = HistoryEventSubType.RECEIVE
             else:
                 amount = deserialize_fval_force_positive(csv_row['Sell'])
                 asset = asset_resolver(csv_row['Cur.Sell'])
-                movement_type = HistoryEventType.WITHDRAWAL
+                movement_subtype = HistoryEventSubType.SPEND
 
             self.add_history_events(
                 write_cursor=write_cursor,
@@ -171,7 +174,7 @@ class CointrackingImporter(BaseExchangeImporter):
                     location=location,
                     asset=asset,
                     amount=amount,
-                    event_type=movement_type,
+                    event_subtype=movement_subtype,
                     fee=fee,
                 ),
             )

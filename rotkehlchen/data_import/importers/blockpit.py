@@ -115,14 +115,17 @@ class BlockpitImporter(BaseExchangeImporter):
         elif transaction_type in {'Deposit', 'Withdrawal', 'NonTaxableIn', 'NonTaxableOut'}:
             if transaction_type in {'Deposit', 'NonTaxableIn'}:
                 direction = 'Incoming'
-                movement_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL] = HistoryEventType.DEPOSIT  # noqa: E501
+                movement_subtype: Literal[
+                    HistoryEventSubType.RECEIVE,
+                    HistoryEventSubType.SPEND,
+                ] = HistoryEventSubType.RECEIVE
             else:
                 direction = 'Outgoing'
-                movement_type = HistoryEventType.WITHDRAWAL
+                movement_subtype = HistoryEventSubType.SPEND
 
             events = [AssetMovement(
                 location=location,
-                event_type=movement_type,
+                event_subtype=movement_subtype,
                 timestamp=ts_sec_to_ms(timestamp),
                 asset=asset_resolver(csv_row[f'{direction} Asset']),
                 amount=deserialize_fval(csv_row[f'{direction} Amount']),
@@ -131,11 +134,10 @@ class BlockpitImporter(BaseExchangeImporter):
                 events.append(AssetMovement(
                     group_identifier=events[0].group_identifier,
                     location=location,
-                    event_type=movement_type,
                     timestamp=ts_sec_to_ms(timestamp),
                     asset=fee_currency,
                     amount=fee_amount,
-                    is_fee=True,
+                    event_subtype=HistoryEventSubType.FEE,
                 ))
             self.add_history_events(write_cursor, events)
 

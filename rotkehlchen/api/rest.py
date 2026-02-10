@@ -3608,10 +3608,7 @@ class RestAPI:
                     asset_movement=asset_movement,
                     fee_event=fee_event,  # type: ignore[arg-type]  # Will be asset movement fee. Query is filtered by entry type above.
                     matched_event=matched_event,
-                    is_deposit=asset_movement.event_subtype in (
-                        HistoryEventSubType.RECEIVE,
-                        HistoryEventSubType.DEPOSIT_ASSET,  # legacy
-                    ) or asset_movement.event_type == HistoryEventType.DEPOSIT,  # legacy
+                    is_deposit=asset_movement.event_subtype == HistoryEventSubType.RECEIVE,
                     allow_adding_adjustments=allow_adding_adjustments,
                 )
             return api_response(OK_RESULT)

@@ -77,16 +77,15 @@ def test_exchanges_removed_api_keys(rotkehlchen_api_server_with_exchanges: APISe
             history=[AssetMovement(
                 timestamp=TimestampMS(1611426201000),
                 location=Location.COINBASE,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_BTC,
                 amount=ONE,
             ), AssetMovement(
                 timestamp=TimestampMS(1611426201000),
                 location=Location.COINBASE,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.FEE,
                 asset=A_BTC,
                 amount=FVal('0.00001'),
-                is_fee=True,
             ), *create_swap_events(
                 timestamp=TimestampMS(1611426201001),
                 location=Location.COINBASE,
@@ -173,7 +172,7 @@ def test_asset_movement_fee_respects_accounting_rules(
             event=AssetMovement(
                 timestamp=TimestampMS(1611426201000),
                 location=Location.COINBASE,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.RECEIVE,
                 asset=A_BTC,
                 amount=ONE,
             ),
@@ -183,10 +182,9 @@ def test_asset_movement_fee_respects_accounting_rules(
             event=AssetMovement(
                 timestamp=TimestampMS(1611426201000),
                 location=Location.COINBASE,
-                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.FEE,
                 asset=A_BTC,
                 amount=fee_amount,
-                is_fee=True,
             ),
         )
 

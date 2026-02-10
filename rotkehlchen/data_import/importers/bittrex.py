@@ -17,7 +17,7 @@ from rotkehlchen.history.events.structures.swap import (
     deserialize_trade_type_is_buy,
     get_swap_spend_receive,
 )
-from rotkehlchen.history.events.structures.types import HistoryEventType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.serialization.deserialize import (
     deserialize_fval,
@@ -130,38 +130,42 @@ class BittrexImporter(BaseExchangeImporter):
         - KeyError
         - DeserializationError
         """
-        event_type: Literal[HistoryEventType.DEPOSIT, HistoryEventType.WITHDRAWAL]
+        event_subtype: Literal[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND]
         if file_type == BittrexFileType.DEPOSITS_AND_WITHDRAWALS:
             asset = csv_row['Currency']
-            event_type = HistoryEventType.DEPOSIT if csv_row['Type'] == 'DEPOSIT' else HistoryEventType.WITHDRAWAL  # noqa: E501
+            event_subtype = (
+                HistoryEventSubType.RECEIVE
+                if csv_row['Type'] == 'DEPOSIT' else
+                HistoryEventSubType.SPEND
+            )
             address_key = 'Address'
             tx_id_key = 'TxId'
             date = csv_row['Date']
             amount = csv_row['Amount']
         elif file_type == BittrexFileType.DEPOSITS:
             asset = csv_row['Currency']
-            event_type = HistoryEventType.DEPOSIT
+            event_subtype = HistoryEventSubType.RECEIVE
             address_key = 'CryptoAddress'
             tx_id_key = 'TxId'
             date = csv_row['LastUpdated']
             amount = csv_row['Amount']
         elif file_type == BittrexFileType.DEPOSITS_OLD:
             asset = csv_row['CURRENCY']
-            event_type = HistoryEventType.DEPOSIT
+            event_subtype = HistoryEventSubType.RECEIVE
             address_key = 'CRYPTOADDRESS'
             tx_id_key = 'TXID'
             date = csv_row['LASTUPDATED']
             amount = csv_row['AMOUNT']
         elif file_type == BittrexFileType.WITHDRAWALS:
             asset = csv_row['Currency']
-            event_type = HistoryEventType.WITHDRAWAL
+            event_subtype = HistoryEventSubType.SPEND
             address_key = 'Address'
             tx_id_key = 'TxId'
             date = csv_row['Opened']
             amount = csv_row['Amount']
         else:
             asset = csv_row['CURRENCY']
-            event_type = HistoryEventType.WITHDRAWAL
+            event_subtype = HistoryEventSubType.SPEND
             address_key = 'ADDRESS'
             tx_id_key = 'TXID'
             date = csv_row['CLOSED']
@@ -169,7 +173,7 @@ class BittrexImporter(BaseExchangeImporter):
         asset = asset_from_bittrex(asset)
         return [AssetMovement(
             location=Location.BITTREX,
-            event_type=event_type,
+            event_subtype=event_subtype,
             timestamp=ts_sec_to_ms(deserialize_timestamp_from_date(
                 date=date,
                 formatstr=timestamp_format,
