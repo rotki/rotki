@@ -8,7 +8,7 @@ import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import { useScramble } from '@/composables/scramble';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { getAccountAddress, getAccountLabel, getChain } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
 
 const props = defineProps<{
@@ -52,7 +52,7 @@ const aliasName = computed<string>(() => {
   const chain = getChain(accountData);
   const labelVal = get(label);
 
-  if (accountData.data.type === 'xpub') {
+  if (isXpubAccount(accountData)) {
     return labelVal;
   }
   const name = get(addressNameSelector(get(accountAddress), chain));

@@ -14,7 +14,7 @@ import { useStatusStore } from '@/store/status';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 import { Section } from '@/types/status';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { getAccountAddress, getXpubId } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress, getXpubId, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 import { downloadFileByTextContent } from '@/utils/download';
 import { logger } from '@/utils/logging';
 import { getKeyType, guessPrefix, isPrefixed } from '@/utils/xpub';
@@ -108,7 +108,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
     const rows: CSVRow[] = [];
 
     for (const account of getAccounts()) {
-      const addressExtras: Record<string, string> = account.data.type === 'xpub' && account.data.derivationPath
+      const addressExtras: Record<string, string> = isXpubAccount(account) && account.data.derivationPath
         ? { derivationPath: account.data.derivationPath }
         : {};
 

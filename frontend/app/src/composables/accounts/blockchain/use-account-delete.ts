@@ -12,7 +12,7 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useConfirmStore } from '@/store/confirm';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 import { uniqueStrings } from '@/utils/data';
 
 export type ShowConfirmationParams = {
@@ -58,7 +58,7 @@ function toPayload(params: ShowConfirmationParams): Payload {
   const address = getAccountAddress(account);
 
   if (account.type === 'group') {
-    if (account.data.type === 'xpub') {
+    if (isXpubAccount(account)) {
       return {
         data: {
           ...account.data,
@@ -235,7 +235,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     const account = params.data;
 
     if (account.type === 'group') {
-      if (account.data.type === 'xpub')
+      if (isXpubAccount(account))
         return t('account_balances.confirm_delete.description_xpub', { address });
 
       const { allChains, chains } = account;

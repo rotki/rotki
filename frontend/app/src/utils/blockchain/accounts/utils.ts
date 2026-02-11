@@ -1,4 +1,4 @@
-import type { BlockchainAccountData, XpubData } from '@/types/blockchain/accounts';
+import type { AddressData, BlockchainAccountData, ValidatorData, XpubData } from '@/types/blockchain/accounts';
 
 export function getXpubId(data: Omit<XpubData, 'type'>): string {
   if (!data.derivationPath)
@@ -8,21 +8,18 @@ export function getXpubId(data: Omit<XpubData, 'type'>): string {
 }
 
 function getDataId(group: { data: BlockchainAccountData }): string {
-  const data = group.data;
-  if (data.type === 'address') {
-    return data.address;
-  }
-  else if (data.type === 'validator') {
-    return data.publicKey;
-  }
-  else {
-    return getXpubId(data);
-  }
+  if (isAddressAccount(group))
+    return group.data.address;
+  else if (isValidatorAccount(group))
+    return group.data.publicKey;
+  else if (isXpubAccount(group))
+    return getXpubId(group.data);
+  return '';
 }
 
 export function getGroupId(group: { data: BlockchainAccountData; chains: string[] }): string {
   const main = getDataId(group);
-  if (group.data.type === 'xpub')
+  if (isXpubAccount(group))
     return `${main}#${getChain(group)}`;
 
   return main;
@@ -33,23 +30,37 @@ export function getAccountId(account: { data: BlockchainAccountData; chain: stri
 }
 
 export function getAccountAddress(account: { data: BlockchainAccountData }): string {
-  if (account.data.type === 'address')
+  if (isAddressAccount(account))
     return account.data.address;
-  else if (account.data.type === 'validator')
+  else if (isValidatorAccount(account))
     return account.data.publicKey;
-  else return account.data.xpub;
+  else if (isXpubAccount(account))
+    return account.data.xpub;
+  return '';
 }
 
 export function getAccountLabel(account: { data: BlockchainAccountData; label?: string }): string {
   if (account.label)
     return account.label;
-  else if (account.data.type === 'address')
+  else if (isAddressAccount(account))
     return account.data.address;
-  else if (account.data.type === 'validator')
+  else if (isValidatorAccount(account))
     return account.data.index.toString();
-  else if (account.data.type === 'xpub')
+  else if (isXpubAccount(account))
     return account.data.xpub;
   return '';
+}
+
+export function isAddressAccount<T extends { data: BlockchainAccountData }>(account: T): account is T & { data: AddressData } {
+  return account.data.type === 'address';
+}
+
+export function isValidatorAccount<T extends { data: BlockchainAccountData }>(account: T): account is T & { data: ValidatorData } {
+  return account.data.type === 'validator';
+}
+
+export function isXpubAccount<T extends { data: BlockchainAccountData }>(account: T): account is T & { data: XpubData } {
+  return account.data.type === 'xpub';
 }
 
 export function getChain(account: { chain: string } | { chains: string[] }): string | undefined {

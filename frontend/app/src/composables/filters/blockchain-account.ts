@@ -7,7 +7,7 @@ import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-bloc
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { CommaSeparatedStringSchema, RouterExpandedIdsSchema } from '@/types/route';
 import { arrayify } from '@/utils/array';
-import { getAccountAddress, getAccountLabel, getChain } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 
 enum BlockchainAccountFilterKeys {
   ACCOUNT = 'account',
@@ -58,7 +58,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
           for (const item of accounts) {
             const address = getAccountAddress(item);
             const chain = getChain(item);
-            const label = item.data.type === 'xpub' ? getAccountLabel(item) : get(addressNameSelector(address, chain));
+            const label = isXpubAccount(item) ? getAccountLabel(item) : get(addressNameSelector(address, chain));
 
             if (!seenAddresses.has(address)) {
               seenAddresses.add(address);

@@ -7,7 +7,7 @@ import AccountBalanceAggregatedAssets from '@/components/accounts/AccountBalance
 import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
 import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
-import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress, getGroupId, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 
 const tab = defineModel<number>('tab', { required: true });
 const query = defineModel<LocationQuery>('query', { required: true });
@@ -42,7 +42,7 @@ defineExpose({
   <AccountGroupDetails
     v-if="row.expansion === 'accounts'"
     v-model="tab"
-    :is-xpub="row.data.type === 'xpub'"
+    :is-xpub="isXpubAccount(row)"
   >
     <template #per-chain>
       <AccountGroupDetailsTable
@@ -53,7 +53,7 @@ defineExpose({
         :chains="chains"
         :tags="visibleTags"
         :group-id="getGroupId(row)"
-        :group="row.data.type === 'xpub' ? 'xpub' : undefined"
+        :group="isXpubAccount(row) ? 'xpub' : undefined"
         :category="row.category || ''"
         :selection-mode="selectionMode"
         @edit="emit('edit', $event)"

@@ -7,7 +7,7 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { ValueDisplay } from '@/modules/amount-display/components';
 import { sortDesc } from '@/utils/bignumbers';
-import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 
 const props = defineProps<{
   chains: string[];
@@ -28,7 +28,7 @@ const topTokens = computed<AssetBalance[]>(() => get(balances)
 
 const assets = computed<AssetBalance[]>(() => {
   const row = props.row;
-  if (row.data.type === 'xpub' && row.nativeAsset) {
+  if (isXpubAccount(row) && row.nativeAsset) {
     return [{
       amount: row.amount || Zero,
       asset: row.nativeAsset,

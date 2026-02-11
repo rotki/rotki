@@ -20,7 +20,7 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { getAccountBalance, hasTokens, sortAndFilterAccounts } from '@/utils/blockchain/accounts';
 import { createAccountWithBalance } from '@/utils/blockchain/accounts/create-account-with-balance';
-import { getAccountAddress, getAccountLabel } from '@/utils/blockchain/accounts/utils';
+import { getAccountAddress, getAccountLabel, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 import { assetSum, balanceSum } from '@/utils/calculation';
 import { uniqueStrings } from '@/utils/data';
 import { deduplicateTags } from '@/utils/tags';
@@ -132,7 +132,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
 
     const accountsWithBalances: BlockchainAccountWithBalance[] = [];
     for (const account of accountData) {
-      if (account.data.type === 'xpub')
+      if (isXpubAccount(account))
         continue;
       accountsWithBalances.push(createAccountWithBalance(account, balanceData));
     }
@@ -247,7 +247,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
           return blockchainAccounts.filter(account => account.groupId === groupId);
         },
         getLabel(account, chain) {
-          return account.data.type === 'xpub' ? getAccountLabel(account) : get(addressNameSelector(getAccountAddress(account), chain));
+          return isXpubAccount(account) ? getAccountLabel(account) : get(addressNameSelector(getAccountAddress(account), chain));
         },
       },
     ));
