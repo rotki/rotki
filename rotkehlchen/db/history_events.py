@@ -324,6 +324,7 @@ class DBHistoryEvents:
         This restores them from backup and removes any auto-created adjustment events.
         """
         link_type_db = HistoryEventLinkType.ASSET_MOVEMENT_MATCH.serialize_for_db()
+        auto_matched_db = HistoryMappingState.AUTO_MATCHED.serialize_for_db()
         location_db = location.serialize_for_db()
         events_to_restore: set[int] = set()
 
@@ -363,7 +364,7 @@ class DBHistoryEvents:
                     HistoryEventType.EXCHANGE_ADJUSTMENT.serialize(),
                     *chunk,
                     HISTORY_MAPPING_KEY_STATE,
-                    HistoryMappingState.AUTO_MATCHED.serialize_for_db(),
+                    auto_matched_db,
                 ),
             )
 
@@ -379,7 +380,7 @@ class DBHistoryEvents:
                 f'DELETE FROM history_events_mappings '
                 f'WHERE parent_identifier IN ({placeholders}) '
                 f'AND name = ? AND value = ?',
-                (*chunk, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.AUTO_MATCHED.serialize_for_db()),  # noqa: E501
+                (*chunk, HISTORY_MAPPING_KEY_STATE, auto_matched_db),
             )
 
     def edit_history_event(

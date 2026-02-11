@@ -1382,12 +1382,21 @@ def test_redecode_block_production_events(rotkehlchen_api_server: 'APIServer') -
 def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') -> None:
     """Test validation for the refetch staking events endpoint."""
     url = api_url_for(rotkehlchen_api_server, 'refetchstakingeventsresource')
-    assert_error_response(  # neither validator_indices nor addresses provided
+    assert_error_response(  # neither provided and no tracked validators
         response=requests.post(url, json={
             'async_query': False,
             'entry_type': 'block productions',
         }),
-        contained_in_msg='Exactly one of validator_indices or addresses must be provided',
+        contained_in_msg='No tracked validators found in rotki',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+    assert_error_response(  # empty lists and no tracked validators
+        response=requests.post(url, json={
+            'async_query': False,
+            'entry_type': 'block productions',
+            'validator_indices': [],
+        }),
+        contained_in_msg='No tracked validators found in rotki',
         status_code=HTTPStatus.BAD_REQUEST,
     )
     assert_error_response(  # both provided
@@ -1397,16 +1406,7 @@ def test_refetch_staking_events_validation(rotkehlchen_api_server: 'APIServer') 
             'validator_indices': [1],
             'addresses': ['0x4c66c2055f6a7a01e102bde8d8d71d1d36667e21'],
         }),
-        contained_in_msg='Exactly one of validator_indices or addresses must be provided',
-        status_code=HTTPStatus.BAD_REQUEST,
-    )
-    assert_error_response(  # empty validator_indices
-        response=requests.post(url, json={
-            'async_query': False,
-            'entry_type': 'block productions',
-            'validator_indices': [],
-        }),
-        contained_in_msg='Exactly one of validator_indices or addresses must be provided',
+        contained_in_msg="Can't specify both validator_indices and addresses in the same query",
         status_code=HTTPStatus.BAD_REQUEST,
     )
     assert_error_response(  # non-existent validator index
@@ -1468,7 +1468,7 @@ def test_refetch_block_production_events(rotkehlchen_api_server: 'APIServer') ->
             'timestamp': 1700100000,
             'blockReward': '200000000000000000',
             'blockMevReward': '0',
-            'feeRecipient': make_evm_address(),
+            'feeRecipient': (new_fee_recipient := make_evm_address()),
             'posConsensus': {'proposerIndex': v_index},
         }, {
             'blockNumber': 100,  # existing, should be skipped
@@ -1487,7 +1487,10 @@ def test_refetch_block_production_events(rotkehlchen_api_server: 'APIServer') ->
                 'validator_indices': [v_index],
             },
         )
-        assert_simple_ok_response(response)
+        result = assert_proper_sync_response_with_result(response)
+        assert result['total'] == 1
+        assert result['per_validator'] == {str(v_index): 1}
+        assert result['per_address'] == {new_fee_recipient: 1}
 
     # the new block should have been added
     with db.conn.read_ctx() as cursor:
@@ -1560,7 +1563,10 @@ def test_refetch_withdrawal_events(rotkehlchen_api_server: 'APIServer') -> None:
                 'to_timestamp': 1710200000,
             },
         )
-        assert_simple_ok_response(response)
+        result = assert_proper_sync_response_with_result(response)
+        assert result['total'] == 1
+        assert result['per_validator'] == {str(v_index): 1}
+        assert result['per_address'] == {withdrawal_address: 1}
 
     # the new withdrawal should have been added, existing one skipped
     with db.conn.read_ctx() as cursor:

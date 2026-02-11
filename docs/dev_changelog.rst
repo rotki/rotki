@@ -18,6 +18,22 @@ A new endpoint to get the 0-based position of a history event group in the filte
   - Returns the 0-based position of the group in the filtered and sorted (timestamp DESC) list of groups.
   - Returns null if the group is not found.
 
+ETH2 Staking Events Refetch Endpoint
+------------------------------------
+
+A new endpoint to refetch ETH2 staking events and return a breakdown of newly added events.
+
+* **New Endpoint**: ``POST /api/(version)/blockchains/eth2/events/refetch``
+
+  - Required ``entry_type`` parameter specifying which type of staking events to refetch. Valid values are ``"block_productions"`` and ``"eth_withdrawals"``.
+  - Optional ``from_timestamp`` and ``to_timestamp`` parameters to restrict the time range of events to refetch.
+  - Optional ``validator_indices`` parameter, a list of validator indices to refetch events for.
+  - Optional ``addresses`` parameter, a list of EVM addresses (fee recipients for block productions, withdrawal addresses for withdrawals) to refetch events for.
+  - ``validator_indices`` and ``addresses`` cannot both be specified in the same request. If neither is provided, events for all tracked validators are refetched.
+  - Supports ``async_query`` for background execution.
+  - ``result`` returns an object with ``total``, ``per_validator``, and ``per_address`` breakdowns of newly added event counts.
+  - ``per_address`` maps fee recipient addresses for block productions or withdrawal addresses for withdrawals.
+
 History Events Filter State Markers Parameter
 ---------------------------------------------
 
@@ -171,6 +187,4 @@ ERC-721 token IDs may now be set when adding/editing assets.
 * **Modified Endpoint**: ``GET /api/(version)/assets/all``
 
   - Now includes a ``collectible_id`` field in the response when token_kind is ``"erc721"``.
-
-
 

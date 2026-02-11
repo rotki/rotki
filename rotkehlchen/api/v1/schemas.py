@@ -4732,44 +4732,51 @@ class RefetchStakingEventsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema)
             **_kwargs: Any,
     ) -> None:
         validator_indices, addresses = data['validator_indices'], data['addresses']
-        if bool(validator_indices) == bool(addresses):
+        if validator_indices and addresses:
             raise ValidationError(
-                message='Exactly one of validator_indices or addresses must be provided',
+                message="Can't specify both validator_indices and addresses in the same query",
                 field_name='validator_indices',
             )
 
         with self.db.conn.read_ctx() as cursor:
-            if validator_indices:
-                question_marks = ','.join('?' * len(validator_indices))
-                count, resolved_addresses = 0, set[ChecksumEvmAddress]()
-                for row in cursor.execute(
-                    f'SELECT validator_index, withdrawal_address FROM eth2_validators WHERE validator_index IN ({question_marks})',  # noqa: E501
-                    validator_indices,
-                ):
-                    count += 1
-                    if row[1] is not None:
-                        resolved_addresses.add(row[1])
-                if count != len(validator_indices):
-                    raise ValidationError(
-                        message='Some validator indices are not tracked by rotki',
-                        field_name='validator_indices',
-                    )
-                data['addresses'] = list(resolved_addresses)
-            else:  # addresses is not None due to the check above
-                question_marks = ','.join('?' * len(addresses))
-                found_addresses, resolved_indices = set[ChecksumEvmAddress](), list[int]()
-                for row in cursor.execute(
-                    f'SELECT DISTINCT validator_index, withdrawal_address FROM eth2_validators WHERE withdrawal_address IN ({question_marks})',  # noqa: E501
-                    addresses,
-                ):
-                    resolved_indices.append(row[0])
+            query, bindings = 'SELECT validator_index, withdrawal_address FROM eth2_validators', ()
+            if addresses:
+                query = f'SELECT DISTINCT validator_index, withdrawal_address FROM eth2_validators WHERE withdrawal_address IN ({",".join("?" * len(addresses))})'  # noqa: E501
+                bindings = addresses
+            elif validator_indices:
+                query += f' WHERE validator_index IN ({",".join("?" * len(validator_indices))})'
+                bindings = validator_indices
+
+            found_indices, found_addresses = list[int](), set[ChecksumEvmAddress]()
+            for row in cursor.execute(query, bindings):
+                found_indices.append(row[0])
+                if row[1] is not None:
                     found_addresses.add(row[1])
-                if len(found_addresses) != len(addresses):
-                    raise ValidationError(
-                        message='Some addresses have no associated validators tracked by rotki',
-                        field_name='addresses',
-                    )
-                data['validator_indices'] = resolved_indices
+
+            if addresses and len(found_addresses) != len(addresses):
+                raise ValidationError(
+                    message='Some addresses have no associated validators tracked by rotki',
+                    field_name='addresses',
+                )
+            elif validator_indices and len(found_indices) != len(validator_indices):
+                raise ValidationError(
+                    message='Some validator indices are not tracked by rotki',
+                    field_name='validator_indices',
+                )
+            elif len(found_indices) == 0:  # neither provided and no tracked validators
+                raise ValidationError(
+                    message='No tracked validators found in rotki',
+                    field_name='validator_indices',
+                )
+
+            data['validator_indices'] = found_indices
+            data['addresses'] = list(found_addresses)
+
+        data['entry_type'] = (
+            HistoryBaseEntryType.ETH_BLOCK_EVENT
+            if data['entry_type'] == HistoryEventQueryType.BLOCK_PRODUCTIONS
+            else HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT
+        )
 
 
 class SolanaTokenMigrationSchema(AsyncQueryArgumentSchema):

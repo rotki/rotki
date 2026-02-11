@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import tempfile
-from collections import defaultdict
+from collections import Counter, defaultdict
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
@@ -29,6 +29,7 @@ from rotkehlchen.db.filtering import (
     IncludeExcludeFilterData,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import AccountingError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
@@ -765,7 +766,7 @@ class HistoryService:
 
     def refetch_staking_events(
             self,
-            entry_type: Literal[HistoryEventQueryType.BLOCK_PRODUCTIONS, HistoryEventQueryType.ETH_WITHDRAWALS],  # noqa: E501
+            entry_type: Literal[HistoryBaseEntryType.ETH_BLOCK_EVENT, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT],  # noqa: E501
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             validator_indices: list[int],
@@ -778,7 +779,9 @@ class HistoryService:
         so all blocks for the validators are fetched). For withdrawal events, re-queries
         etherscan within the specified time range.
 
-        validator_indices and addresses are pre-resolved by the schema.
+        validator_indices, addresses, and entry_type are pre-resolved by the schema.
+        Returns the total number of newly added events along with per-validator
+        and per-address breakdowns.
         """
         if (eth2 := self.rotkehlchen.chains_aggregator.get_module('eth2')) is None:
             return {
@@ -787,8 +790,33 @@ class HistoryService:
                 'status_code': HTTPStatus.CONFLICT,
             }
 
+        db = self.rotkehlchen.data.db
+        serialized_entry_type = entry_type.serialize_for_db()
+        chunks = get_query_chunks(validator_indices)
+
+        def _count_staking_events() -> tuple[int, dict[int, int], dict[str, int]]:
+            total = 0
+            per_validator: dict[int, int] = defaultdict(int)
+            per_address: dict[str, int] = defaultdict(int)
+            with db.conn.read_ctx() as cursor:
+                for chunk, placeholders in chunks:
+                    for validator_index, location_label, count in cursor.execute(
+                        'SELECT S.validator_index, H.location_label, COUNT(*) '
+                        'FROM history_events H '
+                        'JOIN eth_staking_events_info S ON H.identifier = S.identifier '
+                        f'WHERE H.entry_type = ? AND S.validator_index IN ({placeholders}) '
+                        'GROUP BY S.validator_index, H.location_label',
+                        (serialized_entry_type, *chunk),
+                    ):
+                        total += count
+                        per_validator[validator_index] += count
+                        if location_label is not None:
+                            per_address[location_label] += count
+            return total, dict(per_validator), dict(per_address)
+
         try:
-            if entry_type == HistoryEventQueryType.BLOCK_PRODUCTIONS:
+            before_total, before_validators, before_addresses = _count_staking_events()
+            if entry_type == HistoryBaseEntryType.ETH_BLOCK_EVENT:
                 log.debug(f'Refetching block production events for validator indices {validator_indices}')  # noqa: E501
                 eth2.beacon_inquirer.beaconchain.get_and_store_produced_blocks(
                     indices=validator_indices,
@@ -802,6 +830,8 @@ class HistoryService:
                     from_timestamp=from_timestamp,
                     to_timestamp=to_timestamp,
                 )
+
+            after_total, after_validators, after_addresses = _count_staking_events()
         except RemoteError as e:
             return {
                 'result': None,
@@ -809,7 +839,16 @@ class HistoryService:
                 'status_code': HTTPStatus.BAD_GATEWAY,
             }
 
-        return {'result': True, 'message': ''}
+        new_validators = Counter(after_validators)
+        new_validators.subtract(before_validators)
+        new_addresses = Counter(after_addresses)
+        new_addresses.subtract(before_addresses)
+
+        return {'result': {
+            'total': after_total - before_total,
+            'per_validator': dict(+new_validators),
+            'per_address': dict(+new_addresses),
+        }, 'message': ''}
 
     @staticmethod
     def _refetch_withdrawal_events(
