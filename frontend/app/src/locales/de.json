@@ -70,6 +70,15 @@
           "title": "Liquity Pools abfragen"
         }
       }
+    },
+    "get_accounts": {
+      "error": {
+        "description": "Abfrage der Konten für {blockchain} fehlgeschlagen: {message}",
+        "title": "Kontenabfrage"
+      },
+      "task": {
+        "title": "{blockchain}-Konten abfragen"
+      }
     }
   },
   "common": {

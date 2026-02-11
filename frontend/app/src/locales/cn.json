@@ -346,6 +346,9 @@
       "error": {
         "description": "查询{blockchain}账户失败：{message}",
         "title": "账户查询"
+      },
+      "task": {
+        "title": "正在查询{blockchain}账户"
       }
     },
     "history": {

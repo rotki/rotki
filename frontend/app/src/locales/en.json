@@ -618,6 +618,9 @@
       "error": {
         "description": "Failed to query accounts for {blockchain}: {message}",
         "title": "Querying of accounts"
+      },
+      "task": {
+        "title": "Querying {blockchain} accounts"
       }
     },
     "history": {

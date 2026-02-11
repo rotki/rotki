@@ -453,6 +453,9 @@
       "error": {
         "description": "Échec de la requête des comptes pour {blockchain} : {message}",
         "title": "Interrogation des comptes"
+      },
+      "task": {
+        "title": "Interrogation des comptes {blockchain}"
       }
     },
     "history": {
