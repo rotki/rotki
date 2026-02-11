@@ -1,5 +1,5 @@
 import type { Eth2Validator } from '@/types/balances';
-import { assert, type Eth2ValidatorEntry, Eth2Validators, type EthValidatorFilter, type Nullable, onlyIfTruthy } from '@rotki/common';
+import { assert, type Eth2ValidatorEntry, type EthValidatorFilter, type Nullable, onlyIfTruthy } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { api } from '@/modules/api/rotki-api';
 import {
@@ -47,7 +47,7 @@ interface UseBlockchainAccountsApiReturn {
   queryAccounts: (blockchain: string) => Promise<BlockchainAccounts>;
   queryBtcAccounts: (blockchain: BtcChains) => Promise<BitcoinAccounts>;
   deleteXpub: ({ chain, derivationPath, xpub }: DeleteXpubParams) => Promise<PendingTask>;
-  getEth2Validators: (payload?: EthValidatorFilter) => Promise<Eth2Validators>;
+  getEth2Validators: (payload?: EthValidatorFilter) => Promise<PendingTask>;
   addEth2Validator: (payload: Eth2Validator) => Promise<PendingTask>;
   editEth2Validator: ({ ownershipPercentage, validatorIndex }: Eth2Validator) => Promise<boolean>;
   deleteEth2Validators: (validators: Eth2ValidatorEntry[]) => Promise<boolean>;
@@ -183,13 +183,13 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
     return PendingTaskSchema.parse(response);
   };
 
-  const getEth2Validators = async (payload: EthValidatorFilter = { }): Promise<Eth2Validators> => {
-    const response = await api.get<Eth2Validators>('/blockchains/eth2/validators', {
+  const getEth2Validators = async (payload: EthValidatorFilter = { }): Promise<PendingTask> => {
+    const response = await api.get<PendingTask>('/blockchains/eth2/validators', {
       filterEmptyProperties: true,
-      query: payload,
+      query: { ...payload, asyncQuery: true },
       validStatuses: VALID_WITH_SESSION_STATUS,
     });
-    return Eth2Validators.parse(response);
+    return PendingTaskSchema.parse(response);
   };
 
   const addEth2Validator = async (payload: Eth2Validator): Promise<PendingTask> => {

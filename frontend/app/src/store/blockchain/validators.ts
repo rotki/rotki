@@ -5,7 +5,7 @@ import type {
 } from '@/types/blockchain/accounts';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
-import { type Balance, type BigNumber, bigNumberify, Blockchain, type EthValidatorFilter, Zero } from '@rotki/common';
+import { type Balance, type BigNumber, bigNumberify, Blockchain, Eth2Validators, type EthValidatorFilter, Zero } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePremium } from '@/composables/premium';
@@ -14,7 +14,9 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useTaskStore } from '@/store/tasks';
 import { Module } from '@/types/modules';
+import { TaskType } from '@/types/task-type';
 import { createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { isValidatorAccount } from '@/utils/blockchain/accounts/utils';
 import { sortAndFilterValidators } from '@/utils/blockchain/accounts/validator';
@@ -72,12 +74,18 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
     },
   );
 
+  const { awaitTask } = useTaskStore();
+
   const fetchEthStakingValidators = async (payload?: EthValidatorFilter): Promise<void> => {
     if (!isEth2Enabled())
       return;
 
     try {
-      const validators = await getEth2Validators(payload);
+      const { taskId } = await getEth2Validators(payload);
+      const { result } = await awaitTask<Eth2Validators, { title: string }>(taskId, TaskType.FETCH_ETH2_VALIDATORS, {
+        title: t('actions.get_accounts.task.title', { blockchain: Blockchain.ETH2 }),
+      });
+      const validators = Eth2Validators.parse(result);
       updateAccounts(
         Blockchain.ETH2,
         validators.entries.map(validator =>

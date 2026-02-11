@@ -4,21 +4,16 @@ import type { AccountManageState } from '@/composables/accounts/blockchain/use-a
 import { Blockchain } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
-import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
 import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
 import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
+import EvmAccountPageButtons from '@/components/accounts/EvmAccountPageButtons.vue';
 import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
-import BlockchainBalanceRefreshBehaviourMenu
-  from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { useModules } from '@/composables/session/modules';
-import { useStatusStore } from '@/store/status';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
-import { Section } from '@/types/status';
 
 definePage({
   meta: {
@@ -44,9 +39,7 @@ const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
 
 const category = 'evm';
 const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
-const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading(category);
 const { isModuleEnabled } = useModules();
-const { isLoading } = useStatusStore();
 const isEth2Enabled = isModuleEnabled(Module.ETH2);
 
 const isAccountsTabSelected = computed(() => get(tab) === 'accounts');
@@ -77,7 +70,7 @@ function createNewBlockchainAccount(address?: string): void {
   });
 }
 
-function refresh() {
+function refresh(): void {
   if (isDefined(table))
     get(table).refresh();
 }
@@ -110,8 +103,6 @@ watchImmediate(route, (route) => {
     router.replace(getTabLink('accounts'));
   }
 }, { deep: true });
-
-const isEth2Loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH2);
 </script>
 
 <template>
@@ -122,65 +113,12 @@ const isEth2Loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH2);
     ]"
   >
     <template #buttons>
-      <RuiButtonGroup
-        v-if="isAccountsTabSelected"
-        variant="outlined"
-        color="primary"
-      >
-        <RuiButton
-          :disabled="refreshDisabled"
-          :loading="isSectionLoading"
-          @click="get(table)?.refreshClick()"
-        >
-          <template #prepend>
-            <RuiIcon name="lu-refresh-ccw" />
-          </template>
-          {{ t('common.refresh') }}
-        </RuiButton>
-        <RuiMenu>
-          <template #activator="{ attrs }">
-            <RuiButton
-              v-bind="{
-                ...attrs,
-                'data-cy': 'blockchain-account-refresh',
-              }"
-              color="primary"
-              variant="outlined"
-              class="!outline-0 px-2"
-            >
-              <RuiIcon name="lu-chevron-down" />
-            </RuiButton>
-          </template>
-
-          <BlockchainBalanceRefreshBehaviourMenu />
-        </RuiMenu>
-      </RuiButtonGroup>
-
-      <RuiButton
-        v-else
-        color="primary"
-        variant="outlined"
-        :loading="isEth2Loading"
-        @click="get(table)?.refresh()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-refresh-ccw" />
-        </template>
-        {{ t('common.refresh') }}
-      </RuiButton>
-
-      <RuiButton
-        data-cy="add-blockchain-account"
-        color="primary"
-        @click="createNewBlockchainAccount()"
-      >
-        <template #prepend>
-          <RuiIcon name="lu-plus" />
-        </template>
-        {{ t('blockchain_balances.add_account') }}
-      </RuiButton>
-
-      <AccountBalancesExportImport />
+      <EvmAccountPageButtons
+        :is-accounts-tab-selected="isAccountsTabSelected"
+        @refresh-click="get(table)?.refreshClick()"
+        @refresh="get(table)?.refresh()"
+        @add-account="createNewBlockchainAccount()"
+      />
     </template>
 
     <RuiTabs

@@ -624,18 +624,7 @@ describe('composables/api/blockchain/accounts', () => {
           const url = new URL(request.url);
           capturedParams = url.searchParams;
           return HttpResponse.json({
-            result: {
-              entries: [
-                {
-                  index: 123456,
-                  public_key: '0xabc123...',
-                  ownership_percentage: '100',
-                  status: 'active',
-                },
-              ],
-              entries_found: 1,
-              entries_limit: 50,
-            },
+            result: { task_id: 1 },
             message: '',
           });
         }),
@@ -644,9 +633,8 @@ describe('composables/api/blockchain/accounts', () => {
       const { getEth2Validators } = useBlockchainAccountsApi();
       const result = await getEth2Validators();
 
-      expect(capturedParams!.toString()).toBe('');
-      expect(result.entries).toHaveLength(1);
-      expect(result.entries[0].index).toBe(123456);
+      expect(capturedParams!.get('async_query')).toBe('true');
+      expect(result.taskId).toBe(1);
     });
 
     it('fetches validators with filter payload in snake_case', async () => {
@@ -657,11 +645,7 @@ describe('composables/api/blockchain/accounts', () => {
           const url = new URL(request.url);
           capturedParams = url.searchParams;
           return HttpResponse.json({
-            result: {
-              entries: [],
-              entries_found: 0,
-              entries_limit: 50,
-            },
+            result: { task_id: 1 },
             message: '',
           });
         }),
@@ -674,6 +658,7 @@ describe('composables/api/blockchain/accounts', () => {
       };
       await getEth2Validators(payload);
 
+      expect(capturedParams!.get('async_query')).toBe('true');
       expect(capturedParams!.get('validator_indices')).toBe('123,456');
       expect(capturedParams!.get('status')).toBe('active');
     });
