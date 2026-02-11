@@ -157,6 +157,8 @@ cargo run -- --database ../data/global.db --port 4343
 - **Always return explicit types from functions**: `function getName(): string { ... }`
 - **Always type reactive variables**: `const isLoading = ref<boolean>(false)`
 - **Always type computed properties**: `const fullName = computed<string>(() => ...)`
+- If a ref type can be undefined and the default value is undefined, **Don't explicitly put it as type or default value**: `const newId = ref<number>()`
+- **Always use `{ useScope: 'global' }` parameter for `useI18n()`**: `const { t } = useI18n({ useScope: 'global' });`
 
 #### Correct Examples:
 
@@ -169,8 +171,11 @@ const count = ref<number>(0);
 const items = ref<string[]>([]);
 const user = ref<User>();
 
+const { t } = useI18n({ useScope: 'global' });
+
 const isEven = computed<boolean>(() => get(count) % 2 === 0);
 const formattedName = computed<string>(() => `${get(firstName)} ${get(lastName)}`);
+const newId = ref<number>(); // this newId type is number | undefined.
 
 function getUserById(id: number): User | undefined {
   return get(users).find(user => user.id === id) || undefined;
@@ -194,8 +199,11 @@ const count = ref(0);
 const items = ref([]);
 const user = ref();
 
+const { t } = useI18n();
+
 const isEven = computed(() => count.value % 2 === 0);
 const formattedName = computed(() => `${firstName.value} ${lastName.value}`);
+const newId = ref<number | undefined>(undefined);
 
 function getUserById(id: number) {
   return users.value.find(user => user.id === id) || undefined;
@@ -224,14 +232,72 @@ async function fetchData() {
 11. Exposed methods
 
 #### Component Conventions
-- Use `defineProps<{}>()` instead of `defineProps({})`
-- Simplified emit definitions:
+
+##### Props — destructured with defaults (Vue 3.5+)
+- Prefer destructured props with inline defaults over `withDefaults`:
+  ```typescript
+  // ✅ Preferred (Vue 3.5+)
+  const { title, count = 0, disabled = false } = defineProps<{
+    title: string;
+    count?: number;
+    disabled?: boolean;
+  }>();
+
+  // ❌ Legacy — avoid in new code
+  const props = withDefaults(defineProps<{
+    title: string;
+    count?: number;
+    disabled?: boolean;
+  }>(), {
+    count: 0,
+    disabled: false,
+  });
+  ```
+- For mutable default values (arrays, objects), use a factory function:
+  ```typescript
+  const { items = () => [], filters = () => ({}) } = defineProps<{
+    items?: string[];
+    filters?: Record<string, string>;
+  }>();
+  ```
+
+##### Emits — typed tuple syntax
+- Use the typed tuple syntax for emit definitions:
   ```typescript
   const emit = defineEmits<{
     'update:msg': [msg: string];
+    'delete': [id: number];
   }>();
   ```
-- Use `$style` in templates instead of `useCssModules`
+
+##### v-model — `defineModel` (Vue 3.4+)
+- Use `defineModel` for all v-model bindings instead of manual prop + emit:
+  ```typescript
+  // ✅ Correct — defineModel
+  const modelValue = defineModel<string>({ required: true });
+  const selected = defineModel<number>('selected');
+  const filters = defineModel<Filters>('filters', { default: () => ({}) });
+
+  // ❌ Incorrect — manual prop + emit for v-model
+  const props = defineProps<{ modelValue: string }>();
+  const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
+  ```
+
+##### Template refs — `useTemplateRef` (Vue 3.5+)
+- Use `useTemplateRef` for typed template refs:
+  ```typescript
+  // ✅ Correct — Vue 3.5+
+  import { useTemplateRef } from 'vue';
+  const formRef = useTemplateRef<InstanceType<typeof MyForm>>('formRef');
+
+  // ❌ Incorrect — old pattern
+  const formRef = ref<InstanceType<typeof MyForm>>();
+  ```
+  ```html
+  <MyForm ref="formRef" />
+  ```
+
+##### Other conventions
 - Use `$attrs` in templates instead of `useAttrs`
 
 #### Pinia Store Structure
@@ -241,14 +307,17 @@ async function fetchData() {
 4. Optional watchers
 
 #### Styling
-- Transitioning from scoped SCSS with BEM to tailwind
-- Follow existing patterns for consistency
+- Use Tailwind CSS for all styling
+- Scoped CSS modules (`<style module>`) should only be used for Vue `TransitionGroup` animations
+- Do not use scoped SCSS with BEM naming conventions
 
 #### Localization
 - For the localization files (en.json, es.json, etc.), the keys should be ordered alphabetically.
+- Avoid dynamic keys for translations, as they can break the linter.
 
 #### Testing
-- Run tests with `pnpm run test:unit` from `frontend/` directory
+- Run all tests with `pnpm run test:unit` from `frontend/` directory
+- Run a single test file: `pnpm run test:unit src/modules/path/to/file.spec.ts` (no `-- --run` needed)
 - Use Vitest for unit tests with Vue Test Utils
 - **Unit test file naming**: `.spec.ts` files should follow the naming of the tested file and be located in the same folder
   ```
@@ -338,6 +407,7 @@ The mapping of these HistoryEvents types, subtypes, and categories is done in [r
 
 ### Frontend Testing
 - Vitest for unit tests with Vue Test Utils
+- Playwright for E2E testing
 - Component tests should follow existing patterns in `frontend/app/tests/` and `*.spec.ts`
 
 ## Packaging

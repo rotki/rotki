@@ -232,13 +232,72 @@ async function fetchData() {
 11. Exposed methods
 
 #### Component Conventions
-- Use `defineProps<{}>()` instead of `defineProps({})`
-- Simplified emit definitions:
+
+##### Props — destructured with defaults (Vue 3.5+)
+- Prefer destructured props with inline defaults over `withDefaults`:
+  ```typescript
+  // ✅ Preferred (Vue 3.5+)
+  const { title, count = 0, disabled = false } = defineProps<{
+    title: string;
+    count?: number;
+    disabled?: boolean;
+  }>();
+
+  // ❌ Legacy — avoid in new code
+  const props = withDefaults(defineProps<{
+    title: string;
+    count?: number;
+    disabled?: boolean;
+  }>(), {
+    count: 0,
+    disabled: false,
+  });
+  ```
+- For mutable default values (arrays, objects), use a factory function:
+  ```typescript
+  const { items = () => [], filters = () => ({}) } = defineProps<{
+    items?: string[];
+    filters?: Record<string, string>;
+  }>();
+  ```
+
+##### Emits — typed tuple syntax
+- Use the typed tuple syntax for emit definitions:
   ```typescript
   const emit = defineEmits<{
     'update:msg': [msg: string];
+    'delete': [id: number];
   }>();
   ```
+
+##### v-model — `defineModel` (Vue 3.4+)
+- Use `defineModel` for all v-model bindings instead of manual prop + emit:
+  ```typescript
+  // ✅ Correct — defineModel
+  const modelValue = defineModel<string>({ required: true });
+  const selected = defineModel<number>('selected');
+  const filters = defineModel<Filters>('filters', { default: () => ({}) });
+
+  // ❌ Incorrect — manual prop + emit for v-model
+  const props = defineProps<{ modelValue: string }>();
+  const emit = defineEmits<{ 'update:modelValue': [value: string] }>();
+  ```
+
+##### Template refs — `useTemplateRef` (Vue 3.5+)
+- Use `useTemplateRef` for typed template refs:
+  ```typescript
+  // ✅ Correct — Vue 3.5+
+  import { useTemplateRef } from 'vue';
+  const formRef = useTemplateRef<InstanceType<typeof MyForm>>('formRef');
+
+  // ❌ Incorrect — old pattern
+  const formRef = ref<InstanceType<typeof MyForm>>();
+  ```
+  ```html
+  <MyForm ref="formRef" />
+  ```
+
+##### Other conventions
 - Use `$attrs` in templates instead of `useAttrs`
 
 #### Pinia Store Structure
