@@ -62,6 +62,7 @@ function openMatchAssetMovements(): void {
 }
 
 async function viewDuplicates(groupIds: string[], status: DuplicateHandlingStatus): Promise<void> {
+  closeAlerts();
   const groupIdentifiers = groupIds.join(',');
   await router.push({
     path: Routes.HISTORY_EVENTS.toString(),

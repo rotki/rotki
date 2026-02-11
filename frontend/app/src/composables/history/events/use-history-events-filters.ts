@@ -118,13 +118,17 @@ export function useHistoryEventsFilters(
     return missingAcquisitionIdentifier ? [missingAcquisitionIdentifier as string] : undefined;
   });
 
-  const groupIdentifiersFromQuery = computed<string[] | undefined>(() => {
+  const groupIdentifiersRaw = computed<string | undefined>(() => {
     const { groupIdentifiers } = get(route).query;
-    if (!groupIdentifiers)
+    return groupIdentifiers ? (groupIdentifiers as string) : undefined;
+  });
+
+  const groupIdentifiersFromQuery = computed<string[] | undefined>(() => {
+    const raw = get(groupIdentifiersRaw);
+    if (!raw)
       return undefined;
 
-    const ids = groupIdentifiers as string;
-    return ids.includes(',') ? ids.split(',') : [ids];
+    return raw.includes(',') ? raw.split(',') : [raw];
   });
 
   const duplicateHandlingStatusFromQuery = computed<DuplicateHandlingStatus | undefined>(() => {

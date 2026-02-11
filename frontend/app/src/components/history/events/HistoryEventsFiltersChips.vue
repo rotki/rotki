@@ -143,7 +143,7 @@ function refreshDuplicateView(): void {
   <div>
     <div
       v-if="route.query.missingAcquisitionIdentifier"
-      class="mb-4"
+      class="pb-4"
     >
       <RuiChip
         closeable
@@ -158,7 +158,7 @@ function refreshDuplicateView(): void {
 
     <RuiTooltip
       v-if="route.query.highlightedNegativeBalanceEvent"
-      class="mb-4"
+      class="pb-4"
       :popper="{ placement: 'bottom' }"
       :open-delay="400"
       tooltip-class="max-w-80"
@@ -179,7 +179,7 @@ function refreshDuplicateView(): void {
 
     <div
       v-if="hasGroupIdentifiers"
-      class="mb-4"
+      class="pb-4"
     >
       <RuiChip
         closeable
