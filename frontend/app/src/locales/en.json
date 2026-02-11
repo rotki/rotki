@@ -796,7 +796,12 @@
         "description": "Failed to re-pull {entryType} events"
       },
       "success": {
-        "description": "Successfully re-pulled {entryType} events"
+        "address_entry": "{address}: {count}",
+        "description": "{count} new {entryType} events re-pulled",
+        "no_events_description": "No new {entryType} events found",
+        "per_address": "Per address",
+        "per_validator": "Per validator",
+        "validator_entry": "Validator {index}: {count}"
       },
       "task": {
         "description": "Re-pulling {entryType} events {dateRange}",

@@ -97,6 +97,12 @@ export interface RepullingEthStakingPayload extends TimeRange {
   readonly addresses?: string[];
 }
 
+export interface RepullingEthStakingResponse {
+  readonly total: number;
+  readonly perValidator: Record<string, number>;
+  readonly perAddress: Record<string, number>;
+}
+
 export interface RepullingExchangeEventsPayload extends TimeRange {
   location: string;
   name: string;

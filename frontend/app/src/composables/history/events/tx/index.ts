@@ -2,6 +2,7 @@ import type { ActionStatus } from '@/types/action';
 import type {
   AddTransactionHashPayload,
   RepullingEthStakingPayload,
+  RepullingEthStakingResponse,
   RepullingExchangeEventsPayload,
   RepullingExchangeEventsResponse,
   RepullingTransactionPayload,
@@ -172,17 +173,32 @@ export const useHistoryTransactions = createSharedComposable(() => {
     };
 
     try {
-      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
-      if (result) {
-        notify({
-          display: true,
-          message: t('actions.repulling_eth_staking.success.description', messagePayload),
-          severity: Severity.INFO,
-          title: t('actions.repulling_eth_staking.task.title'),
-        });
-      }
+      const { result } = await awaitTask<RepullingEthStakingResponse, TaskMeta>(taskId, taskType, taskMeta, true);
+      const { total, perValidator, perAddress } = result;
 
-      return result;
+      const validatorDetails = Object.entries(perValidator)
+        .map(([index, count]) => `  ${t('actions.repulling_eth_staking.success.validator_entry', { index, count })}`)
+        .join('\n');
+
+      const addressDetails = Object.entries(perAddress)
+        .map(([address, count]) => `  ${t('actions.repulling_eth_staking.success.address_entry', { address, count })}`)
+        .join('\n');
+
+      const details = [
+        validatorDetails ? `${t('actions.repulling_eth_staking.success.per_validator')}:\n${validatorDetails}` : '',
+        addressDetails ? `${t('actions.repulling_eth_staking.success.per_address')}:\n${addressDetails}` : '',
+      ].filter(Boolean).join('\n\n');
+
+      notify({
+        display: true,
+        message: total
+          ? `${t('actions.repulling_eth_staking.success.description', { ...messagePayload, count: total })}\n${details}`
+          : t('actions.repulling_eth_staking.success.no_events_description', messagePayload),
+        severity: Severity.INFO,
+        title: t('actions.repulling_eth_staking.task.title'),
+      });
+
+      return total > 0;
     }
     catch (error: any) {
       if (isTaskCancelled(error)) {
