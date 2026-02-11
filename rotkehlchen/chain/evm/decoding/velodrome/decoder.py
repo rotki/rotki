@@ -127,6 +127,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         - UnknownAsset if the asset identifier is not known
         - WrongAssetType if the asset is not of the correct type
         """
+        out_events, in_events = [], []
         for event in decoded_events:
             crypto_asset = event.asset.resolve_to_crypto_asset()
             if (
@@ -138,6 +139,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                 event.counterparty = self.counterparty
                 event.notes = f'Deposit {event.amount} {crypto_asset.symbol} in {self.counterparty} pool {event.address}'  # noqa: E501
+                out_events.append(event)
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -146,11 +148,16 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = self.counterparty
                 event.notes = f'Receive {event.amount} {crypto_asset.symbol} after depositing in {self.counterparty} pool {tx_log.address}'  # noqa: E501
+                in_events.append(event)
                 GlobalDBHandler.set_tokens_protocol_if_missing(
                     tokens=[event.asset.resolve_to_evm_token()],
                     new_protocol=self.counterparty,
                 )
 
+        maybe_reshuffle_events(
+            ordered_events=[*out_events, *in_events],
+            events_list=decoded_events,
+        )
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_remove_liquidity_events(
@@ -159,6 +166,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             decoded_events: list['EvmEvent'],
     ) -> EvmDecodingOutput:
         """Decodes events that remove liquidity from a (velo/aero)drome v1 or v2 pool"""
+        out_events, in_events = [], []
         for event in decoded_events:
             crypto_asset = event.asset.resolve_to_crypto_asset()
             if (
@@ -169,6 +177,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = self.counterparty
                 event.notes = f'Return {event.amount} {crypto_asset.symbol}'
+                out_events.append(event)
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -178,7 +187,12 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = self.counterparty
                 event.notes = f'Remove {event.amount} {crypto_asset.symbol} from {self.counterparty} pool {tx_log.address}'  # noqa: E501
+                in_events.append(event)
 
+        maybe_reshuffle_events(
+            ordered_events=[*out_events, *in_events],
+            events_list=decoded_events,
+        )
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_swap(self, context: DecoderContext) -> EvmDecodingOutput:

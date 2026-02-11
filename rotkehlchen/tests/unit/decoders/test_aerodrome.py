@@ -310,7 +310,7 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             notes=f'Return {lp_amount} vAMM-AERO/USDbC',
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=5,
+            sequence_index=4,
             timestamp=timestamp,
             location=Location.BASE,
             event_type=HistoryEventType.WITHDRAWAL,
@@ -323,7 +323,7 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
             notes=f'Remove {aero_amount} AERO from aerodrome pool {pool_address}',
         ), EvmEvent(
             tx_ref=tx_hash,
-            sequence_index=6,
+            sequence_index=5,
             timestamp=timestamp,
             location=Location.BASE,
             event_type=HistoryEventType.WITHDRAWAL,
