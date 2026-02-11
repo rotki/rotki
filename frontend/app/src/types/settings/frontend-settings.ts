@@ -19,6 +19,7 @@ import { DateFormatEnum } from '@/types/date-format';
 import { BaseSuggestion, SavedFilterLocation } from '@/types/filtering';
 import { PrivacyMode } from '@/types/session';
 import { TableColumnEnum } from '@/types/table-column';
+import { logger } from '@/utils/logging';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 
 export const FRONTEND_SETTINGS_SCHEMA_VERSION = 2;
@@ -222,7 +223,32 @@ export function parseFrontendSettings(settings: string): FrontendSettings {
   if (isEmpty(data)) {
     return getDefaultFrontendSettings();
   }
-  return FrontendSettings.parse(data);
+  const result = FrontendSettings.safeParse(data);
+  if (result.success) {
+    return result.data;
+  }
+
+  // Strip invalid fields and force schemaVersion so defaults can fill them in
+  const cleanData: Record<string, unknown> = { ...(data as Record<string, unknown>) };
+  const invalidKeys: string[] = [];
+  for (const issue of result.error.issues) {
+    const key = issue.path[0];
+    if (key !== undefined && typeof key === 'string') {
+      invalidKeys.push(key);
+      delete cleanData[key];
+    }
+  }
+
+  logger.error(`Failed to parse frontend settings, invalid keys: [${invalidKeys.join(', ')}]. Attempting recovery`);
+  cleanData.schemaVersion = FRONTEND_SETTINGS_SCHEMA_VERSION;
+
+  const retryResult = FrontendSettings.safeParse(cleanData);
+  if (retryResult.success) {
+    return retryResult.data;
+  }
+
+  logger.error('Frontend settings recovery failed, falling back to defaults', retryResult.error);
+  return getDefaultFrontendSettings();
 }
 
 export function getDefaultFrontendSettings(props: Partial<FrontendSettings> = {}): FrontendSettings {
