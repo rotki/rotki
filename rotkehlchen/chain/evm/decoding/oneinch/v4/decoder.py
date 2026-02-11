@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import (
     DEFI_PLAZA_SWAPPED,
     ORDERFILLED_RFQ,
     PANCAKE_SWAP_TOPIC,
+    WOMBATV2_SWAPPED,
 )
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodingOutput
 from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
@@ -60,6 +61,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 SWAPPED_TOPIC,
                 DEFI_PLAZA_SWAPPED,
                 PANCAKE_SWAP_TOPIC,
+                WOMBATV2_SWAPPED,
             ],
             counterparty=counterparty,
         )

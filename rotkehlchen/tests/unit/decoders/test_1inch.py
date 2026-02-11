@@ -751,6 +751,56 @@ def test_1inch_velodrome(optimism_inquirer, optimism_accounts):
     assert expected_events == events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_1inch_wombatv2_swap(optimism_inquirer, optimism_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xb3f70f0eb6208572e30542304ba5513482b7ff095abd2beb2d22101a705770f2')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=tx_hash,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1707525791000)),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas := '0.000210503989653813'),
+            location_label=(user_addy := optimism_accounts[0]),
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
+            amount=FVal(spend_amount := '400.643728'),
+            location_label=user_addy,
+            notes=f'Swap {spend_amount} USDC in 1inch-v5',
+            address=ONEINCH_V5_ROUTER,
+            counterparty=CPT_ONEINCH_V5,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            amount=FVal(receive_amount := '400.604528'),
+            location_label=user_addy,
+            notes=f'Receive {receive_amount} USDC.e as a result of a 1inch-v5 swap',
+            counterparty=CPT_ONEINCH_V5,
+            address=ONEINCH_V5_ROUTER,
+        ),
+    ]
+    assert expected_events == events
+
+
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
 def test_half_decoded_1inch_v5_swap(ethereum_inquirer, ethereum_accounts):
