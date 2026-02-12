@@ -337,11 +337,19 @@ class ExchangeManager:
         May raise:
         - RemoteError if the exchange's remote query fails
         """
+        with self.database.conn.read_ctx() as cursor:
+            excluded = self.database.get_settings(cursor).non_syncing_exchanges
         exchanges_list = []
         if name is not None:
             if (exchange := self.get_exchange(name=name, location=location)) is None:
                 log.error(
                     'Failed to query history events for unknown exchange. '
+                    f'Location: {location!s}, Name: {name}',
+                )
+                return
+            if exchange.location_id() in excluded:
+                log.info(
+                    'Skipping history events query for disabled syncing exchange. '
                     f'Location: {location!s}, Name: {name}',
                 )
                 return
@@ -353,7 +361,9 @@ class ExchangeManager:
                     f'for location: {location!s}',
                 )
                 return
-            exchanges_list.extend(exchanges)
+            exchanges_list.extend(
+                exchange for exchange in exchanges if exchange.location_id() not in excluded
+            )
 
         for exchange in exchanges_list:
             exchange.query_history_events()
@@ -374,6 +384,10 @@ class ExchangeManager:
         """
         if (exchange := self.get_exchange(name=name, location=location)) is None:
             raise InputError(f'{location!s} exchange {name} is not registered')
+        with self.database.conn.read_ctx() as cursor:
+            excluded = self.database.get_settings(cursor).non_syncing_exchanges
+        if exchange.location_id() in excluded:
+            raise InputError(f'Syncing for {location!s} exchange {name} is disabled')
 
         exchange.send_history_events_status_msg(
             step=HistoryEventsStep.QUERYING_EVENTS_STARTED,

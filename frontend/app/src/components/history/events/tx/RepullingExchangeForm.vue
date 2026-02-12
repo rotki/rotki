@@ -9,6 +9,7 @@ import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { shouldShowDateRangePicker } from '@/composables/history/events/tx/use-repulling-transaction-form';
 import { Routes } from '@/router/routes';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
@@ -26,8 +27,15 @@ const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
 const exchange = ref<Exchange>();
 
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const { nonSyncingExchanges } = storeToRefs(useGeneralSettingsStore());
 
-const hasNoExchanges = computed<boolean>(() => get(connectedExchanges).length === 0);
+const availableExchanges = computed<Exchange[]>(() => get(connectedExchanges).filter(
+  exchange => !get(nonSyncingExchanges).some(
+    excluded => excluded.location === exchange.location && excluded.name === exchange.name,
+  ),
+));
+
+const hasNoExchanges = computed<boolean>(() => get(availableExchanges).length === 0);
 
 const showDateRangePicker = computed<boolean>(() => shouldShowDateRangePicker(false, get(exchange)));
 
@@ -107,7 +115,7 @@ defineExpose({
     <template v-else>
       <RuiAutoComplete
         v-model="exchange"
-        :options="connectedExchanges"
+        :options="availableExchanges"
         :label="t('common.exchange')"
         variant="outlined"
         auto-select-first
