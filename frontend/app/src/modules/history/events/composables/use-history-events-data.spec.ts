@@ -209,7 +209,7 @@ describe('use-history-events-data', () => {
 
       await nextTick();
 
-      expect(get(result.allEventsMapped)).toEqual({});
+      expect(get(result.completeEventsMapped)).toEqual({});
       expect(get(result.displayedEventsMapped)).toEqual({});
     });
 
@@ -312,7 +312,7 @@ describe('use-history-events-data', () => {
       );
     });
 
-    it('should map events by groupIdentifier in allEventsMapped', async () => {
+    it('should map events by groupIdentifier in completeEventsMapped', async () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
@@ -334,7 +334,7 @@ describe('use-history-events-data', () => {
 
       await waitForFetchEvents();
 
-      const mapped = get(result.allEventsMapped);
+      const mapped = get(result.completeEventsMapped);
       expect(mapped.group1).toHaveLength(2);
       expect(mapped.group2).toHaveLength(1);
     });
@@ -360,7 +360,7 @@ describe('use-history-events-data', () => {
 
       await waitForFetchEvents();
 
-      const mapped = get(result.allEventsMapped);
+      const mapped = get(result.completeEventsMapped);
       expect(mapped.group1).toHaveLength(1);
       expect(mapped.group1[0]).toEqual(visibleEvent);
     });
@@ -385,7 +385,7 @@ describe('use-history-events-data', () => {
 
       await waitForFetchEvents();
 
-      expect(get(result.displayedEventsMapped)).toEqual(get(result.allEventsMapped));
+      expect(get(result.displayedEventsMapped)).toEqual(get(result.completeEventsMapped));
     });
 
     it('should filter ignored assets when excludeIgnored is true', async () => {
@@ -438,6 +438,68 @@ describe('use-history-events-data', () => {
 
       const displayed = get(result.displayedEventsMapped);
       expect(displayed.group1).toBeUndefined();
+    });
+
+    it('should detect hidden ignored assets inside swap subgroups', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const approveEvent = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
+      const swapSpend = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 2 });
+      const swapReceive = createMockEvent({ asset: 'SPAM_TOKEN', groupIdentifier: 'group1', identifier: 3 });
+
+      // API returns: approve + [swapSpend, swapReceive] as a subgroup
+      const swapSubgroup: HistoryEventRow = [swapSpend, swapReceive];
+      mockFetchHistoryEvents.mockResolvedValue({ data: [approveEvent, swapSubgroup] });
+      mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'SPAM_TOKEN');
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([approveEvent]));
+      const options = {
+        excludeIgnored: ref<boolean>(true),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = useHistoryEventsData(options, emit);
+
+      await waitForFetchEvents();
+
+      // completeEventsMapped should have 3 events (approve + 2 in subgroup)
+      const complete = get(result.completeEventsMapped);
+      expect(complete.group1).toHaveLength(2); // [approveEvent, [swapSpend, swapReceive]]
+
+      // displayedEventsMapped should filter out SPAM_TOKEN from the subgroup
+      const displayed = get(result.displayedEventsMapped);
+      expect(displayed.group1).toHaveLength(2); // [approveEvent, [swapSpend]]
+
+      // The group should be detected as having hidden ignored assets
+      expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(true);
+    });
+
+    it('should not flag group when no assets are ignored inside subgroups', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const swapSpend = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
+      const swapReceive = createMockEvent({ asset: 'USDC', groupIdentifier: 'group1', identifier: 2 });
+
+      const swapSubgroup: HistoryEventRow = [swapSpend, swapReceive];
+      mockFetchHistoryEvents.mockResolvedValue({ data: [swapSubgroup] });
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
+      const options = {
+        excludeIgnored: ref<boolean>(true),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = useHistoryEventsData(options, emit);
+
+      await waitForFetchEvents();
+
+      expect(get(result.groupsWithHiddenIgnoredAssets).has('group1')).toBe(false);
     });
   });
 

@@ -22,7 +22,11 @@ import {
 const props = defineProps<{
   item: HistoryEventEntry;
   index: number;
-  events: HistoryEventEntry[];
+  /**
+   * All events in the same group, including hidden and ignored events.
+   * This complete set is required for correctly editing grouped events (e.g., swap events).
+   */
+  completeGroupEvents: HistoryEventEntry[];
   canUnlink?: boolean;
   collapsed?: boolean;
 }>();
@@ -49,14 +53,14 @@ function hideEditDeleteActions(item: HistoryEventEntry, index: number): boolean 
 function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
   if (isSwapTypeEvent(item.entryType)) {
     return {
-      eventsInGroup: props.events as GroupEditableHistoryEvents[],
+      eventsInGroup: props.completeGroupEvents as GroupEditableHistoryEvents[],
       type: 'edit-group',
     };
   }
 
   if (isGroupEditableHistoryEvent(item)) {
     return {
-      eventsInGroup: props.events.filter(e => e.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT) as GroupEditableHistoryEvents[],
+      eventsInGroup: props.completeGroupEvents.filter(e => e.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT) as GroupEditableHistoryEvents[],
       type: 'edit-group',
     };
   }
@@ -72,14 +76,14 @@ function editEvent(item: HistoryEvent) {
 }
 
 function deleteEvent(item: HistoryEventEntry) {
-  const isSingleEvmEvent = isEvmEvent(item) && props.events.length === 1;
+  const isSingleEvmEvent = isEvmEvent(item) && props.completeGroupEvents.length === 1;
   const payload: HistoryEventDeletePayload = isSingleEvmEvent
     ? {
         event: item,
         type: 'ignore',
       }
     : {
-        ids: isGroupEditableHistoryEvent(item) || isSwapTypeEvent(item.entryType) ? props.events.map(event => event.identifier) : [item.identifier],
+        ids: isGroupEditableHistoryEvent(item) || isSwapTypeEvent(item.entryType) ? props.completeGroupEvents.map(event => event.identifier) : [item.identifier],
         type: 'delete',
       };
 

@@ -260,6 +260,64 @@ describe('use-virtual-rows', () => {
       expect(eventRows).toHaveLength(2);
     });
 
+    it('should assign subgroup-relative index so the first expanded event has index 0', async () => {
+      const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+      const swapSpend = createMockEvent({ groupIdentifier: 'group1', identifier: 2, eventSubtype: 'spend' });
+      const swapReceive = createMockEvent({ groupIdentifier: 'group1', identifier: 3, eventSubtype: 'receive' });
+
+      const groups = computed<HistoryEventEntry[]>(() => [group]);
+      const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({
+        group1: [[swapSpend, swapReceive]],
+      }));
+
+      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup);
+
+      toggleSwapExpanded('group1-0');
+      await nextTick();
+
+      const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
+      expect(eventRows).toHaveLength(2);
+
+      // First event (spend) should have index 0 so edit/delete actions remain visible
+      expect(eventRows[0].type === 'event-row' && eventRows[0].index).toBe(0);
+      // Second event (receive) should have index 1
+      expect(eventRows[1].type === 'event-row' && eventRows[1].index).toBe(1);
+    });
+
+    it('should assign index 0 to first event of each subgroup when two swap subgroups are expanded', async () => {
+      const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+      const swap1Spend = createMockEvent({ groupIdentifier: 'group1', identifier: 2, eventSubtype: 'spend' });
+      const swap1Receive = createMockEvent({ groupIdentifier: 'group1', identifier: 3, eventSubtype: 'receive' });
+      const swap2Spend = createMockEvent({ groupIdentifier: 'group1', identifier: 4, eventSubtype: 'spend' });
+      const swap2Receive = createMockEvent({ groupIdentifier: 'group1', identifier: 5, eventSubtype: 'receive' });
+
+      const groups = computed<HistoryEventEntry[]>(() => [group]);
+      const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({
+        group1: [[swap1Spend, swap1Receive], [swap2Spend, swap2Receive]],
+      }));
+
+      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup);
+
+      // Expand both swap subgroups
+      toggleSwapExpanded('group1-0');
+      toggleSwapExpanded('group1-1');
+      await nextTick();
+
+      const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
+      expect(eventRows).toHaveLength(4);
+
+      // First subgroup: index 0 and 1
+      expect(eventRows[0].type === 'event-row' && eventRows[0].index).toBe(0);
+      expect(eventRows[1].type === 'event-row' && eventRows[1].index).toBe(1);
+      // Second subgroup: also index 0 and 1 (independent subgroup-relative indexing)
+      expect(eventRows[2].type === 'event-row' && eventRows[2].index).toBe(0);
+      expect(eventRows[3].type === 'event-row' && eventRows[3].index).toBe(1);
+
+      // Verify correct events are in each subgroup
+      expect(eventRows[0].type === 'event-row' && eventRows[0].data.identifier).toBe(2);
+      expect(eventRows[2].type === 'event-row' && eventRows[2].data.identifier).toBe(4);
+    });
+
     it('should collapse expanded swap back to swap-row', async () => {
       const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
       const swapEvent1 = createMockEvent({ groupIdentifier: 'group1', identifier: 2 });
@@ -474,6 +532,30 @@ describe('use-virtual-rows', () => {
       expect(movementRows).toHaveLength(0);
       expect(collapseRows).toHaveLength(1);
       expect(eventRows).toHaveLength(2);
+    });
+
+    it('should assign subgroup-relative index so the first expanded movement event has index 0', async () => {
+      const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+      const movementEvent1 = createAssetMovementEvent({ groupIdentifier: 'group1', identifier: 2 });
+      const movementEvent2 = createAssetMovementEvent({ groupIdentifier: 'group1', identifier: 3 });
+
+      const groups = computed<HistoryEventEntry[]>(() => [group]);
+      const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({
+        group1: [[movementEvent1, movementEvent2]],
+      }));
+
+      const { flattenedRows, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup);
+
+      toggleMovementExpanded('group1-0');
+      await nextTick();
+
+      const eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
+      expect(eventRows).toHaveLength(2);
+
+      // First event should have index 0 so edit/delete actions remain visible
+      expect(eventRows[0].type === 'event-row' && eventRows[0].index).toBe(0);
+      // Second event should have index 1
+      expect(eventRows[1].type === 'event-row' && eventRows[1].index).toBe(1);
     });
 
     it('should collapse expanded matched movement back to matched-movement-row', async () => {

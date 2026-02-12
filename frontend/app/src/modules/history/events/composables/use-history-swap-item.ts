@@ -4,6 +4,7 @@ import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/even
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { isEventMissingAccountingRule } from '@/utils/history/events';
 
 export interface UseHistorySwapItemProps {
@@ -30,6 +31,8 @@ export interface UseHistorySwapItemReturn {
   receiveEvent: ComputedRef<HistoryEventEntry | undefined>;
   isMultiSpend: ComputedRef<boolean>;
   isMultiReceive: ComputedRef<boolean>;
+  isSpendHidden: ComputedRef<boolean>;
+  isReceiveHidden: ComputedRef<boolean>;
   counterparty: ComputedRef<string | undefined>;
   compactNotes: ComputedRef<string | undefined>;
 }
@@ -42,7 +45,8 @@ export function useHistorySwapItem(
   const { events, selection } = props;
   const { t } = useI18n({ useScope: 'global' });
   const { getChain } = useSupportedChains();
-  const { getAssetSymbol } = useAssetInfoRetrieval();
+  const { assetInfo, getAssetSymbol } = useAssetInfoRetrieval();
+  const { isAssetIgnored } = useIgnoredAssetsStore();
 
   const primaryEvent = computed<HistoryEventEntry>(() => get(events)[0]);
 
@@ -92,6 +96,21 @@ export function useHistorySwapItem(
   // Check if multi-swap (multiple spend or receive events)
   const isMultiSpend = computed<boolean>(() => get(spendEvents).length > 1);
   const isMultiReceive = computed<boolean>(() => get(receiveEvents).length > 1);
+
+  const spendAsset = computed<string>(() => get(spendEvent)?.asset ?? '');
+  const receiveAsset = computed<string>(() => get(receiveEvent)?.asset ?? '');
+  const spendAssetInfo = assetInfo(spendAsset, ASSET_RESOLUTION_OPTIONS);
+  const receiveAssetInfo = assetInfo(receiveAsset, ASSET_RESOLUTION_OPTIONS);
+
+  const isSpendHidden = computed<boolean>(() => {
+    const asset = get(spendAsset);
+    return asset !== '' && (isAssetIgnored(asset) || get(spendAssetInfo)?.protocol === 'spam');
+  });
+
+  const isReceiveHidden = computed<boolean>(() => {
+    const asset = get(receiveAsset);
+    return asset !== '' && (isAssetIgnored(asset) || get(receiveAssetInfo)?.protocol === 'spam');
+  });
 
   const counterparty = computed<string | undefined>(() => {
     const ev = get(primaryEvent);
@@ -149,7 +168,9 @@ export function useHistorySwapItem(
     isCheckboxDisabled,
     isMultiReceive,
     isMultiSpend,
+    isReceiveHidden,
     isSelected,
+    isSpendHidden,
     primaryEvent,
     receiveEvent,
     receiveEvents,

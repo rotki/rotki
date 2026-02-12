@@ -175,13 +175,14 @@ export function useVirtualRows(
                 eventCount: event.length,
               });
 
-              // When expanded, show individual event rows for each event
+              // When expanded, show individual event rows for each event.
+              // subIndex is used so the first event (index 0) retains edit/delete actions.
               event.forEach((subEvent, subIndex) => {
                 rows.push({
                   type: 'event-row',
                   groupId,
                   data: subEvent,
-                  index: i * 1000 + subIndex, // Unique index for sub-events
+                  index: subIndex,
                 });
               });
             }
@@ -210,13 +211,14 @@ export function useVirtualRows(
                 eventCount: event.length,
               });
 
-              // When expanded, show individual event rows for each event in the swap
+              // When expanded, show individual event rows for each event in the swap.
+              // subIndex is used so the first event (index 0) retains edit/delete actions.
               event.forEach((subEvent, subIndex) => {
                 rows.push({
                   type: 'event-row',
                   groupId,
                   data: subEvent,
-                  index: i * 1000 + subIndex, // Unique index for sub-events
+                  index: subIndex,
                 });
               });
             }

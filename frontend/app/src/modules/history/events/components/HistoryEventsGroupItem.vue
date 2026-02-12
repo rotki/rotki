@@ -63,6 +63,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
           v-if="showIgnoredAssetsIndicator"
           :popper="{ placement: 'top', scroll: false, resize: false }"
           :open-delay="400"
+          tooltip-class="max-w-60"
         >
           <template #activator>
             <button
@@ -148,6 +149,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
       v-if="showIgnoredAssetsIndicator"
       :popper="{ placement: 'top', scroll: false, resize: false }"
       :open-delay="400"
+      tooltip-class="max-w-60"
     >
       <template #activator>
         <button

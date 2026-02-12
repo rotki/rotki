@@ -14,6 +14,7 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { logger } from '@/utils/logging';
+import { useCompleteEvents } from './use-complete-events';
 
 interface UseHistoryEventsDataOptions {
   groups: Ref<Collection<HistoryEventRow>>;
@@ -37,7 +38,13 @@ interface UseHistoryEventsDataReturn {
   showUpgradeRow: ComputedRef<boolean>;
 
   // Event data
-  allEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
+  /**
+   * All events grouped by groupIdentifier, including events with ignored assets.
+   * Only hidden events are excluded. Used for operations like editing and redecoding
+   * where the complete set of events is needed.
+   */
+  completeEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
+  /** Events grouped by groupIdentifier, with both hidden and ignored-asset events filtered out. */
   displayedEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
   groupsWithHiddenIgnoredAssets: ComputedRef<Set<string>>;
   groupsShowingIgnoredAssets: Ref<Set<string>>;
@@ -47,6 +54,11 @@ interface UseHistoryEventsDataReturn {
   rawEvents: Ref<HistoryEventRow[]>;
   fetchEvents: () => Promise<void>;
   toggleShowIgnoredAssets: (groupId: string) => void;
+
+  // Complete events helpers
+  getGroupEvents: (groupId: string) => HistoryEventEntry[];
+  getCompleteSubgroupEvents: (displayedEvents: HistoryEventEntry[]) => HistoryEventEntry[];
+  getCompleteEventsForItem: (groupId: string, event: HistoryEventEntry) => HistoryEventEntry[];
 }
 
 export function useHistoryEventsData(
@@ -111,8 +123,12 @@ export function useHistoryEventsData(
     }
   }
 
-  // Groups events by their groupIdentifier, filtering out hidden events
-  const allEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => {
+  /**
+   * All events grouped by groupIdentifier, including events with ignored assets.
+   * Only hidden events are excluded. Used for operations like editing and redecoding
+   * where the complete set of events is needed.
+   */
+  const completeEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => {
     const eventsList = get(events);
     if (eventsList.length === 0)
       return {};
@@ -149,10 +165,9 @@ export function useHistoryEventsData(
     set(groupsShowingIgnoredAssets, newSet);
   }
 
-  // Derives from allEventsMapped, filtering out ignored assets when excludeIgnored is true
-  // but respecting per-group toggles
+  /** Events grouped by groupIdentifier, with both hidden and ignored-asset events filtered out. */
   const displayedEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => {
-    const base = get(allEventsMapped);
+    const base = get(completeEventsMapped);
     if (!get(excludeIgnored))
       return base;
 
@@ -190,18 +205,26 @@ export function useHistoryEventsData(
     event => Array.isArray(event) ? event.some(item => item.ignoredInAccounting) : event.ignoredInAccounting,
   );
 
+  function flattenedEventCount(rows: HistoryEventRow[]): number {
+    let count = 0;
+    for (const row of rows)
+      count += Array.isArray(row) ? row.length : 1;
+
+    return count;
+  }
+
   // Track which groups have events hidden due to ignored assets filter
   const groupsWithHiddenIgnoredAssets = computed<Set<string>>(() => {
     if (!get(excludeIgnored))
       return new Set();
 
-    const all = get(allEventsMapped);
+    const all = get(completeEventsMapped);
     const displayed = get(displayedEventsMapped);
     const result = new Set<string>();
 
     for (const groupId of Object.keys(all)) {
-      const allCount = all[groupId]?.length ?? 0;
-      const displayedCount = displayed[groupId]?.length ?? 0;
+      const allCount = flattenedEventCount(all[groupId] ?? []);
+      const displayedCount = flattenedEventCount(displayed[groupId] ?? []);
       if (allCount > displayedCount)
         result.add(groupId);
     }
@@ -231,14 +254,19 @@ export function useHistoryEventsData(
     startPromise(fetchEvents());
   });
 
+  const { getCompleteEventsForItem, getCompleteSubgroupEvents, getGroupEvents } = useCompleteEvents(completeEventsMapped);
+
   return {
-    allEventsMapped,
+    completeEventsMapped,
     displayedEventsMapped,
     entriesFoundTotal,
     events: flattenedEvents,
     eventsLoading,
     fetchEvents,
     found,
+    getCompleteEventsForItem,
+    getCompleteSubgroupEvents,
+    getGroupEvents,
     groups: flattenedGroups,
     groupsShowingIgnoredAssets,
     groupsWithHiddenIgnoredAssets,

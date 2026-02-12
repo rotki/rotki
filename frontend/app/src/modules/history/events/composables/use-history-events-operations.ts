@@ -22,7 +22,7 @@ import { isTaskCancelled } from '@/utils';
 import { isCustomizedEvent } from '@/utils/history/events';
 
 interface UseHistoryEventsOperationsOptions {
-  allEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
+  completeEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
   flattenedEvents: ComputedRef<HistoryEventEntry[]>;
 }
 
@@ -49,7 +49,7 @@ export function useHistoryEventsOperations(
   options: UseHistoryEventsOperationsOptions,
   emit: HistoryEventsTableEmitFn,
 ): UseHistoryEventsOperationsReturn {
-  const { allEventsMapped, flattenedEvents } = options;
+  const { completeEventsMapped, flattenedEvents } = options;
 
   const selected = ref<HistoryEventEntry[]>([]);
   const showRedecodeConfirmation = ref<boolean>(false);
@@ -185,7 +185,7 @@ export function useHistoryEventsOperations(
       return;
     }
 
-    const groupedEvents = get(allEventsMapped)[groupIdentifier] || [];
+    const groupedEvents = get(completeEventsMapped)[groupIdentifier] || [];
     const childEvents = flatten(groupedEvents);
     const isAnyCustom = childEvents.some(item => isCustomizedEvent(item));
 
@@ -211,7 +211,7 @@ export function useHistoryEventsOperations(
       return;
     }
 
-    const groupedEvents = get(allEventsMapped)[eventIdentifier] || [];
+    const groupedEvents = get(completeEventsMapped)[eventIdentifier] || [];
     const childEvents = flatten(groupedEvents);
     const isAnyCustom = childEvents.some(item => isCustomizedEvent(item));
 

@@ -12,7 +12,11 @@ import { useHistorySwapItem } from '../composables/use-history-swap-item';
 
 const props = withDefaults(defineProps<{
   events: HistoryEventEntry[];
-  allEvents: HistoryEventEntry[];
+  /**
+   * All events in the same group, including hidden and ignored events.
+   * This complete set is required for correctly editing grouped events (e.g., swap events).
+   */
+  completeGroupEvents: HistoryEventEntry[];
   groupLocationLabel?: string;
   hideActions?: boolean;
   highlight?: boolean;
@@ -41,7 +45,9 @@ const {
   isCheckboxDisabled,
   isMultiReceive,
   isMultiSpend,
+  isReceiveHidden,
   isSelected,
+  isSpendHidden,
   primaryEvent,
   receiveEvent,
   receiveEvents,
@@ -114,7 +120,10 @@ const isCard = computed<boolean>(() => props.variant === 'card');
 
     <!-- Middle row: Spend → Receive -->
     <div class="flex items-center gap-2 mb-2">
-      <div class="relative flex-1 min-w-0">
+      <div
+        class="relative flex-1 min-w-0"
+        :class="{ 'opacity-50': isSpendHidden }"
+      >
         <HistoryEventAsset
           v-if="spendEvent"
           :event="spendEvent"
@@ -136,7 +145,10 @@ const isCard = computed<boolean>(() => props.variant === 'card');
         />
       </div>
 
-      <div class="relative flex-1 min-w-0">
+      <div
+        class="relative flex-1 min-w-0"
+        :class="{ 'opacity-50': isReceiveHidden }"
+      >
         <HistoryEventAsset
           v-if="receiveEvent"
           :event="receiveEvent"
@@ -165,7 +177,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
         v-if="!hideActions"
         :item="primaryEvent"
         :index="0"
-        :events="allEvents"
+        :complete-group-events="completeGroupEvents"
         class="shrink-0"
         :class="{ 'opacity-50': !hasMissingRule }"
         @edit-event="emit('edit-event', $event)"
@@ -217,7 +229,10 @@ const isCard = computed<boolean>(() => props.variant === 'card');
       />
     </div>
 
-    <div class="relative w-60 shrink-0">
+    <div
+      class="relative w-60 shrink-0"
+      :class="{ 'opacity-50': isSpendHidden }"
+    >
       <HistoryEventAsset
         v-if="spendEvent"
         :event="spendEvent"
@@ -240,7 +255,10 @@ const isCard = computed<boolean>(() => props.variant === 'card');
         />
       </div>
 
-      <div class="relative shrink-0">
+      <div
+        class="relative shrink-0"
+        :class="{ 'opacity-50': isReceiveHidden }"
+      >
         <HistoryEventAsset
           v-if="receiveEvent"
           :event="receiveEvent"
@@ -267,7 +285,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
       v-if="!hideActions"
       :item="primaryEvent"
       :index="0"
-      :events="allEvents"
+      :complete-group-events="completeGroupEvents"
       class="w-24 shrink-0 self-center transition-opacity"
       :class="{ 'opacity-0 group-hover/row:opacity-100 focus-within:opacity-100': !hasMissingRule }"
       @edit-event="emit('edit-event', $event)"

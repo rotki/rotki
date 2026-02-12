@@ -3,6 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type EvmHistoryEvent, HistoryEventAccountingRuleStatus, type HistoryEventEntry } from '@/types/history/events/schemas';
 import { useHistorySwapItem } from './use-history-swap-item';
 
+const mockIsAssetIgnored = vi.fn<(asset: string) => boolean>().mockReturnValue(false);
+const mockAssetInfoMap = new Map<string, { protocol?: string }>();
+
 vi.mock('@/composables/info/chains', () => ({
   useSupportedChains: vi.fn(() => ({
     getChain: vi.fn((location: string) => location),
@@ -11,7 +14,14 @@ vi.mock('@/composables/info/chains', () => ({
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn(() => ({
+    assetInfo: (assetRef: Ref<string>): ComputedRef<{ protocol?: string }> => computed(() => mockAssetInfoMap.get(get(assetRef)) ?? {}),
     getAssetSymbol: vi.fn((asset: string) => asset.toUpperCase()),
+  })),
+}));
+
+vi.mock('@/store/assets/ignored', () => ({
+  useIgnoredAssetsStore: vi.fn(() => ({
+    isAssetIgnored: mockIsAssetIgnored,
   })),
 }));
 
@@ -64,6 +74,8 @@ function createSwapEvents(): HistoryEventEntry[] {
 describe('useHistorySwapItem', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
+    mockIsAssetIgnored.mockReturnValue(false);
+    mockAssetInfoMap.clear();
   });
 
   describe('primaryEvent', () => {
@@ -328,6 +340,76 @@ describe('useHistorySwapItem', () => {
       const { compactNotes } = useHistorySwapItem({ events });
 
       expect(get(compactNotes)).toBeUndefined();
+    });
+  });
+
+  describe('isSpendHidden and isReceiveHidden', () => {
+    it('should return false when neither asset is ignored or spam', () => {
+      const events = ref(createSwapEvents());
+      const { isSpendHidden, isReceiveHidden } = useHistorySwapItem({ events });
+
+      expect(get(isSpendHidden)).toBe(false);
+      expect(get(isReceiveHidden)).toBe(false);
+    });
+
+    it('should return true for isSpendHidden when spend asset is ignored', () => {
+      mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'ETH');
+
+      const events = ref(createSwapEvents());
+      const { isSpendHidden, isReceiveHidden } = useHistorySwapItem({ events });
+
+      expect(get(isSpendHidden)).toBe(true);
+      expect(get(isReceiveHidden)).toBe(false);
+    });
+
+    it('should return true for isReceiveHidden when receive asset is ignored', () => {
+      mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'USDC');
+
+      const events = ref(createSwapEvents());
+      const { isSpendHidden, isReceiveHidden } = useHistorySwapItem({ events });
+
+      expect(get(isSpendHidden)).toBe(false);
+      expect(get(isReceiveHidden)).toBe(true);
+    });
+
+    it('should return true for isSpendHidden when spend asset is spam', () => {
+      mockAssetInfoMap.set('ETH', { protocol: 'spam' });
+
+      const events = ref(createSwapEvents());
+      const { isSpendHidden, isReceiveHidden } = useHistorySwapItem({ events });
+
+      expect(get(isSpendHidden)).toBe(true);
+      expect(get(isReceiveHidden)).toBe(false);
+    });
+
+    it('should return true for isReceiveHidden when receive asset is spam', () => {
+      mockAssetInfoMap.set('USDC', { protocol: 'spam' });
+
+      const events = ref(createSwapEvents());
+      const { isSpendHidden, isReceiveHidden } = useHistorySwapItem({ events });
+
+      expect(get(isSpendHidden)).toBe(false);
+      expect(get(isReceiveHidden)).toBe(true);
+    });
+
+    it('should return true for both when both assets are ignored', () => {
+      mockIsAssetIgnored.mockReturnValue(true);
+
+      const events = ref(createSwapEvents());
+      const { isSpendHidden, isReceiveHidden } = useHistorySwapItem({ events });
+
+      expect(get(isSpendHidden)).toBe(true);
+      expect(get(isReceiveHidden)).toBe(true);
+    });
+
+    it('should return false when there is no spend or receive event', () => {
+      const events = ref([
+        createMockEvent({ identifier: 1, eventSubtype: 'fee' }),
+      ]);
+      const { isSpendHidden, isReceiveHidden } = useHistorySwapItem({ events });
+
+      expect(get(isSpendHidden)).toBe(false);
+      expect(get(isReceiveHidden)).toBe(false);
     });
   });
 });

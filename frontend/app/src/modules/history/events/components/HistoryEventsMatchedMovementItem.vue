@@ -12,7 +12,11 @@ import { useHistoryMatchedMovementItem } from '../composables/use-history-matche
 
 const props = withDefaults(defineProps<{
   events: HistoryEventEntry[];
-  allEvents: HistoryEventEntry[];
+  /**
+   * All events in the same group, including hidden and ignored events.
+   * This complete set is required for correctly editing grouped events (e.g., swap events).
+   */
+  completeGroupEvents: HistoryEventEntry[];
   groupLocationLabel?: string;
   hideActions?: boolean;
   highlight?: boolean;
@@ -129,7 +133,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
         v-if="!hideActions"
         :item="primaryEvent"
         :index="0"
-        :events="allEvents"
+        :complete-group-events="completeGroupEvents"
         :can-unlink="canUnlink"
         class="shrink-0"
         :class="{ 'opacity-50': !hasMissingRule }"
@@ -200,7 +204,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
       v-if="!hideActions"
       :item="primaryEvent"
       :index="0"
-      :events="allEvents"
+      :complete-group-events="completeGroupEvents"
       :can-unlink="canUnlink"
       class="w-24 shrink-0 self-center transition-opacity"
       :class="{ 'opacity-0 group-hover/row:opacity-100 focus-within:opacity-100': !hasMissingRule }"

@@ -57,12 +57,15 @@ const { groupLoading, groups: rawGroups, pageParams } = toRefs(props);
 
 // Event data management
 const {
-  allEventsMapped,
+  completeEventsMapped,
   displayedEventsMapped,
   entriesFoundTotal,
   events,
   eventsLoading,
   found,
+  getCompleteEventsForItem,
+  getCompleteSubgroupEvents,
+  getGroupEvents,
   groups,
   groupsShowingIgnoredAssets,
   groupsWithHiddenIgnoredAssets,
@@ -125,7 +128,7 @@ const {
   suggestNextSequenceId,
   toggle,
 } = useHistoryEventsOperations({
-  allEventsMapped,
+  completeEventsMapped,
   flattenedEvents: events,
 }, emit);
 
@@ -137,7 +140,7 @@ const {
 } = useHistoryEventsForms(suggestNextSequenceId, emit);
 
 // Emit event IDs when events change
-watch([events, allEventsMapped, rawEvents], ([newEvents, groupedEvents, rawEventsData]) => {
+watch([events, completeEventsMapped, rawEvents], ([newEvents, groupedEvents, rawEventsData]) => {
   const eventIds = newEvents.map(event => event.identifier);
   emit('update-event-ids', { eventIds, groupedEvents, rawEvents: rawEventsData });
 }, { immediate: true });
@@ -154,13 +157,6 @@ const groupsMap = computed<Map<string, HistoryEventEntry>>(() => {
 // Helper to find group by ID (O(1) lookup)
 function findGroup(groupId: string): HistoryEventEntry | undefined {
   return get(groupsMap).get(groupId);
-}
-
-// Helper to get flattened events for a group (uses displayed events for consistency)
-function getGroupEvents(groupId: string): HistoryEventEntry[] {
-  const groupEvents = get(displayedEventsMapped)[groupId] || [];
-  // Flatten if events contain arrays (subgroups)
-  return groupEvents.flatMap(e => (Array.isArray(e) ? e : [e]));
 }
 
 // Handler for edit event with group lookup
@@ -336,7 +332,7 @@ function unlinkGroup(groupId: string): void {
             v-else-if="row.type === 'event-row'"
             :event="row.data"
             :index="row.index"
-            :all-events="getGroupEvents(row.groupId)"
+            :complete-group-events="getCompleteEventsForItem(row.groupId, row.data)"
             :group-location-label="findGroup(row.groupId)?.locationLabel ?? undefined"
             :hide-actions="hideActions"
             :highlight="isHighlighted(row.data)"
@@ -353,7 +349,7 @@ function unlinkGroup(groupId: string): void {
           <HistoryEventsSwapItem
             v-else-if="row.type === 'swap-row'"
             :events="row.events"
-            :all-events="getGroupEvents(row.groupId)"
+            :complete-group-events="getCompleteSubgroupEvents(row.events)"
             :group-location-label="findGroup(row.groupId)?.locationLabel ?? undefined"
             :hide-actions="hideActions"
             :highlight="isSwapHighlighted(row.events)"
@@ -378,7 +374,7 @@ function unlinkGroup(groupId: string): void {
           <HistoryEventsMatchedMovementItem
             v-else-if="row.type === 'matched-movement-row'"
             :events="row.events"
-            :all-events="getGroupEvents(row.groupId)"
+            :complete-group-events="getCompleteSubgroupEvents(row.events)"
             :group-location-label="findGroup(row.groupId)?.locationLabel ?? undefined"
             :hide-actions="hideActions"
             :highlight="isSwapHighlighted(row.events)"
