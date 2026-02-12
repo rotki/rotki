@@ -43,9 +43,9 @@ async function promptUser(appDataDir: string): Promise<void> {
     }));
 
   const selectedDataDirs = await multiselect({
-    message: 'Select what to copy from data to develop_data.',
+    message: 'Select what to copy from data to develop_data (submit empty to skip).',
     options: dataDirs,
-    required: true,
+    required: false,
   });
 
   if (isCancel(selectedDataDirs)) {
