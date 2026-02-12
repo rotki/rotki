@@ -907,6 +907,7 @@ def should_exclude_possible_match(
         event: HistoryBaseEntry,
         blockchain_accounts: BlockchainAccounts,
         already_matched_event_ids: set[int],
+        exclude_protocol_counterparty: bool = True,
         exclude_unexpected_direction: bool = False,
 ) -> bool:
     """Check if the given event should be excluded from being a possible match.
@@ -914,6 +915,7 @@ def should_exclude_possible_match(
     - Event is from the same exchange as the asset movement
     - Event is an INFORMATIONAL/APPROVE event
     - Event is a TRANSFER/NONE between tracked accounts.
+    - Onchain event has a non-exchange counterparty (when exclude_protocol_counterparty=True)
     - exclude_unexpected_direction is True and the event direction opposes the expected direction
        for the movement type. Used for close matches only (allows manually matching edge cases).
        Uses accounting direction instead of balance tracking direction, since the onchain match
@@ -942,6 +944,13 @@ def should_exclude_possible_match(
             event.event_type == HistoryEventType.SPEND and
             event.event_subtype == HistoryEventSubType.FEE and
             getattr(event, 'counterparty', None) == CPT_GAS
+        ):
+            return True
+
+        if exclude_protocol_counterparty and (  # Protocol counterparties should not auto-match exchange movements.  # noqa: E501
+            event.counterparty is not None and
+            event.counterparty not in EXCHANGES_CPT and
+            event.counterparty != CPT_MONERIUM
         ):
             return True
 
@@ -1040,6 +1049,7 @@ def find_asset_movement_matches(
         assets_in_collection: tuple['Asset', ...],
         blockchain_accounts: BlockchainAccounts,
         already_matched_event_ids: set[int],
+        exclude_protocol_counterparty: bool = True,
         tolerance: FVal | None = None,
 ) -> list[HistoryBaseEntry]:
     """Find events that closely match what the corresponding event for the given asset movement
@@ -1095,6 +1105,7 @@ def find_asset_movement_matches(
         tolerance=tolerance,
         blockchain_accounts=blockchain_accounts,
         already_matched_event_ids=already_matched_event_ids,
+        exclude_protocol_counterparty=exclude_protocol_counterparty,
     )
     if len(close_matches) == 0:
         close_matches = _find_close_matches(
@@ -1107,6 +1118,7 @@ def find_asset_movement_matches(
             tolerance=tolerance,
             blockchain_accounts=blockchain_accounts,
             already_matched_event_ids=already_matched_event_ids,
+            exclude_protocol_counterparty=exclude_protocol_counterparty,
         )
 
     if len(close_matches) == 0:
@@ -1148,6 +1160,7 @@ def _find_close_matches(
         tolerance: FVal,
         blockchain_accounts: BlockchainAccounts,
         already_matched_event_ids: set[int],
+        exclude_protocol_counterparty: bool,
 ) -> list[HistoryBaseEntry]:
     """Return candidate matches that pass amount checks and heuristics."""
     close_matches: list[HistoryBaseEntry] = []
@@ -1157,6 +1170,7 @@ def _find_close_matches(
             event=event,
             blockchain_accounts=blockchain_accounts,
             already_matched_event_ids=already_matched_event_ids,
+            exclude_protocol_counterparty=exclude_protocol_counterparty,
             exclude_unexpected_direction=True,
         ):
             log.debug(

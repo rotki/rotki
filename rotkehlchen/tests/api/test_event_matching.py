@@ -6,6 +6,7 @@ import requests
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData, TaskName
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.constants import HOUR_IN_SECONDS
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_WETH
 from rotkehlchen.db.constants import (
@@ -739,6 +740,55 @@ def test_get_possible_matches(rotkehlchen_api_server: 'APIServer') -> None:
     for already_matched_id in already_matched_ids:
         assert already_matched_id not in result['close_matches']
         assert already_matched_id not in result['other_events']
+
+
+def test_protocol_counterparty_in_other_events_only(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Protocol counterparty events should not appear in close_matches (which mirrors
+    auto-matching) but should be included in other_events for manual matching."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevents = DBHistoryEvents(rotki.data.db)
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        dbevents.add_history_events(
+            write_cursor=write_cursor,
+            history=[movement := AssetMovement(
+                identifier=1,
+                location=Location.KRAKEN,
+                event_subtype=HistoryEventSubType.RECEIVE,
+                timestamp=TimestampMS(1700003101000),
+                asset=A_ETH,
+                amount=FVal('1'),
+                unique_id='kraken_deposit_1',
+                location_label='Kraken 1',
+            ), EvmEvent(
+                identifier=2,
+                tx_ref=make_evm_tx_hash(),
+                sequence_index=0,
+                timestamp=TimestampMS(1700003100000),
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.DEPOSIT,
+                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                asset=A_ETH,
+                amount=FVal('1'),
+                counterparty=CPT_AAVE_V3,
+                location_label=make_evm_address(),
+            )],
+        )
+
+    result = assert_proper_response_with_result(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+            json={
+                'asset_movement': movement.group_identifier,
+                'time_range': HOUR_IN_SECONDS,
+                'tolerance': '0.002',
+            },
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+    )
+    assert result['close_matches'] == []
+    assert result['other_events'] == [2]
 
 
 def test_get_history_events_with_matched_asset_movements(

@@ -3841,6 +3841,7 @@ class RestAPI:
                     event=event,
                     blockchain_accounts=blockchain_accounts,
                     already_matched_event_ids=already_matched_event_ids,
+                    exclude_protocol_counterparty=False,
                 )
             ],
         }))
