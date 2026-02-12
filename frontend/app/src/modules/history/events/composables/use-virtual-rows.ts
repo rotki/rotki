@@ -114,11 +114,11 @@ export function useVirtualRows(
   eventsByGroup: ComputedRef<Record<string, HistoryEventRow[]>>,
 ): UseVirtualRowsReturn {
   // Track how many items are visible per group (beyond initial limit)
-  const groupVisibleCounts = ref<Map<string, number>>(new Map());
+  const groupVisibleCounts = shallowRef<Map<string, number>>(new Map());
   // Track which swap rows are expanded (key: groupId-index)
-  const expandedSwaps = ref<Set<string>>(new Set());
+  const expandedSwaps = shallowRef<Set<string>>(new Set());
   // Track which matched movement rows are expanded (key: groupId-index)
-  const expandedMovements = ref<Set<string>>(new Set());
+  const expandedMovements = shallowRef<Set<string>>(new Set());
 
   const flattenedRows = computed<VirtualRow[]>(() => {
     const rows: VirtualRow[] = [];

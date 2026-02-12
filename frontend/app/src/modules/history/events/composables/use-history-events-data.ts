@@ -136,7 +136,7 @@ export function useHistoryEventsData(
   });
 
   // Track which groups have opted to show ignored assets (per-group toggle)
-  const groupsShowingIgnoredAssets = ref<Set<string>>(new Set());
+  const groupsShowingIgnoredAssets = shallowRef<Set<string>>(new Set());
 
   function toggleShowIgnoredAssets(groupId: string): void {
     const current = get(groupsShowingIgnoredAssets);

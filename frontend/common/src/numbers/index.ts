@@ -1,5 +1,8 @@
 import { BigNumber } from 'bignumber.js';
+import { markRaw } from 'vue';
 import z from 'zod/v4';
+
+markRaw(BigNumber.prototype);
 
 export const Zero = bigNumberify(0);
 

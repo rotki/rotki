@@ -53,7 +53,7 @@ const sharedStats = ref<QueueStats>({
   total: 0,
 });
 
-const sharedItems = ref<Map<string, BalanceQueryQueueItem>>(new Map());
+const sharedItems = shallowRef<Map<string, BalanceQueryQueueItem>>(new Map());
 
 // Cached reference to the balance queue singleton
 let balanceQueue: BalanceQueueService<BalanceQueueMetadata> | null = null;

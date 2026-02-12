@@ -1,4 +1,3 @@
-import type { Ref } from 'vue';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';
@@ -9,6 +8,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import weekday from 'dayjs/plugin/weekday';
 import weekOfYear from 'dayjs/plugin/weekOfYear';
+import { markRaw, type Ref } from 'vue';
 import { DateFormat } from '@/types/date-format';
 
 export function getDateInputISOFormat(format: DateFormat): string {
@@ -85,6 +85,7 @@ export function getDayNames(locale = 'en'): string[] {
 }
 
 export function setupDayjs(): void {
+  markRaw(dayjs.prototype);
   dayjs.extend(customParseFormat);
   dayjs.extend(utc);
   dayjs.extend(timezone);

@@ -37,7 +37,7 @@ export interface UseHistoryEventsSelectionModeReturn {
 
 export function useHistoryEventsSelectionMode(): UseHistoryEventsSelectionModeReturn {
   const isActive = ref<boolean>(false);
-  const selectedIds = ref<Set<number>>(new Set());
+  const selectedIds = shallowRef<Set<number>>(new Set());
   const availableIds = ref<number[]>([]);
   const selectAllMatching = ref<boolean>(false);
   const totalMatchingCount = ref<number>(0);

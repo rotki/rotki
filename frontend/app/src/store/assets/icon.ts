@@ -18,17 +18,13 @@ const CACHE_TTL = 5 * 60 * 1000;
 export const useAssetIconStore = defineStore('assets/icon', () => {
   const lastRefreshedAssetIcon = ref<number>(0);
   // Cache for asset existence checks to avoid redundant HTTP requests
-  const assetExistsCache = ref<Map<string, CachedAssetResult>>(new Map());
+  const assetExistsCache = shallowRef<Map<string, CachedAssetResult>>(new Map());
   // Track pending requests to avoid duplicate in-flight requests
-  const pendingRequests = ref<Map<string, Promise<boolean>>>(new Map());
+  const pendingRequests = shallowRef<Map<string, Promise<boolean>>>(new Map());
 
   const setLastRefreshedAssetIcon = (): void => {
     set(lastRefreshedAssetIcon, Date.now());
   };
-
-  onBeforeMount(() => {
-    setLastRefreshedAssetIcon();
-  });
 
   const { assetImageUrl, checkAsset } = useAssetIconApi();
 

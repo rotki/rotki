@@ -19,7 +19,11 @@ vi.mock('@/composables/electron-interop', () => {
 });
 
 vi.mock('@/composables/api/session/premium-credentials', () => ({
-  usePremiumCredentialsApi: vi.fn().mockReturnValue({}),
+  usePremiumCredentialsApi: vi.fn().mockReturnValue({
+    deletePremiumCredentials: vi.fn(),
+    getPremiumCapabilities: vi.fn().mockResolvedValue({}),
+    setPremiumCredentials: vi.fn(),
+  }),
 }));
 
 describe('premiumSettings.vue', () => {

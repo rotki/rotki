@@ -6,8 +6,8 @@ import { logger } from '@/utils/logging';
 export const useHistoryRefreshStateStore = defineStore('history/refresh-state', () => {
   const isRefreshing = ref<boolean>(false);
   const lastRefreshTime = ref<number | null>(null);
-  const refreshedKeys = ref<Set<string>>(new Set<string>());
-  const pendingKeys = ref<Set<string>>(new Set<string>());
+  const refreshedKeys = shallowRef<Set<string>>(new Set<string>());
+  const pendingKeys = shallowRef<Set<string>>(new Set<string>());
 
   // Prefix keys to distinguish accounts from exchanges
   const BLOCKCHAIN_PREFIX = 'blockchain:';

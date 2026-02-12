@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it } from 'vitest';
+import type { EffectScope } from 'vue';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useDatabase } from '@/modules/data/use-database';
 import { useMainStore } from '@/store/main';
@@ -11,25 +12,34 @@ import {
 const TEST_USER = 'test-user-mappings';
 const TEST_DATA_DIR = '/test/data/dir';
 
+let scope: EffectScope;
+
 beforeEach(async () => {
   setActivePinia(createPinia());
+  scope = effectScope();
 
-  const { db, isReady } = useDatabase();
+  await scope.run(async () => {
+    const { db, isReady } = useDatabase();
 
-  // Set up user identifier
-  const user = useLoggedUserIdentifier();
-  set(user, TEST_USER);
+    // Set up user identifier
+    const user = useLoggedUserIdentifier();
+    set(user, TEST_USER);
 
-  // Set up data directory
-  const mainStore = useMainStore();
-  const { dataDirectory } = storeToRefs(mainStore);
-  set(dataDirectory, TEST_DATA_DIR);
+    // Set up data directory
+    const mainStore = useMainStore();
+    const { dataDirectory } = storeToRefs(mainStore);
+    set(dataDirectory, TEST_DATA_DIR);
 
-  // Wait for database to become ready
-  await until(isReady).toBe(true);
+    // Wait for database to become ready
+    await until(isReady).toBe(true);
 
-  // Clear the table before each test
-  await db().missingMappings.clear();
+    // Clear the table before each test
+    await db().missingMappings.clear();
+  });
+});
+
+afterEach(() => {
+  scope.stop();
 });
 
 function createMissingMapping(data: Pick<AddMissingMapping, 'location' | 'identifier'>): AddMissingMapping {

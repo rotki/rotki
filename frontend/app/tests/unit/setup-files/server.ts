@@ -14,6 +14,7 @@ import {
   skippedExternalEventsHandlers,
   stakingHandlers,
   supportedChainsHandlers,
+  taskSchedulerHandlers,
 } from './handlers';
 
 const server = setupServer(
@@ -31,6 +32,7 @@ const server = setupServer(
   ...settingsHandlers,
   ...skippedExternalEventsHandlers,
   ...assetsHandlers,
+  ...taskSchedulerHandlers,
 );
 
 export { server };

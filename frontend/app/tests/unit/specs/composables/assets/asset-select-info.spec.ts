@@ -1,3 +1,4 @@
+import type { EffectScope } from 'vue';
 import { flushPromises } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -8,22 +9,26 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // The composable is designed to share cached data efficiently in production.
 
 describe('composables/assets/asset-select-info', () => {
+  let scope: EffectScope;
+
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
 
     // Set up Pinia for the tests
     setActivePinia(createPinia());
+    scope = effectScope();
   });
 
   afterEach(() => {
+    scope.stop();
     vi.useRealTimers();
   });
 
   describe('basic functionality', () => {
     it('should return null when identifier is undefined', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
-      const assetSelectInfo = useAssetSelectInfo();
+      const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
       const result = assetSelectInfo.assetInfo(undefined);
       expect(get(result)).toBeNull();
@@ -31,7 +36,7 @@ describe('composables/assets/asset-select-info', () => {
 
     it('should return null when identifier is empty string', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
-      const assetSelectInfo = useAssetSelectInfo();
+      const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
       const result = assetSelectInfo.assetInfo('');
       expect(get(result)).toBeNull();
@@ -39,7 +44,7 @@ describe('composables/assets/asset-select-info', () => {
 
     it('should return empty string for symbol when identifier is undefined', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
-      const assetSelectInfo = useAssetSelectInfo();
+      const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
       const result = assetSelectInfo.assetSymbol(undefined);
       expect(get(result)).toBe('');
@@ -47,7 +52,7 @@ describe('composables/assets/asset-select-info', () => {
 
     it('should return empty string for symbol when identifier is empty', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
-      const assetSelectInfo = useAssetSelectInfo();
+      const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
       const result = assetSelectInfo.assetSymbol('');
       expect(get(result)).toBe('');
@@ -55,7 +60,7 @@ describe('composables/assets/asset-select-info', () => {
 
     it('should return empty string for name when identifier is undefined', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
-      const assetSelectInfo = useAssetSelectInfo();
+      const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
       const result = assetSelectInfo.assetName(undefined);
       expect(get(result)).toBe('');
@@ -63,7 +68,7 @@ describe('composables/assets/asset-select-info', () => {
 
     it('should return empty string for name when identifier is empty', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
-      const assetSelectInfo = useAssetSelectInfo();
+      const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
       const result = assetSelectInfo.assetName('');
       expect(get(result)).toBe('');
@@ -73,7 +78,7 @@ describe('composables/assets/asset-select-info', () => {
   describe('reactive behavior', () => {
     it('should handle reactive identifier changes', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
-      const assetSelectInfo = useAssetSelectInfo();
+      const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
       const identifier = ref<string | undefined>(undefined);
       const nameResult = assetSelectInfo.assetName(identifier);
@@ -107,7 +112,7 @@ describe('composables/assets/asset-select-info', () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
       const { useAssetInfoApi } = await import('@/composables/api/assets/info');
 
-      const assetSelectInfo = useAssetSelectInfo();
+      const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
       // Mock the API to return undefined
       const mockAssetMapping = vi.fn().mockResolvedValue(undefined);
@@ -136,8 +141,8 @@ describe('composables/assets/asset-select-info', () => {
     it('should share the same instance between multiple calls', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
 
-      const instance1 = useAssetSelectInfo();
-      const instance2 = useAssetSelectInfo();
+      const instance1 = scope.run(() => useAssetSelectInfo())!;
+      const instance2 = scope.run(() => useAssetSelectInfo())!;
 
       // Both instances should be the same due to createSharedComposable
       expect(instance1).toBe(instance2);

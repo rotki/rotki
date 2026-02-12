@@ -16,7 +16,7 @@ beforeAll(() => {
 
   vi.mock('@/composables/api/assets/info', () => ({
     useAssetInfoApi: vi.fn().mockReturnValue({
-      assetMapping: vi.fn().mockResolvedValue({}),
+      assetMapping: vi.fn().mockResolvedValue({ assets: {}, assetCollections: {} }),
     }),
   }));
 
