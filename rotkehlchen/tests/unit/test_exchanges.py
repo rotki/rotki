@@ -10,6 +10,8 @@ from rotkehlchen.types import ApiKey, ApiSecret, ExchangeApiCredentials, Locatio
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.exchanges.manager import ExchangeManager
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 def test_exchanges_filtering(database, exchange_manager, function_scope_messages_aggregator):
@@ -62,10 +64,10 @@ def test_exchanges_filtering(database, exchange_manager, function_scope_messages
 
 
 def test_query_exchange_history_events_respects_non_syncing(
-        database,
-        exchange_manager,
-        function_scope_messages_aggregator,
-):
+        database: 'DBHandler',
+        exchange_manager: 'ExchangeManager',
+        function_scope_messages_aggregator: 'MessagesAggregator',
+) -> None:
     kraken1 = MockKraken(
         name='mockkraken_1',
         api_key=make_api_key(),
