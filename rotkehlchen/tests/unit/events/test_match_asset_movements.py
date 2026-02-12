@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
@@ -40,7 +41,7 @@ from rotkehlchen.history.events.structures.asset_movement import (
     AssetMovementExtraData,
     AssetMovementSubtype,
 )
-from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType, HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
@@ -309,8 +310,11 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
     # Last two events should be withdrawal4's matched event and a new adjustment event to cover the
     # difference between withdrawal4 and its matched event. Note that since the matched event is
     # also an asset movement in this case, the adjustment is actually added to the group of the
-    # matched event since it gets processed first.
+    # matched event since it gets processed first. Its amount was also adjusted to mirror the
+    # Bitstamp withdrawal amount (the matched event from the Kraken deposit's perspective).
+    original_matched_event_amount = withdrawal4_matched_event.amount
     withdrawal4_matched_event.identifier = asset_movements[-2].identifier
+    withdrawal4_matched_event.amount = withdrawal4.amount  # adjusted to mirror the matched event
     withdrawal4_matched_event.extra_data = AssetMovementExtraData(matched_asset_movement={
         'group_identifier': withdrawal4.group_identifier,
         'exchange': 'bitstamp',
@@ -318,9 +322,9 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
     })
     assert asset_movements[-2] == withdrawal4_matched_event
     assert (withdrawal4_adjustment := asset_movements[-1]).event_type == HistoryEventType.EXCHANGE_ADJUSTMENT  # noqa: E501
-    assert withdrawal4_adjustment.event_subtype == HistoryEventSubType.RECEIVE
+    assert withdrawal4_adjustment.event_subtype == HistoryEventSubType.SPEND
     assert withdrawal4_adjustment.group_identifier == withdrawal4_matched_event.group_identifier
-    assert withdrawal4_adjustment.amount == withdrawal4.amount - withdrawal4_matched_event.amount
+    assert withdrawal4_adjustment.amount == withdrawal4.amount - original_matched_event_amount
 
     # Check that matches have been cached and that the cached identifiers
     # refer to the correct asset movements
@@ -833,7 +837,7 @@ def test_match_asset_movements_settings(database: 'DBHandler') -> None:
     assert all_events[0].group_identifier == movement_event.group_identifier
     assert all_events[1].group_identifier == movement_event.group_identifier
     assert all_events[1].event_type == HistoryEventType.EXCHANGE_ADJUSTMENT
-    assert all_events[1].event_subtype == HistoryEventSubType.RECEIVE
+    assert all_events[1].event_subtype == HistoryEventSubType.SPEND
     assert all_events[1].amount == movement_event.amount - matched_event.amount
     assert all_events[2].group_identifier == matched_event.group_identifier
 
@@ -1049,15 +1053,27 @@ def test_exchange_deposit_sai_to_dai_credit(database: 'DBHandler') -> None:
 
 
 def test_adjustments(database: 'DBHandler') -> None:
-    """Test that we properly create adjustment events during matching if amounts differ."""
+    """Test adjustment events and movement amount changes for all direction combinations.
+
+    Movement amount is set to the onchain amount (symmetric transfer), adjustment event
+    reconciles exchange balance. SPEND if user lost value, RECEIVE if gained.
+
+    Deposit (exchange=9.96, onchain=10): movement -> 10, SPEND 0.04, balance = +10 - 0.04 = +9.96
+    Deposit (exchange=10, onchain=9.96): movement -> 9.96, RECEIVE 0.04, balance = +9.96 + 0.04 = +10
+    Withdrawal (exchange=9.96, onchain=10): movement -> 10, RECEIVE 0.04, balance = -10 + 0.04 = -9.96
+    Withdrawal (exchange=10, onchain=9.96): movement -> 9.96, SPEND 0.04, balance = -9.96 - 0.04 = -10
+    Exchange-to-exchange (Bitstamp=10, Kraken=9.96): Kraken -> 10, SPEND 0.04, Bitstamp unchanged
+    Deposit with fee (amount=9, fee=1, onchain=10): 9 + 1 = 10, exact match, no adjustment
+    Deposit with fee (amount=9, fee=1, onchain=10.04): 9 + 1 = 10 != 10.04, SPEND 0.04
+    """  # noqa: E501
     events_db = DBHistoryEvents(database)
 
-    events_to_add = []
+    events_to_add: list[HistoryEvent | AssetMovement | EvmEvent] = []
     movement_data: list[tuple[Asset, AssetMovementSubtype, float, float]] = [
-        (A_ETH, HistoryEventSubType.RECEIVE, 5.49, 5.5),
-        (A_BTC, HistoryEventSubType.RECEIVE, 5.5, 5.49),
-        (A_USDC, HistoryEventSubType.SPEND, 5.49, 5.5),
-        (A_WSOL, HistoryEventSubType.SPEND, 5.5, 5.49),
+        (A_ETH, HistoryEventSubType.RECEIVE, 9.96, 10),
+        (A_BTC, HistoryEventSubType.RECEIVE, 10, 9.96),
+        (A_USDC, HistoryEventSubType.SPEND, 9.96, 10),
+        (A_WSOL, HistoryEventSubType.SPEND, 10, 9.96),
     ]
     for idx, (asset, movement_subtype, movement_amount, match_amount) in enumerate(movement_data):
         events_to_add.extend([(movement_event := AssetMovement(
@@ -1090,30 +1106,182 @@ def test_adjustments(database: 'DBHandler') -> None:
             amount=FVal(match_amount),
         )])
 
+    # Deposits with fee: exact match (DAI: 9 + 1 = 10) and discrepancy (SAI: 9 + 1 != 10.04)
+    fee_movements: dict[Asset, AssetMovement] = {}
+    for fee_asset, onchain_amount, unique_id, ts in (
+        (A_DAI, FVal('10'), 'fee-exact', TimestampMS(1600000000005)),
+        (A_SAI, FVal('10.04'), 'fee-diff', TimestampMS(1600000000006)),
+    ):
+        movement = AssetMovement(
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            timestamp=ts,
+            asset=fee_asset,
+            amount=FVal('9'),
+            unique_id=unique_id,
+            location_label='kraken',
+        )
+        fee_movements[fee_asset] = movement
+        events_to_add.extend([movement, AssetMovement(
+            location=Location.KRAKEN,
+            event_subtype=HistoryEventSubType.FEE,
+            timestamp=ts,
+            asset=fee_asset,
+            amount=ONE,
+            unique_id=unique_id,
+        ), EvmEvent(
+            tx_ref=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=ts,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=fee_asset,
+            amount=onchain_amount,
+            location_label=make_evm_address(),
+        )])
+
+    # Exchange-to-exchange: Bitstamp withdrawal matched with Kraken deposit
+    events_to_add.extend([(e2e_withdrawal := AssetMovement(
+        location=Location.BITSTAMP,
+        event_subtype=HistoryEventSubType.SPEND,
+        timestamp=TimestampMS(1600000000010),
+        asset=A_AAVE,
+        amount=FVal('10'),
+        unique_id='e2e-1',
+        location_label='Bitstamp 1',
+    )), (e2e_deposit := AssetMovement(
+        location=Location.KRAKEN,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        timestamp=TimestampMS(1600000000011),
+        asset=A_AAVE,
+        amount=FVal('9.96'),
+        unique_id='e2e-2',
+        location_label='Kraken 1',
+    ))])
+
     with database.conn.write_ctx() as write_cursor:
         events_db.add_history_events(
             write_cursor=write_cursor,
             history=events_to_add,
         )
 
-    # Run matching and check that the adjustment events were created with proper subtypes
     match_asset_movements(database=database)
     with database.conn.read_ctx() as cursor:
-        for asset, expected_adjustment_subtype in (
-            (A_ETH, HistoryEventSubType.RECEIVE),
-            (A_BTC, HistoryEventSubType.SPEND),
-            (A_USDC, HistoryEventSubType.SPEND),
-            (A_WSOL, HistoryEventSubType.RECEIVE),
+        # Check exchange-to-onchain cases
+        for asset, expected_adjustment_subtype, original_movement_amount, expected_movement_amount in (  # noqa: E501
+            (A_ETH, HistoryEventSubType.SPEND, FVal('9.96'), FVal('10')),
+            (A_BTC, HistoryEventSubType.RECEIVE, FVal('10'), FVal('9.96')),
+            (A_USDC, HistoryEventSubType.RECEIVE, FVal('9.96'), FVal('10')),
+            (A_WSOL, HistoryEventSubType.SPEND, FVal('10'), FVal('9.96')),
         ):
-            assert len(events := events_db.get_history_events_internal(
+            assert len(adjustments := events_db.get_history_events_internal(
                 cursor=cursor,
                 filter_query=HistoryEventFilterQuery.make(
                     assets=(asset,),
                     event_types=[HistoryEventType.EXCHANGE_ADJUSTMENT],
                 ),
             )) == 1
-            assert events[0].event_subtype == expected_adjustment_subtype
-            assert events[0].amount == FVal('0.01')
+            assert adjustments[0].event_subtype == expected_adjustment_subtype
+            assert adjustments[0].amount == FVal('0.04')
+
+            assert len(movements := events_db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(
+                    assets=(asset,),
+                    entry_types=IncludeExcludeFilterData(
+                        values=[HistoryBaseEntryType.ASSET_MOVEMENT_EVENT],
+                    ),
+                    event_subtypes=[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND],
+                ),
+            )) == 1
+            assert movements[0].amount == expected_movement_amount
+            assert cursor.execute(
+                'SELECT amount FROM history_events_backup WHERE identifier = ?',
+                (movements[0].identifier,),
+            ).fetchone()[0] == str(original_movement_amount)
+
+        # Check exchange-to-exchange case: only one adjustment (under the Kraken deposit's group)
+        assert len(e2e_adjustments := events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                assets=(A_AAVE,),
+                event_types=[HistoryEventType.EXCHANGE_ADJUSTMENT],
+            ),
+        )) == 1
+        assert e2e_adjustments[0].event_subtype == HistoryEventSubType.SPEND
+        assert e2e_adjustments[0].amount == FVal('0.04')
+        assert e2e_adjustments[0].group_identifier == e2e_deposit.group_identifier
+
+        # The Kraken deposit amount was adjusted to mirror the Bitstamp withdrawal (5.5)
+        e2e_movements = events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                assets=(A_AAVE,),
+                entry_types=IncludeExcludeFilterData(
+                    values=[HistoryBaseEntryType.ASSET_MOVEMENT_EVENT],
+                ),
+                event_subtypes=[HistoryEventSubType.RECEIVE, HistoryEventSubType.SPEND],
+            ),
+        )
+        assert len(e2e_movements) == 2
+        kraken_deposit = next(m for m in e2e_movements if m.location == Location.KRAKEN)
+        bitstamp_withdrawal = next(m for m in e2e_movements if m.location == Location.BITSTAMP)
+        assert kraken_deposit.amount == e2e_withdrawal.amount  # adjusted to 5.5
+        assert bitstamp_withdrawal.amount == e2e_withdrawal.amount  # unchanged at 5.5
+        assert cursor.execute(
+            'SELECT amount FROM history_events_backup WHERE identifier = ?',
+            (kraken_deposit.identifier,),
+        ).fetchone()[0] == str(e2e_deposit.amount)  # backup has original 9.96
+
+        # Deposit with fee, exact match: no adjustment, amount unchanged
+        assert len(events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                assets=(A_DAI,),
+                event_types=[HistoryEventType.EXCHANGE_ADJUSTMENT],
+            ),
+        )) == 0
+        fee_exact_movements = events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                assets=(A_DAI,),
+                entry_types=IncludeExcludeFilterData(
+                    values=[HistoryBaseEntryType.ASSET_MOVEMENT_EVENT],
+                ),
+                event_subtypes=[HistoryEventSubType.RECEIVE],
+            ),
+        )
+        assert len(fee_exact_movements) == 1
+        assert fee_exact_movements[0].amount == fee_movements[A_DAI].amount  # unchanged at 9
+
+        # Deposit with fee, discrepancy: amount(9) + fee(1) = 10, onchain = 10.04
+        # adjustment SPEND 0.04, movement -> 10.04
+        assert len(fee_diff_adjustments := events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                assets=(A_SAI,),
+                event_types=[HistoryEventType.EXCHANGE_ADJUSTMENT],
+            ),
+        )) == 1
+        assert fee_diff_adjustments[0].event_subtype == HistoryEventSubType.SPEND
+        assert fee_diff_adjustments[0].amount == FVal('0.04')
+        fee_diff_movements = events_db.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(
+                assets=(A_SAI,),
+                entry_types=IncludeExcludeFilterData(
+                    values=[HistoryBaseEntryType.ASSET_MOVEMENT_EVENT],
+                ),
+                event_subtypes=[HistoryEventSubType.RECEIVE],
+            ),
+        )
+        assert len(fee_diff_movements) == 1
+        assert fee_diff_movements[0].amount == FVal('10.04')  # adjusted to onchain
+        assert cursor.execute(
+            'SELECT amount FROM history_events_backup WHERE identifier = ?',
+            (fee_diff_movements[0].identifier,),
+        ).fetchone()[0] == str(fee_movements[A_SAI].amount)  # backup has original 9
 
 
 def test_match_by_balance_tracking_event_direction(database: 'DBHandler') -> None:

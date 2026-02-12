@@ -714,12 +714,21 @@ def _maybe_add_adjustment_event(
         matched_event: HistoryBaseEntry,
         is_deposit: bool,
 ) -> None:
-    """Add an event to cover the difference between the amounts of the movement and its match.
+    """Adjust the movement amount to mirror the onchain amount and add an adjustment event
+    to reconcile the exchange balance back to what the exchange actually reported.
+
+    The movement amount is set to the onchain amount so the transfer is symmetric for balance
+    tracking. The adjustment event corrects the exchange balance and records the gain/loss
+    for accounting (SPEND if user lost value, RECEIVE if gained).
+
+    Example: deposit, exchange credits 9.96, onchain sent 10
+    - Movement: 9.96 -> 10, adjustment SPEND 0.04, balance = +10 - 0.04 = +9.96
+
     Takes no action if the amounts match or if existing events already cover the difference.
     """
-    # Include the fee amount only for deposits since for withdrawals the matched event happens
-    # after the fee has already been deducted.
-    movement_amount_with_fee = asset_movement.amount - fee_event.amount if (
+    # For deposits, include the fee since the onchain amount is amount + fee (fee is deducted
+    # after arrival). For withdrawals, the fee is deducted before the onchain transfer.
+    movement_amount_with_fee = asset_movement.amount + fee_event.amount if (
         is_deposit and
         fee_event is not None and
         fee_event.asset == asset_movement.asset
@@ -774,6 +783,17 @@ def _maybe_add_adjustment_event(
         if has_correct_adjustment_event:
             return  # An existing adjustment already covers the amount difference.
 
+    # Adjust the movement amount to mirror the onchain amount so the transfer is symmetric for
+    # balance tracking. A backup is saved so that unlinking restores the original amount.
+    asset_movement.amount = matched_event.amount
+    with events_db.db.conn.write_ctx() as write_cursor:
+        events_db.edit_history_event(
+            write_cursor=write_cursor,
+            event=asset_movement,
+            mapping_state=HistoryMappingState.AUTO_MATCHED,
+            save_backup=True,
+        )
+
     # Get the next open sequence index for the adjustment event
     with events_db.db.conn.read_ctx() as cursor:
         next_sequence_index = cursor.execute(
@@ -781,7 +801,9 @@ def _maybe_add_adjustment_event(
             (asset_movement.group_identifier,),
         ).fetchone()[0] + 1
 
-    # Create the movement's adjustment event
+    # Create the adjustment event to reconcile the exchange balance back to the original
+    # exchange-reported amount. The subtype reflects the accounting impact:
+    # SPEND if the user lost value, RECEIVE if the user gained value.
     with events_db.db.conn.write_ctx() as write_cursor:
         events_db.add_history_event(
             write_cursor=write_cursor,
@@ -792,8 +814,8 @@ def _maybe_add_adjustment_event(
                 location=asset_movement.location,
                 event_type=HistoryEventType.EXCHANGE_ADJUSTMENT,
                 event_subtype=HistoryEventSubType.SPEND if (
-                    (is_deposit and movement_amount_with_fee > matched_event.amount) or
-                    (not is_deposit and movement_amount_with_fee < matched_event.amount)
+                    (is_deposit and movement_amount_with_fee < matched_event.amount) or
+                    (not is_deposit and movement_amount_with_fee > matched_event.amount)
                 ) else HistoryEventSubType.RECEIVE,
                 asset=asset_movement.asset,
                 amount=amount_diff,
