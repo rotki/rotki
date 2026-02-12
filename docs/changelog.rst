@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Clicking on non-snapshot data points in the net worth graph will no longer open the snapshot export dialog.
 * :bug:`-` 1inch v5 swaps routed through wombat router will now be decoded properly
 * :feature:`11583` Users can now re-pull missing ETH staking withdrawal events for specific validators or addresses within a chosen time range.
 * :feature:`11582` Users can now re-pull missing ETH staking block production events for specific validators or addresses within a chosen time range.

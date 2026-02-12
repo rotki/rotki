@@ -203,4 +203,50 @@ describe('useStatisticsStore', () => {
       expect(totalValue.toNumber()).toBe(3460000);
     });
   });
+
+  describe('getNetValue snapshotCount', () => {
+    it('should return snapshotCount of 0 when there is no backend data', () => {
+      const store = useStatisticsStore();
+      // netValue is empty by default (no backend data)
+      const result = get(get(store.getNetValue(0)));
+
+      expect(result.snapshotCount).toBe(0);
+      // Should still have 2 data points (synthetic zero + current balance)
+      expect(result.data).toHaveLength(2);
+    });
+
+    it('should return snapshotCount matching the number of real backend data points', () => {
+      const store = useStatisticsStore();
+      const now = Math.floor(Date.now() / 1000);
+
+      store.netValue = {
+        data: [new BigNumber('1000'), new BigNumber('2000'), new BigNumber('3000')],
+        times: [now - 300, now - 200, now - 100],
+      };
+
+      const result = get(get(store.getNetValue(0)));
+
+      // 3 real snapshots from the backend
+      expect(result.snapshotCount).toBe(3);
+      // Total should be 3 snapshots + 1 appended current balance
+      expect(result.data).toHaveLength(4);
+    });
+
+    it('should exclude snapshots before startingDate from snapshotCount', () => {
+      const store = useStatisticsStore();
+      const now = Math.floor(Date.now() / 1000);
+
+      store.netValue = {
+        data: [new BigNumber('1000'), new BigNumber('2000'), new BigNumber('3000')],
+        times: [now - 300, now - 200, now - 100],
+      };
+
+      // Only include snapshots after now - 150 (should exclude first two)
+      const result = get(get(store.getNetValue(now - 150)));
+
+      expect(result.snapshotCount).toBe(1);
+      // 1 real snapshot + 1 appended current balance
+      expect(result.data).toHaveLength(2);
+    });
+  });
 });

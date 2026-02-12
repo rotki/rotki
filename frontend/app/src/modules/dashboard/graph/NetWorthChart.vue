@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { type BigNumber, type NetValue, Zero } from '@rotki/common';
+import type { NetValueChartData } from '@/modules/dashboard/graph/types';
+import { type BigNumber, Zero } from '@rotki/common';
 import VChart from 'vue-echarts';
 import ExportSnapshotDialog from '@/components/dashboard/ExportSnapshotDialog.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -9,7 +10,7 @@ import { useNetValueChartConfig } from '@/modules/dashboard/graph/use-net-value-
 import { useNetValueEventHandlers } from '@/modules/dashboard/graph/use-net-value-event-handlers';
 
 const props = defineProps<{
-  chartData: NetValue;
+  chartData: NetValueChartData;
 }>();
 
 const { chartData } = toRefs(props);

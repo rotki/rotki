@@ -1,13 +1,14 @@
 import type { EChartsType } from 'echarts/core';
 import type { Ref } from 'vue';
 import type VChart from 'vue-echarts';
-import { assert, type BigNumber, type NetValue } from '@rotki/common';
+import type { NetValueChartData } from '@/modules/dashboard/graph/types';
+import { assert, type BigNumber } from '@rotki/common';
 import { type TooltipData, useGraphTooltip } from '@/composables/graphs';
 
 interface UseNetValueEventHandlersParams {
   chartInstance: Ref<InstanceType<typeof VChart> | undefined>;
   chartContainer: Ref<HTMLElement | undefined>;
-  chartData: Ref<NetValue>;
+  chartData: Ref<NetValueChartData>;
   onHover: (timestamp: number, value: BigNumber) => void;
 }
 
@@ -97,9 +98,10 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
       const { axesInfo, dataIndex } = event;
       const xAxisInfo = axesInfo?.[0];
 
-      const netValues = get(chartData).data;
+      const { data: netValues, snapshotCount } = get(chartData);
       const netValue = netValues[dataIndex];
       const currentBalance = dataIndex === netValues.length - 1;
+      const isSnapshot = dataIndex < snapshotCount;
 
       if (!xAxisInfo || !netValue) {
         resetTooltip();
@@ -117,7 +119,7 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
         ...tooltipPosition,
       });
 
-      updateLastHover(currentBalance, timestamp, netValue);
+      updateLastHover(!isSnapshot, timestamp, netValue);
     });
   }
 

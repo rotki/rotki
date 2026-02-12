@@ -1,4 +1,3 @@
-import type { NetValue } from '@rotki/common';
 import type {
   BrushComponentOption,
   EChartsOption,
@@ -9,6 +8,7 @@ import type {
 } from 'echarts';
 import type { DataZoomComponentOption, GridComponentOption } from 'echarts/components';
 import type { ComputedRef, Ref } from 'vue';
+import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { useGraph } from '@/composables/graphs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
@@ -21,7 +21,7 @@ interface UseNetValueChartConfigReturn {
   chartOption: ComputedRef<EChartsOption>;
 }
 
-export function useNetValueChartConfig(chartData: Ref<NetValue>): UseNetValueChartConfigReturn {
+export function useNetValueChartConfig(chartData: Ref<NetValueChartData>): UseNetValueChartConfigReturn {
   const data = computed<number[][]>(() => {
     const { data, times } = get(chartData);
     if (!(times?.length && data?.length)) {

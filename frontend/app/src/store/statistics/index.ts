@@ -1,4 +1,5 @@
 import type { MaybeRef } from 'vue';
+import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { type AssetBalanceWithPriceAndChains, type BigNumber, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
@@ -142,8 +143,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const totalNetWorthUsd = calculateTotalValue(true);
 
-  function getNetValue(startingDate: number): ComputedRef<NetValue> {
-    return computed<NetValue>(() => {
+  function getNetValue(startingDate: number): ComputedRef<NetValueChartData> {
+    return computed<NetValueChartData>(() => {
       const currency = get(currencySymbol);
       const rate = get(useExchangeRate(currency)) ?? One;
 
@@ -159,6 +160,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
         return {
           data: [Zero, netWorth],
+          snapshotCount: 0,
           times: [now - oneDayTimestamp, now],
         };
       }
@@ -175,6 +177,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
       return {
         data: [...nv.data, netWorth],
+        snapshotCount: nv.data.length,
         times: [...nv.times, now],
       };
     });
