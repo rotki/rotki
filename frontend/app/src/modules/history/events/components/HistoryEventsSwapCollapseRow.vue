@@ -25,7 +25,7 @@ const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>
     return undefined;
 
   for (const event of events) {
-    const isDepositOrWithdrawal = event.eventType === 'deposit' || event.eventType === 'withdrawal';
+    const isDepositOrWithdrawal = event.eventType === 'deposit' || event.eventType === 'withdrawal' || event.eventType === 'exchange transfer';
     if (isDepositOrWithdrawal && 'txRef' in event && event.txRef) {
       return {
         location: event.location,

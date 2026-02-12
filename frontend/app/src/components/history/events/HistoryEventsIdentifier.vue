@@ -138,7 +138,7 @@ const key = computed(() => {
       #verb
     >
       {{
-        assetMovementEvent.eventType === 'withdrawal'
+        assetMovementEvent.eventSubtype === 'spend'
           ? t('transactions.events.headers.asset_movement_event_withdraw')
           : t('transactions.events.headers.asset_movement_event_deposit')
       }}
