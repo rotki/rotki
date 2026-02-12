@@ -216,7 +216,7 @@ const tags = useAccountTags(text);
     >
       <template #activator>
         <span
-          class="block whitespace-nowrap"
+          class="block"
           :class="{ blur: !shouldShowAmount }"
         >
           {{ finalDisplayText }}

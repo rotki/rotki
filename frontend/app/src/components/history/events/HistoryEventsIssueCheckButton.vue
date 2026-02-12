@@ -144,7 +144,7 @@ watch(showWarningButton, (value) => {
       <RuiButton
         variant="outlined"
         color="warning"
-        class="rounded-r-none !outline-none !border-r"
+        class="rounded-r-none !outline-none !border-r [&>span]:!hidden lg:[&>span]:!inline h-full"
         :class="issueButtonEnabled ? 'border-rui-warning/[0.5]' : 'border-rui-grey-500/[0.5]'"
         :disabled="!issueButtonEnabled"
         :loading="checkingIssues"
@@ -156,7 +156,7 @@ watch(showWarningButton, (value) => {
             size="18"
           />
         </template>
-        <span class="hidden md:inline">{{ t('transactions.alerts.button') }}</span>
+        {{ t('transactions.alerts.button') }}
         <template #append>
           <RuiIcon
             name="lu-chevron-down"

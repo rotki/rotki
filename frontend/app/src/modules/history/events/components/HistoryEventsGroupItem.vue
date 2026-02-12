@@ -134,7 +134,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <!-- Row Layout -->
   <div
     v-else
-    class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-1 pr-4 bg-rui-grey-100 dark:bg-dark-elevated contain-content"
+    class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-2 pr-4 bg-rui-grey-100 dark:bg-dark-elevated contain-content"
   >
     <IgnoredInAccountingIcon
       v-if="group.ignoredInAccounting"
@@ -142,7 +142,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
     />
     <div
       v-else
-      class="w-4 shrink-0"
+      class=" shrink-0"
     />
 
     <RuiTooltip

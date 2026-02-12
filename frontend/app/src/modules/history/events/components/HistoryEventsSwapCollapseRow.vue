@@ -39,7 +39,7 @@ const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>
 
 <template>
   <div
-    class="h-9 flex items-center gap-2 border-default pr-4 pl-2 bg-gradient-to-b from-rui-grey-100 to-transparent dark:from-rui-grey-900 group/row relative mx-4 rounded-t-2xl mt-0.5"
+    class="h-9 flex items-center gap-2 border-default pr-4 pl-2 bg-gradient-to-b from-rui-grey-100 to-transparent dark:from-rui-grey-900 group/row relative mx-2 rounded-t-2xl mt-0.5"
   >
     <!-- Collapse button (absolute top-left like expand) -->
     <RuiButton

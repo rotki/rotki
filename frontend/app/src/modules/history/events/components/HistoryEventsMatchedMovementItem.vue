@@ -136,7 +136,6 @@ const isCard = computed<boolean>(() => props.variant === 'card');
         :complete-group-events="completeGroupEvents"
         :can-unlink="canUnlink"
         class="shrink-0"
-        :class="{ 'opacity-50': !hasMissingRule }"
         @edit-event="emit('edit-event', $event)"
         @delete-event="emit('delete-event', $event)"
         @show:missing-rule-action="emit('show:missing-rule-action', $event)"
@@ -148,7 +147,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <!-- Row Layout -->
   <div
     v-else
-    class="h-[72px] flex items-center gap-4 border-b border-default px-4 pl-8 group/row relative contain-content"
+    class="h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6 group/row relative contain-content"
     :class="{ 'opacity-50': primaryEvent.ignoredInAccounting }"
   >
     <RuiCheckbox
@@ -182,13 +181,13 @@ const isCard = computed<boolean>(() => props.variant === 'card');
         :highlight="highlight"
         hide-state-chips
         :group-location-label="groupLocationLabel"
-        class="w-44 xl:w-52 shrink-0 self-center"
+        class="w-56 shrink-0 self-center"
       />
     </div>
 
     <HistoryEventAsset
       :event="primaryEvent"
-      class="w-60 shrink-0"
+      class="w-56 xl:w-60 shrink-0"
       @refresh="emit('refresh')"
     />
 
