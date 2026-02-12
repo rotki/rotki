@@ -347,12 +347,6 @@ class ExchangeManager:
                     f'Location: {location!s}, Name: {name}',
                 )
                 return
-            if exchange.location_id() in excluded:
-                log.info(
-                    'Skipping history events query for disabled syncing exchange. '
-                    f'Location: {location!s}, Name: {name}',
-                )
-                return
             exchanges_list.append(exchange)
         else:
             if (exchanges := self.connected_exchanges.get(location)) is None:
@@ -361,11 +355,15 @@ class ExchangeManager:
                     f'for location: {location!s}',
                 )
                 return
-            exchanges_list.extend(
-                exchange for exchange in exchanges if exchange.location_id() not in excluded
-            )
+            exchanges_list.extend(exchanges)
 
         for exchange in exchanges_list:
+            if exchange.location_id() in excluded:
+                log.info(
+                    'Skipping history events query for disabled syncing exchange. '
+                    f'Location: {exchange.location!s}, Name: {exchange.name}',
+                )
+                continue
             exchange.query_history_events()
 
     def requery_exchange_history_events(

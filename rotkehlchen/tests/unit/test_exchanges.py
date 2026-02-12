@@ -61,6 +61,43 @@ def test_exchanges_filtering(database, exchange_manager, function_scope_messages
         assert set(exchange_manager.iterate_exchanges()) == {binance2, kraken1, kraken2}
 
 
+def test_query_exchange_history_events_respects_non_syncing(
+        database,
+        exchange_manager,
+        function_scope_messages_aggregator,
+):
+    kraken1 = MockKraken(
+        name='mockkraken_1',
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=function_scope_messages_aggregator,
+    )
+    kraken2 = MockKraken(
+        name='mockkraken_2',
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=function_scope_messages_aggregator,
+    )
+
+    exchange_manager.initialize_exchanges({}, database)
+    exchange_manager.connected_exchanges[Location.KRAKEN].append(kraken1)
+    exchange_manager.connected_exchanges[Location.KRAKEN].append(kraken2)
+
+    with database.user_write() as cursor:
+        database.set_settings(cursor, ModifiableDBSettings(
+            non_syncing_exchanges=[kraken1.location_id()],
+        ))
+
+    with patch.object(kraken1, 'query_history_events') as kraken1_query, \
+            patch.object(kraken2, 'query_history_events') as kraken2_query:
+        exchange_manager.query_exchange_history_events(location=Location.KRAKEN, name=None)
+
+        kraken1_query.assert_not_called()
+        kraken2_query.assert_called_once()
+
+
 TEST_CREDENTIALS_1 = ExchangeApiCredentials(
     name='KuCoin',
     location=Location.KUCOIN,
