@@ -125,6 +125,17 @@ const { pending, showConfirmation, status } = useCacheClear<Purgeable>(
       });
     }
 
+    const exchangeTradeHistoryLimits: Record<string, number> = {
+      poloniex: 180,
+    };
+
+    if (source === Purgeable.CENTRALIZED_EXCHANGES && value && value in exchangeTradeHistoryLimits) {
+      message += `\n\n${t('data_management.purge_data.confirm.exchange_trade_history_warning', {
+        days: exchangeTradeHistoryLimits[value],
+        exchange: toSentenceCase(value),
+      })}`;
+    }
+
     return {
       message,
       title: t('data_management.purge_data.confirm.title'),

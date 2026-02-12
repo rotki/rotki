@@ -2246,6 +2246,7 @@
   "data_management": {
     "purge_data": {
       "confirm": {
+        "exchange_trade_history_warning": "Please note that {exchange} only allows retrieving the last {days} days of trade history. Any older trades will be permanently lost.",
         "message": "Are you sure you want to purge the cached data for {source} ({value})?",
         "message_all": "Are you sure you want to purge the cached data for all {source}?",
         "title": "Confirm cached data purge"
