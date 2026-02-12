@@ -3220,25 +3220,25 @@
     "progress": "{progress} %"
   },
   "purge_selector": {
+    "centralized_exchange": "Échange centralisé",
     "centralized_exchange_to_clear": {
       "hint": "Laissez ce champ vide pour supprimer les données de tous les échanges centralisés",
       "label": "Échange centralisé à effacer"
     },
-    "centralized_exchanges": "Échanges centralisés",
     "chain_to_clear": {
       "hint": "Laissez ce champ vide pour supprimer les données de toutes les chaînes",
       "label": "Chaîne à effacer"
     },
+    "decentralized_exchange": "Échange décentralisé",
     "decentralized_exchange_to_clear": {
       "hint": "Laissez ce champ vide pour supprimer les données de tous les échanges décentralisés",
       "label": "Échange décentralisé à effacer"
     },
-    "decentralized_exchanges": "Échanges décentralisés",
+    "defi_module": "Module DeFi",
     "defi_module_to_clear": {
       "hint": "Laissez ce champ vide pour supprimer les données de tous les modules DeFi",
       "label": "Module DeFi à effacer"
     },
-    "defi_modules": "Modules DeFi",
     "label": "Sélectionner une source de données",
     "transactions": "Transactions"
   },

@@ -4586,25 +4586,25 @@
     "ds_proxy": "DS Proxy:"
   },
   "purge_selector": {
+    "centralized_exchange": "Централизованная биржа",
     "centralized_exchange_to_clear": {
       "hint": "Оставьте это поле пустым, чтобы удалить данные для всех централизованных бирж",
       "label": "Централизованная биржа для очистки"
     },
-    "centralized_exchanges": "Централизованные биржи",
     "chain_to_clear": {
       "hint": "Оставьте это поле пустым, чтобы удалить данные транзакций для всех сетей",
       "label": "Сеть для очистки"
     },
+    "decentralized_exchange": "Децентрализованная биржа",
     "decentralized_exchange_to_clear": {
       "hint": "Оставьте это поле пустым, чтобы удалить данные для всех децентрализованных бирж",
       "label": "Децентрализованная биржа для очистки"
     },
-    "decentralized_exchanges": "Децентрализованные биржи",
+    "defi_module": "Модуль Defi",
     "defi_module_to_clear": {
       "hint": "Оставьте это поле пустым, чтобы удалить данные для всех DeFi модулей",
       "label": "DeFi модуль для очистки"
     },
-    "defi_modules": "DeFi модули",
     "eth_block": "События блоков ETH",
     "eth_withdrawals": "События вывода ETH",
     "label": "Выберите источник данных",

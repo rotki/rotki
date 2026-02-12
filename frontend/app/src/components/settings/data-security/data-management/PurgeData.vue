@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { toSentenceCase } from '@rotki/common';
+import { pluralize, toSentenceCase } from '@rotki/common';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import DefiModuleSelector from '@/components/defi/DefiModuleSelector.vue';
 import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue';
@@ -37,17 +37,17 @@ const moduleToClear = ref<string>('');
 const purgeable = [
   {
     id: Purgeable.CENTRALIZED_EXCHANGES,
-    text: t('purge_selector.centralized_exchanges'),
+    text: t('purge_selector.centralized_exchange'),
     value: centralizedExchangeToClear,
   },
   {
     id: Purgeable.DECENTRALIZED_EXCHANGES,
-    text: t('purge_selector.decentralized_exchanges'),
+    text: t('purge_selector.decentralized_exchange'),
     value: decentralizedExchangeToClear,
   },
   {
     id: Purgeable.DEFI_MODULES,
-    text: t('purge_selector.defi_modules'),
+    text: t('purge_selector.defi_module'),
     value: moduleToClear,
   },
   {
@@ -121,7 +121,7 @@ const { pending, showConfirmation, status } = useCacheClear<Purgeable>(
     }
     else {
       message = t('data_management.purge_data.confirm.message_all', {
-        source: textSource,
+        source: pluralize(textSource),
       });
     }
 

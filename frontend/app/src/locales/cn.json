@@ -2945,25 +2945,25 @@
     "progress": "{progress} %"
   },
   "purge_selector": {
+    "centralized_exchange": "中心化交易所",
     "centralized_exchange_to_clear": {
       "hint": "清空该字段以删除所有中心化交易所的数据",
       "label": "集中交易所清零"
     },
-    "centralized_exchanges": "中心化交易所",
     "chain_to_clear": {
       "hint": "清空该字段以删除所有链的交易数据",
       "label": "链要清除"
     },
+    "decentralized_exchange": "去中心化交易所",
     "decentralized_exchange_to_clear": {
       "hint": "清空此字段以删除所有去中心化交易所的数据",
       "label": "去中心化交易所去清算"
     },
-    "decentralized_exchanges": "去中心化交易所",
+    "defi_module": "DeFi 模块",
     "defi_module_to_clear": {
       "hint": "清空此字段以删除所有 defi 模块的数据",
       "label": "待清除的 DeFi 模块"
     },
-    "defi_modules": "DeFi 模块",
     "label": "选择数据源",
     "transactions": "交易"
   },
