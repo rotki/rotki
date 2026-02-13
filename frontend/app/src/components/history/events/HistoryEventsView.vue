@@ -259,7 +259,6 @@ watchDebounced(route, async () => {
           :processing="processing"
           :loading="anyEventsDecoding"
           :include-evm-events="includes.evmEvents"
-          :main-page="mainPage"
           @refresh="actions.refresh.all(true, $event)"
           @show:dialog="dialogContainer?.show($event)"
         />

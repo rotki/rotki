@@ -215,12 +215,12 @@ const tags = useAccountTags(text);
       persist-on-tooltip-hover
     >
       <template #activator>
-        <span
-          class="block"
+        <div
+          class="truncate"
           :class="{ blur: !shouldShowAmount }"
         >
           {{ finalDisplayText }}
-        </span>
+        </div>
       </template>
 
       <TagDisplay

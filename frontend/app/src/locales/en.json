@@ -5279,7 +5279,6 @@
     "alerts": {
       "button": "Actions needed",
       "check_duplicate_events": "Check duplicate events",
-      "check_issues": "Check issues",
       "check_unmatched_movements": "Check unmatched movements",
       "no_issues_found": "No issues found",
       "title": "There are actions needed for your events"
