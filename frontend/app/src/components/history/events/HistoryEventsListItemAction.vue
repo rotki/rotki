@@ -6,7 +6,6 @@ import type {
   HistoryEvent,
   HistoryEventEntry,
 } from '@/types/history/events/schemas';
-import { HistoryEventEntryType } from '@rotki/common';
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
 import {
@@ -62,8 +61,14 @@ function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
   }
 
   if (isGroupEditableHistoryEvent(item)) {
+    const idx = props.completeGroupEvents.findIndex(e => e.identifier === item.identifier);
+    const eventsInGroup: GroupEditableHistoryEvents[] = [item];
+    const nextEvent = props.completeGroupEvents[idx + 1];
+    if (nextEvent && isAssetMovementEvent(nextEvent) && nextEvent.eventSubtype === 'fee')
+      eventsInGroup.push(nextEvent);
+
     return {
-      eventsInGroup: props.completeGroupEvents.filter(e => e.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT) as GroupEditableHistoryEvents[],
+      eventsInGroup,
       type: 'edit-group',
     };
   }

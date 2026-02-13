@@ -8,6 +8,7 @@ import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import SimpleTable from '@/components/common/SimpleTable.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
+import HistoryEventAccount from '@/components/history/events/HistoryEventAccount.vue';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
@@ -121,7 +122,7 @@ const movementEntry = computed<HistoryEventEntry>(() => {
 
 const tableClass = computed<string>(() => {
   if (props.isPinned)
-    return '!overflow-auto !max-h-none !h-[calc(100vh-32.25rem)]';
+    return '!overflow-auto !max-h-none !h-[calc(100vh-33rem)]';
   return 'table-inside-dialog !max-h-[calc(100vh-33rem)]';
 });
 
@@ -201,7 +202,6 @@ watchDebounced(onlyExpectedAssets, () => {
       </p>
       <SimpleTable
         :class="pinnedSimpleTableClass"
-        class="[&_td]:!py-0"
       >
         <thead>
           <tr>
@@ -391,6 +391,7 @@ watchDebounced(onlyExpectedAssets, () => {
         </template>
         <template #item.txRef="{ row }">
           <div
+            v-if="'txRef' in row.entry && row.entry.txRef"
             class="flex items-center"
             :class="isPinned ? 'gap-2' : 'gap-1'"
           >
@@ -402,22 +403,19 @@ watchDebounced(onlyExpectedAssets, () => {
               :class="{ '!text-xs': isPinned }"
             />
             <HashLink
-              v-if="'txRef' in row.entry && row.entry.txRef"
               :text="row.entry.txRef"
               type="transaction"
               :location="row.entry.location"
               :class="{ '!text-[10px]': isPinned }"
             />
-            <span v-else>-</span>
           </div>
           <div>
-            <HashLink
-              v-if="row.entry.locationLabel"
-              :text="row.entry.locationLabel"
+            <span v-if="!row.entry.locationLabel">-</span>
+            <HistoryEventAccount
+              v-else
               :location="row.entry.location"
-              :class="{ '!text-[10px]': isPinned }"
+              :location-label="row.entry.locationLabel"
             />
-            <span v-else>-</span>
           </div>
         </template>
         <template #item.asset="{ row }">
