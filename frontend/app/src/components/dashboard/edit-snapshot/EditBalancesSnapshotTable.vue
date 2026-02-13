@@ -48,7 +48,6 @@ const indexToEdit = ref<number | null>(null);
 const indexToDelete = ref<number | null>(null);
 const locationToDelete = ref<string>('');
 const formModel = ref<(BalanceSnapshotPayload & { location: string }) | null>(null);
-const tableRef = ref<any>();
 const sort = ref<DataTableSortData<BalanceSnapshot>>({
   column: 'usdValue',
   direction: 'desc',
@@ -385,12 +384,10 @@ function confirmDelete(): void {
       />
     </div>
     <RuiDataTable
-      ref="tableRef"
       v-model:sort="sort"
       class="table-inside-dialog !max-h-[calc(100vh-26.25rem)]"
       :cols="tableHeaders"
       :rows="filteredData"
-      :scroller="tableRef?.$el"
       row-attr="assetIdentifier"
       dense
     >

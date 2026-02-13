@@ -170,7 +170,7 @@ onMounted(() => {
         </template>
       </i18n-t>
     </template>
-    <template #default="{ wrapper }">
+    <template #default>
       <RuiAlert
         v-if="warnDuplicate"
         class="my-2"
@@ -250,7 +250,6 @@ onMounted(() => {
         <RuiDataTable
           :rows="conflicts"
           :cols="tableHeaders"
-          :scroller="wrapper"
           row-attr="identifier"
           outlined
           dense

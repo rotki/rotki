@@ -186,7 +186,7 @@ async function save() {
     @cancel="close()"
     @confirm="save()"
   >
-    <template #default="{ wrapper }">
+    <template #default>
       <div class="flex justify-end items-center gap-8 border border-default rounded p-4 mb-4">
         <RuiCheckbox
           :model-value="!!solveAllUsing"
@@ -254,7 +254,6 @@ async function save() {
         mobile-breakpoint="0"
         outlined
         row-attr="localId"
-        :scroller="wrapper"
       >
         <template #header.taxable>
           <RuiTooltip

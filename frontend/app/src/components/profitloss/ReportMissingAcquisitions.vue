@@ -68,15 +68,11 @@ const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
 
 const expanded = ref<MappedGroupedItems[]>([]);
 
-const tableRef = ref<any>(null);
-
 const sort = ref<DataTableSortData<MappedGroupedItems>>([]);
 const childSort = ref<DataTableSortData<MissingAcquisition>>({
   column: 'time',
   direction: 'asc' as const,
 });
-
-const tableContainer = computed(() => get(tableRef)?.$el);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -168,7 +164,6 @@ async function showInHistoryEvent(identifier: number) {
   </CreateDate>
   <div>
     <RuiDataTable
-      ref="tableRef"
       v-model:sort="sort"
       v-model:expanded="expanded"
       class="table-inside-dialog"
@@ -179,7 +174,6 @@ async function showInHistoryEvent(identifier: number) {
       :rows="groupedMissingAcquisitions"
       row-attr="asset"
       single-expand
-      :scroller="tableContainer"
       :dense="isPinned"
     >
       <template #item.asset="{ row }">
@@ -256,7 +250,6 @@ async function showInHistoryEvent(identifier: number) {
           v-model:sort="childSort"
           :cols="childHeaders"
           :rows="row.acquisitions"
-          :scroller="tableContainer"
           class="bg-white dark:bg-rui-grey-900"
           :class="{ 'my-2': isPinned }"
           outlined

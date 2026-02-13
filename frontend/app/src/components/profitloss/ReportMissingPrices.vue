@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { HistoricalPrice, HistoricalPriceDeletePayload, HistoricalPriceFormPayload } from '@/types/prices';
 import type { EditableMissingPrice, MissingPrice } from '@/types/reports';
-import { type DataTableColumn, type DataTableSortData, RuiDataTable } from '@rotki/ui-library';
-import { useTemplateRef } from 'vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
@@ -30,10 +29,6 @@ const refreshing = ref<boolean>(false);
 
 const refreshedHistoricalPrices = ref<Record<string, BigNumber>>({});
 const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
-
-const tableRef = useTemplateRef<ComponentPublicInstance<typeof RuiDataTable>>('tableRef');
-
-const tableContainer = computed(() => get(tableRef)?.$el);
 
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
@@ -177,7 +172,6 @@ onMounted(async () => {
 <template>
   <div>
     <RuiDataTable
-      ref="tableRef"
       v-model:sort="sort"
       class="table-inside-dialog"
       :class="{
@@ -185,7 +179,6 @@ onMounted(async () => {
       }"
       :cols="headers"
       :rows="formattedItems"
-      :scroller="tableContainer"
       :dense="isPinned"
       row-attr="fromAsset"
     >

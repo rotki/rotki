@@ -37,7 +37,6 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const editedIndex = ref<number | null>(null);
 const formModel = ref<LocationDataSnapshotPayload | null>(null);
 const excludedLocations = ref<string[]>([]);
-const tableRef = ref<any>();
 const sort = ref<DataTableSortData<LocationDataSnapshot>>({
   column: 'usdValue',
   direction: 'desc' as const,
@@ -198,12 +197,10 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
 <template>
   <div>
     <RuiDataTable
-      ref="tableRef"
       v-model:sort="sort"
       class="table-inside-dialog !max-h-[calc(100vh-26.25rem)]"
       :cols="tableHeaders"
       :rows="data"
-      :scroller="tableRef?.$el"
       row-attr="location"
       dense
     >
