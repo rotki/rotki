@@ -8,9 +8,8 @@ import LocationIcon from '@/components/history/LocationIcon.vue';
 import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { shouldShowDateRangePicker } from '@/composables/history/events/tx/use-repulling-transaction-form';
+import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { Routes } from '@/router/routes';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
@@ -25,17 +24,9 @@ const fromTimestamp = useRefPropVModel(modelValue, 'fromTimestamp');
 const toTimestamp = useRefPropVModel(modelValue, 'toTimestamp');
 
 const exchange = ref<Exchange>();
+const { syncingExchanges } = useExchangeData();
 
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { nonSyncingExchanges } = storeToRefs(useGeneralSettingsStore());
-
-const availableExchanges = computed<Exchange[]>(() => get(connectedExchanges).filter(
-  exchange => !get(nonSyncingExchanges).some(
-    excluded => excluded.location === exchange.location && excluded.name === exchange.name,
-  ),
-));
-
-const hasNoExchanges = computed<boolean>(() => get(availableExchanges).length === 0);
+const hasNoExchanges = computed<boolean>(() => get(syncingExchanges).length === 0);
 
 const showDateRangePicker = computed<boolean>(() => shouldShowDateRangePicker(false, get(exchange)));
 
@@ -115,7 +106,7 @@ defineExpose({
     <template v-else>
       <RuiAutoComplete
         v-model="exchange"
-        :options="availableExchanges"
+        :options="syncingExchanges"
         :label="t('common.exchange')"
         variant="outlined"
         auto-select-first

@@ -1,17 +1,23 @@
 import type { ComputedRef, MaybeRef } from 'vue';
 import type { AssetProtocolBalances } from '@/types/blockchain/balances';
-import type { ExchangeInfo } from '@/types/exchanges';
+import type { Exchange, ExchangeInfo } from '@/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { useSessionSettingsStore } from '@/store/settings/session';
 import { sortDesc } from '@/utils/bignumbers';
 import { balanceSum, exchangeAssetSum } from '@/utils/calculation';
 
 interface UseExchangeDataReturn {
   useBaseExchangeBalances: (exchange?: MaybeRef<string>) => ComputedRef<AssetProtocolBalances>;
   exchanges: ComputedRef<ExchangeInfo[]>;
+  syncingExchanges: ComputedRef<Exchange[]>;
+  isSameExchange: (a: Exchange, b: Exchange) => boolean;
 }
 
 export function useExchangeData(): UseExchangeDataReturn {
   const { exchangeBalances } = storeToRefs(useBalancesStore());
+  const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+  const { nonSyncingExchanges } = storeToRefs(useGeneralSettingsStore());
 
   const exchanges = computed<ExchangeInfo[]>(() => {
     const balances = get(exchangeBalances);
@@ -52,8 +58,20 @@ export function useExchangeData(): UseExchangeDataReturn {
     return protocolBalances;
   });
 
+  function isSameExchange(a: Exchange, b: Exchange): boolean {
+    return a.location === b.location && a.name === b.name;
+  }
+
+  const syncingExchanges = computed<Exchange[]>(() => get(connectedExchanges).filter(
+    exchange => !get(nonSyncingExchanges).some(
+      excluded => isSameExchange(excluded, exchange),
+    ),
+  ));
+
   return {
     exchanges,
     useBaseExchangeBalances,
+    syncingExchanges,
+    isSameExchange,
   };
 }

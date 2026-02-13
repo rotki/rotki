@@ -3445,6 +3445,7 @@
   },
   "history_refresh_selection": {
     "back_to_chain": "Back to chain selection",
+    "non_syncing_hint": "{count} exchange is excluded from syncing | {count} exchanges are excluded from syncing",
     "refresh": "Refresh {total} {type}",
     "refresh_disabled": "Refreshing {service} is disabled because the required API key is not configured",
     "search_address": "Search by address",

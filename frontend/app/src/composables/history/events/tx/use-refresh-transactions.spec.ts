@@ -75,8 +75,9 @@ const mockRefreshHandlers = {
   queryOnlineEvent: vi.fn().mockResolvedValue(undefined),
 };
 
-const mockSessionSettingsStore = {
-  connectedExchanges: ref<Exchange[]>(mockExchanges),
+const mockExchangeData = {
+  isSameExchange: (a: Exchange, b: Exchange): boolean => a.location === b.location && a.name === b.name,
+  syncingExchanges: ref<Exchange[]>(mockExchanges),
 };
 
 vi.mock('./use-history-transaction-accounts', () => ({
@@ -107,8 +108,8 @@ vi.mock('./refresh-handlers', () => ({
   useRefreshHandlers: vi.fn(() => mockRefreshHandlers),
 }));
 
-vi.mock('@/store/settings/session', () => ({
-  useSessionSettingsStore: vi.fn(() => mockSessionSettingsStore),
+vi.mock('@/modules/balances/exchanges/use-exchange-data', () => ({
+  useExchangeData: vi.fn(() => mockExchangeData),
 }));
 
 vi.mock('@/store/history/query-status/tx-query-status', () => ({
@@ -233,7 +234,7 @@ describe('useRefreshTransactions', () => {
 
       await refreshTransactions();
 
-      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith(undefined);
+      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith(mockExchanges);
       expect(mockEventsQueryStatusStore.initializeQueryStatus).toHaveBeenCalled();
     });
   });
@@ -492,7 +493,7 @@ describe('useRefreshTransactions', () => {
 
     it('should not call onHistoryStarted when no accounts or exchanges to refresh', async () => {
       mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([]);
-      set(mockSessionSettingsStore.connectedExchanges, []);
+      set(mockExchangeData.syncingExchanges, []);
 
       const { refreshTransactions } = useRefreshTransactions();
 

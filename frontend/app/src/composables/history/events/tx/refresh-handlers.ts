@@ -5,8 +5,6 @@ import { useModules } from '@/composables/session/modules';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
 import { useNotificationsStore } from '@/store/notifications';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import { type Exchange, QueryExchangeEventsPayload } from '@/types/exchanges';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
@@ -17,7 +15,7 @@ import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
 
 interface UseRefreshHandlersReturn {
-  queryAllExchangeEvents: (exchanges?: Exchange[]) => Promise<void>;
+  queryAllExchangeEvents: (exchanges: Exchange[]) => Promise<void>;
   queryOnlineEvent: (queryType: OnlineHistoryEventsQueryType) => Promise<void>;
 }
 
@@ -30,7 +28,6 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const isEth2Enabled = isModuleEnabled(Module.ETH2);
   const { apiKey } = useExternalApiKeys(t);
   const { authenticated: moneriumAuthenticated, refreshStatus } = useMoneriumOAuth();
-  const { nonSyncingExchanges } = storeToRefs(useGeneralSettingsStore());
 
   const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
     const eth2QueryTypes: OnlineHistoryEventsQueryType[] = [
@@ -116,15 +113,8 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     }
   };
 
-  const queryAllExchangeEvents = async (exchanges?: Exchange[]): Promise<void> => {
-    const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-    const selectedExchanges = exchanges ?? get(connectedExchanges);
-    const excluded = get(nonSyncingExchanges);
-    const filteredExchanges = selectedExchanges.filter(exchange => !excluded.some(
-      excludedExchange => excludedExchange.location === exchange.location
-        && excludedExchange.name === exchange.name,
-    ));
-    const groupedExchanges = Object.entries(groupBy(filteredExchanges, exchange => exchange.location));
+  const queryAllExchangeEvents = async (exchanges: Exchange[]): Promise<void> => {
+    const groupedExchanges = Object.entries(groupBy(exchanges, exchange => exchange.location));
 
     await awaitParallelExecution(groupedExchanges, ([group]) => group, async ([_group, exchanges]) => {
       for (const exchange of exchanges) {

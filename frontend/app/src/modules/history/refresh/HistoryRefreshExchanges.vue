@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import type { Exchange } from '@/types/exchanges';
+import { getTextToken } from '@rotki/common';
 import { isEqual, sortBy } from 'es-toolkit';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
-import { useSessionSettingsStore } from '@/store/settings/session';
+import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const modelValue = defineModel<Exchange[]>({ required: true });
 const search = defineModel<string>('search', { required: true });
@@ -13,12 +15,17 @@ defineProps<{
 
 const emit = defineEmits<{ 'update:all-selected': [allSelected: boolean] }>();
 
-const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
+const { t } = useI18n({ useScope: 'global' });
+
+const { syncingExchanges } = useExchangeData();
+const { nonSyncingExchanges } = storeToRefs(useGeneralSettingsStore());
+
+const hasNonSyncingExchanges = computed<boolean>(() => get(nonSyncingExchanges).length > 0);
 
 const filteredExchanges = computed<Exchange[]>(() => {
-  const query = get(search).toLocaleLowerCase();
-  return get(connectedExchanges).filter(exchange =>
-    exchange.name.toLocaleLowerCase().includes(query) || exchange.location.toLocaleLowerCase().includes(query),
+  const query = getTextToken(get(search));
+  return get(syncingExchanges).filter(exchange =>
+    getTextToken(exchange.name).includes(query) || getTextToken(exchange.location).includes(query),
   );
 });
 
@@ -32,20 +39,20 @@ function toggleSelect(exchange: Exchange): void {
   }
 }
 
-function toggleSelectAll() {
+function toggleSelectAll(): void {
   if (get(modelValue).length > 0) {
     updateSelection([]);
   }
   else {
-    updateSelection(get(connectedExchanges));
+    updateSelection(get(syncingExchanges));
   }
 }
 
-function updateSelection(exchanges: Exchange[]) {
+function updateSelection(exchanges: Exchange[]): void {
   set(modelValue, exchanges);
   emit('update:all-selected', isEqual(
     sortBy(exchanges, ['location', 'name']),
-    sortBy(get(connectedExchanges), ['location', 'name']),
+    sortBy(get(syncingExchanges), ['location', 'name']),
   ));
 }
 
@@ -82,5 +89,12 @@ defineExpose({
     </span>
 
     <div class="grow" />
+  </div>
+
+  <div
+    v-if="hasNonSyncingExchanges"
+    class="px-4 py-2 text-xs text-rui-text-secondary italic"
+  >
+    {{ t('history_refresh_selection.non_syncing_hint', { count: nonSyncingExchanges.length }) }}
   </div>
 </template>
