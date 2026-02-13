@@ -22,11 +22,11 @@ const { adaptiveLanguage, setLanguage } = useLocale();
 
 onBeforeMount(() => {
   startPromise(setupBackend());
-  setLanguage(get(adaptiveLanguage));
+  startPromise(setLanguage(get(adaptiveLanguage)));
 });
 
-watch(adaptiveLanguage, (language) => {
-  setLanguage(language);
+watch(adaptiveLanguage, async (language) => {
+  await setLanguage(language);
 });
 </script>
 
@@ -34,7 +34,6 @@ watch(adaptiveLanguage, (language) => {
   <div
     v-if="!isPlayground"
     id="rotki"
-    :key="adaptiveLanguage"
     class="overflow-hidden !text-rui-text bg-rui-grey-50 dark:bg-dark-surface"
     :class="{ 'animations-disabled': !animationsEnabled }"
   >

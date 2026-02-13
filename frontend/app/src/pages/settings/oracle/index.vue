@@ -19,11 +19,11 @@ enum Category {
   PENALTY = 'penalty',
 }
 
-const navigation = [
+const navigation = computed<{ id: Category; label: string }[]>(() => [
   { id: Category.PRICE_ORACLE, label: t('price_oracle_settings.title') },
   { id: Category.CACHE_MANAGEMENT, label: t('oracle_cache_management.title') },
   { id: Category.PENALTY, label: t('oracle_cache_management.penalty.title') },
-];
+]);
 </script>
 
 <template>

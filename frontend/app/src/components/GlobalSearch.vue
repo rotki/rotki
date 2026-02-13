@@ -44,7 +44,6 @@ type SearchItemWithoutValue = Omit<SearchItem, 'value'>;
 
 const { t } = useI18n({ useScope: 'global' });
 const { appRoutes } = useAppRoutes();
-const Routes = get(appRoutes);
 const open = ref<boolean>(false);
 const isMac = ref<boolean>(false);
 
@@ -91,6 +90,7 @@ function filterItems(items: SearchItemWithoutValue[], keyword: string): SearchIt
 }
 
 function getRoutes(keyword: string): SearchItemWithoutValue[] {
+  const Routes = get(appRoutes);
   const routeItems: SearchItemWithoutValue[] = [
     { ...Routes.DASHBOARD },
     {
@@ -218,6 +218,7 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
 }
 
 function getExchanges(keyword: string): SearchItemWithoutValue[] {
+  const Routes = get(appRoutes);
   const exchanges = get(connectedExchanges);
   const exchangeItems: SearchItemWithoutValue[] = exchanges.map((exchange: Exchange) => {
     const identifier = exchange.location;
@@ -234,6 +235,7 @@ function getExchanges(keyword: string): SearchItemWithoutValue[] {
 }
 
 function getActions(keyword: string): SearchItemWithoutValue[] {
+  const Routes = get(appRoutes);
   const actionItems: SearchItemWithoutValue[] = [
     {
       route: `${Routes.API_KEYS_EXCHANGES.route}?add=true`,

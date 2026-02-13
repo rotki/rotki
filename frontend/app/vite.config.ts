@@ -1,6 +1,6 @@
 import type { ComponentResolver } from 'unplugin-vue-components';
 import { builtinModules } from 'node:module';
-import path, { join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 import process from 'node:process';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import { ruiIconsPlugin } from '@rotki/ui-library/vite-plugin';
@@ -158,7 +158,7 @@ export default defineConfig({
       ],
     }),
     VueI18nPlugin({
-      include: [path.resolve(__dirname, './src/locales/**')],
+      include: [resolve(PACKAGE_ROOT, './src/locales/**')],
     }),
     ...(!isTest && process.env.ENABLE_DEV_TOOLS ? [vueDevTools()] : []),
   ],

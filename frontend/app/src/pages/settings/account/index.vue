@@ -18,9 +18,9 @@ enum Category {
   SECURITY = 'security',
 }
 
-const navigation = [
+const navigation = computed<{ id: Category; label: string }[]>(() => [
   { id: Category.SECURITY, label: t('settings.security_settings.title') },
-];
+]);
 </script>
 
 <template>

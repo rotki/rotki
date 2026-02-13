@@ -23,13 +23,13 @@ enum Category {
   ASSET_DATABASE = 'asset-database',
 }
 
-const navigation = [
+const navigation = computed<{ id: Category; label: string }[]>(() => [
   { id: Category.DATABASE_INFO, label: t('database_settings.database_info.title') },
   { id: Category.USER_BACKUPS, label: t('database_settings.user_backups.title') },
   { id: Category.MANAGE_DATA, label: t('database_settings.manage_data.title') },
   { id: Category.IMPORT_EXPORT, label: t('database_settings.import_export.title') },
   { id: Category.ASSET_DATABASE, label: t('database_settings.asset_database.title') },
-];
+]);
 </script>
 
 <template>

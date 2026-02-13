@@ -1,4 +1,5 @@
 import type { MaybeRef } from 'vue';
+import { loadLocaleMessages } from '@/i18n';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { SupportedLanguage } from '@/types/settings/frontend-settings';
@@ -26,9 +27,12 @@ export const useLocale = createSharedComposable(() => {
       set(lastLanguage, SupportedLanguage.EN);
   };
 
-  function setLanguage(language: string): void {
-    if (language !== get(locale))
+  async function setLanguage(language: string): Promise<void> {
+    if (language !== get(locale)) {
+      await loadLocaleMessages(language);
       set(locale, language);
+      document.querySelector('html')?.setAttribute('lang', language);
+    }
   }
 
   watch([language, forceUpdateMachineLanguage], () => {

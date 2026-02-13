@@ -25,14 +25,14 @@ enum Category {
   BACKEND = 'backend',
 }
 
-const navigation = [
+const navigation = computed<{ id: Category; label: string }[]>(() => [
   { id: Category.GENERAL, label: t('general_settings.title') },
   { id: Category.AMOUNT, label: t('general_settings.amount.title') },
   { id: Category.NFT, label: t('general_settings.nft_setting.title') },
   { id: Category.HISTORY_EVENT, label: t('general_settings.history_event.title') },
   { id: Category.EXTERNAL_SERVICE, label: t('general_settings.external_service_setting.title') },
   { id: Category.BACKEND, label: t('backend_settings.title') },
-];
+]);
 </script>
 
 <template>

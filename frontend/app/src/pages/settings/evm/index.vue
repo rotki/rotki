@@ -20,10 +20,10 @@ enum Category {
   INDEXER = 'indexer',
 }
 
-const navigation = [
+const navigation = computed<{ id: Category; label: string }[]>(() => [
   { id: Category.CHAINS, label: t('evm_settings.general.title') },
   { id: Category.INDEXER, label: t('evm_settings.indexer.title') },
-];
+]);
 </script>
 
 <template>

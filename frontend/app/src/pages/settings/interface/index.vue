@@ -23,13 +23,13 @@ enum Category {
   THEME = 'theme',
 }
 
-const navigation = [
+const navigation = computed<{ id: Category; label: string }[]>(() => [
   { id: Category.INTERFACE_ONLY, label: t('frontend_settings.title') },
   { id: Category.GRAPH, label: t('frontend_settings.subtitle.graph_settings') },
   { id: Category.ALIAS, label: t('frontend_settings.subtitle.alias_names') },
   { id: Category.NEWLY_DETECTED_TOKENS, label: t('frontend_settings.newly_detected_tokens.title') },
   { id: Category.THEME, label: t('premium_components.theme_manager.text') },
-];
+]);
 </script>
 
 <template>

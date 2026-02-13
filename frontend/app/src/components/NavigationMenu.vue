@@ -38,212 +38,214 @@ withDefaults(
 );
 
 const { appRoutes } = useAppRoutes();
-const Routes = get(appRoutes);
-const navItems: MenuItem[] = [
-  {
-    class: 'dashboard',
-    type: 'item',
-    ...Routes.DASHBOARD,
-  },
-  {
-    class: 'accounts',
-    type: 'group',
-    ...Routes.ACCOUNTS,
-    items: [
-      {
-        class: 'accounts-evm',
-        type: 'item',
-        ...Routes.ACCOUNTS_EVM,
-      },
-      {
-        class: 'accounts-bitcoin',
-        type: 'item',
-        ...Routes.ACCOUNTS_BITCOIN,
-      },
-      {
-        class: 'accounts-solana',
-        type: 'item',
-        ...Routes.ACCOUNTS_SOLANA,
-      },
-      {
-        class: 'accounts-substrate',
-        type: 'item',
-        ...Routes.ACCOUNTS_SUBSTRATE,
-      },
-    ],
-  },
-  {
-    class: 'balances',
-    type: 'group',
-    ...Routes.BALANCES,
-    items: [
-      {
-        class: 'balances-blockchain',
-        type: 'item',
-        ...Routes.BALANCES_BLOCKCHAIN,
-      },
-      {
-        class: 'balances-exchange',
-        type: 'item',
-        ...Routes.BALANCES_EXCHANGE,
-      },
-      {
-        class: 'balances-manual',
-        type: 'item',
-        ...Routes.BALANCES_MANUAL,
-      },
-      {
-        class: 'balances-non-fungible',
-        type: 'item',
-        ...Routes.BALANCES_NON_FUNGIBLE,
-      },
-    ],
-  },
-  {
-    class: 'history',
-    type: 'item',
-    ...Routes.HISTORY,
-    route: Routes.HISTORY_EVENTS.route,
-  },
-  {
-    class: 'onchain',
-    type: 'group',
-    ...Routes.ONCHAIN,
-    items: [
-      {
-        class: 'onchain-send',
-        type: 'item',
-        ...Routes.ONCHAIN_SEND,
-      },
-    ],
-  },
-  {
-    class: 'staking',
-    type: 'item',
-    ...Routes.STAKING,
-    route: '/staking',
-  },
-  {
-    class: 'statistics',
-    type: 'group',
-    ...Routes.STATISTICS,
-    items: [
-      {
-        class: 'statistics-graph',
-        type: 'item',
-        ...Routes.STATISTICS_GRAPHS,
-      },
-      {
-        class: 'statistics-history-events',
-        type: 'item',
-        ...Routes.STATISTICS_HISTORY_EVENTS,
-      },
-    ],
-  },
-  {
-    class: 'profit-loss-report',
-    type: 'item',
-    ...Routes.PROFIT_LOSS_REPORTS,
-  },
-  {
-    class: 'airdrops',
-    type: 'item',
-    ...Routes.AIRDROPS,
-  },
-  {
-    class: 'nfts',
-    type: 'item',
-    ...Routes.NFTS,
-  },
-  {
-    type: 'divider',
-  },
-  {
-    class: 'tag-manager',
-    type: 'item',
-    ...Routes.TAG_MANAGER,
-  },
-  {
-    class: 'asset-manager',
-    type: 'group',
-    ...Routes.ASSET_MANAGER,
-    items: [
-      {
-        class: 'asset-manager-managed',
-        type: 'item',
-        ...Routes.ASSET_MANAGER_MANAGED,
-      },
-      {
-        class: 'asset-manager-custom',
-        type: 'item',
-        ...Routes.ASSET_MANAGER_CUSTOM,
-      },
-      {
-        class: 'asset-manager-more',
-        type: 'item',
-        ...Routes.ASSET_MANAGER_MORE,
-      },
-    ],
-  },
-  {
-    class: 'price-manager',
-    type: 'group',
-    ...Routes.PRICE_MANAGER,
-    items: [
-      {
-        class: 'price-manager-latest',
-        type: 'item',
-        ...Routes.PRICE_MANAGER_LATEST,
-      },
-      {
-        class: 'price-manager-historic',
-        type: 'item',
-        ...Routes.PRICE_MANAGER_HISTORIC,
-      },
-    ],
-  },
-  {
-    class: 'address-book-manager',
-    type: 'item',
-    ...Routes.ADDRESS_BOOK_MANAGER,
-  },
-  {
-    type: 'divider',
-  },
-  {
-    class: 'api-keys',
-    type: 'group',
-    ...Routes.API_KEYS,
-    items: [
-      {
-        class: 'api-keys-premium',
-        type: 'item',
-        ...Routes.API_KEYS_ROTKI_PREMIUM,
-      },
-      {
-        class: 'api-keys-exchanges',
-        type: 'item',
-        ...Routes.API_KEYS_EXCHANGES,
-      },
-      {
-        class: 'api-keys-external-services',
-        type: 'item',
-        ...Routes.API_KEYS_EXTERNAL_SERVICES,
-      },
-    ],
-  },
-  {
-    type: 'item',
-    ...Routes.IMPORT,
-  },
-  {
-    type: 'divider',
-  },
-  {
-    type: 'item',
-    ...Routes.CALENDAR,
-  },
-];
+const navItems = computed<MenuItem[]>(() => {
+  const Routes = get(appRoutes);
+  return [
+    {
+      class: 'dashboard',
+      type: 'item',
+      ...Routes.DASHBOARD,
+    },
+    {
+      class: 'accounts',
+      type: 'group',
+      ...Routes.ACCOUNTS,
+      items: [
+        {
+          class: 'accounts-evm',
+          type: 'item',
+          ...Routes.ACCOUNTS_EVM,
+        },
+        {
+          class: 'accounts-bitcoin',
+          type: 'item',
+          ...Routes.ACCOUNTS_BITCOIN,
+        },
+        {
+          class: 'accounts-solana',
+          type: 'item',
+          ...Routes.ACCOUNTS_SOLANA,
+        },
+        {
+          class: 'accounts-substrate',
+          type: 'item',
+          ...Routes.ACCOUNTS_SUBSTRATE,
+        },
+      ],
+    },
+    {
+      class: 'balances',
+      type: 'group',
+      ...Routes.BALANCES,
+      items: [
+        {
+          class: 'balances-blockchain',
+          type: 'item',
+          ...Routes.BALANCES_BLOCKCHAIN,
+        },
+        {
+          class: 'balances-exchange',
+          type: 'item',
+          ...Routes.BALANCES_EXCHANGE,
+        },
+        {
+          class: 'balances-manual',
+          type: 'item',
+          ...Routes.BALANCES_MANUAL,
+        },
+        {
+          class: 'balances-non-fungible',
+          type: 'item',
+          ...Routes.BALANCES_NON_FUNGIBLE,
+        },
+      ],
+    },
+    {
+      class: 'history',
+      type: 'item',
+      ...Routes.HISTORY,
+      route: Routes.HISTORY_EVENTS.route,
+    },
+    {
+      class: 'onchain',
+      type: 'group',
+      ...Routes.ONCHAIN,
+      items: [
+        {
+          class: 'onchain-send',
+          type: 'item',
+          ...Routes.ONCHAIN_SEND,
+        },
+      ],
+    },
+    {
+      class: 'staking',
+      type: 'item',
+      ...Routes.STAKING,
+      route: '/staking',
+    },
+    {
+      class: 'statistics',
+      type: 'group',
+      ...Routes.STATISTICS,
+      items: [
+        {
+          class: 'statistics-graph',
+          type: 'item',
+          ...Routes.STATISTICS_GRAPHS,
+        },
+        {
+          class: 'statistics-history-events',
+          type: 'item',
+          ...Routes.STATISTICS_HISTORY_EVENTS,
+        },
+      ],
+    },
+    {
+      class: 'profit-loss-report',
+      type: 'item',
+      ...Routes.PROFIT_LOSS_REPORTS,
+    },
+    {
+      class: 'airdrops',
+      type: 'item',
+      ...Routes.AIRDROPS,
+    },
+    {
+      class: 'nfts',
+      type: 'item',
+      ...Routes.NFTS,
+    },
+    {
+      type: 'divider',
+    },
+    {
+      class: 'tag-manager',
+      type: 'item',
+      ...Routes.TAG_MANAGER,
+    },
+    {
+      class: 'asset-manager',
+      type: 'group',
+      ...Routes.ASSET_MANAGER,
+      items: [
+        {
+          class: 'asset-manager-managed',
+          type: 'item',
+          ...Routes.ASSET_MANAGER_MANAGED,
+        },
+        {
+          class: 'asset-manager-custom',
+          type: 'item',
+          ...Routes.ASSET_MANAGER_CUSTOM,
+        },
+        {
+          class: 'asset-manager-more',
+          type: 'item',
+          ...Routes.ASSET_MANAGER_MORE,
+        },
+      ],
+    },
+    {
+      class: 'price-manager',
+      type: 'group',
+      ...Routes.PRICE_MANAGER,
+      items: [
+        {
+          class: 'price-manager-latest',
+          type: 'item',
+          ...Routes.PRICE_MANAGER_LATEST,
+        },
+        {
+          class: 'price-manager-historic',
+          type: 'item',
+          ...Routes.PRICE_MANAGER_HISTORIC,
+        },
+      ],
+    },
+    {
+      class: 'address-book-manager',
+      type: 'item',
+      ...Routes.ADDRESS_BOOK_MANAGER,
+    },
+    {
+      type: 'divider',
+    },
+    {
+      class: 'api-keys',
+      type: 'group',
+      ...Routes.API_KEYS,
+      items: [
+        {
+          class: 'api-keys-premium',
+          type: 'item',
+          ...Routes.API_KEYS_ROTKI_PREMIUM,
+        },
+        {
+          class: 'api-keys-exchanges',
+          type: 'item',
+          ...Routes.API_KEYS_EXCHANGES,
+        },
+        {
+          class: 'api-keys-external-services',
+          type: 'item',
+          ...Routes.API_KEYS_EXTERNAL_SERVICES,
+        },
+      ],
+    },
+    {
+      type: 'item',
+      ...Routes.IMPORT,
+    },
+    {
+      type: 'divider',
+    },
+    {
+      type: 'item',
+      ...Routes.CALENDAR,
+    },
+  ];
+});
 
 const route = useRoute();
 const router = useRouter();
