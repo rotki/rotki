@@ -112,6 +112,7 @@ interface UseVirtualRowsReturn {
 export function useVirtualRows(
   groups: ComputedRef<HistoryEventEntry[]>,
   eventsByGroup: ComputedRef<Record<string, HistoryEventRow[]>>,
+  isSubgroupIncomplete: (events: HistoryEventEntry[]) => boolean,
 ): UseVirtualRowsReturn {
   // Track how many items are visible per group (beyond initial limit)
   const groupVisibleCounts = shallowRef<Map<string, number>>(new Map());
@@ -161,19 +162,25 @@ export function useVirtualRows(
       visibleEvents.forEach((event, i) => {
         // Handle array (subgroup - could be swap or matched movement)
         if (Array.isArray(event)) {
+          // When a subgroup has events hidden by ignored-asset filtering,
+          // always show individual event rows without collapse controls.
+          const incomplete = isSubgroupIncomplete(event);
+
           // Check if this is a matched asset movement (not a swap)
           if (isMatchedMovementGroup(event)) {
             const movementKey = `${groupId}-${i}`;
-            const isMovementExpanded = expandedMovementsSet.has(movementKey);
+            const isMovementExpanded = incomplete || expandedMovementsSet.has(movementKey);
 
             if (isMovementExpanded) {
-              // Add collapse header row
-              rows.push({
-                type: 'matched-movement-collapse',
-                groupId,
-                movementKey,
-                eventCount: event.length,
-              });
+              // Add collapse header row (skip when forced open due to incomplete subgroup)
+              if (!incomplete) {
+                rows.push({
+                  type: 'matched-movement-collapse',
+                  groupId,
+                  movementKey,
+                  eventCount: event.length,
+                });
+              }
 
               // When expanded, show individual event rows for each event.
               // subIndex is used so the first event (index 0) retains edit/delete actions.
@@ -200,16 +207,18 @@ export function useVirtualRows(
           else {
             // Regular swap
             const swapKey = `${groupId}-${i}`;
-            const isSwapExpanded = expandedSwapsSet.has(swapKey);
+            const isSwapExpanded = incomplete || expandedSwapsSet.has(swapKey);
 
             if (isSwapExpanded) {
-              // Add collapse header row
-              rows.push({
-                type: 'swap-collapse',
-                groupId,
-                swapKey,
-                eventCount: event.length,
-              });
+              // Add collapse header row (skip when forced open due to incomplete subgroup)
+              if (!incomplete) {
+                rows.push({
+                  type: 'swap-collapse',
+                  groupId,
+                  swapKey,
+                  eventCount: event.length,
+                });
+              }
 
               // When expanded, show individual event rows for each event in the swap.
               // subIndex is used so the first event (index 0) retains edit/delete actions.

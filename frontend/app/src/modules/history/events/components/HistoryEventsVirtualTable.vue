@@ -69,6 +69,7 @@ const {
   groups,
   groupsShowingIgnoredAssets,
   groupsWithHiddenIgnoredAssets,
+  isSubgroupIncomplete,
   limit,
   loading,
   rawEvents,
@@ -88,6 +89,7 @@ const {
 const { flattenedRows, getCardHeight, getRowHeight, loadMoreEvents, toggleMovementExpanded, toggleSwapExpanded } = useVirtualRows(
   groups,
   displayedEventsMapped,
+  isSubgroupIncomplete,
 );
 
 // Virtual list with scroll and highlight management

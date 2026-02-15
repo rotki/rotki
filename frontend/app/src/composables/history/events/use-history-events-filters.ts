@@ -68,7 +68,6 @@ interface UseHistoryEventsFiltersReturn {
   highlightTypes: ComputedRef<Record<string, HighlightType>>;
   identifiers: ComputedRef<string[] | undefined>;
   includes: ComputedRef<{ evmEvents: boolean; onlineEvents: boolean }>;
-  locationOverview: Ref<string | undefined>;
   locations: ComputedRef<string[]>;
   matchers: ComputedRef<Matcher[]>;
   onLocationLabelsChanged: (locationLabels: string[]) => void;
@@ -99,7 +98,6 @@ export function useHistoryEventsFilters(
   } = options;
 
   const locationLabels = ref<string[]>([]);
-  const locationOverview = ref(get(location));
 
   const GROUPS_CANCEL_TAG = 'history-events-groups';
 
@@ -254,8 +252,8 @@ export function useHistoryEventsFilters(
 
       const accountsValue = get(usedLocationLabels);
 
-      if (isDefined(locationOverview))
-        params.location = toSnakeCase(get(locationOverview));
+      if (isDefined(location))
+        params.location = toSnakeCase(get(location));
 
       if (accountsValue.length > 0)
         params.locationLabels = get(usedLocationLabels);
@@ -342,10 +340,6 @@ export function useHistoryEventsFilters(
         query: remainingQuery,
       }));
     }
-
-    // Update locationOverview when filter location changes
-    if (filterChanged)
-      set(locationOverview, filters.location);
   }, { debounce: 100 });
 
   return {
@@ -360,7 +354,6 @@ export function useHistoryEventsFilters(
     identifiers: missingAcquisitionFromQuery,
     includes,
     locationLabels,
-    locationOverview,
     locations,
     matchers,
     onLocationLabelsChanged,

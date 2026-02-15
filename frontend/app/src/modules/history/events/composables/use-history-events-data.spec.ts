@@ -798,4 +798,219 @@ describe('use-history-events-data', () => {
       expect(get(result.rawEvents)).toHaveLength(0);
     });
   });
+
+  describe('swap event subgrouping', () => {
+    async function waitForFetchEvents(): Promise<void> {
+      await nextTick();
+      await vi.runAllTimersAsync();
+      await nextTick();
+      await vi.runAllTimersAsync();
+      await nextTick();
+    }
+
+    function createSwapEvent(overrides: Partial<Omit<HistoryEventEntry, 'entryType'>> = {}): HistoryEventEntry {
+      const event: HistoryEventEntry = {
+        amount: bigNumberify('100'),
+        asset: 'ETH',
+        entryType: HistoryEventEntryType.SWAP_EVENT,
+        eventAccountingRuleStatus: HistoryEventAccountingRuleStatus.PROCESSED,
+        eventSubtype: 'spend',
+        eventType: 'trade',
+        extraData: null,
+        groupIdentifier: 'group1',
+        hidden: false,
+        identifier: 1,
+        ignoredInAccounting: false,
+        location: 'kraken',
+        locationLabel: 'Account 1',
+        sequenceIndex: 0,
+        states: [],
+        timestamp: 1000000,
+        ...overrides,
+      };
+      return event;
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should wrap multiple swap events in the same group into a subgroup array', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const swapSpend = createSwapEvent({ groupIdentifier: 'group1', identifier: 1, eventSubtype: 'spend' });
+      const swapReceive = createSwapEvent({ groupIdentifier: 'group1', identifier: 2, eventSubtype: 'receive', asset: 'USDC' });
+
+      mockFetchHistoryEvents.mockResolvedValue({ data: [swapSpend, swapReceive] });
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
+      const options = {
+        excludeIgnored: ref<boolean>(false),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = useHistoryEventsData(options, emit);
+
+      await waitForFetchEvents();
+
+      const mapped = get(result.completeEventsMapped);
+      // Should have one entry which is an array (subgroup) containing both swap events
+      expect(mapped.group1).toHaveLength(1);
+      expect(Array.isArray(mapped.group1[0])).toBe(true);
+      expect((mapped.group1[0] as HistoryEventEntry[]).length).toBe(2);
+    });
+
+    it('should not wrap a single swap event into a subgroup', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const swapEvent = createSwapEvent({ groupIdentifier: 'group1', identifier: 1 });
+
+      mockFetchHistoryEvents.mockResolvedValue({ data: [swapEvent] });
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapEvent]));
+      const options = {
+        excludeIgnored: ref<boolean>(false),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = useHistoryEventsData(options, emit);
+
+      await waitForFetchEvents();
+
+      const mapped = get(result.completeEventsMapped);
+      // Single swap event should not be wrapped
+      expect(mapped.group1).toHaveLength(1);
+      expect(Array.isArray(mapped.group1[0])).toBe(false);
+    });
+
+    it('should not wrap non-swap events into a subgroup', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const event1 = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+      const event2 = createMockEvent({ groupIdentifier: 'group1', identifier: 2 });
+
+      mockFetchHistoryEvents.mockResolvedValue({ data: [event1, event2] });
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
+      const options = {
+        excludeIgnored: ref<boolean>(false),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = useHistoryEventsData(options, emit);
+
+      await waitForFetchEvents();
+
+      const mapped = get(result.completeEventsMapped);
+      // EVM events should remain as individual entries
+      expect(mapped.group1).toHaveLength(2);
+      expect(Array.isArray(mapped.group1[0])).toBe(false);
+      expect(Array.isArray(mapped.group1[1])).toBe(false);
+    });
+  });
+
+  describe('isSubgroupIncomplete', () => {
+    async function waitForFetchEvents(): Promise<void> {
+      await nextTick();
+      await vi.runAllTimersAsync();
+      await nextTick();
+      await vi.runAllTimersAsync();
+      await nextTick();
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should return true when displayed subgroup has fewer events than complete', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const swapSpend = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
+      const swapReceive = createMockEvent({ asset: 'SPAM_TOKEN', groupIdentifier: 'group1', identifier: 2 });
+
+      const swapSubgroup: HistoryEventRow = [swapSpend, swapReceive];
+      mockFetchHistoryEvents.mockResolvedValue({ data: [swapSubgroup] });
+      mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'SPAM_TOKEN');
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
+      const options = {
+        excludeIgnored: ref<boolean>(true),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = useHistoryEventsData(options, emit);
+
+      await waitForFetchEvents();
+
+      // The displayed subgroup has 1 event (swapSpend), complete has 2
+      const displayed = get(result.displayedEventsMapped);
+      const displayedSubgroup = displayed.group1[0] as HistoryEventEntry[];
+      expect(result.isSubgroupIncomplete(displayedSubgroup)).toBe(true);
+    });
+
+    it('should return false when displayed subgroup matches complete', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const swapSpend = createMockEvent({ asset: 'ETH', groupIdentifier: 'group1', identifier: 1 });
+      const swapReceive = createMockEvent({ asset: 'USDC', groupIdentifier: 'group1', identifier: 2 });
+
+      const swapSubgroup: HistoryEventRow = [swapSpend, swapReceive];
+      mockFetchHistoryEvents.mockResolvedValue({ data: [swapSubgroup] });
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
+      const options = {
+        excludeIgnored: ref<boolean>(true),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = useHistoryEventsData(options, emit);
+
+      await waitForFetchEvents();
+
+      // No ignored assets, so displayed matches complete
+      const displayed = get(result.displayedEventsMapped);
+      const displayedSubgroup = displayed.group1[0] as HistoryEventEntry[];
+      expect(result.isSubgroupIncomplete(displayedSubgroup)).toBe(false);
+    });
+
+    it('should return false for empty events array', async () => {
+      const { useHistoryEventsData } = await import('./use-history-events-data');
+
+      const groups = ref<Collection<HistoryEventRow>>(createMockCollection([]));
+      const options = {
+        excludeIgnored: ref<boolean>(false),
+        groupLoading: ref<boolean>(false),
+        groups,
+        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      };
+
+      const emit = vi.fn();
+      const result = useHistoryEventsData(options, emit);
+
+      expect(result.isSubgroupIncomplete([])).toBe(false);
+    });
+  });
 });

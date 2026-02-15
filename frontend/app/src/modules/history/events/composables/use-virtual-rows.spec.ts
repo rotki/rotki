@@ -40,7 +40,7 @@ describe('use-virtual-rows', () => {
         group2: [group2],
       }));
 
-      const { flattenedRows } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false);
 
       const rows = get(flattenedRows);
       const headerRows = rows.filter(r => r.type === 'group-header');
@@ -60,7 +60,7 @@ describe('use-virtual-rows', () => {
         group1: [event1, event2],
       }));
 
-      const { flattenedRows } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false);
 
       const rows = get(flattenedRows);
       const eventRows = rows.filter(r => r.type === 'event-row');
@@ -84,7 +84,7 @@ describe('use-virtual-rows', () => {
         group1: [], // No events loaded yet
       }));
 
-      const { flattenedRows } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false);
 
       const rows = get(flattenedRows);
       const placeholderRows = rows.filter(r => r.type === 'event-placeholder');
@@ -104,7 +104,7 @@ describe('use-virtual-rows', () => {
         group1: [],
       }));
 
-      const { flattenedRows } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false);
 
       const rows = get(flattenedRows);
       const placeholderRows = rows.filter(r => r.type === 'event-placeholder');
@@ -122,7 +122,7 @@ describe('use-virtual-rows', () => {
         group1: [[swapEvent1, swapEvent2]], // Array = swap subgroup
       }));
 
-      const { flattenedRows } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false);
 
       const rows = get(flattenedRows);
       const swapRows = rows.filter(r => r.type === 'swap-row');
@@ -143,7 +143,7 @@ describe('use-virtual-rows', () => {
         group1: events,
       }));
 
-      const { flattenedRows } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false);
 
       const rows = get(flattenedRows);
       const loadMoreRows = rows.filter(r => r.type === 'load-more');
@@ -165,7 +165,7 @@ describe('use-virtual-rows', () => {
         group1: events,
       }));
 
-      const { flattenedRows } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false);
 
       const rows = get(flattenedRows);
       const loadMoreRows = rows.filter(r => r.type === 'load-more');
@@ -185,7 +185,7 @@ describe('use-virtual-rows', () => {
         group1: events,
       }));
 
-      const { flattenedRows, loadMoreEvents } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, loadMoreEvents } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Initially 6 events visible
       let eventRows = get(flattenedRows).filter(r => r.type === 'event-row');
@@ -210,7 +210,7 @@ describe('use-virtual-rows', () => {
         group1: events,
       }));
 
-      const { flattenedRows, loadMoreEvents } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, loadMoreEvents } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Initially 9 hidden (15 - 6)
       let loadMoreRow = get(flattenedRows).find(r => r.type === 'load-more');
@@ -237,7 +237,7 @@ describe('use-virtual-rows', () => {
         group1: [[swapEvent1, swapEvent2]],
       }));
 
-      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Initially collapsed - shows swap-row
       let swapRows = get(flattenedRows).filter(r => r.type === 'swap-row');
@@ -270,7 +270,7 @@ describe('use-virtual-rows', () => {
         group1: [[swapSpend, swapReceive]],
       }));
 
-      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       toggleSwapExpanded('group1-0');
       await nextTick();
@@ -296,7 +296,7 @@ describe('use-virtual-rows', () => {
         group1: [[swap1Spend, swap1Receive], [swap2Spend, swap2Receive]],
       }));
 
-      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Expand both swap subgroups
       toggleSwapExpanded('group1-0');
@@ -318,6 +318,31 @@ describe('use-virtual-rows', () => {
       expect(eventRows[2].type === 'event-row' && eventRows[2].data.identifier).toBe(4);
     });
 
+    it('should force-expand swap and hide collapse header when subgroup is incomplete', () => {
+      const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+      const swapEvent1 = createMockEvent({ groupIdentifier: 'group1', identifier: 2, eventSubtype: 'spend' });
+      const swapEvent2 = createMockEvent({ groupIdentifier: 'group1', identifier: 3, eventSubtype: 'receive' });
+
+      const groups = computed<HistoryEventEntry[]>(() => [group]);
+      const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({
+        group1: [[swapEvent1, swapEvent2]],
+      }));
+
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => true);
+
+      const rows = get(flattenedRows);
+      const swapRows = rows.filter(r => r.type === 'swap-row');
+      const collapseRows = rows.filter(r => r.type === 'swap-collapse');
+      const eventRows = rows.filter(r => r.type === 'event-row');
+
+      // Should be expanded without collapse header
+      expect(swapRows).toHaveLength(0);
+      expect(collapseRows).toHaveLength(0);
+      expect(eventRows).toHaveLength(2);
+      expect(eventRows[0].type === 'event-row' && eventRows[0].data.identifier).toBe(2);
+      expect(eventRows[1].type === 'event-row' && eventRows[1].data.identifier).toBe(3);
+    });
+
     it('should collapse expanded swap back to swap-row', async () => {
       const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
       const swapEvent1 = createMockEvent({ groupIdentifier: 'group1', identifier: 2 });
@@ -328,7 +353,7 @@ describe('use-virtual-rows', () => {
         group1: [[swapEvent1, swapEvent2]],
       }));
 
-      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, toggleSwapExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Get swap key and expand
       const swapKey = 'group1-0';
@@ -360,7 +385,7 @@ describe('use-virtual-rows', () => {
         group1: [group],
       }));
 
-      const { getRowHeight } = useVirtualRows(groups, eventsByGroup);
+      const { getRowHeight } = useVirtualRows(groups, eventsByGroup, () => false);
 
       expect(getRowHeight(0)).toBe(ROW_HEIGHTS['group-header']);
     });
@@ -373,7 +398,7 @@ describe('use-virtual-rows', () => {
         group1: [group],
       }));
 
-      const { getRowHeight } = useVirtualRows(groups, eventsByGroup);
+      const { getRowHeight } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Index 0 is group-header, index 1 is event-row
       expect(getRowHeight(1)).toBe(ROW_HEIGHTS['event-row']);
@@ -389,7 +414,7 @@ describe('use-virtual-rows', () => {
         group1: [[swapEvent1, swapEvent2]],
       }));
 
-      const { getRowHeight } = useVirtualRows(groups, eventsByGroup);
+      const { getRowHeight } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Index 0 is group-header, index 1 is swap-row
       expect(getRowHeight(1)).toBe(ROW_HEIGHTS['swap-row']);
@@ -405,7 +430,7 @@ describe('use-virtual-rows', () => {
         group1: events,
       }));
 
-      const { flattenedRows, getRowHeight } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, getRowHeight } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Find load-more row index
       const rows = get(flattenedRows);
@@ -422,7 +447,7 @@ describe('use-virtual-rows', () => {
         group1: [group],
       }));
 
-      const { getRowHeight } = useVirtualRows(groups, eventsByGroup);
+      const { getRowHeight } = useVirtualRows(groups, eventsByGroup, () => false);
 
       expect(getRowHeight(999)).toBe(ROW_HEIGHTS['event-row']);
     });
@@ -433,7 +458,7 @@ describe('use-virtual-rows', () => {
       const groups = computed<HistoryEventEntry[]>(() => []);
       const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({}));
 
-      const { flattenedRows } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false);
 
       expect(get(flattenedRows)).toHaveLength(0);
     });
@@ -444,7 +469,7 @@ describe('use-virtual-rows', () => {
       const groups = computed<HistoryEventEntry[]>(() => [group]);
       const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({}));
 
-      const { flattenedRows } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false);
 
       const rows = get(flattenedRows);
 
@@ -488,7 +513,7 @@ describe('use-virtual-rows', () => {
         group1: [[chainEvent, exchangeEvent]], // Array containing one asset movement = matched movement
       }));
 
-      const { flattenedRows } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => false);
 
       const rows = get(flattenedRows);
       const movementRows = rows.filter(r => r.type === 'matched-movement-row');
@@ -511,7 +536,7 @@ describe('use-virtual-rows', () => {
         group1: [[movementEvent1, movementEvent2]],
       }));
 
-      const { flattenedRows, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Initially collapsed - shows matched-movement-row
       let movementRows = get(flattenedRows).filter(r => r.type === 'matched-movement-row');
@@ -544,7 +569,7 @@ describe('use-virtual-rows', () => {
         group1: [[movementEvent1, movementEvent2]],
       }));
 
-      const { flattenedRows, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       toggleMovementExpanded('group1-0');
       await nextTick();
@@ -568,7 +593,7 @@ describe('use-virtual-rows', () => {
         group1: [[movementEvent1, movementEvent2]],
       }));
 
-      const { flattenedRows, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Get movement key and expand
       const movementKey = 'group1-0';
@@ -600,10 +625,35 @@ describe('use-virtual-rows', () => {
         group1: [[movementEvent1, movementEvent2]],
       }));
 
-      const { getRowHeight } = useVirtualRows(groups, eventsByGroup);
+      const { getRowHeight } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Index 0 is group-header, index 1 is matched-movement-row
       expect(getRowHeight(1)).toBe(ROW_HEIGHTS['matched-movement-row']);
+    });
+
+    it('should force-expand matched-movement and hide collapse header when subgroup is incomplete', () => {
+      const group = createMockEvent({ groupIdentifier: 'group1', identifier: 1 });
+      const movementEvent1 = createAssetMovementEvent({ groupIdentifier: 'group1', identifier: 2 });
+      const movementEvent2 = createAssetMovementEvent({ groupIdentifier: 'group1', identifier: 3 });
+
+      const groups = computed<HistoryEventEntry[]>(() => [group]);
+      const eventsByGroup = computed<Record<string, HistoryEventRow[]>>(() => ({
+        group1: [[movementEvent1, movementEvent2]],
+      }));
+
+      const { flattenedRows } = useVirtualRows(groups, eventsByGroup, () => true);
+
+      const rows = get(flattenedRows);
+      const movementRows = rows.filter(r => r.type === 'matched-movement-row');
+      const collapseRows = rows.filter(r => r.type === 'matched-movement-collapse');
+      const eventRows = rows.filter(r => r.type === 'event-row');
+
+      // Should be expanded without collapse header
+      expect(movementRows).toHaveLength(0);
+      expect(collapseRows).toHaveLength(0);
+      expect(eventRows).toHaveLength(2);
+      expect(eventRows[0].type === 'event-row' && eventRows[0].data.identifier).toBe(2);
+      expect(eventRows[1].type === 'event-row' && eventRows[1].data.identifier).toBe(3);
     });
 
     it('should return correct height for matched-movement-collapse row', async () => {
@@ -616,7 +666,7 @@ describe('use-virtual-rows', () => {
         group1: [[movementEvent1, movementEvent2]],
       }));
 
-      const { flattenedRows, getRowHeight, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup);
+      const { flattenedRows, getRowHeight, toggleMovementExpanded } = useVirtualRows(groups, eventsByGroup, () => false);
 
       // Expand the movement
       toggleMovementExpanded('group1-0');

@@ -3,6 +3,7 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import type { Collection } from '@/types/collection';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import { HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { flatten } from 'es-toolkit';
 import { useHistoryEvents } from '@/composables/history/events';
@@ -59,6 +60,7 @@ interface UseHistoryEventsDataReturn {
   getGroupEvents: (groupId: string) => HistoryEventEntry[];
   getCompleteSubgroupEvents: (displayedEvents: HistoryEventEntry[]) => HistoryEventEntry[];
   getCompleteEventsForItem: (groupId: string, event: HistoryEventEntry) => HistoryEventEntry[];
+  isSubgroupIncomplete: (displayedEvents: HistoryEventEntry[]) => boolean;
 }
 
 export function useHistoryEventsData(
@@ -148,6 +150,16 @@ export function useHistoryEventsData(
       }
     }
 
+    // For swap event groups, the backend doesn't subgroup because all events
+    // in the group are guaranteed to be in the same subgroup. Wrap them as a
+    // single subgroup array so the frontend renders them with HistoryEventsSwapItem.
+    for (const [groupId, groupEvents] of Object.entries(mapping)) {
+      if (groupEvents.length > 1
+        && groupEvents.every(e => !Array.isArray(e) && e.entryType === HistoryEventEntryType.SWAP_EVENT)) {
+        mapping[groupId] = [groupEvents as HistoryEventEntry[]];
+      }
+    }
+
     return mapping;
   });
 
@@ -232,6 +244,33 @@ export function useHistoryEventsData(
     return result;
   });
 
+  // Map each event identifier to its complete subgroup size for detecting incomplete subgroups
+  const completeSubgroupSizes = computed<Map<number, number>>(() => {
+    const map = new Map<number, number>();
+    for (const groupEvents of Object.values(get(completeEventsMapped))) {
+      for (const event of groupEvents) {
+        if (Array.isArray(event)) {
+          for (const subEvent of event)
+            map.set(subEvent.identifier, event.length);
+        }
+      }
+    }
+    return map;
+  });
+
+  /**
+   * Checks if a displayed subgroup has fewer events than the complete subgroup
+   * (i.e., some events are hidden due to ignored asset filtering).
+   * When true, the subgroup should always be shown expanded without a collapse toggle.
+   */
+  function isSubgroupIncomplete(displayedEvents: HistoryEventEntry[]): boolean {
+    if (displayedEvents.length === 0)
+      return false;
+    const sizes = get(completeSubgroupSizes);
+    const completeSize = sizes.get(displayedEvents[0].identifier);
+    return completeSize !== undefined && completeSize > displayedEvents.length;
+  }
+
   const flattenedGroups = computed<HistoryEventEntry[]>(() => flatten(get(data)));
 
   const flattenedEvents = computed<HistoryEventEntry[]>(() => flatten(get(events)));
@@ -271,6 +310,7 @@ export function useHistoryEventsData(
     groupsShowingIgnoredAssets,
     groupsWithHiddenIgnoredAssets,
     hasIgnoredEvent,
+    isSubgroupIncomplete,
     limit,
     loading,
     rawEvents: events,
