@@ -150,6 +150,7 @@ export class RotkiApi {
       treat409AsSuccess,
       filterEmptyProperties,
       retry,
+      skipAuthHandler,
       ...fetchOptions
     } = options;
 
@@ -170,8 +171,13 @@ export class RotkiApi {
 
       const status = response.status;
 
-      if (status === HTTPStatus.UNAUTHORIZED)
-        this.handleAuthFailure();
+      if (status === HTTPStatus.UNAUTHORIZED) {
+        if (!skipAuthHandler)
+          this.handleAuthFailure();
+
+        const responseData = response._data;
+        throw createStatusError(status, responseData?.message, responseData);
+      }
 
       const allowedStatuses = validStatuses ?? VALID_STATUS_CODES;
       if (!allowedStatuses.includes(status)) {

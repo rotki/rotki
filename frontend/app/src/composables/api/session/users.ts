@@ -120,6 +120,7 @@ export function useUsersApi(): UseUserApiReturn {
       name: username,
       newPassword,
     },
+    { skipAuthHandler: true },
   );
 
   return {
