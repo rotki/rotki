@@ -63,6 +63,10 @@ interface UseHistoryEventsDataReturn {
   isSubgroupIncomplete: (displayedEvents: HistoryEventEntry[]) => boolean;
 }
 
+function isSwapOnlyGroup(events: HistoryEventRow[]): events is HistoryEventEntry[] {
+  return events.length > 1 && events.every(e => !Array.isArray(e) && e.entryType === HistoryEventEntryType.SWAP_EVENT);
+}
+
 export function useHistoryEventsData(
   options: UseHistoryEventsDataOptions,
   emit: HistoryEventsTableEmitFn,
@@ -154,10 +158,8 @@ export function useHistoryEventsData(
     // in the group are guaranteed to be in the same subgroup. Wrap them as a
     // single subgroup array so the frontend renders them with HistoryEventsSwapItem.
     for (const [groupId, groupEvents] of Object.entries(mapping)) {
-      if (groupEvents.length > 1
-        && groupEvents.every(e => !Array.isArray(e) && e.entryType === HistoryEventEntryType.SWAP_EVENT)) {
-        mapping[groupId] = [groupEvents as HistoryEventEntry[]];
-      }
+      if (isSwapOnlyGroup(groupEvents))
+        mapping[groupId] = [groupEvents];
     }
 
     return mapping;
@@ -249,10 +251,11 @@ export function useHistoryEventsData(
     const map = new Map<number, number>();
     for (const groupEvents of Object.values(get(completeEventsMapped))) {
       for (const event of groupEvents) {
-        if (Array.isArray(event)) {
-          for (const subEvent of event)
-            map.set(subEvent.identifier, event.length);
-        }
+        if (!Array.isArray(event))
+          continue;
+
+        for (const subEvent of event)
+          map.set(subEvent.identifier, event.length);
       }
     }
     return map;
