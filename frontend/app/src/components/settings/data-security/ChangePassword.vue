@@ -6,10 +6,10 @@ import { useChangePassword } from '@/modules/account/use-change-password';
 import { usePremiumStore } from '@/store/session/premium';
 import { toMessages } from '@/utils/validation';
 
-const currentPassword = ref('');
-const newPassword = ref('');
-const newPasswordConfirm = ref('');
-const loading = ref(false);
+const currentPassword = ref<string>('');
+const newPassword = ref<string>('');
+const newPasswordConfirm = ref<string>('');
+const loading = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -31,11 +31,14 @@ const v$ = useVuelidate(rules, { currentPassword, newPassword, newPasswordConfir
 const { premiumSync } = storeToRefs(usePremiumStore());
 const { changePassword } = useChangePassword();
 
-function reset() {
+function reset(): void {
+  set(currentPassword, '');
+  set(newPassword, '');
+  set(newPasswordConfirm, '');
   get(v$).$reset();
 }
 
-async function change() {
+async function change(): Promise<void> {
   set(loading, true);
   const result = await changePassword({
     currentPassword: get(currentPassword),
