@@ -1267,8 +1267,10 @@
       "message": "There are {count} unmatched asset movements that require manual matching."
     },
     "compact_notes": {
-      "deposit": "Deposit {amount} {asset} to {locationLabel} from {address}",
-      "withdraw": "Withdraw {amount} {asset} from {locationLabel} to {address}"
+      "deposit": "Deposit {amount} {asset}{to}{from}",
+      "from_part": " from {address}",
+      "to_part": " to {locationLabel}",
+      "withdraw": "Withdraw {amount} {asset}{from}{to}"
     },
     "dialog": {
       "confirm_match": "Confirm Match",

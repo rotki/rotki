@@ -121,6 +121,7 @@ const {
   confirmRedecode,
   confirmTxAndEventsDelete,
   confirmUnlink,
+  unlinkGroup,
   hasCustomEvents,
   redecode,
   redecodePayload,
@@ -183,17 +184,6 @@ function hasHiddenIgnoredAssets(groupId: string): boolean {
 // Helper to check if a group is currently showing ignored assets
 function isShowingIgnoredAssets(groupId: string): boolean {
   return get(groupsShowingIgnoredAssets).has(groupId);
-}
-
-function unlinkGroup(groupId: string): void {
-  const events = getGroupEvents(groupId);
-  const event = events.find(item => item.eventSubtype !== 'fee' && !!item.actualGroupIdentifier);
-  if (event) {
-    confirmUnlink({ identifier: event.identifier });
-  }
-  else {
-    console.warn(`No unlinkable event found for group ${groupId}`);
-  }
 }
 </script>
 

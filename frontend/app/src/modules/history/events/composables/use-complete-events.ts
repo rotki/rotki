@@ -1,5 +1,6 @@
 import type { ComputedRef } from 'vue';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
+import { flatten } from 'es-toolkit';
 
 interface UseCompleteEventsReturn {
   /**
@@ -39,7 +40,7 @@ export function useCompleteEvents(
 ): UseCompleteEventsReturn {
   function getGroupEvents(groupId: string): HistoryEventEntry[] {
     const groupEvents = get(completeEventsMapped)[groupId] || [];
-    return groupEvents.flatMap(e => (Array.isArray(e) ? e : [e]));
+    return flatten(groupEvents);
   }
 
   /**

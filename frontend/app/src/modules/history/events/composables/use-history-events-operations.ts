@@ -9,17 +9,17 @@ import type {
   HistoryEventRow,
 } from '@/types/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
-import { flatten } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useCompleteEvents } from '@/modules/history/events/composables/use-complete-events';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
 import { isTaskCancelled } from '@/utils';
-import { isCustomizedEvent } from '@/utils/history/events';
+import { isAssetMovementEvent, isCustomizedEvent } from '@/utils/history/events';
 
 interface UseHistoryEventsOperationsOptions {
   completeEventsMapped: ComputedRef<Record<string, HistoryEventRow[]>>;
@@ -37,6 +37,7 @@ interface UseHistoryEventsOperationsReturn {
   getItemClass: (item: HistoryEventEntry) => '' | 'opacity-50';
   confirmDelete: (payload: HistoryEventDeletePayload) => void;
   confirmUnlink: (payload: HistoryEventUnlinkPayload) => void;
+  unlinkGroup: (groupId: string) => void;
   suggestNextSequenceId: (group: HistoryEventEntry) => string;
   confirmTxAndEventsDelete: (payload: LocationAndTxRef) => void;
   redecode: (payload: PullEventPayload, eventIdentifier: string) => void;
@@ -50,6 +51,7 @@ export function useHistoryEventsOperations(
   emit: HistoryEventsTableEmitFn,
 ): UseHistoryEventsOperationsReturn {
   const { completeEventsMapped, flattenedEvents } = options;
+  const { getGroupEvents } = useCompleteEvents(completeEventsMapped);
 
   const selected = ref<HistoryEventEntry[]>([]);
   const showRedecodeConfirmation = ref<boolean>(false);
@@ -130,6 +132,14 @@ export function useHistoryEventsOperations(
     }
   }
 
+  function unlinkGroup(groupId: string): void {
+    const events = getGroupEvents(groupId);
+    const event = events.find(item => isAssetMovementEvent(item) && item.eventSubtype !== 'fee' && !!item.actualGroupIdentifier);
+    if (event) {
+      confirmUnlink({ identifier: event.identifier });
+    }
+  }
+
   function suggestNextSequenceId(group: HistoryEventEntry): string {
     const allFlattened = get(flattenedEvents);
 
@@ -185,9 +195,7 @@ export function useHistoryEventsOperations(
       return;
     }
 
-    const groupedEvents = get(completeEventsMapped)[groupIdentifier] || [];
-    const childEvents = flatten(groupedEvents);
-    const isAnyCustom = childEvents.some(item => isCustomizedEvent(item));
+    const isAnyCustom = getGroupEvents(groupIdentifier).some(item => isCustomizedEvent(item));
 
     // If there are custom events, show dialog to ask about custom event handling
     if (isAnyCustom) {
@@ -211,9 +219,7 @@ export function useHistoryEventsOperations(
       return;
     }
 
-    const groupedEvents = get(completeEventsMapped)[eventIdentifier] || [];
-    const childEvents = flatten(groupedEvents);
-    const isAnyCustom = childEvents.some(item => isCustomizedEvent(item));
+    const isAnyCustom = getGroupEvents(eventIdentifier).some(item => isCustomizedEvent(item));
 
     // Show dialog with indexer options (only for EVM events)
     set(hasCustomEvents, isAnyCustom);
@@ -245,6 +251,7 @@ export function useHistoryEventsOperations(
     confirmTxAndEventsDelete,
     confirmUnlink,
     getItemClass,
+    unlinkGroup,
     hasCustomEvents,
     redecode,
     redecodePayload,

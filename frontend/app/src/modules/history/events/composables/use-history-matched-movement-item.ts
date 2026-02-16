@@ -4,6 +4,7 @@ import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useLocations } from '@/composables/locations';
 import { isEventMissingAccountingRule } from '@/utils/history/events';
 
 export interface UseHistoryMatchedMovementItemProps {
@@ -40,6 +41,8 @@ export function useHistoryMatchedMovementItem(
   const { getChain } = useSupportedChains();
   const { getAssetSymbol } = useAssetInfoRetrieval();
 
+  const { locationData } = useLocations();
+
   // For asset movements, use the first non-fee asset movement event as primary
   const primaryEvent = computed<HistoryEventEntry>(() => {
     const assetMovementEvent = get(events).find(
@@ -48,10 +51,13 @@ export function useHistoryMatchedMovementItem(
     return assetMovementEvent ?? get(events)[0];
   });
 
-  // Secondary event is the one that's NOT an asset movement event (e.g., EVM event, Solana event)
-  const secondaryEvent = computed<HistoryEventEntry | undefined>(() => get(events).find(
-    item => item.entryType !== HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-  ));
+  // Secondary event is the matching counterpart (non-fee, different from primary)
+  const secondaryEvent = computed<HistoryEventEntry | undefined>(() => {
+    const primaryId = get(primaryEvent).identifier;
+    return get(events).find(
+      item => item.eventSubtype !== 'fee' && item.identifier !== primaryId,
+    );
+  });
 
   const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(primaryEvent)));
 
@@ -100,12 +106,15 @@ export function useHistoryMatchedMovementItem(
 
     const amount = primary.amount;
     const asset = getAssetSymbol(primary.asset, ASSET_RESOLUTION_OPTIONS);
-    const locationLabel = primary.locationLabel ?? '';
-    const address = secondary?.locationLabel ?? '';
+    const locationLabel = primary.locationLabel || get(locationData(primary.location))?.name || '';
+    const address = secondary?.locationLabel || (secondary && get(locationData(secondary.location))?.name) || '';
+
+    const to = locationLabel ? t('asset_movement_matching.compact_notes.to_part', { locationLabel }) : '';
+    const from = address ? t('asset_movement_matching.compact_notes.from_part', { address }) : '';
 
     const notes = primary.eventSubtype === 'receive'
-      ? t('asset_movement_matching.compact_notes.deposit', { address, amount, asset, locationLabel })
-      : t('asset_movement_matching.compact_notes.withdraw', { address, amount, asset, locationLabel });
+      ? t('asset_movement_matching.compact_notes.deposit', { amount, asset, to, from })
+      : t('asset_movement_matching.compact_notes.withdraw', { amount, asset, from, to });
 
     // Append fee if exists
     const fee = get(events).filter(item => item.eventSubtype === 'fee');
