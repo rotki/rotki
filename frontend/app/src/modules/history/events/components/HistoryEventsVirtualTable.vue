@@ -198,7 +198,7 @@ function unlinkGroup(groupId: string): void {
 </script>
 
 <template>
-  <div class="flex flex-col border border-default rounded-lg overflow-hidden bg-white dark:bg-dark-surface">
+  <div class="flex flex-col border border-default rounded-lg overflow-hidden bg-slate-50 dark:bg-dark-surface">
     <!-- Sticky Header with Sort + Pagination -->
     <HistoryEventsVirtualHeader
       v-model:sort="sort"
@@ -265,6 +265,7 @@ function unlinkGroup(groupId: string): void {
           <HistoryEventsGroupItem
             v-if="row.type === 'group-header'"
             :group="row.data"
+            :group-events="getGroupEvents(row.groupId)"
             :hide-actions="hideActions"
             :loading="eventsLoading"
             :duplicate-handling-status="duplicateHandlingStatus"

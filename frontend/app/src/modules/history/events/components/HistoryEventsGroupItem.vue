@@ -11,6 +11,7 @@ import LocationIcon from '@/components/history/LocationIcon.vue';
 
 const props = withDefaults(defineProps<{
   group: HistoryEventEntry;
+  groupEvents?: HistoryEventEntry[];
   hideActions?: boolean;
   loading?: boolean;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
@@ -18,6 +19,7 @@ const props = withDefaults(defineProps<{
   showingIgnoredAssets?: boolean;
   variant?: 'row' | 'card';
 }>(), {
+  groupEvents: () => [],
   variant: 'row',
 });
 
@@ -94,7 +96,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
 
         <HistoryEventsIdentifier
           :event="group"
-          truncate
+          :group-events="groupEvents"
           class="min-w-0 flex-1"
         />
       </div>
@@ -134,7 +136,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <!-- Row Layout -->
   <div
     v-else
-    class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-2 pr-4 bg-rui-grey-100 dark:bg-dark-elevated contain-content"
+    class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-2 pr-4 bg-white dark:bg-dark-elevated contain-content"
   >
     <IgnoredInAccountingIcon
       v-if="group.ignoredInAccounting"
@@ -181,7 +183,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
     <div class="flex items-center gap-2.5 min-w-0 flex-1">
       <HistoryEventsIdentifier
         :event="group"
-        truncate
+        :group-events="groupEvents"
         class="min-w-0"
       />
 
@@ -199,7 +201,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
     <DateDisplay
       :timestamp="group.timestamp"
       milliseconds
-      class="w-40 text-right shrink-0 text-sm"
+      class="text-right shrink-0 text-sm"
     />
 
     <HistoryEventsAction

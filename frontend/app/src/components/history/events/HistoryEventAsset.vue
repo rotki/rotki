@@ -64,8 +64,8 @@ function openMenuHandler(event: MouseEvent): void {
   >
     <template #activator="{ attrs }">
       <div
-        class="flex items-center py-2 gap-2 overflow-hidden"
-        :class="!disableOptions && 'cursor-pointer hover:bg-rui-grey-200 dark:hover:bg-rui-grey-900 rounded-md group/asset -ml-1 pl-1 min-h-14 pr-14 relative'"
+        class="flex items-center py-2 gap-2 overflow-hidden transition-colors"
+        :class="!disableOptions && 'cursor-pointer hover:bg-rui-grey-300 dark:hover:bg-rui-grey-900 rounded-md group/asset -ml-1 pl-1 min-h-14 pr-14 relative'"
         v-bind="attrs"
         @contextmenu="openMenuHandler($event)"
       >

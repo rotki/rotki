@@ -62,7 +62,7 @@ const showLocationLabel = computed<boolean>(() => {
       class="shrink-0"
     />
 
-    <div class="ml-3.5 min-w-0">
+    <div class="ml-3 min-w-0">
       <div class="font-medium uppercase text-sm truncate">
         {{ attrs.label }}
       </div>

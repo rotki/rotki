@@ -9,6 +9,7 @@ const props = withDefaults(
     icon?: boolean;
     size?: string;
     noPadding?: boolean;
+    imageClass?: string;
   }>(),
   {
     horizontal: false,
@@ -47,6 +48,7 @@ const location = locationData(item);
         :src="location.image"
         :alt="location.name"
         contain
+        :image-class="imageClass"
         :size="size"
         class="icon-bg"
       />

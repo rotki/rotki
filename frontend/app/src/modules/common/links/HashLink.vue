@@ -2,6 +2,7 @@
 import type { RuiTooltip } from '@rotki/ui-library';
 import { Blockchain, consistOfNumbers } from '@rotki/common';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
+import LocationIcon from '@/components/history/LocationIcon.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useScramble } from '@/composables/scramble';
@@ -63,6 +64,11 @@ interface HashLinkProps {
    */
   type?: keyof ExplorerUrls;
   noScramble?: boolean;
+  /**
+   * Whether to show a location/chain icon before the hash text.
+   * Requires `location` to be set.
+   */
+  showLocationIcon?: boolean;
 }
 
 const props = withDefaults(defineProps<HashLinkProps>(), {
@@ -70,6 +76,7 @@ const props = withDefaults(defineProps<HashLinkProps>(), {
   hideText: false,
   location: undefined,
   noScramble: false,
+  showLocationIcon: false,
   size: 12,
   truncateLength: 4,
   type: 'address',
@@ -196,6 +203,15 @@ const tags = useAccountTags(text);
 
 <template>
   <div class="flex flex-row shrink items-center gap-1.5 text-xs [&_*]:font-mono [&_*]:leading-6 min-h-[22px] min-w-0">
+    <LocationIcon
+      v-if="showLocationIcon && location"
+      icon
+      :item="location"
+      image-class="!size-4"
+      size="20px"
+      class="min-w-5 bg-white !rounded-full overflow-hidden -ml-1.5"
+    />
+
     <EnsAvatar
       v-if="showIcon"
       :address="displayText"
