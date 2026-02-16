@@ -6,7 +6,7 @@ import { useSpamAsset } from '@/composables/assets/spam';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { EVM_TOKEN } from '@/types/asset';
+import { isSpammableAssetType } from '@/types/asset';
 
 const props = defineProps<{
   asset: NftAsset;
@@ -179,7 +179,7 @@ defineExpose({
                   {{ t('assets.action.ignore') }}
                 </RuiTooltip>
                 <RuiTooltip
-                  v-if="asset.assetType === EVM_TOKEN"
+                  v-if="isSpammableAssetType(asset.assetType)"
                   :open-delay="200"
                   :popper="{ placement: 'top' }"
                 >

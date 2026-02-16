@@ -118,6 +118,10 @@ export const SOLANA_CHAIN = 'solana';
 
 export const CUSTOM_ASSET = 'custom asset';
 
+export function isSpammableAssetType(assetType?: string | null): boolean {
+  return assetType === EVM_TOKEN || assetType === SOLANA_TOKEN;
+}
+
 export interface AssetUpdatePayload {
   readonly resolution?: ConflictResolution;
   readonly version: number;

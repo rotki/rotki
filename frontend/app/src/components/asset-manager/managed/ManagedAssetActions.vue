@@ -15,9 +15,10 @@ const ignoredFilter = defineModel<IgnoredFilter>('ignoredFilter', { required: tr
 const selected = defineModel<string[]>('selected', { required: true });
 const filtersModel = defineModel<Filters>('matches', { required: true });
 
-defineProps<{
+const { spamDisabled = false } = defineProps<{
   ignoredAssets: string[];
   matchers: Matcher[];
+  spamDisabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -71,7 +72,7 @@ function handleRefreshIgnored(): void {
               class="min-w-[5.625rem]"
               variant="outlined"
               color="error"
-              :disabled="selected.length === 0"
+              :disabled="selected.length === 0 || spamDisabled"
               @click="handleMarkSpam()"
             >
               <template #prepend>

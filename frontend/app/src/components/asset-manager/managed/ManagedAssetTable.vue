@@ -15,7 +15,7 @@ import { useManagedAssetOperations } from '@/composables/asset-manager/use-manag
 import { useManagedAssetTable } from '@/composables/asset-manager/use-managed-asset-table';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { EVM_TOKEN, type IgnoredAssetsHandlingType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
+import { EVM_TOKEN, type IgnoredAssetsHandlingType, isSpammableAssetType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 
 interface IgnoredFilter {
   onlyShowOwned: boolean;
@@ -80,6 +80,18 @@ const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAss
 
 const { fetchIgnoredAssets } = useIgnoredAssetsStore();
 
+const spamDisabled = computed<boolean>(() => {
+  const selectedIds = get(selected);
+  if (selectedIds.length === 0)
+    return false;
+
+  const assets = get(collection).data;
+  return !selectedIds.some((id) => {
+    const asset = assets.find(a => a.identifier === id);
+    return asset && isSpammableAssetType(asset.assetType);
+  });
+});
+
 function getAssetLocation(row: SupportedAsset): string | undefined {
   if (row.assetType === EVM_TOKEN)
     return row?.evmChain ?? undefined;
@@ -99,6 +111,7 @@ function getAssetLocation(row: SupportedAsset): string | undefined {
       v-model:matches="filtersModel"
       :ignored-assets="ignoredAssets"
       :matchers="matchers"
+      :spam-disabled="spamDisabled"
       @ignore="massIgnore($event)"
       @mark-spam="massSpam()"
       @refresh:ignored="fetchIgnoredAssets()"

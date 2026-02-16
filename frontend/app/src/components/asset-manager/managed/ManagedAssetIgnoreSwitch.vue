@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
-import { EVM_TOKEN } from '@/types/asset';
+import { isSpammableAssetType } from '@/types/asset';
 
 interface AssetForIgnoreSwitch {
   identifier: string;
@@ -34,7 +34,7 @@ const { useIsAssetWhitelisted } = useWhitelistedAssetsStore();
 
 const identifier = computed<string>(() => props.asset.identifier);
 const isSpam = computed<boolean>(() => props.asset.protocol === 'spam');
-const showMoreOptions = computed<boolean>(() => props.asset.assetType === EVM_TOKEN);
+const showMoreOptions = computed<boolean>(() => isSpammableAssetType(props.asset.assetType));
 
 const isIgnored = useIsAssetIgnored(identifier);
 const isWhitelisted = useIsAssetWhitelisted(identifier);
