@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
-import { NotificationCategory, type NotificationPayload, One, Severity, Zero } from '@rotki/common';
+import { NotificationCategory, type NotificationPayload, Severity, Zero } from '@rotki/common';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useStatusUpdater } from '@/composables/status';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
@@ -30,7 +30,7 @@ export function useLatestPrices(
   const refreshing = ref(false);
 
   const { addLatestPrice, deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
-  const { assetPrice } = usePriceUtils();
+  const { assetPriceInCurrentCurrency } = usePriceUtils();
   const { refreshPrices } = usePriceRefresh();
   const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
   const { notify } = useNotificationsStore();
@@ -50,17 +50,18 @@ export function useLatestPrices(
       ? latestPricesVal.filter(({ fromAsset }) => fromAsset === filterVal)
       : latestPricesVal;
 
-    return filteredItems.map(
-      (item, index) =>
-        ({
-          id: index + 1,
-          ...item,
-          usdPrice:
-            (!isNft(item.fromAsset)
-              ? get(assetPrice(item.fromAsset))
-              : (get(assetPrice(item.toAsset)) ?? One).multipliedBy(item.price)) || Zero,
-        }) satisfies ManualPriceWithUsd,
-    );
+    return filteredItems.map((item, index) => {
+      const { fromAsset, toAsset, price } = item;
+      const priceInCurrency = isNft(fromAsset)
+        ? get(assetPriceInCurrentCurrency(toAsset)).multipliedBy(price)
+        : get(assetPriceInCurrentCurrency(fromAsset));
+
+      return {
+        id: index + 1,
+        ...item,
+        usdPrice: priceInCurrency || Zero,
+      } satisfies ManualPriceWithUsd;
+    });
   });
 
   const getLatestPrices = async (): Promise<void> => {

@@ -180,7 +180,6 @@ onMounted(async () => {
             :value="row.usdPrice"
             :loading="!row.usdPrice || row.usdPrice.lt(0)"
             :price-asset="row.fromAsset"
-            from="USD"
           />
         </template>
         <template #item.actions="{ row }">
