@@ -113,6 +113,15 @@ const emptyDescription = computed<string>(() =>
     : t('asset_movement_matching.dialog.no_unmatched'),
 );
 
+const descriptionEl = useTemplateRef<HTMLElement>('description');
+const { height: descriptionHeight } = useElementSize(descriptionEl);
+
+const pinnedTableStyle = computed<Record<string, string> | undefined>(() => {
+  if (!props.isPinned)
+    return undefined;
+  return { height: `calc(100vh - 15.4rem - ${get(descriptionHeight)}px)` };
+});
+
 function getRowClass(row: UnmatchedMovementRow): string {
   const classes = ['transition-all'];
   if (row.groupIdentifier === props.highlightedGroupIdentifier) {
@@ -125,7 +134,10 @@ function getRowClass(row: UnmatchedMovementRow): string {
 <template>
   <div>
     <div class="flex items-center justify-between gap-2 mb-4">
-      <p class="text-body-2 text-rui-text-secondary">
+      <p
+        ref="description"
+        class="text-body-2 text-rui-text-secondary"
+      >
         {{ showRestore ? t('asset_movement_matching.dialog.ignored_description') : t('asset_movement_matching.dialog.description') }}
       </p>
       <RuiButton
@@ -154,7 +166,8 @@ function getRowClass(row: UnmatchedMovementRow): string {
       dense
       multi-page-select
       :loading="loading"
-      :class="!isPinned ? 'max-h-[calc(100vh-23rem)]' : 'h-[calc(100vh-17.9rem)] !max-h-none'"
+      :style="pinnedTableStyle"
+      :class="!isPinned ? 'max-h-[calc(100vh-23rem)]' : '!max-h-none'"
       class="table-inside-dialog"
       :empty="{ description: emptyDescription }"
     >
@@ -199,7 +212,10 @@ function getRowClass(row: UnmatchedMovementRow): string {
           :timestamp="row.timestamp"
           milliseconds
         />
-        <template v-if="isPinned">
+        <div
+          v-if="isPinned"
+          class="flex flex-wrap items-center gap-x-1.5"
+        >
           <BadgeDisplay class="!leading-6 my-1">
             {{ getAssetMovementsType(row.eventSubtype) }}
           </BadgeDisplay>
@@ -209,7 +225,7 @@ function getRowClass(row: UnmatchedMovementRow): string {
             :identifier="row.location"
             horizontal
           />
-        </template>
+        </div>
       </template>
       <template #item.actions="{ row }">
         <div class="flex items-center gap-2">
@@ -255,7 +271,7 @@ function getRowClass(row: UnmatchedMovementRow): string {
           <div
             v-else
             class="flex"
-            :class="isPinned ? 'flex-col gap-1' : 'gap-2'"
+            :class="isPinned ? 'flex-wrap gap-1' : 'gap-2'"
           >
             <RuiButton
               size="sm"

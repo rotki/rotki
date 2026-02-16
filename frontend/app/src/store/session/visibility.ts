@@ -10,6 +10,7 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
   const showNotesSidebar = ref<boolean>(false);
   const showPinned = ref<boolean>(false);
   const showPrivacyModeMenu = ref<boolean>(false);
+  const pinnedWidth = ref<number>(516);
 
   const toggleDrawer = (): void => {
     set(showDrawer, !get(showDrawer));
@@ -29,6 +30,7 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
     expanded,
     isMini,
     pinned,
+    pinnedWidth,
     showAbout,
     showDrawer,
     showHelpBar,

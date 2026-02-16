@@ -120,10 +120,19 @@ const movementEntry = computed<HistoryEventEntry>(() => {
   return { ...entry, ...meta };
 });
 
+const searchControlsEl = useTemplateRef<HTMLElement>('searchControls');
+const { height: searchControlsHeight } = useElementSize(searchControlsEl);
+
 const tableClass = computed<string>(() => {
   if (props.isPinned)
-    return '!overflow-auto !max-h-none !h-[calc(100vh-33rem)]';
+    return '!overflow-auto !max-h-none';
   return 'table-inside-dialog !max-h-[calc(100vh-33rem)]';
+});
+
+const pinnedTableStyle = computed<Record<string, string> | undefined>(() => {
+  if (!props.isPinned)
+    return undefined;
+  return { height: `calc(100vh - 28.4rem - ${get(searchControlsHeight)}px)` };
 });
 
 watchDebounced(onlyExpectedAssets, () => {
@@ -200,9 +209,7 @@ watchDebounced(onlyExpectedAssets, () => {
       <p class="text-body-2 font-medium mb-2">
         {{ t('asset_movement_matching.dialog.matching_for') }}
       </p>
-      <SimpleTable
-        :class="pinnedSimpleTableClass"
-      >
+      <SimpleTable :class="pinnedSimpleTableClass">
         <thead>
           <tr>
             <th>{{ t('common.datetime') }}</th>
@@ -280,7 +287,7 @@ watchDebounced(onlyExpectedAssets, () => {
         </tbody>
       </SimpleTable>
     </div>
-    <div>
+    <div ref="searchControls">
       <div class="text-body-2 font-medium mb-4">
         {{ t('asset_movement_matching.dialog.search_description') }}
       </div>
@@ -364,6 +371,7 @@ watchDebounced(onlyExpectedAssets, () => {
         :rows="matches"
         row-attr="identifier"
         :class="tableClass"
+        :style="pinnedTableStyle"
         :item-class="getRowClass"
         dense
         outlined

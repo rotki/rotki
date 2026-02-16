@@ -11,13 +11,22 @@ import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useStatisticsStore } from '@/store/statistics';
 
 const visibilityStore = useAreaVisibilityStore();
-const { expanded, isMini, showPinned } = storeToRefs(visibilityStore);
+const { expanded, isMini, pinnedWidth, showPinned } = storeToRefs(visibilityStore);
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
 const { toggleDrawer } = visibilityStore;
 
 const { updateTray } = useInterop();
 const { scrollToTop, shouldShowScrollToTopButton } = useCoreScroll();
+
+const { isXlAndDown } = useBreakpoint();
+
+const pinnedPadding = computed<string | undefined>(() => {
+  if (get(showPinned) && !get(isXlAndDown))
+    return `${get(pinnedWidth)}px`;
+
+  return undefined;
+});
 
 watch(overall, (overall) => {
   if (overall.percentage === '-')
@@ -58,8 +67,8 @@ onBeforeMount(() => {
       :class="{
         'pl-[3.5rem]': isMini,
         'pl-[300px]': expanded,
-        '2xl:pr-[520px]': showPinned,
       }"
+      :style="{ paddingRight: pinnedPadding }"
     >
       <main>
         <RouterView #default="{ Component }">

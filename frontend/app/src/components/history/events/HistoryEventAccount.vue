@@ -6,7 +6,7 @@ import HashLink from '@/modules/common/links/HashLink.vue';
 const props = defineProps<{
   location: string;
   locationLabel: string;
-  dense?: boolean
+  dense?: boolean;
 }>();
 
 const { matchChain } = useSupportedChains();
