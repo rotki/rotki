@@ -13,7 +13,7 @@ interface UseChangePasswordReturn {
 export function useChangePassword(): UseChangePasswordReturn {
   const { username } = storeToRefs(useSessionAuthStore());
   const { setMessage } = useMessageStore();
-  const { changeUserPassword } = useUsersApi();
+  const { changeUserPassword, colibriLogin, colibriLogout } = useUsersApi();
   const { clearPassword, isPackaged } = useInterop();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -25,10 +25,20 @@ export function useChangePassword(): UseChangePasswordReturn {
         success: true,
       });
 
-      if (success && isPackaged) {
-        clearPassword()
-          .then(() => logger.info('clear complete'))
-          .catch(error => logger.error(error));
+      if (success) {
+        try {
+          await colibriLogout();
+          await colibriLogin({ username: get(username), password: newPassword });
+        }
+        catch (error: any) {
+          logger.error('Failed to re-authenticate with colibri after password change', error);
+        }
+
+        if (isPackaged) {
+          clearPassword()
+            .then(() => logger.info('clear complete'))
+            .catch(error => logger.error(error));
+        }
       }
 
       return {

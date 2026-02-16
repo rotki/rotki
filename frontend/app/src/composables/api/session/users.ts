@@ -13,6 +13,7 @@ interface UseUserApiReturn {
   createAccount: (payload: CreateAccountPayload) => Promise<PendingTask>;
   login: (credentials: LoginCredentials) => Promise<PendingTask>;
   colibriLogin: (credentials: BasicLoginCredentials) => Promise<boolean>;
+  colibriLogout: () => Promise<boolean>;
   checkIfLogged: (username: string) => Promise<boolean>;
   loggedUsers: () => Promise<string[]>;
   getUserProfiles: () => Promise<string[]>;
@@ -127,6 +128,7 @@ export function useUsersApi(): UseUserApiReturn {
     changeUserPassword,
     checkIfLogged,
     colibriLogin,
+    colibriLogout,
     createAccount,
     getUserProfiles,
     loggedUsers,
