@@ -72,6 +72,7 @@ defineExpose({
       v-model="counterpartyModel"
       :label="t('common.counterparty')"
       :disabled="editMode"
+      exclude-exchanges
       clearable
       :error-messages="toMessages(v$.counterparty)"
     />

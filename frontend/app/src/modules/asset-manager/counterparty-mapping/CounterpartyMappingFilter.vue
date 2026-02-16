@@ -21,6 +21,7 @@ const { t } = useI18n({ useScope: 'global' });
       v-model="counterparty"
       :label="t('asset_management.counterparty_mapping.filter_by_counterparty')"
       class="w-full"
+      exclude-exchanges
       dense
       hide-details
       clearable
