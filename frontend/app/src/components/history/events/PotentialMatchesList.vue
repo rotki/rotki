@@ -58,7 +58,7 @@ function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetCla
     {
       key: 'timestamp',
       label: isPinned
-        ? t('asset_movement_matching.dialog.info_column')
+        ? t('asset_movement_matching.dialog.compacted_info')
         : t('common.datetime'),
       ...baseClass,
     },
@@ -68,7 +68,7 @@ function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetCla
     columns.push({
       key: 'eventTypeAndSubtype',
       label: `${t('transactions.events.form.event_type.label')} -\n${t('transactions.events.form.event_subtype.label')}`,
-      class: `whitespace-pre-line min-w-32 ${baseClass.class ?? ''}`.trim(),
+      class: `min-w-32 ${baseClass.class ?? ''}`.trim(),
       cellClass: baseClass.cellClass ?? '',
     });
   }
@@ -77,7 +77,7 @@ function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetCla
     {
       key: 'txRef',
       label: `${t('common.tx_hash')} -\n${t('common.account')}`,
-      class: `whitespace-pre-line min-w-32 ${baseClass.class ?? ''}`.trim(),
+      class: `min-w-32 ${baseClass.class ?? ''}`.trim(),
       cellClass: baseClass.cellClass ?? '',
     },
     {
@@ -413,6 +413,7 @@ watchDebounced(onlyExpectedAssets, () => {
             <span v-if="!row.entry.locationLabel">-</span>
             <HistoryEventAccount
               v-else
+              :dense="isPinned"
               :location="row.entry.location"
               :location-label="row.entry.locationLabel"
             />

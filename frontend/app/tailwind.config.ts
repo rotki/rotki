@@ -205,6 +205,7 @@ export default {
     '!pt-0',
     'h-[30rem]',
     '!bg-rui-error/15',
+    '[&>span]:!text-xs',
   ],
   plugins: [generated, componentsPlugin, containerQueryPlugin],
 } satisfies Config;
