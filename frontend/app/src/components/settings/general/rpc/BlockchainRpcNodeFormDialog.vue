@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { BlockchainRpcNodeManageState } from '@/types/settings/rpc';
+import type { BlockchainRpcNode, BlockchainRpcNodeManageState } from '@/types/settings/rpc';
 import { assert, Blockchain } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
@@ -85,12 +85,13 @@ async function save() {
       set(errorMessages, messages);
 
       const keys = Object.keys(messages);
-      const knownKeys = Object.keys(node);
-      const unknownKeys = keys.filter(key => !knownKeys.includes(key));
+      const formKeys: string[] = ['name', 'endpoint', 'weight', 'owned', 'active'] satisfies (keyof BlockchainRpcNode)[];
+      const nodeKeys = Object.keys(node);
+      const nonFormKeys = keys.filter(key => !formKeys.includes(key) && nodeKeys.includes(key));
 
-      if (unknownKeys.length > 0) {
+      if (nonFormKeys.length > 0) {
         setMessage({
-          description: unknownKeys.map(key => `${key}: ${messages[key]}`).join(', '),
+          description: nonFormKeys.map(key => `${key}: ${messages[key]}`).join(', '),
           success: false,
           title: errorTitle,
         });

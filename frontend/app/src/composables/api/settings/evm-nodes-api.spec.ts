@@ -116,6 +116,35 @@ describe('composables/api/settings/evm-nodes-api', () => {
         blockchain: 'ETH',
       });
     });
+
+    it('strips isArchive from the payload', async () => {
+      let requestBody: Record<string, unknown> | null = null;
+
+      server.use(
+        http.put(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
+          requestBody = await request.json() as Record<string, unknown>;
+          return HttpResponse.json({
+            result: true,
+            message: '',
+          });
+        }),
+      );
+
+      const { addEvmNode } = useEvmNodesApi();
+      const newNode = {
+        name: 'Archive Node',
+        endpoint: 'https://archive.example.com',
+        active: true,
+        owned: true,
+        weight: 100,
+        blockchain: 'ETH',
+        isArchive: true,
+      };
+
+      await addEvmNode(newNode);
+
+      expect(requestBody).not.toHaveProperty('isArchive');
+    });
   });
 
   describe('editEvmNode', () => {
@@ -155,6 +184,36 @@ describe('composables/api/settings/evm-nodes-api', () => {
         weight: 25,
         blockchain: 'ETH',
       });
+    });
+
+    it('strips isArchive from the payload', async () => {
+      let requestBody: Record<string, unknown> | null = null;
+
+      server.use(
+        http.patch(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
+          requestBody = await request.json() as Record<string, unknown>;
+          return HttpResponse.json({
+            result: true,
+            message: '',
+          });
+        }),
+      );
+
+      const { editEvmNode } = useEvmNodesApi();
+      const editedNode: BlockchainRpcNode = {
+        identifier: 1,
+        name: 'Archive Node',
+        endpoint: 'https://archive.example.com',
+        active: true,
+        owned: true,
+        weight: 100,
+        blockchain: 'ETH',
+        isArchive: true,
+      };
+
+      await editEvmNode(editedNode);
+
+      expect(requestBody).not.toHaveProperty('isArchive');
     });
   });
 
