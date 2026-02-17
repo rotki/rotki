@@ -28,6 +28,7 @@ const props = defineProps<{
   pageParams: HistoryEventRequestPayload | undefined;
   excludeIgnored: boolean;
   groupLoading: boolean;
+  hasActiveFilters?: boolean;
   tableHeightOffset?: number;
   identifiers?: string[];
   highlightedIdentifiers?: string[];
@@ -234,9 +235,22 @@ function isShowingIgnoredAssets(groupId: string): boolean {
     <div
       v-else-if="!loading && groups.length === 0"
       :style="tableContainerStyle"
-      class="flex items-center justify-center text-rui-text-secondary"
+      class="flex flex-col items-center justify-center gap-2 text-rui-text-secondary whitespace-break-spaces text-center"
     >
-      {{ t('data_table.no_data') }}
+      <template v-if="hasActiveFilters">
+        {{ t('transactions.empty_state.no_data_with_filters') }}
+        <RuiButton
+          variant="text"
+          color="primary"
+          class="underline"
+          @click="emit('clear-filters')"
+        >
+          {{ t('transactions.empty_state.clear_filters') }}
+        </RuiButton>
+      </template>
+      <template v-else>
+        {{ t('transactions.empty_state.no_events') }}
+      </template>
     </div>
 
     <!-- Virtual Scroll Container -->

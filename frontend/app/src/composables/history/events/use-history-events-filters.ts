@@ -10,6 +10,7 @@ import { isEqual } from 'es-toolkit';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { isValidHistoryEventState } from '@/composables/history/events/mapping/state';
+import { useRefWithDebounce } from '@/composables/ref';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { TableId } from '@/modules/table/use-remember-table-sorting';
 import { RouterLocationLabelsSchema } from '@/types/route';
@@ -56,7 +57,16 @@ export function getHighlightClass(highlightType?: HighlightType): string | undef
   return HIGHLIGHT_CLASSES[highlightType];
 }
 
+export function getDefaultToggles(): HistoryEventsToggles {
+  return {
+    matchExactEvents: false,
+    showIgnoredAssets: false,
+    stateMarkers: [],
+  };
+}
+
 interface UseHistoryEventsFiltersReturn {
+  clearFilters: () => void;
   duplicateHandlingStatus: ComputedRef<DuplicateHandlingStatus | undefined>;
   locationLabels: Ref<string[]>;
   groupIdentifiers: ComputedRef<string[] | undefined>;
@@ -64,6 +74,7 @@ interface UseHistoryEventsFiltersReturn {
   filters: ComputedRef<Filters>;
   groupLoading: Ref<boolean>;
   groups: Ref<Collection<HistoryEventRow>>;
+  hasActiveFilters: ComputedRef<boolean>;
   highlightedIdentifiers: ComputedRef<string[] | undefined>;
   highlightTypes: ComputedRef<Record<string, HighlightType>>;
   identifiers: ComputedRef<string[] | undefined>;
@@ -321,6 +332,19 @@ export function useHistoryEventsFilters(
     };
   });
 
+  const hasActiveFiltersRaw = computed<boolean>(() =>
+    Object.keys(get(filters)).length > 0
+    || get(locationLabels).length > 0
+    || !isEqual(get(toggles), getDefaultToggles()));
+
+  const hasActiveFilters = useRefWithDebounce(hasActiveFiltersRaw, 500);
+
+  function clearFilters(): void {
+    updateFilter({});
+    onLocationLabelsChanged([]);
+    set(toggles, { ...getDefaultToggles() });
+  }
+
   function onLocationLabelsChanged(labels: string[]): void {
     set(userAction, true);
     set(locationLabels, labels);
@@ -343,12 +367,14 @@ export function useHistoryEventsFilters(
   }, { debounce: 100 });
 
   return {
+    clearFilters,
     duplicateHandlingStatus: duplicateHandlingStatusFromQuery,
     fetchData,
     filters,
     groupIdentifiers: groupIdentifiersFromQuery,
     groupLoading,
     groups,
+    hasActiveFilters,
     highlightedIdentifiers,
     highlightTypes,
     identifiers: missingAcquisitionFromQuery,

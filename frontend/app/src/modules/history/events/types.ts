@@ -22,6 +22,7 @@ export interface HistoryEventUnlinkPayload {
 }
 
 export interface HistoryEventsTableEmits {
+  'clear-filters': [];
   'show:dialog': [options: DialogShowOptions];
   'set-page': [page: number];
   'refresh': [payload?: PullLocationTransactionPayload];

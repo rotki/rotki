@@ -5297,6 +5297,11 @@
         "title": "Delete transaction and events"
       }
     },
+    "empty_state": {
+      "clear_filters": "Clear filters",
+      "no_data_with_filters": "No events match the current filters",
+      "no_events": "No events found.\nAdd exchanges, track blockchain addresses, or manually add events to get started."
+    },
     "events": {
       "accounting_rule": {
         "different_types_error": "Cannot create an accounting rule for events with different types or subtypes. Please select events with the same event type and subtype combination.",

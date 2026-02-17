@@ -11,7 +11,7 @@ import HistoryEventsViewButtons from '@/components/history/events/HistoryEventsV
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useHistoryEventsActions } from '@/composables/history/events/use-history-events-actions';
-import { useHistoryEventNavigationConsumer, useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
+import { getDefaultToggles, useHistoryEventNavigationConsumer, useHistoryEventsFilters } from '@/composables/history/events/use-history-events-filters';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import HistoryEventsVirtualTable from '@/modules/history/events/components/HistoryEventsVirtualTable.vue';
 import { useHistoryEventsDeletion } from '@/modules/history/events/composables/use-history-events-deletion';
@@ -73,11 +73,7 @@ const {
   validators,
 } = toRefs(props);
 
-const toggles = ref<HistoryEventsToggles>({
-  matchExactEvents: false,
-  showIgnoredAssets: false,
-  stateMarkers: [],
-});
+const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
 
 const showAlerts = ref<boolean>(false);
 const currentAction = ref<HistoryEventAction>(HISTORY_EVENT_ACTIONS.QUERY);
@@ -106,12 +102,14 @@ const {
 const usedTitle = computed<string>(() => get(sectionTitle) || t('transactions.title'));
 
 const {
+  clearFilters,
   duplicateHandlingStatus,
   fetchData,
   filters,
   groupIdentifiers,
   groupLoading,
   groups,
+  hasActiveFilters,
   highlightedIdentifiers,
   highlightTypes,
   identifiers,
@@ -319,12 +317,14 @@ watchDebounced(route, async () => {
             :groups="groups"
             :page-params="toggles.matchExactEvents ? pageParams : undefined"
             :exclude-ignored="!toggles.showIgnoredAssets"
+            :has-active-filters="hasActiveFilters"
             :identifiers="identifiers"
             :highlighted-identifiers="highlightedIdentifiers"
             :highlight-types="highlightTypes"
             :selection="selectionMode"
             :match-exact-events="toggles.matchExactEvents"
             :duplicate-handling-status="duplicateHandlingStatus"
+            @clear-filters="clearFilters()"
             @show:dialog="dialogContainer?.show($event)"
             @refresh="actions.fetch.dataAndRedecode($event)"
             @refresh:block-event="actions.redecode.blocks($event)"
