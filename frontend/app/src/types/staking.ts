@@ -60,33 +60,33 @@ export const LidoCsmNodeOperatorPayloadSchema = z.object({
 export type LidoCsmNodeOperatorPayload = z.infer<typeof LidoCsmNodeOperatorPayloadSchema>;
 
 const LidoCsmOperatorTypeSchema = z.object({
-  id: z.number().int().optional(),
-  label: z.string().optional(),
-}).strict().partial();
+  id: z.number().int(),
+  label: z.string(),
+});
 
 const LidoCsmBondSchema = z.object({
-  claimable: NumericString.optional(),
-  current: NumericString.optional(),
-  required: NumericString.optional(),
-}).strict().partial();
+  claimable: NumericString,
+  current: NumericString,
+  required: NumericString,
+});
 
 const LidoCsmKeysSchema = z.object({
-  totalDeposited: z.number().int().nonnegative().optional(),
-}).strict().partial();
+  totalDeposited: z.number().int().nonnegative(),
+});
 
 const LidoCsmRewardsSchema = z.object({
-  pending: NumericString.optional(),
-}).strict().partial();
+  pending: NumericString,
+});
 
 const LidoCsmNodeOperatorMetricsSchema = z.object({
-  bond: LidoCsmBondSchema.nullish(),
-  keys: LidoCsmKeysSchema.nullish(),
-  operatorType: LidoCsmOperatorTypeSchema.nullish(),
-  rewards: LidoCsmRewardsSchema.nullish().optional(),
+  bond: LidoCsmBondSchema,
+  keys: LidoCsmKeysSchema,
+  operatorType: LidoCsmOperatorTypeSchema,
+  rewards: LidoCsmRewardsSchema,
 });
 
 const LidoCsmNodeOperatorSchema = LidoCsmNodeOperatorPayloadSchema.extend({
-  metrics: LidoCsmNodeOperatorMetricsSchema.nullish(),
+  metrics: LidoCsmNodeOperatorMetricsSchema.nullable(),
 });
 
 export type LidoCsmNodeOperator = z.infer<typeof LidoCsmNodeOperatorSchema>;

@@ -4969,11 +4969,15 @@
         "submit": "Add node operator",
         "title": "Track a node operator",
         "validation": {
-          "invalid_id": "Use a non-negative whole number"
+          "invalid_id": "Use a non-negative whole number",
+          "non_empty_address": "An address is required",
+          "non_empty_id": "A node operator ID is required"
         }
       },
       "messages": {
         "add_failed": "Failed to add the node operator: {message}",
+        "confirm_delete_message": "Are you sure you want to remove node operator #{nodeOperatorId} for {address}?",
+        "confirm_delete_title": "Delete node operator",
         "delete_failed": "Failed to remove the node operator: {message}",
         "fetch_failed": "Failed to query the Lido CSM node operators: {message}"
       },
