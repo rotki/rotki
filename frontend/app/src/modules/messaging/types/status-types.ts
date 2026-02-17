@@ -135,7 +135,7 @@ const MultiplePricesQueryStatusWithSubtype = CommonQueryStatusData.extend({
 
 export const CsvImportResult = z.object({
   messages: z.array(z.object({
-    isError: z.boolean(),
+    isError: z.boolean().default(false),
     msg: z.string(),
     rows: z.array(z.number()).optional(),
   })),

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`10873` Users can now track Lido CSM node-operator bond balances by linking the accounting contract to their addresses.
 * :bug:`-` Clicking on non-snapshot data points in the net worth graph will no longer open the snapshot export dialog.
 * :bug:`-` 1inch v5 swaps routed through wombat router will now be decoded properly
 * :feature:`11583` Users can now re-pull missing ETH staking withdrawal events for specific validators or addresses within a chosen time range.
@@ -112,7 +113,6 @@ Changelog
 * :bug:`11005` Fix an issue where adding a new manual balance with a custom asset/price unnecessarily fetches prices for all assets.
 * :bug:`10997` Binance CSV import will now properly handle trades with different counts of spend versus buy entries.
 * :feature:`9230` rotki will now provide quick options for the date time picker.
-* :feature:`10873` Users can now track Lido CSM node-operator bond balances by linking the accounting contract to their addresses.
 * :bug:`10979` Binance CSV import will now properly handle multiple trades with identical amounts at the same timestamp.
 * :bug:`10984` Fix Binance CSV import crash when multiple trades with different pairs occur at the same time.
 * :bug:`10960` rotki will now support swaps with fees in multiple different assets.

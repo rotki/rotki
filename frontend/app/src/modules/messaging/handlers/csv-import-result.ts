@@ -16,8 +16,9 @@ export function createCsvImportResultHandler(t: ReturnType<typeof useI18n>['t'])
       messageBody = `${messageBody}\n\n${t('notification_messages.csv_import_result.errors')}`;
       messages.forEach((error, index) => {
         messageBody = `${messageBody}\n${index + 1}. ${error.msg}`;
-        if (error.rows)
-          messageBody = `${messageBody}\n${t('notification_messages.csv_import_result.rows', { rows: groupConsecutiveNumbers(error.rows) }, error.rows.length)}`;
+        const rows = error.rows?.filter(row => row >= 0);
+        if (rows?.length)
+          messageBody = `${messageBody}\n${t('notification_messages.csv_import_result.rows', { rows: groupConsecutiveNumbers(rows) }, rows.length)}`;
       });
     }
     let severity: Severity;
