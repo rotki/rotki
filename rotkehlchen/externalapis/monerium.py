@@ -41,12 +41,15 @@ MONERIUM_API_BASE_URL: Final = 'https://api.monerium.app/'
 MONERIUM_ACCEPT_HEADER: Final = 'application/vnd.monerium.api-v2+json'
 TOKEN_REFRESH_MARGIN_SECONDS: Final = 60
 AUTHORIZATION_CODE_FLOW_CLIENT_ID: Final = '9f93c53a-aa6c-11f0-9078-069e351f134d'
-SUPPORTED_MONERIUM_CHAINS: Final = {  # keys are the values used in the monerium's orders endpoint
+# keys are the values used in the monerium's orders endpoint
+# https://github.com/monerium/js-monorepo/blob/f01f01ceef87164f1dd42c54b332ca63444c2e23/packages/sdk/src/types.ts#L21
+SUPPORTED_MONERIUM_CHAINS: Final = {
     'ethereum': Location.ETHEREUM,
     'gnosis': Location.GNOSIS,
     'polygon': Location.POLYGON_POS,
     'arbitrum': Location.ARBITRUM_ONE,
     'scroll': Location.SCROLL,
+    'base': Location.BASE,
 }
 
 

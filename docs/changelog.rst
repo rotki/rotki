@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Monerium transactions on Base will now be decoded properly.
 * :feature:`10873` Users can now track Lido CSM node-operator bond balances by linking the accounting contract to their addresses.
 * :bug:`-` Clicking on non-snapshot data points in the net worth graph will no longer open the snapshot export dialog.
 * :bug:`-` 1inch v5 swaps routed through wombat router will now be decoded properly
