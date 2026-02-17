@@ -341,13 +341,9 @@ jobs:
     steps:
       - name: Check if any task failed
         run: |
-          data=($(echo "${RESULT}" | sed 's/[][,]//g'))
-          for i in "${data[@]}"
-          do
-            if [[ $i == "failure" ]]; then
-                echo "::error::At least one required task failed"
-                exit 1;
-            fi
-          done
+          if echo "${RESULT}" | jq -e '.[] | select(. == "failure")' > /dev/null 2>&1; then
+              echo "::error::At least one required task failed"
+              exit 1
+          fi
         env:
           RESULT: ${{ toJSON(needs.*.result) }}
