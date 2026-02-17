@@ -7,7 +7,7 @@ import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HistoryEventsListItemAction from '@/components/history/events/HistoryEventsListItemAction.vue';
 import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
-import { getHighlightClass, type HighlightType } from '@/composables/history/events/use-history-events-filters';
+import { getHighlightClass, type HighlightType } from '@/composables/history/events/types';
 import { useHistorySwapItem } from '../composables/use-history-swap-item';
 
 const props = withDefaults(defineProps<{

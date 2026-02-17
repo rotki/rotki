@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DuplicateHandlingStatus } from '@/composables/history/events/use-history-events-filters';
+import type { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import type { LocationAndTxRef, PullEventPayload } from '@/types/history/events';
 import type { HistoryEventEntry, StandaloneEditableEvents } from '@/types/history/events/schemas';
 import DateDisplay from '@/components/display/DateDisplay.vue';

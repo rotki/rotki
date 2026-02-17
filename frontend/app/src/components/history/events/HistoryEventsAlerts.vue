@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
-import { DuplicateHandlingStatus } from '@/composables/history/events/use-history-events-filters';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useRefWithDebounce } from '@/composables/ref';
 import { useStatusUpdater } from '@/composables/status';

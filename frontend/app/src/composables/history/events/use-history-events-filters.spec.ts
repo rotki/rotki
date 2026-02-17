@@ -32,7 +32,17 @@ vi.mock('@/composables/history/events', () => ({
   })),
 }));
 
-vi.mock('@/composables/history/events/use-history-event-navigation', () => ({
+vi.mock('@/composables/history/events/use-history-event-navigation', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/composables/history/events/use-history-event-navigation')>();
+  return {
+    ...actual,
+    useHistoryEventNavigation: vi.fn(() => ({
+      findHighlightPage: vi.fn().mockResolvedValue(-1),
+    })),
+  };
+});
+
+vi.mock('@/composables/history/events/use-history-event-navigation-consumer', () => ({
   useHistoryEventNavigationConsumer: vi.fn(),
 }));
 

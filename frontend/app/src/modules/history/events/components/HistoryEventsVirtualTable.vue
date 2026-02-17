@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { DuplicateHandlingStatus, HighlightType } from '@/composables/history/events/use-history-events-filters';
+import type { DuplicateHandlingStatus, HighlightType } from '@/composables/history/events/types';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventsTableEmits } from '@/modules/history/events/types';

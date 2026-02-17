@@ -1,7 +1,7 @@
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { Ref } from 'vue';
 import type { VirtualRow } from './use-virtual-rows';
-import type { HighlightType } from '@/composables/history/events/use-history-events-filters';
+import type { HighlightType } from '@/composables/history/events/types';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry } from '@/types/history/events/schemas';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
+import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
-import { type DuplicateHandlingStatus, DuplicateHandlingStatus as DuplicateStatus } from '@/composables/history/events/use-history-events-filters';
 import { useConfirmStore } from '@/store/confirm';
 
 const props = defineProps<{
@@ -25,7 +25,7 @@ const {
 
 const { duplicateHandlingStatus, groupIdentifiers } = toRefs(props);
 
-const isAutoFixable = computed<boolean>(() => get(duplicateHandlingStatus) === DuplicateStatus.AUTO_FIX);
+const isAutoFixable = computed<boolean>(() => get(duplicateHandlingStatus) === DuplicateHandlingStatus.AUTO_FIX);
 
 const hasGroupIdentifiers = computed<boolean>(() => {
   const ids = get(groupIdentifiers);

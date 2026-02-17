@@ -1,4 +1,4 @@
-import type { ContextColorsType, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, MaybeRef, Ref } from 'vue';
 import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
@@ -6,10 +6,13 @@ import type { Collection } from '@/types/collection';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
 import { type Account, type HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { objectOmit } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { isValidHistoryEventState } from '@/composables/history/events/mapping/state';
+import { DuplicateHandlingStatus, type HighlightType } from '@/composables/history/events/types';
+import { HIGHLIGHT_FETCH_DEBOUNCE, HIGHLIGHT_FILTER_DEBOUNCE, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
 import { useRefWithDebounce } from '@/composables/ref';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { TableId } from '@/modules/table/use-remember-table-sorting';
@@ -19,16 +22,9 @@ import {
   isOnlineHistoryEventType,
 } from '@/utils/history/events';
 
-export { useHistoryEventNavigationConsumer } from '@/composables/history/events/use-history-event-navigation';
+export { useHistoryEventNavigationConsumer } from '@/composables/history/events/use-history-event-navigation-consumer';
 
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
-
-export const DuplicateHandlingStatus = {
-  AUTO_FIX: 'auto-fix',
-  MANUAL_REVIEW: 'manual-review',
-} as const;
-
-export type DuplicateHandlingStatus = (typeof DuplicateHandlingStatus)[keyof typeof DuplicateHandlingStatus];
 
 interface HistoryEventsFiltersOptions {
   entryTypes: Ref<HistoryEventEntryType[] | undefined>;
@@ -41,20 +37,6 @@ interface HistoryEventsFiltersOptions {
   protocols: Ref<string[]>;
   useExternalAccountFilter: Ref<boolean | undefined>;
   validators: Ref<number[] | undefined>;
-}
-
-export type HighlightType = ContextColorsType;
-
-export const HIGHLIGHT_CLASSES: Partial<Record<HighlightType, string>> = {
-  error: '!bg-rui-error/15',
-  success: '!bg-rui-success/15',
-  warning: '!bg-rui-warning/15',
-};
-
-export function getHighlightClass(highlightType?: HighlightType): string | undefined {
-  if (!highlightType)
-    return undefined;
-  return HIGHLIGHT_CLASSES[highlightType];
 }
 
 export function getDefaultToggles(): HistoryEventsToggles {
@@ -113,8 +95,8 @@ export function useHistoryEventsFilters(
   const GROUPS_CANCEL_TAG = 'history-events-groups';
 
   const route = useRoute();
-  const router = useRouter();
   const { fetchHistoryEvents } = useHistoryEvents();
+  const { findHighlightPage } = useHistoryEventNavigation();
 
   const fetchHistoryEventsTagged = async (
     payload: MaybeRef<HistoryEventRequestPayload>,
@@ -185,7 +167,7 @@ export function useHistoryEventsFilters(
       }
       return {};
     }),
-    fetchDebounce: 200,
+    fetchDebounce: HIGHLIGHT_FETCH_DEBOUNCE,
     extraParams: computed(() => {
       const stateMarkers = get(toggles, 'stateMarkers');
       return {
@@ -350,21 +332,42 @@ export function useHistoryEventsFilters(
     set(locationLabels, labels);
   }
 
-  watchDebounced([filters, locationLabels], ([filters, locationLabels], [oldFilters, oldLocationLabels]) => {
-    const filterChanged = !isEqual(filters, oldFilters);
-    const accountsChanged = !isEqual(locationLabels, oldLocationLabels);
+  /**
+   * Calculate position of highlighted event within current filters and set the page directly.
+   * This avoids a duplicate fetch by setting the page before the pagination system's debounced fetch fires.
+   * The filter watcher fires at HIGHLIGHT_FILTER_DEBOUNCE while the pagination fetch fires at HIGHLIGHT_FETCH_DEBOUNCE,
+   * so if the position API responds quickly, setPage() resets the debounce and only one fetch occurs.
+   */
+  let navigationGeneration = 0;
 
-    if (!(filterChanged || accountsChanged))
+  async function navigateToHighlightPosition(): Promise<void> {
+    const generation = ++navigationGeneration;
+    const page = await findHighlightPage(get(pageParams), get(pagination).limit);
+
+    if (generation !== navigationGeneration)
       return;
 
-    // Clear highlight when non-pagination filters change
-    const { highlightedAssetMovement, highlightedNegativeBalanceEvent, highlightedPotentialMatch, ...remainingQuery } = get(route).query;
-    if (highlightedAssetMovement || highlightedPotentialMatch || highlightedNegativeBalanceEvent) {
-      startPromise(router.replace({
-        query: remainingQuery,
-      }));
-    }
-  }, { debounce: 100 });
+    if (page >= 1)
+      setPage(page);
+  }
+
+  /**
+   * Re-navigate highlights when any parameter affecting the result set changes.
+   * Watches the aggregated pageParams (filters, toggles, limit, etc.) but ignores
+   * offset changes since those are just page navigation.
+   */
+  watchDebounced(pageParams, (params, oldParams) => {
+    if (!oldParams)
+      return;
+
+    const current = objectOmit(params, ['offset']);
+    const previous = objectOmit(oldParams, ['offset']);
+
+    if (isEqual(current, previous))
+      return;
+
+    startPromise(navigateToHighlightPosition());
+  }, { debounce: HIGHLIGHT_FILTER_DEBOUNCE, deep: true });
 
   return {
     clearFilters,

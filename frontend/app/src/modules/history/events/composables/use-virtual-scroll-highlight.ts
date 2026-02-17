@@ -1,7 +1,7 @@
 import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { VirtualRow } from './use-virtual-rows';
-import type { HighlightType } from '@/composables/history/events/use-history-events-filters';
+import type { HighlightType } from '@/composables/history/events/types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { startPromise } from '@shared/utils';
 import { useMediaQuery, useVirtualList, type UseVirtualListReturn } from '@vueuse/core';

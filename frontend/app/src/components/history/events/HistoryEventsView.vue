@@ -177,7 +177,7 @@ const {
 const debouncedProcessing = refDebounced(processing, 200);
 const { autoMatchLoading, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 const { eventsModificationCounter } = storeToRefs(useHistoryStore());
-useHistoryEventNavigationConsumer(pagination);
+useHistoryEventNavigationConsumer(pagination, pageParams, groupLoading);
 const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading);
 
 // Handle updating available event IDs from the table

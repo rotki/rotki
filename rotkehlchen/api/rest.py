@@ -2782,10 +2782,7 @@ class RestAPI:
             group_identifier=group_identifier,
             filter_query=filter_query,
         )
-        if position is None:
-            return api_response(wrap_in_fail_result('No event found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
-
-        return api_response(_wrap_in_ok_result({'position': position}), status_code=HTTPStatus.OK)
+        return api_response(_wrap_in_ok_result({'position': position if position is not None else -1}), status_code=HTTPStatus.OK)  # noqa: E501
 
     @async_api_call()
     def add_transaction_by_reference(

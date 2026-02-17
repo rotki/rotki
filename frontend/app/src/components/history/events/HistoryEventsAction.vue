@@ -13,8 +13,8 @@ import type {
   SolanaSwapEvent,
   StandaloneEditableEvents,
 } from '@/types/history/events/schemas';
+import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
-import { type DuplicateHandlingStatus, DuplicateHandlingStatus as DuplicateStatus } from '@/composables/history/events/use-history-events-filters';
 import { useReportIssue } from '@/composables/report-issue';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import {
@@ -58,7 +58,7 @@ const { show } = useConfirmStore();
 
 const { duplicateHandlingStatus, event } = toRefs(props);
 
-const isAutoFixable = computed<boolean>(() => get(duplicateHandlingStatus) === DuplicateStatus.AUTO_FIX);
+const isAutoFixable = computed<boolean>(() => get(duplicateHandlingStatus) === DuplicateHandlingStatus.AUTO_FIX);
 
 const showMenu = ref<boolean>(false);
 
