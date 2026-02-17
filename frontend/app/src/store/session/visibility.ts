@@ -1,5 +1,6 @@
 import type { Nullable } from '@rotki/common';
 import type { Pinned } from '@/types/session';
+import { PINNED_DEFAULT_WIDTH } from '@/composables/use-sidebar-resize-constants';
 
 export const useAreaVisibilityStore = defineStore('session/visibility', () => {
   const showAbout = ref<boolean>(false);
@@ -10,7 +11,7 @@ export const useAreaVisibilityStore = defineStore('session/visibility', () => {
   const showNotesSidebar = ref<boolean>(false);
   const showPinned = ref<boolean>(false);
   const showPrivacyModeMenu = ref<boolean>(false);
-  const pinnedWidth = ref<number>(516);
+  const pinnedWidth = ref<number>(PINNED_DEFAULT_WIDTH);
 
   const toggleDrawer = (): void => {
     set(showDrawer, !get(showDrawer));

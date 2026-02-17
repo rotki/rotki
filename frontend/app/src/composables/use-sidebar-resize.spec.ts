@@ -1,6 +1,7 @@
 import { createTestingPinia } from '@pinia/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSidebarResize } from '@/composables/use-sidebar-resize';
+import { PINNED_DEFAULT_WIDTH } from '@/composables/use-sidebar-resize-constants';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 interface MockTarget {
@@ -42,7 +43,7 @@ describe('composables::use-sidebar-resize', () => {
   it('should initialize with default width', () => {
     const { widthPx, dragging } = useSidebarResize();
 
-    expect(get(widthPx)).toBe('516px');
+    expect(get(widthPx)).toBe(`${PINNED_DEFAULT_WIDTH}px`);
     expect(get(dragging)).toBe(false);
   });
 
@@ -92,7 +93,7 @@ describe('composables::use-sidebar-resize', () => {
       expect(store.pinnedWidth).toBe(700);
     });
 
-    it('should clamp width to minimum 500', () => {
+    it('should clamp width to minimum', () => {
       Object.defineProperty(window, 'innerWidth', { value: 1200, writable: true, configurable: true });
       const store = useAreaVisibilityStore();
       const { onPointerDown, onPointerMove } = useSidebarResize();
@@ -100,8 +101,8 @@ describe('composables::use-sidebar-resize', () => {
       onPointerDown(createPointerEvent().event);
       onPointerMove(createPointerEvent({ clientX: 900 }).event);
 
-      // width = 1200 - 900 = 300, clamped to min 516
-      expect(store.pinnedWidth).toBe(516);
+      // width = 1200 - 900 = 300, clamped to min
+      expect(store.pinnedWidth).toBe(PINNED_DEFAULT_WIDTH);
     });
 
     it('should clamp width to 75% of window when window is narrow', () => {

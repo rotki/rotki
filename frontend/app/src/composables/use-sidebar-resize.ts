@@ -1,7 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
+import { PINNED_DEFAULT_WIDTH, PINNED_MAX_VIEWPORT_RATIO, PINNED_MAX_WIDTH } from '@/composables/use-sidebar-resize-constants';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-
-const PINNED_DEFAULT_WIDTH = 516;
 
 export function useSidebarResize(): {
   dragging: Ref<boolean>;
@@ -22,8 +21,8 @@ export function useSidebarResize(): {
   });
 
   function clampWidth(width: number): number {
-    const max = Math.min(1000, window.innerWidth * 0.75);
-    return Math.max(516, Math.min(width, max));
+    const max = Math.min(PINNED_MAX_WIDTH, window.innerWidth * PINNED_MAX_VIEWPORT_RATIO);
+    return Math.max(PINNED_DEFAULT_WIDTH, Math.min(width, max));
   }
 
   function onPointerDown(event: PointerEvent): void {
