@@ -27,6 +27,7 @@ function createPointerEvent(overrides: Partial<PointerEvent> = {}): { event: Poi
 
 describe('composables::use-sidebar-resize', () => {
   let originalInnerWidth: number;
+  let rafCallbacks: FrameRequestCallback[];
 
   beforeEach(() => {
     const pinia = createTestingPinia();
@@ -34,11 +35,27 @@ describe('composables::use-sidebar-resize', () => {
     originalInnerWidth = window.innerWidth;
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
+
+    rafCallbacks = [];
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: FrameRequestCallback): number => {
+      rafCallbacks.push(cb);
+      return rafCallbacks.length;
+    });
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {
+      rafCallbacks.length = 0;
+    });
   });
 
   afterEach(() => {
+    vi.restoreAllMocks();
     Object.defineProperty(window, 'innerWidth', { value: originalInnerWidth, writable: true, configurable: true });
   });
+
+  function flushRaf(): void {
+    const cbs = [...rafCallbacks];
+    rafCallbacks.length = 0;
+    cbs.forEach(cb => cb(performance.now()));
+  }
 
   it('should initialize with default width', () => {
     const { widthPx, dragging } = useSidebarResize();
@@ -77,6 +94,7 @@ describe('composables::use-sidebar-resize', () => {
       const { onPointerMove } = useSidebarResize();
 
       onPointerMove(createPointerEvent({ clientX: 500 }).event);
+      flushRaf();
 
       expect(store.pinnedWidth).toBe(520);
     });
@@ -88,6 +106,7 @@ describe('composables::use-sidebar-resize', () => {
 
       onPointerDown(createPointerEvent().event);
       onPointerMove(createPointerEvent({ clientX: 500 }).event);
+      flushRaf();
 
       // width = 1200 - 500 = 700, max = min(1000, 900) = 900, clamped = 700
       expect(store.pinnedWidth).toBe(700);
@@ -100,6 +119,7 @@ describe('composables::use-sidebar-resize', () => {
 
       onPointerDown(createPointerEvent().event);
       onPointerMove(createPointerEvent({ clientX: 900 }).event);
+      flushRaf();
 
       // width = 1200 - 900 = 300, clamped to min
       expect(store.pinnedWidth).toBe(PINNED_DEFAULT_WIDTH);
@@ -112,6 +132,7 @@ describe('composables::use-sidebar-resize', () => {
 
       onPointerDown(createPointerEvent().event);
       onPointerMove(createPointerEvent({ clientX: 100 }).event);
+      flushRaf();
 
       // width = 1200 - 100 = 1100, max = min(1000, 900) = 900, clamped to 900
       expect(store.pinnedWidth).toBe(900);
@@ -124,9 +145,24 @@ describe('composables::use-sidebar-resize', () => {
 
       onPointerDown(createPointerEvent().event);
       onPointerMove(createPointerEvent({ clientX: 500 }).event);
+      flushRaf();
 
       // width = 2000 - 500 = 1500, max = min(1000, 1500) = 1000, clamped to 1000
       expect(store.pinnedWidth).toBe(1000);
+    });
+
+    it('should only apply the last move before the frame flushes', () => {
+      Object.defineProperty(window, 'innerWidth', { value: 1200, writable: true, configurable: true });
+      const store = useAreaVisibilityStore();
+      const { onPointerDown, onPointerMove } = useSidebarResize();
+
+      onPointerDown(createPointerEvent().event);
+      onPointerMove(createPointerEvent({ clientX: 600 }).event);
+      onPointerMove(createPointerEvent({ clientX: 500 }).event);
+      flushRaf();
+
+      // Only the last move (clientX: 500 → width 700) should apply
+      expect(store.pinnedWidth).toBe(700);
     });
   });
 
@@ -154,6 +190,20 @@ describe('composables::use-sidebar-resize', () => {
       expect(mockTarget.releasePointerCapture).toHaveBeenCalledWith(1);
       expect(document.body.style.cursor).toBe('');
       expect(document.body.style.userSelect).toBe('');
+    });
+
+    it('should cancel pending animation frame', () => {
+      Object.defineProperty(window, 'innerWidth', { value: 1200, writable: true, configurable: true });
+      const store = useAreaVisibilityStore();
+      const { onPointerDown, onPointerMove, onPointerUp } = useSidebarResize();
+
+      onPointerDown(createPointerEvent().event);
+      onPointerMove(createPointerEvent({ clientX: 500 }).event);
+      onPointerUp(createPointerEvent().event);
+      flushRaf();
+
+      // The pending rAF should have been cancelled, width stays at default
+      expect(store.pinnedWidth).toBe(PINNED_DEFAULT_WIDTH);
     });
   });
 });

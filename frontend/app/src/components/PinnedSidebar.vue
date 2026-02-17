@@ -29,7 +29,8 @@ const { dragging, widthPx, onPointerDown, onPointerMove, onPointerUp } = useSide
     :temporary="isLgAndDown"
     :width="widthPx"
     position="right"
-    class="border-l border-rui-grey-300 dark:border-rui-grey-800 z-[6] transition"
+    class="border-l border-rui-grey-300 dark:border-rui-grey-800 z-[6]"
+    :class="{ '!transition-none': dragging }"
   >
     <div class="relative h-full">
       <div
@@ -38,6 +39,7 @@ const { dragging, widthPx, onPointerDown, onPointerMove, onPointerUp } = useSide
         @pointerdown="onPointerDown($event)"
         @pointermove="onPointerMove($event)"
         @pointerup="onPointerUp($event)"
+        @pointercancel="onPointerUp($event)"
       >
         <div
           class="absolute left-1/2 -translate-x-1/2 top-0 h-full w-[2px] transition-colors pointer-events-none"

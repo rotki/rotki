@@ -9,10 +9,9 @@ export function useSidebarResize(): {
   onPointerMove: (event: PointerEvent) => void;
   onPointerUp: (event: PointerEvent) => void;
 } {
-  const { pinnedWidth } = storeToRefs(useAreaVisibilityStore());
+  const { pinnedDragging: dragging, pinnedWidth } = storeToRefs(useAreaVisibilityStore());
   const { isLgAndDown } = useBreakpoint();
-
-  const dragging = ref<boolean>(false);
+  let rafId = 0;
 
   const widthPx = computed<string>(() => {
     if (get(isLgAndDown))
@@ -37,13 +36,24 @@ export function useSidebarResize(): {
     if (!get(dragging))
       return;
 
-    const newWidth = clampWidth(window.innerWidth - event.clientX);
-    set(pinnedWidth, newWidth);
+    if (rafId)
+      cancelAnimationFrame(rafId);
+
+    rafId = requestAnimationFrame(() => {
+      const newWidth = clampWidth(window.innerWidth - event.clientX);
+      set(pinnedWidth, newWidth);
+      rafId = 0;
+    });
   }
 
   function onPointerUp(event: PointerEvent): void {
     if (!get(dragging))
       return;
+
+    if (rafId) {
+      cancelAnimationFrame(rafId);
+      rafId = 0;
+    }
 
     set(dragging, false);
     (event.target as HTMLElement).releasePointerCapture(event.pointerId);

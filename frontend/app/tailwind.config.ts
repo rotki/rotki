@@ -206,6 +206,7 @@ export default {
     'h-[30rem]',
     '!bg-rui-error/15',
     '[&>span]:!text-xs',
+    '!transition-none',
   ],
   plugins: [generated, componentsPlugin, containerQueryPlugin],
 } satisfies Config;

@@ -11,7 +11,7 @@ import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useStatisticsStore } from '@/store/statistics';
 
 const visibilityStore = useAreaVisibilityStore();
-const { expanded, isMini, pinnedWidth, showPinned } = storeToRefs(visibilityStore);
+const { expanded, isMini, pinnedDragging, pinnedWidth, showPinned } = storeToRefs(visibilityStore);
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
 const { toggleDrawer } = visibilityStore;
@@ -23,7 +23,7 @@ const { isXlAndDown } = useBreakpoint();
 
 const pinnedPadding = computed<string | undefined>(() => {
   if (get(showPinned) && !get(isXlAndDown))
-    return `${get(pinnedWidth)}px`;
+    return `calc(${get(pinnedWidth)}px - 100vw + 100%)`;
 
   return undefined;
 });
@@ -65,6 +65,7 @@ onBeforeMount(() => {
     <div
       class="py-4 w-full transition-all min-h-[calc(100vh-64px)]"
       :class="{
+        '!transition-none': pinnedDragging,
         'pl-[3.5rem]': isMini,
         'pl-[300px]': expanded,
       }"
