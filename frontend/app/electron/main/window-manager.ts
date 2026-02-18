@@ -10,7 +10,7 @@ import { NavigationHandler } from '@electron/main/navigation-handler';
 import { parseToken } from '@electron/main/oauth-utils';
 import { WindowConfig } from '@electron/main/window-config';
 import { assert } from '@rotki/common';
-import { startPromise } from '@shared/utils';
+import { startPromise, wait } from '@shared/utils';
 import { BrowserWindow, ipcMain } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 
@@ -163,7 +163,7 @@ export class WindowManager {
         // Wait with exponential backoff: 1s, 2s, 4s, 8s
         const delay = Math.min(1000 * (2 ** (attempt - 1)), 8000);
         this.logger.debug(`Retrying in ${delay}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await wait(delay);
       }
     }
 

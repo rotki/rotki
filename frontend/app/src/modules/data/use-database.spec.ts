@@ -1,4 +1,5 @@
 import type { MissingMapping } from '@/modules/data/schemas';
+import { wait } from '@shared/utils';
 import { get, set } from '@vueuse/core';
 import Dexie, { type EntityTable } from 'dexie';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -106,7 +107,7 @@ describe('useDatabase', () => {
 
       // Wait for watch to execute
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await wait(50);
 
       expect(get(isReady)).toBe(true);
     });
@@ -119,7 +120,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await wait(50);
 
       expect(get(isReady)).toBe(true);
       expect(db().name).toMatch(/^rotki\.data\.[\da-z]{6}\.testuser$/);
@@ -133,7 +134,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await wait(50);
 
       expect(get(isReady)).toBe(true);
 
@@ -153,7 +154,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(0);
@@ -184,7 +185,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       expect(get(isReady)).toBe(true);
 
@@ -211,7 +212,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(0);
@@ -235,7 +236,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       expect(get(isReady)).toBe(true);
 
@@ -265,7 +266,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       expect(get(isReady)).toBe(true);
       expect(await db().newlyDetectedTokens.count()).toBe(0);
@@ -282,7 +283,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       // Should still be ready (migration failure is caught)
       expect(get(isReady)).toBe(true);
@@ -306,7 +307,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(0);
@@ -335,7 +336,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(1);
@@ -357,7 +358,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       expect(get(isReady)).toBe(true);
       expect(await db().missingMappings.count()).toBe(0);
@@ -394,7 +395,7 @@ describe('useDatabase', () => {
       const { db, isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       expect(get(isReady)).toBe(true);
 
@@ -420,7 +421,7 @@ describe('useDatabase', () => {
       const database = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await wait(50);
 
       expect(get(database.isReady)).toBe(true);
       const firstDbName = database.db.name;
@@ -436,7 +437,7 @@ describe('useDatabase', () => {
       set(mockUserIdentifier, 'differentuser');
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await wait(50);
 
       expect(get(database.isReady)).toBe(true);
       // Access database.db to re-evaluate the getter
@@ -455,7 +456,7 @@ describe('useDatabase', () => {
       const { isReady } = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await wait(50);
 
       expect(get(isReady)).toBe(true);
 
@@ -463,7 +464,7 @@ describe('useDatabase', () => {
       set(mockUserIdentifier, undefined);
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await wait(50);
 
       expect(get(isReady)).toBe(false);
     });
@@ -479,7 +480,7 @@ describe('useDatabase', () => {
       const database = useDatabase();
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await wait(50);
 
       expect(get(database.isReady)).toBe(true);
       const firstDbName = database.db.name;
@@ -488,7 +489,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, '/path/two');
 
       await nextTick();
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await wait(50);
 
       expect(get(database.isReady)).toBe(true);
       // Access database.db to re-evaluate the getter

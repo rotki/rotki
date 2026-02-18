@@ -4,6 +4,7 @@ import type { EIP6963ProviderDetail } from '@/types';
 import { AppServer } from '@electron/main/app-server';
 import { selectPort } from '@electron/main/port-utils';
 import { ROTKI_RPC_METHODS } from '@shared/proxy/constants';
+import { wait } from '@shared/utils';
 import { shell } from 'electron';
 
 interface WalletBridgeIpcHandlersCallbacks {
@@ -62,7 +63,7 @@ export class WalletBridgeIpcHandlers {
       this.walletBridgeWebSocketServer.start(portNumber + 1);
 
       // Small delay to ensure servers are ready
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await wait(100);
 
       // Open the Wallet Connect Bridge in Electron (same URL in dev/prod)
       await shell.openExternal(`http://localhost:${portNumber}/#/wallet-bridge`);
@@ -95,7 +96,7 @@ export class WalletBridgeIpcHandlers {
         try {
           this.walletBridgeWebSocketServer.sendNotification({ type: 'close_tab' });
           // Brief delay to allow message to be sent
-          await new Promise(resolve => setTimeout(resolve, 150));
+          await wait(150);
         }
         catch (error) {
           this.logger.warn('Failed to send close notification during server stop:', error);

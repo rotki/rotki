@@ -1,3 +1,4 @@
+import { wait } from '@shared/utils';
 import { flushPromises } from '@vue/test-utils';
 import { get, set } from '@vueuse/core';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -104,7 +105,7 @@ describe('useNewlyDetectedTokensDb', () => {
       const originalDetectedAt = originalToken?.detectedAt;
 
       // Wait a bit and update
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await wait(10);
 
       await addToken({
         tokenIdentifier: 'eip155:1/erc20:0x1234',

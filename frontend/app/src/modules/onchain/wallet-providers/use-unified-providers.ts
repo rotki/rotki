@@ -1,4 +1,5 @@
 import type { EIP1193Provider, EIP6963ProviderInfo } from '@/types';
+import { wait } from '@shared/utils';
 import { createSharedComposable, get, set, useLocalStorage } from '@vueuse/core';
 import { computed, type ComputedRef, readonly, ref, type Ref } from 'vue';
 import { logger } from '@/utils/logging';
@@ -151,7 +152,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
 
         // Wait before retry (except on last attempt)
         if (attempt < maxRetries) {
-          await new Promise(resolve => setTimeout(resolve, retryDelay));
+          await wait(retryDelay);
         }
       }
 
