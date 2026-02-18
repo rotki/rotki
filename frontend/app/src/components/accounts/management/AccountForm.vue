@@ -274,7 +274,6 @@ defineExpose({
     </RuiAlert>
 
     <AccountSelector
-      v-if="chain"
       v-model:input-mode="inputMode"
       v-model:chain="chain"
       :chain-ids="chainIds"

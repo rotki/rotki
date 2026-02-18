@@ -5,7 +5,7 @@ import InputModeSelect from '@/components/accounts/management/inputs/InputModeSe
 import { useAccountLoading } from '@/composables/accounts/loading';
 import { isBtcChain } from '@/types/blockchain/chains';
 
-const chain = defineModel<string>('chain', { required: true });
+const chain = defineModel<string | undefined>('chain', { required: true });
 const inputMode = defineModel<InputMode>('inputMode', { required: true });
 
 defineProps<{
@@ -15,8 +15,10 @@ defineProps<{
 
 const { loading } = useAccountLoading();
 
+const selectedChain = computed<string>(() => get(chain) ?? '');
+
 const showInputModeSelector = logicOr(
-  computed<boolean>(() => isBtcChain(get(chain))),
+  computed<boolean>(() => isBtcChain(get(selectedChain))),
 );
 </script>
 
@@ -30,6 +32,6 @@ const showInputModeSelector = logicOr(
   <InputModeSelect
     v-if="!editMode && showInputModeSelector"
     v-model:input-mode="inputMode"
-    :blockchain="chain"
+    :blockchain="selectedChain"
   />
 </template>
