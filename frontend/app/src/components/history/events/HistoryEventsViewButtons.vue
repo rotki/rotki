@@ -27,7 +27,7 @@ const menuOpen = ref<boolean>(false);
 const checkingType = ref<IssueCheckType>();
 const noIssuesFeedback = ref<IssueCheckType>();
 
-const { refreshUnmatchedAssetMovements, unmatchedCount } = useUnmatchedAssetMovements();
+const { refreshUnmatchedAssetMovements, unmatchedCount, ignoredCount } = useUnmatchedAssetMovements();
 const { fetchCustomizedEventDuplicates, totalCount: duplicatesCount } = useCustomizedEventDuplicates();
 
 const { start: startFeedbackTimeout, stop: stopFeedbackTimeout } = useTimeoutFn(() => {
@@ -44,7 +44,7 @@ async function checkUnmatched(): Promise<void> {
   set(checkingType, 'unmatched');
   try {
     await refreshUnmatchedAssetMovements();
-    if (get(unmatchedCount) > 0) {
+    if (get(unmatchedCount) > 0 || get(ignoredCount) > 0) {
       set(menuOpen, false);
       emit('show:dialog', { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
     }
