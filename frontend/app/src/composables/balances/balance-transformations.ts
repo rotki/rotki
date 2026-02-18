@@ -205,9 +205,7 @@ export function aggregateSourceBalances(
         continue;
       }
 
-      if (!aggregatedBalances[identifier]) {
-        aggregatedBalances[identifier] = {};
-      }
+      aggregatedBalances[identifier] ??= {};
 
       for (const [protocol, balance] of Object.entries(source[asset])) {
         aggregatedBalances[identifier][protocol] = aggregateBalanceForProtocol(
@@ -308,15 +306,11 @@ export function processCollectionGrouping(
       mainAsset = collectionCache.get(collectionId);
     }
 
-    if (!grouped[groupId]) {
-      grouped[groupId] = [];
-    }
-
-    const assetTotal = perProtocolBalanceSum(zeroBalance(), protocolBalances);
+    grouped[groupId] ??= [];
     grouped[groupId].push({
       asset,
       perProtocol: protocolBalances,
-      ...assetTotal,
+      ...perProtocolBalanceSum(zeroBalance(), protocolBalances),
       usdPrice: getAssetPrice(asset, noPrice),
       ...(mainAsset === asset ? { isMain: true } : {}),
     });
@@ -329,12 +323,11 @@ export function processCollectionGrouping(
       const mainAsset = collectionCache.get(collectionId);
 
       if (mainAsset && !groupAssets.some(value => value.asset === mainAsset)) {
-        const zeroBalanceTotal = zeroBalance();
         groupAssets.push({
           asset: mainAsset,
           isMain: true,
           perProtocol: {},
-          ...zeroBalanceTotal,
+          ...zeroBalance(),
           usdPrice: getAssetPrice(mainAsset, noPrice),
         });
       }
@@ -361,6 +354,17 @@ export function processCollectionGrouping(
     const main = groupAssets.find(value => value.isMain);
     if (!main) {
       throw new Error('Main asset not found for collection');
+    }
+
+    // When only one asset has balance from a different chain, use its real identifier
+    const assetsWithBalance = groupAssets.filter(value => value.amount.gt(0));
+    if (assetsWithBalance.length === 1) {
+      const actualAsset = assetsWithBalance[0];
+      const chainOf = (id: string): string => id.slice(0, Math.max(0, id.indexOf('/')));
+      if (chainOf(actualAsset.asset) !== chainOf(main.asset)) {
+        const filteredAsset = omit(actualAsset, ['isMain']);
+        return { ...filteredAsset, perProtocol: getSortedProtocolBalances(filteredAsset.perProtocol) };
+      }
     }
 
     let groupAmount = Zero;
