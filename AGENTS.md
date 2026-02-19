@@ -394,6 +394,27 @@ The mapping of these HistoryEvents types, subtypes, and categories is done in [r
 - All byte signatures should be a constant byte literal. Like ```DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'```
 - Don't put assets as constants. If you need a constant just use the asset identifier as a string and compare against it.
 
+## Rotki Backend Style Preferences (strict)
+
+When editing backend Python and tests, follow these preferences unless explicitly told otherwise:
+
+1. Prefer narrow exceptions.
+ - Do not use `except Exception`.
+ - Catch the concrete error type used by the surrounding code path (e.g. `RemoteError` for rpc/multicall).
+
+ 2. Prefer inline one-time assignment via walrus operator.
+ - If a variable is used only once in a small local scope, inline it with `:=` instead of introducing a standalone line.
+ - Apply this especially in tests for constants like `timestamp`, `amount_str`, `gas_str`, `user_address`.
+ - Example: `location_label=(user_address := ethereum_accounts[0])`.
+
+ 3. Avoid unnecessary temporary locals.
+ - If a value is only used once and readability is preserved, inline it.
+ - Keep code compact and avoid “setup variable blocks” in tests.
+
+ 4. Keep existing codebase idioms first.
+ - Match nearby file style even if generic Python style differs.
+ - For rotki tests, prefer concise expected-event construction with inline assignments where practical.
+
 ## Testing Strategy
 
 ### Backend Testing
