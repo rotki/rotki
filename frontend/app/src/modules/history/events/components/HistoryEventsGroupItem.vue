@@ -51,6 +51,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <!-- Card Layout -->
   <div
     v-if="isCard"
+    data-cy="history-event-group"
     class="pt-1 pb-2 px-3 border-b border-rui-grey-200 dark:border-rui-grey-800 bg-rui-grey-100 dark:bg-dark-elevated"
   >
     <!-- Top row: Location + Identifier + Actions -->
@@ -136,6 +137,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <!-- Row Layout -->
   <div
     v-else
+    data-cy="history-event-group"
     class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-2 pr-4 bg-white dark:bg-dark-elevated contain-content"
   >
     <IgnoredInAccountingIcon

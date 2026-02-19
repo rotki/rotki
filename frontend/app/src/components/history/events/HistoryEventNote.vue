@@ -62,6 +62,7 @@ function isLinkTypeWithoutImage(t: any, chain: string): t is keyof ExplorerUrls 
 <template>
   <div
     v-bind="$attrs"
+    data-cy="event-notes"
     class="notes-content text-sm text-rui-text-secondary leading-relaxed"
   >
     <template

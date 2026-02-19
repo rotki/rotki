@@ -70,6 +70,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <!-- Card Layout -->
   <div
     v-if="isCard"
+    data-cy="history-event-row"
     class="p-3 border-b border-default bg-white dark:bg-dark-surface contain-content transition-all"
     :class="[
       { 'opacity-50': hiddenEvent },
@@ -136,6 +137,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
   <!-- Row Layout -->
   <div
     v-else
+    data-cy="history-event-row"
     class="h-[72px] flex items-center gap-4 border-b border-default px-4 pl-6 group/row contain-content"
     :class="[
       { 'opacity-50': hiddenEvent },

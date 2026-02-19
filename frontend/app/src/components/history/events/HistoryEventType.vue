@@ -38,7 +38,10 @@ const showLocationLabel = computed<boolean>(() => {
 </script>
 
 <template>
-  <div class="flex items-center text-left min-w-0">
+  <div
+    data-cy="event-type"
+    class="flex items-center text-left min-w-0"
+  >
     <HistoryEventTypeCounterparty
       v-if="('counterparty' in event && event.counterparty) || ('address' in event && event.address)"
       :counterparty="event.counterparty || undefined"
