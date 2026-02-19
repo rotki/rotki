@@ -45,7 +45,8 @@ const rui = createRuiPlugin({
 });
 
 const search = window.location.search;
-const skipUpdate = search.includes('skip_update');
+const hash = window.location.hash;
+const skipUpdate = search.includes('skip_update') || hash.includes('skip_update');
 if (skipUpdate)
   sessionStorage.setItem('skip_update', '1');
 
