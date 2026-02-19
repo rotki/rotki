@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.
 * :feature:`-` Monerium transactions on Base will now be decoded properly.
 * :feature:`10873` Users can now track Lido CSM node-operator bond balances by linking the accounting contract to their addresses.
 * :bug:`-` Clicking on non-snapshot data points in the net worth graph will no longer open the snapshot export dialog.

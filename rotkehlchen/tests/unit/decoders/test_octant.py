@@ -4,6 +4,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.octant.constants import (
     CPT_OCTANT,
     OCTANT_DEPOSITS,
+    OCTANT_DEPOSITS_V2,
     OCTANT_REWARDS,
 )
 from rotkehlchen.constants.assets import A_ETH, A_GLM
@@ -142,6 +143,54 @@ def test_claim_rewards(ethereum_inquirer, ethereum_accounts):
             notes=f'Claim {amount_str} ETH as Octant epoch 2 reward',
             counterparty=CPT_OCTANT,
             address=OCTANT_REWARDS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_lock_glm_v2(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x117d78603f8a20f3c8ce29145d2f485d27688c922e09f532132fe33ecddcfe71')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1771489283000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_str := '0.000025132956030882'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=459,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_GLM,
+            amount=FVal(0),
+            location_label=user_address,
+            notes=f'Revoke GLM spending approval of {user_address} by {OCTANT_DEPOSITS_V2}',
+            address=OCTANT_DEPOSITS_V2,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=460,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
+            asset=A_GLM,
+            amount=FVal(amount_str := '3767.190200498257727034'),
+            location_label=user_address,
+            notes=f'Lock {amount_str} GLM in Octant v2',
+            counterparty=CPT_OCTANT,
+            address=OCTANT_DEPOSITS_V2,
         ),
     ]
     assert events == expected_events

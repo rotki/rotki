@@ -423,6 +423,32 @@ def test_octant_balances(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_octant_balances_v2(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that balances of locked GLM in Octant v2 are properly detected"""
+    tx_hash = deserialize_evm_tx_hash('0x117d78603f8a20f3c8ce29145d2f485d27688c922e09f532132fe33ecddcfe71')  # noqa: E501
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+    )
+    octant_balances_inquirer = OctantBalances(
+        evm_inquirer=ethereum_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    octant_balances = octant_balances_inquirer.query_balances()
+    user_balance = octant_balances[ethereum_accounts[0]]
+    assert user_balance.assets[A_GLM.resolve_to_evm_token()][CPT_OCTANT] == Balance(
+        amount=FVal('3767.190200498257727034'),
+        value=FVal('5650.785300747386590551'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x15AcAA0E27b70AfE3D7631cDAf5516BCAbE3bc0F']])
 def test_eigenlayer_balances(
         ethereum_inquirer: 'EthereumInquirer',

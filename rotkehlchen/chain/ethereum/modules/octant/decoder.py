@@ -19,7 +19,15 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
-from .constants import CPT_OCTANT, LOCKED, OCTANT_DEPOSITS, OCTANT_REWARDS, UNLOCKED
+from .constants import (
+    CPT_OCTANT,
+    LOCKED,
+    OCTANT_DEPOSITS,
+    OCTANT_DEPOSITS_V2,
+    OCTANT_REWARDS,
+    STAKE_DEPOSITED_V2,
+    UNLOCKED,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -46,24 +54,35 @@ class OctantDecoder(EvmDecoderInterface):
         self.glm = A_GLM.resolve_to_evm_token()
 
     def _decode_locker_events(self, context: DecoderContext) -> EvmDecodingOutput:
-        if context.tx_log.topics[0] not in (LOCKED, UNLOCKED):
+        if context.tx_log.topics[0] not in (LOCKED, UNLOCKED, STAKE_DEPOSITED_V2):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if context.tx_log.topics[0] == LOCKED:
             expected_type = HistoryEventType.SPEND
             new_type = HistoryEventType.DEPOSIT
             new_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
-            verb, preposition = 'Lock', 'in'
+            verb, preposition, protocol_name = 'Lock', 'in', 'Octant'
+            amount_start, address_start = 32, 96
+            sequence_index = context.tx_log.log_index + 1  # push it after approval if any
         elif context.tx_log.topics[0] == UNLOCKED:
             expected_type = HistoryEventType.RECEIVE
             new_type = HistoryEventType.WITHDRAWAL
             new_subtype = HistoryEventSubType.WITHDRAW_FROM_PROTOCOL
-            verb, preposition = 'Unlock', 'from'
+            verb, preposition, protocol_name = 'Unlock', 'from', 'Octant'
+            amount_start, address_start = 32, 96
+            sequence_index = context.tx_log.log_index + 1  # push it after approval if any
+        elif context.tx_log.topics[0] == STAKE_DEPOSITED_V2:
+            expected_type = HistoryEventType.SPEND
+            new_type = HistoryEventType.DEPOSIT
+            new_subtype = HistoryEventSubType.DEPOSIT_TO_PROTOCOL
+            verb, preposition, protocol_name = 'Lock', 'in', 'Octant v2'
+            amount_start, address_start = 32, 0
+            sequence_index = context.tx_log.log_index + 1  # push it after approval if any
         else:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        raw_amount = int.from_bytes(context.tx_log.data[32:64])
-        address = bytes_to_address(context.tx_log.data[96:128])
+        raw_amount = int.from_bytes(context.tx_log.data[amount_start:amount_start + 32])
+        address = bytes_to_address(context.tx_log.data[address_start:address_start + 32])
         if self.base.is_tracked(address) is False:
             return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -73,17 +92,17 @@ class OctantDecoder(EvmDecoderInterface):
             if (
                     event.event_type == expected_type and
                     event.asset == self.glm and
-                    event.address == OCTANT_DEPOSITS and
+                    event.address == context.tx_log.address and
                     event.amount == amount
             ):
                 event.event_type = new_type
                 event.event_subtype = new_subtype
                 event.counterparty = CPT_OCTANT
-                event.notes = f'{verb} {event.amount} GLM {preposition} Octant'
-                event.sequence_index = context.tx_log.log_index + 1  # push it after approval if any  # noqa: E501
+                event.notes = f'{verb} {event.amount} GLM {preposition} {protocol_name}'
+                event.sequence_index = sequence_index
                 break
         else:
-            log.error(f'Could not find corresponding GLM transfer for Octant {verb} at: {context.transaction.tx_hash!s}')  # noqa: E501
+            log.error(f'Could not find corresponding GLM transfer for {protocol_name} {verb} at: {context.transaction.tx_hash!s}')  # noqa: E501
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -119,6 +138,7 @@ class OctantDecoder(EvmDecoderInterface):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             OCTANT_DEPOSITS: (self._decode_locker_events,),
+            OCTANT_DEPOSITS_V2: (self._decode_locker_events,),
             OCTANT_REWARDS: (self._decode_reward_events,),
         }
 
