@@ -504,6 +504,10 @@
         "description": "Failed to fetch customized event duplicates: {error}",
         "title": "Fetching Customized Event Duplicates"
       },
+      "fetch_events_error": {
+        "description": "Failed to load duplicate event details: {error}",
+        "title": "Loading Duplicate Events"
+      },
       "fix_error": {
         "description": "Failed to fix customized event duplicates: {error}",
         "title": "Fixing Customized Event Duplicates"

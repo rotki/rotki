@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import type { ComputedRef, Ref } from 'vue';
+import { Severity } from '@rotki/common';
 import CustomizedEventDuplicatesList from '@/components/history/events/CustomizedEventDuplicatesList.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { type DuplicateRow, useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { Routes } from '@/router/routes';
+import { useNotificationsStore } from '@/store/notifications';
+import { logger } from '@/utils/logging';
 
 const modelValue = defineModel<boolean>({ default: false });
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
+const { notify } = useNotificationsStore();
 
 const {
   autoFixCount,
@@ -55,6 +59,15 @@ async function loadRows(
       offset: 0,
     });
     set(rows, result.data);
+  }
+  catch (error: any) {
+    logger.error('Failed to load duplicate event rows:', error);
+    notify({
+      display: true,
+      message: t('actions.customized_event_duplicates.fetch_events_error.description', { error: error.message }),
+      severity: Severity.ERROR,
+      title: t('actions.customized_event_duplicates.fetch_events_error.title'),
+    });
   }
   finally {
     set(loadingRef, false);
