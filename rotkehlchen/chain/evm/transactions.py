@@ -417,15 +417,19 @@ class EvmTransactions(ABC):  # noqa: B024
         """
         query_period_or_hash: TimestampOrBlockRange | EVMTxHash
         if isinstance(period_or_hash, TimestampOrBlockRange):
+            is_parent_hash_query = False
             query_period_or_hash = self.evm_inquirer.maybe_timestamp_to_block_range(
                 period=period_or_hash,
             )
+            queried_from_ts = Timestamp(period_or_hash.from_value) if period_or_hash.range_type == 'timestamps' else None  # noqa: E501
         else:
+            is_parent_hash_query = True
             query_period_or_hash = period_or_hash
+            queried_from_ts = None
 
         parent_tx_timestamps: dict[EVMTxHash, Timestamp] = {}
+        parent_hash_internal_txs: list[EvmInternalTransaction] = []
         queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
-        queried_from_ts = Timestamp(period_or_hash.from_value) if isinstance(period_or_hash, TimestampOrBlockRange) and period_or_hash.range_type == 'timestamps' else None  # noqa: E501
         for new_internal_txs in self.evm_inquirer.get_transactions(
                 account=address,
                 period_or_hash=query_period_or_hash,
@@ -470,16 +474,19 @@ class EvmTransactions(ABC):  # noqa: B024
                 else:
                     timestamp = parent_tx_timestamps[internal_tx.parent_tx_hash]
 
-                with self.database.conn.write_ctx() as write_cursor:
-                    self.dbevmtx.add_evm_internal_transactions(
-                        write_cursor=write_cursor,
-                        transactions=[internal_tx],
-                        relevant_address=None,  # no need to re-associate address
-                    )
+                if is_parent_hash_query:
+                    parent_hash_internal_txs.append(internal_tx)
+                else:
+                    with self.database.conn.write_ctx() as write_cursor:
+                        self.dbevmtx.add_evm_internal_transactions(
+                            write_cursor=write_cursor,
+                            transactions=[internal_tx],
+                            relevant_address=None,  # no need to re-associate address
+                        )
 
-                if isinstance(period_or_hash, TimestampOrBlockRange) and period_or_hash.range_type == 'timestamps':  # noqa: E501
+                if queried_from_ts is not None:
                     assert location_string, 'should always be given for timestamps'
-                    assert queried_from_ts is not None, 'queried_from_ts should be set for timestamp ranges'  # noqa: E501
+                    assert isinstance(period_or_hash, TimestampOrBlockRange), 'timestamp ranges only'  # noqa: E501
                     queried_to_ts = Timestamp(max(queried_from_ts, timestamp))
                     log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
                     if update_ranges:  # update last queried time for address
@@ -501,6 +508,22 @@ class EvmTransactions(ABC):  # noqa: B024
                         },
                     )
                     queried_from_ts = queried_to_ts
+
+        if is_parent_hash_query:
+            assert not isinstance(query_period_or_hash, TimestampOrBlockRange)
+            parent_tx_hash = query_period_or_hash
+            with self.database.user_write() as write_cursor:
+                self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash(
+                    write_cursor=write_cursor,
+                    parent_tx_hash=parent_tx_hash,
+                    chain_id=self.evm_inquirer.chain_id,
+                )
+                if len(parent_hash_internal_txs) != 0:
+                    self.dbevmtx.add_evm_internal_transactions(
+                        write_cursor=write_cursor,
+                        transactions=parent_hash_internal_txs,
+                        relevant_address=None,
+                    )
         return queried_hashes
 
     def _get_internal_transactions_for_ranges(

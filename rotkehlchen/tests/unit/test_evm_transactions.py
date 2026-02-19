@@ -227,6 +227,76 @@ def test_query_and_save_internal_transactions_returns_only_new_hashes(
     assert queried_hashes == [new_parent_tx.tx_hash]
 
 
+def test_query_single_parent_hash_replaces_existing_internal_transactions(
+        database: 'DBHandler',
+        ethereum_manager: 'EthereumManager',
+) -> None:
+    """For parent hash queries we should replace old internal tx rows atomically.
+
+    This avoids accumulating duplicate-like rows when indexers return the same transfer
+    with different gas metadata after a repull.
+    """
+    dbevmtx = DBEvmTx(database)
+    parent_tx, sender, receiver = make_ethereum_transaction(), make_evm_address(), make_evm_address()  # noqa: E501
+    receiver = make_evm_address()
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[parent_tx],
+            relevant_address=None,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(parent_tx.tx_hash),
+        )
+        dbevmtx.add_evm_internal_transactions(
+            write_cursor=write_cursor,
+            transactions=[EvmInternalTransaction(
+                parent_tx_hash=parent_tx.tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                trace_id=1,
+                from_address=sender,
+                to_address=receiver,
+                value=100,
+                gas=0,
+                gas_used=0,
+            )],
+            relevant_address=None,
+        )
+
+    with patch.object(
+        ethereum_manager.node_inquirer,
+        'get_transactions',
+        return_value=iter([[EvmInternalTransaction(
+            parent_tx_hash=parent_tx.tx_hash,
+            chain_id=ChainID.ETHEREUM,
+            trace_id=1,
+            from_address=sender,
+            to_address=receiver,
+            value=100,
+            gas=30945,
+            gas_used=0,
+        )]]),
+    ):
+        ethereum_manager.transactions._query_and_save_internal_transactions_for_range_or_parent_hash(
+            period_or_hash=parent_tx.tx_hash,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        tx_identifier = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (parent_tx.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+        rows = cursor.execute(
+            'SELECT trace_id, from_address, to_address, value, gas, gas_used '
+            'FROM evm_internal_transactions WHERE parent_tx=?',
+            (tx_identifier,),
+        ).fetchall()
+
+    assert rows == [(1, sender, receiver, '100', '30945', '0')]
+
+
 def test_query_and_save_erc20_transfers_returns_only_new_hashes(
         database: 'DBHandler',
         ethereum_manager: 'EthereumManager',
