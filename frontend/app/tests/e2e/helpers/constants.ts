@@ -25,6 +25,9 @@ export const TEST_TIMEOUT_BLOCKCHAIN = 180000;
 // Comparison precision for balance assertions
 export const BALANCE_PRECISION = 0.1;
 
+// Mock RPC server port
+export const MOCK_RPC_PORT = 30304;
+
 // Viewport configurations for responsive testing
 export const VIEWPORTS = [
   { width: 1280, height: 720, name: 'HD Ready' },

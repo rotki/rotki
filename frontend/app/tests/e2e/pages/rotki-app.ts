@@ -18,6 +18,11 @@ export class RotkiApp {
   ) {}
 
   private async loadEnv(): Promise<void> {
+    // Skip etherscan key when using mock RPC to force all calls through the mock
+    if (process.env.MOCK_RPC_MODE) {
+      return;
+    }
+
     const apiKey = process.env.ETHERSCAN_API_KEY || TK.join('');
     if (apiKey) {
       await apiAddEtherscanKey(this.request, apiKey);

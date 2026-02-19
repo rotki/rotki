@@ -7,10 +7,12 @@ import { defineConfig, devices } from '@playwright/test';
 const FRONTEND_PORT = 30301;
 const BACKEND_PORT = 30302;
 const COLIBRI_PORT = 30303;
+const MOCK_RPC_PORT = 30304;
 
 const frontendUrl = `http://localhost:${FRONTEND_PORT}`;
 const backendUrl = `http://127.0.0.1:${BACKEND_PORT}`;
 const colibriUrl = `http://127.0.0.1:${COLIBRI_PORT}`;
+const mockRpcUrl = `http://127.0.0.1:${MOCK_RPC_PORT}`;
 
 const testDir = path.join(process.cwd(), '.e2e');
 const dataDir = path.join(testDir, 'data');
@@ -116,6 +118,17 @@ export default defineConfig({
 
   webServer: [
     {
+      command: `tsx tests/e2e/rpc-mock/server.ts`,
+      url: `${mockRpcUrl}/health`,
+      reuseExistingServer: !process.env.CI,
+      timeout: 10_000,
+      env: {
+        MOCK_RPC_PORT: String(MOCK_RPC_PORT),
+        MOCK_RPC_MODE: process.env.MOCK_RPC_MODE || 'replay',
+        ...(process.env.MOCK_RPC_TARGET && { MOCK_RPC_TARGET: process.env.MOCK_RPC_TARGET }),
+      },
+    },
+    {
       command: `tsx scripts/start-backend.ts --port ${BACKEND_PORT} --data ${dataDir} --logs ${logDir}`,
       url: `${backendUrl}/api/1/ping`,
       reuseExistingServer: !process.env.CI,
@@ -147,4 +160,4 @@ export default defineConfig({
   ],
 });
 
-export { backendUrl, colibriUrl, dataDir, frontendUrl, logDir };
+export { backendUrl, colibriUrl, dataDir, frontendUrl, logDir, mockRpcUrl };

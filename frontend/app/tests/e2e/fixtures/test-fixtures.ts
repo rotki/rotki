@@ -1,5 +1,6 @@
 import { type APIRequestContext, test as base, type Browser, type BrowserContext, type Page } from '@playwright/test';
 import { isCoverageEnabled, startCoverage, stopCoverage } from '../coverage';
+import { apiConfigureAllEvmRpcMocks, saveMockRpcCassette } from '../helpers/rpc-mock';
 import { generateUsername } from '../helpers/utils';
 import { RotkiApp } from '../pages/rotki-app';
 
@@ -19,6 +20,12 @@ export interface SharedTestContext {
  */
 export interface LoginOptions {
   disableModules?: boolean;
+  /**
+   * Name of the RPC mock cassette to use for this test suite.
+   * Each test suite should use a unique name to avoid collisions.
+   * If not provided, mock RPC will not be configured.
+   */
+  rpcMockCassette?: string;
 }
 
 /**
@@ -30,7 +37,10 @@ export interface LoginOptions {
  * let ctx: SharedTestContext;
  *
  * test.beforeAll(async ({ browser, request }) => {
- *   ctx = await createLoggedInContext(browser, request);
+ *   ctx = await createLoggedInContext(browser, request, {
+ *     disableModules: true,
+ *     rpcMockCassette: 'blockchain-balances',
+ *   });
  * });
  *
  * test.afterAll(async () => {
@@ -63,6 +73,11 @@ export async function createLoggedInContext(
   const app = new RotkiApp(sharedPage, request);
   await app.fasterLogin(username, '1234', options.disableModules ?? false);
 
+  // Replace default RPC nodes with mock server (if cassette specified)
+  if (options.rpcMockCassette) {
+    await apiConfigureAllEvmRpcMocks(request, options.rpcMockCassette);
+  }
+
   return {
     sharedContext,
     sharedPage,
@@ -81,6 +96,9 @@ export async function cleanupContext(ctx: SharedTestContext | undefined): Promis
     return;
 
   const { sharedContext, sharedPage } = ctx;
+
+  // Save mock RPC cassette if in record mode
+  await saveMockRpcCassette();
 
   // Stop coverage collection if enabled
   if (isCoverageEnabled() && sharedPage) {

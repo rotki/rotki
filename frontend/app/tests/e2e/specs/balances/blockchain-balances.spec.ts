@@ -30,7 +30,10 @@ test.describe.serial('blockchain balances', () => {
       return { ...account, blockchain, address };
     });
 
-    ctx = await createLoggedInContext(browser, request, { disableModules: true });
+    ctx = await createLoggedInContext(browser, request, {
+      disableModules: true,
+      rpcMockCassette: 'blockchain-balances',
+    });
   });
 
   test.afterAll(async () => {

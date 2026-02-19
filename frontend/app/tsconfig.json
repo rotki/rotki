@@ -14,6 +14,9 @@
     },
     {
       "path": "./tests/e2e/specs/tsconfig.json"
+    },
+    {
+      "path": "./tests/e2e/rpc-mock/tsconfig.json"
     }
   ],
   "files": []
