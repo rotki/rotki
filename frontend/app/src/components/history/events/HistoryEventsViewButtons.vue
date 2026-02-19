@@ -63,7 +63,7 @@ async function checkDuplicates(): Promise<void> {
     await fetchCustomizedEventDuplicates();
     if (get(duplicatesCount) > 0) {
       set(menuOpen, false);
-      set(showAlerts, true);
+      emit('show:dialog', { type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
     }
     else {
       showNoIssuesFeedback('duplicates');

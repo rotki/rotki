@@ -21,7 +21,6 @@ import {
   type DecodableEventType,
   isGroupEditableHistoryEvent,
 } from '@/modules/history/management/forms/form-guards';
-import { useConfirmStore } from '@/store/confirm';
 import {
   isEthBlockEvent,
   isEthBlockEventRef,
@@ -46,6 +45,7 @@ const emit = defineEmits<{
   'redecode-with-options': [event: PullEventPayload];
   'delete-tx': [data: LocationAndTxRef];
   'fix-duplicate': [];
+  'ignore-duplicate': [];
 }>();
 
 const {
@@ -53,12 +53,12 @@ const {
   txEventsDecoding,
 } = useHistoryEventsStatus();
 
-const { fixDuplicates, fixLoading } = useCustomizedEventDuplicates();
-const { show } = useConfirmStore();
+const { confirmAndFixDuplicate, confirmAndMarkNonDuplicated, fixLoading, ignoreLoading } = useCustomizedEventDuplicates();
 
 const { duplicateHandlingStatus, event } = toRefs(props);
 
 const isAutoFixable = computed<boolean>(() => get(duplicateHandlingStatus) === DuplicateHandlingStatus.AUTO_FIX);
+const isDuplicate = computed<boolean>(() => !!get(duplicateHandlingStatus) && get(duplicateHandlingStatus) !== DuplicateHandlingStatus.IGNORED);
 
 const showMenu = ref<boolean>(false);
 
@@ -173,22 +173,20 @@ function openReportDialog(): void {
   });
 }
 
-async function fixDuplicateEvent(): Promise<void> {
+function confirmFixDuplicate(): void {
   const groupIdentifier = get(event).groupIdentifier;
   if (!groupIdentifier)
     return;
 
-  const result = await fixDuplicates([groupIdentifier]);
-  if (result.success)
-    emit('fix-duplicate');
+  confirmAndFixDuplicate([groupIdentifier], () => emit('fix-duplicate'));
 }
 
-function confirmFixDuplicate(): void {
-  show({
-    message: t('customized_event_duplicates.actions.fix_single_confirm'),
-    primaryAction: t('common.actions.confirm'),
-    title: t('customized_event_duplicates.actions.fix_single'),
-  }, async () => fixDuplicateEvent());
+function confirmIgnoreDuplicate(): void {
+  const groupIdentifier = get(event).groupIdentifier;
+  if (!groupIdentifier)
+    return;
+
+  confirmAndMarkNonDuplicated([groupIdentifier], () => emit('ignore-duplicate'));
 }
 </script>
 
@@ -198,7 +196,7 @@ function confirmFixDuplicate(): void {
       v-if="isAutoFixable"
       size="sm"
       color="primary"
-      class="mr-2"
+      class="mr-1"
       :loading="fixLoading"
       @click="confirmFixDuplicate()"
     >
@@ -209,6 +207,22 @@ function confirmFixDuplicate(): void {
         />
       </template>
       {{ t('customized_event_duplicates.actions.fix') }}
+    </RuiButton>
+    <RuiButton
+      v-if="isDuplicate"
+      variant="outlined"
+      size="sm"
+      class="mr-2"
+      :loading="ignoreLoading"
+      @click="confirmIgnoreDuplicate()"
+    >
+      <template #prepend>
+        <RuiIcon
+          name="lu-eye-off"
+          size="16"
+        />
+      </template>
+      {{ t('customized_event_duplicates.actions.mark_non_duplicated') }}
     </RuiButton>
     <RuiMenu
       v-model="showMenu"

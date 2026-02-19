@@ -2,6 +2,7 @@ import type { ContextColorsType } from '@rotki/ui-library';
 
 export const DuplicateHandlingStatus = {
   AUTO_FIX: 'auto-fix',
+  IGNORED: 'ignored',
   MANUAL_REVIEW: 'manual-review',
 } as const;
 

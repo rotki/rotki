@@ -31,6 +31,7 @@ const emit = defineEmits<{
   'redecode-with-options': [event: PullEventPayload];
   'delete-tx': [data: LocationAndTxRef];
   'fix-duplicate': [];
+  'ignore-duplicate': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -114,6 +115,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
         @redecode-with-options="emit('redecode-with-options', $event)"
         @delete-tx="emit('delete-tx', $event)"
         @fix-duplicate="emit('fix-duplicate')"
+        @ignore-duplicate="emit('ignore-duplicate')"
       />
     </div>
 
@@ -218,6 +220,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
       @redecode-with-options="emit('redecode-with-options', $event)"
       @delete-tx="emit('delete-tx', $event)"
       @fix-duplicate="emit('fix-duplicate')"
+      @ignore-duplicate="emit('ignore-duplicate')"
     />
   </div>
 </template>

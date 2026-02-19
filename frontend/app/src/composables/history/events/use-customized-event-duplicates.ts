@@ -1,24 +1,21 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
-import type { HistoryEventCollectionRow, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
+import type { HistoryEventCollectionRow, HistoryEventEntry, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { type CustomizedEventDuplicates, useCustomizedEventDuplicatesApi } from '@/composables/api/history/events/customized-event-duplicates';
+import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { arrayify } from '@/utils/array';
 import { logger } from '@/utils/logging';
 
-export interface CustomizedEventDuplicate {
-  groupIdentifier: string;
-  events: HistoryEventCollectionRow;
-}
-
 export interface DuplicateRow {
+  entry: HistoryEventEntry;
   groupIdentifier: string;
-  txHash: string;
   location: string;
+  locationLabel: string | null;
   timestamp: number;
-  original: CustomizedEventDuplicate;
+  txHash: string;
 }
 
 export interface FetchDuplicateEventsPayload {
@@ -28,16 +25,25 @@ export interface FetchDuplicateEventsPayload {
 }
 
 interface UseCustomizedEventDuplicatesReturn {
-  autoFixGroupIds: ComputedRef<string[]>;
-  manualReviewGroupIds: ComputedRef<string[]>;
+  actionableCount: ComputedRef<number>;
   autoFixCount: ComputedRef<number>;
-  manualReviewCount: ComputedRef<number>;
-  totalCount: ComputedRef<number>;
-  loading: Ref<boolean>;
-  fixLoading: Ref<boolean>;
+  autoFixGroupIds: ComputedRef<string[]>;
+  confirmAndFixDuplicate: (groupIdentifiers: string[], onSuccess?: () => void) => void;
+  confirmAndMarkNonDuplicated: (groupIdentifiers: string[], onSuccess?: () => void) => void;
+  confirmAndRestore: (groupIdentifiers: string[], onSuccess?: () => void) => void;
   fetchCustomizedEventDuplicates: () => Promise<void>;
   fetchDuplicateEvents: (payload: FetchDuplicateEventsPayload) => Promise<Collection<DuplicateRow>>;
   fixDuplicates: (groupIdentifiers?: string[]) => Promise<ActionStatus>;
+  fixLoading: Ref<boolean>;
+  ignoreDuplicates: (groupIdentifiers: string[]) => Promise<ActionStatus>;
+  ignoreLoading: Ref<boolean>;
+  ignoredCount: ComputedRef<number>;
+  ignoredGroupIds: ComputedRef<string[]>;
+  loading: Ref<boolean>;
+  manualReviewCount: ComputedRef<number>;
+  manualReviewGroupIds: ComputedRef<string[]>;
+  totalCount: ComputedRef<number>;
+  unignoreDuplicates: (groupIdentifiers: string[]) => Promise<ActionStatus>;
 }
 
 function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMeta {
@@ -45,11 +51,13 @@ function getEventEntry(row: HistoryEventCollectionRow): HistoryEventEntryWithMet
 }
 
 function mapToDuplicateRow(groupId: string, events: HistoryEventCollectionRow): DuplicateRow {
-  const entry = getEventEntry(events).entry;
+  const { entry, ...meta } = getEventEntry(events);
+  const eventEntry: HistoryEventEntry = { ...entry, ...meta };
   return {
+    entry: eventEntry,
     groupIdentifier: groupId,
     location: entry.location,
-    original: { events, groupIdentifier: groupId },
+    locationLabel: entry.locationLabel ?? null,
     timestamp: entry.timestamp,
     txHash: 'txRef' in entry ? (entry.txRef ?? '') : '',
   };
@@ -57,22 +65,28 @@ function mapToDuplicateRow(groupId: string, events: HistoryEventCollectionRow): 
 
 export const useCustomizedEventDuplicates = createSharedComposable((): UseCustomizedEventDuplicatesReturn => {
   const { t } = useI18n({ useScope: 'global' });
+  const { show: showConfirm } = useConfirmStore();
   const { setMessage } = useMessageStore();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
-  const { fixCustomizedEventDuplicates, getCustomizedEventDuplicates } = useCustomizedEventDuplicatesApi();
+  const { fixCustomizedEventDuplicates, getCustomizedEventDuplicates, ignoreCustomizedEventDuplicates, unignoreCustomizedEventDuplicates } = useCustomizedEventDuplicatesApi();
 
   const rawAutoFixGroupIds = ref<string[]>([]);
   const rawManualReviewGroupIds = ref<string[]>([]);
+  const rawIgnoredGroupIds = ref<string[]>([]);
   const loading = ref<boolean>(false);
   const fixLoading = ref<boolean>(false);
+  const ignoreLoading = ref<boolean>(false);
 
   const autoFixGroupIds = computed<string[]>(() => get(rawAutoFixGroupIds));
   const manualReviewGroupIds = computed<string[]>(() => get(rawManualReviewGroupIds));
+  const ignoredGroupIds = computed<string[]>(() => get(rawIgnoredGroupIds));
 
   const autoFixCount = computed<number>(() => get(rawAutoFixGroupIds).length);
   const manualReviewCount = computed<number>(() => get(rawManualReviewGroupIds).length);
-  const totalCount = computed<number>(() => get(autoFixCount) + get(manualReviewCount));
+  const ignoredCount = computed<number>(() => get(rawIgnoredGroupIds).length);
+  const actionableCount = computed<number>(() => get(autoFixCount) + get(manualReviewCount));
+  const totalCount = computed<number>(() => get(actionableCount) + get(ignoredCount));
 
   const fetchCustomizedEventDuplicates = async (): Promise<void> => {
     set(loading, true);
@@ -80,6 +94,7 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
       const result: CustomizedEventDuplicates = await getCustomizedEventDuplicates();
       set(rawAutoFixGroupIds, result.autoFixGroupIds);
       set(rawManualReviewGroupIds, result.manualReviewGroupIds);
+      set(rawIgnoredGroupIds, result.ignoredGroupIds);
     }
     catch (error: any) {
       logger.error('Failed to fetch customized event duplicates:', error);
@@ -182,16 +197,113 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     }
   };
 
+  const ignoreDuplicates = async (groupIdentifiers: string[]): Promise<ActionStatus> => {
+    set(ignoreLoading, true);
+    try {
+      await ignoreCustomizedEventDuplicates(groupIdentifiers);
+      await fetchCustomizedEventDuplicates();
+      return { success: true };
+    }
+    catch (error: any) {
+      logger.error('Failed to ignore customized event duplicates:', error);
+      setMessage({
+        description: t('actions.customized_event_duplicates.mark_non_duplicated_error.description', { error: error.message }),
+        title: t('actions.customized_event_duplicates.mark_non_duplicated_error.title'),
+      });
+      return { message: error.message, success: false };
+    }
+    finally {
+      set(ignoreLoading, false);
+    }
+  };
+
+  const unignoreDuplicates = async (groupIdentifiers: string[]): Promise<ActionStatus> => {
+    set(ignoreLoading, true);
+    try {
+      await unignoreCustomizedEventDuplicates(groupIdentifiers);
+      await fetchCustomizedEventDuplicates();
+      return { success: true };
+    }
+    catch (error: any) {
+      logger.error('Failed to unignore customized event duplicates:', error);
+      setMessage({
+        description: t('actions.customized_event_duplicates.unignore_error.description', { error: error.message }),
+        title: t('actions.customized_event_duplicates.unignore_error.title'),
+      });
+      return { message: error.message, success: false };
+    }
+    finally {
+      set(ignoreLoading, false);
+    }
+  };
+
+  const confirmAndFixDuplicate = (groupIdentifiers: string[], onSuccess?: () => void): void => {
+    showConfirm({
+      message: groupIdentifiers.length === 1
+        ? t('customized_event_duplicates.actions.fix_single_confirm')
+        : t('customized_event_duplicates.actions.fix_selected_confirm', { count: groupIdentifiers.length }),
+      primaryAction: t('common.actions.confirm'),
+      title: groupIdentifiers.length === 1
+        ? t('customized_event_duplicates.actions.fix_single')
+        : t('customized_event_duplicates.actions.fix_selected'),
+    }, async () => {
+      const result = await fixDuplicates(groupIdentifiers);
+      if (result.success)
+        onSuccess?.();
+    });
+  };
+
+  const confirmAndMarkNonDuplicated = (groupIdentifiers: string[], onSuccess?: () => void): void => {
+    showConfirm({
+      message: groupIdentifiers.length === 1
+        ? t('customized_event_duplicates.actions.mark_non_duplicated_confirm')
+        : t('customized_event_duplicates.actions.mark_non_duplicated_selected_confirm', { count: groupIdentifiers.length }),
+      primaryAction: t('common.actions.confirm'),
+      title: groupIdentifiers.length === 1
+        ? t('customized_event_duplicates.actions.mark_non_duplicated')
+        : t('customized_event_duplicates.actions.mark_non_duplicated_selected'),
+    }, async () => {
+      const result = await ignoreDuplicates(groupIdentifiers);
+      if (result.success)
+        onSuccess?.();
+    });
+  };
+
+  const confirmAndRestore = (groupIdentifiers: string[], onSuccess?: () => void): void => {
+    showConfirm({
+      message: groupIdentifiers.length === 1
+        ? t('customized_event_duplicates.actions.restore_confirm')
+        : t('customized_event_duplicates.actions.restore_selected_confirm', { count: groupIdentifiers.length }),
+      primaryAction: t('common.actions.confirm'),
+      title: groupIdentifiers.length === 1
+        ? t('customized_event_duplicates.actions.restore')
+        : t('customized_event_duplicates.actions.restore_selected'),
+    }, async () => {
+      const result = await unignoreDuplicates(groupIdentifiers);
+      if (result.success)
+        onSuccess?.();
+    });
+  };
+
   return {
+    actionableCount,
     autoFixCount,
     autoFixGroupIds,
+    confirmAndFixDuplicate,
+    confirmAndMarkNonDuplicated,
+    confirmAndRestore,
     fetchCustomizedEventDuplicates,
     fetchDuplicateEvents,
     fixDuplicates,
     fixLoading,
+    ignoreDuplicates,
+    ignoreLoading,
+    ignoredCount,
+    ignoredGroupIds,
     loading,
     manualReviewCount,
     manualReviewGroupIds,
     totalCount,
+    unignoreDuplicates,
   };
 });

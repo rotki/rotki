@@ -12,15 +12,19 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { autoMatchLoading, unmatchedCount } = useUnmatchedAssetMovements();
-const { totalCount: duplicatesCount } = useCustomizedEventDuplicates();
+const { actionableCount: duplicatesCount } = useCustomizedEventDuplicates();
 
 const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(duplicatesCount));
 const hasIssues = computed<boolean>(() => !get(autoMatchLoading) && get(totalIssuesCount) > 0);
 const hasOnlyUnmatchedMovements = computed<boolean>(() => get(unmatchedCount) > 0 && get(duplicatesCount) === 0);
+const hasOnlyDuplicates = computed<boolean>(() => get(unmatchedCount) === 0 && get(duplicatesCount) > 0);
 
 function toggleAlerts(): void {
   if (get(hasOnlyUnmatchedMovements)) {
     emit('show:dialog', { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+  }
+  else if (get(hasOnlyDuplicates)) {
+    emit('show:dialog', { type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
   }
   else {
     set(showAlerts, !get(showAlerts));

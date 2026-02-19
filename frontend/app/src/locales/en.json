@@ -511,6 +511,14 @@
       "fix_success": {
         "description": "Successfully removed {count} duplicate event(s).",
         "title": "Duplicates Fixed"
+      },
+      "mark_non_duplicated_error": {
+        "description": "Failed to mark customized event duplicates as non-duplicated: {error}",
+        "title": "Marking Customized Event Duplicates as Non-Duplicated"
+      },
+      "unignore_error": {
+        "description": "Failed to restore ignored customized event duplicates: {error}",
+        "title": "Restoring Customized Event Duplicates"
       }
     },
     "date_range": " from {from}| to {to}| from {from} to {to}",
@@ -2063,7 +2071,18 @@
       "fix_selected": "Auto Fix Selected Group",
       "fix_selected_confirm": "Are you sure you want to fix {count} selected duplicate event(s)?",
       "fix_single": "Fix Duplicate",
-      "fix_single_confirm": "Are you sure you want to fix this duplicate event? This will remove the duplicate on-chain event and keep your customized event."
+      "fix_single_confirm": "Are you sure you want to fix this duplicate event? This will remove the duplicate on-chain event and keep your customized event.",
+      "mark_non_duplicated": "Mark as Non-Duplicated",
+      "mark_non_duplicated_confirm": "Are you sure you want to mark this event as non-duplicated?",
+      "mark_non_duplicated_selected": "Mark Selected as Non-Duplicated",
+      "mark_non_duplicated_selected_confirm": "Are you sure you want to mark {count} selected event(s) as non-duplicated?",
+      "mark_non_duplicated_tooltip": "Mark this duplicate as a false positive and hide it from future checks.",
+      "restore": "Restore",
+      "restore_confirm": "Are you sure you want to restore this ignored duplicate event?",
+      "restore_selected": "Restore Selected",
+      "restore_selected_confirm": "Are you sure you want to restore {count} ignored duplicate event(s)?",
+      "restore_tooltip": "Restore this ignored duplicate so it appears in the review list again.",
+      "show_in_history": "Show in History Events"
     },
     "banner": {
       "auto_fix_message": "{count} duplicate event(s) can be auto-fixed.",
@@ -2077,6 +2096,21 @@
       "resolved_count": "{count} duplicate(s) resolved.",
       "viewing_auto_fixable": "Showing auto-fixable duplicate events",
       "viewing_manual_review": "Showing duplicates requiring manual review"
+    },
+    "columns": {
+      "tx_hash": "Transaction"
+    },
+    "dialog": {
+      "auto_fix_description": "These duplicates can be automatically resolved by removing the on-chain event and keeping your customized event.",
+      "manual_review_description": "These duplicates require manual review. Inspect them in the history events view to decide how to handle them.",
+      "non_duplicated_description": "These events have been marked as non-duplicated and are excluded from checks.",
+      "title": "Duplicate Events"
+    },
+    "no_items": "No duplicate events found.",
+    "tabs": {
+      "auto_fix": "Can Be Auto-Fixed",
+      "manual_review": "Needs Manual Review",
+      "non_duplicated": "Marked as Non-Duplicated"
     }
   },
   "dashboard": {

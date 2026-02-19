@@ -71,6 +71,12 @@ const AccountingRuleFormDialog = defineAsyncComponent({
   loadingComponent: DialogLoadingComponent,
 });
 
+const CustomizedEventDuplicatesDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/components/history/events/CustomizedEventDuplicatesDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
 const MatchAssetMovementsDialog = defineAsyncComponent({
   delay: 200,
   loader: () => import('@/components/history/events/MatchAssetMovementsDialog.vue'),
@@ -209,6 +215,11 @@ defineExpose({
       v-model="accountingRuleToEdit"
       :event-ids="selectedEventIds"
       @refresh="emit('accounting-rule-refresh')"
+    />
+
+    <CustomizedEventDuplicatesDialog
+      v-if="currentDialog.type === DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES"
+      v-model="dialogIsOpen"
     />
 
     <MatchAssetMovementsDialog
