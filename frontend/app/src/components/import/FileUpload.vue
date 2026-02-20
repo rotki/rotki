@@ -269,12 +269,14 @@ defineExpose({
             <div
               v-if="uploaded"
               class="text-rui-success"
+              data-cy="import-complete"
             >
               {{ t('file_upload.import_complete') }}
             </div>
             <div
               v-else-if="error"
               class="text-rui-error"
+              data-cy="import-error"
             >
               {{ error }}
             </div>
@@ -292,6 +294,7 @@ defineExpose({
           type="file"
           :accept="fileFilter"
           hidden
+          data-cy="file-input"
           @change="onSelect($event)"
         />
       </div>

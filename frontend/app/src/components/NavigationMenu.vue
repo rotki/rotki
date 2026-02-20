@@ -234,6 +234,7 @@ const navItems = computed<MenuItem[]>(() => {
       ],
     },
     {
+      class: 'import',
       type: 'item',
       ...Routes.IMPORT,
     },

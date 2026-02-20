@@ -117,6 +117,24 @@ export class HistoryEventsPage {
     await this.page.locator('[data-cy=bottom-dialog]').waitFor({ state: 'detached', timeout: TIMEOUT_LONG });
   }
 
+  async applyTableFilter(key: string, value: string): Promise<void> {
+    const filter = this.page.locator('[data-cy=table-filter]');
+    // Click the activator to open the autocomplete and reveal the input
+    await filter.locator('[data-id=activator]').click();
+    const input = filter.locator('input');
+    await input.pressSequentially(`${key}=`, { delay: 50 });
+
+    // Wait for suggestions dropdown to show filter values
+    const suggestions = this.page.locator('[data-cy=suggestions]');
+    await suggestions.waitFor({ state: 'visible' });
+
+    // Type the value character by character to trigger reactive suggestion updates
+    await input.pressSequentially(value, { delay: 50 });
+    const option = suggestions.getByText(value, { exact: false }).first();
+    await option.waitFor({ state: 'visible' });
+    await option.click();
+  }
+
   async getEventRows(): Promise<number> {
     const rows = this.page.locator('[data-cy=history-event-row]');
     return rows.count();

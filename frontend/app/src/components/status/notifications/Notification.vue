@@ -179,6 +179,7 @@ function getIcon(action: NotificationAction): RuiIcons {
     class="!p-2 !pb-1.5 max-w-[400px]"
     no-padding
     :variant="popup ? 'flat' : 'outlined'"
+    data-id="notification"
   >
     <div class="flex pb-1 items-center overflow-hidden">
       <div
@@ -203,6 +204,7 @@ function getIcon(action: NotificationAction): RuiIcons {
         </div>
       </div>
       <RuiButton
+        data-id="notification_dismiss"
         variant="text"
         icon
         class="!p-2"

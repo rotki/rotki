@@ -3,7 +3,7 @@ import rotki from '@rotki/eslint-config';
 import { translationKeys } from '@rotki/ui-library';
 
 export default rotki({
-  ignores: ['app/backend-icons.generated.ts'],
+  ignores: ['app/backend-icons.generated.ts', 'app/tests/e2e/test-results/**'],
   vue: true,
   typescript: {
     tsconfigPath: 'tsconfig.json',

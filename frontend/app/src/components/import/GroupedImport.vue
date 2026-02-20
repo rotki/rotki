@@ -139,6 +139,7 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
       auto-select-first
       variant="outlined"
       key-attr="key"
+      data-cy="import-source-select"
     >
       <template #selection="{ item }">
         <ReuseDisplay v-bind="item" />
