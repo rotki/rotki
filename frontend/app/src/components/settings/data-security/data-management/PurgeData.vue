@@ -11,6 +11,7 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useCacheClear } from '@/composables/session/cache-clear';
 import { useSessionPurge } from '@/composables/session/purge';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useLocationStore } from '@/store/locations';
 import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/types/modules';
 import { Purgeable } from '@/types/session/purge';
@@ -147,7 +148,7 @@ const chainsSelection = useArrayMap(allTxChainsInfo, item => item.id);
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem :id="SettingsHighlightIds.PURGE_DATA">
     <template #title>
       {{ t('data_management.purge_data.title') }}
     </template>

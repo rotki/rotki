@@ -5,6 +5,7 @@ import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import NftImageRenderingSetting from '@/components/settings/general/nft/NftImageRenderingSetting.vue';
 import NftsInNetValueSetting from '@/components/settings/general/nft/NftsInNetValueSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -18,7 +19,7 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('general_settings.nft_setting.subtitle.include_nfts') }}
     </template>
 
-    <SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.NFT_IN_NET_VALUE">
       <template #title>
         {{ t('general_settings.nft_setting.label.include_nfts_subtitle') }}
       </template>
@@ -28,7 +29,7 @@ const { t } = useI18n({ useScope: 'global' });
       <NftsInNetValueSetting />
     </SettingsItem>
 
-    <SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.NFT_IMAGE_RENDERING">
       <template #title>
         {{ t('general_settings.nft_setting.subtitle.nft_images_rendering_setting') }}
       </template>

@@ -7,12 +7,16 @@ import EthStakingTaxableAfterWithdrawalSetting from '@/components/settings/accou
 import GasCostSetting from '@/components/settings/accounting/GasCostSetting.vue';
 import TaxFreeSetting from '@/components/settings/accounting/TaxFreeSetting.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsItem class="border-t mt-6">
+  <SettingsItem
+    :id="SettingsHighlightIds.ACCOUNTING_TRADE"
+    class="border-t mt-6"
+  >
     <template #title>
       {{ t('accounting_settings.trade.title') }}
     </template>

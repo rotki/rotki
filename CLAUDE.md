@@ -343,6 +343,136 @@ The contribution guide can be seen here: https://docs.rotki.com/contribution-gui
   - Fetch deposits/withdrawals (also called asset movements) and trades.
 - You will need to create some tests with mocked data
 
+### Adding a Frontend Setting
+
+When adding a new setting to the frontend, follow these steps:
+
+#### 1. Register IDs in `frontend/app/src/composables/settings/types.ts`
+
+- Add a **highlight ID** to `SettingsHighlightIds` (used to scroll-to and highlight the setting):
+  ```typescript
+  export const SettingsHighlightIds = {
+    // ... existing entries (keep alphabetically sorted)
+    MY_NEW_SETTING: 'setting-my-new-setting',
+  } as const;
+  ```
+- If the setting belongs to a **new category**, also add a category ID to `SettingsCategoryIds`:
+  ```typescript
+  export const SettingsCategoryIds = {
+    // ... existing entries
+    MY_CATEGORY: 'my-category',
+  } as const;
+  ```
+
+#### 2. Create the setting component
+
+Create the component in the appropriate subdirectory under `frontend/app/src/components/settings/`. Use `SettingsOption` as a wrapper — it handles debounced updates, success/error messages, and API calls.
+
+```vue
+<script setup lang="ts">
+import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+
+const { t } = useI18n({ useScope: 'global' });
+const value = ref<boolean>(false);
+</script>
+
+<template>
+  <SettingsOption
+    setting="myNewSetting"
+    :error-message="t('my_setting.error')"
+  >
+    <template #title>{{ t('my_setting.title') }}</template>
+    <template #default="{ error, success, updateImmediate }">
+      <RuiSwitch
+        v-model="value"
+        :success-messages="success"
+        :error-messages="error"
+        @update:model-value="updateImmediate($event)"
+      />
+    </template>
+  </SettingsOption>
+</template>
+```
+
+`SettingsOption` accepts `setting` (backend setting), `frontendSetting` (frontend-only), or `sessionSetting` (session-only) to target the right store.
+
+#### 3. Add the setting to its category component
+
+In the relevant category component (e.g., `GeneralSettingsCategory.vue`), wrap the new setting in a `SettingsItem` with the highlight ID:
+
+```vue
+<SettingsItem :id="SettingsHighlightIds.MY_NEW_SETTING">
+  <template #title>{{ t('my_setting.title') }}</template>
+  <template #subtitle>{{ t('my_setting.subtitle') }}</template>
+  <MyNewSetting />
+</SettingsItem>
+```
+
+The `:id` prop is what enables scroll-to-highlight from the settings search.
+
+#### 4. Register in settings search (`frontend/app/src/composables/settings/use-settings-search.ts`)
+
+Add an entry to the appropriate `TabGroup` and `CategoryDef` in the `tabs` array inside `getEntries()`:
+
+```typescript
+{ tab: routes.SETTINGS_GENERAL, categories: [
+  { categoryId: SettingsCategoryIds.GENERAL, children: [
+    // ... existing entries
+    {
+      texts: [t('general_settings.title'), t('my_setting.title')],
+      highlightId: SettingsHighlightIds.MY_NEW_SETTING,
+      keywords: [t('my_setting.subtitle')],
+    },
+  ] },
+] },
+```
+
+- `texts` — breadcrumb path shown in search results (category name, then setting name)
+- `highlightId` — links to the `SettingsItem` `:id` for scroll-and-highlight
+- `keywords` — optional extra search terms (subtitles, descriptions)
+
+#### 5. If adding a new category
+
+If the setting requires a new category on an existing settings page:
+
+1. Create a new category component wrapping settings in `<SettingCategory>` + `<SettingsItem>`
+2. In the page file (e.g., `frontend/app/src/pages/settings/general/index.vue`):
+   - Add the category ID to the `navigation` array
+   - Add the category component to the template with `:id="SettingsCategoryIds.MY_CATEGORY"`
+
+```vue
+<script setup lang="ts">
+const navigation = computed<{ id: string; label: string }[]>(() => [
+  // ... existing entries
+  { id: SettingsCategoryIds.MY_CATEGORY, label: t('my_category.title') },
+]);
+</script>
+
+<template>
+  <SettingsPage :navigation="navigation">
+    <!-- ... existing categories -->
+    <MyCategorySettings :id="SettingsCategoryIds.MY_CATEGORY" />
+  </SettingsPage>
+</template>
+```
+
+#### 6. Add translations
+
+Add all labels, subtitles, and error messages to `frontend/app/src/locales/en.json` (keys must be alphabetically sorted).
+
+#### Key files reference
+
+| Purpose | File |
+|---------|------|
+| Highlight & category IDs | `frontend/app/src/composables/settings/types.ts` |
+| Search registration | `frontend/app/src/composables/settings/use-settings-search.ts` |
+| Highlight/scroll logic | `frontend/app/src/composables/settings/use-settings-highlight.ts` |
+| Page layout with navigation | `frontend/app/src/components/settings/controls/SettingsPage.vue` |
+| Setting update wrapper | `frontend/app/src/components/settings/controls/SettingsOption.vue` |
+| Setting layout wrapper | `frontend/app/src/components/settings/controls/SettingsItem.vue` |
+| Category visual grouping | `frontend/app/src/components/settings/SettingCategory.vue` |
+| Settings pages | `frontend/app/src/pages/settings/*/index.vue` |
+
 ### Adding EVM protocol decoders
 
 As an example decoder, we can look at [MakerDAO](https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/rotkehlchen/chain/ethereum/modules/makerdao/decoder.py).

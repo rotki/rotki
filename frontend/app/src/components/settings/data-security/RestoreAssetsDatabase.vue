@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import RestoreAssetDbButton from '@/components/asset-manager/RestoreAssetDbButton.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem :id="SettingsHighlightIds.RESTORE_ASSETS_DB">
     <template #title>
       {{ t('asset_update.restore.title') }}
     </template>

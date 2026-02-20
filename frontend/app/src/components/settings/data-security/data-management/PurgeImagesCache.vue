@@ -5,6 +5,7 @@ import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useAssetIconApi } from '@/composables/api/assets/icon';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useCacheClear } from '@/composables/session/cache-clear';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useAssetIconStore } from '@/store/assets/icon';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { PurgeableImageCache } from '@/types/session/purge';
@@ -74,7 +75,7 @@ const { pending, showConfirmation, status } = useCacheClear<PurgeableImageCache>
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem :id="SettingsHighlightIds.PURGE_IMAGES_CACHE">
     <template #title>
       {{ t('data_management.purge_images_cache.title') }}
     </template>

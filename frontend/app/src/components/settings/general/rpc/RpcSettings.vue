@@ -7,6 +7,7 @@ import AppImage from '@/components/common/AppImage.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { isOfEnum } from '@/utils';
 import { getPublicProtocolImagePath, getPublicServiceImagePath } from '@/utils/file';
 
@@ -108,7 +109,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div>
+  <div
+    :id="SettingsHighlightIds.RPC_NODES"
+    class="mt-4"
+  >
     <div class="pb-5 border-b border-default flex flex-wrap gap-4 items-center justify-between">
       <SettingCategoryHeader>
         <template #title>

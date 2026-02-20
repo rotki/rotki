@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useValidation } from '@/composables/validation';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toMessages } from '@/utils/validation';
@@ -41,6 +42,7 @@ onMounted(() => {
 
 <template>
   <SettingsOption
+    :id="SettingsHighlightIds.ORACLE_PENALTY_DURATION"
     setting="oraclePenaltyDuration"
     :transform="transform"
     @finished="resetBalanceSaveFrequency()"

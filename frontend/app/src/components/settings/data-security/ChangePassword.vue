@@ -2,6 +2,7 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, sameAs } from '@vuelidate/validators';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useChangePassword } from '@/modules/account/use-change-password';
 import { usePremiumStore } from '@/store/session/premium';
 import { toMessages } from '@/utils/validation';
@@ -60,7 +61,7 @@ async function change(): Promise<void> {
   >
     {{ t('change_password.sync_warning') }}
   </RuiAlert>
-  <SettingsItem>
+  <SettingsItem :id="SettingsHighlightIds.CHANGE_PASSWORD">
     <template #title>
       {{ t('change_password.title') }}
     </template>

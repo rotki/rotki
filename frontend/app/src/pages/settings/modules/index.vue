@@ -2,6 +2,7 @@
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import SettingsPage from '@/components/settings/controls/SettingsPage.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
@@ -15,7 +16,10 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <SettingsPage>
-    <SettingCategory>
+    <SettingCategory
+      :id="SettingsHighlightIds.MODULES"
+      class="mt-4"
+    >
       <template #title>
         {{ t('module_settings.title') }}
       </template>

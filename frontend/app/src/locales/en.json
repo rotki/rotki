@@ -4950,6 +4950,10 @@
     "go_to_section": "Go to section",
     "not_saved": "Setting not saved",
     "saved": "Setting saved",
+    "search": {
+      "no_results": "No settings found",
+      "placeholder": "Search settings..."
+    },
     "security_settings": {
       "subtitle": "Manage your account security",
       "title": "Security"
