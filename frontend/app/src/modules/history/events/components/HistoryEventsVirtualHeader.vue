@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { type DataTableSortData, type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
+import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 
 const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
@@ -13,6 +14,7 @@ defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
+const globalItemsPerPage = useItemsPerPage();
 const { isSmAndDown } = useBreakpoint();
 
 function getSortArray() {
@@ -65,6 +67,9 @@ const itemsPerPage = computed<number>({
   },
   set(limit: number) {
     set(pagination, { ...get(pagination), limit, page: 1 });
+
+    if (limit !== get(globalItemsPerPage))
+      set(globalItemsPerPage, limit);
   },
 });
 

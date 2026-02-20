@@ -1,6 +1,7 @@
 import type { Ref } from 'vue';
 import type { TableId } from '@/modules/table/use-remember-table-sorting';
 import type { LocationQuery } from '@/types/route';
+import { objectOmit } from '@vueuse/shared';
 import { isEmpty } from 'es-toolkit/compat';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 
@@ -43,15 +44,15 @@ export function useRememberTableFilter(
     const savedFilter = get(persistedFiltersRaw)[tableIdValue];
 
     if (savedFilter && !isEmpty(savedFilter)) {
-      // Reset page to 1 (offset to 0) when restoring
-      const { page, ...filterWithoutPage } = savedFilter;
+      // Strip page and limit — page resets to 1, limit comes from global itemsPerPage setting
+      const filterWithoutPagination = objectOmit(savedFilter, ['page', 'limit']);
 
       // Update query params so applyRouteFilter can pick them up
       if (history === 'router') {
-        await router.replace({ query: filterWithoutPage });
+        await router.replace({ query: filterWithoutPagination });
       }
       else if (history === 'external') {
-        set(query, filterWithoutPage);
+        set(query, filterWithoutPagination);
       }
     }
   };
@@ -66,7 +67,8 @@ export function useRememberTableFilter(
     const current = get(persistedFiltersRaw);
     set(persistedFiltersRaw, {
       ...current,
-      [tableIdValue]: query,
+      // Strip limit — it should always come from global itemsPerPage setting
+      [tableIdValue]: objectOmit(query, ['limit']),
     });
   };
 
