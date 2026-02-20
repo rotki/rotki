@@ -33,3 +33,4 @@ frontend/logs
 colibri/target
 **/.claude/
 out
+.codexbox-out/
