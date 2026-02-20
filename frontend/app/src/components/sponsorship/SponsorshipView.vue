@@ -78,7 +78,7 @@ const data = ref<Sponsor>(getCurrentSponsor());
       <AppImage
         cover
         class="rounded-md overflow-hidden"
-        :class="drawer ? 'size-20' : 'size-24 min-w-24'"
+        :class="drawer ? 'size-20 min-w-20' : 'size-24 min-w-24'"
         :alt="data.name"
         :src="data.image"
       />
@@ -120,7 +120,7 @@ const data = ref<Sponsor>(getCurrentSponsor());
         <div class="w-full flex justify-center">
           <ExternalLink
             color="primary"
-            class="!text-xs text-center"
+            class="!text-xs text-center [&>span]:!whitespace-pre-line"
             :url="externalLinks.sponsor"
           >
             {{ t('sponsorship.sponsor') }}
