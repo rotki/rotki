@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
+    from rotkehlchen.externalapis.sqd import Sqd
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -38,6 +39,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             etherscan: 'Etherscan',
             blockscout: 'Blockscout',
             routescan: 'Routescan',
+            sqd: 'Sqd',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.ARBITRUM_ONE]](chain_id=ChainID.ARBITRUM_ONE)
@@ -47,6 +49,7 @@ class ArbitrumOneInquirer(EvmNodeInquirer):
             etherscan=etherscan,
             blockscout=blockscout,
             routescan=routescan,
+            sqd=sqd,
             blockchain=SupportedBlockchain.ARBITRUM_ONE,
             contracts=contracts,
             rpc_timeout=rpc_timeout,

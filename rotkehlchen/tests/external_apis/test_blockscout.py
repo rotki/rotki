@@ -13,7 +13,7 @@ from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
-from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, TimestampMS
 
@@ -125,9 +125,7 @@ def test_missing_data_error(blockscout: Blockscout) -> None:
             text='{"message": "Internal transactions for this transaction have not been processed yet","result": [],"status": "2"}',  # noqa: E501
         )),
     ):
-        next(blockscout.get_transactions(
+        next(blockscout.get_internal_transactions_by_parent_hash(
             chain_id=ChainID.ETHEREUM,
-            account=make_evm_address(),
-            action='txlistinternal',
-            period_or_hash=make_evm_tx_hash(),
+            tx_hash=make_evm_tx_hash(),
         ))

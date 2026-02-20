@@ -16,6 +16,7 @@ import {
   ETHERSCAN_PRIO_LIST_ITEM,
   type PrioritizedListId,
   ROUTESCAN_PRIO_LIST_ITEM,
+  SQD_PRIO_LIST_ITEM,
 } from '@/types/settings/prioritized-list-id';
 
 defineProps<{
@@ -55,6 +56,7 @@ const allIndexerItems = [
   ETHERSCAN_PRIO_LIST_ITEM,
   BLOCKSCOUT_PRIO_LIST_ITEM,
   ROUTESCAN_PRIO_LIST_ITEM,
+  SQD_PRIO_LIST_ITEM,
 ];
 
 const CHAIN_SUPPORTED_INDEXERS: Record<string, typeof allIndexerItems> = {
@@ -102,7 +104,7 @@ const tabs = computed<TabItem[]>(() => {
 
 function resetLocalValues(): void {
   const defaultOrder = get(defaultEvmIndexerOrder);
-  set(localDefaultOrder, defaultOrder ? [...defaultOrder] : [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN]);
+  set(localDefaultOrder, defaultOrder ? [...defaultOrder] : [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN, EvmIndexer.SQD]);
 
   const chainOrders = get(evmIndexersOrder);
   if (chainOrders) {

@@ -76,3 +76,8 @@ export const ROUTESCAN_PRIO_LIST_ITEM: PrioritizedListItemData<EvmIndexer> = {
   icon: getPublicServiceImagePath('routescan.svg'),
   identifier: EvmIndexer.ROUTESCAN,
 };
+
+export const SQD_PRIO_LIST_ITEM: PrioritizedListItemData<EvmIndexer> = {
+  icon: getPublicServiceImagePath('sqd.png'),
+  identifier: EvmIndexer.SQD,
+};

@@ -13,7 +13,9 @@ from rotkehlchen.chain.ethereum.modules.safe.constants import (
 )
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
     NodeName,
+    SerializableChainIndexerOrder,
     WeightedNode,
     string_to_evm_address,
 )
@@ -25,6 +27,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
+    ChainID,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -261,6 +264,9 @@ def test_execution_failure(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{
+    'evm_indexers_order': SerializableChainIndexerOrder({ChainID.BASE: [EvmIndexer.BLOCKSCOUT]}),
+}])
 @pytest.mark.parametrize('base_manager_connect_at_start', [(
     WeightedNode(
         node_info=NodeName(
@@ -277,7 +283,7 @@ def test_execution_failure(ethereum_inquirer, ethereum_accounts):
     '0x8De14E014402C0677B075A69122F94C0425Cc179',
     '0x0BeBD2FcA9854F657329324aA7dc90F656395189',
 ]])
-def test_safe_mastercopy_upgrade_on_base(base_inquirer, base_accounts) -> None:
+def test_safe_mastercopy_upgrade_on_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x37d530d1347e3d0903bcb2c8650bd223b39259ba22af373ba70a3cb064ac46b4')  # noqa: E501
     transactions = BaseTransactions(base_inquirer, base_inquirer.database)
     transactions.single_address_query_transactions(  # temporary hack at the time of writing get_decoded_events_of_transaction does not respect the `evm_indexers_order` so we do this here to use the given order  # noqa: E501

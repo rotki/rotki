@@ -45,6 +45,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
+    from rotkehlchen.externalapis.sqd import Sqd
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -61,6 +62,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             etherscan: 'Etherscan',
             blockscout: 'Blockscout',
             routescan: 'Routescan',
+            sqd: 'Sqd',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.ETHEREUM]](chain_id=ChainID.ETHEREUM)
@@ -70,6 +72,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             etherscan=etherscan,
             blockscout=blockscout,
             routescan=routescan,
+            sqd=sqd,
             blockchain=SupportedBlockchain.ETHEREUM,
             contracts=contracts,
             rpc_timeout=rpc_timeout,

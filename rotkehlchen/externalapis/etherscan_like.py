@@ -2,13 +2,11 @@ import abc
 import json
 import logging
 import operator
-from abc import ABC
 from collections.abc import Iterator
 from contextlib import suppress
-from enum import Enum, auto
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Final, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import gevent
 import requests
@@ -23,6 +21,11 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.interface import (
+    TRANSACTIONS_BATCH_NUM,
+    EvmIndexerInterface,
+    HasChainActivity,
+)
 from rotkehlchen.externalapis.utils import get_earliest_ts
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -52,8 +55,6 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator
 
-TRANSACTIONS_BATCH_NUM: Final = 10
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -66,20 +67,7 @@ def _hashes_tuple_to_list(hashes: set[tuple[EVMTxHash, Timestamp]]) -> list[EVMT
     return [x[0] for x in sorted(hashes, key=operator.itemgetter(1))]
 
 
-class HasChainActivity(Enum):
-    """
-    Classify the type of transaction first found in blockscout/etherscan.
-    TRANSACTIONS means that the endpoint for transactions/internal transactions
-    had entries, TOKENS means that the tokens endpoint had entries, BALANCE means
-    that the address has a non-zero native asset balance and NONE means that no
-    activity was found."""
-    TRANSACTIONS = auto()
-    TOKENS = auto()
-    BALANCE = auto()
-    NONE = auto()
-
-
-class EtherscanLikeApi(ABC):
+class EtherscanLikeApi(EvmIndexerInterface):
     """Base class for any APIs similar to etherscan."""
 
     def __init__(
@@ -480,8 +468,39 @@ class EtherscanLikeApi(ABC):
         options['startblock'] = last_block
         return options
 
-    @overload
     def get_transactions(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress | None,
+            internal: bool,
+            period: TimestampOrBlockRange | None = None,
+    ) -> Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]:
+        """Generic interface implementation. Delegates to _query_transactions."""
+        yield from self._query_transactions(
+            chain_id=chain_id,
+            account=account,
+            action='txlistinternal' if internal else 'txlist',
+            period_or_hash=period,
+        )
+
+    def get_internal_transactions_by_parent_hash(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            tx_hash: EVMTxHash,
+    ) -> Iterator[list[EvmInternalTransaction]]:
+        """Query internal transactions for a specific parent transaction hash.
+
+        This is an etherscan-specific capability not part of the generic indexer interface.
+        """
+        yield from self._query_transactions(
+            chain_id=chain_id,
+            account=None,
+            action='txlistinternal',
+            period_or_hash=tx_hash,
+        )
+
+    @overload
+    def _query_transactions(
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
             account: ChecksumEvmAddress | None,
@@ -491,7 +510,7 @@ class EtherscanLikeApi(ABC):
         ...
 
     @overload
-    def get_transactions(
+    def _query_transactions(
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
             account: ChecksumEvmAddress | None,
@@ -500,7 +519,7 @@ class EtherscanLikeApi(ABC):
     ) -> Iterator[list[EvmTransaction]]:
         ...
 
-    def get_transactions(
+    def _query_transactions(
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
             account: ChecksumEvmAddress | None,
@@ -511,7 +530,7 @@ class EtherscanLikeApi(ABC):
 
         Can specify a given timestamp or block period.
 
-        For internal transactions can also query by parent transaction hash instead
+        For internal transactions can also query by parent transaction hash instead.
         Also the account is optional in case of internal transactions.
 
         May raise:

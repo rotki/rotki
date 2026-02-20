@@ -1,11 +1,103 @@
-from typing import TYPE_CHECKING
+from abc import ABC, abstractmethod
+from collections.abc import Iterator
+from enum import Enum, auto
+from typing import TYPE_CHECKING, Any, Final
 
-from rotkehlchen.types import ApiKey, ExternalService, Timestamp
+from rotkehlchen.chain.structures import TimestampOrBlockRange
+from rotkehlchen.types import (
+    SUPPORTED_CHAIN_IDS,
+    ApiKey,
+    ChecksumEvmAddress,
+    EvmInternalTransaction,
+    EvmTransaction,
+    EVMTxHash,
+    ExternalService,
+    Timestamp,
+)
 from rotkehlchen.utils.interfaces import DBSetterMixin
 from rotkehlchen.utils.misc import ts_now
 
+# number of transactions to accumulate before yielding a batch to the caller
+TRANSACTIONS_BATCH_NUM: Final = 10
+
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+
+
+class HasChainActivity(Enum):
+    """Classify the type of transaction first found in blockscout/etherscan.
+
+    TRANSACTIONS means that the endpoint for transactions/internal transactions
+    had entries, TOKENS means that the tokens endpoint had entries, BALANCE means
+    that the address has a non-zero native asset balance and NONE means that no
+    activity was found.
+    """
+    TRANSACTIONS = auto()
+    TOKENS = auto()
+    BALANCE = auto()
+    NONE = auto()
+
+
+class EvmIndexerInterface(ABC):
+    """Abstract interface for EVM blockchain indexers.
+
+    Defines the core contract that all indexers (Etherscan, Blockscout, Routescan, SQD)
+    must implement. Only contains methods that every indexer is expected to support.
+
+    Etherscan-specific methods (RPC proxies, contract inspection, timestamp-to-block
+    conversion, etc.) live in EtherscanLikeApi and are dispatched via
+    _try_etherscan_like_indexers in the node inquirer.
+    """
+    name: str
+
+    @abstractmethod
+    def get_transactions(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress | None,
+            internal: bool,
+            period: TimestampOrBlockRange | None = None,
+    ) -> Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]:
+        """Yields batches of transactions for an account.
+
+        When internal is True, yields internal (trace) transactions.
+        Indexers that don't support timestamp ranges should raise RemoteError
+        to fall through to the next indexer.
+        """
+
+    @abstractmethod
+    def get_token_transaction_hashes(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress,
+            from_block: int | None = None,
+            to_block: int | None = None,
+    ) -> Iterator[list[EVMTxHash]]:
+        """Get transaction hashes involving ERC20 token transfers for an account."""
+
+    @abstractmethod
+    def get_logs(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            contract_address: ChecksumEvmAddress,
+            topics: list[str | None],
+            from_block: int,
+            to_block: int | str = 'latest',
+            existing_events: list[dict[str, Any]] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Get event logs by contract address and topics."""
+
+    @abstractmethod
+    def get_latest_block_number(self, chain_id: SUPPORTED_CHAIN_IDS) -> int:
+        """Get the latest block number for a chain."""
+
+    @abstractmethod
+    def has_activity(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress,
+    ) -> 'HasChainActivity':
+        """Check if an account has any on-chain activity."""
 
 
 class ExternalServiceWithApiKey:

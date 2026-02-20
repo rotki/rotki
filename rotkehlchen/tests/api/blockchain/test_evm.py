@@ -13,7 +13,11 @@ from eth_utils import to_checksum_address
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.chain.evm.transactions import EvmTransaction
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    SerializableChainIndexerOrder,
+    string_to_evm_address,
+)
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ZERO
 from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -386,6 +390,10 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'], allow_playback_repeats=True)
+@pytest.mark.parametrize('db_settings', [{
+    'evm_indexers_order': SerializableChainIndexerOrder({ChainID.BINANCE_SC: [EvmIndexer.ETHERSCAN]}),  # noqa: E501
+}])
+@pytest.mark.parametrize('should_mock_settings', [False])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
@@ -602,7 +610,11 @@ def test_argent_names(rotkehlchen_api_server: 'APIServer') -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{
+    'evm_indexers_order': SerializableChainIndexerOrder({ChainID.BINANCE_SC: [EvmIndexer.ETHERSCAN]}),  # noqa: E501
+}])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('should_mock_settings', [False])
 @pytest.mark.parametrize('optimism_manager_connect_at_start', [(OPTIMISM_MAINNET_NODE,)])
 @pytest.mark.parametrize('binance_sc_manager_connect_at_start', BSC_NODES_TO_CONNECT)
 @pytest.mark.parametrize('base_manager_connect_at_start', [(BASE_MAINNET_NODE,)])
