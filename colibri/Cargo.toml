@@ -1,6 +1,6 @@
 [package]
 name = "colibri"
-version = "1.41.3"
+version = "1.42.0"
 edition = "2021"
 
 [dependencies]
