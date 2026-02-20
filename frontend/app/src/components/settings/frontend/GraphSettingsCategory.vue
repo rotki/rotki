@@ -4,6 +4,7 @@ import ShowGraphRangeSelectorSetting from '@/components/settings/frontend/ShowGr
 import TimeFrameSetting from '@/components/settings/frontend/TimeFrameSetting.vue';
 import ZeroBasedGraphSetting from '@/components/settings/frontend/ZeroBasedGraphSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -16,8 +17,8 @@ const { t } = useI18n({ useScope: 'global' });
     <template #subtitle>
       {{ t('frontend_settings.subtitle.graph_settings_hint') }}
     </template>
-    <TimeFrameSetting />
-    <SettingsItem>
+    <TimeFrameSetting :id="SettingsHighlightIds.TIMEFRAME" />
+    <SettingsItem :id="SettingsHighlightIds.GRAPH_BASIS">
       <template #title>
         {{ t('frontend_settings.graph_basis.title') }}
       </template>

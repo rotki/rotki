@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import LogLevelSetting from '@/components/settings/backend/LogLevelSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -13,6 +14,6 @@ const { t } = useI18n({ useScope: 'global' });
     <template #subtitle>
       {{ t('backend_settings.subtitle') }}
     </template>
-    <LogLevelSetting />
+    <LogLevelSetting :id="SettingsHighlightIds.LOG_LEVEL" />
   </SettingCategory>
 </template>

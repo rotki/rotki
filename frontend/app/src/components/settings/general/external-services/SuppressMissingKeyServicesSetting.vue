@@ -3,6 +3,7 @@ import { toCapitalCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/types/user';
 import { getPublicServiceImagePath } from '@/utils/file';
@@ -58,7 +59,10 @@ const [DefineServiceItem, ReuseServiceItem] = createReusableTemplate<{ item: Ser
     </div>
   </DefineServiceItem>
 
-  <SettingsItem data-cy="suppress-missing-key-services-setting">
+  <SettingsItem
+    :id="SettingsHighlightIds.SUPPRESS_MISSING_KEY"
+    data-cy="suppress-missing-key-services-setting"
+  >
     <template #title>
       {{ t('general_settings.external_service_setting.suppress_missing_key.title') }}
     </template>

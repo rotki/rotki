@@ -6,6 +6,7 @@ import ExternalServiceSettingsCategory from '@/components/settings/ExternalServi
 import GeneralSettingsCategory from '@/components/settings/GeneralSettingsCategory.vue';
 import HistoryEventSettingsCategory from '@/components/settings/HistoryEventSettingsCategory.vue';
 import NftSettingsCategory from '@/components/settings/NftSettingsCategory.vue';
+import { SettingsCategoryIds } from '@/composables/settings/types';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
@@ -16,22 +17,13 @@ definePage({
 
 const { t } = useI18n({ useScope: 'global' });
 
-enum Category {
-  GENERAL = 'general',
-  AMOUNT = 'amount',
-  NFT = 'nft',
-  HISTORY_EVENT = 'history-event',
-  EXTERNAL_SERVICE = 'external-service',
-  BACKEND = 'backend',
-}
-
-const navigation = computed<{ id: Category; label: string }[]>(() => [
-  { id: Category.GENERAL, label: t('general_settings.title') },
-  { id: Category.AMOUNT, label: t('general_settings.amount.title') },
-  { id: Category.NFT, label: t('general_settings.nft_setting.title') },
-  { id: Category.HISTORY_EVENT, label: t('general_settings.history_event.title') },
-  { id: Category.EXTERNAL_SERVICE, label: t('general_settings.external_service_setting.title') },
-  { id: Category.BACKEND, label: t('backend_settings.title') },
+const navigation = computed<{ id: string; label: string }[]>(() => [
+  { id: SettingsCategoryIds.GENERAL, label: t('general_settings.title') },
+  { id: SettingsCategoryIds.AMOUNT, label: t('general_settings.amount.title') },
+  { id: SettingsCategoryIds.NFT, label: t('general_settings.nft_setting.title') },
+  { id: SettingsCategoryIds.HISTORY_EVENT, label: t('general_settings.history_event.title') },
+  { id: SettingsCategoryIds.EXTERNAL_SERVICE, label: t('general_settings.external_service_setting.title') },
+  { id: SettingsCategoryIds.BACKEND, label: t('backend_settings.title') },
 ]);
 </script>
 
@@ -40,11 +32,11 @@ const navigation = computed<{ id: Category; label: string }[]>(() => [
     class="general-settings"
     :navigation="navigation"
   >
-    <GeneralSettingsCategory :id="Category.GENERAL" />
-    <AmountSettingsCategory :id="Category.AMOUNT" />
-    <NftSettingsCategory :id="Category.NFT" />
-    <HistoryEventSettingsCategory :id="Category.HISTORY_EVENT" />
-    <ExternalServiceSettingsCategory :id="Category.EXTERNAL_SERVICE" />
-    <BackendServiceSettingsCategory :id="Category.BACKEND" />
+    <GeneralSettingsCategory :id="SettingsCategoryIds.GENERAL" />
+    <AmountSettingsCategory :id="SettingsCategoryIds.AMOUNT" />
+    <NftSettingsCategory :id="SettingsCategoryIds.NFT" />
+    <HistoryEventSettingsCategory :id="SettingsCategoryIds.HISTORY_EVENT" />
+    <ExternalServiceSettingsCategory :id="SettingsCategoryIds.EXTERNAL_SERVICE" />
+    <BackendServiceSettingsCategory :id="SettingsCategoryIds.BACKEND" />
   </SettingsPage>
 </template>

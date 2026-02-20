@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 
 defineProps<{
   skipped: number;
@@ -10,11 +11,12 @@ defineProps<{
 const emit = defineEmits<{
   check: [];
 }>();
+
 const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem :id="SettingsHighlightIds.ASSET_UPDATE">
     <template #title>
       {{ t('asset_update.manual.title') }}
     </template>

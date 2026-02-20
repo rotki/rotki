@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
 import type { Exchange } from '@/types/exchanges';
 import type { TradeLocationData } from '@/types/history/trade/location';
+import { type AssetBalanceWithPrice, type BigNumber, getTextToken } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import AppImage from '@/components/common/AppImage.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
@@ -50,7 +50,7 @@ const isMac = ref<boolean>(false);
 const input = ref<any>(null);
 const selected = ref<number>();
 const search = ref<string>('');
-const loading = ref(false);
+const loading = ref<boolean>(false);
 const visibleItems = ref<SearchItem[]>([]);
 
 const key = '/';
@@ -63,21 +63,16 @@ const { getLocationData } = useLocations();
 const { assetSearch } = useAssetInfoRetrieval();
 
 function getItemText(item: SearchItemWithoutValue): string {
-  const text = item.texts ? item.texts.join(' ') : item.text;
-  return (
-    text
-      ?.replace(/[^\s\w]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim() ?? ''
-  );
+  return item.texts ? item.texts.join(' ') : (item.text ?? '');
 }
 
 function filterItems(items: SearchItemWithoutValue[], keyword: string): SearchItemWithoutValue[] {
-  const splitKeyword = keyword.split(' ');
+  const words = keyword.split(/\s+/).map(w => getTextToken(w)).filter(Boolean);
   return items.filter((item) => {
     let matchedPoints = 0;
-    for (const word of splitKeyword) {
-      const indexOf = getItemText(item).toLowerCase().indexOf(word);
+    const text = getTextToken(getItemText(item));
+    for (const word of words) {
+      const indexOf = text.indexOf(word);
       if (indexOf > -1) {
         matchedPoints++;
         if (indexOf === 0)
@@ -340,18 +335,16 @@ watchDebounced(
       return;
     }
 
-    const search = keyword.toLocaleLowerCase().trim();
-
     const staticData = [
-      ...getRoutes(search),
-      ...getExchanges(search),
-      ...getActions(search),
-      ...getLocations(search),
+      ...getRoutes(keyword),
+      ...getExchanges(keyword),
+      ...getActions(keyword),
+      ...getLocations(keyword),
     ].sort((a, b) => (b.matchedPoints ?? 0) - (a.matchedPoints ?? 0));
 
     set(
       visibleItems,
-      [...staticData, ...(await getAssets(search))].map((item, index) => ({
+      [...staticData, ...(await getAssets(keyword))].map((item, index) => ({
         ...item,
         text: getItemText(item),
         value: index,

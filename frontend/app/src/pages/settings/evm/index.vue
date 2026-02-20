@@ -5,6 +5,7 @@ import IndexerOrderSetting from '@/components/settings/evm/IndexerOrderSetting.v
 import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
 import TreatEthAsEth2Setting from '@/components/settings/general/TreatEthAsEth2Setting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { SettingsCategoryIds, SettingsHighlightIds } from '@/composables/settings/types';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
@@ -15,14 +16,9 @@ definePage({
 
 const { t } = useI18n({ useScope: 'global' });
 
-enum Category {
-  CHAINS = 'chains',
-  INDEXER = 'indexer',
-}
-
-const navigation = computed<{ id: Category; label: string }[]>(() => [
-  { id: Category.CHAINS, label: t('evm_settings.general.title') },
-  { id: Category.INDEXER, label: t('evm_settings.indexer.title') },
+const navigation = computed<{ id: string; label: string }[]>(() => [
+  { id: SettingsCategoryIds.CHAINS, label: t('evm_settings.general.title') },
+  { id: SettingsCategoryIds.INDEXER, label: t('evm_settings.indexer.title') },
 ]);
 </script>
 
@@ -31,11 +27,11 @@ const navigation = computed<{ id: Category; label: string }[]>(() => [
     class="evm-settings"
     :navigation="navigation"
   >
-    <SettingCategory :id="Category.CHAINS">
+    <SettingCategory :id="SettingsCategoryIds.CHAINS">
       <template #title>
         {{ t('evm_settings.general.title') }}
       </template>
-      <SettingsItem>
+      <SettingsItem :id="SettingsHighlightIds.TREAT_ETH2_AS_ETH">
         <template #title>
           {{ t('evm_settings.general.treat_eth2_as_eth.title') }}
         </template>
@@ -44,7 +40,7 @@ const navigation = computed<{ id: Category; label: string }[]>(() => [
         </template>
         <TreatEthAsEth2Setting />
       </SettingsItem>
-      <SettingsItem>
+      <SettingsItem :id="SettingsHighlightIds.CHAINS_TO_SKIP_DETECTION">
         <template #title>
           {{ t('evm_settings.general.chains_to_skip_detection.title') }}
         </template>
@@ -54,6 +50,6 @@ const navigation = computed<{ id: Category; label: string }[]>(() => [
         <EvmChainsToIgnoreSettings />
       </SettingsItem>
     </SettingCategory>
-    <IndexerOrderSetting :id="Category.INDEXER" />
+    <IndexerOrderSetting :id="SettingsCategoryIds.INDEXER" />
   </SettingsPage>
 </template>

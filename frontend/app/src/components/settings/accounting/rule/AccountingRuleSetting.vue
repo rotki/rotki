@@ -15,6 +15,7 @@ import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { type Filters, type Matcher, useAccountingRuleFilter } from '@/composables/filters/accounting-rule';
 import { useAccountingSettings } from '@/composables/settings/accounting';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
@@ -22,14 +23,14 @@ import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { getPlaceholderRule } from '@/utils/settings';
 
-const CUSTOM_RULE_HANDLING = {
+const CustomRuleHandling = {
   /** Show regular rules (exclude event-specific rules) */
   EXCLUDE: 'exclude',
   /** Show only event-specific rules */
   ONLY: 'only',
 } as const;
 
-type CustomRuleHandling = typeof CUSTOM_RULE_HANDLING[keyof typeof CUSTOM_RULE_HANDLING];
+type CustomRuleHandling = typeof CustomRuleHandling[keyof typeof CustomRuleHandling];
 
 const AccountingRuleQuerySchema = z.object({
   counterparty: z.string().nullable().default(null),
@@ -46,7 +47,7 @@ const route = useRoute();
 const { exportJSON, getAccountingRule, getAccountingRules, getAccountingRulesConflicts } = useAccountingSettings();
 
 const editMode = ref<boolean>(false);
-const customRuleHandling = ref<CustomRuleHandling>(CUSTOM_RULE_HANDLING.EXCLUDE);
+const customRuleHandling = ref<CustomRuleHandling>(CustomRuleHandling.EXCLUDE);
 
 const modelValue = ref<AccountingRuleEntry>();
 const eventIdsForRule = ref<number[]>();
@@ -302,7 +303,10 @@ const importFileDialog = ref<boolean>(false);
 </script>
 
 <template>
-  <div>
+  <div
+    :id="SettingsHighlightIds.ACCOUNTING_RULE"
+    class="mt-4"
+  >
     <div class="pb-5 border-b border-default flex flex-wrap gap-2 items-center justify-between">
       <SettingCategoryHeader>
         <template #title>
@@ -417,10 +421,10 @@ const importFileDialog = ref<boolean>(false);
               color="primary"
               class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
             >
-              <RuiTab :value="CUSTOM_RULE_HANDLING.EXCLUDE">
+              <RuiTab :value="CustomRuleHandling.EXCLUDE">
                 {{ t('accounting_settings.rule.tabs.regular') }}
               </RuiTab>
-              <RuiTab :value="CUSTOM_RULE_HANDLING.ONLY">
+              <RuiTab :value="CustomRuleHandling.ONLY">
                 {{ t('accounting_settings.rule.tabs.custom') }}
               </RuiTab>
             </RuiTabs>
@@ -441,7 +445,7 @@ const importFileDialog = ref<boolean>(false);
         v-model:pagination="pagination"
         :state="state"
         :is-loading="isLoading"
-        :is-custom="customRuleHandling === CUSTOM_RULE_HANDLING.ONLY"
+        :is-custom="customRuleHandling === CustomRuleHandling.ONLY"
         @set-page="setPage($event)"
         @delete-click="showDeleteConfirmation($event)"
         @edit-click="edit($event)"

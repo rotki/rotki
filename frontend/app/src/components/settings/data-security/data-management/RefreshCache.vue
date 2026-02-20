@@ -7,6 +7,7 @@ import { useSessionApi } from '@/composables/api/session/index';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useCacheClear } from '@/composables/session/cache-clear';
 import { useSessionPurge } from '@/composables/session/purge';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -84,7 +85,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <SettingsItem>
+  <SettingsItem :id="SettingsHighlightIds.REFRESH_CACHE">
     <template #title>
       {{ t('data_management.refresh_cache.title') }}
     </template>

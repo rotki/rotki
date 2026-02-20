@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useUnifiedProgress } from '@/modules/dashboard/progress/composables/use-unified-progress';
 import HistoryQueryIndicatorDismissalThresholdSetting from './HistoryQueryIndicatorDismissalThresholdSetting.vue';
 import HistoryQueryIndicatorMinOutOfSyncPeriodSetting from './HistoryQueryIndicatorMinOutOfSyncPeriodSetting.vue';
@@ -37,10 +38,10 @@ onUnmounted(() => {
     <template #title>
       {{ t('frontend_settings.history_query_indicator.title') }}
     </template>
-    <HistoryQueryIndicatorMinOutOfSyncPeriodSetting />
-    <HistoryQueryIndicatorDismissalThresholdSetting />
+    <HistoryQueryIndicatorMinOutOfSyncPeriodSetting :id="SettingsHighlightIds.MIN_OUT_OF_SYNC_PERIOD" />
+    <HistoryQueryIndicatorDismissalThresholdSetting :id="SettingsHighlightIds.DISMISSAL_THRESHOLD" />
     <div>
-      <SettingsItem>
+      <SettingsItem :id="SettingsHighlightIds.RESET_DISMISSAL_STATUS">
         <template #title>
           {{ t('frontend_settings.history_query_indicator.reset_dismissal_status.title') }}
         </template>

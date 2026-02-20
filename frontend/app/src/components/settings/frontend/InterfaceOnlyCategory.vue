@@ -8,6 +8,7 @@ import LanguageSetting from '@/components/settings/general/language/LanguageSett
 import QueryPeriodSetting from '@/components/settings/general/QueryPeriodSetting.vue';
 import RefreshSetting from '@/components/settings/general/RefreshSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import HistoryQueryIndicatorSettings from '@/modules/settings/interface/HistoryQueryIndicatorSettings.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -19,13 +20,13 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('frontend_settings.title') }}
     </template>
     <LanguageSetting />
-    <AnimationsEnabledSetting />
-    <PersistTableSortingSetting />
-    <ScrambleDataSetting />
-    <PersistPrivacySettings />
-    <RefreshSetting />
-    <QueryPeriodSetting />
-    <Explorers />
+    <AnimationsEnabledSetting :id="SettingsHighlightIds.ANIMATIONS" />
+    <PersistTableSortingSetting :id="SettingsHighlightIds.PERSIST_TABLE_SORTING" />
+    <ScrambleDataSetting :id="SettingsHighlightIds.SCRAMBLE" />
+    <PersistPrivacySettings :id="SettingsHighlightIds.PERSIST_PRIVACY" />
+    <RefreshSetting :id="SettingsHighlightIds.REFRESH_BALANCE" />
+    <QueryPeriodSetting :id="SettingsHighlightIds.PERIODIC_QUERY" />
+    <Explorers :id="SettingsHighlightIds.EXPLORERS" />
     <HistoryQueryIndicatorSettings />
   </SettingCategory>
 </template>

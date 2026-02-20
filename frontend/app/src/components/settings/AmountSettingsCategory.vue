@@ -8,6 +8,7 @@ import NumericSeparatorsSettings from '@/components/settings/general/amount/Nume
 import RoundingSettings from '@/components/settings/general/amount/RoundingSettings.vue';
 import CurrencyLocationSetting from '@/components/settings/general/CurrencyLocationSetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { FiatDisplay } from '@/modules/amount-display';
 import SubscriptToggle from './general/amount/SubscriptToggle.vue';
 
@@ -25,7 +26,7 @@ const amountExample = bigNumberify(123456.789);
       {{ t('general_settings.amount.subtitle') }}
     </template>
 
-    <SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.AMOUNT_FORMAT">
       <template #title>
         {{ t('general_settings.amount.label.amount') }}
       </template>
@@ -42,7 +43,7 @@ const amountExample = bigNumberify(123456.789);
       </div>
     </SettingsItem>
 
-    <SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.SUBSCRIPT">
       <template #title>
         {{ t('rounding_settings.subscript.title') }}
       </template>
@@ -52,7 +53,7 @@ const amountExample = bigNumberify(123456.789);
       <SubscriptToggle />
     </SettingsItem>
 
-    <SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.ROUNDING">
       <template #title>
         {{ t('rounding_settings.title') }}
       </template>
@@ -62,14 +63,14 @@ const amountExample = bigNumberify(123456.789);
       <RoundingSettings />
     </SettingsItem>
 
-    <SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.ABBREVIATION">
       <template #title>
         {{ t('general_settings.amount.label.abbreviation') }}
       </template>
       <AbbreviateNumberSetting />
     </SettingsItem>
 
-    <SettingsItem>
+    <SettingsItem :id="SettingsHighlightIds.CURRENCY_LOCATION">
       <template #title>
         {{ t('general_settings.amount.label.currency_location') }}
       </template>

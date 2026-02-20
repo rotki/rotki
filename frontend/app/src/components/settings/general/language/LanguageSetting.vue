@@ -4,6 +4,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import LanguageSelectorItem from '@/components/settings/general/language/LanguageSelectorItem.vue';
 import { useLocale } from '@/composables/session/use-locale';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { supportedLanguages } from '@/data/supported-language';
 import { SupportedLanguage } from '@/types/settings/frontend-settings';
 
@@ -41,6 +42,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 <template>
   <SettingsOption
+    :id="SettingsHighlightIds.LANGUAGE"
     class="w-full"
     setting="language"
     frontend-setting

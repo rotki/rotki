@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { useSettingsPageHighlight } from '@/composables/settings/use-settings-page-highlight';
+import { useSettingsScrollSpy } from '@/composables/settings/use-settings-scroll-spy';
+
 interface Nav {
   id: string;
   label: string;
@@ -18,83 +21,16 @@ defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const parentScroller = ref<HTMLDivElement>();
-const currentId = ref<string>(navigation[0]?.id ?? '');
+const parentScroller = useTemplateRef<HTMLDivElement>('parentScroller');
 
 const { isMdAndUp } = useBreakpoint();
 
-function isElementInViewport(el: Element): boolean {
-  const parent = get(parentScroller);
-  if (!parent)
-    return false;
-
-  const parentRect = parent.getBoundingClientRect();
-  const elementRect = el.getBoundingClientRect();
-
-  return (
-    elementRect.top < parentRect.bottom
-    && elementRect.bottom > parentRect.top
-    && elementRect.left < parentRect.right
-    && elementRect.right > parentRect.left
-  );
-}
-
-function checkVisibility() {
-  const parent = get(parentScroller);
-  if (parent) {
-    if (parent.scrollTop === 0) {
-      set(currentId, navigation.at(0)?.id ?? '');
-      return;
-    }
-    if (parent.scrollTop + parent.clientHeight >= parent.scrollHeight - 10) {
-      // If scrolled to the bottom (with a small tolerance), set to the last navigation item's id
-      set(currentId, navigation.at(-1)?.id ?? '');
-      return;
-    }
-  }
-
-  for (const nav of navigation) {
-    const element = document.getElementById(nav.id);
-    if (element && isElementInViewport(element)) {
-      set(currentId, nav.id);
-      return; // Exit the function once we find the first visible element
-    }
-  }
-  // If no element is visible, set to the first navigation item's id
-  set(currentId, navigation[0]?.id ?? '');
-}
-
-function scrollToElement(navId?: string) {
-  if (!navId)
-    return;
-
-  const element = document.getElementById(navId);
-  const parent = get(parentScroller);
-  if (element && parent) {
-    parent.scrollTo({
-      behavior: 'smooth',
-      top: element.offsetTop - parent.offsetTop,
-    });
-  }
-}
-
-onMounted(() => {
-  const parent = get(parentScroller);
-  if (parent) {
-    parent.addEventListener('scroll', checkVisibility);
-    window.addEventListener('resize', checkVisibility);
-  }
-  // Initial check
-  checkVisibility();
+const { currentId, isElementInViewport, scrollToElement } = useSettingsScrollSpy({
+  navigation,
+  scroller: parentScroller,
 });
 
-onUnmounted(() => {
-  const parent = get(parentScroller);
-  if (parent) {
-    parent.removeEventListener('scroll', checkVisibility);
-    window.removeEventListener('resize', checkVisibility);
-  }
-});
+useSettingsPageHighlight({ scrollToElement, isElementInViewport });
 </script>
 
 <template>
@@ -138,7 +74,7 @@ onUnmounted(() => {
     </template>
     <div
       ref="parentScroller"
-      class="flex-1 overflow-y-auto border-default pb-8 md:pb-16 h-full flex flex-col gap-6 md:gap-8 -mr-4 pr-4 md:pr-8"
+      class="flex-1 overflow-y-auto border-default pb-8 md:pb-16 h-full flex flex-col gap-6 md:gap-8 -mx-4 px-4 md:pr-8 -mt-4 pt-4"
       v-bind="$attrs"
       :class="{
         'md:border-r !h-[calc(100%-72px)] md:!h-full md:mr-0': navigation.length > 0,

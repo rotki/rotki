@@ -11,6 +11,7 @@ import DisplayDateInLocaltimeSetting from '@/components/settings/general/Display
 import UsageAnalyticsSetting from '@/components/settings/general/UsageAnalyticsSetting.vue';
 import VersionUpdateFrequencySetting from '@/components/settings/general/VersionUpdateFrequencySetting.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 
 const { t } = useI18n({ useScope: 'global' });
 </script>
@@ -23,9 +24,9 @@ const { t } = useI18n({ useScope: 'global' });
     <template #subtitle>
       {{ t('general_settings.subtitle') }}
     </template>
-    <UsageAnalyticsSetting />
-    <AutoDetectTokensSetting />
-    <SettingsItem>
+    <UsageAnalyticsSetting :id="SettingsHighlightIds.USAGE_ANALYTICS" />
+    <AutoDetectTokensSetting :id="SettingsHighlightIds.AUTO_DETECT_TOKENS" />
+    <SettingsItem :id="SettingsHighlightIds.DISPLAY_DATE_IN_LOCALTIME">
       <template #title>
         {{ t('general_settings.display_date_in_localtime.title') }}
       </template>
@@ -34,11 +35,11 @@ const { t } = useI18n({ useScope: 'global' });
         <CsvExportDelimiterSetting />
       </div>
     </SettingsItem>
-    <AskUserUponSizeDiscrepancySetting />
-    <VersionUpdateFrequencySetting />
-    <BalanceSaveFrequencySetting />
-    <BtcDerivationGapLimitSetting />
-    <SettingsItem>
+    <AskUserUponSizeDiscrepancySetting :id="SettingsHighlightIds.ASK_SIZE_DISCREPANCY" />
+    <VersionUpdateFrequencySetting :id="SettingsHighlightIds.VERSION_UPDATE_CHECK" />
+    <BalanceSaveFrequencySetting :id="SettingsHighlightIds.BALANCE_SAVE_FREQUENCY" />
+    <BtcDerivationGapLimitSetting :id="SettingsHighlightIds.BTC_DERIVATION_GAP" />
+    <SettingsItem :id="SettingsHighlightIds.DATE_FORMAT">
       <template #title>
         {{ t('date_format_help.title') }}
       </template>

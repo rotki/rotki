@@ -3,6 +3,7 @@ import type { DatabaseInfo } from '@/types/backup';
 import CopyButton from '@/components/helper/CopyButton.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useBackupApi } from '@/composables/api/backup';
+import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useNotificationsStore } from '@/store/notifications';
 import { size } from '@/utils/data';
 import { logger } from '@/utils/logging';
@@ -146,13 +147,13 @@ onMounted(loadInfo);
       </div>
     </RuiCard>
   </DefineRow>
-  <SettingsItem>
+  <SettingsItem :id="SettingsHighlightIds.USERDB_INFO">
     <template #title>
       {{ t('database_settings.database_info.labels.userdb') }}
     </template>
     <ReuseRow :details="userDetails" />
   </SettingsItem>
-  <SettingsItem>
+  <SettingsItem :id="SettingsHighlightIds.GLOBALDB_INFO">
     <template #title>
       {{ t('database_settings.database_info.labels.globaldb') }}
     </template>
