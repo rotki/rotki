@@ -351,6 +351,27 @@ It needs to contain a class that inherits from the `DecoderInterface` and is nam
 
 Note: If your new decoder decodes an airdrop's claiming event and this airdrop is present in the [data repo airdrop index](https://github.com/rotki/data/blob/develop/airdrops/index_v2.json) with `has_decoder` as `false`, please update that also.
 
+### Decoder scope policy (performance-critical)
+
+- Prefer `addresses_to_decoders()` over generic `decoding_rules()` whenever a protocol emits identifiable logs from known contract addresses.
+- Use `decoding_rules()` only as a last resort when no reliable address/topic/input selector scoping exists.
+
+Why:
+- `decoding_rules()` are evaluated for every log in every transaction on that chain, which increases per-log decoding overhead.
+- `addresses_to_decoders()` restricts execution to logs from relevant protocol contracts, reducing unnecessary rule invocations and improving decode throughput.
+- Narrow-scoped decoders also reduce false positives and make behavior easier to reason about.
+
+### ActionItem matching rule (avoid redundant log scans)
+
+- When creating an `ActionItem` from a log handler, prefer using data already available in the current `context.tx_log` for matching fields (`amount`, `asset`, `location_label`, `to_address`) whenever possible.
+- Do not iterate `context.all_logs` just to rediscover transfer data if the current log already provides the same amount/address relation.
+- Only scan `context.all_logs` when correlating multiple distinct logs is strictly required.
+
+Why:
+- Reduces per-transaction work and decoder complexity.
+- Avoids introducing fragile cross-log assumptions.
+- Keeps action-item transformations deterministic and easier to review.
+
 #### Counterparties
 
 It needs to implement a method called `counterparties()` which returns a list of counterparties that can be associated with the transactions of this module. Most of the time these are protocol names like `uniswap-v1`, `makerdao_dsr`, etc.
@@ -389,8 +410,16 @@ Each combination of event type and subtype and counterparty creates a new unique
 
 The mapping of these HistoryEvents types, subtypes, and categories is done in [rotkehlchen/accounting/constants.py](https://github.com/rotki/rotki/blob/17b4368bc15043307fa6acf536b5237b3840c40e/rotkehlchen/accounting/constants.py).
 
-#### Things to keep in mind
+### Hex / bytes constants policy (strict)
 
+- Never manually transcribe event topics, method selectors, hashes, or byte constants into Python byte literals.
+- Always derive byte constants programmatically from canonical hex with `bytes.fromhex(...)` (or equivalent safe conversion).
+- When source data is on-chain/API, copy exact `0x...` values and normalize with:
+  - `hex_str = value.removeprefix('0x')`
+  - `const = bytes.fromhex(hex_str)`
+- Always verify round-trip before finalizing:
+  - `assert const.hex() == hex_str.lower()`
+- Prefer storing canonical constants as hex strings + conversion, rather than hand-written escaped byte literals.
 - All byte signatures should be a constant byte literal. Like ```DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'```
 - Don't put assets as constants. If you need a constant just use the asset identifier as a string and compare against it.
 
