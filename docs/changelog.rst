@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
+
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.
 * :feature:`-` Monerium transactions on Base will now be decoded properly.
