@@ -6,6 +6,7 @@ from collections import defaultdict
 from collections.abc import Generator
 from contextlib import ExitStack
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Any
 from unittest.mock import patch
 
@@ -131,6 +132,48 @@ def fixture_last_accounting_rules_version() -> int:
     return 5
 
 
+def _read_rules_from_file(rules_file: Path) -> list[dict[str, Any]]:
+    rules = json.loads(rules_file.read_text(encoding='utf-8'))['accounting_rules']
+    if not isinstance(rules, list):
+        raise TypeError(f'Expected list of accounting rules in {rules_file}')
+    return rules
+
+
+def _download_rules_file(version: int, rules_file: Path) -> None:
+    """Download and atomically refresh one cached accounting-rules JSON file.
+
+    This helper exists to keep xdist runs stable: multiple workers may initialize
+    `latest_accounting_rules` concurrently and a direct write can leave a briefly
+    empty/truncated file that another worker reads, triggering JSONDecodeError.
+    We therefore validate payload shape and replace the destination atomically via
+    a temporary file + `os.replace()`.
+    """
+    response = requests.get(
+        f'https://raw.githubusercontent.com/rotki/data/develop/updates/accounting_rules/v{version}.json',
+        timeout=30,
+    )
+    response.raise_for_status()
+    payload = json.loads(response.text)
+    if not isinstance(payload.get('accounting_rules'), list):
+        raise TypeError(f'Invalid accounting rules payload for version {version}')
+
+    tmp_file: str | None = None
+    try:
+        with NamedTemporaryFile(
+            mode='w',
+            encoding='utf-8',
+            dir=rules_file.parent,
+            delete=False,
+        ) as tmp:
+            json.dump(payload, tmp)
+            tmp.write('\n')
+            tmp_file = tmp.name
+        os.replace(tmp_file, rules_file)
+    finally:
+        if tmp_file is not None and Path(tmp_file).exists():
+            Path(tmp_file).unlink()
+
+
 @pytest.fixture(name='latest_accounting_rules', autouse=True, scope='session')
 def fixture_download_rules(last_accounting_rules_version) -> list[tuple[int, Path]]:
     """
@@ -145,13 +188,15 @@ def fixture_download_rules(last_accounting_rules_version) -> list[tuple[int, Pat
     result = []
     for i in range(1, last_accounting_rules_version + 1):
         rules_file = Path(base_dir / f'v{i}.json')
-        if (rules_file := Path(base_dir / f'v{i}.json')).exists():
-            result.append((i, rules_file))
-            continue
-
-        response = requests.get(f'https://raw.githubusercontent.com/rotki/data/develop/updates/accounting_rules/v{i}.json')
         rules_file.parent.mkdir(exist_ok=True, parents=True)
-        rules_file.write_text(response.text, encoding='utf-8')
+        if rules_file.exists():
+            try:
+                _read_rules_from_file(rules_file)
+            except (OSError, json.JSONDecodeError, KeyError, TypeError):
+                _download_rules_file(version=i, rules_file=rules_file)
+        else:
+            _download_rules_file(version=i, rules_file=rules_file)
+
         result.append((i, rules_file))
 
     return result
@@ -164,7 +209,7 @@ def fixture_latest_accounting_rules_data(
     """Parse accounting rules once per session to avoid repeated JSON IO per test."""
     parsed_rules: list[tuple[int, list[dict[str, Any]]]] = []
     for version, jsonfile in latest_accounting_rules:
-        rules = json.loads(jsonfile.read_text(encoding='utf-8'))['accounting_rules']
+        rules = _read_rules_from_file(jsonfile)
         parsed_rules.append((version, rules))
     return parsed_rules
 

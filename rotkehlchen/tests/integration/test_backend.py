@@ -1,3 +1,4 @@
+import re
 import subprocess  # noqa: S404
 import sys
 from http import HTTPStatus
@@ -30,9 +31,28 @@ def test_backend():
                 if 'rotki REST API server is running at' in output:
                     break
 
-            url = f'http://{output.split()[-4]}/api/1/info'
-            response = requests.get(url)
-            assert response.status_code == HTTPStatus.OK
+            if (match := re.search(r'(\d+\.\d+\.\d+\.\d+:\d+)', output)) is None:
+                raise AssertionError(f'Could not parse API endpoint from output: {output!r}')
+
+            url = f'http://{match.group(1)}/api/1/info'
+            response = None
+            # API startup log is emitted before `WSGIServer.start()` is called, so
+            # seeing "server is running at ..." does not guarantee the socket is
+            # already accepting connections. Poll until `/api/1/info` succeeds to
+            # avoid connection-refused flakes in slower/contended CI workers.
+            while True:
+                try:
+                    response = requests.get(url, timeout=2)
+                except requests.RequestException:
+                    gevent.sleep(0.1)
+                    continue
+
+                if response.status_code == HTTPStatus.OK:
+                    break
+
+                gevent.sleep(0.1)
+
+            assert response is not None
             assert 'data_directory' in response.json()['result']
 
         except gevent.Timeout as e:

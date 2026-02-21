@@ -40,7 +40,6 @@ def create_api_server(
         rest_port_number: int,
 ) -> APIServer:
     api_server = APIServer(RestAPI(rotkehlchen=rotki), rotki.rotki_notifier)
-
     api_server.flask_app.config['SERVER_NAME'] = f'127.0.0.1:{rest_port_number}'
     api_server.start(
         host='127.0.0.1',
@@ -51,7 +50,6 @@ def create_api_server(
     # the listening socket.
     # https://github.com/raiden-network/raiden/issues/389#issuecomment-305551563
     _wait_for_listening_port(rest_port_number)
-
     return api_server
 
 
