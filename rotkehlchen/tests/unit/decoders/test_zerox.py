@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Final
+from unittest.mock import patch
 
 import pytest
 
@@ -7,8 +8,9 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.zerox.constants import ZEROX_ROUTER
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.zerox.constants import CPT_ZEROX
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.optimism.modules.zerox.constants import ZEROX_ROUTER as OP_ZEROX_ROUTER
+from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
     A_ETH,
@@ -28,7 +30,7 @@ from rotkehlchen.tests.unit.decoders.test_metamask import A_OPTIMISM_USDC
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import Location, SupportedBlockchain, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -1723,4 +1725,65 @@ def test_farcaster_zerox_swap(base_inquirer, base_accounts):
         notes=f'Receive {in_amount} USDC as the result of a swap via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=string_to_evm_address('0x47146d81B68b737316d0636D5135849d364bB0c8'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base mainnet',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ),
+        active=True,
+        weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('base_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_base_settler_zerox_swap(base_inquirer, base_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x304022641c44fd883a788e9fc962160a674f74835e1af4b13bc1afa882bcf17f')  # noqa: E501
+    with patch(  # ignore internal transactions since not needed and atm no base indexer gives them
+        'rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_range_or_parent_hash',
+        return_value=[],
+    ):
+        events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1771621869000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000002439848517049')),
+        location_label=(user := base_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:8453/erc20:0x18b6f6049A0af4Ed2BBe0090319174EeeF89f53a'),
+        amount=(out_amount := FVal('14.375')),
+        location_label=user,
+        notes=f'Swap {out_amount} RUNNER via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=string_to_evm_address('0xdc5d8200A030798BC6227240f68b4dD9542686ef'),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_BASE_USDC,
+        amount=(in_amount := FVal('1.827248')),
+        location_label=user,
+        notes=f'Receive {in_amount} USDC as the result of a swap via the 0x protocol',
+        counterparty=CPT_ZEROX,
+        address=string_to_evm_address('0xdc5d8200A030798BC6227240f68b4dD9542686ef'),
     )]
