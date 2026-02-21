@@ -12,7 +12,7 @@ from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.node_inquirer import _connect_task_prefix
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.constants import LAST_USERDB_DATA_MIGRATION
-from rotkehlchen.db.settings import DBSettings, ModifiableDBSettings
+from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE, EXCHANGES_WITHOUT_API_SECRET
 from rotkehlchen.history.price import PriceHistorian
@@ -419,6 +419,12 @@ def initialize_mock_rotkehlchen_instance(
             premium_credentials=None,
             resume_from_backup=False,
         )
+        # unlock_user() initializes CachedSettings via rotki.get_settings().
+        # In tests this method can be mocked, so re-sync cache from the actual DB.
+        with rotki.data.db.conn.read_ctx() as cursor:
+            CachedSettings().initialize(
+                rotki.data.db.get_settings(cursor, have_premium=rotki.premium is not None),
+            )
 
     rotki.task_manager.should_schedule = True
     inquirer_inject_evm_managers_set_order(
