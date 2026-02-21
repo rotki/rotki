@@ -1,5 +1,4 @@
 import json
-import os
 from collections.abc import Callable
 from contextlib import ExitStack
 from typing import TYPE_CHECKING, Any
@@ -783,7 +782,7 @@ def test_location_unsupported_assets_updates(
         _check_location_unsupported_assets(cursor, after_upgrade=True)
 
 
-def test_version_used_in_updates(database: 'DBHandler') -> None:
+def test_version_used_in_updates(database: 'DBHandler', monkeypatch: pytest.MonkeyPatch) -> None:
     """Test that the next higher bugfixes or develop version is used depending on the branch.
     Allows updates intended for the next release to be applied during release testing.
     """
@@ -791,9 +790,9 @@ def test_version_used_in_updates(database: 'DBHandler') -> None:
             'rotkehlchen.db.updates.get_current_version',
             return_value=VersionCheckResult(our_version=Version('1.38.4.dev204+gcd9b2b93f')),
     ):
-        os.environ['GITHUB_BASE_REF'] = 'develop'
+        monkeypatch.setenv('GITHUB_BASE_REF', 'develop')
         data_updater = RotkiDataUpdater(msg_aggregator=database.msg_aggregator, user_db=database)
         assert data_updater.version == Version('1.39.0')
-        os.environ['GITHUB_BASE_REF'] = 'bugfixes'
+        monkeypatch.setenv('GITHUB_BASE_REF', 'bugfixes')
         data_updater = RotkiDataUpdater(msg_aggregator=database.msg_aggregator, user_db=database)
         assert data_updater.version == Version('1.38.5')
