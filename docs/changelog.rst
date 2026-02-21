@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
+* :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
 
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.
