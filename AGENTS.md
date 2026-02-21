@@ -372,6 +372,21 @@ Why:
 - Avoids introducing fragile cross-log assumptions.
 - Keeps action-item transformations deterministic and easier to review.
 
+### Fallback when chain indexers are unavailable
+
+If a chain cannot be queried via explorer/indexer APIs (`etherscanscan` / `routescan` / `blockscout` etc ), do not stop. Use this fallback flow:
+
+1. Add a public RPC node for the chain in the test via `*_manager_connect_at_start` + `WeightedNode(NodeName(...))`.
+2. Query tx/receipt/logs from RPC directly (not from explorer APIs).
+3. If internal txs are not needed for the specific decoder path, patch:
+   `rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_range_or_parent_hash`
+   to return `[]`.
+4. Keep the test focused on decoded events from logs/transfers.
+5. Prefer deterministic assertions and exact tx-hash regression tests.
+6. Do not block on explorer availability; only ask the user if RPC data is insufficient.
+
+Example intent: Base currently may fail on explorer/indexer paths; use `https://mainnet.base.org` until indexers recover.
+
 #### Counterparties
 
 It needs to implement a method called `counterparties()` which returns a list of counterparties that can be associated with the transactions of this module. Most of the time these are protocol names like `uniswap-v1`, `makerdao_dsr`, etc.
