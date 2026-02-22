@@ -11,20 +11,23 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.constants.assets import A_DAI, A_MKR
+from rotkehlchen.constants.assets import A_DAI, A_MKR, A_USDC
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
+    BUY_GEM,
     CPT_SKY,
     DAI_TO_USDS,
     DAI_TO_USDS_CONTRACT,
     EXIT,
+    LITE_PSM_USDC_A,
     MIGRATION_ACTIONS_CONTRACT,
     MKR_TO_SKY,
     MKR_TO_SKY_CONTRACT,
+    SELL_GEM,
     SKY_ASSET,
     USDS_ASSET,
     USDS_JOIN_ADDRESS,
@@ -167,6 +170,54 @@ class SkyDecoder(EvmDecoderInterface):
         in_event.counterparty = CPT_SKY
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_direct_psm_swap(self, context: DecoderContext) -> EvmDecodingOutput:
+        if context.tx_log.topics[0] not in (BUY_GEM, SELL_GEM):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if context.tx_log.topics[0] == BUY_GEM:
+            spend_asset, receive_asset = A_DAI, A_USDC
+        else:
+            spend_asset, receive_asset = A_USDC, A_DAI
+
+        out_event, in_event = None, None
+        for event in context.decoded_events:
+            if (
+                    out_event is None and
+                    event.event_type == HistoryEventType.SPEND and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset == spend_asset and
+                    event.location_label == user_address
+            ):
+                out_event = event
+            elif (
+                    in_event is None and
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset == receive_asset and
+                    event.location_label == user_address
+            ):
+                in_event = event
+
+        if out_event is None or in_event is None:
+            log.error(f'Failed to decode direct PSM swap at {context.transaction}')
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        out_event.event_type = HistoryEventType.TRADE
+        out_event.event_subtype = HistoryEventSubType.SPEND
+        out_event.notes = f'Swap {out_event.amount} {out_event.asset.resolve_to_asset_with_symbol().symbol} in Sky PSM'  # noqa: E501
+        out_event.counterparty = CPT_SKY
+        out_event.address = LITE_PSM_USDC_A
+        in_event.event_type = HistoryEventType.TRADE
+        in_event.event_subtype = HistoryEventSubType.RECEIVE
+        in_event.notes = f'Receive {in_event.amount} {in_event.asset.resolve_to_asset_with_symbol().symbol} from Sky PSM swap'  # noqa: E501
+        in_event.counterparty = CPT_SKY
+        in_event.address = LITE_PSM_USDC_A
+        maybe_reshuffle_events([out_event, in_event], context.decoded_events)
+        return EvmDecodingOutput(process_swaps=True)
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
@@ -174,6 +225,7 @@ class SkyDecoder(EvmDecoderInterface):
             DAI_TO_USDS_CONTRACT: (self._decode_migrate_dai,),
             MKR_TO_SKY_CONTRACT: (self._decode_migrate_mkr,),
             USDS_JOIN_ADDRESS: (self._decode_maybe_migrate_dai,),
+            LITE_PSM_USDC_A: (self._decode_direct_psm_swap,),
         }
 
     @staticmethod

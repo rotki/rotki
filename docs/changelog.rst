@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Sky PSM direct swaps should now be properly decoded.
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
 * :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
 

@@ -6,14 +6,16 @@ from rotkehlchen.chain.ethereum.modules.makerdao.constants import MKR_ADDRESS
 from rotkehlchen.chain.ethereum.modules.sky.constants import (
     CPT_SKY,
     DAI_TO_USDS_CONTRACT,
+    LITE_PSM_USDC_A,
     MIGRATION_ACTIONS_CONTRACT,
     SKY_ASSET,
     USDS_ASSET,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_MKR, A_SDAI
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_MKR, A_SDAI, A_USDC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -305,5 +307,52 @@ def test_migrate_dai_usds(ethereum_inquirer, ethereum_accounts):
         notes=f'Receive {amount} USDS from DAI to USDS migration',
         counterparty=CPT_SKY,
         address=MIGRATION_ACTIONS_CONTRACT,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x55c41E8D26EFFCD7bA922310d264ae09B025E525']])
+def test_direct_psm_swap(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xce4944ffef9e76eafdb28b2729426ef0bae0bd3ebe0021725ead1b14c51cc068')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1771702187000)),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000004413535309216'),
+        location_label=(user := ethereum_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_DAI,
+        amount=FVal(amount := '2972.491485'),
+        location_label=user,
+        notes=f'Swap {amount} DAI in Sky PSM',
+        counterparty=CPT_SKY,
+        address=LITE_PSM_USDC_A,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDC,
+        amount=FVal(amount),
+        location_label=user,
+        notes=f'Receive {amount} USDC from Sky PSM swap',
+        counterparty=CPT_SKY,
+        address=LITE_PSM_USDC_A,
     )]
     assert expected_events == events
