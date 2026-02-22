@@ -427,15 +427,14 @@ The mapping of these HistoryEvents types, subtypes, and categories is done in [r
 
 ### Hex / bytes constants policy (strict)
 
-- Never manually transcribe event topics, method selectors, hashes, or byte constants into Python byte literals.
-- Always derive byte constants programmatically from canonical hex with `bytes.fromhex(...)` (or equivalent safe conversion).
-- When source data is on-chain/API, copy exact `0x...` values and normalize with:
+- Source of truth: copy exact on-chain/API `0x...` hex.
+- Validation step (during implementation): convert with `bytes.fromhex(hex_str.removeprefix('0x'))` and verify round-trip:
   - `hex_str = value.removeprefix('0x')`
   - `const = bytes.fromhex(hex_str)`
-- Always verify round-trip before finalizing:
   - `assert const.hex() == hex_str.lower()`
-- Prefer storing canonical constants as hex strings + conversion, rather than hand-written escaped byte literals.
-- All byte signatures should be a constant byte literal. Like ```DEPOSIT_TOPIC: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'```
+- Final committed form: all event topics, method selectors, hashes, and byte signatures must be byte literals (for example `TOPIC: Final = b'\xdc\xbc\x1c\x05...\xd7'`).
+- Do not keep `bytes.fromhex(...)` in final constant definitions.
+- If useful for readability, keep the canonical `0x...` value as a comment next to the byte literal.
 - Don't put assets as constants. If you need a constant just use the asset identifier as a string and compare against it.
 
 ## Rotki Backend Style Preferences (strict)
