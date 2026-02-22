@@ -9,7 +9,6 @@ import requests
 from gevent.lock import Semaphore
 from oauthlib.oauth2 import WebApplicationClient
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheStatic
@@ -19,6 +18,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EVMTxHash, Location, deserialize_evm_tx_hash
@@ -52,7 +52,6 @@ SUPPORTED_MONERIUM_CHAINS: Final = {
     'scroll': Location.SCROLL,
     'base': Location.BASE,
 }
-MONERIUM_REAUTHENTICATE_MESSAGE: Final = 'Please sign in with Monerium again to refresh your data'
 
 
 class Monerium:
@@ -546,10 +545,7 @@ class MoneriumOAuthClient:
         log.debug('Finished refresh of monerium ouath token')
 
     def _notify_reauthentication_required(self) -> None:
-        self.database.msg_aggregator.add_message(
-            message_type=WSMessageType.MONERIUM_SESSIONKEY_EXPIRED,
-            data={'error': MONERIUM_REAUTHENTICATE_MESSAGE},
-        )
+        notify_reauthentication_required(database=self.database, service='monerium')
 
     @staticmethod
     def _is_invalid_grant_refresh_response(response: requests.Response) -> bool:

@@ -1,7 +1,8 @@
-from typing import Any
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 from hexbytes import HexBytes as Web3HexBytes
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_GENESIS
 from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.errors.misc import InputError
@@ -11,6 +12,19 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import convert_to_int
 
 DEFAULT_API = 'etherscan'
+REAUTHENTICATION_MESSAGES: Final = {
+    'gnosispay': 'Please sign in with GnosisPay again to refresh your data',
+    'monerium': 'Please sign in with Monerium again to refresh your data',
+}
+REAUTHENTICATION_MESSAGE_TYPES: Final = {
+    'gnosispay': WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
+    'monerium': WSMessageType.MONERIUM_SESSIONKEY_EXPIRED,
+}
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
+ReauthService = Literal['gnosispay', 'monerium']
 
 
 def read_hash(data: dict[str, Any], key: str, api: str = DEFAULT_API) -> bytes:
@@ -70,3 +84,10 @@ def get_earliest_ts(chain_id: SUPPORTED_CHAIN_IDS) -> Timestamp:
             return Timestamp(1590856200)
 
     raise InputError(f'Unexpected chain {chain_id} when querying earliest block ts')
+
+
+def notify_reauthentication_required(database: 'DBHandler', service: ReauthService) -> None:
+    database.msg_aggregator.add_message(
+        message_type=REAUTHENTICATION_MESSAGE_TYPES[service],
+        data={'error': REAUTHENTICATION_MESSAGES[service]},
+    )
