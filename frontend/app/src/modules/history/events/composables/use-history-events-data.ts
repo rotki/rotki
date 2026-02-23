@@ -82,7 +82,9 @@ export function useHistoryEventsData(
   const { data, entriesFoundTotal, found, limit, total } = getCollectionData(groups);
   const { showUpgradeRow } = setupEntryLimit(limit, found, total, entriesFoundTotal);
   const { fetchHistoryEvents } = useHistoryEvents();
-  const { isAssetIgnored } = useIgnoredAssetsStore();
+  const ignoredAssetsStore = useIgnoredAssetsStore();
+  const { isAssetIgnored } = ignoredAssetsStore;
+  const { ignoredAssets } = storeToRefs(ignoredAssetsStore);
   const { sectionLoading } = useHistoryEventsStatus();
 
   const groupIdentifiers = computed<string[]>(() =>
@@ -294,6 +296,13 @@ export function useHistoryEventsData(
   // Trigger events fetch when groups change (tied to fetchData completion in pagination filter)
   watchImmediate(data, () => {
     startPromise(fetchEvents());
+  });
+
+  // Refresh when ignored assets change (e.g. mark-as-spam from context menu).
+  // The emit from the child component is lost because the row is destroyed
+  // before the emit propagates, so we watch the store directly.
+  watch(ignoredAssets, () => {
+    emit('refresh');
   });
 
   const { getCompleteEventsForItem, getCompleteSubgroupEvents, getGroupEvents } = useCompleteEvents(completeEventsMapped);
