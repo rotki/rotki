@@ -1,13 +1,15 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
+const {
+  disabled = false,
+  selectedCount = 0,
+  selectionMode,
+  showSelectionToggle,
+} = defineProps<{
   disabled?: boolean;
   selectedCount?: number;
   selectionMode: boolean;
   showSelectionToggle: boolean;
-}>(), {
-  disabled: false,
-  selectedCount: 0,
-});
+}>();
 
 const emit = defineEmits<{
   'clear-selection': [];

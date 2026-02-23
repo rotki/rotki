@@ -9,12 +9,13 @@ import HistoryRefreshExchanges from '@/modules/history/refresh/HistoryRefreshExc
 import HistoryRefreshProtocolEvents from '@/modules/history/refresh/HistoryRefreshProtocolEvents.vue';
 import HistoryRefreshStakingEvents from '@/modules/history/refresh/HistoryRefreshStakingEvents.vue';
 
-withDefaults(defineProps<{
+const {
+  processing,
+  disabled = false,
+} = defineProps<{
   processing: boolean;
   disabled?: boolean;
-}>(), {
-  disabled: false,
-});
+}>();
 
 const emit = defineEmits<{
   refresh: [payload?: HistoryRefreshEventData];

@@ -12,11 +12,12 @@ interface Emits {
   'select-provider': [provider: EIP6963ProviderDetail];
 }
 
-withDefaults(defineProps<Props>(), {
-  loading: false,
-  showTitle: true,
-  variant: 'grid',
-});
+const {
+  providers,
+  loading = false,
+  showTitle = true,
+  variant = 'grid',
+} = defineProps<Props>();
 
 const emit = defineEmits<Emits>();
 

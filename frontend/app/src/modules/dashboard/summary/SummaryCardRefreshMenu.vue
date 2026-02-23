@@ -6,10 +6,11 @@ interface SummaryCardRefreshMenuProps {
   loading?: boolean;
   disabled?: boolean;
 }
-withDefaults(defineProps<SummaryCardRefreshMenuProps>(), {
-  disabled: false,
-  loading: false,
-});
+const {
+  tooltip,
+  loading = false,
+  disabled = false,
+} = defineProps<SummaryCardRefreshMenuProps>();
 
 const emit = defineEmits<{
   refresh: [];

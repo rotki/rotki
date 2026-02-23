@@ -1,7 +1,5 @@
 <script setup lang="ts">
-withDefaults(defineProps<{ hideHeader?: boolean; child?: boolean; title?: string[] }>(), {
-  title: undefined,
-});
+const { hideHeader, child, title } = defineProps<{ hideHeader?: boolean; child?: boolean; title?: string[] }>();
 </script>
 
 <template>

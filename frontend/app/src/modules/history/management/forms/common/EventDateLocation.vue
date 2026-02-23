@@ -5,7 +5,7 @@ import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 const timestamp = defineModel<number>('timestamp', { required: true });
 const location = defineModel<string>('location', { required: true });
 
-withDefaults(defineProps<{
+const { errorMessages, locations = [] } = defineProps<{
   locationDisabled?: boolean;
   dateDisabled?: boolean;
   errorMessages: {
@@ -13,11 +13,7 @@ withDefaults(defineProps<{
     location: string[];
   };
   locations?: string[];
-}>(), {
-  dateDisabled: false,
-  locationDisabled: false,
-  locations: () => [],
-});
+}>();
 
 const emit = defineEmits<{
   blur: [source: 'location' | 'timestamp'];

@@ -2,7 +2,7 @@
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
 
-withDefaults(defineProps<{ full?: boolean }>(), { full: false });
+const { full = false } = defineProps<{ full?: boolean }>();
 
 const { isMdAndUp } = useBreakpoint();
 </script>

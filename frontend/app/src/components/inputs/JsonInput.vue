@@ -4,11 +4,11 @@ import { debounce } from 'es-toolkit';
 
 const modelValue = defineModel<Record<string, any>>({ required: true });
 
-withDefaults(defineProps<{
+const {
+  label = '',
+} = defineProps<{
   label?: string;
-}>(), {
-  label: '',
-});
+}>();
 
 const jsonEditor = ref<JsonEditor>();
 const jsonEditorContainer = useTemplateRef<HTMLDivElement>('jsonEditorContainer');

@@ -14,19 +14,12 @@ import { toMessages } from '@/utils/validation';
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const model = defineModel<BalanceSnapshotPayloadAndLocation>({ required: true });
 
-withDefaults(
-  defineProps<{
-    edit?: boolean;
-    locations?: string[];
-    previewLocationBalance?: Record<string, BigNumber> | null;
-    timestamp: number;
-  }>(),
-  {
-    edit: false,
-    locations: () => [],
-    previewLocationBalance: null,
-  },
-);
+const { locations, previewLocationBalance = null, timestamp } = defineProps<{
+  edit?: boolean;
+  locations: string[];
+  previewLocationBalance?: Record<string, BigNumber> | null;
+  timestamp: number;
+}>();
 
 const emit = defineEmits<{
   'update:asset': [asset: string];

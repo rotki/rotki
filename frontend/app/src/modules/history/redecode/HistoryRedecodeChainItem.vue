@@ -3,12 +3,13 @@ import LocationIcon from '@/components/history/LocationIcon.vue';
 
 const modelValue = defineModel<boolean>({ required: true });
 
-withDefaults(defineProps<{
+const {
+  disabled = false,
+  chain,
+} = defineProps<{
   disabled?: boolean;
   chain: string;
-}>(), {
-  disabled: false,
-});
+}>();
 
 function toggleSelect(): void {
   set(modelValue, !get(modelValue));

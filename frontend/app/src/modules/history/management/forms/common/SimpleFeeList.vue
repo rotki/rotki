@@ -4,13 +4,13 @@ import SimpleFeeEntry from '@/modules/history/management/forms/common/SimpleFeeE
 
 const modelValue = defineModel<FeeEntry[]>({ required: true });
 
-withDefaults(defineProps<{
+const {
+  disabled = false,
+  location,
+} = defineProps<{
   disabled?: boolean;
   location?: string;
-}>(), {
-  disabled: false,
-  location: undefined,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 

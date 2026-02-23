@@ -13,9 +13,10 @@ interface Emits {
 
 const modelValue = defineModel<boolean>({ default: false });
 
-withDefaults(defineProps<Props>(), {
-  loading: false,
-});
+const {
+  providers,
+  loading = false,
+} = defineProps<Props>();
 
 const emit = defineEmits<Emits>();
 

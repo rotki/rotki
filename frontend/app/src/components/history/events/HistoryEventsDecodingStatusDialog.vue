@@ -14,9 +14,10 @@ interface Emits {
 
 const modelValue = defineModel<boolean>({ required: true });
 
-withDefaults(defineProps<Props>(), {
-  persistent: false,
-});
+const {
+  persistent = false,
+  refreshing,
+} = defineProps<Props>();
 
 const emit = defineEmits<Emits>();
 

@@ -13,13 +13,10 @@ const modelValue = defineModel<CustomAsset>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-withDefaults(
-  defineProps<{
-    editMode?: boolean;
-    types?: string[];
-  }>(),
-  { editMode: false, types: () => [] },
-);
+const { types } = defineProps<{
+  editMode?: boolean;
+  types: string[];
+}>();
 
 const customAssetType = useRefPropVModel(modelValue, 'customAssetType');
 const name = useRefPropVModel(modelValue, 'name');

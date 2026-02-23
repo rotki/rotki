@@ -1,10 +1,10 @@
 <script setup lang="ts">
 type Color = 'grey' | 'red' | 'green';
-withDefaults(defineProps<{
+const {
+  color = 'grey',
+} = defineProps<{
   color?: Color;
-}>(), {
-  color: 'grey',
-});
+}>();
 
 const colorVariants: Record<Color, string> = {
   green: 'text-rui-green-700 bg-rui-green-100',

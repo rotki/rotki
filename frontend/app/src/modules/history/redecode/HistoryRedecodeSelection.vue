@@ -4,14 +4,15 @@ import { getTextToken } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import HistoryRedecodeChainItem from '@/modules/history/redecode/HistoryRedecodeChainItem.vue';
 
-withDefaults(defineProps<{
+const {
+  loading,
+  disabled = false,
+  showRedecodePage = false,
+} = defineProps<{
   loading: boolean;
   disabled?: boolean;
   showRedecodePage?: boolean;
-}>(), {
-  disabled: false,
-  showRedecodePage: false,
-});
+}>();
 
 const emit = defineEmits<{
   redecode: [payload: string[] | 'page'];
