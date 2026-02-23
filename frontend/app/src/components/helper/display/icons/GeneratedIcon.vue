@@ -6,24 +6,19 @@ interface Dimension {
   unit: string;
 }
 
-const props = withDefaults(
-  defineProps<{
-    size: string;
-    asset?: string;
-    customAsset?: boolean;
-    flat?: boolean;
-  }>(),
-  {
-    asset: '',
-    customAsset: false,
-    flat: false,
-  },
-);
-
-const { asset, size } = toRefs(props);
+const {
+  asset = '',
+  customAsset,
+  size,
+} = defineProps<{
+  size: string;
+  asset?: string;
+  customAsset?: boolean;
+  flat?: boolean;
+}>();
 
 const dimensions = computed<Dimension>(() => {
-  const match: RegExpMatchArray | null = get(size).match(/^(\d+(?:\.\d)?)(\w+|%)?$/);
+  const match: RegExpMatchArray | null = size.match(/^(\d+(?:\.\d)?)(\w+|%)?$/);
   const value: string = match?.[1] ?? '0';
   const unit: string = match?.[2] ?? '';
   return {
@@ -33,17 +28,17 @@ const dimensions = computed<Dimension>(() => {
 });
 
 const wrapperStyle = computed<Style>(() => ({
-  height: get(size),
-  minHeight: get(size),
-  minWidth: get(size),
-  width: get(size),
+  height: size,
+  minHeight: size,
+  minWidth: size,
+  width: size,
 }));
 
 const text = computed<string>(() => {
-  if (get(asset).length > 3)
-    return get(asset).slice(0, 3);
+  if (asset.length > 3)
+    return asset.slice(0, 3);
 
-  return get(asset);
+  return asset;
 });
 
 const textStyle = computed<Style>(() => {

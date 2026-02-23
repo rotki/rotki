@@ -4,31 +4,22 @@ import { useScramble } from '@/composables/scramble';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
-const props = withDefaults(
-  defineProps<{
-    timestamp: number | string;
-    showTimezone?: boolean;
-    noTime?: boolean;
-    milliseconds?: boolean;
-    hideTooltip?: boolean;
-  }>(),
-  {
-    hideTooltip: false,
-    milliseconds: false,
-    noTime: false,
-    showTimezone: false,
-  },
-);
+const { hideTooltip = false, milliseconds = false, noTime = false, showTimezone = false, timestamp } = defineProps<{
+  timestamp: number | string;
+  showTimezone?: boolean;
+  noTime?: boolean;
+  milliseconds?: boolean;
+  hideTooltip?: boolean;
+}>();
 
-const { milliseconds, noTime, showTimezone, timestamp } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
 const dateFormat = computed<string>(() => {
-  const display = get(showTimezone)
+  const display = showTimezone
     ? get(dateDisplayFormat)
     : get(dateDisplayFormat).replace('%z', '').replace('%Z', '').trim();
 
-  if (get(noTime))
+  if (noTime)
     return display.split(' ')[0];
 
   return display;
@@ -36,29 +27,28 @@ const dateFormat = computed<string>(() => {
 
 const { scrambleTimestamp, shouldShowAmount } = useScramble();
 
-const numericTimestamp = useToNumber(timestamp);
+const numericTimestamp = useToNumber(() => timestamp);
 const reactiveScramble = reactify(scrambleTimestamp);
-const displayTimestamp = reactiveScramble(numericTimestamp, milliseconds);
+const displayTimestamp = reactiveScramble(numericTimestamp, () => milliseconds);
 
-const date = computed(() => {
+const date = computed<Date>(() => {
   const display = get(displayTimestamp);
-  return new Date(get(milliseconds) ? display : display * 1000);
+  return new Date(milliseconds ? display : display * 1000);
 });
 
-function format(date: Ref<Date>, format: Ref<string>) {
-  return computed(() => displayDateFormatter.format(get(date), get(format)));
+function format(date: Ref<Date>, format: Ref<string>): ComputedRef<string> {
+  return computed<string>(() => displayDateFormatter.format(get(date), get(format)));
 }
 
 const formattedDate = format(date, dateFormat);
 const formattedDateWithTimezone = format(date, dateDisplayFormat);
 
-const showTooltip = computed(() => {
-  const timezone = get(showTimezone);
+const showTooltip = computed<boolean>(() => {
   const format = get(dateDisplayFormat);
-  return !timezone && (format.includes('%z') || format.includes('%Z'));
+  return !showTimezone && (format.includes('%z') || format.includes('%Z'));
 });
 
-const splitByMillisecondsPart = computed(() => get(formattedDate).split('.'));
+const splitByMillisecondsPart = computed<string[]>(() => get(formattedDate).split('.'));
 </script>
 
 <template>

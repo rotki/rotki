@@ -10,7 +10,17 @@ import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
 import { getHighlightClass, type HighlightType } from '@/composables/history/events/types';
 import { useHistoryEventItem } from '../composables/use-history-event-item';
 
-const props = withDefaults(defineProps<{
+const {
+  event,
+  index,
+  completeGroupEvents,
+  groupLocationLabel,
+  hideActions,
+  highlight,
+  highlightType,
+  selection,
+  variant = 'row',
+} = defineProps<{
   event: HistoryEventEntry;
   index: number;
   /**
@@ -24,9 +34,7 @@ const props = withDefaults(defineProps<{
   highlightType?: HighlightType;
   selection?: UseHistoryEventsSelectionModeReturn;
   variant?: 'row' | 'card';
-}>(), {
-  variant: 'row',
-});
+}>();
 
 const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
@@ -34,8 +42,6 @@ const emit = defineEmits<{
   'show:missing-rule-action': [data: HistoryEventEditData];
   'refresh': [];
 }>();
-
-const { event } = toRefs(props);
 
 const {
   blockNumber,
@@ -51,8 +57,8 @@ const {
   toggleSelected,
   validatorIndex,
 } = useHistoryEventItem({
-  event,
-  selection: props.selection,
+  event: () => event,
+  selection,
 });
 
 const isSelectedModel = computed<boolean>({
@@ -63,7 +69,7 @@ const isSelectedModel = computed<boolean>({
   },
 });
 
-const isCard = computed<boolean>(() => props.variant === 'card');
+const isCard = computed<boolean>(() => variant === 'card');
 </script>
 
 <template>

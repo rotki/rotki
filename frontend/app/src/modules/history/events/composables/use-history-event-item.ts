@@ -1,5 +1,5 @@
 import type { Blockchain } from '@rotki/common';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
@@ -8,7 +8,7 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { isEventMissingAccountingRule } from '@/utils/history/events';
 
 export interface UseHistoryEventItemProps {
-  event: Ref<HistoryEventEntry> | ComputedRef<HistoryEventEntry>;
+  event: MaybeRefOrGetter<HistoryEventEntry>;
   selection?: UseHistoryEventsSelectionModeReturn;
 }
 
@@ -41,7 +41,7 @@ export function useHistoryEventItem(
   const { assetInfo } = useAssetInfoRetrieval();
   const { useIsAssetIgnored } = useIgnoredAssetsStore();
 
-  const eventAsset = computed<string>(() => get(event).asset);
+  const eventAsset = computed<string>(() => toValue(event).asset);
   const isIgnoredAsset = useIsAssetIgnored(eventAsset);
   const asset = assetInfo(eventAsset, { collectionParent: false });
   const isSpam = computed<boolean>(() => get(asset)?.protocol === 'spam');
@@ -62,41 +62,41 @@ export function useHistoryEventItem(
   const isSelected = computed<boolean>(() => {
     if (!selection)
       return false;
-    return selection.isEventSelected(get(event).identifier);
+    return selection.isEventSelected(toValue(event).identifier);
   });
 
   function toggleSelected(): void {
-    selection?.actions.toggleEvent(get(event).identifier);
+    selection?.actions.toggleEvent(toValue(event).identifier);
   }
 
-  const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(event)));
+  const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(toValue(event)));
 
-  const chain = computed<Blockchain>(() => getChain(get(event).location));
+  const chain = computed<Blockchain>(() => getChain(toValue(event).location));
 
   const notes = computed<string | undefined>(() => {
-    const ev = get(event);
+    const ev = toValue(event);
     const autoNotes = 'autoNotes' in ev ? ev.autoNotes : undefined;
     const userNotes = 'userNotes' in ev ? ev.userNotes : undefined;
     return userNotes || autoNotes || undefined;
   });
 
   const counterparty = computed<string | undefined>(() => {
-    const ev = get(event);
+    const ev = toValue(event);
     return 'counterparty' in ev ? (ev.counterparty ?? undefined) : undefined;
   });
 
   const validatorIndex = computed<number | undefined>(() => {
-    const ev = get(event);
+    const ev = toValue(event);
     return 'validatorIndex' in ev ? ev.validatorIndex : undefined;
   });
 
   const blockNumber = computed<number | undefined>(() => {
-    const ev = get(event);
+    const ev = toValue(event);
     return 'blockNumber' in ev ? ev.blockNumber : undefined;
   });
 
   const extraData = computed<Record<string, any> | undefined>(() => {
-    const ev = get(event);
+    const ev = toValue(event);
     return 'extraData' in ev ? (ev.extraData as Record<string, any> | undefined) : undefined;
   });
 

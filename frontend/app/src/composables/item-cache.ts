@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { logger } from '@/utils/logging';
@@ -23,7 +23,7 @@ interface CacheOptions {
 interface UseItemCacheReturn<T> {
   cache: Ref<Record<string, T | null>>;
   unknown: Map<string, number>;
-  isPending: (identifier: MaybeRef<string>) => ComputedRef<boolean>;
+  isPending: (identifier: MaybeRefOrGetter<string>) => ComputedRef<boolean>;
   retrieve: (key: string) => ComputedRef<T | null>;
   reset: () => void;
   refresh: (key: string) => void;
@@ -160,8 +160,8 @@ export function useItemCache<T>(
   };
 
   const isPending = (
-    identifier: MaybeRef<string>,
-  ): ComputedRef<boolean> => computed<boolean>(() => get(pending)[get(identifier)] ?? false);
+    identifier: MaybeRefOrGetter<string>,
+  ): ComputedRef<boolean> => computed<boolean>(() => get(pending)[toValue(identifier)] ?? false);
 
   const reset = (): void => {
     set(pending, {});

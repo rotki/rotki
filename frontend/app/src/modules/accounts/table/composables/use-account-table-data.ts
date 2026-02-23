@@ -1,5 +1,5 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { AccountDataRow } from '../types';
 import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
@@ -23,14 +23,14 @@ interface UseAccountTableDataReturn<T extends BlockchainAccountBalance> {
 }
 
 export function useAccountTableData<T extends BlockchainAccountBalance>(
-  accounts: Ref<Collection<T>>,
+  accounts: MaybeRefOrGetter<Collection<T>>,
   expandedIds: Ref<string[]>,
   chainFilter: Ref<Record<string, string[]>>,
 ): UseAccountTableDataReturn<T> {
   const collapsed = ref<AccountDataRow<T>[]>([]) as Ref<AccountDataRow<T>[]>;
 
   const rows = computed<AccountDataRow<T>[]>(() => {
-    const data = get(accounts).data;
+    const data = toValue(accounts).data;
     return data.map(account => ({
       ...account,
       id: 'chain' in account ? getAccountId(account) : getGroupId(account),
@@ -49,7 +49,7 @@ export function useAccountTableData<T extends BlockchainAccountBalance>(
   });
 
   const totalValue = computed<BigNumber | undefined>(() => {
-    const totalVal = get(accounts).totalValue;
+    const totalVal = toValue(accounts).totalValue;
     if (!totalVal)
       return undefined;
 

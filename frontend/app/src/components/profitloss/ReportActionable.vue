@@ -3,15 +3,13 @@ import type { Report } from '@/types/reports';
 import ReportActionableCard from '@/components/profitloss/ReportActionableCard.vue';
 import { useReportsStore } from '@/store/reports';
 
-const props = withDefaults(
-  defineProps<{
-    report: Report;
-    initialOpen?: boolean;
-  }>(),
-  {
-    initialOpen: false,
-  },
-);
+const {
+  initialOpen = false,
+  report,
+} = defineProps<{
+  report: Report;
+  initialOpen?: boolean;
+}>();
 
 const emit = defineEmits<{
   regenerate: [];
@@ -21,8 +19,7 @@ function regenerateReport() {
   emit('regenerate');
 }
 
-const { initialOpen, report } = toRefs(props);
-const mainDialogOpen = ref<boolean>(get(initialOpen));
+const mainDialogOpen = ref<boolean>(initialOpen);
 
 const reportsStore = useReportsStore();
 const { actionableItems } = toRefs(reportsStore);

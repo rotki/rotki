@@ -10,19 +10,12 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { uniqueStrings } from '@/utils/data';
 import { getDomain } from '@/utils/url';
 
-const props = withDefaults(
-  defineProps<{
-    identifier: string;
-    styled?: StyleValue;
-    size?: string;
-  }>(),
-  {
-    size: '50px',
-    styled: undefined,
-  },
-);
+const { identifier, size = '50px', styled } = defineProps<{
+  identifier: string;
+  styled?: StyleValue;
+  size?: string;
+}>();
 
-const { identifier } = toRefs(props);
 const { assetInfo } = useAssetInfoRetrieval();
 
 const frontendStore = useFrontendSettingsStore();
@@ -30,7 +23,7 @@ const frontendStore = useFrontendSettingsStore();
 const { whitelistedDomainsForNftImages } = storeToRefs(frontendStore);
 const { updateSetting } = frontendStore;
 
-const balanceData = assetInfo(identifier);
+const balanceData = assetInfo(() => identifier);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -74,7 +67,7 @@ const collectionName = computed<string | null>(() => {
   if (!data || !data.collectionName)
     return null;
 
-  const tokenId = get(identifier).split('_')[3];
+  const tokenId = identifier.split('_')[3];
   return `${data.collectionName} #${tokenId}`;
 });
 
@@ -84,12 +77,10 @@ const name = computed<string | null>(() => {
 });
 
 const { isPending } = useAssetCacheStore();
-const isNftDetailLoading = isPending(identifier);
+const isNftDetailLoading = isPending(() => identifier);
 
 const fallbackData = computed(() => {
-  const id = get(identifier);
-
-  const data = id.split('_');
+  const data = identifier.split('_');
   return {
     address: data[2],
     tokenId: data[3],

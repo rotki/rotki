@@ -2,7 +2,7 @@ import type { EthBalance } from '@/types/blockchain/balances';
 import type { AssetPriceInfo } from '@/types/prices';
 import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, NoPrice, Zero } from '@rotki/common';
 import { storeToRefs } from 'pinia';
-import { computed, type ComputedRef, type MaybeRef, ref } from 'vue';
+import { computed, type ComputedRef, type MaybeRef, type MaybeRefOrGetter } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';
@@ -20,7 +20,7 @@ import { bigNumberSum } from '@/utils/calculation';
 interface UseAggregatedBalancesReturn {
   balances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   liabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
-  assetPriceInfo: (identifier: MaybeRef<string>, groupCollection?: MaybeRef<boolean>) => ComputedRef<AssetPriceInfo>;
+  assetPriceInfo: (identifier: MaybeRefOrGetter<string>, groupCollection?: MaybeRefOrGetter<boolean>) => ComputedRef<AssetPriceInfo>;
   assets: ComputedRef<string[]>;
   useBlockchainBalances: (chains: MaybeRef<string[]>, address?: MaybeRef<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   useExchangeBalances: (exchange?: MaybeRef<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
@@ -160,11 +160,11 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   });
 
   const assetPriceInfo = (
-    identifier: MaybeRef<string>,
-    groupMultiChain: MaybeRef<boolean> = ref(false),
+    identifier: MaybeRefOrGetter<string>,
+    groupMultiChain: MaybeRefOrGetter<boolean> = false,
   ): ComputedRef<AssetPriceInfo> => computed<AssetPriceInfo>(() => {
-    const id = get(identifier);
-    const assetValue = get(balances(true, get(groupMultiChain))).find(
+    const id = toValue(identifier);
+    const assetValue = get(balances(true, toValue(groupMultiChain))).find(
       (value: AssetBalanceWithPrice) => value.asset === id,
     );
 

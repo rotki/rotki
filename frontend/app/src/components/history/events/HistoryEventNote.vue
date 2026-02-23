@@ -12,42 +12,39 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    notes?: string;
-    amount?: BigNumber | BigNumber[];
-    asset?: string;
-    chain?: string;
-    noTxRef?: boolean;
-    validatorIndex?: number;
-    blockNumber?: number;
-    counterparty?: string;
-    extraData?: Record<string, any>;
-  }>(),
-  {
-    amount: undefined,
-    asset: '',
-    blockNumber: undefined,
-    chain: Blockchain.ETH,
-    notes: '',
-    noTxRef: false,
-    validatorIndex: undefined,
-  },
-);
-
-const { amount, asset, blockNumber, counterparty, extraData, notes, noTxRef, validatorIndex } = toRefs(props);
+const {
+  amount,
+  asset = '',
+  blockNumber,
+  chain = Blockchain.ETH,
+  counterparty,
+  extraData,
+  notes = '',
+  noTxRef,
+  validatorIndex,
+} = defineProps<{
+  notes?: string;
+  amount?: BigNumber | BigNumber[];
+  asset?: string;
+  chain?: string;
+  noTxRef?: boolean;
+  validatorIndex?: number;
+  blockNumber?: number;
+  counterparty?: string;
+  extraData?: Record<string, any>;
+}>();
 
 const { formatNotes } = useHistoryEventNote();
 
 const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
-  amount,
-  assetId: asset,
-  blockNumber,
-  counterparty,
-  extraData,
-  notes,
-  noTxRef,
-  validatorIndex,
+  amount: () => amount,
+  assetId: () => asset,
+  blockNumber: () => blockNumber,
+  counterparty: () => counterparty,
+  extraData: () => extraData,
+  notes: () => notes,
+  noTxRef: () => noTxRef,
+  validatorIndex: () => validatorIndex,
 });
 
 function isLinkType(t: any): t is keyof ExplorerUrls {

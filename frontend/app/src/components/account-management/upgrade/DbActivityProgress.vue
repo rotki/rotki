@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import type { CurrentDbUpgradeProgress } from '@/types/login';
 
-const props = withDefaults(defineProps<{
+const {
+  dataMigration = false,
+  progress,
+} = defineProps<{
   progress: CurrentDbUpgradeProgress | null;
   dataMigration?: boolean;
-}>(), {
-  dataMigration: false,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { progress } = toRefs(props);
 
 const [DefineProgress, ReuseProgress] = createReusableTemplate<{
   updateProgress: CurrentDbUpgradeProgress;
@@ -19,8 +18,8 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
 }>();
 
 const multipleUpgrades = computed<boolean>(() => {
-  if (isDefined(progress)) {
-    const { fromVersion, toVersion } = get(progress);
+  if (progress) {
+    const { fromVersion, toVersion } = progress;
     return toVersion - fromVersion > 1;
   }
   return false;

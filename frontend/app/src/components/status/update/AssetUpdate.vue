@@ -14,15 +14,11 @@ import { useMainStore } from '@/store/main';
 import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
 
-const props = withDefaults(defineProps<{ headless?: boolean }>(), {
-  headless: false,
-});
+const { headless = false } = defineProps<{ headless?: boolean }>();
 
 const emit = defineEmits<{
   skip: [];
 }>();
-
-const { headless } = toRefs(props);
 const checking = ref<boolean>(false);
 const applying = ref<boolean>(false);
 const inlineConfirm = ref<boolean>(false);
@@ -63,7 +59,7 @@ async function check() {
   set(checking, false);
   const skippedVersion = get(skipped);
   const versions = checkResult.versions;
-  if (get(headless) && skippedVersion && skippedVersion === versions?.remote) {
+  if (headless && skippedVersion && skippedVersion === versions?.remote) {
     set(checking, false);
     emit('skip');
     return;
@@ -72,7 +68,7 @@ async function check() {
   set(showUpdateDialog, checkResult.updateAvailable);
 
   if (!checkResult.updateAvailable) {
-    if (get(headless)) {
+    if (headless) {
       emit('skip');
     }
     else {
@@ -127,20 +123,20 @@ async function updateComplete() {
 
   set(restarting, true);
 
-  // Only logout if user is actually logged in
+  // Only logout if the user is actually logged in
   if (get(logged))
     await logout(true);
 
   setConnected(false);
   await restartBackend();
-  await connect();
+  connect();
   set(restarting, false);
 }
 
 const { show } = useConfirmStore();
 
 function showDoneConfirmation() {
-  if (get(headless)) {
+  if (headless) {
     set(inlineConfirm, true);
   }
   else {
@@ -166,7 +162,7 @@ onMounted(async () => {
     return;
   }
 
-  if (get(headless))
+  if (headless)
     await check();
 });
 </script>

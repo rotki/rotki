@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useSupportedChains } from '@/composables/info/chains';
 
 interface UseBlockchainAccountLoadingReturn {
@@ -6,13 +6,13 @@ interface UseBlockchainAccountLoadingReturn {
   chainIds: ComputedRef<string[]>;
 }
 
-export function useAccountCategoryHelper(category: MaybeRef<string>): UseBlockchainAccountLoadingReturn {
+export function useAccountCategoryHelper(category: MaybeRefOrGetter<string>): UseBlockchainAccountLoadingReturn {
   const { supportedChains } = useSupportedChains();
 
-  const isEvm = computed(() => get(category) === 'evm');
+  const isEvm = computed<boolean>(() => toValue(category) === 'evm');
 
   const chainIds = computed<string[]>(() => {
-    const categoryVal = get(category);
+    const categoryVal = toValue(category);
 
     return get(supportedChains)
       .filter(item => item.type === categoryVal || (categoryVal === 'evm' && item.type === 'evmlike'))

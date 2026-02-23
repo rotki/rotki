@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useStatusStore } from '@/store/status';
@@ -15,15 +15,15 @@ interface UseBlockchainAccountLoadingReturn {
   isLoadingActive: ComputedRef<boolean>;
 }
 
-export function useBlockchainAccountLoading(category: MaybeRef<string> = ''): UseBlockchainAccountLoadingReturn {
+export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> = ''): UseBlockchainAccountLoadingReturn {
   const { useIsTaskRunning } = useTaskStore();
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
   const { isLoading } = useStatusStore();
 
   const { chainIds, isEvm } = useAccountCategoryHelper(category);
 
-  const isAnyBalancesFetching = computed(() => {
-    if (!category) {
+  const isAnyBalancesFetching = computed<boolean>(() => {
+    if (!toValue(category)) {
       return get(logicOr(
         useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
         useIsTaskRunning(TaskType.L2_LOOPRING),
@@ -39,15 +39,15 @@ export function useBlockchainAccountLoading(category: MaybeRef<string> = ''): Us
     return get(logicOr(...(chainsTask)));
   });
 
-  const isSectionLoading = computed(() => {
-    if (!category)
+  const isSectionLoading = computed<boolean>(() => {
+    if (!toValue(category))
       return get(isLoading(Section.BLOCKCHAIN));
 
     const chainsTask = get(chainIds).map(chain => isLoading(Section.BLOCKCHAIN, chain));
     return get(logicOr(...(chainsTask)));
   });
 
-  const isDetectingTokens = computed(() => get(isEvm) && isDefined(massDetecting));
+  const isDetectingTokens = computed<boolean>(() => get(isEvm) && isDefined(massDetecting));
   const operationRunning = logicOr(useIsTaskRunning(TaskType.ADD_ACCOUNT), useIsTaskRunning(TaskType.REMOVE_ACCOUNT));
   const refreshDisabled = logicOr(isSectionLoading, isDetectingTokens);
   const deleteDisabled = logicOr(isAnyBalancesFetching, operationRunning);

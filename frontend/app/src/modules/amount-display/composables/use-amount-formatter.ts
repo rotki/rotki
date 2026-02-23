@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { RoundingType } from '@/modules/amount-display/types';
 import { BigNumber, bigNumberify } from '@rotki/common';
 import { displayAmountFormatter } from '@/data/amount-formatter';
@@ -13,14 +13,14 @@ export interface NumberParts {
 }
 
 export interface AmountFormatterOptions {
-  value: MaybeRef<BigNumber>;
-  integer?: MaybeRef<boolean>;
+  value: MaybeRefOrGetter<BigNumber>;
+  integer?: MaybeRefOrGetter<boolean>;
   /**
    * Which rounding mode to use from frontend settings.
    * - 'value' (default): Uses valueRoundingMode setting (typically ROUND_DOWN)
    * - 'amount': Uses amountRoundingMode setting (typically ROUND_UP)
    */
-  rounding?: MaybeRef<RoundingType>;
+  rounding?: MaybeRefOrGetter<RoundingType>;
 }
 
 export interface AmountFormatterReturn {
@@ -64,7 +64,7 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
     valueRoundingMode,
   } = useAmountDisplaySettings();
 
-  const displayValue = computed<BigNumber>(() => get(value));
+  const displayValue = computed<BigNumber>(() => toValue(value));
 
   const isNaN = computed<boolean>(() => get(displayValue).isNaN());
 
@@ -77,10 +77,10 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
   );
 
   // Use valueRoundingMode for 'value' (default), amountRoundingMode for 'amount'
-  const roundingMode = computed(() => (get(rounding) === 'amount' ? get(amountRoundingMode) : get(valueRoundingMode)));
+  const roundingMode = computed(() => (toValue(rounding) === 'amount' ? get(amountRoundingMode) : get(valueRoundingMode)));
 
   const renderedValue = computed<string>(() => {
-    const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
+    const floatingPrecisionUsed = toValue(integer) ? 0 : get(floatingPrecision);
 
     if (get(isNaN)) {
       return '-';
@@ -118,7 +118,7 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
     }
 
     const val = get(displayValue);
-    const floatingPrecisionUsed = get(integer) ? 0 : get(floatingPrecision);
+    const floatingPrecisionUsed = toValue(integer) ? 0 : get(floatingPrecision);
     const decimals = get(decimalPlaces);
     const hiddenDecimals = decimals > floatingPrecisionUsed;
 
@@ -156,7 +156,7 @@ export function useAmountFormatter(options: AmountFormatterOptions): AmountForma
     }
 
     const val = get(displayValue);
-    const precision = get(integer) ? 0 : get(floatingPrecision);
+    const precision = toValue(integer) ? 0 : get(floatingPrecision);
     const [wholePart, decimalPart = ''] = val.toFormat(val.decimalPlaces() || 0).split(get(decimalSeparator));
 
     if (!decimalPart || wholePart !== '0') {

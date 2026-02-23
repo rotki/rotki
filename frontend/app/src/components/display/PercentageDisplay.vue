@@ -1,41 +1,33 @@
 <script setup lang="ts">
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-const props = withDefaults(
-  defineProps<{
-    value?: string;
-    justify?: 'end' | 'start';
-    assetPadding?: number;
-  }>(),
-  {
-    assetPadding: 0,
-    justify: 'end',
-    value: undefined,
-  },
-);
+const { assetPadding = 0, justify = 'end', value } = defineProps<{
+  value?: string;
+  justify?: 'end' | 'start';
+  assetPadding?: number;
+}>();
 
-const { assetPadding, value } = toRefs(props);
 const { shouldShowPercentage } = storeToRefs(useFrontendSettingsStore());
 
 const displayValue = computed<string>(() => {
   if (!get(shouldShowPercentage))
     return (Math.random() * 100 + 1).toFixed(2);
 
-  if (!isDefined(value))
+  if (value === undefined)
     return '-';
 
-  return get(value).replace('%', '');
+  return value.replace('%', '');
 });
 
 const assetStyle = computed<Record<string, string | undefined>>(() => {
-  if (!get(assetPadding)) {
+  if (!assetPadding) {
     return {
       'max-width': '0ch',
     };
   }
   return {
     'text-align': 'start',
-    'width': `${get(assetPadding) + 1}ch`,
+    'width': `${assetPadding + 1}ch`,
   };
 });
 

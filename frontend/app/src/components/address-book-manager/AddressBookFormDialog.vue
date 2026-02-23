@@ -10,27 +10,24 @@ import { ApiValidationError } from '@/types/api/errors';
 
 const open = defineModel<boolean>('open', { required: true });
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: AddressBookPayload | null;
-    editMode?: boolean;
-    selectedChain?: string;
-    location?: 'global' | 'private';
-    root?: boolean;
-  }>(),
-  {
-    editableItem: null,
-    editMode: undefined,
-    root: false,
-  },
-);
+const {
+  editableItem = null,
+  editMode,
+  location,
+  root = false,
+  selectedChain,
+} = defineProps<{
+  editableItem?: AddressBookPayload | null;
+  editMode?: boolean;
+  selectedChain?: string;
+  location?: 'global' | 'private';
+  root?: boolean;
+}>();
 
 const emit = defineEmits<{
   'update:tab': [tab: number];
   'refresh': [];
 }>();
-
-const { editableItem, editMode, location, selectedChain } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -42,8 +39,8 @@ const stateUpdated = ref(false);
 
 const emptyForm: () => AddressBookPayload = () => ({
   address: '',
-  blockchain: get(selectedChain) ?? 'all',
-  location: get(location) || 'private',
+  blockchain: selectedChain ?? 'all',
+  location: location || 'private',
   name: '',
 });
 
@@ -61,7 +58,7 @@ async function save() {
 
   const { address, blockchain, location, name } = get(modelValue);
   let success;
-  const isEdit = get(editMode) ?? !!get(editableItem);
+  const isEdit = editMode ?? !!editableItem;
   const payload = {
     address: address.trim(),
     blockchain: blockchain === 'all' ? null : blockchain,
@@ -70,9 +67,9 @@ async function save() {
 
   set(loading, true);
   try {
-    if (get(isEdit))
+    if (isEdit)
       success = await updateAddressBook(location, [payload]);
-    else success = await addAddressBook(location, [payload], props.root);
+    else success = await addAddressBook(location, [payload], root);
   }
   catch (error: any) {
     success = false;
@@ -83,10 +80,10 @@ async function save() {
 
     if (typeof errors === 'string') {
       const values = { message: error.message };
-      const title = get(isEdit)
+      const title = isEdit
         ? t('address_book.actions.edit.error.title')
         : t('address_book.actions.add.error.title');
-      const description = get(isEdit)
+      const description = isEdit
         ? t('address_book.actions.edit.error.description', values)
         : t('address_book.actions.add.error.description', values);
       setMessage({
@@ -110,7 +107,7 @@ async function save() {
 }
 
 const dialogTitle = computed<string>(() =>
-  get(editableItem)
+  editableItem
     ? t('address_book.dialog.edit_title')
     : t('address_book.dialog.add_title'),
 );
@@ -120,7 +117,7 @@ watch(modelValue, (oldValue, currValue) => {
     set(errorMessages, {});
 });
 
-watchImmediate([open, editableItem], ([open, editableItem]) => {
+watchImmediate([open, () => editableItem], ([open, editableItem]) => {
   if (!open) {
     set(modelValue, undefined);
   }

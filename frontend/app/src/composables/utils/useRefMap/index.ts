@@ -1,5 +1,5 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 
-export function useRefMap<I extends object | null | undefined, O>(inp: Ref<I>, map: (inp: I) => O): ComputedRef<O> {
-  return computed(() => map(get(inp)));
+export function useRefMap<I extends object | null | undefined, O>(inp: MaybeRefOrGetter<I>, map: (inp: I) => O): ComputedRef<O> {
+  return computed(() => map(toValue(inp)));
 }

@@ -2,32 +2,22 @@
 import AppImage from '@/components/common/AppImage.vue';
 import { useLocations } from '@/composables/locations';
 
-const props = withDefaults(
-  defineProps<{
-    item: string;
-    horizontal?: boolean;
-    icon?: boolean;
-    size?: string;
-    noPadding?: boolean;
-    imageClass?: string;
-  }>(),
-  {
-    horizontal: false,
-    icon: false,
-    noPadding: false,
-    size: '24px',
-  },
-);
+const { item, horizontal, icon, size = '24px', imageClass } = defineProps<{
+  item: string;
+  horizontal?: boolean;
+  icon?: boolean;
+  size?: string;
+  noPadding?: boolean;
+  imageClass?: string;
+}>();
 
 const emit = defineEmits<{
   click: [location: string];
 }>();
 
-const { item } = toRefs(props);
-
 const { locationData } = useLocations();
 
-const location = locationData(item);
+const location = locationData(() => item);
 </script>
 
 <template>

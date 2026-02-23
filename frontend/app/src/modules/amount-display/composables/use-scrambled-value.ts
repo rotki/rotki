@@ -1,12 +1,12 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 import { useAmountDisplaySettings } from './use-amount-display-settings';
 
 export interface UseScrambledValueOptions {
-  value: MaybeRef<BigNumber>;
-  noScramble?: MaybeRef<boolean>;
+  value: MaybeRefOrGetter<BigNumber>;
+  noScramble?: MaybeRefOrGetter<boolean>;
 }
 
 export interface UseScrambledValueReturn {
@@ -29,19 +29,17 @@ export function useScrambledValue(options: UseScrambledValueOptions): UseScrambl
 
   const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? generateRandomScrambleMultiplier());
 
+  const scrambledValue = useNumberScrambler({
+    enabled: computed<boolean>(() => !toValue(noScramble) && (get(scrambleData) || !get(shouldShowAmount))),
+    multiplier: scrambleMultiplier,
+    value,
+  });
+
   watchEffect(() => {
     const newValue = get(scrambleMultiplierRef);
     if (newValue !== undefined) {
       set(scrambleMultiplier, newValue);
     }
-  });
-
-  const valueRef = isRef(value) ? value : ref(value);
-
-  const scrambledValue = useNumberScrambler({
-    enabled: computed<boolean>(() => !get(noScramble) && (get(scrambleData) || !get(shouldShowAmount))),
-    multiplier: scrambleMultiplier,
-    value: valueRef as ComputedRef<BigNumber>,
   });
 
   return {

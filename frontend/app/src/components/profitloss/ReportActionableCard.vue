@@ -8,15 +8,13 @@ import { useConfirmStore } from '@/store/confirm';
 import { useReportsStore } from '@/store/reports';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 
-const props = withDefaults(
-  defineProps<{
-    report: Report;
-    isPinned?: boolean;
-  }>(),
-  {
-    isPinned: false,
-  },
-);
+const {
+  isPinned = false,
+  report,
+} = defineProps<{
+  report: Report;
+  isPinned?: boolean;
+}>();
 
 const emit = defineEmits<{
   'set-dialog': [value: boolean];
@@ -28,7 +26,6 @@ const ReportMissingAcquisitions = defineAsyncComponent(
 const ReportMissingPrices = defineAsyncComponent(() => import('@/components/profitloss/ReportMissingPrices.vue'));
 
 const { t } = useI18n({ useScope: 'global' });
-const { isPinned, report } = toRefs(props);
 const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
 
 function setDialog(dialog: boolean) {
@@ -72,7 +69,7 @@ function pinSection() {
     name: 'report-actionable-card',
     props: {
       isPinned: true,
-      report: get(report),
+      report,
     },
   };
 
@@ -180,7 +177,7 @@ function submitActionableItems(missingPrices: EditableMissingPrice[]) {
 }
 
 function ignoreIssues() {
-  if (get(isPinned))
+  if (isPinned)
     setPinned(null);
 
   setDialog(false);
@@ -191,7 +188,7 @@ function regenerateReport() {
 }
 
 function close() {
-  if (get(isPinned))
+  if (isPinned)
     setPinned(null);
   else setDialog(false);
 }

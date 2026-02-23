@@ -1,47 +1,42 @@
 <script setup lang="ts">
-import type { MaybeRef } from 'vue';
 import { toRem } from '@/utils/data';
 import { getPublicPlaceholderImagePath } from '@/utils/file';
 
-const props = withDefaults(
-  defineProps<{
-    width?: string | number;
-    height?: string | number;
-    maxWidth?: string | number;
-    maxHeight?: string | number;
-    size?: string | number;
-    src?: string;
-    srcset?: string;
-    sizes?: string;
-    alt?: string;
-    contain?: boolean;
-    cover?: boolean;
-    loading?: boolean;
-    imageClass?: string;
-  }>(),
-  {
-    alt: undefined,
-    contain: false,
-    height: undefined,
-    loading: false,
-    maxHeight: undefined,
-    maxWidth: undefined,
-    size: undefined,
-    sizes: undefined,
-    src: undefined,
-    srcset: undefined,
-    width: undefined,
-    imageClass: undefined,
-  },
-);
+const {
+  alt,
+  contain = false,
+  cover = false,
+  height,
+  imageClass,
+  loading = false,
+  maxHeight,
+  maxWidth,
+  size,
+  sizes,
+  src,
+  srcset,
+  width,
+} = defineProps<{
+  width?: string | number;
+  height?: string | number;
+  maxWidth?: string | number;
+  maxHeight?: string | number;
+  size?: string | number;
+  src?: string;
+  srcset?: string;
+  sizes?: string;
+  alt?: string;
+  contain?: boolean;
+  cover?: boolean;
+  loading?: boolean;
+  imageClass?: string;
+}>();
 
 const emit = defineEmits<{
   error: [];
   load: [];
   loadstart: [];
 }>();
-
-const { height, maxHeight, maxWidth, size, width } = toRefs(props);
 
 const error = ref<boolean>(false);
 const success = ref<boolean>(false);
@@ -53,8 +48,8 @@ const style = computed(() => ({
   width: getSizeOrValue(width),
 }));
 
-function getSizeOrValue(value: MaybeRef<string | number | undefined>) {
-  return isDefined(get(size)) ? toRem(get(size)) : toRem(get(value));
+function getSizeOrValue(value: string | number | undefined) {
+  return size !== undefined ? toRem(size) : toRem(value);
 }
 
 function onError() {

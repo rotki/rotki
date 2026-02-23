@@ -1,10 +1,10 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { PriceOracle } from '@/types/settings/price-oracle';
 
 export interface OracleInfoOptions {
-  priceAsset: MaybeRef<string>;
-  isAssetPrice: MaybeRef<boolean>;
+  priceAsset: MaybeRefOrGetter<string>;
+  isAssetPrice: MaybeRefOrGetter<boolean>;
 }
 
 export interface OracleInfoReturn {
@@ -19,13 +19,13 @@ export function useOracleInfo(options: OracleInfoOptions): OracleInfoReturn {
   const { getAssetPriceOracle, isManualAssetPrice } = usePriceUtils();
 
   const isManualPrice = computed<boolean>(() => {
-    if (!get(isAssetPrice) || !get(priceAsset))
+    if (!toValue(isAssetPrice) || !toValue(priceAsset))
       return false;
     return get(isManualAssetPrice(priceAsset));
   });
 
   const assetOracle = computed<string | undefined>(() => {
-    if (!get(isAssetPrice) || !get(priceAsset)) {
+    if (!toValue(isAssetPrice) || !toValue(priceAsset)) {
       return undefined;
     }
 

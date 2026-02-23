@@ -7,24 +7,19 @@ import { useLatestPrices } from '@/composables/price-manager/latest';
 
 const open = defineModel<boolean>('open', { required: true });
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: ManualPriceFormPayload | null;
-    editMode?: boolean;
-    disableFromAsset?: boolean;
-  }>(),
-  {
-    disableFromAsset: false,
-    editableItem: null,
-    editMode: undefined,
-  },
-);
+const {
+  disableFromAsset = false,
+  editableItem = null,
+  editMode,
+} = defineProps<{
+  editableItem?: ManualPriceFormPayload | null;
+  editMode?: boolean;
+  disableFromAsset?: boolean;
+}>();
 
 const emit = defineEmits<{
   refresh: [];
 }>();
-
-const { editableItem, editMode } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -52,7 +47,7 @@ async function save() {
     return false;
 
   const data = get(modelValue);
-  const isEdit = get(editMode) ?? !!get(editableItem);
+  const isEdit = editMode ?? !!editableItem;
   set(loading, true);
   const success = await saveAction(data, isEdit);
 
@@ -65,18 +60,18 @@ async function save() {
 }
 
 const dialogTitle = computed<string>(() =>
-  get(editableItem)
+  editableItem
     ? t('price_management.dialog.edit_title')
     : t('price_management.dialog.add_title'),
 );
 
-watchImmediate([open, editableItem], ([open, editableItem]) => {
+watchImmediate([open, () => editableItem], ([open, editableItemVal]) => {
   if (!open) {
     set(modelValue, undefined);
   }
   else {
-    if (editableItem) {
-      set(modelValue, editableItem);
+    if (editableItemVal) {
+      set(modelValue, editableItemVal);
     }
     else {
       set(modelValue, emptyPrice());

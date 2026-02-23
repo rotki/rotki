@@ -4,17 +4,10 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-const props = withDefaults(
-  defineProps<{
-    darkModeEnabled: boolean;
-    menu?: boolean;
-  }>(),
-  {
-    menu: false,
-  },
-);
-
-const { darkModeEnabled } = toRefs(props);
+const { darkModeEnabled, menu = false } = defineProps<{
+  darkModeEnabled: boolean;
+  menu?: boolean;
+}>();
 
 const automaticSymbol = 'A';
 
@@ -34,14 +27,14 @@ const labels = computed(() => [
 ]);
 
 const tooltip = computed(() => {
-  const mode = get(darkModeEnabled)
+  const mode = darkModeEnabled
     ? t('theme_switch.light')
     : t('theme_switch.dark');
   return t('theme_switch.tooltip', { mode });
 });
 
 async function toggleSelectedTheme() {
-  const newTheme = get(darkModeEnabled) ? Theme.LIGHT : Theme.DARK;
+  const newTheme = darkModeEnabled ? Theme.LIGHT : Theme.DARK;
   await changeSelectedTheme(newTheme);
 }
 

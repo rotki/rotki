@@ -2,24 +2,16 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { HistoryEventCategoryDetailWithId } from '@/types/history/events/event-type';
 
-const props = withDefaults(
-  defineProps<{
-    type: HistoryEventCategoryDetailWithId;
-    showLabel?: boolean;
-    icon?: RuiIcons;
-    highlight?: boolean;
-    showInfo?: boolean;
-  }>(),
-  {
-    showInfo: false,
-    showLabel: false,
-  },
-);
-
-const { type } = toRefs(props);
+const { type, showInfo, showLabel, icon, highlight } = defineProps<{
+  type: HistoryEventCategoryDetailWithId;
+  showLabel?: boolean;
+  icon?: RuiIcons;
+  highlight?: boolean;
+  showInfo?: boolean;
+}>();
 
 const directionIcon = computed<RuiIcons>(() => {
-  switch (get(type).direction) {
+  switch (type.direction) {
     case 'in':
       return 'lu-arrow-down';
     case 'out':

@@ -21,7 +21,25 @@ defineOptions({
 
 const modelValue = defineModel<AccountWithAddressData[]>({ required: true });
 
-const props = withDefaults(defineProps<{
+const {
+  chains = [],
+  customHint = '',
+  dense = false,
+  errorMessages = [],
+  hideChainIcon = false,
+  hideOnEmptyUsable = false,
+  hint = false,
+  label = '',
+  loading = false,
+  multichain = false,
+  multiple = false,
+  noDataText,
+  outlined = false,
+  required = false,
+  showDetails = false,
+  unique = false,
+  usableAddresses = [],
+} = defineProps<{
   label?: string;
   hint?: boolean;
   loading?: boolean;
@@ -39,30 +57,11 @@ const props = withDefaults(defineProps<{
   customHint?: string;
   noDataText?: string;
   required?: boolean;
-}>(), {
-  chains: () => [],
-  customHint: '',
-  dense: false,
-  errorMessages: () => [],
-  hideChainIcon: false,
-  hideOnEmptyUsable: false,
-  hint: false,
-  label: '',
-  loading: false,
-  multichain: false,
-  multiple: false,
-  outlined: false,
-  required: false,
-  showDetails: false,
-  unique: false,
-  usableAddresses: () => [],
-});
+}>();
 
 defineSlots<{
   default: () => any;
 }>();
-
-const { chains, hideOnEmptyUsable, multichain, multiple, unique, usableAddresses } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -79,7 +78,7 @@ const accounts = computed<AccountWithAddressData[]>(() =>
 
 const internalValue = computed<AccountWithExtra | AccountWithExtra[] | undefined>(() => {
   const accounts = get(modelValue).map(item => ({ ...item, address: getAccountAddress(item), key: getAccountId(item) }));
-  if (get(multiple))
+  if (multiple)
     return accounts;
 
   if (!accounts || accounts.length === 0)
@@ -89,18 +88,17 @@ const internalValue = computed<AccountWithExtra | AccountWithExtra[] | undefined
 });
 
 const selectableAccounts = computed<AccountWithAddressData[]>(() => {
-  const filteredChains = get(chains);
   const accountData = get(accounts);
 
-  const filteredAccounts = filteredChains.length === 0
+  const filteredAccounts = chains.length === 0
     ? accountData
-    : accountData.filter(({ chain }) => chain === 'ALL' || filteredChains.includes(chain));
+    : accountData.filter(({ chain }) => chain === 'ALL' || chains.includes(chain));
 
-  const filteredByUnique: AccountWithAddressData[] = get(unique)
+  const filteredByUnique: AccountWithAddressData[] = unique
     ? uniqBy(filteredAccounts, account => getAccountAddress(account))
     : filteredAccounts;
 
-  if (get(multichain)) {
+  if (multichain) {
     const entries: Record<string, number> = {};
     filteredByUnique.forEach((account) => {
       const address = getAccountAddress(account);
@@ -143,16 +141,15 @@ const hintText = computed<string>(() => {
 });
 
 const displayedAccounts = computed<AccountWithExtra[]>(() => {
-  const addresses = get(usableAddresses);
   const accounts = [...get(selectableAccounts)].map(item => ({
     ...item,
     address: getAccountAddress(item),
     key: getAccountId(item),
   }));
-  if (addresses.length > 0)
-    return accounts.filter(account => addresses.includes(account.address));
+  if (usableAddresses.length > 0)
+    return accounts.filter(account => usableAddresses.includes(account.address));
 
-  return get(hideOnEmptyUsable) ? [] : accounts;
+  return hideOnEmptyUsable ? [] : accounts;
 });
 
 function filter(item: BlockchainAccount, queryText: string) {

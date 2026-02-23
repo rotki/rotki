@@ -4,21 +4,17 @@ import AppImage from '@/components/common/AppImage.vue';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
-const props = withDefaults(defineProps<{
+const { counterparty, icon, size = '20px' } = defineProps<{
   counterparty: string;
   icon?: boolean;
   size?: string;
-}>(), {
-  size: '20px',
-});
-
-const { counterparty, size } = toRefs(props);
+}>();
 
 const { getCounterpartyData } = useHistoryEventCounterpartyMappings();
 
 const { isDark } = useRotkiTheme();
 
-const data = getCounterpartyData(counterparty);
+const data = getCounterpartyData(() => counterparty);
 
 const useDarkModeImage = computed(() => get(isDark) && get(data).darkmodeImage);
 

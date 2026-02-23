@@ -22,19 +22,11 @@ const usdValue = defineModel<string>('usdValue', { required: true });
 
 const asset = defineModel<string>('asset', { default: '', required: false });
 
-const props = withDefaults(
-  defineProps<{
-    timestamp: number;
-    disableAsset?: boolean;
-    nft?: boolean;
-  }>(),
-  {
-    disableAsset: false,
-    nft: false,
-  },
-);
-
-const { disableAsset, timestamp } = toRefs(props);
+const { disableAsset = false, nft = false, timestamp } = defineProps<{
+  timestamp: number;
+  disableAsset?: boolean;
+  nft?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -114,8 +106,7 @@ function onFiatValueChange() {
 
 async function fetchHistoricPrices() {
   const assetVal = get(asset);
-  const timestampVal = get(timestamp);
-  if (!timestampVal || !assetVal)
+  if (!timestamp || !assetVal)
     return;
 
   const oldUsdPrice = get(numericUsdValue).dividedBy(get(numericAmount));
@@ -126,7 +117,7 @@ async function fetchHistoricPrices() {
   else {
     const price: BigNumber = await getHistoricPrice({
       fromAsset: assetVal,
-      timestamp: timestampVal,
+      timestamp,
       toAsset: CURRENCY_USD,
     });
 
@@ -148,7 +139,7 @@ async function fetchHistoricPrices() {
 
     const price = await getHistoricPrice({
       fromAsset: assetVal,
-      timestamp: timestampVal,
+      timestamp,
       toAsset: currentCurrency,
     });
 
@@ -163,7 +154,6 @@ async function fetchHistoricPrices() {
 
 async function submitPrice(): Promise<void> {
   const assetVal = get(asset);
-  const timestampVal = get(timestamp);
 
   if (!assetVal)
     return;
@@ -173,7 +163,7 @@ async function submitPrice(): Promise<void> {
       await savePrice({
         fromAsset: assetVal,
         price: get(assetToUsdPrice),
-        timestamp: timestampVal,
+        timestamp,
         toAsset: CURRENCY_USD,
       });
     }
@@ -182,7 +172,7 @@ async function submitPrice(): Promise<void> {
     await savePrice({
       fromAsset: assetVal,
       price: get(assetToFiatPrice),
-      timestamp: timestampVal,
+      timestamp,
       toAsset: get(currencySymbol),
     });
   }
@@ -198,7 +188,7 @@ function reset() {
 }
 
 watchImmediate(
-  [timestamp, asset],
+  [() => timestamp, asset],
   async ([timestamp, asset], [oldTimestamp, oldAsset]) => {
     if (timestamp !== oldTimestamp || asset !== oldAsset)
       await fetchHistoricPrices();

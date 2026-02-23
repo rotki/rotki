@@ -20,9 +20,24 @@ import { useHistoryEventsSelectionMode } from '@/modules/history/events/composab
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { useHistoryStore } from '@/store/history';
 
+type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
+
 defineOptions({ inheritAttrs: false });
 
-const props = withDefaults(defineProps<{
+const {
+  entryTypes,
+  eventSubTypes = [],
+  eventTypes = [],
+  externalAccountFilter = [],
+  location,
+  mainPage,
+  onlyChains = [],
+  period,
+  protocols = [],
+  sectionTitle = '',
+  useExternalAccountFilter,
+  validators,
+} = defineProps<{
   location?: string;
   protocols?: string[];
   eventTypes?: string[];
@@ -35,43 +50,13 @@ const props = withDefaults(defineProps<{
   sectionTitle?: string;
   mainPage?: boolean;
   onlyChains?: Blockchain[];
-}>(), {
-  entryTypes: undefined,
-  eventSubTypes: () => [],
-  eventTypes: () => [],
-  externalAccountFilter: () => [],
-  location: undefined,
-  mainPage: false,
-  onlyChains: () => [],
-  period: undefined,
-  protocols: () => [],
-  sectionTitle: '',
-  useExternalAccountFilter: undefined,
-  validators: undefined,
-});
+}>();
 
 const SyncProgressPanel = defineAsyncComponent(() => import('@/modules/sync-progress/components/SyncProgressPanel.vue'));
-
-type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
-
-const {
-  entryTypes,
-  eventSubTypes,
-  eventTypes,
-  externalAccountFilter,
-  location,
-  mainPage,
-  onlyChains,
-  period,
-  protocols,
-  sectionTitle,
-  useExternalAccountFilter,
-  validators,
-} = toRefs(props);
 
 const toggles = ref<HistoryEventsToggles>(getDefaultToggles());
 
@@ -99,7 +84,7 @@ const {
   shouldFetchEventsRegularly,
 } = useHistoryEventsStatus();
 
-const usedTitle = computed<string>(() => get(sectionTitle) || t('transactions.title'));
+const usedTitle = computed<string>(() => sectionTitle || t('transactions.title'));
 
 const {
   clearFilters,
@@ -123,26 +108,26 @@ const {
   sort,
 } = useHistoryEventsFilters(
   {
-    entryTypes,
-    eventSubTypes,
-    eventTypes,
-    externalAccountFilter,
-    location,
-    mainPage,
-    period,
-    protocols,
-    useExternalAccountFilter,
-    validators,
+    entryTypes: () => entryTypes,
+    eventSubTypes: () => eventSubTypes,
+    eventTypes: () => eventTypes,
+    externalAccountFilter: () => externalAccountFilter,
+    location: () => location,
+    mainPage: () => mainPage,
+    period: () => period,
+    protocols: () => protocols,
+    useExternalAccountFilter: () => useExternalAccountFilter,
+    validators: () => validators,
   },
   toggles,
 );
 
 const actions = useHistoryEventsActions({
   currentAction,
-  entryTypes,
+  entryTypes: () => entryTypes,
   fetchData,
   groups,
-  onlyChains,
+  onlyChains: () => onlyChains,
   shouldFetchEventsRegularly,
 });
 
@@ -228,7 +213,7 @@ watch(backgroundLoading, async (isLoading, wasLoading) => {
 
 // Refresh when events are modified (e.g., from pinned sidebar matching)
 watch(eventsModificationCounter, async (current, previous) => {
-  if (props.mainPage && current > previous)
+  if (mainPage && current > previous)
     await actions.fetch.dataAndLocations();
 });
 

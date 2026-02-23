@@ -1,23 +1,15 @@
 <script setup lang="ts">
-const props = withDefaults(
-  defineProps<{
-    minHeight?: string;
-    initialAppear?: boolean;
-  }>(),
-  {
-    initialAppear: false,
-    minHeight: '16px',
-  },
-);
+const { initialAppear = false, minHeight = '16px' } = defineProps<{
+  minHeight?: string;
+  initialAppear?: boolean;
+}>();
 
 defineSlots<{
   default: () => any;
 }>();
 
-const { initialAppear, minHeight } = toRefs(props);
-
 const wrapper = ref();
-const appear = ref<boolean>(get(initialAppear));
+const appear = ref<boolean>(initialAppear);
 const appearDebounced = refDebounced(appear, 200);
 const height = ref<string>('max-content');
 const usedAppear = logicAnd(appear, appearDebounced);
@@ -33,7 +25,7 @@ const minHeightUsed = computed(() => {
   const heightVal = get(height);
   if (heightVal !== 'max-content' || get(usedAppear))
     return 'auto';
-  return get(minHeight);
+  return minHeight;
 });
 
 watch(usedAppear, (appear) => {

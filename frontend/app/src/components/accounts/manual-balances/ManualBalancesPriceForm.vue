@@ -8,15 +8,10 @@ import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
-const props = withDefaults(
-  defineProps<{
-    pending: boolean;
-    asset?: string;
-  }>(),
-  {
-    asset: '',
-  },
-);
+const { asset = '', pending } = defineProps<{
+  pending: boolean;
+  asset?: string;
+}>();
 
 const price = ref<string>('');
 const priceAsset = ref<string>('');
@@ -24,8 +19,6 @@ const fetchingPrice = ref<boolean>(false);
 const fetchedPrice = ref<string>('');
 const isCustomPrice = ref<boolean>(false);
 const fiatPriceHint = ref<BigNumber | null>();
-
-const { asset } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetPrice, isAssetPriceInCurrentCurrency, toSelectedCurrency } = usePriceUtils();
@@ -63,16 +56,14 @@ function setPriceAndPriceAsset(newPrice = '', newPriceAsset = '') {
 }
 
 async function searchAssetPrice() {
-  const assetProp = get(asset);
-
-  if (!assetProp) {
+  if (!asset) {
     setPriceAndPriceAsset();
     return;
   }
 
   const mainCurrency = get(currencySymbol);
 
-  const customLatestPrices = await fetchLatestPrices({ fromAsset: assetProp });
+  const customLatestPrices = await fetchLatestPrices({ fromAsset: asset });
   if (customLatestPrices.length > 0) {
     const customLatestPrice = customLatestPrices[0];
     const newPrice = customLatestPrice.price.toFixed();
@@ -81,7 +72,7 @@ async function searchAssetPrice() {
     setPriceAndPriceAsset(newPrice, newPriceAsset);
 
     if (mainCurrency !== newPriceAsset) {
-      const priceInFiat = await getAssetPriceInFiat(assetProp);
+      const priceInFiat = await getAssetPriceInFiat(asset);
       if (priceInFiat)
         set(fiatPriceHint, priceInFiat);
     }
@@ -89,12 +80,12 @@ async function searchAssetPrice() {
     return;
   }
 
-  if (mainCurrency === assetProp) {
+  if (mainCurrency === asset) {
     setPriceAndPriceAsset('1', mainCurrency);
     return;
   }
 
-  const priceInFiat = await getAssetPriceInFiat(assetProp);
+  const priceInFiat = await getAssetPriceInFiat(asset);
   if (priceInFiat) {
     setPriceAndPriceAsset(priceInFiat.toFixed(), mainCurrency);
     return;
@@ -126,7 +117,7 @@ watch(isCustomPrice, (isCustomPrice) => {
   }
 });
 
-watchImmediate(asset, () => {
+watchImmediate(() => asset, () => {
   searchAssetPrice();
 });
 

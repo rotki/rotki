@@ -29,21 +29,16 @@ const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
 
 const expandedIds = defineModel<string[]>('expandedIds', { required: true });
 
-const props = withDefaults(defineProps<{
+const { accounts, category, group } = defineProps<{
   accounts: Collection<T>;
   category: string;
   group?: 'evm' | 'xpub';
-}>(), {
-  group: undefined,
-});
+}>();
 
 const emit = defineEmits<{
   edit: [account: AccountManageState];
   refresh: [];
 }>();
-
-const { category } = toRefs(props);
-const accounts = toRef(props, 'accounts');
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -61,9 +56,9 @@ const {
   isVirtual,
   rows,
   totalValue,
-} = useAccountTableData<T>(accounts, expandedIds, chainFilter);
+} = useAccountTableData<T>(() => accounts, expandedIds, chainFilter);
 
-const { accountOperation, isAnyLoading, isRowLoading, isSectionLoading } = useAccountLoadingStates<T>(category);
+const { accountOperation, isAnyLoading, isRowLoading, isSectionLoading } = useAccountLoadingStates<T>(() => category);
 
 const { confirmDelete, edit } = useAccountOperations<T>({
   onEdit: account => emit('edit', account),
@@ -71,7 +66,7 @@ const { confirmDelete, edit } = useAccountOperations<T>({
 });
 
 // Create columns
-const cols = computed(() => createColumns(props.group, get(anyExpansion)));
+const cols = computed(() => createColumns(group, get(anyExpansion)));
 
 // Initialize table sorting
 initializeTableSorting(sort, cols);

@@ -1,18 +1,18 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 
 export interface ScramblerOptions {
-  value: Ref<BigNumber>;
-  enabled: Ref<boolean>;
-  multiplier: Ref<number>;
+  value: MaybeRefOrGetter<BigNumber>;
+  enabled: MaybeRefOrGetter<boolean>;
+  multiplier: MaybeRefOrGetter<number>;
 }
 
 export function useNumberScrambler(options: ScramblerOptions): ComputedRef<BigNumber> {
-  return computed(() => {
-    const value = get(options.value);
-    if (!get(options.enabled))
+  return computed<BigNumber>(() => {
+    const value = toValue(options.value);
+    if (!toValue(options.enabled))
       return value;
 
-    return value.multipliedBy(get(options.multiplier));
+    return value.multipliedBy(toValue(options.multiplier));
   });
 }

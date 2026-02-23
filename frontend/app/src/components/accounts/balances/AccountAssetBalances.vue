@@ -18,10 +18,7 @@ interface AccountAssetBalancesProps {
 
 const selected = defineModel<string[] | undefined>('selected', { required: true });
 
-const props = withDefaults(defineProps<AccountAssetBalancesProps>(), {
-  flat: false,
-  selectionMode: false,
-});
+const { assets } = defineProps<AccountAssetBalancesProps>();
 
 const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   column: 'value',
@@ -29,11 +26,10 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 });
 
 const { t } = useI18n({ useScope: 'global' });
-const { assets } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const totalValue = computed<BigNumber>(() => sum(get(assets)));
+const totalValue = computed<BigNumber>(() => sum(assets));
 
 const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   cellClass: 'py-1',

@@ -42,28 +42,20 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(defineProps<Props>(), {
-  asset: '',
-  loading: false,
-  noCollectionParent: false,
-  noTruncate: false,
-});
-
-const { amount, asset, noCollectionParent, noScramble } = toRefs(props);
+const { amount, asset = '', noCollectionParent, noScramble } = defineProps<Props>();
 
 // Composables
 const { assetInfo } = useAssetInfoRetrieval();
-const resolutionOptions = computed(() => ({ collectionParent: !get(noCollectionParent) }));
-const info = assetInfo(asset, resolutionOptions);
-const { scrambledValue } = useScrambledValue({ value: amount, noScramble });
+const resolutionOptions = computed(() => ({ collectionParent: !noCollectionParent }));
+const info = assetInfo(() => asset, resolutionOptions);
+const { scrambledValue } = useScrambledValue({ value: () => amount, noScramble: () => noScramble });
 
 // Computed - returns empty string if no asset provided
 const assetSymbol = computed<string>(() => {
-  const assetVal = get(asset);
-  if (!assetVal)
+  if (!asset)
     return '';
   const assetInfoVal = get(info);
-  return assetInfoVal?.symbol ?? assetVal;
+  return assetInfoVal?.symbol ?? asset;
 });
 </script>
 

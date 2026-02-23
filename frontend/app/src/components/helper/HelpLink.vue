@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import { useLinks } from '@/composables/links';
 
-const props = withDefaults(
-  defineProps<{
-    url: string;
-    tooltip: string;
-    small?: boolean;
-  }>(),
-  {
-    small: false,
-  },
-);
+const { small, tooltip, url } = defineProps<{
+  url: string;
+  tooltip: string;
+  small?: boolean;
+}>();
 
-const { url } = toRefs(props);
-const { href, onLinkClick } = useLinks(url);
+const { href, onLinkClick } = useLinks(() => url);
 </script>
 
 <template>

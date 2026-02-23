@@ -1,16 +1,16 @@
-import type { Ref } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 
 interface UseAssetPageNavigationReturn { navigateToDetails: () => Promise<void> }
 
-export function useAssetPageNavigation(asset: Ref<string>, collectionParent?: Ref<boolean>): UseAssetPageNavigationReturn {
+export function useAssetPageNavigation(asset: MaybeRefOrGetter<string>, collectionParent?: MaybeRefOrGetter<boolean>): UseAssetPageNavigationReturn {
   const router = useRouter();
   const navigateToDetails = async (): Promise<void> => {
     await router.push({
       name: '/assets/[identifier]',
       params: {
-        identifier: get(asset),
+        identifier: toValue(asset),
       },
-      ...(!get(collectionParent)
+      ...(!toValue(collectionParent)
         ? {}
         : {
             query: {

@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRef, MaybeRefOrGetter } from 'vue';
 import type { ActionDataEntry } from '@/types/action';
 import { isValidEthAddress, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
@@ -104,8 +104,8 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
     ({ identifier }) => identifier,
   );
 
-  const getCounterpartyData = (counterparty: MaybeRef<string>): ComputedRef<ActionDataEntry> => computed(() => {
-    const counterpartyVal = get(counterparty);
+  const getCounterpartyData = (counterparty: MaybeRefOrGetter<string>): ComputedRef<ActionDataEntry> => computed(() => {
+    const counterpartyVal = toValue(counterparty);
     const data = get(dataEntries).find(item => item.identifier === counterpartyVal);
 
     if (data)

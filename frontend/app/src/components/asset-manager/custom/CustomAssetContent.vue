@@ -11,17 +11,12 @@ import { useCommonTableProps } from '@/modules/table/use-common-table-props';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 
-const props = withDefaults(
-  defineProps<{
-    identifier?: string | null;
-    mainPage?: boolean;
-  }>(),
-  { identifier: null, mainPage: false },
-);
+const { identifier = null, mainPage = false } = defineProps<{
+  identifier?: string | null;
+  mainPage?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { identifier, mainPage } = toRefs(props);
 
 const types = ref<string[]>([]);
 
@@ -69,7 +64,7 @@ const {
     direction: 'desc',
   }],
   filterSchema: () => useCustomAssetFilter(types),
-  history: get(mainPage) ? 'router' : false,
+  history: mainPage ? 'router' : false,
 });
 
 function add() {
@@ -112,7 +107,7 @@ function showDeleteConfirmation(item: CustomAsset) {
 
 onMounted(async () => {
   await refresh();
-  editAsset(get(identifier));
+  editAsset(identifier);
 
   const query = get(route).query;
   if (query.add) {
@@ -121,7 +116,7 @@ onMounted(async () => {
   }
 });
 
-watch(identifier, (assetId) => {
+watch(() => identifier, (assetId) => {
   editAsset(assetId);
 });
 </script>

@@ -11,27 +11,18 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    dense?: boolean;
-    showLabel?: boolean;
-    useLocalSetting?: boolean;
-  }>(),
-  {
-    dense: false,
-    showLabel: true,
-    useLocalSetting: false,
-  },
-);
-
-const { useLocalSetting } = toRefs(props);
+const { useLocalSetting = false } = defineProps<{
+  dense?: boolean;
+  showLabel?: boolean;
+  useLocalSetting?: boolean;
+}>();
 
 const language = ref<SupportedLanguage>(SupportedLanguage.EN);
 
 const { adaptiveLanguage, forceUpdateMachineLanguage, lastLanguage } = useLocale();
 
 async function updateSetting(value: string, update: (newValue: any) => Promise<void>) {
-  if (get(useLocalSetting))
+  if (useLocalSetting)
     set(lastLanguage, value);
   else
     await update(value);

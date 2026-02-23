@@ -13,16 +13,11 @@ import { getFilepath } from '@/utils/file';
 
 const selected = defineModel<UserDbBackupWithId[]>('selected', { required: true });
 
-const props = withDefaults(
-  defineProps<{
-    items: UserDbBackupWithId[];
-    loading?: boolean;
-    directory: string;
-  }>(),
-  {
-    loading: false,
-  },
-);
+const { directory, items, loading = false } = defineProps<{
+  items: UserDbBackupWithId[];
+  loading?: boolean;
+  directory: string;
+}>();
 
 const emit = defineEmits<{
   remove: [backup: UserDbBackupWithId];
@@ -45,7 +40,7 @@ const selection = computed<number[] | undefined>({
       return;
     }
 
-    set(selected, props.items.filter(x => value.includes(x.id)));
+    set(selected, items.filter(x => value.includes(x.id)));
   },
 });
 
@@ -76,10 +71,9 @@ const tableHeaders = computed<DataTableColumn<UserDbBackupWithId>[]>(() => [
 
 useRememberTableSorting<UserDbBackupWithId>(TableId.USER_DB_BACKUP, sort, tableHeaders);
 
-const { directory, items } = toRefs(props);
 const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
-const totalSize = computed(() => size(get(items).reduce((sum, db) => sum + db.size, 0)));
+const totalSize = computed(() => size(items.reduce((sum, db) => sum + db.size, 0)));
 
 const { fileUrl } = useBackupApi();
 const getLink = (db: UserDbBackup) => fileUrl(getFilepath(db, directory));

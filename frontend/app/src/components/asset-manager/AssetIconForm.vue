@@ -8,17 +8,12 @@ import { useAssetIconStore } from '@/store/assets/icon';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 
-const props = withDefaults(
-  defineProps<{
-    identifier: string;
-    refreshable?: boolean;
-  }>(),
-  { refreshable: false },
-);
+const { identifier, refreshable = false } = defineProps<{
+  identifier: string;
+  refreshable?: boolean;
+}>();
 
-const { identifier } = toRefs(props);
-
-const preview = computed<string | null>(() => get(identifier) ?? null);
+const preview = computed<string | null>(() => identifier ?? null);
 const icon = ref<File>();
 
 const refreshIconLoading = ref<boolean>(false);
@@ -37,7 +32,7 @@ async function refreshIcon() {
     return;
 
   set(refreshIconLoading, true);
-  const identifierVal = get(identifier);
+  const identifierVal = identifier;
   try {
     await refresh(identifierVal);
     set(refreshKey, get(refreshKey) + 1);

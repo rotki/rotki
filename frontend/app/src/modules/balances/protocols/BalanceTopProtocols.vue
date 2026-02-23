@@ -3,19 +3,14 @@ import type { ProtocolBalance } from '@rotki/common';
 import ProtocolMenuItem from '@/modules/balances/protocols/ProtocolMenuItem.vue';
 import ProtocolTooltipIcon from '@/modules/balances/protocols/ProtocolTooltipIcon.vue';
 
-const props = withDefaults(defineProps<{
+const { protocols, visible = 3 } = defineProps<{
   protocols: ProtocolBalance[];
   asset?: string;
   loading?: boolean;
   visible?: number;
-}>(), {
-  loading: false,
-  visible: 3,
-});
+}>();
 
-const { protocols, visible } = toRefs(props);
-
-const showMore = computed<number>(() => get(protocols).length - get(visible));
+const showMore = computed<number>(() => protocols.length - visible);
 </script>
 
 <template>

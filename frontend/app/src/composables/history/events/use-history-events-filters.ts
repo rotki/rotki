@@ -1,5 +1,5 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, MaybeRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoryEventsToggles } from '@/components/history/events/dialog-types';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { Collection } from '@/types/collection';
@@ -27,16 +27,16 @@ export { useHistoryEventNavigationConsumer } from '@/composables/history/events/
 type Period = { fromTimestamp?: string; toTimestamp?: string } | { fromTimestamp?: number; toTimestamp?: number };
 
 interface HistoryEventsFiltersOptions {
-  entryTypes: Ref<HistoryEventEntryType[] | undefined>;
-  eventSubTypes: Ref<string[]>;
-  eventTypes: Ref<string[]>;
-  externalAccountFilter: Ref<Account[]>;
-  location: Ref<string | undefined>;
-  mainPage: Ref<boolean>;
-  period: Ref<Period | undefined>;
-  protocols: Ref<string[]>;
-  useExternalAccountFilter: Ref<boolean | undefined>;
-  validators: Ref<number[] | undefined>;
+  entryTypes: MaybeRefOrGetter<HistoryEventEntryType[] | undefined>;
+  eventSubTypes: MaybeRefOrGetter<string[]>;
+  eventTypes: MaybeRefOrGetter<string[]>;
+  externalAccountFilter: MaybeRefOrGetter<Account[]>;
+  location: MaybeRefOrGetter<string | undefined>;
+  mainPage: MaybeRefOrGetter<boolean>;
+  period: MaybeRefOrGetter<Period | undefined>;
+  protocols: MaybeRefOrGetter<string[]>;
+  useExternalAccountFilter: MaybeRefOrGetter<boolean | undefined>;
+  validators: MaybeRefOrGetter<number[] | undefined>;
 }
 
 export function getDefaultToggles(): HistoryEventsToggles {
@@ -132,8 +132,8 @@ export function useHistoryEventsFilters(
   });
 
   const usedLocationLabels = computed<string[]>(() => {
-    if (isDefined(useExternalAccountFilter))
-      return get(externalAccountFilter).map(account => account.address);
+    if (toValue(useExternalAccountFilter) !== undefined)
+      return toValue(externalAccountFilter).map(account => account.address);
 
     return get(locationLabels);
   });
@@ -158,10 +158,10 @@ export function useHistoryEventsFilters(
   >(fetchHistoryEventsTagged, {
     cancelTag: GROUPS_CANCEL_TAG,
     defaultParams: computed(() => {
-      if (isDefined(entryTypes) && get(entryTypes)) {
+      if (toValue(entryTypes) !== undefined && toValue(entryTypes)) {
         return {
           entryTypes: {
-            values: get(entryTypes) || [],
+            values: toValue(entryTypes) || [],
           },
         };
       }
@@ -177,14 +177,14 @@ export function useHistoryEventsFilters(
       };
     }),
     filterSchema: () => useHistoryEventFilter({
-      eventSubtypes: (get(eventSubTypes) || []).length > 0,
-      eventTypes: (get(eventTypes) || []).length > 0,
-      locations: !!get(location),
-      period: !!get(period),
-      protocols: (get(protocols) || []).length > 0,
-      validators: !!get(validators),
-    }, entryTypes),
-    history: get(mainPage) ? 'router' : false,
+      eventSubtypes: (toValue(eventSubTypes) || []).length > 0,
+      eventTypes: (toValue(eventTypes) || []).length > 0,
+      locations: !!toValue(location),
+      period: !!toValue(period),
+      protocols: (toValue(protocols) || []).length > 0,
+      validators: !!toValue(validators),
+    }, computed<HistoryEventEntryType[] | undefined>(() => toValue(entryTypes))),
+    history: toValue(mainPage) ? 'router' : false,
     onUpdateFilters(query) {
       const parsedLocationLabels = RouterLocationLabelsSchema.parse(query);
       const locationLabelsParsed = parsedLocationLabels.locationLabels;
@@ -237,28 +237,31 @@ export function useHistoryEventsFilters(
     requestParams: computed<Partial<HistoryEventRequestPayload>>(() => {
       const params: Writeable<Partial<HistoryEventRequestPayload>> = {
         aggregateByGroupIds: true,
-        counterparties: get(protocols),
-        eventSubtypes: get(eventSubTypes),
-        eventTypes: get(eventTypes),
+        counterparties: toValue(protocols),
+        eventSubtypes: toValue(eventSubTypes),
+        eventTypes: toValue(eventTypes),
         identifiers: get(missingAcquisitionFromQuery),
       };
 
       const accountsValue = get(usedLocationLabels);
 
-      if (isDefined(location))
-        params.location = toSnakeCase(get(location));
+      const locationVal = toValue(location);
+      if (locationVal !== undefined)
+        params.location = toSnakeCase(locationVal);
 
       if (accountsValue.length > 0)
         params.locationLabels = get(usedLocationLabels);
 
-      if (isDefined(period)) {
-        const { fromTimestamp, toTimestamp } = get(period);
+      const periodVal = toValue(period);
+      if (periodVal !== undefined) {
+        const { fromTimestamp, toTimestamp } = periodVal;
         params.fromTimestamp = fromTimestamp;
         params.toTimestamp = toTimestamp;
       }
 
-      if (isDefined(validators) && get(validators))
-        params.validatorIndices = get(validators)?.map(v => v.toString()) || [];
+      const validatorsVal = toValue(validators);
+      if (validatorsVal !== undefined && validatorsVal)
+        params.validatorIndices = validatorsVal.map(v => v.toString()) || [];
 
       return params;
     }),
@@ -307,7 +310,7 @@ export function useHistoryEventsFilters(
   });
 
   const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
-    const entryTypesValue = get(entryTypes);
+    const entryTypesValue = toValue(entryTypes);
     return {
       evmEvents: entryTypesValue ? entryTypesValue.some(type => isEvmEventType(type)) : true,
       onlineEvents: entryTypesValue ? entryTypesValue.some(type => isOnlineHistoryEventType(type)) : true,

@@ -10,25 +10,20 @@ const primaryValue = defineModel<string>('primaryValue', { required: true });
 const secondaryValue = defineModel<string>('secondaryValue', { required: true });
 const reversed = defineModel<boolean>('reversed', { default: false });
 
-const props = withDefaults(
-  defineProps<{
-    label?: { primary?: string; secondary?: string };
-    errorMessages?: {
-      primary?: string | string[];
-      secondary?: string | string[];
-    };
-    loading?: boolean;
-    disabled?: boolean;
-  }>(),
-  {
-    disabled: false,
-    errorMessages: () => ({}),
-    label: () => ({}),
-    loading: false,
-  },
-);
-
-const { disabled, errorMessages } = toRefs(props);
+const {
+  disabled = false,
+  errorMessages = {},
+  label = {},
+  loading = false,
+} = defineProps<{
+  label?: { primary?: string; secondary?: string };
+  errorMessages?: {
+    primary?: string | string[];
+    secondary?: string | string[];
+  };
+  loading?: boolean;
+  disabled?: boolean;
+}>();
 
 const primaryInput = useTemplateRef<InstanceType<typeof AmountInput>>('primaryInput');
 const secondaryInput = useTemplateRef<InstanceType<typeof AmountInput>>('secondaryInput');
@@ -45,9 +40,8 @@ function reverse(): void {
 }
 
 const aggregatedErrorMessages = computed<string[]>(() => {
-  const val = get(errorMessages);
-  const primary = val?.primary || [];
-  const secondary = val?.secondary || [];
+  const primary = errorMessages?.primary || [];
+  const secondary = errorMessages?.secondary || [];
 
   return [...arrayify(primary), ...arrayify(secondary)];
 });

@@ -15,7 +15,15 @@ import { CURRENCY_USD } from '@/types/currencies';
 import { groupAssetBreakdown } from '@/utils/balances';
 import { calculatePercentage } from '@/utils/calculation';
 
-const props = withDefaults(defineProps<{
+const {
+  assets,
+  blockchainOnly = false,
+  details,
+  identifier,
+  isLiability = false,
+  showPercentage = false,
+  total,
+} = defineProps<{
   identifier: string;
   assets: string[];
   details?: {
@@ -26,29 +34,21 @@ const props = withDefaults(defineProps<{
   showPercentage?: boolean;
   total?: BigNumber;
   isLiability?: boolean;
-}>(), {
-  blockchainOnly: false,
-  isLiability: false,
-  showPercentage: false,
-  total: undefined,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { blockchainOnly, showPercentage, total } = toRefs(props);
 const { useAssetBreakdown } = useAssetBalancesBreakdown();
 const { matchChain } = useSupportedChains();
 
 const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
-  const assets = props.assets.length > 0 ? props.assets : [props.identifier];
+  const usedAssets = assets.length > 0 ? assets : [identifier];
   const breakdown: Record<string, AssetBreakdown[]> = {};
-  const details = props.details;
-  const isLiability = props.isLiability;
 
-  for (const asset of assets) {
+  for (const asset of usedAssets) {
     breakdown[asset] = get(useAssetBreakdown(asset, isLiability, {
       ...details,
-      blockchainOnly: get(blockchainOnly),
+      blockchainOnly,
     }));
   }
 
@@ -103,7 +103,7 @@ const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
     sortable: true,
   }];
 
-  if (get(showPercentage)) {
+  if (showPercentage) {
     cols.push({
       align: 'end',
       cellClass: 'py-2',
@@ -119,11 +119,10 @@ const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
 useRememberTableSorting<AssetBreakdown>(TableId.EVM_NATIVE_TOKEN_BREAKDOWN, sort, cols);
 
 function percentage(value: BigNumber) {
-  const totalVal = get(total);
-  if (!totalVal)
+  if (!total)
     return '';
 
-  return calculatePercentage(value, totalVal);
+  return calculatePercentage(value, total);
 }
 
 function getAssets(location: string): AssetBalance[] {

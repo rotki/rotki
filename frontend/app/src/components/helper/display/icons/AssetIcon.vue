@@ -30,23 +30,23 @@ interface AssetIconProps {
   optimizeForVirtualScroll?: boolean;
 }
 
-const props = withDefaults(defineProps<AssetIconProps>(), {
-  circle: false,
-  enableAssociation: true,
-  flat: false,
-  forceChain: undefined,
-  noTooltip: false,
-  optimizeForVirtualScroll: false,
-  padding: '2px',
-  resolutionOptions: () => ({}),
-  showChain: true,
-});
+const {
+  chainIconSize,
+  circle,
+  flat = false,
+  forceChain,
+  identifier,
+  noTooltip = false,
+  optimizeForVirtualScroll = false,
+  padding = '2px',
+  resolutionOptions = {},
+  showChain = true,
+  size,
+} = defineProps<AssetIconProps>();
 
 const emit = defineEmits<{ click: [] }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { chainIconSize, identifier, padding, resolutionOptions, showChain, size } = toRefs(props);
 
 const error = ref<boolean>(false);
 const pending = ref<boolean>(true);
@@ -57,7 +57,7 @@ const { currencies } = useCurrencies();
 const { assetInfo } = useAssetInfoRetrieval();
 
 const mappedIdentifier = computed<string>(() => {
-  const id = getIdentifierFromSymbolMap(get(identifier));
+  const id = getIdentifierFromSymbolMap(identifier);
   return isBlockchain(id) ? id.toUpperCase() : id;
 });
 
@@ -67,14 +67,14 @@ const currency = computed<string | undefined>(() => {
   return fiatCurrencies.find(({ tickerSymbol }) => tickerSymbol === id)?.unicodeSymbol;
 });
 
-const asset = assetInfo(mappedIdentifier, resolutionOptions);
+const asset = assetInfo(mappedIdentifier, () => resolutionOptions);
 const url = reactify(getAssetImageUrl)(mappedIdentifier);
 
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);
 
 const chain = computed(() => {
-  if (props.forceChain) {
-    return props.forceChain;
+  if (forceChain) {
+    return forceChain;
   }
 
   const info = get(asset);
@@ -137,19 +137,17 @@ const tooltip = computed(() => {
 // Popper options - disable scroll listeners for virtualized lists to prevent reflow during scroll
 const popperOptions = computed(() => ({
   placement: 'top' as const,
-  scroll: !props.optimizeForVirtualScroll,
-  resize: !props.optimizeForVirtualScroll,
+  scroll: !optimizeForVirtualScroll,
+  resize: !optimizeForVirtualScroll,
 }));
 
-const usedChainIconSize = computed(() => get(chainIconSize) || `${(Number.parseInt(get(size)) * 50) / 100}px`);
-const usedProtocolIconSize = computed(() => get(chainIconSize) || `${(Number.parseInt(get(size)) * 40) / 100}px`);
+const usedChainIconSize = computed(() => chainIconSize || `${(Number.parseInt(size) * 50) / 100}px`);
+const usedProtocolIconSize = computed(() => chainIconSize || `${(Number.parseInt(size) * 40) / 100}px`);
 
 const chainIconMargin = computed(() => `-${get(usedChainIconSize)}`);
 
 const placeholderStyle = computed(() => {
-  const pad = get(padding);
-  const width = get(size);
-  const prop = `calc(${pad} + ${pad} + ${width})`;
+  const prop = `calc(${padding} + ${padding} + ${size})`;
   return {
     height: prop,
     width: prop,
@@ -175,7 +173,7 @@ watchImmediate(mappedIdentifier, async (identifier) => {
   }
 });
 
-const { copied, copy } = useCopy(identifier);
+const { copied, copy } = useCopy(() => identifier);
 </script>
 
 <template>

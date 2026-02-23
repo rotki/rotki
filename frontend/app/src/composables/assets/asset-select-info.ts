@@ -1,5 +1,5 @@
 import type { AssetInfo } from '@rotki/common';
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AssetMap } from '@/types/asset';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { getAssociatedAssetIdentifier, processAssetInfo, useAssetAssociationMap } from '@/composables/assets/common';
@@ -11,9 +11,9 @@ interface AssetWithResolutionStatus extends AssetInfo {
 }
 
 interface UseAssetSelectInfoReturn {
-  assetInfo: (identifier: MaybeRef<string | undefined>) => ComputedRef<AssetWithResolutionStatus | null>;
-  assetSymbol: (identifier: MaybeRef<string | undefined>) => ComputedRef<string>;
-  assetName: (identifier: MaybeRef<string | undefined>) => ComputedRef<string>;
+  assetInfo: (identifier: MaybeRefOrGetter<string | undefined>) => ComputedRef<AssetWithResolutionStatus | null>;
+  assetSymbol: (identifier: MaybeRefOrGetter<string | undefined>) => ComputedRef<string>;
+  assetName: (identifier: MaybeRefOrGetter<string | undefined>) => ComputedRef<string>;
 }
 
 export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoReturn => {
@@ -110,9 +110,9 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
   }
 
   const assetInfo = (
-    identifier: MaybeRef<string | undefined>,
+    identifier: MaybeRefOrGetter<string | undefined>,
   ): ComputedRef<AssetWithResolutionStatus | null> => computed(() => {
-    const id = get(identifier);
+    const id = toValue(identifier);
     if (!id)
       return null;
 
@@ -140,9 +140,9 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
   });
 
   const assetSymbol = (
-    identifier: MaybeRef<string | undefined>,
+    identifier: MaybeRefOrGetter<string | undefined>,
   ): ComputedRef<string> => computed(() => {
-    const id = get(identifier);
+    const id = toValue(identifier);
     if (!id)
       return '';
 
@@ -151,9 +151,9 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
   });
 
   const assetName = (
-    identifier: MaybeRef<string | undefined>,
+    identifier: MaybeRefOrGetter<string | undefined>,
   ): ComputedRef<string> => computed(() => {
-    const id = get(identifier);
+    const id = toValue(identifier);
     if (!id)
       return '';
 

@@ -25,7 +25,19 @@ defineOptions({
 const search = defineModel<string>('search', { default: '', required: false });
 const selected = defineModel<string[] | undefined>('selected', { required: false });
 
-const props = withDefaults(defineProps<{
+const {
+  allBreakdown = false,
+  balances,
+  details,
+  hideBreakdown = false,
+  hideTotal = false,
+  isLiability = false,
+  loading = false,
+  selectionMode = false,
+  showPerProtocol = false,
+  stickyHeader = false,
+  visibleColumns = [] as TableColumn[],
+} = defineProps<{
   balances: AssetBalanceWithPrice[];
   details?: {
     groupId?: string;
@@ -40,22 +52,9 @@ const props = withDefaults(defineProps<{
   visibleColumns?: TableColumn[];
   showPerProtocol?: boolean;
   selectionMode?: boolean;
-}>(), {
-  allBreakdown: false,
-  details: undefined,
-  hideBreakdown: false,
-  hideTotal: false,
-  isLiability: false,
-  loading: false,
-  selectionMode: false,
-  showPerProtocol: false,
-  stickyHeader: false,
-  visibleColumns: () => [],
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { balances } = toRefs(props);
 const expanded = ref<AssetBalanceWithPrice[]>([]);
 
 const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
@@ -74,7 +73,7 @@ const isExpanded = (asset: string) => some(get(expanded), { asset });
 
 function shouldShowRowExpander(row: AssetBalanceWithPrice): boolean {
   const hasBreakdown = Boolean(row.breakdown);
-  const shouldShowNativeBreakdown = (!props.hideBreakdown && isEvmNativeToken(row.asset)) ?? false;
+  const shouldShowNativeBreakdown = (!hideBreakdown && isEvmNativeToken(row.asset)) ?? false;
   const hasPerProtocolDetails = (row.perProtocol && row.perProtocol.length > 1) ?? false;
   return hasBreakdown || shouldShowNativeBreakdown || hasPerProtocolDetails;
 }
@@ -87,7 +86,7 @@ function assetFilter(item: Nullable<AssetBalance>) {
   return assetFilterByKeyword(item, get(debouncedSearch), assetName, assetSymbol);
 }
 
-const filteredBalances = computed(() => get(balances).filter(assetFilter));
+const filteredBalances = computed(() => balances.filter(assetFilter));
 
 const total = computed<BigNumber>(() => bigNumberSum(get(filteredBalances).map(({ value }) => value)));
 
@@ -131,7 +130,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     sortable: true,
   }];
 
-  if (props.showPerProtocol) {
+  if (showPerProtocol) {
     headers.splice(1, 0, {
       align: 'end',
       cellClass: 'py-0',
@@ -142,7 +141,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     });
   }
 
-  if (props.visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
+  if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE)) {
     headers.push({
       align: 'end',
       cellClass: 'py-0',
@@ -152,7 +151,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
     });
   }
 
-  if (props.visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
+  if (visibleColumns.includes(TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP)) {
     headers.push({
       align: 'end',
       cellClass: 'py-0',
@@ -170,9 +169,9 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => {
 const rowAppendLabelColspan = computed(() => {
   let colspan = 3;
 
-  if (props.selectionMode)
+  if (selectionMode)
     colspan++;
-  if (props.showPerProtocol)
+  if (showPerProtocol)
     colspan++;
 
   return colspan;

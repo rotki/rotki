@@ -34,20 +34,18 @@ const ignoredFilter = defineModel<IgnoredFilter>('ignoredFilter', { required: tr
 
 const expanded = defineModel<SupportedAsset[]>('expanded', { required: true });
 
-const props = withDefaults(defineProps<{
+const { collection, ignoredAssets, loading = false, matchers } = defineProps<{
   collection: Collection<SupportedAsset>;
   matchers: Matcher[];
   ignoredAssets: string[];
   loading?: boolean;
-}>(), { loading: false });
+}>();
 
 const emit = defineEmits<{
   'refresh': [];
   'edit': [asset: SupportedAsset];
   'delete-asset': [asset: SupportedAsset];
 }>();
-
-const { collection } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
 
 const edit = (asset: SupportedAsset) => emit('edit', asset);
@@ -70,11 +68,11 @@ const { cols, data, expand, isExpanded } = useManagedAssetTable(
   sortModel,
   paginationModel,
   expanded,
-  collection,
+  () => collection,
 );
 
 const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAssetDisplayHelpers(
-  collection,
+  () => collection,
   useIsAssetWhitelisted,
 );
 
@@ -85,7 +83,7 @@ const spamDisabled = computed<boolean>(() => {
   if (selectedIds.length === 0)
     return false;
 
-  const assets = get(collection).data;
+  const assets = collection.data;
   return !selectedIds.some((id) => {
     const asset = assets.find(a => a.identifier === id);
     return asset && isSpammableAssetType(asset.assetType);

@@ -1,11 +1,11 @@
-import type { Ref } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 
 interface UseCopyReturn {
   copy: () => Promise<void>;
   copied: Ref<boolean>;
 }
 
-export function useCopy(source: Ref<string>): UseCopyReturn {
+export function useCopy(source: MaybeRefOrGetter<string>): UseCopyReturn {
   const copied = ref<boolean>(false);
 
   const { copy: copyText } = useClipboard({

@@ -10,22 +10,18 @@ import { useMessageStore } from '@/store/message';
 const open = defineModel<boolean>('open', { required: true });
 const savedAssetId = defineModel<string>('savedAssetId', { required: false });
 
-const props = withDefaults(
-  defineProps<{
-    editableItem?: CustomAsset | null;
-    types?: string[];
-  }>(),
-  {
-    editableItem: null,
-    types: () => [],
-  },
-);
+const {
+  editableItem = null,
+  types = [],
+} = defineProps<{
+  editableItem?: CustomAsset | null;
+  types?: string[];
+}>();
 
 const emit = defineEmits<{
   refresh: [];
 }>();
 
-const { editableItem } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
 
 const modelValue = ref<CustomAsset>();
@@ -57,7 +53,7 @@ async function save() {
   let success;
   let identifier = data.identifier;
 
-  const editMode = !!get(editableItem);
+  const editMode = !!editableItem;
   set(loading, true);
   try {
     if (editMode) {
@@ -92,12 +88,12 @@ async function save() {
 }
 
 const dialogTitle = computed<string>(() =>
-  get(editableItem)
+  editableItem
     ? t('asset_management.edit_title')
     : t('asset_management.add_title'),
 );
 
-watchImmediate([open, editableItem], ([open, editableItem]) => {
+watchImmediate([open, () => editableItem], ([open, editableItem]) => {
   if (!open) {
     set(modelValue, undefined);
   }

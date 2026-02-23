@@ -14,54 +14,51 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    asset: NftAsset;
-    changeable?: boolean;
-    hideActions?: boolean;
-    dense?: boolean;
-    enableAssociation?: boolean;
-    showChain?: boolean;
-    isCollectionParent?: boolean;
-    hideMenu?: boolean;
-    iconOnly?: boolean;
-    size?: string;
-    forceChain?: string;
-    optimizeForVirtualScroll?: boolean;
-  }>(),
-  {
-    changeable: false,
-    dense: false,
-    enableAssociation: true,
-    hideActions: false,
-    hideMenu: false,
-    iconOnly: false,
-    isCollectionParent: false,
-    optimizeForVirtualScroll: false,
-    showChain: true,
-    size: '30px',
-  },
-);
+const {
+  asset,
+  changeable,
+  dense,
+  enableAssociation = true,
+  forceChain,
+  hideActions,
+  hideMenu = false,
+  iconOnly,
+  isCollectionParent = false,
+  optimizeForVirtualScroll,
+  showChain = true,
+  size = '30px',
+} = defineProps<{
+  asset: NftAsset;
+  changeable?: boolean;
+  hideActions?: boolean;
+  dense?: boolean;
+  enableAssociation?: boolean;
+  showChain?: boolean;
+  isCollectionParent?: boolean;
+  hideMenu?: boolean;
+  iconOnly?: boolean;
+  size?: string;
+  forceChain?: string;
+  optimizeForVirtualScroll?: boolean;
+}>();
 
 const emit = defineEmits<{
   refresh: [];
 }>();
 
-const { asset, hideMenu, isCollectionParent } = toRefs(props);
-
 const menuOpened = ref<boolean>(false);
 
-const symbol = useRefMap(asset, asset => asset.symbol ?? '');
-const name = useRefMap(asset, asset => asset.name ?? '');
+const symbol = useRefMap(() => asset, asset => asset.symbol ?? '');
+const name = useRefMap(() => asset, asset => asset.name ?? '');
 
 const { isPending } = useAssetCacheStore();
-const identifier = useRefMap(asset, asset => asset.identifier);
+const identifier = useRefMap(() => asset, asset => asset.identifier);
 const loading = computed<boolean>(() => get(isPending(identifier)));
 
 const [DefineImage, ReuseImage] = createReusableTemplate();
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
 
-const { navigateToDetails } = useAssetPageNavigation(identifier, isCollectionParent);
+const { navigateToDetails } = useAssetPageNavigation(identifier, () => isCollectionParent);
 
 watch(menuOpened, (menuOpened) => {
   if (!menuOpened) {
@@ -79,7 +76,7 @@ function useContextMenu(attrs: Record<string, any>) {
   return {
     ...omit(attrs, ['onClick']),
     onClick: () => {
-      if (!get(hideMenu)) {
+      if (!hideMenu) {
         navigateToDetails();
       }
     },

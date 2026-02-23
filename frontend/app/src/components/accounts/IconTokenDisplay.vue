@@ -5,21 +5,16 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { AssetAmountDisplay } from '@/modules/amount-display/components';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-const props = withDefaults(defineProps<{
+const { assets, visible = 3 } = defineProps<{
   assets: AssetBalance[];
   loading: boolean;
   visible?: number;
   resolutionOptions?: AssetResolutionOptions;
   showChain?: boolean;
-}>(), {
-  resolutionOptions: () => ({ collectionParent: false }),
-  showChain: false,
-  visible: 3,
-});
+}>();
 
-const { assets, visible } = toRefs(props);
 const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
-const showMore = computed<number>(() => get(assets).length - get(visible));
+const showMore = computed<number>(() => assets.length - visible);
 const router = useRouter();
 
 async function navigateToAsset(asset: AssetBalance): Promise<void> {

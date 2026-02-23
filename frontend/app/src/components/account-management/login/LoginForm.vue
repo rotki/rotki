@@ -18,16 +18,15 @@ import { deleteBackendUrl, getBackendUrl, saveBackendUrl } from '@/utils/account
 import { compareTextByKeyword } from '@/utils/assets';
 import { toMessages } from '@/utils/validation';
 
-const props = withDefaults(
-  defineProps<{
-    loading: boolean;
-    isDocker?: boolean;
-    errors?: string[];
-  }>(),
-  {
-    errors: () => [],
-  },
-);
+const {
+  errors = [] as string[],
+  isDocker,
+  loading,
+} = defineProps<{
+  loading: boolean;
+  isDocker?: boolean;
+  errors?: string[];
+}>();
 
 const emit = defineEmits<{
   'touched': [];
@@ -39,7 +38,6 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const isTest = import.meta.env.VITE_TEST;
-const { errors, isDocker } = toRefs(props);
 
 const usersApi = useUsersApi();
 const authStore = useSessionAuthStore();
@@ -112,10 +110,10 @@ watch([username, password], ([username, password], [oldUsername, oldPassword]) =
     touched();
 });
 
-const isLoggedInError = useArraySome(errors, error => error.includes('is already logged in'));
+const isLoggedInError = useArraySome(() => errors, error => error.includes('is already logged in'));
 
-const usernameError = useArrayFind(errors, error => error.startsWith('User '));
-const passwordError = useArrayFind(errors, error => error.startsWith('Wrong password '));
+const usernameError = useArrayFind(() => errors, error => error.startsWith('User '));
+const passwordError = useArrayFind(() => errors, error => error.startsWith('Wrong password '));
 
 const savedUsernames = ref<string[]>([]);
 
@@ -198,7 +196,7 @@ function clearCustomBackend() {
 }
 
 function checkRememberUsername() {
-  set(rememberUsername, !!get(savedRememberUsername) || !!get(savedRememberPassword) || !get(isDocker));
+  set(rememberUsername, !!get(savedRememberUsername) || !!get(savedRememberPassword) || !isDocker);
 }
 
 async function loadSettings() {
@@ -210,7 +208,7 @@ async function loadSettings() {
   set(customBackendSessionOnly, sessionOnly);
   set(customBackendSaved, !!url);
 
-  if (get(errors).length > 0)
+  if (errors.length > 0)
     return;
 
   if (isPackaged && get(rememberPassword) && get(username)) {
