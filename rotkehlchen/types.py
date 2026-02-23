@@ -1493,3 +1493,11 @@ class HistoryEventQueryType(SerializableEnumNameMixin):
     BLOCK_PRODUCTIONS = auto()
     MONERIUM = auto()
     GNOSIS_PAY = auto()
+
+
+class ExchangePurgeType(SerializableEnumNameMixin):
+    """Supported categories for CEX data purging."""
+    ALL = auto()
+    TRADES = auto()
+    ASSET_MOVEMENTS = auto()
+    OTHER = auto()

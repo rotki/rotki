@@ -348,6 +348,29 @@ describe('composables/api/balances/exchanges', () => {
       expect(result).toBe(true);
     });
 
+    it('deletes exchange data for a specific category', async () => {
+      let capturedUrl = '';
+      let capturedParams: URLSearchParams | null = null;
+
+      server.use(
+        http.delete(`${backendUrl}/api/1/exchanges/data/poloniex`, ({ request }) => {
+          capturedUrl = request.url;
+          capturedParams = new URL(request.url).searchParams;
+          return HttpResponse.json({
+            result: true,
+            message: '',
+          });
+        }),
+      );
+
+      const { deleteExchangeData } = useExchangeApi();
+      const result = await deleteExchangeData('poloniex', 'asset_movements');
+
+      expect(capturedUrl).toContain('/exchanges/data/poloniex');
+      expect(capturedParams!.get('data_type')).toBe('asset_movements');
+      expect(result).toBe(true);
+    });
+
     it('throws error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/exchanges/data`, () =>

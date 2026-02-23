@@ -104,6 +104,124 @@ def test_purge_single_exchange_data(
     check_saved_events_for_exchange(Location.BINANCE, rotki.data.db, should_exist=True)
 
 
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_purge_exchange_data_by_category(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    db = rotki.data.db
+    target_location = Location.POLONIEX
+    history_db = DBHistoryEvents(db)
+    with db.user_write() as cursor:
+        history_db.add_history_events(write_cursor=cursor, history=[
+            HistoryEvent(
+                group_identifier='purge-category-trade',
+                sequence_index=0,
+                timestamp=TimestampMS(1),
+                location=target_location,
+                location_label='poloniex',
+                asset=A_BTC,
+                amount=ONE,
+                event_type=HistoryEventType.TRADE,
+                event_subtype=HistoryEventSubType.SPEND,
+            ),
+            HistoryEvent(
+                group_identifier='purge-category-movement',
+                sequence_index=0,
+                timestamp=TimestampMS(2),
+                location=target_location,
+                location_label='poloniex',
+                asset=A_BTC,
+                amount=ONE,
+                event_type=HistoryEventType.EXCHANGE_TRANSFER,
+                event_subtype=HistoryEventSubType.RECEIVE,
+            ),
+            HistoryEvent(
+                group_identifier='purge-category-adjustment',
+                sequence_index=0,
+                timestamp=TimestampMS(3),
+                location=target_location,
+                location_label='poloniex',
+                asset=A_BTC,
+                amount=ONE,
+                event_type=HistoryEventType.EXCHANGE_ADJUSTMENT,
+                event_subtype=HistoryEventSubType.SPEND,
+            ),
+            HistoryEvent(
+                group_identifier='purge-category-other',
+                sequence_index=0,
+                timestamp=TimestampMS(4),
+                location=target_location,
+                location_label='poloniex',
+                asset=A_BTC,
+                amount=ONE,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.REWARD,
+            ),
+        ])
+        db.update_used_query_range(
+            write_cursor=cursor,
+            name='poloniex_trades_poloniex',
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(10),
+        )
+        db.update_used_query_range(
+            write_cursor=cursor,
+            name='poloniex_asset_movements_poloniex',
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(10),
+        )
+        db.update_used_query_range(
+            write_cursor=cursor,
+            name='poloniex_history_events_poloniex',
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(10),
+        )
+
+    response = requests.delete(
+        f'{api_url_for(rotkehlchen_api_server_with_exchanges, "named_exchanges_data_resource", location=target_location)}?data_type=asset_movements',  # noqa: E501
+    )
+    assert_simple_ok_response(response)
+
+    with db.conn.read_ctx() as cursor:
+        remaining_types = {
+            row[0] for row in cursor.execute(
+                'SELECT type FROM history_events WHERE location=?',
+                (target_location.serialize_for_db(),),
+            )
+        }
+        assert remaining_types == {
+            HistoryEventType.TRADE.serialize(),
+            HistoryEventType.STAKING.serialize(),
+        }
+        assert db.get_used_query_range(cursor, 'poloniex_asset_movements_poloniex') is None
+        assert db.get_used_query_range(cursor, 'poloniex_trades_poloniex') == (Timestamp(0), Timestamp(10))  # noqa: E501
+        assert db.get_used_query_range(cursor, 'poloniex_history_events_poloniex') == (Timestamp(0), Timestamp(10))  # noqa: E501
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_purge_exchange_data_by_category_without_shared_range_fallback(
+        rotkehlchen_api_server_with_exchanges: 'APIServer',
+) -> None:
+    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
+    db = rotki.data.db
+    target_location = Location.POLONIEX
+    with db.user_write() as cursor:
+        db.update_used_query_range(
+            write_cursor=cursor,
+            name='poloniex_history_events_poloniex',
+            start_ts=Timestamp(0),
+            end_ts=Timestamp(10),
+        )
+
+    response = requests.delete(
+        f'{api_url_for(rotkehlchen_api_server_with_exchanges, "named_exchanges_data_resource", location=target_location)}?data_type=trades',  # noqa: E501
+    )
+    assert_simple_ok_response(response)
+    with db.conn.read_ctx() as cursor:
+        assert db.get_used_query_range(cursor, 'poloniex_history_events_poloniex') == (Timestamp(0), Timestamp(10))  # noqa: E501
+
+
 def test_purge_blockchain_transaction_data(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     addr1 = make_evm_address()

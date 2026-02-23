@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`11639` Users can now search for settings across all settings pages and navigate directly to a specific setting.
+* :feature:`11621` users can now selectively purge exchange history by event category.
 * :feature:`-` rotki can now resolved non .eth ENS names
 * :feature:`-` Balancer v3 Gauge reward claims should now be properly decoded.
 * :feature:`-` Sky PSM direct swaps should now be properly decoded.

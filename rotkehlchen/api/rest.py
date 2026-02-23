@@ -187,6 +187,7 @@ from rotkehlchen.types import (
     CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
     EVMTxHash,
+    ExchangePurgeType,
     ExternalService,
     ExternalServiceApiCredentials,
     HexColorCode,
@@ -1955,13 +1956,25 @@ class RestAPI:
         response_data = self.transactions_service.delete_watchers(watchers)
         return make_response_from_dict(response_data)
 
-    def purge_exchange_data(self, location: Location | None) -> Response:
+    def purge_exchange_data(
+            self,
+            location: Location | None,
+            data_type: ExchangePurgeType,
+    ) -> Response:
         with self.rotkehlchen.data.db.user_write() as cursor:
             if location:
-                self.rotkehlchen.data.db.purge_exchange_data(cursor, location)
+                self.rotkehlchen.data.db.purge_exchange_data(
+                    write_cursor=cursor,
+                    location=location,
+                    data_type=data_type,
+                )
             else:
                 for exchange_location in ALL_SUPPORTED_EXCHANGES:
-                    self.rotkehlchen.data.db.purge_exchange_data(cursor, exchange_location)
+                    self.rotkehlchen.data.db.purge_exchange_data(
+                        write_cursor=cursor,
+                        location=exchange_location,
+                        data_type=data_type,
+                    )
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 

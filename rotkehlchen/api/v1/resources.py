@@ -274,6 +274,7 @@ from rotkehlchen.types import (
     CounterpartyAssetMappingUpdateEntry,
     Eth2PubKey,
     EVMTxHash,
+    ExchangePurgeType,
     ExternalService,
     ExternalServiceApiCredentials,
     HexColorCode,
@@ -628,9 +629,9 @@ class ExchangesDataResource(BaseMethodView):
     delete_schema = ExchangesDataResourceSchema()
 
     @require_loggedin_user()
-    @use_kwargs(delete_schema, location='view_args')
-    def delete(self, location: Location | None) -> Response:
-        return self.rest_api.purge_exchange_data(location=location)
+    @use_kwargs(delete_schema, location='json_and_query_and_view_args')
+    def delete(self, location: Location | None, data_type: ExchangePurgeType) -> Response:
+        return self.rest_api.purge_exchange_data(location=location, data_type=data_type)
 
 
 class AssociatedLocations(BaseMethodView):

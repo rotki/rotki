@@ -118,6 +118,7 @@ from rotkehlchen.exchanges.kraken import KrakenAccountType
 from rotkehlchen.exchanges.okx import OkxLocation
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, deserialize_timestamp
@@ -142,6 +143,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     ExchangeApiCredentials,
     ExchangeLocationID,
+    ExchangePurgeType,
     ExternalService,
     ExternalServiceApiCredentials,
     HexColorCode,
@@ -177,6 +179,15 @@ TABLES_WITH_ASSETS = (
 )
 
 DB_BACKUP_RE = re.compile(r'(\d+)_rotkehlchen_db_v(\d+).backup')
+
+EXCHANGE_TRADE_EVENT_TYPES: tuple[str, ...] = (
+    HistoryEventType.TRADE.serialize(),
+    HistoryEventType.MULTI_TRADE.serialize(),
+)
+EXCHANGE_ASSET_MOVEMENT_EVENT_TYPES: tuple[str, ...] = (
+    HistoryEventType.EXCHANGE_TRANSFER.serialize(),
+    HistoryEventType.EXCHANGE_ADJUSTMENT.serialize(),
+)
 
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
@@ -1310,30 +1321,85 @@ class DBHandler:
             write_cursor: 'DBCursor',
             location: Location,
             exchange_name: str | None = None,
+            data_type: ExchangePurgeType = ExchangePurgeType.ALL,
     ) -> None:
         """Delete the query ranges for the given exchange name"""
-        names_to_delete = f'{location!s}\\_%'
-        if exchange_name is not None:
-            names_to_delete += f'\\_{exchange_name}'
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-            (names_to_delete, '\\'),
-        )
-        write_cursor.execute(
-            'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
-            (names_to_delete, '\\'),
-        )
+        if data_type == ExchangePurgeType.ALL:
+            ranges_to_delete = [f'{location!s}\\_%']
+            if exchange_name is not None:
+                ranges_to_delete = [f'{location!s}\\_%\\_{exchange_name}']
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
+                (ranges_to_delete[0], '\\'),
+            )
+        elif data_type == ExchangePurgeType.TRADES:
+            ranges_to_delete = [
+                f'{location!s}\\_trades\\_%'
+                if exchange_name is None else
+                f'{location!s}\\_trades\\_{exchange_name}',
+            ]
+        elif data_type == ExchangePurgeType.ASSET_MOVEMENTS:
+            ranges_to_delete = [
+                f'{location!s}\\_asset_movements\\_%'
+                if exchange_name is None else
+                f'{location!s}\\_asset_movements\\_{exchange_name}',
+            ]
+        else:  # ExchangePurgeType.OTHER
+            ranges_to_delete = [
+                f'{location!s}\\_history_events\\_%'
+                if exchange_name is None else
+                f'{location!s}\\_history_events\\_{exchange_name}',
+            ]
 
-    def purge_exchange_data(self, write_cursor: 'DBCursor', location: Location) -> None:
-        self.delete_used_query_range_for_exchange(write_cursor=write_cursor, location=location)
-        (events_db := DBHistoryEvents(database=self)).restore_matched_events_before_purge(
+        for pattern in ranges_to_delete:
+            write_cursor.execute(
+                'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+                (pattern, '\\'),
+            )
+            write_cursor.execute(
+                'DELETE FROM key_value_cache WHERE name LIKE ? ESCAPE ?;',
+                (pattern, '\\'),
+            )
+
+    def purge_exchange_data(
+            self,
+            write_cursor: 'DBCursor',
+            location: Location,
+            data_type: ExchangePurgeType = ExchangePurgeType.ALL,
+    ) -> None:
+        self.delete_used_query_range_for_exchange(
             write_cursor=write_cursor,
             location=location,
+            data_type=data_type,
         )
+        events_db = DBHistoryEvents(database=self)
+        if data_type in (ExchangePurgeType.ALL, ExchangePurgeType.ASSET_MOVEMENTS):
+            events_db.restore_matched_events_before_purge(
+                write_cursor=write_cursor,
+                location=location,
+            )
+
+        where_clause = 'WHERE location = ?'
+        where_bindings: tuple[str, ...] = (location.serialize_for_db(),)
+        if data_type == ExchangePurgeType.TRADES:
+            where_clause += f' AND type IN ({",".join("?" for _ in EXCHANGE_TRADE_EVENT_TYPES)})'
+            where_bindings += tuple(EXCHANGE_TRADE_EVENT_TYPES)
+        elif data_type == ExchangePurgeType.ASSET_MOVEMENTS:
+            where_clause += (
+                f' AND type IN ({",".join("?" for _ in EXCHANGE_ASSET_MOVEMENT_EVENT_TYPES)})'
+            )
+            where_bindings += tuple(EXCHANGE_ASSET_MOVEMENT_EVENT_TYPES)
+        elif data_type == ExchangePurgeType.OTHER:
+            excluded_types = tuple(
+                EXCHANGE_TRADE_EVENT_TYPES + EXCHANGE_ASSET_MOVEMENT_EVENT_TYPES,
+            )
+            where_clause += f' AND type NOT IN ({",".join("?" for _ in excluded_types)})'
+            where_bindings += excluded_types
+
         events_db.delete_events_and_track(
             write_cursor=write_cursor,
-            where_clause='WHERE location = ?',
-            where_bindings=(location.serialize_for_db(),),
+            where_clause=where_clause,
+            where_bindings=where_bindings,
         )
 
     def update_used_query_range(self, write_cursor: 'DBCursor', name: str, start_ts: Timestamp, end_ts: Timestamp) -> None:  # noqa: E501

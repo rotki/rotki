@@ -20,12 +20,17 @@ interface UseExchangeApiReturn {
   getExchanges: () => Promise<Exchanges>;
   queryBinanceMarkets: (location: string) => Promise<string[]>;
   queryBinanceUserMarkets: (name: string, location: string) => Promise<string[]>;
-  deleteExchangeData: (name?: string) => Promise<boolean>;
+  deleteExchangeData: (
+    name?: string,
+    dataType?: 'all' | 'trades' | 'asset_movements' | 'other',
+  ) => Promise<boolean>;
   getExchangeSavingsTask: (payload: ExchangeSavingsRequestPayload) => Promise<PendingTask>;
   getExchangeSavings: (payload: ExchangeSavingsRequestPayload) => Promise<ExchangeSavingsCollectionResponse>;
 }
 
 export function useExchangeApi(): UseExchangeApiReturn {
+  type ExchangePurgeType = 'all' | 'trades' | 'asset_movements' | 'other';
+
   const queryRemoveExchange = async ({ location, name }: Exchange): Promise<boolean> => api.delete<boolean>('/exchanges', {
     body: {
       location,
@@ -85,12 +90,14 @@ export function useExchangeApi(): UseExchangeApiReturn {
     query: { location },
   });
 
-  const deleteExchangeData = async (name?: string): Promise<boolean> => {
+  const deleteExchangeData = async (name?: string, dataType: ExchangePurgeType = 'all'): Promise<boolean> => {
     let url = `/exchanges/data`;
     if (name)
       url += `/${name}`;
 
-    return api.delete<boolean>(url);
+    return api.delete<boolean>(url, {
+      query: dataType === 'all' ? undefined : { dataType },
+    });
   };
 
   const getExchangeSavingsTask = async (payload: ExchangeSavingsRequestPayload): Promise<PendingTask> => {
