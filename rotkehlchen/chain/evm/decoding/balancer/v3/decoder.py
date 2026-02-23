@@ -8,7 +8,7 @@ from eth_abi import decode as decode_abi
 from rotkehlchen.assets.utils import asset_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.balancer_cache import (
     read_balancer_pools_and_gauges_from_cache,
 )
@@ -16,9 +16,12 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import BALANCER_LABEL, CP
 from rotkehlchen.chain.evm.decoding.balancer.decoder import BalancerCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
+    EnricherContext,
     EvmDecodingOutput,
+    TransferEnrichmentOutput,
 )
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -74,6 +77,36 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
         # no-op implementation of abstract method from ReloadablePoolsAndGaugesDecoderMixin.
         # balancer v3 pool deposits and withdrawals are handled by _decode_liquidity_event.
         return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _maybe_enrich_gauge_claim_reward(
+            self,
+            context: EnricherContext,
+    ) -> TransferEnrichmentOutput:
+        if (
+            context.event.address not in self.gauges or
+            context.event.event_type != HistoryEventType.RECEIVE or
+            context.event.event_subtype != HistoryEventSubType.NONE
+        ):
+            return FAILED_ENRICHMENT_OUTPUT
+
+        for tx_log in context.all_logs:
+            if (
+                tx_log.address in self.gauges and
+                tx_log.topics[0] in (DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2)
+            ):
+                return FAILED_ENRICHMENT_OUTPUT
+            if (
+                tx_log.address == VAULT_ADDRESS and
+                tx_log.topics[0] in (LIQUIDITY_ADDED_TOPIC, LIQUIDITY_REMOVED_TOPIC, SWAP_TOPIC)
+            ):
+                return FAILED_ENRICHMENT_OUTPUT
+
+        context.event.event_subtype = HistoryEventSubType.REWARD
+        context.event.counterparty = CPT_BALANCER_V3
+        context.event.notes = (
+            f'Claim {context.event.amount} {context.token.symbol} from a balancer-v3 gauge'
+        )
+        return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V3)
 
     def _decode_liquidity_event(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode liquidity events (inflow & outflow) for Balancer V3 pools."""
@@ -300,6 +333,9 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
         return super().addresses_to_decoders() | {
             VAULT_ADDRESS: (self._decode_vault_events,),
         }
+
+    def enricher_rules(self) -> list[Callable]:
+        return [self._maybe_enrich_gauge_claim_reward]
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
         return {

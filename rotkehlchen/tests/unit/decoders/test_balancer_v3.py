@@ -80,6 +80,55 @@ def test_add_liquidity_imbalanced(ethereum_inquirer: 'EthereumInquirer', ethereu
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V3]])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x8F747d43b6bFE7A1AC2aCf63B4d6B255Eb3c7383']])
+def test_gauge_claim_rewards_arbitrum(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
+        globaldb: 'GlobalDBHandler',
+) -> None:
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.BALANCER_V3_GAUGES, str(arbitrum_one_inquirer.chain_id.value)),
+            values=['0xEF2A09B9C4679Ca642C9211d54E9E361E77B2C09'],
+        )
+
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xbcdb4f97d661e746f478ccc3ca6c8ef7f174cff820f6d0c47e2a40d0d9be8365')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1753518245000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.00000148867')),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=Asset('eip155:42161/erc20:0x0c06cCF38114ddfc35e07427B9424adcca9F44F8'),
+        amount=(reward_amount := FVal('24.828703036032904366')),
+        location_label=user_address,
+        notes=f'Claim {reward_amount} EURe from a balancer-v3 gauge',
+        counterparty=CPT_BALANCER_V3,
+        address=string_to_evm_address('0xEF2A09B9C4679Ca642C9211d54E9E361E77B2C09'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xF8E85fD6A2a73A5d2CC9df4209Ac0C1dc16E15a4']])
 def test_add_liquidity_proportionally(arbitrum_one_inquirer: 'ArbitrumOneInquirer', arbitrum_one_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x0ea5100f442d6a998af7c91226d9d5685acbc628e7c838703d30c5b3002cec6c')  # noqa: E501
