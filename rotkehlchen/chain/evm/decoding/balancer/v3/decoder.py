@@ -246,20 +246,13 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
             decoded_events: list['EvmEvent'],
             all_logs: list['EvmTxReceiptLog'],
     ) -> list['EvmEvent']:
-        """Process Balancer v3 swap events by consolidating transfers into proper trade events.
-
-        Reads swap logs to identify which tokens are involved in swaps, then transforms
-        corresponding transfer events into trade events. Removes duplicate events for the same token.
-        """  # noqa: E501
+        """Process Balancer v3 swap events into consolidated trade events."""
         in_assets, out_assets = set(), set()
         for tx_log in all_logs:
             if tx_log.topics[0] != SWAP_TOPIC:
                 continue
 
-            # track involved assets only, not amounts. When multiple swaps occur in a transaction,
-            # wrapping/unwrapping operations can happen before swaps, so using individual
-            # swap log amounts would miss wrapped token portions and only capture direct
-            # swap amounts, leading to incomplete event matching across the full transaction flow
+            # Track assets, not per-log amounts, to account for wrapping/unwrapping around swaps.
             if (token_out := self.base.get_or_create_evm_asset(bytes_to_address(tx_log.topics[2]))) == self.node_inquirer.wrapped_native_token:  # noqa: E501
                 out_assets.add(self.node_inquirer.native_token)
             if (token_in := self.base.get_or_create_evm_asset(bytes_to_address(tx_log.topics[3]))) == self.node_inquirer.wrapped_native_token:  # noqa: E501
@@ -301,24 +294,15 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
             log.error(f'Failed to find in/out event for balancer v3 swap in transaction {transaction}')  # noqa: E501
             return decoded_events
 
-        # transform the found events
-        out_event.event_type = HistoryEventType.TRADE
-        out_event.event_subtype = HistoryEventSubType.SPEND
-        out_event.counterparty = CPT_BALANCER_V3
         out_event.amount = out_amounts[out_event.asset]
-        out_event.notes = f'Swap {out_event.amount} {out_event.asset.resolve_to_asset_with_symbol().symbol} in Balancer v3'  # noqa: E501
-
-        in_event.event_type = HistoryEventType.TRADE
-        in_event.event_subtype = HistoryEventSubType.RECEIVE
-        in_event.counterparty = CPT_BALANCER_V3
         in_event.amount = in_amounts[in_event.asset]
-        in_event.notes = f'Receive {in_event.amount} {in_event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap in Balancer v3'  # noqa: E501
         for event in events_to_remove:
             decoded_events.remove(event)
 
-        maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
-            events_list=decoded_events,
+        self._finalize_swap_events(
+            decoded_events=decoded_events,
+            spend_event=out_event,
+            receive_event=in_event,
         )
         return decoded_events
 

@@ -221,3 +221,31 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
             )
 
         return decoded_events
+
+    def _finalize_swap_events(
+            self,
+            decoded_events: list['EvmEvent'],
+            spend_event: 'EvmEvent',
+            receive_event: 'EvmEvent',
+    ) -> None:
+        spend_event.event_type, receive_event.event_type = (
+            HistoryEventType.TRADE, HistoryEventType.TRADE,
+        )
+        spend_event.event_subtype, receive_event.event_subtype = (
+            HistoryEventSubType.SPEND, HistoryEventSubType.RECEIVE,
+        )
+        spend_event.counterparty = receive_event.counterparty = self.counterparty
+        spend_event.notes = (
+            f'Swap {spend_event.amount} '
+            f'{spend_event.asset.resolve_to_asset_with_symbol().symbol} '
+            f'in {(balancer_label := "Balancer " + self.counterparty[-2:])}'
+        )
+        receive_event.notes = (
+            f'Receive {receive_event.amount} '
+            f'{receive_event.asset.resolve_to_asset_with_symbol().symbol} '
+            f'as the result of a swap in {balancer_label}'
+        )
+        maybe_reshuffle_events(
+            ordered_events=[spend_event, receive_event],
+            events_list=decoded_events,
+        )

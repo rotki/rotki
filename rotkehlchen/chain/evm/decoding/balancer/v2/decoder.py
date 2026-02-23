@@ -111,10 +111,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.notes = f'Deposit {event.amount} {token.symbol} to a Balancer v2 pool'
                 send_events.append(event)
 
-        # in _check_deposits_withdrawals we expect the receive to be the last event.
-        # This happens almost always but there are some cases like rETH on arb where it doesn't.
-        # This reshuffle ensures that the receive event is always the last one before grouping
-        # them in _check_deposits_withdrawals.
+        # Keep receive last before grouping in _check_deposits_withdrawals.
         maybe_reshuffle_events(
             ordered_events=send_events + receive_events,
             events_list=context.decoded_events,
@@ -135,14 +132,7 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             decoded_events: list['EvmEvent'],
             all_logs: list['EvmTxReceiptLog'],
     ) -> list['EvmEvent']:
-        """Decode swaps in Balancer v2. SWAP tx_log events are created at the tx start containing
-        token and amount information, followed by transfer executions. Since tokens may be swapped
-        multiple times before reaching the desired token, the tokens and amounts from all present
-        swap logs must be matched against the events.
-
-        Native assets are wrapped/unwrapped before/after the swap, so the token shows as a
-        wrapped native asset, but we have a native asset transfer from the user.
-        """
+        """Decode Balancer v2 swaps by matching swap logs against transfer events."""
         token_amounts_spent, token_amounts_received = set(), set()
         for tx_log in all_logs:
             if tx_log.topics[0] == V2_SWAP:
@@ -170,27 +160,20 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 )) in token_amounts_spent and
                 event.event_type == HistoryEventType.SPEND
             ):
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.SPEND
-                event.notes = f'Swap {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} via Balancer v2'  # noqa: E501
-                event.counterparty = CPT_BALANCER_V2
                 spend_event = event
             elif (
                 event_token_amount in token_amounts_received and
                 event.event_type == HistoryEventType.RECEIVE
             ):
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.RECEIVE
-                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap via Balancer v2'  # noqa: E501
-                event.counterparty = CPT_BALANCER_V2
                 receive_event = event
 
         if spend_event is None or receive_event is None:
             log.error(f'Failed to find both in and out events for a Balancer v2 swap in {transaction}')  # noqa: E501
         else:
-            maybe_reshuffle_events(
-                ordered_events=[spend_event, receive_event],
-                events_list=decoded_events,
+            self._finalize_swap_events(
+                decoded_events=decoded_events,
+                spend_event=spend_event,
+                receive_event=receive_event,
             )
 
         return decoded_events
