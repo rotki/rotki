@@ -598,85 +598,25 @@ def test_makerdao_sai_repay_sai(ethereum_transaction_decoder):
     assert events == expected_events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_5]])
-def test_makerdao_sai_deposit_weth(ethereum_transaction_decoder):
-    """
-    Data for deposit is taken from
-    https://etherscan.io/tx/0x5a7849ab4b7f7de2b005deddef24a094387c248c3bcb06066109bd7852c1d8af
-    """
-    tx_hash = deserialize_evm_tx_hash('0x5a7849ab4b7f7de2b005deddef24a094387c248c3bcb06066109bd7852c1d8af')  # noqa: E501
-    transaction = EvmTransaction(
-        chain_id=ChainID.ETHEREUM,
-        tx_hash=tx_hash,
-        timestamp=1513955555,
-        block_number=4777359,
-        from_address=ADDY_5,
-        to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
-        value=0,
-        gas=139590,
-        gas_price=40000000000,
-        gas_used=92590,
-        input_data=hexstring_to_bytes('0x049878f3000000000000000000000000000000000000000000000004e1003b28d9280000'),
-        nonce=250,
+def test_makerdao_sai_deposit_weth(ethereum_inquirer):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5a7849ab4b7f7de2b005deddef24a094387c248c3bcb06066109bd7852c1d8af')),  # noqa: E501,
     )
-    receipt = EvmTxReceipt(
-        tx_hash=tx_hash,
-        chain_id=ChainID.ETHEREUM,
-        contract_address=None,
-        status=True,
-        tx_type=0,
-        logs=[
-            EvmTxReceiptLog(
-                log_index=2,
-                data=hexstring_to_bytes('000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000024049878f3000000000000000000000000000000000000000000000004e1003b28d9280000'),
-                address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
-                topics=[
-                    hexstring_to_bytes('0x049878f300000000000000000000000000000000000000000000000000000000'),
-                    hexstring_to_bytes('0x0000000000000000000000008d44eaae757884f4f8fb4664d07acecee71cfd89'),
-                    hexstring_to_bytes('0x000000000000000000000000000000000000000000000004e1003b28d9280000'),
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=3,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000004e14781c3f76dad52'),
-                address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x0000000000000000000000008d44eaae757884f4f8fb4664d07acecee71cfd89'),
-                    hexstring_to_bytes('0x000000000000000000000000448a5065aebb8e423f0896e6c5d525c040f59af3'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=4,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000004e1003b28d9280000'),
-                address=string_to_evm_address('0xf53AD2c6851052A81B42133467480961B2321C09'),
-                topics=[
-                    hexstring_to_bytes('0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885'),
-                    hexstring_to_bytes('0x0000000000000000000000008d44eaae757884f4f8fb4664d07acecee71cfd89'),
-                ],
-            ),
-        ],
-    )
-    dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
-    events, _, _ = ethereum_transaction_decoder._decode_transaction(
-        transaction=transaction,
-        tx_receipt=receipt,
-    )
-
-    timestamp = TimestampMS(1513955555000)
     expected_events = [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1513955555000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal('0.0037036'),
+            amount=FVal(gas_str := '0.0037036'),
             location_label=ADDY_5,
-            notes='Burn 0.0037036 ETH for gas',
+            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -686,9 +626,9 @@ def test_makerdao_sai_deposit_weth(ethereum_transaction_decoder):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_WETH,
-            amount=FVal('90.02006235538821461'),
+            amount=FVal(amount_str := '90.02006235538821461'),
             location_label=ADDY_5,
-            notes='Supply 90.02006235538821461 WETH to Sai vault',
+            notes=f'Supply {amount_str} WETH to Sai vault',
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ), EvmEvent(
@@ -699,9 +639,9 @@ def test_makerdao_sai_deposit_weth(ethereum_transaction_decoder):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=A_PETH,
-            amount=FVal('90'),
+            amount=FVal(receive_str := '90'),
             location_label=ADDY_5,
-            notes='Receive 90 PETH from Sai Vault',
+            notes=f'Receive {receive_str} PETH from Sai Vault',
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
         ),
@@ -709,77 +649,26 @@ def test_makerdao_sai_deposit_weth(ethereum_transaction_decoder):
     assert events == expected_events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_5]])
-def test_makerdao_sai_deposit_peth(ethereum_transaction_decoder):
-    """
-    Data for deposit is taken from
-    https://etherscan.io/tx/0xc8bd1d3556706e659e907b515185ce7e139777229f257e79a6b0b26e2a536e2c
-    """
-    tx_hash = deserialize_evm_tx_hash('0xc8bd1d3556706e659e907b515185ce7e139777229f257e79a6b0b26e2a536e2c')  # noqa: E501
-    transaction = EvmTransaction(
-        chain_id=ChainID.ETHEREUM,
-        tx_hash=tx_hash,
-        timestamp=1513955635,
-        block_number=4777359,
-        from_address=ADDY_5,
-        to_address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
-        value=0,
-        gas=74253,
-        gas_price=40000000000,
-        gas_used=34502,
-        input_data=hexstring_to_bytes('0xb3b77a510000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000004e1003b28d9280000'),
-        nonce=251,
-    )
-    receipt = EvmTxReceipt(
-        tx_hash=tx_hash,
-        chain_id=ChainID.ETHEREUM,
-        contract_address=None,
-        status=True,
-        tx_type=0,
-        logs=[
-            EvmTxReceiptLog(
-                log_index=30,
-                data=hexstring_to_bytes('000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000400000000000000000000000000000000000000000000000000000000000000044b3b77a510000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000004e1003b28d9280000'),
-                address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),
-                topics=[
-                    hexstring_to_bytes('0xb3b77a5100000000000000000000000000000000000000000000000000000000'),
-                    hexstring_to_bytes('0x0000000000000000000000008d44eaae757884f4f8fb4664d07acecee71cfd89'),
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000003'),
-                    hexstring_to_bytes('0x000000000000000000000000000000000000000000000004e1003b28d9280000'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=31,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000004e1003b28d9280000'),
-                address=string_to_evm_address('0xf53AD2c6851052A81B42133467480961B2321C09'),
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x0000000000000000000000008d44eaae757884f4f8fb4664d07acecee71cfd89'),
-                    hexstring_to_bytes('0x000000000000000000000000448a5065aebb8e423f0896e6c5d525c040f59af3'),
-                ],
-            ),
-        ],
-    )
-    dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_transactions(cursor, [transaction], relevant_address=None)
-    events, _, _ = ethereum_transaction_decoder._decode_transaction(
-        transaction=transaction,
-        tx_receipt=receipt,
+def test_makerdao_sai_deposit_peth(ethereum_inquirer):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xc8bd1d3556706e659e907b515185ce7e139777229f257e79a6b0b26e2a536e2c')),  # noqa: E501,
     )
 
-    timestamp = TimestampMS(1513955635000)
     expected_events = [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1513955635000)),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal('0.00138008'),
+            amount=FVal(gas_str := '0.00138008'),
             location_label=ADDY_5,
-            notes='Burn 0.00138008 ETH for gas',
+            notes=f'Burn {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_ref=tx_hash,
@@ -789,8 +678,8 @@ def test_makerdao_sai_deposit_peth(ethereum_transaction_decoder):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_TO_PROTOCOL,
             asset=A_PETH,
-            amount=FVal('90'),
-            notes='Increase CDP collateral by 90 PETH',
+            amount=FVal(amount_str := '90'),
+            notes=f'Increase CDP collateral by {amount_str} PETH',
             location_label=ADDY_5,
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x448a5065aeBB8E423F0896E6c5D525C040f59af3'),

@@ -95,6 +95,7 @@ class Balancerv3CommonDecoder(BalancerCommonDecoder):
                 tx_log.topics[0] in (DEPOSIT_TOPIC_V2, WITHDRAW_TOPIC_V2)
             ):
                 return FAILED_ENRICHMENT_OUTPUT
+
             if (
                 tx_log.address == VAULT_ADDRESS and
                 tx_log.topics[0] in (LIQUIDITY_ADDED_TOPIC, LIQUIDITY_REMOVED_TOPIC, SWAP_TOPIC)
