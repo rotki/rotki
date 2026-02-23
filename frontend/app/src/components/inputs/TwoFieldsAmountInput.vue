@@ -30,8 +30,8 @@ const props = withDefaults(
 
 const { disabled, errorMessages } = toRefs(props);
 
-const primaryInput = ref<InstanceType<typeof AmountInput> | null>(null);
-const secondaryInput = ref<InstanceType<typeof AmountInput> | null>(null);
+const primaryInput = useTemplateRef<InstanceType<typeof AmountInput>>('primaryInput');
+const secondaryInput = useTemplateRef<InstanceType<typeof AmountInput>>('secondaryInput');
 
 function reverse(): void {
   const newReversed = !get(reversed);

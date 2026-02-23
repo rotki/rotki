@@ -20,7 +20,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const form = ref<InstanceType<typeof AccountForm>>();
+const form = useTemplateRef<InstanceType<typeof AccountForm>>('form');
 const stateUpdated = ref(false);
 
 const title = computed<string>(() =>

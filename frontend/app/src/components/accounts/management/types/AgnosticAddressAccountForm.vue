@@ -13,7 +13,7 @@ defineProps<{
   loading: boolean;
 }>();
 
-const address = ref<InstanceType<typeof AddressInput>>();
+const address = useTemplateRef<InstanceType<typeof AddressInput>>('address');
 
 const editMode = computed(() => get(modelValue).mode === 'edit');
 

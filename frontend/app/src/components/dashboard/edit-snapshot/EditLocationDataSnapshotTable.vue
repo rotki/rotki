@@ -41,7 +41,7 @@ const sort = ref<DataTableSortData<LocationDataSnapshot>>({
   column: 'usdValue',
   direction: 'desc' as const,
 });
-const form = ref<InstanceType<typeof EditLocationDataSnapshotForm>>();
+const form = useTemplateRef<InstanceType<typeof EditLocationDataSnapshotForm>>('form');
 
 const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(() => [
   {

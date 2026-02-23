@@ -42,7 +42,7 @@ const props = withDefaults(defineProps<{
 const fetching = ref<boolean>(false);
 const dontAutoFetch = ref<boolean>(false);
 const underlyingTokens = ref<UnderlyingToken[]>([]);
-const assetIconFormRef = ref<InstanceType<typeof AssetIconForm> | null>(null);
+const assetIconFormRef = useTemplateRef<InstanceType<typeof AssetIconForm>>('assetIconFormRef');
 
 const identifier = useRefPropVModel(modelValue, 'identifier');
 const address = refOptional(useRefPropVModel(modelValue, 'address'), '');

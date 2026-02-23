@@ -25,7 +25,7 @@ const { clearError } = reportsStore;
 const isRunning = useIsTaskRunning(TaskType.TRADE_HISTORY);
 const importDataDialog = ref<boolean>(false);
 const reportDebugData = ref<File>();
-const reportDebugDataUploader = ref<InstanceType<typeof FileUpload>>();
+const reportDebugDataUploader = useTemplateRef<InstanceType<typeof FileUpload>>('reportDebugDataUploader');
 
 const router = useRouter();
 const route = useRoute();

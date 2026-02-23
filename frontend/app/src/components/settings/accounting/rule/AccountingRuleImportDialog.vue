@@ -15,7 +15,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const importFileUploader = ref<InstanceType<typeof FileUpload>>();
+const importFileUploader = useTemplateRef<InstanceType<typeof FileUpload>>('importFileUploader');
 const importFile = ref<File>();
 
 const { importJSON } = useAccountingSettings();

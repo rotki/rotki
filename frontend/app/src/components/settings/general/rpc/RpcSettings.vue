@@ -31,7 +31,7 @@ interface CustomRpcSettingTab {
 type RpcSettingTab = ChainRpcSettingTab | CustomRpcSettingTab;
 
 const rpcSettingTab = ref<number>(0);
-const evmRpcNodeManagerRef = ref<InstanceType<typeof BlockchainRpcNodeManager | typeof SimpleRpcNodeManager>[]>();
+const evmRpcNodeManagerRef = useTemplateRef<InstanceType<typeof BlockchainRpcNodeManager | typeof SimpleRpcNodeManager>[]>('evmRpcNodeManagerRef');
 
 const { txEvmChains } = useSupportedChains();
 const evmChainTabs = useArrayMap(txEvmChains, (chain) => {

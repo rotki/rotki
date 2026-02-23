@@ -45,7 +45,7 @@ const location = useRefPropVModel(model, 'location');
 const { t } = useI18n({ useScope: 'global' });
 
 const assetType = ref<string>('token');
-const assetPriceForm = ref<InstanceType<typeof EditBalancesSnapshotAssetPriceForm>>();
+const assetPriceForm = useTemplateRef<InstanceType<typeof EditBalancesSnapshotAssetPriceForm>>('assetPriceForm');
 
 const rules = {
   category: {

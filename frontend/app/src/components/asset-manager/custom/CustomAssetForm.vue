@@ -25,7 +25,7 @@ const customAssetType = useRefPropVModel(modelValue, 'customAssetType');
 const name = useRefPropVModel(modelValue, 'name');
 const notes = refOptional(useRefPropVModel(modelValue, 'notes'), '');
 
-const assetIconFormRef = ref<InstanceType<typeof AssetIconForm> | null>(null);
+const assetIconFormRef = useTemplateRef<InstanceType<typeof AssetIconForm>>('assetIconFormRef');
 
 const { t } = useI18n({ useScope: 'global' });
 

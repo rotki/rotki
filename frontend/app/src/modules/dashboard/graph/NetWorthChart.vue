@@ -17,8 +17,8 @@ const { chartData } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
-const chartContainer = ref<HTMLElement>();
-const chartInstance = ref<InstanceType<typeof VChart>>();
+const chartContainer = useTemplateRef<HTMLElement>('chartContainer');
+const chartInstance = useTemplateRef<InstanceType<typeof VChart>>('chartInstance');
 
 const selectedTimestamp = ref<number>(0);
 const selectedBalance = ref<BigNumber>(Zero);

@@ -16,7 +16,7 @@ defineProps<{
   loading: boolean;
 }>();
 
-const address = ref<InstanceType<typeof AddressInput>>();
+const address = useTemplateRef<InstanceType<typeof AddressInput>>('address');
 const selectedModules = ref<Module[]>([]);
 
 const { isEvm } = useSupportedChains();

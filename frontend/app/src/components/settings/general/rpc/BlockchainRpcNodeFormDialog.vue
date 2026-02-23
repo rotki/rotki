@@ -24,7 +24,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const errorMessages = ref<ValidationErrors>({});
 const submitting = ref<boolean>(false);
-const form = ref<InstanceType<typeof BlockchainRpcNodeForm>>();
+const form = useTemplateRef<InstanceType<typeof BlockchainRpcNodeForm>>('form');
 const stateUpdated = ref(false);
 
 const { getChainName } = useSupportedChains();

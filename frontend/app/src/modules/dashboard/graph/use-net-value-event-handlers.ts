@@ -1,13 +1,13 @@
 import type { EChartsType } from 'echarts/core';
-import type { Ref } from 'vue';
+import type { Ref, ShallowRef } from 'vue';
 import type VChart from 'vue-echarts';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { assert, type BigNumber } from '@rotki/common';
 import { type TooltipData, useGraphTooltip } from '@/composables/graphs';
 
 interface UseNetValueEventHandlersParams {
-  chartInstance: Ref<InstanceType<typeof VChart> | undefined>;
-  chartContainer: Ref<HTMLElement | undefined>;
+  chartInstance: Readonly<ShallowRef<InstanceType<typeof VChart> | null>>;
+  chartContainer: Readonly<ShallowRef<HTMLElement | null>>;
   chartData: Ref<NetValueChartData>;
   onHover: (timestamp: number, value: BigNumber) => void;
 }
