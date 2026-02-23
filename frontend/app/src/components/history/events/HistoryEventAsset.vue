@@ -130,8 +130,6 @@ function openMenuHandler(event: MouseEvent): void {
       ref="menuContentRef"
       :asset="currentAsset"
       icon-only
-      :hide-actions="false"
-      :is-collection-parent="false"
       @refresh="emit('refresh')"
     />
   </RuiMenu>
