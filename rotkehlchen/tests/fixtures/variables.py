@@ -1,15 +1,27 @@
+import re
 from collections.abc import Sequence
+from itertools import count
 
 import pytest
 
-from rotkehlchen.tests.utils.ports import get_free_port
 from rotkehlchen.types import Location
 
 
 @pytest.fixture(scope='session', name='port_generator')
-def fixture_port_generator(request):
-    """ count generator used to get a unique port number. """
-    return get_free_port('127.0.0.1', request.config.option.initial_port)
+def fixture_port_generator(request, worker_id):
+    """Generate deterministic non-overlapping ports across xdist workers."""
+    worker_idx = 0
+    if worker_id != 'master' and (match := re.match(r'gw(\d+)$', worker_id)) is not None:
+        worker_idx = int(match.group(1))
+
+    if hasattr(request.config, 'workerinput'):
+        worker_count = int(request.config.workerinput['workercount'])
+    else:
+        worker_count = int(request.config.option.numprocesses or 1)
+
+    step = max(1, worker_count)
+    start_port = int(request.config.option.initial_port) + worker_idx
+    return count(start_port, step)
 
 
 @pytest.fixture

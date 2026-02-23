@@ -22,6 +22,7 @@ from rotkehlchen.config import default_data_directory
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import TRACE, RotkehlchenLogsAdapter, add_logging_level, configure_logging
 from rotkehlchen.tests.utils.args import default_args
+from rotkehlchen.tests.utils.gevent import ensure_gevent_patches
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -71,6 +72,12 @@ def pytest_addoption(parser):
         help='If set then all tests that are aware of their mocking the network will not do that. Use this in order to easily skip mocks and test that using the network, the remote queries are still working fine and mocks dont need any changing.',  # noqa: E501
     )
     parser.addoption('--profiler', default=None, choices=['flamegraph-trace'])
+
+
+@pytest.hookimpl(tryfirst=True)
+def pytest_runtest_setup() -> None:
+    """Keep gevent socket patch active even if other plugins restore stdlib sockets."""
+    ensure_gevent_patches()
 
 
 if sys.platform == 'darwin':
@@ -362,7 +369,7 @@ def fixture_vcr_base_dir() -> Path:
     # pytest-deadfixtures ignore
     """
     depth_arg = ''  # In local environment we fetch all history to avoid making the local repo a shallow clone  # noqa: E501
-    if 'CI' in os.environ:
+    if 'CI' in os.environ and 'CASSETTES_DIR' in os.environ:
         # the CI action Ensure VCR branch is fully rebased handles it. Do nothing
         # Also important since running this with xdist and -n X then this runs X
         # times and causes the CI to fail dueto inconsistencies and multi cloning
