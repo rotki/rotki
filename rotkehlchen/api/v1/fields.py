@@ -1,10 +1,11 @@
 import logging
 import urllib
 from abc import ABC, abstractmethod
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
+from contextlib import suppress
 from enum import Enum, StrEnum
 from pathlib import Path
-from typing import Any, Generic, Literal
+from typing import Any, Final, Generic, Literal
 
 import webargs
 from eth_utils import to_checksum_address
@@ -23,6 +24,7 @@ from rotkehlchen.assets.asset import (
     CustomAsset,
     EvmToken,
     Nft,
+    SolanaToken,
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -578,17 +580,43 @@ class EvmChainLikeNameField(fields.Field):
         return chain
 
 
+def _deserialize_to_asset(real_value: str) -> Asset:
+    if real_value.startswith(NFT_DIRECTIVE):
+        return Nft(identifier=real_value)
+    return Asset(identifier=real_value).check_existence()
+
+
+def _deserialize_to_asset_with_name_and_type(real_value: str) -> AssetWithNameAndType:
+    return Asset(identifier=real_value).resolve_to_asset_with_name_and_type()
+
+
+def _deserialize_to_asset_with_oracles(real_value: str) -> AssetWithOracles:
+    return Asset(identifier=real_value).resolve_to_asset_with_oracles()
+
+
+ASSET_DESERIALIZERS: Final[dict[type, Callable[[str], Asset]]] = {
+    Asset: _deserialize_to_asset,
+    AssetWithNameAndType: _deserialize_to_asset_with_name_and_type,
+    AssetWithOracles: _deserialize_to_asset_with_oracles,
+    CryptoAsset: CryptoAsset,
+    CustomAsset: CustomAsset,
+    EvmToken: EvmToken,
+    SolanaToken: SolanaToken,
+}
+
+
 class AssetField(fields.Field):
 
     def __init__(
             self,
             *,
-            expected_type: type[Asset | (AssetWithNameAndType | (AssetWithOracles | (CryptoAsset | (EvmToken | CustomAsset))))],  # noqa: E501
+            expected_type: type[Asset | (AssetWithNameAndType | (AssetWithOracles | (CryptoAsset | (EvmToken | (SolanaToken | CustomAsset)))))],  # noqa: E501
             form_with_incomplete_data: bool = False,
             **kwargs: Any,
     ) -> None:
         self.expected_type = expected_type
         self.form_with_incomplete_data = form_with_incomplete_data
+        self._asset_deserializer = ASSET_DESERIALIZERS.get(expected_type, expected_type)
         super().__init__(**kwargs)
 
     @staticmethod
@@ -612,27 +640,43 @@ class AssetField(fields.Field):
             raise ValidationError(f'Tried to initialize an asset out of a non-string identifier {value}')  # noqa: E501
         # Since the identifier could be url encoded for evm tokens in urls we need to unquote it
         real_value: str = urllib.parse.unquote(value)
-        asset: Asset
         try:
-            if self.expected_type == Asset:
-                if real_value.startswith(NFT_DIRECTIVE):
-                    asset = Nft(identifier=real_value)
-                else:
-                    asset = Asset(identifier=real_value).check_existence()
-            elif self.expected_type == AssetWithNameAndType:
-                asset = Asset(identifier=real_value).resolve_to_asset_with_name_and_type()
-            elif self.expected_type == AssetWithOracles:
-                asset = Asset(identifier=real_value).resolve_to_asset_with_oracles()
-            elif self.expected_type == CryptoAsset:
-                asset = CryptoAsset(real_value)
-            elif self.expected_type == CustomAsset:
-                asset = CustomAsset(real_value)
-            else:  # EvmToken
-                asset = EvmToken(real_value)
+            return self._asset_deserializer(real_value)
         except (DeserializationError, UnknownAsset, WrongAssetType) as e:
             raise ValidationError(str(e)) from e
 
-        return asset
+
+class UnionAssetField(fields.Field):
+
+    def __init__(self, allowed_types: tuple[type[Asset], ...], **kwargs: Any) -> None:
+        self.allowed_types = allowed_types
+        self._deserializers = tuple(ASSET_DESERIALIZERS.get(t, t) for t in allowed_types)
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _serialize(
+            value: Asset | None,
+            attr: str | None,  # pylint: disable=unused-argument
+            obj: Any,
+            **_kwargs: Any,
+    ) -> str | None:
+        return value.identifier if value else None
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> Asset:
+        if isinstance(value, str) is False:
+            raise ValidationError(f'Tried to initialize an asset out of a non-string identifier {value}')  # noqa: E501
+        real_value: str = urllib.parse.unquote(value)
+        for deser in self._deserializers:
+            with suppress(DeserializationError, UnknownAsset, WrongAssetType):
+                return deser(real_value)
+        type_names = ', '.join(t.__name__ for t in self.allowed_types)
+        raise ValidationError(f'Asset {real_value} is not one of {type_names}')
 
 
 class MaybeAssetField(fields.Field):

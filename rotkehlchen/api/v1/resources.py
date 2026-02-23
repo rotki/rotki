@@ -212,6 +212,7 @@ from rotkehlchen.assets.asset import (
     CryptoAsset,
     CustomAsset,
     EvmToken,
+    SolanaToken,
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
@@ -3371,31 +3372,31 @@ class FalsePositiveSpamTokenResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_delete_schema, location='json_and_query')
-    def post(self, token: EvmToken) -> Response:
+    def post(self, token: EvmToken | SolanaToken) -> Response:
         return self.rest_api.add_to_spam_assets_false_positive(token=token)
 
     @require_loggedin_user()
     @use_kwargs(post_delete_schema, location='json_and_query')
-    def delete(self, token: EvmToken) -> Response:
+    def delete(self, token: EvmToken | SolanaToken) -> Response:
         return self.rest_api.remove_from_spam_assets_false_positives(token=token)
 
     def get(self) -> Response:
         return self.rest_api.get_spam_assets_false_positives()
 
 
-class SpamEvmTokenResource(BaseMethodView):
+class SpamTokenResource(BaseMethodView):
 
     delete_schema = SingleTokenSchema()
     post_schema = SpamTokenListSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
-    def post(self, tokens: list[EvmToken]) -> Response:
+    def post(self, tokens: list[EvmToken | SolanaToken]) -> Response:
         return self.rest_api.add_tokens_to_spam(tokens)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query')
-    def delete(self, token: EvmToken) -> Response:
+    def delete(self, token: EvmToken | SolanaToken) -> Response:
         return self.rest_api.remove_token_from_spam(token=token)
 
 

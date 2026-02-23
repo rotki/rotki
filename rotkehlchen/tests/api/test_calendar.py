@@ -471,3 +471,42 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer) -> None:
     )
     result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': []}
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('solana_accounts', [['So11111111111111111111111111111111111111112']])
+def test_calendar_solana_address_validation(
+        rotkehlchen_api_server: APIServer,
+) -> None:
+    """Test that Solana address validation works for calendar entries."""
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'calendarresource'),
+        json={
+            'timestamp': 1869737344,
+            'name': 'Solana event',
+            'description': 'A test event on Solana',
+            'address': 'So11111111111111111111111111111111111111112',
+            'blockchain': SupportedBlockchain.SOLANA.serialize(),
+            'color': 'ffffff',
+            'auto_delete': False,
+        },
+    )
+    assert_proper_sync_response_with_result(response)
+
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'calendarresource'),
+        json={
+            'timestamp': 1869737344,
+            'name': 'Bad Solana event',
+            'description': 'Should fail validation',
+            'address': 'notavalidsolanaaddress',
+            'blockchain': SupportedBlockchain.SOLANA.serialize(),
+            'color': 'ffffff',
+            'auto_delete': False,
+        },
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg='is not a solana address',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
