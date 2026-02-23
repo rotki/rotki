@@ -3,17 +3,15 @@ import { toSentenceCase } from '@rotki/common';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { type LocationProgress, LocationStatus } from '../types';
 
-const props = withDefaults(defineProps<{
+const { location } = defineProps<{
   location: LocationProgress;
   compact?: boolean;
-}>(), {
-  compact: false,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const isComplete = computed<boolean>(() => props.location.status === LocationStatus.COMPLETE);
-const isQuerying = computed<boolean>(() => props.location.status === LocationStatus.QUERYING);
+const isComplete = computed<boolean>(() => location.status === LocationStatus.COMPLETE);
+const isQuerying = computed<boolean>(() => location.status === LocationStatus.QUERYING);
 
 const statusIcon = computed<string>(() => {
   if (get(isComplete))
@@ -36,11 +34,11 @@ const statusText = computed<string>(() => {
     return t('sync_progress.status.complete');
 
   if (get(isQuerying)) {
-    if (props.location.eventType) {
-      const eventType = props.location.eventType;
+    if (location.eventType) {
+      const eventType = location.eventType;
       const type = eventType === 'history_query'
         ? t('common.events')
-        : toSentenceCase(props.location.eventType);
+        : toSentenceCase(location.eventType);
       return t('sync_progress.status.querying_event_type', { type });
     }
     return t('sync_progress.status.querying');

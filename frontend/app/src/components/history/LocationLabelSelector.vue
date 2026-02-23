@@ -22,18 +22,15 @@ const modelValue = defineModel<string[] | string>({
   set: (val: string[] | string | undefined) => val ?? '',
 });
 
-const props = withDefaults(defineProps<{
+const { options } = defineProps<{
   options?: LocationLabel[];
   noTruncate?: boolean;
-}>(), {
-  options: undefined,
-  noTruncate: false,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { locationLabels: storeLocationLabels } = storeToRefs(useHistoryStore());
 
-const locationLabelOptions = computed<LocationLabel[]>(() => props.options ?? get(storeLocationLabels));
+const locationLabelOptions = computed<LocationLabel[]>(() => options ?? get(storeLocationLabels));
 const { allTxChainsInfo, matchChain } = useSupportedChains();
 const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
 

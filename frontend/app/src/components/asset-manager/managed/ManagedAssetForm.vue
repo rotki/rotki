@@ -30,14 +30,11 @@ const modelValue = defineModel<SupportedAsset>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = withDefaults(defineProps<{
+const { editMode = false, assetTypes } = defineProps<{
   editMode?: boolean;
   loading?: boolean;
   assetTypes: string[];
-}>(), {
-  editMode: false,
-  loading: false,
-});
+}>();
 
 const fetching = ref<boolean>(false);
 const dontAutoFetch = ref<boolean>(false);
@@ -163,7 +160,7 @@ async function saveAsset() {
     assetPayload = omit(assetPayload, ['collectibleId']);
   }
 
-  if (props.editMode) {
+  if (editMode) {
     newIdentifier = get(identifier);
     await editAsset({ ...assetPayload, identifier: newIdentifier });
   }
@@ -210,7 +207,7 @@ function isValidEvmChain(evmChain: string) {
   return get(txEvmChains).some(({ evmChainName }) => evmChainName === evmChain);
 }
 
-const types = computed(() => props.assetTypes.filter(item => item !== CUSTOM_ASSET)
+const types = computed(() => assetTypes.filter(item => item !== CUSTOM_ASSET)
   .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })));
 
 watch([address, evmChain], async ([address, evmChain]) => {
@@ -240,7 +237,7 @@ watchImmediate(modelValue, (asset) => {
 });
 
 onMounted(() => {
-  set(dontAutoFetch, props.editMode);
+  set(dontAutoFetch, editMode);
 });
 
 defineExpose({

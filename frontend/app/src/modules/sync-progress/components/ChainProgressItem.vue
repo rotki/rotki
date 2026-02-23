@@ -4,17 +4,15 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { AddressStatus, type ChainProgress } from '../types';
 import AddressProgressItem from './AddressProgressItem.vue';
 
-const props = withDefaults(defineProps<{
+const { chain } = defineProps<{
   chain: ChainProgress;
   compact?: boolean;
-}>(), {
-  compact: false,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { getChainName } = useSupportedChains();
 
-const chainName = getChainName(computed(() => props.chain.chain));
+const chainName = getChainName(computed(() => chain.chain));
 
 const INITIAL_SHOW_COUNT = 5;
 
@@ -22,13 +20,13 @@ const expanded = ref<boolean>(false);
 const showAll = ref<boolean>(false);
 
 const isComplete = computed<boolean>(() =>
-  props.chain.completed === props.chain.total && props.chain.total > 0,
+  chain.completed === chain.total && chain.total > 0,
 );
 
-const hasActivity = computed<boolean>(() => props.chain.inProgress > 0);
+const hasActivity = computed<boolean>(() => chain.inProgress > 0);
 
 const sortedAddresses = computed(() =>
-  [...props.chain.addresses].sort((a, b) => {
+  [...chain.addresses].sort((a, b) => {
     const priority: Record<string, number> = {
       [AddressStatus.QUERYING]: 0,
       [AddressStatus.DECODING]: 1,
@@ -46,7 +44,7 @@ const visibleAddresses = computed(() => {
 });
 
 const remainingCount = computed<number>(() =>
-  Math.max(0, props.chain.addresses.length - INITIAL_SHOW_COUNT),
+  Math.max(0, chain.addresses.length - INITIAL_SHOW_COUNT),
 );
 
 const hasMore = computed<boolean>(() => get(remainingCount) > 0 && !get(showAll));

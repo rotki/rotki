@@ -7,21 +7,19 @@ interface Props {
   isClickable?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  isClickable: false,
-});
+const { isCurrent, isComplete, isClickable, stepNumber } = defineProps<Props>();
 
 const emit = defineEmits<{
   'click-step': [stepNumber: number];
 }>();
 
-const shouldShowContent = computed<boolean>(() => props.isCurrent || props.isComplete);
-const isHeaderClickable = computed<boolean>(() => props.isComplete && props.isClickable);
-const stepBadgeClass = computed<string>(() => props.isComplete ? 'bg-rui-success' : 'bg-rui-primary');
+const shouldShowContent = computed<boolean>(() => isCurrent || isComplete);
+const isHeaderClickable = computed<boolean>(() => isComplete && isClickable);
+const stepBadgeClass = computed<string>(() => isComplete ? 'bg-rui-success' : 'bg-rui-primary');
 
 function handleHeaderClick(): void {
   if (get(isHeaderClickable)) {
-    emit('click-step', props.stepNumber);
+    emit('click-step', stepNumber);
   }
 }
 </script>

@@ -17,7 +17,7 @@ const locationLabels = defineModel<string[]>('locationLabels', { required: true 
 
 const toggles = defineModel<HistoryEventsToggles>('toggles', { required: true });
 
-const props = withDefaults(defineProps<{
+const { ignoreStatus } = defineProps<{
   matchers: SearchMatcher<any, any>[];
   exportParams: HistoryEventRequestPayload;
   hideAccountSelector?: boolean;
@@ -25,12 +25,7 @@ const props = withDefaults(defineProps<{
   ignoreStatus?: IgnoreStatus;
   processing?: boolean;
   selection: SelectionState;
-}>(), {
-  hideAccountSelector: false,
-  hideRedecodeButtons: false,
-  ignoreStatus: undefined,
-  processing: false,
-});
+}>();
 
 const emit = defineEmits<{
   'redecode': [payload: 'all' | 'page' | string[]];
@@ -40,12 +35,12 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const canIgnore = computed<boolean>(() => {
-  const status = props.ignoreStatus;
+  const status = ignoreStatus;
   return status ? status.notIgnoredCount > 0 : false;
 });
 
 const canUnignore = computed<boolean>(() => {
-  const status = props.ignoreStatus;
+  const status = ignoreStatus;
   return status ? status.ignoredCount > 0 : false;
 });
 

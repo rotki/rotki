@@ -4,7 +4,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { usePremium } from '@/composables/premium';
 
-const props = withDefaults(defineProps<{
+const { events, entriesFoundTotal, found, total, limit } = defineProps<{
   colspan: number;
   label: string;
   total: number;
@@ -14,13 +14,7 @@ const props = withDefaults(defineProps<{
   timeEnd?: number;
   found?: number;
   entriesFoundTotal?: number;
-}>(), {
-  entriesFoundTotal: undefined,
-  events: false,
-  found: undefined,
-  timeEnd: 0,
-  timeStart: 0,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -36,7 +30,7 @@ if (false as boolean) {
 
 const messageKey = computed<string>(() => {
   const isPremium = get(premium);
-  if (props.events)
+  if (events)
     return isPremium ? 'upgrade_row.events_premium' : 'upgrade_row.events';
 
   return isPremium ? 'upgrade_row.upgrade_premium' : 'upgrade_row.upgrade';
@@ -54,8 +48,8 @@ const linkUrl = computed<string | undefined>(() => {
   return isPremium ? externalLinks.manageSubscriptions : undefined;
 });
 
-const displayTotal = computed<number>(() => props.entriesFoundTotal ?? props.total);
-const displayLimit = computed<number>(() => props.found ?? props.limit);
+const displayTotal = computed<number>(() => entriesFoundTotal ?? total);
+const displayLimit = computed<number>(() => found ?? limit);
 </script>
 
 <template>

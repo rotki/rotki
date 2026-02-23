@@ -3,21 +3,19 @@ import type { DecodingProgress } from '../types';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 
-const props = withDefaults(defineProps<{
+const { item } = defineProps<{
   item: DecodingProgress;
   compact?: boolean;
-}>(), {
-  compact: false,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 const { getChainName } = useSupportedChains();
 
-const chainName = getChainName(computed(() => props.item.chain));
+const chainName = getChainName(computed(() => item.chain));
 
-const isComplete = computed<boolean>(() => props.item.processed >= props.item.total);
-const isPending = computed<boolean>(() => props.item.processed === 0 && props.item.total > 0);
-const isInProgress = computed<boolean>(() => props.item.processed > 0 && props.item.processed < props.item.total);
+const isComplete = computed<boolean>(() => item.processed >= item.total);
+const isPending = computed<boolean>(() => item.processed === 0 && item.total > 0);
+const isInProgress = computed<boolean>(() => item.processed > 0 && item.processed < item.total);
 
 const statusIcon = computed<string>(() => {
   if (get(isComplete))
