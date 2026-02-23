@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Final, Literal, cast
 
 import requests
 
-from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
@@ -18,6 +17,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.utils import notify_reauthentication_required
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
@@ -130,10 +130,7 @@ class GnosisPay:
                     error_message = response.text
 
                 log.error(f'Failed to connect to the GnosisPay API due to {error_message}')
-                self.database.msg_aggregator.add_message(
-                    message_type=WSMessageType.GNOSISPAY_SESSIONKEY_EXPIRED,
-                    data={'error': 'Please sign in with GnosisPay again to refresh your data'},
-                )
+                notify_reauthentication_required(database=self.database, service='gnosispay')
 
             raise RemoteError(
                 f'Gnosis Pay API request {response.url} failed '
