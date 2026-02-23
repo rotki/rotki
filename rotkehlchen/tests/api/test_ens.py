@@ -197,3 +197,22 @@ def test_resolve_ens(rotkehlchen_api_server: 'APIServer') -> None:
     assert result is None
     with dbens.db.conn.read_ctx() as cursor:  # make sure it's also NOT in the DB
         assert dbens.get_address_for_name(cursor, 'isurelydontexistbecauseifid1drotkitestswouldbreak.eth') is None  # noqa: E501
+
+
+def test_resolve_non_eth_ens_domain(rotkehlchen_api_server: 'APIServer') -> None:
+    with patch('rotkehlchen.api.services.user_data.maybe_resolve_name') as maybe_resolve_name:
+        maybe_resolve_name.return_value = string_to_evm_address(
+            '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+        )
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'resolveensresource',
+            ),
+            json={'name': 'nick.box'},
+        )
+
+    result = assert_proper_sync_response_with_result(response)
+    assert result == '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
+    maybe_resolve_name.assert_called_once()
+    assert maybe_resolve_name.call_args.kwargs['name'] == 'nick.box'

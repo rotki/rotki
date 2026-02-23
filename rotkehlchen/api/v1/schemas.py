@@ -43,7 +43,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatus
 from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
-from rotkehlchen.chain.evm.decoding.ens.utils import is_potential_ens_name
+from rotkehlchen.chain.evm.decoding.ens.utils import is_valid_ens_name
 from rotkehlchen.chain.evm.types import EvmIndexer, SerializableChainIndexerOrder
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
@@ -2259,7 +2259,7 @@ def _validate_blockchain_account_schemas(
     if chain.is_evm():
         for account_data in data['accounts']:
             address_string = address_getter(account_data)
-            if not is_potential_ens_name(address_string):
+            if not is_valid_ens_name(address_string):
                 # Make sure that given value is an ethereum address
                 try:
                     address = to_checksum_address(address_string)
@@ -2285,7 +2285,7 @@ def _validate_blockchain_account_schemas(
             address = address_getter(account_data)
             # ENS domain will be checked in the transformation step
             if not (
-                is_potential_ens_name(address) or
+                is_valid_ens_name(address) or
                 is_valid_btc_address(address)
             ):
                 raise ValidationError(
@@ -2311,7 +2311,7 @@ def _validate_blockchain_account_schemas(
         for account_data in data['accounts']:
             address = address_getter(account_data)
             # ENS domain will be checked in the transformation step
-            if not is_potential_ens_name(address) and not is_valid_substrate_address(chain, address):  # noqa: E501
+            if not is_valid_ens_name(address) and not is_valid_substrate_address(chain, address):
                 raise ValidationError(
                     f'Given value {address} is not a valid {chain} address',
                     field_name='address',
@@ -2333,7 +2333,7 @@ def _transform_btc_or_bch_address(
 
     NB: ENS domains for BTC store the scriptpubkey. Check EIP-2304.
     """
-    if not is_potential_ens_name(given_address):
+    if not is_valid_ens_name(given_address):
         return BTCAddress(given_address)
 
     try:
@@ -2399,7 +2399,7 @@ def _transform_evm_address(
     try:
         address = to_checksum_address(given_address)
     except ValueError:
-        # Validation will only let .eth names come here. Let's see if it resolves to anything
+        # Validation allows ENS names here (.eth and supported DNS TLDs). Resolve it.
         address = _resolve_ens_name(
             ethereum_inquirer=ethereum_inquirer,
             name=given_address,
@@ -2428,7 +2428,7 @@ def _transform_substrate_address(
     ENS domain substrate public key encoding:
     https://github.com/ensdomains/address-encoder/blob/master/src/index.ts
     """
-    if not is_potential_ens_name(given_address):
+    if not is_valid_ens_name(given_address):
         return SubstrateAddress(given_address)
 
     try:
@@ -3444,7 +3444,7 @@ class ReverseEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
 
 
 class ResolveEnsSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    name = NonEmptyStringField(required=True)
+    name = NonEmptyStringField(required=True, validate=validate_predicate(is_valid_ens_name))
 
 
 class OptionalAddressesListSchema(Schema):
@@ -3954,7 +3954,7 @@ class BinanceSavingsSchema(BaseStakingQuerySchema):
 
 
 class EnsAvatarsSchema(Schema):
-    ens_name = NonEmptyStringField(required=True, validate=validate_predicate(is_potential_ens_name))  # noqa: E501
+    ens_name = NonEmptyStringField(required=True, validate=validate_predicate(is_valid_ens_name))
 
 
 class ClearCacheSchema(Schema):
@@ -3981,7 +3981,7 @@ class ClearIconsCacheSchema(Schema):
 
 class ClearAvatarsCacheSchema(Schema):
     entries = fields.List(
-        NonEmptyStringField(required=True, validate=validate_predicate(is_potential_ens_name)),
+        NonEmptyStringField(required=True, validate=validate_predicate(is_valid_ens_name)),
         load_default=None,
     )
 
