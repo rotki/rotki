@@ -30,10 +30,19 @@ const { t } = useI18n({ useScope: 'global' });
 
 const source = ref<Purgeable>(Purgeable.TRANSACTIONS);
 
+type CentralizedExchangePurgeType = 'all' | 'trades' | 'asset_movements' | 'other';
+
 const centralizedExchangeToClear = ref<string>('');
+const centralizedExchangeDataType = ref<CentralizedExchangePurgeType>('all');
 const decentralizedExchangeToClear = ref<string>('');
 const chainToClear = ref<string>('');
 const moduleToClear = ref<string>('');
+const centralizedExchangePurgeTypeOptions = computed<Array<{ id: CentralizedExchangePurgeType; text: string }>>(() => [
+  { id: 'all', text: 'All' },
+  { id: 'trades', text: 'Trades' },
+  { id: 'asset_movements', text: 'Deposits / Withdrawals' },
+  { id: 'other', text: 'Other events' },
+]);
 
 const purgeable = [
   {
@@ -76,7 +85,7 @@ async function purgeSource(source: Purgeable) {
     await deleteModuleData((value as Module) || null);
   }
   else if (source === Purgeable.CENTRALIZED_EXCHANGES) {
-    await deleteExchangeData(value);
+    await deleteExchangeData(value, get(centralizedExchangeDataType));
   }
   else if (source === Purgeable.DECENTRALIZED_EXCHANGES) {
     if (value)
@@ -183,6 +192,17 @@ const chainsSelection = useArrayMap(allTxChainsInfo, item => item.id);
         :items="allExchanges"
         :label="t('purge_selector.centralized_exchange_to_clear.label')"
         :hint="t('purge_selector.centralized_exchange_to_clear.hint')"
+      />
+      <RuiAutoComplete
+        v-if="source === Purgeable.CENTRALIZED_EXCHANGES"
+        v-model="centralizedExchangeDataType"
+        variant="outlined"
+        label="Data type"
+        :options="centralizedExchangePurgeTypeOptions"
+        text-attr="text"
+        key-attr="id"
+        hide-details
+        :disabled="pending"
       />
       <LocationSelector
         v-else-if="source === Purgeable.DECENTRALIZED_EXCHANGES"

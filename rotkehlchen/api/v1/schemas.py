@@ -153,6 +153,7 @@ from rotkehlchen.types import (
     CounterpartyAssetMappingDeleteEntry,
     CounterpartyAssetMappingUpdateEntry,
     ExchangeLocationID,
+    ExchangePurgeType,
     ExternalService,
     ExternalServiceApiCredentials,
     HistoryEventQueryType,
@@ -1982,6 +1983,10 @@ class ExchangesResourceAddSchema(BinanceMarketsSchemaMixin, KrakenFutureKeysSche
 
 class ExchangesDataResourceSchema(Schema):
     location = LocationField(limit_to=ALL_SUPPORTED_EXCHANGES, load_default=None)
+    data_type = SerializableEnumField(
+        enum_class=ExchangePurgeType,
+        load_default=ExchangePurgeType.ALL,
+    )
 
 
 class ExchangeEventsQuerySchema(AsyncQueryArgumentSchema):
