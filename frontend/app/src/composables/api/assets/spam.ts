@@ -8,7 +8,7 @@ interface UseAssetSpamApiReturn {
 
 export function useAssetSpamApi(): UseAssetSpamApiReturn {
   const markAssetsAsSpam = async (tokens: string[]): Promise<boolean> => api.post<boolean>(
-    '/assets/evm/spam/',
+    '/assets/spam',
     {
       tokens,
     },
@@ -17,7 +17,7 @@ export function useAssetSpamApi(): UseAssetSpamApiReturn {
     },
   );
 
-  const removeAssetFromSpamList = async (token: string): Promise<boolean> => api.delete<boolean>('/assets/evm/spam/', {
+  const removeAssetFromSpamList = async (token: string): Promise<boolean> => api.delete<boolean>('/assets/spam', {
     body: { token },
     validStatuses: VALID_WITHOUT_SESSION_STATUS,
   });

@@ -16,7 +16,7 @@ describe('composables/api/assets/spam', () => {
         let capturedBody: unknown;
 
         server.use(
-          http.post(`${backendUrl}/api/1/assets/evm/spam/`, async ({ request }) => {
+          http.post(`${backendUrl}/api/1/assets/spam`, async ({ request }) => {
             capturedBody = await request.json();
             return HttpResponse.json({
               result: true,
@@ -36,7 +36,7 @@ describe('composables/api/assets/spam', () => {
 
       it('throws error on failure', async () => {
         server.use(
-          http.post(`${backendUrl}/api/1/assets/evm/spam/`, () =>
+          http.post(`${backendUrl}/api/1/assets/spam`, () =>
             HttpResponse.json({
               result: null,
               message: 'Invalid token address',
@@ -56,7 +56,7 @@ describe('composables/api/assets/spam', () => {
         let capturedBody: unknown;
 
         server.use(
-          http.delete(`${backendUrl}/api/1/assets/evm/spam/`, async ({ request }) => {
+          http.delete(`${backendUrl}/api/1/assets/spam`, async ({ request }) => {
             capturedBody = await request.json();
             return HttpResponse.json({
               result: true,
@@ -74,7 +74,7 @@ describe('composables/api/assets/spam', () => {
 
       it('throws error when token not found', async () => {
         server.use(
-          http.delete(`${backendUrl}/api/1/assets/evm/spam/`, () =>
+          http.delete(`${backendUrl}/api/1/assets/spam`, () =>
             HttpResponse.json({
               result: null,
               message: 'Token not found in spam list',
