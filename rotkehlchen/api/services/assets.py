@@ -24,6 +24,7 @@ from rotkehlchen.assets.asset import (
     AssetWithOracles,
     CustomAsset,
     EvmToken,
+    SolanaToken,
 )
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import ASSET_TYPES_EXCLUDED_FOR_USERS, AssetType
@@ -882,7 +883,7 @@ class AssetsService:
 
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def add_to_spam_assets_false_positive(self, token: EvmToken) -> dict[str, Any]:
+    def add_to_spam_assets_false_positive(self, token: EvmToken | SolanaToken) -> dict[str, Any]:
         globaldb = GlobalDBHandler()
         with globaldb.conn.write_ctx() as write_cursor:
             globaldb_set_general_cache_values(
@@ -902,7 +903,10 @@ class AssetsService:
 
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def remove_from_spam_assets_false_positives(self, token: EvmToken) -> dict[str, Any]:
+    def remove_from_spam_assets_false_positives(
+            self,
+            token: EvmToken | SolanaToken,
+    ) -> dict[str, Any]:
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             globaldb_delete_general_cache_values(
                 write_cursor=write_cursor,
@@ -921,7 +925,7 @@ class AssetsService:
 
         return {'result': whitelisted_tokens, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def add_tokens_to_spam(self, tokens: list[EvmToken]) -> dict[str, Any]:
+    def add_tokens_to_spam(self, tokens: list[EvmToken | SolanaToken]) -> dict[str, Any]:
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             for token in tokens:
                 if token.protocol != SPAM_PROTOCOL:
@@ -934,8 +938,9 @@ class AssetsService:
                 )
                 AssetResolver.clean_memory_cache(token.identifier)
 
+                blockchain = token.chain_id.to_blockchain() if isinstance(token, EvmToken) else SupportedBlockchain.SOLANA  # noqa: E501
                 for balances in self.rotkehlchen.chains_aggregator.balances.get(
-                    chain=(blockchain := token.chain_id.to_blockchain()),
+                    chain=blockchain,
                 ).values():
                     in_assets = balances.assets.pop(token, None)  # type: ignore
                     in_liabilities = balances.liabilities.pop(token, None)  # type: ignore
@@ -950,7 +955,7 @@ class AssetsService:
         self.rotkehlchen.data.add_ignored_assets(assets=tokens)
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
-    def remove_token_from_spam(self, token: EvmToken) -> dict[str, Any]:
+    def remove_token_from_spam(self, token: EvmToken | SolanaToken) -> dict[str, Any]:
         if token.protocol == SPAM_PROTOCOL:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
                 set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=False)
