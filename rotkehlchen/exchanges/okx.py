@@ -2,8 +2,8 @@ import datetime
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from enum import Enum, StrEnum
-from typing import TYPE_CHECKING, Any, Final, Literal, Self
+from enum import Enum
+from typing import TYPE_CHECKING, Any, Final, Literal
 from urllib.parse import urlencode, urljoin
 
 import requests
@@ -50,6 +50,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_sec_to_ms
+from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
@@ -69,27 +70,10 @@ class OkxEndpoint(Enum):
     WITHDRAWALS = '/api/v5/asset/withdrawal-history'
 
 
-class OkxLocation(StrEnum):
+class OkxLocation(SerializableEnumNameMixin):
     GLOBAL = 'www'
     EEA = 'my'
     US = 'app'
-
-    def serialize(self) -> str:
-        return self.name.lower()
-
-    @classmethod
-    def deserialize(cls, value: str) -> Self:
-        """May raise DeserializationError if the given value can't be deserialized"""
-        if not isinstance(value, str):
-            raise DeserializationError(
-                f'Failed to deserialize {cls.__name__} value from non string value: {value}',
-            )
-
-        upper_value = value.replace(' ', '_').upper()
-        try:
-            return getattr(cls, upper_value)
-        except AttributeError as e:
-            raise DeserializationError(f'Failed to deserialize {cls.__name__} value {value}') from e  # noqa: E501
 
 
 class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
