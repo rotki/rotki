@@ -67,7 +67,7 @@ def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_cach
             asset=A_ETH,
             amount=FVal(0.001),
             location_label=user_address,
-            notes='Swap 0.001 ETH via Balancer v2',
+            notes='Swap 0.001 ETH in Balancer v2',
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ), EvmSwapEvent(
@@ -79,7 +79,7 @@ def test_balancer_v2_swap(ethereum_inquirer, ethereum_accounts, load_global_cach
             asset=A_DAI,
             amount=FVal('1.207092929058998715'),
             location_label=user_address,
-            notes='Receive 1.207092929058998715 DAI as the result of a swap via Balancer v2',
+            notes='Receive 1.207092929058998715 DAI as the result of a swap in Balancer v2',
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ),
@@ -350,7 +350,7 @@ def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches
             asset=A_USDC,
             amount=FVal(1000),
             location_label=user_address,
-            notes='Swap 1000 USDC via Balancer v2',
+            notes='Swap 1000 USDC in Balancer v2',
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ), EvmSwapEvent(
@@ -362,7 +362,7 @@ def test_balancer_trade(ethereum_inquirer, ethereum_accounts, load_global_caches
             asset=Asset('eip155:1/erc20:0x3E828ac5C480069D4765654Fb4b8733b910b13b2'),
             amount=FVal('1881.157063057509114271'),
             location_label=user_address,
-            notes='Receive 1881.157063057509114271 CLNY as the result of a swap via Balancer v2',
+            notes='Receive 1881.157063057509114271 CLNY as the result of a swap in Balancer v2',
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ),
@@ -1150,7 +1150,7 @@ def test_balancer_v2_swap_token_to_native(gnosis_inquirer, gnosis_accounts):
         asset=Asset('eip155:100/erc20:0x4f4F9b8D5B4d0Dc10506e5551B0513B61fD59e75'),
         amount=FVal(spend_amount := '100'),
         location_label=user_address,
-        notes=f'Swap {spend_amount} GIV via Balancer v2',
+        notes=f'Swap {spend_amount} GIV in Balancer v2',
         counterparty=CPT_BALANCER_V2,
         address=VAULT_ADDRESS,
     ), EvmSwapEvent(
@@ -1162,7 +1162,7 @@ def test_balancer_v2_swap_token_to_native(gnosis_inquirer, gnosis_accounts):
         asset=A_XDAI,
         amount=FVal(receive_amount := '1.154255223159359515'),
         location_label=user_address,
-        notes=f'Receive {receive_amount} XDAI as the result of a swap via Balancer v2',
+        notes=f'Receive {receive_amount} XDAI as the result of a swap in Balancer v2',
         counterparty=CPT_BALANCER_V2,
         address=VAULT_ADDRESS,
     )]

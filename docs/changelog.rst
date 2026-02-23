@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` rotki can now resolved non .eth ENS names
 * :feature:`-` Balancer v3 Gauge reward claims should now be properly decoded.
 * :feature:`-` Sky PSM direct swaps should now be properly decoded.
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
