@@ -30,4 +30,6 @@ class WooFiDecoder(WooFiCommonDecoder):
                 supercharger=string_to_evm_address('0x5CB9ba4a6f05c4125D61172E1b2C1DBe3afb3158'),
                 withdraw_manager=string_to_evm_address('0x3cBB7F9a4e1E8a8430f1d400DF269B80B6872DeB'),
             )],
+            woo_token_address=string_to_evm_address('0x4691937a7508860F876c9c0a2a617E7d9E945D4B'),
+            stake_v1_address=string_to_evm_address('0x2AEab1a338bCB1758f71BD5aF40637cEE2085076'),
         )

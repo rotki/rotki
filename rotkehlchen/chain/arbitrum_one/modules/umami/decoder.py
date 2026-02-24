@@ -11,6 +11,7 @@ from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import (
     DEPOSIT_TOPIC,
+    HARVEST_TOPIC,
     STAKE_TOPIC,
     UNSTAKE_TOPIC,
     WITHDRAW_TOPIC_V3,
@@ -33,7 +34,6 @@ if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
-REWARD_TOPIC: Final = b'q\xba\xb6\\\xed.WPwZ\x06\x13\xbe\x06}\xf4\x8e\xf0l\xf9*In\xbfvc\xae\x06`\x92IT'  # noqa: E501
 DEPOSIT_EXECUTION_FOUR_BYTES: Final = b'\xdb\x10\xc3\xb9'
 UMAMI_DEPOSIT_WITHDRAWAL_FEE_PERCENTAGE: Final = FVal('0.0015')  # this is an estimate since the actual percentage is dynamic -- 0.15%  # noqa: E501
 
@@ -250,7 +250,7 @@ class UmamiDecoder(ArbitrumDecoderInterface):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
-                if context.tx_log.topics[0] == REWARD_TOPIC:
+                if context.tx_log.topics[0] == HARVEST_TOPIC:
                     event.event_type = HistoryEventType.STAKING
                     event.event_subtype = HistoryEventSubType.REWARD
                     event.counterparty = CPT_UMAMI
