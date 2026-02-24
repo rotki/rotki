@@ -29,6 +29,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount
 from rotkehlchen.chain.bitcoin.bch.utils import (
+    is_valid_bitcoin_cash_address,
     validate_bch_address_input,
 )
 from rotkehlchen.chain.bitcoin.hdkey import HDKey, XpubType
@@ -726,16 +727,21 @@ class HistoryEventFilterSchema(
         if addresses is not None:
             evm_addresses = {x for x in addresses if is_checksum_address(x)}
             solana_addresses = {x for x in addresses if is_valid_solana_address(x)}
-            if len(solana_addresses) + len(evm_addresses) != (address_count := len(addresses)):
+            btc_addresses = {
+                x for x in addresses
+                if is_valid_btc_address(x) or is_valid_bitcoin_cash_address(x)
+            }
+            if len(solana_addresses) + len(evm_addresses) + len(btc_addresses) != (address_count := len(addresses)):  # noqa: E501
                 raise ValidationError(
-                    message='some addresses are not valid EVM or Solana addresses',
+                    message='some addresses are not valid EVM, Solana, BTC, or BCH addresses',
                     field_name='addresses',
                 )
 
             all_addrs_are_evm = len(evm_addresses) == address_count
             all_addrs_are_solana = len(solana_addresses) == address_count
+            all_addrs_are_btc = len(btc_addresses) == address_count
             multi_chain_query = (
-                not (all_addrs_are_evm or all_addrs_are_solana) or  # addresses from both types
+                not (all_addrs_are_evm or all_addrs_are_solana or all_addrs_are_btc) or  # addresses from multiple chain types  # noqa: E501
                 len(tx_ref_types) > 1 or  # multiple types of tx refs
                 (len(tx_ref_types) == 1 and (
                     (ref_type := next(iter(tx_ref_types))) == ChainType.BITCOIN or

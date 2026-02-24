@@ -39,6 +39,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY = 'bitcoin_counterparty_addresses'
 
 
 class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
@@ -324,8 +325,9 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             amount: FVal,
             notes: str | None = None,
             location_label: str | None = None,
+            counterparty_addresses: list[BTCAddress] | None = None,
     ) -> HistoryEvent:
-        return HistoryEvent(
+        event = HistoryEvent(
             group_identifier=f'{self.group_identifier_prefix}{tx.tx_id}',
             sequence_index=0,  # events are reshuffled later
             timestamp=ts_sec_to_ms(tx.timestamp),
@@ -337,6 +339,13 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
             notes=notes,
             location_label=self.get_display_address(BTCAddress(location_label)) if location_label is not None else None,  # noqa: E501
         )
+        if counterparty_addresses is not None:
+            setattr(
+                event,
+                BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY,
+                [str(self.get_display_address(address)) for address in counterparty_addresses],
+            )
+        return event
 
     def _maybe_create_fee_events(
             self,
@@ -509,6 +518,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 amount=amount,
                 notes=f'{verb} {amount} {self.asset.identifier} {from_to} {self.get_display_address(address)}',  # noqa: E501
                 location_label=location_label,
+                counterparty_addresses=[address],
             ))
 
         return spend_events + receive_events  # keep all spend events first
@@ -549,6 +559,7 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                         other_addresses=', '.join([self.get_display_address(x) for x in other_side_dict]),  # noqa: E501
                     ),
                     location_label=address,
+                    counterparty_addresses=list(other_side_dict.keys()),
                 ))
 
         return events

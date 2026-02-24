@@ -35,6 +35,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX,
     SUPPORTED_CHAIN_IDS,
+    BTCAddress,
     BTCTxId,
     CacheType,
     ChainID,
@@ -663,6 +664,23 @@ class DBOptionalChainAddressesFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBBitcoinEventAddressFilter(DBFilter):
+    """Filter history events by bitcoin/bch counterparty addresses."""
+    addresses: list[ChecksumEvmAddress | SolanaAddress | BTCAddress]
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        if len(self.addresses) == 0:
+            return [], []
+
+        placeholders = ', '.join(['?'] * len(self.addresses))
+        return [(
+            'history_events_identifier IN ('
+            'SELECT event_identifier FROM bitcoin_events_addresses '
+            f'WHERE address IN ({placeholders}))'
+        )], self.addresses
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class ReportDataFilterQuery(DBFilterQuery, FilterWithTimestamp):
 
     @property
@@ -1231,10 +1249,11 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             notes_substring: str | None = None,
             tx_refs: list[EVMTxHash | BTCTxId | Signature] | None = None,
             counterparties: list[str] | None = None,
-            addresses: list[ChecksumEvmAddress | SolanaAddress] | None = None,
+            addresses: list[ChecksumEvmAddress | SolanaAddress | BTCAddress] | None = None,
     ) -> Self:
         if entry_types is None:
             entry_types = IncludeExcludeFilterData(values=[
+                HistoryBaseEntryType.HISTORY_EVENT,
                 HistoryBaseEntryType.SOLANA_EVENT,
                 HistoryBaseEntryType.EVM_EVENT,
                 HistoryBaseEntryType.EVM_SWAP_EVENT,
@@ -1275,11 +1294,17 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             ))
 
         if addresses is not None and len(addresses) > 0:
-            filter_query.filters.append(DBMultiStringFilter(
-                and_op=True,
-                column='address',
-                values=addresses,
-                operator='IN',
+            filter_query.filters.append(DBNestedFilter(
+                and_op=False,
+                filters=[DBMultiStringFilter(
+                    and_op=True,
+                    column='address',
+                    values=addresses,
+                    operator='IN',
+                ), DBBitcoinEventAddressFilter(
+                    and_op=True,
+                    addresses=addresses,
+                )],
             ))
 
         return filter_query

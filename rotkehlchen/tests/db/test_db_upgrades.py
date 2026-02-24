@@ -3359,14 +3359,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
     assert new_tables == {
-        'historical_balance_cache',
-        'lido_csm_node_operators',
-        'lido_csm_node_operator_metrics',
-        'solana_ata_address_mappings',
-        'history_event_links',
-        'history_event_link_ignores',
-        'history_events_backup',
-        'chain_events_info_backup',
+        'bitcoin_events_addresses',
     }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
@@ -3942,6 +3935,117 @@ def test_upgrade_db_50_to_51(user_data_dir, messages_aggregator):
               )
             """.format(','.join('?' * len(duplicate_internal_parents))),
             duplicate_internal_parents,
+        ).fetchone()[0] == 0
+
+    db.logout()
+
+
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 51 to version 52."""
+    _use_prepared_db(user_data_dir, 'v50_rotkehlchen.db')
+    db_v51 = _init_db_with_target_version(
+        target_version=51,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v51.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
+                'BTC_NOTE_TEST_1',
+                0,
+                1730000000000,
+                Location.BITCOIN.serialize_for_db(),
+                'bc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4',
+                'BTC',
+                '0.25',
+                (
+                    'Send 0.25 BTC to 1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp, '
+                    '1BoatSLRHtKNngkdXEeobR76b53LETtpyT'
+                ),
+                HistoryEventType.SPEND.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        )
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
+                'BCH_NOTE_TEST_1',
+                0,
+                1730000001000,
+                Location.BITCOIN_CASH.serialize_for_db(),
+                'bitcoincash:qrjp962nn74p57w0gaf77d335upghk220yceaxqxwa',
+                'BCH',
+                '3.5',
+                'Receive 3.5 BCH from bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt',
+                HistoryEventType.RECEIVE.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        )
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db(),
+                'BTC_NOTE_TEST_2',
+                0,
+                1730000002000,
+                Location.BITCOIN.serialize_for_db(),
+                '1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp',
+                'BTC',
+                '0.01',
+                'Spend 0.01 BTC for fees',
+                HistoryEventType.SPEND.serialize(),
+                HistoryEventSubType.FEE.serialize(),
+            ),
+        )
+
+    db_v51.logout()
+    db = _init_db_with_target_version(
+        target_version=52,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db.conn.read_ctx() as cursor:
+        assert table_exists(cursor=cursor, name='bitcoin_events_addresses')
+        assert index_exists(cursor=cursor, name='idx_bitcoin_events_addresses_address')
+        mappings = cursor.execute(
+            'SELECT address FROM bitcoin_events_addresses '
+            'WHERE event_identifier IN ('
+            'SELECT identifier FROM history_events WHERE group_identifier = ?'
+            ') ORDER BY address',
+            ('BTC_NOTE_TEST_1',),
+        ).fetchall()
+        assert mappings == [
+            ('1BoatSLRHtKNngkdXEeobR76b53LETtpyT',),
+            ('1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp',),
+        ]
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM bitcoin_events_addresses '
+            'WHERE event_identifier IN ('
+            'SELECT identifier FROM history_events WHERE group_identifier = ?'
+            ')',
+            ('BCH_NOTE_TEST_1',),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM bitcoin_events_addresses '
+            'WHERE event_identifier IN ('
+            'SELECT identifier FROM history_events WHERE group_identifier = ?'
+            ')',
+            ('BTC_NOTE_TEST_2',),
         ).fetchone()[0] == 0
 
     db.logout()

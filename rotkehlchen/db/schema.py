@@ -557,6 +557,17 @@ CREATE TABLE IF NOT EXISTS chain_events_info (
 );
 """  # noqa: E501
 
+# Table that maps bitcoin history events to zero, one, or many counterparty addresses.
+# WITHOUT ROWID keeps this mapping compact since the composite PK is the natural key.
+DB_CREATE_BITCOIN_EVENTS_ADDRESSES = """
+CREATE TABLE IF NOT EXISTS bitcoin_events_addresses (
+    event_identifier INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    FOREIGN KEY(event_identifier) REFERENCES history_events(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY(event_identifier, address)
+) WITHOUT ROWID;
+"""  # noqa: E501
+
 # Table that extends history events table and stores data specific to ethereum staking
 DB_CREATE_ETH_STAKING_EVENTS_INFO = """
 CREATE TABLE IF NOT EXISTS eth_staking_events_info(
@@ -945,6 +956,7 @@ CREATE INDEX IF NOT EXISTS idx_history_events_asset ON history_events(asset);
 CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);
 CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);
 CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
+CREATE INDEX IF NOT EXISTS idx_bitcoin_events_addresses_address ON bitcoin_events_addresses(address);
 CREATE INDEX IF NOT EXISTS idx_history_event_links_right ON history_event_links(right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_links_composite ON history_event_links(link_type, left_event_id, right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_link_ignores_type ON history_event_link_ignores(link_type);
@@ -1000,6 +1012,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETH_VALIDATORS_DATA_CACHE}
 {DB_CREATE_HISTORY_EVENTS}
 {DB_CREATE_CHAIN_EVENTS_INFO}
+{DB_CREATE_BITCOIN_EVENTS_ADDRESSES}
 {DB_CREATE_ETH_STAKING_EVENTS_INFO}
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}
 {DB_CREATE_HISTORY_EVENTS_BACKUP}

@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.manager import BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY
 from rotkehlchen.constants.assets import A_BTC
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
@@ -58,6 +59,7 @@ def test_1input_1output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BT
             location_label=address1,
             notes=f'Send {transfer_amount} BTC to {address2}',
         )]
+        assert getattr(events[1], BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY) == [address2]
     elif btc_accounts == [address2]:  # only output tracked - single receive event
         assert events == [HistoryEvent(
             group_identifier=group_identifier,
@@ -71,6 +73,7 @@ def test_1input_1output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BT
             location_label=address2,
             notes=f'Receive {transfer_amount} BTC from {address1}',
         )]
+        assert getattr(events[0], BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY) == [address1]
     else:  # input and output tracked - fee event and transfer event
         assert events == [fee_event, HistoryEvent(
             group_identifier=group_identifier,
@@ -84,6 +87,7 @@ def test_1input_1output(bitcoin_manager: 'BitcoinManager', btc_accounts: list[BT
             location_label=address1,
             notes=f'Transfer {transfer_amount} BTC to {address2}',
         )]
+        assert getattr(events[1], BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY) == [address2]
 
 
 @pytest.mark.vcr
