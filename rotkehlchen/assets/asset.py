@@ -96,7 +96,7 @@ def _serialize_underlying_tokens(
 
 
 @total_ordering
-@dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=False, eq=True, order=False, unsafe_hash=False, frozen=True, slots=True)
 class Asset:
     """Base class for all assets"""
     identifier: str
@@ -280,13 +280,13 @@ class Asset:
         return self.identifier
 
 
-@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
 class AssetWithNameAndType(Asset, abc.ABC):
     asset_type: AssetType = field(init=False)
     name: str = field(init=False)
 
     def to_dict(self) -> dict[str, Any]:
-        return super().to_dict() | {
+        return super(AssetWithNameAndType, self).to_dict() | {
             'name': self.name,
             'asset_type': str(self.asset_type),
         }
@@ -298,16 +298,18 @@ class AssetWithNameAndType(Asset, abc.ABC):
         return f'{self.identifier}({self.name})'
 
 
+@dataclass(init=False, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
 class AssetWithSymbol(AssetWithNameAndType, abc.ABC):
     symbol: str = field(init=False)
 
     def to_dict(self) -> dict[str, Any]:
-        return super().to_dict() | {'symbol': self.symbol}
+        return super(AssetWithSymbol, self).to_dict() | {'symbol': self.symbol}
 
     def __repr__(self) -> str:
         return f'<Asset identifier:{self.identifier} name:{self.name} symbol:{self.symbol}>'
 
 
+@dataclass(init=False, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
 class AssetWithOracles(AssetWithSymbol, abc.ABC):
     # None means no special mapping. '' means not supported
     cryptocompare: str | None = field(init=False)
@@ -342,17 +344,17 @@ class AssetWithOracles(AssetWithSymbol, abc.ABC):
         return self.coingecko is not None and self.coingecko != ''
 
     def to_dict(self) -> dict[str, Any]:
-        return super().to_dict() | {
+        return super(AssetWithOracles, self).to_dict() | {
             'cryptocompare': self.cryptocompare,
             'coingecko': self.coingecko,
         }
 
 
-@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
 class FiatAsset(AssetWithOracles):
 
     def __post_init__(self, direct_field_initialization: bool) -> None:
-        super().__post_init__(direct_field_initialization)
+        super(FiatAsset, self).__post_init__(direct_field_initialization)
         if direct_field_initialization is True:
             return
 
@@ -386,14 +388,14 @@ class FiatAsset(AssetWithOracles):
         return asset
 
 
-@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
 class CryptoAsset(AssetWithOracles):
     started: Timestamp | None = field(init=False)
     forked: Optional['CryptoAsset'] = field(init=False)
     swapped_for: Optional['CryptoAsset'] = field(init=False)
 
     def __post_init__(self, direct_field_initialization: bool) -> None:
-        super().__post_init__(direct_field_initialization)
+        super(CryptoAsset, self).__post_init__(direct_field_initialization)
         if direct_field_initialization is True:
             return
 
@@ -446,7 +448,7 @@ class CryptoAsset(AssetWithOracles):
         if self.swapped_for is not None:
             swapped_for = self.swapped_for.identifier
 
-        return super().to_dict() | {
+        return super(CryptoAsset, self).to_dict() | {
             'name': self.name,
             'symbol': self.symbol,
             'asset_type': str(self.asset_type),
@@ -459,8 +461,9 @@ class CryptoAsset(AssetWithOracles):
 
 
 class CustomAsset(AssetWithNameAndType):
-    notes: str | None = field(init=False)
-    custom_asset_type: str = field(init=False)
+    __slots__ = ('custom_asset_type', 'notes')
+    notes: str | None
+    custom_asset_type: str
 
     @classmethod
     def initialize(
@@ -545,7 +548,7 @@ SolanaTokenDBTuple = tuple[
 ]
 
 
-@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
 class EvmToken(CryptoAsset):
     evm_address: ChecksumEvmAddress = field(init=False)
     chain_id: ChainID = field(init=False)
@@ -555,7 +558,7 @@ class EvmToken(CryptoAsset):
     underlying_tokens: list[UnderlyingToken] | None = field(init=False)
 
     def __post_init__(self, direct_field_initialization: bool) -> None:
-        super().__post_init__(direct_field_initialization)
+        super(EvmToken, self).__post_init__(direct_field_initialization)
         if direct_field_initialization is True:
             return
 
@@ -648,7 +651,7 @@ class EvmToken(CryptoAsset):
             if self.underlying_tokens is not None
             else None
         )
-        result = super().to_dict() | {
+        result = super(EvmToken, self).to_dict() | {
             'address': self.evm_address,
             'evm_chain': self.chain_id.to_name(),
             'token_kind': self.token_kind.serialize(),
@@ -673,6 +676,7 @@ class EvmToken(CryptoAsset):
 
 
 class Nft(EvmToken):
+    __slots__ = ()
 
     def __post_init__(self, direct_field_initialization: bool) -> None:
         if direct_field_initialization is True:
@@ -735,7 +739,7 @@ class Nft(EvmToken):
         return asset
 
 
-@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True)
+@dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=True, slots=True)  # noqa: E501
 class SolanaToken(CryptoAsset):
     mint_address: SolanaAddress = field(init=False)
     token_kind: SOLANA_TOKEN_KINDS_TYPE = field(init=False)
@@ -743,7 +747,7 @@ class SolanaToken(CryptoAsset):
     protocol: str | None = field(init=False)
 
     def __post_init__(self, direct_field_initialization: bool) -> None:
-        super().__post_init__(direct_field_initialization)
+        super(SolanaToken, self).__post_init__(direct_field_initialization)
         if direct_field_initialization is True:
             return
 
@@ -820,7 +824,7 @@ class SolanaToken(CryptoAsset):
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return super().to_dict() | {
+        return super(SolanaToken, self).to_dict() | {
             'address': self.mint_address,
             'token_kind': self.token_kind.serialize(),
             'decimals': self.decimals,
