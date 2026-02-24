@@ -177,8 +177,6 @@ macro_rules! create_globaldb {
 
 #[cfg(test)]
 mod test {
-    use std::env;
-
     /// Test that the collections and coingecko ids are queried correctly.
     #[tokio::test]
     async fn test_query_asset_data() {
