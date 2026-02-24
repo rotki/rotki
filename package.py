@@ -21,6 +21,7 @@ rotki_version = get_version()
 
 pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '6.15.0')
 BACKEND_PREFIX = 'rotki-core'
+BACKEND_DEBUG_SYMBOLS_ENV = 'ROTKI_BACKEND_DEBUG_SYMBOLS'
 SUPPORTED_ARCHS = [
     'AMD64',  # Windows
     'x86_64',
@@ -46,6 +47,12 @@ APPLE_ID = 'APPLEID'
 APPLE_ID_PASS = 'APPLEIDPASS'
 X64_APPL_RUST_TARGET = 'x86_64-apple-darwin'
 ARM_APPL_RUST_TARGET = 'aarch64-apple-darwin'
+
+
+def env_var_to_bool(value: str | None) -> bool:
+    if value is None:
+        return False
+    return value.lower() in {'1', 'true', 'yes', 'on'}
 
 
 def log_group(name: str) -> Callable:
@@ -527,11 +534,13 @@ class BackendBuilder:
             env: Environment,
             mac: MacPackaging | None,
             win: WindowsPackaging | None,
+            debug_symbols: bool = False,
     ) -> None:
         self.__mac = mac
         self.__win = win
         self.__storage = storage
         self.__env = env
+        self.__debug_symbols = debug_symbols
 
     def clean(self) -> None:
         storage = self.__storage
@@ -603,8 +612,12 @@ class BackendBuilder:
         bootloader_directory = pyinstaller_directory / 'bootloader'
         os.chdir(bootloader_directory)
 
+        cc = f'clang -arch {self.__env.target_arch}'
+        if self.__debug_symbols:
+            cc += ' -g'
+
         build_ret_code = subprocess.call(
-            f'CC="clang -arch {self.__env.target_arch}" ./waf --no-universal2 all',
+            f'CC="{cc}" ./waf --no-universal2 all',
             shell=True,
         )
         if build_ret_code != 0:
@@ -659,6 +672,8 @@ class BackendBuilder:
         os.environ.pop('GITHUB_REF', None)
 
         self.__env.sanity_check()
+        if self.__debug_symbols:
+            logger.info('debug symbols are enabled for backend build')
 
         mac = self.__mac
         win = self.__win
@@ -728,9 +743,12 @@ class BackendBuilder:
         colibri_directory = self.__storage.colibri_directory
         target_arg = ''
 
-        build_env = None
+        build_env: dict[str, str] = os.environ.copy()
         if self.__win is not None:
             build_env = self.__get_windows_cargo_env()
+        if self.__debug_symbols:
+            # Keep release optimizations while emitting debug symbols for symbolization/testing.
+            build_env['CARGO_PROFILE_RELEASE_DEBUG'] = '1'
 
         build_ret_code = subprocess.call(
             f'cargo build --target-dir {colibri_directory} '
@@ -777,7 +795,11 @@ class BackendBuilder:
         self.__storage.prepare_backend()
         backend_directory = self.__storage.backend_directory
         package_env = os.environ.copy()
-        package_env.setdefault('PYTHONOPTIMIZE', '2')
+        if self.__debug_symbols:
+            # Do not force optimized bytecode for debug-symbol test builds.
+            package_env.setdefault('PYTHONOPTIMIZE', '0')
+        else:
+            package_env.setdefault('PYTHONOPTIMIZE', '2')
         package_ret_code = subprocess.call(
             f'pyinstaller --noconfirm --clean --distpath "{backend_directory}" rotkehlchen.spec',
             shell=True,
@@ -806,6 +828,10 @@ class BackendBuilder:
         for the system in question.
         """
         if self.__env.is_x86_64() and not self.__env.is_mac_runner():
+            if self.__debug_symbols:
+                logger.info(
+                    'using prebuilt pyinstaller bootloader; rust debug symbols are enabled',
+                )
             self.pip_install(f'pyinstaller=={pyinstaller_version}')
         else:
             self.__build_pyinstaller_bootloader(pyinstaller_version)
@@ -937,7 +963,16 @@ def main() -> None:
         default=False,
         help='Performs a clean build',
     )
+    parser.add_argument(
+        '--debug-symbols',
+        action='store_true',
+        default=False,
+        help='Build backend with debug symbol settings (opt-in, test builds only)',
+    )
     args = parser.parse_args()
+    debug_symbols = args.debug_symbols or env_var_to_bool(
+        os.environ.get(BACKEND_DEBUG_SYMBOLS_ENV),
+    )
 
     if args.clean:
         logger.info('Cleaning build directory')
@@ -952,7 +987,13 @@ def main() -> None:
         win = WindowsPackaging(storage, environment)
 
     if args.build in {'backend', 'full'}:
-        builder = BackendBuilder(storage, environment, mac, win)
+        builder = BackendBuilder(
+            storage=storage,
+            env=environment,
+            mac=mac,
+            win=win,
+            debug_symbols=debug_symbols,
+        )
         builder.clean()
         builder.build()
 
