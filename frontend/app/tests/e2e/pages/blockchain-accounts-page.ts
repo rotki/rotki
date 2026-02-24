@@ -43,12 +43,13 @@ export class BlockchainAccountsPage {
     await chainOption.waitFor({ state: 'visible' });
     await chainOption.click();
 
-    if (balance.blockchain !== Blockchain.ETH) {
-      await this.page.locator('[data-cy=input-mode-manual]').click();
-    }
+    const isBtc = balance.blockchain === Blockchain.BTC || balance.blockchain === Blockchain.BCH;
+    const addressField = isBtc
+      ? this.page.locator('[data-cy=account-address-field] textarea')
+      : this.page.locator('[data-cy=account-address-field] input');
 
-    await expect(this.page.locator('[data-cy=account-address-field] input')).not.toBeDisabled();
-    await this.page.locator('[data-cy=account-address-field] input').fill(balance.address);
+    await expect(addressField).not.toBeDisabled();
+    await addressField.fill(balance.address);
     await this.page.locator('[data-cy=account-label-field] input').fill(balance.label);
 
     for (const tag of balance.tags) {

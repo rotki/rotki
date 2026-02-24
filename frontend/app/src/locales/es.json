@@ -2054,12 +2054,6 @@
         "wallet_is_not_enabled": "La extensión para el monedero está deshabilitada. Puedes habilitarla en el menú Extensions/Add-Ons, dependiendo de tu navegador.",
         "wallet_is_not_installed": "Este navegador no tiene ningún monedero instalado. Puedes ir a la tienda de extensiones de tu navegador e instalar uno"
       }
-    },
-    "manual_add": {
-      "label": "Manual"
-    },
-    "xpub_add": {
-      "label": "XPUB"
     }
   },
   "kraken_page": {

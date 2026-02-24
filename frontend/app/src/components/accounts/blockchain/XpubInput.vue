@@ -5,12 +5,14 @@ import type { BtcChains } from '@/types/blockchain/chains';
 import { Blockchain } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
+import { createReusableTemplate } from '@vueuse/core';
 import { isEmpty } from 'es-toolkit/compat';
 import { trimOnPaste } from '@/utils/event';
 import { toMessages } from '@/utils/validation';
-import { getKeyType, getPrefix, isPrefixed, keyType, XpubPrefix, type XpubType } from '@/utils/xpub';
+import { type DetectionResult, detectXpubType, getKeyType, getPrefix, keyType, XpubPrefix, type XpubType } from '@/utils/xpub';
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 const xpub = defineModel<XpubPayload | undefined>('xpub');
 
 const { disabled, blockchain } = defineProps<{
@@ -18,36 +20,70 @@ const { disabled, blockchain } = defineProps<{
   blockchain: BtcChains;
 }>();
 
+const emit = defineEmits<{
+  'detected-address': [address: string];
+}>();
+
+const [DefineKeyTypeOption, ReuseKeyTypeOption] = createReusableTemplate<{ item: XpubType }>();
+
 const { t } = useI18n({ useScope: 'global' });
 
 const xpubKey = ref<string>('');
 const derivationPath = ref<string>('');
 const xpubKeyPrefix = ref<XpubPrefix>(XpubPrefix.XPUB);
-const advanced = ref(false);
+const advanced = ref<boolean>(false);
+const detectedType = ref<DetectionResult>();
+const showDisambiguation = ref<boolean>(false);
+const userOverride = ref<boolean>(false);
+const pasteHandled = ref<boolean>(false);
 
-function updateXpub(event?: XpubPayload): void {
-  set(xpub, event);
-}
+function runDetection(value: string): void {
+  const result = detectXpubType(value);
+  set(detectedType, result);
+  set(showDisambiguation, false);
+  set(userOverride, false);
 
-function setXpubKeyType(value: string) {
-  const match = isPrefixed(value);
-  if (match && match.length === 3) {
-    const prefix = match[1] as XpubPrefix;
-    if (prefix === XpubPrefix.XPUB)
-      return;
+  if (result === 'address') {
+    emit('detected-address', value.trim());
+    return;
+  }
 
-    set(xpubKeyPrefix, prefix);
+  if (result === XpubPrefix.YPUB || result === XpubPrefix.ZPUB) {
+    set(xpubKeyPrefix, result);
+    return;
+  }
+
+  if (result === 'ambiguous') {
+    if (blockchain === Blockchain.BCH) {
+      set(xpubKeyPrefix, XpubPrefix.XPUB);
+    }
+    else {
+      set(showDisambiguation, true);
+    }
   }
 }
 
-function onPasteXpub(event: ClipboardEvent) {
+function resolveDisambiguation(choice: XpubPrefix.XPUB | XpubPrefix.P2TR): void {
+  set(xpubKeyPrefix, choice);
+  set(detectedType, choice);
+  set(showDisambiguation, false);
+}
+
+function onAdvancedPrefixChange(): void {
+  set(userOverride, true);
+  set(detectedType, undefined);
+  set(showDisambiguation, false);
+}
+
+function onPasteXpub(event: ClipboardEvent): void {
   if (disabled)
     return;
 
   const paste = trimOnPaste(event);
   if (paste) {
-    setXpubKeyType(paste);
+    set(pasteHandled, true);
     set(xpubKey, paste);
+    runDetection(paste);
   }
 }
 
@@ -56,6 +92,29 @@ const keyTypeListData = computed<XpubType[]>(() => {
     return keyType;
 
   return keyType.filter(item => ![XpubPrefix.ZPUB, XpubPrefix.P2TR].includes(item.value));
+});
+
+const autoDetected = computed<boolean>(() => {
+  const detected = get(detectedType);
+  if (get(userOverride) || !detected)
+    return false;
+
+  return detected !== 'ambiguous' && detected !== 'address';
+});
+
+function isAutoDetectedOption(option: XpubType): boolean {
+  if (!get(autoDetected))
+    return false;
+
+  return option.value === get(xpubKeyPrefix);
+}
+
+const detectedHint = computed<string | undefined>(() => {
+  if (!get(autoDetected))
+    return undefined;
+
+  const type = keyType.find(k => k.value === get(xpubKeyPrefix));
+  return type ? t('account_form.xpub_detected.type_hint', { type: type.humanLabel }) : undefined;
 });
 
 const rules = {
@@ -98,25 +157,39 @@ watchImmediate(xpub, (xpub) => {
   const derivation = get(derivationPath);
   if (derivation && derivation.replace(/'/g, '').replace(/\/$/, '') !== xpub?.derivationPath)
     set(derivationPath, xpub?.derivationPath || '');
+
+  if (disabled && xpub?.xpub && xpub.xpubType) {
+    const currentPrefix = getPrefix(xpub.xpubType);
+    set(detectedType, currentPrefix);
+  }
 });
 
 watch(() => blockchain, () => {
   set(xpubKeyPrefix, get(keyTypeListData)[0].value);
 });
 
-watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, xpub, path]) => {
-  if (xpub)
-    setXpubKeyType(xpub);
+watch(xpubKey, (newKey) => {
+  if (get(pasteHandled)) {
+    set(pasteHandled, false);
+    return;
+  }
 
+  if (newKey && !get(userOverride))
+    runDetection(newKey);
+  else if (!newKey)
+    set(detectedType, undefined);
+});
+
+watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, key, path]) => {
   let payload: XpubPayload | undefined;
-  if (xpub) {
+  if (key) {
     payload = {
       derivationPath: path?.replace(/'/g, '').replace(/\/$/, '') ?? undefined,
-      xpub: xpub.trim(),
+      xpub: key.trim(),
       xpubType: getKeyType(prefix as XpubPrefix),
     };
   }
-  updateXpub(payload);
+  set(xpub, payload);
 });
 
 defineExpose({
@@ -125,18 +198,22 @@ defineExpose({
 </script>
 
 <template>
+  <DefineKeyTypeOption #default="{ item }">
+    <div class="flex items-center gap-2">
+      <span>{{ item.humanLabel }} ({{ item.label }})</span>
+      <RuiChip
+        v-if="isAutoDetectedOption(item)"
+        color="success"
+        size="sm"
+        content-class="!leading-4"
+      >
+        {{ t('account_form.xpub_detected.badge') }}
+      </RuiChip>
+    </div>
+  </DefineKeyTypeOption>
+
   <div class="mt-2 flex flex-col gap-4">
     <div class="flex gap-4">
-      <RuiMenuSelect
-        v-model="xpubKeyPrefix"
-        :options="keyTypeListData"
-        :disabled="disabled"
-        class="account-form__xpub-key-type flex-1"
-        key-attr="value"
-        text-attr="label"
-        hide-details
-        variant="outlined"
-      />
       <RuiTextField
         v-model="xpubKey"
         variant="outlined"
@@ -144,6 +221,7 @@ defineExpose({
         class="account-form__xpub flex-1"
         :label="t('account_form.labels.btc.xpub')"
         autocomplete="off"
+        :hint="detectedHint"
         :error-messages="toMessages(v$.xpub)"
         :disabled="disabled"
         @blur="v$.xpub.$touch()"
@@ -179,18 +257,93 @@ defineExpose({
         </RuiTooltip>
       </div>
     </div>
-    <RuiTextField
+
+    <div
+      v-if="showDisambiguation"
+      class="flex flex-col gap-2 -mt-2 mb-3"
+    >
+      <span class="text-rui-text-secondary text-body-2">
+        {{ t('account_form.xpub_detected.disambiguation_prompt') }}
+      </span>
+      <div class="flex gap-2">
+        <RuiButton
+          :variant="xpubKeyPrefix === XpubPrefix.XPUB ? 'default' : 'outlined'"
+          color="primary"
+          size="sm"
+          :disabled="disabled"
+          @click="resolveDisambiguation(XpubPrefix.XPUB)"
+        >
+          <div class="flex flex-col items-start">
+            <span>{{ t('account_form.xpub_detected.legacy') }}</span>
+            <span
+              class="text-caption"
+              :class="xpubKeyPrefix === XpubPrefix.XPUB ? 'opacity-70' : 'text-rui-text-secondary'"
+            >
+              {{ t('account_form.xpub_detected.legacy_description') }}
+            </span>
+          </div>
+        </RuiButton>
+        <RuiButton
+          :variant="xpubKeyPrefix === XpubPrefix.P2TR ? 'default' : 'outlined'"
+          color="primary"
+          size="sm"
+          :disabled="disabled"
+          @click="resolveDisambiguation(XpubPrefix.P2TR)"
+        >
+          <div class="flex flex-col items-start">
+            <span>{{ t('account_form.xpub_detected.taproot') }}</span>
+            <span
+              class="text-caption"
+              :class="xpubKeyPrefix === XpubPrefix.P2TR ? 'opacity-70' : 'text-rui-text-secondary'"
+            >
+              {{ t('account_form.xpub_detected.taproot_description') }}
+            </span>
+          </div>
+        </RuiButton>
+      </div>
+      <span
+        v-if="!disabled"
+        class="text-rui-text-secondary text-caption"
+      >
+        {{ t('account_form.xpub_detected.disambiguation_hint') }}
+      </span>
+    </div>
+
+    <div
       v-if="advanced"
-      v-model="derivationPath"
-      variant="outlined"
-      color="primary"
-      class="account-form__derivation-path"
-      :label="t('account_form.labels.btc.derivation_path')"
-      :error-messages="toMessages(v$.derivationPath)"
-      autocomplete="off"
-      :disabled="disabled"
-      :hint="t('common.optional')"
-      @blur="v$.derivationPath.$touch()"
-    />
+      class="flex flex-col gap-4"
+    >
+      <RuiMenuSelect
+        v-model="xpubKeyPrefix"
+        :options="keyTypeListData"
+        :disabled="disabled"
+        class="account-form__xpub-key-type"
+        key-attr="value"
+        text-attr="label"
+        hide-details
+        variant="outlined"
+        :label="t('account_form.xpub_detected.type_override')"
+        @update:model-value="onAdvancedPrefixChange()"
+      >
+        <template #selection="{ item }">
+          <ReuseKeyTypeOption :item="item" />
+        </template>
+        <template #item="{ item }">
+          <ReuseKeyTypeOption :item="item" />
+        </template>
+      </RuiMenuSelect>
+      <RuiTextField
+        v-model="derivationPath"
+        variant="outlined"
+        color="primary"
+        class="account-form__derivation-path"
+        :label="t('account_form.labels.btc.derivation_path')"
+        :error-messages="toMessages(v$.derivationPath)"
+        autocomplete="off"
+        :disabled="disabled"
+        :hint="t('common.optional')"
+        @blur="v$.derivationPath.$touch()"
+      />
+    </div>
   </div>
 </template>

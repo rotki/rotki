@@ -83,13 +83,25 @@
       "blockchain": "Choose blockchain | Choose blockchains",
       "btc": {
         "derivation_path": "Derivation Path",
-        "xpub": "XPUB"
+        "placeholder": "Paste BTC addresses or an xpub key",
+        "xpub": "Address / XPUB"
       },
       "multiple": "Add multiple addresses"
     },
     "validation": {
       "address_non_empty": "The address cannot be empty",
       "xpub_non_empty": "The XPUB field cannot be empty"
+    },
+    "xpub_detected": {
+      "badge": "Auto Detected",
+      "disambiguation_hint": "Most wallets using xpub format are Legacy",
+      "disambiguation_prompt": "Which address type does your wallet use?",
+      "legacy": "Legacy",
+      "legacy_description": "Addresses start with 1",
+      "taproot": "Taproot",
+      "taproot_description": "Addresses start with bc1p",
+      "type_hint": "{type} detected",
+      "type_override": "Key Type (override)"
     }
   },
   "account_import_progress": {
@@ -3686,12 +3698,6 @@
         "wallet_is_not_installed": "This browser doesn't have any wallets installed. You can go to the extension store of your browser and install one."
       },
       "only_metamask": "* Currently, only MetaMask supports multiple address selections. Other wallets only allow active address to be imported."
-    },
-    "manual_add": {
-      "label": "Manual"
-    },
-    "xpub_add": {
-      "label": "XPUB"
     }
   },
   "kraken_page": {

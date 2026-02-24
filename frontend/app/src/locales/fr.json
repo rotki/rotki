@@ -2345,12 +2345,6 @@
         "wallet_is_not_enabled": "L'extension pour le portefeuille est désactivée. Vous pouvez l'activer dans le menu Extensions/Add-Ons, en fonction de votre navigateur.",
         "wallet_is_not_installed": "Aucun portefeuille n'est installé dans ce navigateur. Vous pouvez aller dans le magasin d'extensions de votre navigateur et en installer un."
       }
-    },
-    "manual_add": {
-      "label": "Manuel"
-    },
-    "xpub_add": {
-      "label": "XPUB"
     }
   },
   "kraken_page": {
