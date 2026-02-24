@@ -4,7 +4,7 @@ Changelog
 
 * :bug:`11708` Users can now mark Solana tokens as spam in addition to EVM tokens.
 * :bug:`11709` History events page will now properly refresh after marking an asset as spam or ignoring it from the context menu.
-* :feature:`11702` Zerox Base Swaps through the latest settler will now be properly decoded.
+* :bug:`-` Registering a new device is now more reliable when rotki runs in container environments.
 * :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
 
 * :release:`1.42.0 <2025-02-20>`

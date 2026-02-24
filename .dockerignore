@@ -4,9 +4,11 @@
 .idea
 .mypy_cache
 .pytest_cache
+.venv
 .run
 build
 chromedriverlog.txt
+colibri/target
 frontend/app/.env.development.local
 frontend/app/.idea
 frontend/app/.nyc_output
