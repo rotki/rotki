@@ -15,6 +15,10 @@ defineProps<{
   loading: boolean;
 }>();
 
+const emit = defineEmits<{
+  'detected-address': [address: string];
+}>();
+
 const input = useTemplateRef<InstanceType<typeof XpubInput>>('input');
 
 const xpub = computed<XpubPayload>({
@@ -85,6 +89,7 @@ defineExpose({
       v-model:error-messages="errors"
       :disabled="loading || modelValue.mode === 'edit'"
       :blockchain="modelValue.chain"
+      @detected-address="emit('detected-address', $event)"
     />
     <AccountDataInput
       v-model:tags="tags"

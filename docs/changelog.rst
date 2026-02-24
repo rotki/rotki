@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`11693` Bitcoin wallet addition is now simplified with single-field auto-detection of xpub type from the key prefix.
 * :feature:`11639` Users can now search for settings across all settings pages and navigate directly to a specific setting.
 * :feature:`11621` users can now selectively purge exchange history by event category.
 * :feature:`-` rotki can now resolved non .eth ENS names

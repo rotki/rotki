@@ -1,3 +1,4 @@
+import { isValidBchAddress, isValidBtcAddress } from '@rotki/common';
 import { XpubKeyType } from '@/types/blockchain/accounts';
 
 export enum XpubPrefix {
@@ -8,6 +9,7 @@ export enum XpubPrefix {
 }
 
 export interface XpubType {
+  readonly humanLabel: string;
   readonly label: string;
   readonly value: XpubPrefix;
 }
@@ -41,18 +43,22 @@ export const getPrefix: (type?: XpubKeyType) => XpubPrefix = (type) => {
 
 export const keyType: XpubType[] = [
   {
+    humanLabel: 'Legacy',
     label: XPUB_LABEL,
     value: XpubPrefix.XPUB,
   },
   {
+    humanLabel: 'SegWit',
     label: YPUB_LABEL,
     value: XpubPrefix.YPUB,
   },
   {
+    humanLabel: 'Native SegWit',
     label: ZPUB_LABEL,
     value: XpubPrefix.ZPUB,
   },
   {
+    humanLabel: 'Taproot',
     label: P2TR_LABEL,
     value: XpubPrefix.P2TR,
   },
@@ -69,4 +75,42 @@ export function guessPrefix(key: string): XpubPrefix {
   }
   const prefix = match?.[1] ?? XpubPrefix.XPUB;
   return prefix as XpubPrefix;
+}
+
+/**
+ * Returns true for plain BTC/BCH addresses (P2PKH, P2SH, bech32, Taproot, CashAddr).
+ */
+export function isBtcAddress(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed)
+    return false;
+
+  return isValidBtcAddress(trimmed) || isValidBchAddress(trimmed);
+}
+
+export type DetectionResult = XpubPrefix | 'address' | 'ambiguous' | null;
+
+/**
+ * Detects the xpub type from the key prefix.
+ * Returns 'address' for plain BTC addresses, 'ambiguous' for xpub prefix
+ * (shared by P2PKH and P2TR), or the specific XpubPrefix for ypub/zpub.
+ */
+export function detectXpubType(value: string): DetectionResult {
+  const trimmed = value.trim();
+  if (!trimmed)
+    return null;
+
+  if (isBtcAddress(trimmed))
+    return 'address';
+
+  if (trimmed.startsWith('ypub'))
+    return XpubPrefix.YPUB;
+
+  if (trimmed.startsWith('zpub'))
+    return XpubPrefix.ZPUB;
+
+  if (trimmed.startsWith('xpub'))
+    return 'ambiguous';
+
+  return null;
 }

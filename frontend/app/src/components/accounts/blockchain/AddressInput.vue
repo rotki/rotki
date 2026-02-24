@@ -10,17 +10,22 @@ import { toMessages } from '@/utils/validation';
 const addresses = defineModel<string[]>('addresses', { required: true });
 const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
 
-const { disabled, multi, showWalletImport } = defineProps<{
+const { disabled, multi, showWalletImport, forceMultiple = false } = defineProps<{
   disabled: boolean;
   multi: boolean;
   showWalletImport?: boolean;
+  forceMultiple?: boolean;
+}>();
+
+const emit = defineEmits<{
+  'detected-xpub': [key: string];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const address = ref<string>('');
 const userAddresses = ref<string>('');
-const multiple = ref<boolean>(false);
+const multiple = ref<boolean>(forceMultiple);
 
 const entries = computed(() => {
   const allAddresses = get(userAddresses)
@@ -39,22 +44,53 @@ const entries = computed(() => {
   return Object.values(entries);
 });
 
-function onPasteMulti(event: ClipboardEvent) {
+function onPasteMulti(event: ClipboardEvent): void {
   if (disabled)
     return;
 
   const paste = trimOnPaste(event);
-  if (paste)
-    userAddresses.value += paste.replace(/,(0x)/g, ',\n0x');
+  if (!paste)
+    return;
+
+  const trimmed = paste.trim();
+  if (isXpubPrefix(trimmed)) {
+    emit('detected-xpub', trimmed);
+    return;
+  }
+
+  const target = event.target as HTMLTextAreaElement | null;
+  const current = get(userAddresses);
+  const replacement = paste.replace(/,(0x)/g, ',\n0x');
+
+  if (target && target.selectionStart !== target.selectionEnd) {
+    const before = current.slice(0, target.selectionStart);
+    const after = current.slice(target.selectionEnd);
+    set(userAddresses, before + replacement + after);
+  }
+  else {
+    set(userAddresses, current + replacement);
+  }
 }
 
-function onPasteAddress(event: ClipboardEvent) {
+function isXpubPrefix(value: string): boolean {
+  return value.startsWith('xpub') || value.startsWith('ypub') || value.startsWith('zpub');
+}
+
+function onPasteAddress(event: ClipboardEvent): void {
   if (disabled)
     return;
 
   const paste = trimOnPaste(event);
-  if (paste)
-    set(address, paste);
+  if (!paste)
+    return;
+
+  const trimmed = paste.trim();
+  if (isXpubPrefix(trimmed)) {
+    emit('detected-xpub', trimmed);
+    return;
+  }
+
+  set(address, paste);
 }
 
 function updateErrorMessages(newErrors: ValidationErrors): void {
@@ -66,9 +102,15 @@ watch(address, (address) => {
   updateAddresses(address ? [address.trim()] : []);
 });
 
-function setAddress(addresses: string[]) {
+function setAddress(addresses: string[]): void {
   if (addresses.length === 1) {
-    set(address, addresses[0]);
+    if (get(multiple)) {
+      if (!get(userAddresses))
+        set(userAddresses, addresses[0]);
+    }
+    else {
+      set(address, addresses[0]);
+    }
   }
   else if (addresses.length === 0) {
     set(address, '');
@@ -170,7 +212,7 @@ defineExpose({
 <template>
   <div>
     <RuiCheckbox
-      v-if="multi"
+      v-if="multi && !forceMultiple"
       v-model="multiple"
       color="primary"
       class="mt-0 mb-4 flex"
@@ -198,13 +240,15 @@ defineExpose({
       <RuiTextArea
         v-else
         v-model="userAddresses"
+        data-cy="account-address-field"
         variant="outlined"
         color="primary"
         class="flex-1"
-        min-rows="5"
+        :min-rows="forceMultiple ? (entries.length > 1 ? 4 : 2) : 5"
         :disabled="disabled"
         :error-messages="toMessages(v$.userAddresses)"
         :hint="t('account_form.labels.addresses_hint')"
+        :placeholder="forceMultiple ? t('account_form.labels.btc.placeholder') : undefined"
         :label="t('account_form.labels.addresses')"
         @blur="v$.userAddresses.$touch()"
         @paste="onPasteMulti($event)"

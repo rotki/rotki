@@ -7,6 +7,7 @@ import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import AccountDataInput from '@/components/accounts/management/inputs/AccountDataInput.vue';
 import ModuleActivator from '@/components/accounts/ModuleActivator.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { isBtcChain } from '@/types/blockchain/chains';
 
 const modelValue = defineModel<AccountManage>({ required: true });
 
@@ -14,6 +15,10 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 
 defineProps<{
   loading: boolean;
+}>();
+
+const emit = defineEmits<{
+  'detected-xpub': [key: string];
 }>();
 
 const address = useTemplateRef<InstanceType<typeof AddressInput>>('address');
@@ -139,7 +144,9 @@ defineExpose({
         v-model:error-messages="errors"
         :disabled="loading || editMode"
         :multi="!editMode"
+        :force-multiple="!editMode && isBtcChain(modelValue.chain)"
         :show-wallet-import="showWalletImport"
+        @detected-xpub="emit('detected-xpub', $event)"
       />
       <AccountDataInput
         v-model:tags="tags"

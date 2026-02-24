@@ -2118,12 +2118,6 @@
         "wallet_is_not_enabled": "钱包的扩展已禁用。您可以根据自己的浏览器，在 “扩展/附加组件 ”菜单中启用它。",
         "wallet_is_not_installed": "该浏览器没有安装任何钱包。您可以到浏览器的扩展商店安装一个。"
       }
-    },
-    "manual_add": {
-      "label": "手册"
-    },
-    "xpub_add": {
-      "label": "XPUB"
     }
   },
   "kraken_page": {

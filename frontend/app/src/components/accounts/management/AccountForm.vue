@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { ValidationErrors } from '@/types/api/errors';
 import { assert, Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import { camelCase } from 'es-toolkit';
 import AccountFormApiKeyAlertContent from '@/components/accounts/management/AccountFormApiKeyAlertContent.vue';
 import AccountSelector from '@/components/accounts/management/inputs/AccountSelector.vue';
@@ -160,6 +161,51 @@ async function validate(): Promise<boolean> {
   return true;
 }
 
+async function handleDetectedXpub(key: string): Promise<void> {
+  const selectedChain = get(chain);
+  if (!selectedChain || !isBtcChain(selectedChain))
+    return;
+
+  set(inputMode, InputMode.XPUB_ADD);
+  await nextTick();
+
+  const current = get(modelValue);
+  if (current.type !== 'xpub')
+    return;
+
+  set(modelValue, {
+    ...current,
+    data: {
+      ...current.data,
+      xpub: {
+        ...current.data.xpub,
+        xpub: key,
+      },
+    },
+  });
+}
+
+async function handleDetectedAddress(address: string): Promise<void> {
+  let targetChain = get(chain);
+  if (!targetChain)
+    return;
+
+  if (targetChain === Blockchain.BTC && address.startsWith('bitcoincash:')) {
+    targetChain = Blockchain.BCH;
+    set(chain, targetChain);
+    await nextTick();
+  }
+
+  set(inputMode, InputMode.MANUAL_ADD);
+  await nextTick();
+  set(modelValue, {
+    chain: targetChain,
+    data: [{ address, tags: null }],
+    mode: 'add',
+    type: 'account',
+  });
+}
+
 watch(modelValue, (modelValue) => {
   if ('xpub' in modelValue.data && modelValue.mode === 'edit')
     set(inputMode, InputMode.XPUB_ADD);
@@ -170,6 +216,9 @@ watch(modelValue, (modelValue) => {
 watchImmediate(chain, (chain) => {
   if (get(modelValue).mode === 'edit' || !chain)
     return;
+
+  if (get(inputMode) === InputMode.XPUB_ADD)
+    set(inputMode, InputMode.MANUAL_ADD);
 
   if (chain === Blockchain.ETH2) {
     set(modelValue, {
@@ -274,7 +323,6 @@ defineExpose({
     </RuiAlert>
 
     <AccountSelector
-      v-model:input-mode="inputMode"
       v-model:chain="chain"
       :chain-ids="chainIds"
       :edit-mode="modelValue.mode === 'edit'"
@@ -294,6 +342,7 @@ defineExpose({
       v-model="modelValue"
       v-model:error-messages="errors"
       :loading="loading"
+      @detected-address="startPromise(handleDetectedAddress($event))"
     />
 
     <AgnosticAddressAccountForm
@@ -310,6 +359,7 @@ defineExpose({
       v-model="modelValue"
       v-model:error-messages="errors"
       :loading="loading"
+      @detected-xpub="startPromise(handleDetectedXpub($event))"
     />
   </div>
 </template>
