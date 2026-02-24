@@ -5,27 +5,23 @@ import { size } from '@/utils/data';
 
 const file = defineModel<File | undefined>({ required: true });
 
-const props = withDefaults(
-  defineProps<{
-    source: ImportSourceType;
-    loading?: boolean;
-    fileFilter?: string;
-    uploaded?: boolean;
-    errorMessage?: string;
-  }>(),
-  {
-    errorMessage: '',
-    fileFilter: '.csv',
-    loading: false,
-    uploaded: false,
-  },
-);
+const {
+  errorMessage = '',
+  fileFilter = '.csv',
+  source,
+  uploaded = false,
+} = defineProps<{
+  source: ImportSourceType;
+  loading?: boolean;
+  fileFilter?: string;
+  uploaded?: boolean;
+  errorMessage?: string;
+}>();
 
 const emit = defineEmits<{
   'update:uploaded': [uploaded: boolean];
   'update:error-message': [message: string];
 }>();
-const { errorMessage, fileFilter, source, uploaded } = toRefs(props);
 
 const wrapper = ref<HTMLDivElement>();
 
@@ -68,7 +64,7 @@ function onSelect(event: Event) {
   if (!target || !target.files)
     return;
 
-  if (!['icon', 'zip', 'csv', 'json'].includes(get(source)))
+  if (!['icon', 'zip', 'csv', 'json'].includes(source))
     check(target.files);
   else selected(target.files[0]);
 }
@@ -120,12 +116,10 @@ function check(files: File[] | FileList) {
     return;
   }
 
-  const filter = get(fileFilter);
-
-  if (!isValidFile(files[0], filter)) {
+  if (!isValidFile(files[0], fileFilter)) {
     onError(
       t('file_upload.only_files', {
-        fileFilter: filter,
+        fileFilter,
       }),
     );
     return;
@@ -148,7 +142,7 @@ function clickSelect() {
   get(select)?.click();
 }
 
-watch(uploaded, (uploaded) => {
+watch(() => uploaded, (uploaded) => {
   clearTimeoutHandler(errorTimeout);
   clearTimeoutHandler(uploadedTimeout);
 
@@ -164,7 +158,7 @@ watch(uploaded, (uploaded) => {
   set(uploadedTimeout, timeout);
 });
 
-watch(errorMessage, message => onError(message));
+watch(() => errorMessage, message => onError(message));
 
 watch(file, (file) => {
   if (!file) {

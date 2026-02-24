@@ -9,7 +9,16 @@ import HistoryEventsIdentifier from '@/components/history/events/HistoryEventsId
 import IgnoredInAccountingIcon from '@/components/history/IgnoredInAccountingIcon.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 
-const props = withDefaults(defineProps<{
+const {
+  group,
+  groupEvents = [],
+  hideActions,
+  loading,
+  duplicateHandlingStatus,
+  hasHiddenIgnoredAssets,
+  showingIgnoredAssets,
+  variant = 'row',
+} = defineProps<{
   group: HistoryEventEntry;
   groupEvents?: HistoryEventEntry[];
   hideActions?: boolean;
@@ -18,10 +27,7 @@ const props = withDefaults(defineProps<{
   hasHiddenIgnoredAssets?: boolean;
   showingIgnoredAssets?: boolean;
   variant?: 'row' | 'card';
-}>(), {
-  groupEvents: () => [],
-  variant: 'row',
-});
+}>();
 
 const emit = defineEmits<{
   'add-event': [event: StandaloneEditableEvents];
@@ -36,16 +42,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { hasHiddenIgnoredAssets, showingIgnoredAssets } = toRefs(props);
-
 // Show indicator if group has hidden ignored assets OR is currently showing them
 const showIgnoredAssetsIndicator = computed<boolean>(() =>
-  get(hasHiddenIgnoredAssets) || get(showingIgnoredAssets),
+  hasHiddenIgnoredAssets || showingIgnoredAssets,
 );
 
-const { group } = toRefs(props);
-
-const isCard = computed<boolean>(() => props.variant === 'card');
+const isCard = computed<boolean>(() => variant === 'card');
 </script>
 
 <template>

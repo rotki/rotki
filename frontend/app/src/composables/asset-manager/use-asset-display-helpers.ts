@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { Collection } from '@/types/collection';
 import { getAddressFromEvmIdentifier, isEvmIdentifier, type SupportedAsset, toSentenceCase } from '@rotki/common';
 import { CUSTOM_ASSET } from '@/types/asset';
@@ -22,7 +22,7 @@ interface UseAssetDisplayHelpersReturn {
 }
 
 export function useAssetDisplayHelpers(
-  collection: Ref<Collection<SupportedAsset>>,
+  collection: MaybeRefOrGetter<Collection<SupportedAsset>>,
   useIsAssetWhitelisted: (identifier: string) => ComputedRef<boolean>,
 ): UseAssetDisplayHelpersReturn {
   const formatType = (string?: string | null): string => toSentenceCase(string ?? 'EVM token');
@@ -58,7 +58,7 @@ export function useAssetDisplayHelpers(
   const canBeEdited = (asset: SupportedAsset): boolean => !isCustomAsset(asset);
 
   const disabledRows = computed<SupportedAsset[]>(() => {
-    const data = get(collection).data;
+    const data = toValue(collection).data;
     return data.filter(item => get(useIsAssetWhitelisted(item.identifier)) || isSpamAsset(item));
   });
 

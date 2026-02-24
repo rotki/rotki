@@ -4,31 +4,27 @@ import NavigatorLink from '@/components/helper/NavigatorLink.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useLocations } from '@/composables/locations';
 
-const props = withDefaults(
-  defineProps<{
-    identifier: string;
-    icon?: boolean;
-    size?: string;
-    openDetails?: boolean;
-    detailPath?: string;
-    horizontal?: boolean;
-  }>(),
-  {
-    detailPath: '',
-    horizontal: false,
-    icon: false,
-    openDetails: true,
-    size: '24px',
-  },
-);
-
-const { detailPath, identifier } = toRefs(props);
+const {
+  identifier,
+  icon,
+  size = '24px',
+  openDetails = true,
+  detailPath = '',
+  horizontal,
+} = defineProps<{
+  identifier: string;
+  icon?: boolean;
+  size?: string;
+  openDetails?: boolean;
+  detailPath?: string;
+  horizontal?: boolean;
+}>();
 
 const { locationData } = useLocations();
-const location = locationData(identifier);
+const location = locationData(() => identifier);
 
 const route = computed<RouteLocationRaw>(() => {
-  const details = get(detailPath);
+  const details = detailPath;
   const tradeLocation = get(location);
   if (details) {
     return { path: details };

@@ -7,10 +7,10 @@ interface Props {
   size?: string;
 }
 
-withDefaults(defineProps<Props>(), {
-  metadata: undefined,
-  size: '16px',
-});
+const {
+  metadata,
+  size = '16px',
+} = defineProps<Props>();
 </script>
 
 <template>

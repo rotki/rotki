@@ -14,15 +14,11 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 
-const props = withDefaults(
-  defineProps<{
-    identifier: string;
-    isCollectionParent?: boolean;
-  }>(),
-  { isCollectionParent: false },
-);
+const { identifier, isCollectionParent = false } = defineProps<{
+  identifier: string;
+  isCollectionParent?: boolean;
+}>();
 
-const { identifier, isCollectionParent } = toRefs(props);
 const { assetPriceInfo } = useAggregatedBalances();
 const { assetPriceInCurrentCurrency } = usePriceUtils();
 
@@ -32,11 +28,11 @@ const { isLoading } = useStatusStore();
 
 const refreshingPrices = isLoading(Section.PRICES);
 
-const info = computed<AssetPriceInfo>(() => get(assetPriceInfo(identifier, isCollectionParent)));
-const price = assetPriceInCurrentCurrency(identifier);
+const info = computed<AssetPriceInfo>(() => get(assetPriceInfo(() => identifier, () => isCollectionParent)));
+const price = assetPriceInCurrentCurrency(() => identifier);
 
 const { isManualAssetPrice } = usePriceUtils();
-const isManualPrice = isManualAssetPrice(identifier);
+const isManualPrice = isManualAssetPrice(() => identifier);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -50,7 +46,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 function setPriceForm() {
   const toAsset = get(currencySymbol);
   set(customPrice, {
-    fromAsset: get(identifier),
+    fromAsset: identifier,
     price: get(price).toFixed(),
     toAsset,
   });
@@ -60,15 +56,14 @@ function setPriceForm() {
 const { deletePrice, refreshCurrentPrices, refreshing } = useLatestPrices(t);
 
 function showDeleteConfirmation() {
-  const identifierVal = get(identifier);
   show(
     {
       message: t('assets.custom_price.delete.message', {
-        asset: get(assetName(identifierVal)) ?? identifierVal,
+        asset: get(assetName(identifier)) ?? identifier,
       }),
       title: t('assets.custom_price.delete.tooltip'),
     },
-    () => deletePrice({ fromAsset: identifierVal }),
+    () => deletePrice({ fromAsset: identifier }),
   );
 }
 

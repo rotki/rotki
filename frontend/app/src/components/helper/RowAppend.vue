@@ -1,41 +1,36 @@
 <script setup lang="ts">
-const props = withDefaults(
-  defineProps<{
-    className?: string | Record<string, any>;
-    label?: string;
-    labelColspan?: string | number;
-    leftPatchColspan?: string | number;
-    rightPatchColspan?: string | number;
-    isMobile?: boolean;
-  }>(),
-  {
-    className: '',
-    isMobile: false,
-    label: '',
-    labelColspan: 1,
-    leftPatchColspan: 0,
-    rightPatchColspan: 0,
-  },
-);
-
-const { className, isMobile, leftPatchColspan, rightPatchColspan } = toRefs(props);
+const {
+  className = '',
+  isMobile = false,
+  label = '',
+  labelColspan = 1,
+  leftPatchColspan = 0,
+  rightPatchColspan = 0,
+} = defineProps<{
+  className?: string | Record<string, any>;
+  label?: string;
+  labelColspan?: string | number;
+  leftPatchColspan?: string | number;
+  rightPatchColspan?: string | number;
+  isMobile?: boolean;
+}>();
 
 const formattedClassName = computed(() => {
   const propClassName
-    = typeof className.value === 'object'
-      ? className.value
+    = typeof className === 'object'
+      ? className
       : {
-          [className.value]: true,
+          [className]: true,
         };
 
   return {
-    'flex justify-between': isMobile.value,
+    'flex justify-between': isMobile,
     ...propClassName,
   };
 });
 
-const leftColspan = useToNumber(leftPatchColspan);
-const rightColspan = useToNumber(rightPatchColspan);
+const leftColspan = useToNumber(() => leftPatchColspan);
+const rightColspan = useToNumber(() => rightPatchColspan);
 </script>
 
 <template>

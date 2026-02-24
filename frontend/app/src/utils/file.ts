@@ -1,9 +1,8 @@
-import type { Ref } from 'vue';
 import type { UserDbBackup } from '@/types/backup';
 
-export function getFilepath(db: UserDbBackup, directory: Ref<string>): string {
+export function getFilepath(db: UserDbBackup, directory: string): string {
   const file = `${db.time}_rotkehlchen_db_v${db.version}.backup`;
-  return `${directory.value}${file}`;
+  return `${directory}${file}`;
 }
 
 export function getFilename(fullPath: string): string {

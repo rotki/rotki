@@ -41,25 +41,25 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(defineProps<Props>(), {
-  amount: undefined,
-  price: null,
-  timestamp: undefined,
-  value: undefined,
-});
-
-const { amount, asset, price: knownPrice, timestamp, value: providedValue, loading: loadingProp } = toRefs(props);
+const {
+  amount,
+  asset,
+  price: knownPrice,
+  timestamp,
+  value: providedValue,
+  loading: loadingProp,
+} = defineProps<Props>();
 
 // Composables
 const { loading: calculationLoading, value: calculatedValue } = useAssetValue({
-  amount: computed<BigNumber>(() => get(amount) ?? Zero),
-  asset,
-  knownPrice,
-  timestamp,
+  amount: computed<BigNumber>(() => amount ?? Zero),
+  asset: () => asset,
+  knownPrice: () => knownPrice,
+  timestamp: () => timestamp,
 });
 const { assetOracle, isManualPrice } = useOracleInfo({
   isAssetPrice: computed<boolean>(() => true),
-  priceAsset: asset,
+  priceAsset: () => asset,
 });
 const { currency } = useAmountDisplaySettings();
 
@@ -67,13 +67,10 @@ const { currency } = useAmountDisplaySettings();
 const displaySymbol = computed<string>(() => get(currency).unicodeSymbol);
 
 // Computed - value resolution
-const hasProvidedValue = computed<boolean>(() => {
-  const val = get(providedValue);
-  return val !== undefined && val.gt(0);
-});
+const hasProvidedValue = computed<boolean>(() => providedValue !== undefined && providedValue.gt(0));
 
 const displayValue = computed<BigNumber>(() =>
-  get(hasProvidedValue) ? get(providedValue)! : get(calculatedValue),
+  get(hasProvidedValue) ? providedValue! : get(calculatedValue),
 );
 
 const loading = computed<boolean>(() =>

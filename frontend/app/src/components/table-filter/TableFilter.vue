@@ -20,15 +20,12 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(defineProps<{
+const { matches, matchers, location, disabled } = defineProps<{
   matches: MatchedKeywordWithBehaviour<any>;
   matchers: SearchMatcher<any, any>[];
   location?: SavedFilterLocation;
   disabled?: boolean;
-}>(), {
-  disabled: false,
-  location: undefined,
-});
+}>();
 
 const emit = defineEmits<{
   'update:matches': [matches: MatchedKeywordWithBehaviour<any>];
@@ -37,8 +34,6 @@ const emit = defineEmits<{
 defineSlots<{
   tooltip: () => any;
 }>();
-
-const { matchers, matches } = toRefs(props);
 
 const input = ref();
 const search = ref<string>('');
@@ -57,7 +52,7 @@ const {
   matcherForKey,
   matcherForKeyValue,
   validKeys,
-} = useMatcherUtils(matchers);
+} = useMatcherUtils(() => matchers);
 
 // Selection management
 const {
@@ -73,7 +68,7 @@ const {
 } = useFilterSelection(search, matcherForKey, matcherForKeyValue, emit);
 
 // Filtered matchers based on selection
-const { filteredMatchers } = useFilterMatchers(matchers, selection, search);
+const { filteredMatchers } = useFilterMatchers(() => matchers, selection, search);
 
 // Chip grouping composable
 const {
@@ -244,14 +239,14 @@ onMounted(() => {
     e.stopPropagation();
   };
 
-  restoreSelection(get(matches));
+  restoreSelection(matches);
 });
 
 watch(search, () => {
   set(selectedSuggestion, 0);
 });
 
-watch(matches, (matchesData) => {
+watch(() => matches, (matchesData) => {
   restoreSelection(matchesData);
 });
 

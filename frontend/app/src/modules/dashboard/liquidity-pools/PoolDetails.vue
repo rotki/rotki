@@ -17,9 +17,7 @@ interface PoolDetailsProps {
   premiumOnly?: boolean;
 }
 
-const props = withDefaults(defineProps<PoolDetailsProps>(), {
-  premiumOnly: true,
-});
+const { assets, premiumOnly = true } = defineProps<PoolDetailsProps>();
 
 const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   column: 'value',
@@ -63,7 +61,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
 useRememberTableSorting<AssetBalanceWithPrice>(TableId.POOL_LIQUIDITY_BALANCE_DETAIL, sort, cols);
 
 const sorted = computed<AssetBalanceWithPrice[]>(() => {
-  const transformed: AssetBalanceWithPrice[] = props.assets.map(item => ({
+  const transformed: AssetBalanceWithPrice[] = assets.map(item => ({
     amount: item.userBalance.amount,
     asset: item.asset,
     usdPrice: get(assetPrice(item.asset)) ?? Zero,

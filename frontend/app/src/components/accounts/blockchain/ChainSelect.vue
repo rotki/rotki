@@ -12,24 +12,19 @@ defineOptions({
 
 const model = defineModel<T extends Array<infer U> ? U[] : T | undefined>({ required: true });
 
-const props = withDefaults(
-  defineProps<{
-    disabled?: boolean;
-    dense?: boolean;
-    evmOnly?: boolean;
-    excludeEthStaking?: boolean;
-    items?: string[];
-  }>(),
-  {
-    dense: false,
-    disabled: false,
-    evmOnly: false,
-    excludeEthStaking: false,
-    items: () => [],
-  },
-);
-
-const { evmOnly, excludeEthStaking, items } = toRefs(props);
+const {
+  dense = false,
+  disabled = false,
+  evmOnly = false,
+  excludeEthStaking = false,
+  items = [],
+} = defineProps<{
+  disabled?: boolean;
+  dense?: boolean;
+  evmOnly?: boolean;
+  excludeEthStaking?: boolean;
+  items?: string[];
+}>();
 
 const { isModuleEnabled } = useModules();
 
@@ -37,19 +32,18 @@ const { isEvm, supportedChains } = useSupportedChains();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const filteredItems = computed <string[]> (() => {
+const filteredItems = computed<string[]>(() => {
   const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
 
   let data: string[] = get(supportedChains).map(({ id }) => id);
 
-  const only = get(items);
-  if (only.length > 0)
-    data = data.filter(chain => only.includes(chain));
+  if (items.length > 0)
+    data = data.filter(chain => items.includes(chain));
 
-  if (!isEth2Enabled || get(excludeEthStaking))
+  if (!isEth2Enabled || excludeEthStaking)
     data = data.filter(symbol => symbol !== Blockchain.ETH2);
 
-  if (get(evmOnly))
+  if (evmOnly)
     data = data.filter(symbol => get(isEvm(symbol as Blockchain)));
 
   return data;
@@ -58,7 +52,7 @@ const filteredItems = computed <string[]> (() => {
 const mappedOptions = computed<ChainInfo[]>(() => {
   const filtered = get(filteredItems);
   const chains = get(supportedChains).filter(item => filtered.includes(item.id));
-  if (get(items).includes('all')) {
+  if (items.includes('all')) {
     chains.unshift({
       id: 'all',
       image: '',

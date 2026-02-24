@@ -7,17 +7,10 @@ import { AddressNamePriority } from '@/types/settings/address-name-priorities';
 import { EvmIndexer } from '@/types/settings/evm-indexer';
 import { PriceOracle } from '@/types/settings/price-oracle';
 
-const props = withDefaults(
-  defineProps<{
-    data: PrioritizedListItemData<PrioritizedListId>;
-    size?: string;
-  }>(),
-  {
-    size: '32px',
-  },
-);
-
-const { data } = toRefs(props);
+const { data, size = '32px' } = defineProps<{
+  data: PrioritizedListItemData<PrioritizedListId>;
+  size?: string;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 

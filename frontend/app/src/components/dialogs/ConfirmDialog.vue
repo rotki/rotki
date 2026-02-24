@@ -1,7 +1,18 @@
 <script setup lang="ts">
 import { DialogType, themes } from '@/types/dialogs';
 
-const props = withDefaults(defineProps<{
+const {
+  confirmType = DialogType.INFO,
+  disabled = false,
+  display,
+  loading = false,
+  maxWidth = '500',
+  message,
+  primaryAction = null,
+  secondaryAction = null,
+  singleAction = false,
+  title,
+} = defineProps<{
   title: string;
   message: string;
   display: boolean;
@@ -12,29 +23,19 @@ const props = withDefaults(defineProps<{
   singleAction?: boolean;
   loading?: boolean;
   maxWidth?: string;
-}>(), {
-  confirmType: DialogType.INFO,
-  disabled: false,
-  loading: false,
-  maxWidth: '500',
-  primaryAction: null,
-  secondaryAction: null,
-  singleAction: false,
-});
+}>();
 
 const emit = defineEmits<{
   confirm: [];
   cancel: [];
 }>();
 
-const { confirmType, primaryAction, secondaryAction } = toRefs(props);
-
 const { t } = useI18n({ useScope: 'global' });
 
-const color = computed(() => themes[get(confirmType)].color);
-const icon = computed(() => themes[get(confirmType)].icon);
-const primaryText = computed<string>(() => get(primaryAction) || t('common.actions.confirm'));
-const secondaryText = computed<string>(() => get(secondaryAction) || t('common.actions.cancel'));
+const color = computed(() => themes[confirmType].color);
+const icon = computed(() => themes[confirmType].icon);
+const primaryText = computed<string>(() => primaryAction || t('common.actions.confirm'));
+const secondaryText = computed<string>(() => secondaryAction || t('common.actions.cancel'));
 </script>
 
 <template>

@@ -4,25 +4,19 @@ import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import HashLink from '@/modules/common/links/HashLink.vue';
 
-const props = withDefaults(
-  defineProps<{
-    asset: string;
-    link?: boolean;
-  }>(),
-  {
-    link: false,
-  },
-);
+const { asset, link = false } = defineProps<{
+  asset: string;
+  link?: boolean;
+}>();
 
 defineSlots<{
   default: () => any;
 }>();
 
-const { asset } = toRefs(props);
-const address = reactify(getAddressFromEvmIdentifier)(asset);
+const address = reactify(getAddressFromEvmIdentifier)(() => asset);
 const { assetInfo } = useAssetInfoRetrieval();
-const assetDetails = assetInfo(asset);
-const { navigateToDetails } = useAssetPageNavigation(asset);
+const assetDetails = assetInfo(() => asset);
+const { navigateToDetails } = useAssetPageNavigation(() => asset);
 </script>
 
 <template>

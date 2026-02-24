@@ -6,23 +6,19 @@ import { toMessages } from '@/utils/validation';
 
 const display = defineModel<boolean>({ required: true });
 
-const props = withDefaults(
-  defineProps<{
-    username: string;
-    errorMessage?: string;
-  }>(),
-  {
-    errorMessage: '',
-  },
-);
+const {
+  errorMessage = '',
+  username,
+} = defineProps<{
+  username: string;
+  errorMessage?: string;
+}>();
 
 const emit = defineEmits<{
   confirm: [password: string];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { errorMessage, username } = toRefs(props);
 const { getPassword } = useInterop();
 
 const password = ref<string>('');
@@ -41,9 +37,8 @@ const v$ = useVuelidate(rules, { password }, { $autoDirty: true });
 
 const passwordErrors = computed<string[]>(() => {
   const errors = toMessages(get(v$).password);
-  const externalError = get(errorMessage);
-  if (externalError)
-    return [externalError];
+  if (errorMessage)
+    return [errorMessage];
 
   return errors;
 });
@@ -60,9 +55,8 @@ watchImmediate(display, async (isDisplayed) => {
     set(password, '');
     get(v$).$reset();
     // Fetch stored password when dialog opens
-    const usernameValue = get(username);
-    if (usernameValue)
-      set(storedPassword, await getPassword(usernameValue));
+    if (username)
+      set(storedPassword, await getPassword(username));
   }
 });
 </script>

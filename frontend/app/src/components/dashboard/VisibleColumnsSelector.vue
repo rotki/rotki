@@ -4,17 +4,12 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { TableColumn } from '@/types/table-column';
 
-const props = withDefaults(
-  defineProps<{
-    group: DashboardTableType;
-    groupLabel?: string;
-  }>(),
-  { groupLabel: undefined },
-);
+const { group, groupLabel } = defineProps<{
+  group: DashboardTableType;
+  groupLabel?: string;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { group, groupLabel } = toRefs(props);
 
 const availableColumns = computed(() => [
   {
@@ -23,7 +18,7 @@ const availableColumns = computed(() => [
   },
   {
     text: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
-      group: get(groupLabel) || get(group),
+      group: groupLabel || group,
     }),
     value: TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP,
   },
@@ -32,13 +27,13 @@ const availableColumns = computed(() => [
 const store = useFrontendSettingsStore();
 const { dashboardTablesVisibleColumns } = storeToRefs(store);
 
-const currentVisibleColumns = computed(() => get(dashboardTablesVisibleColumns)[get(group)]);
+const currentVisibleColumns = computed(() => get(dashboardTablesVisibleColumns)[group]);
 
 async function onVisibleColumnsChange(visibleColumns: TableColumn[]) {
   const payload: FrontendSettingsPayload = {
     dashboardTablesVisibleColumns: {
       ...get(dashboardTablesVisibleColumns),
-      [get(group)]: visibleColumns,
+      [group]: visibleColumns,
     },
   };
 

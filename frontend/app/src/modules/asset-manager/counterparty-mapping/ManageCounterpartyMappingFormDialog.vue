@@ -8,11 +8,9 @@ import { useMessageStore } from '@/store/message';
 
 const modelValue = defineModel<CounterpartyMapping | undefined>({ required: true });
 
-const props = withDefaults(defineProps<{
+const { editMode } = defineProps<{
   editMode?: boolean;
-}>(), {
-  editMode: false,
-});
+}>();
 
 const emit = defineEmits<{
   refresh: [mapping: CounterpartyMapping];
@@ -26,7 +24,7 @@ const stateUpdated = ref(false);
 const errorMessages = ref<Record<string, string[]>>({});
 
 const dialogTitle = computed<string>(() =>
-  props.editMode
+  editMode
     ? t('asset_management.cex_mapping.edit_title')
     : t('asset_management.cex_mapping.add_title'),
 );
@@ -45,7 +43,6 @@ async function save(): Promise<boolean> {
 
   const data = get(modelValue);
   let success;
-  const editMode = props.editMode;
 
   set(loading, true);
   try {

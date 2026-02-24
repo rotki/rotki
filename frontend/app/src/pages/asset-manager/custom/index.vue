@@ -8,14 +8,9 @@ definePage({
   }),
 });
 
-const props = withDefaults(
-  defineProps<{
-    identifier?: string | null;
-  }>(),
-  { identifier: null },
-);
-
-const { identifier } = toRefs(props);
+const { identifier = null } = defineProps<{
+  identifier?: string | null;
+}>();
 </script>
 
 <template>

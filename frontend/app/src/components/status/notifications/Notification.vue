@@ -5,13 +5,10 @@ import dayjs from 'dayjs';
 import MissingKeyNotification from '@/components/status/notifications/MissingKeyNotification.vue';
 import { arrayify } from '@/utils/array';
 
-const props = withDefaults(
-  defineProps<{
-    notification: NotificationData;
-    popup?: boolean;
-  }>(),
-  { popup: false },
-);
+const { notification, popup = false } = defineProps<{
+  notification: NotificationData;
+  popup?: boolean;
+}>();
 
 const emit = defineEmits<{
   dismiss: [id: number];
@@ -20,10 +17,8 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const { copy: copyToClipboard } = useClipboard();
 
-const { notification } = toRefs(props);
-
 const actions = computed<NotificationAction[]>(() => {
-  const action = get(notification).action;
+  const action = notification.action;
 
   if (!action)
     return [];
@@ -36,7 +31,7 @@ function dismiss(id: number) {
 }
 
 const icon = computed<RuiIcons>(() => {
-  switch (get(notification).severity) {
+  switch (notification.severity) {
     case Severity.ERROR:
     case Severity.INFO:
       return 'lu-circle-alert';
@@ -50,10 +45,10 @@ const icon = computed<RuiIcons>(() => {
 });
 
 const color = computed<string>(() => {
-  if (get(notification).action)
+  if (notification.action)
     return 'warning';
 
-  switch (get(notification).severity) {
+  switch (notification.severity) {
     case Severity.ERROR:
       return 'error';
     case Severity.INFO:
@@ -98,7 +93,7 @@ const expandButtonClass = computed<string>(() => {
 });
 
 const circleBgClass = computed(() => {
-  switch (props.notification.severity) {
+  switch (notification.severity) {
     case Severity.ERROR:
       return 'bg-rui-error';
     case Severity.INFO:
@@ -112,10 +107,10 @@ const circleBgClass = computed(() => {
   }
 });
 
-const date = computed(() => dayjs(get(notification).date).format('LLL'));
+const date = computed(() => dayjs(notification.date).format('LLL'));
 
 async function copy() {
-  const { i18nParam, message } = get(notification);
+  const { i18nParam, message } = notification;
   let messageText = message;
 
   if (i18nParam) {

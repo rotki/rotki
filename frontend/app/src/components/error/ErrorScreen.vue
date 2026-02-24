@@ -1,39 +1,30 @@
 <script setup lang="ts">
 import CopyButton from '@/components/helper/CopyButton.vue';
 
-const props = withDefaults(
-  defineProps<{
-    header?: string;
-    title?: string;
-    subtitle?: string;
-    message?: string;
-    error?: string;
-    alternative?: string;
-  }>(),
-  {
-    alternative: '',
-    error: '',
-    header: '',
-    message: '',
-    subtitle: '',
-    title: '',
-  },
-);
+const {
+  alternative = '',
+  error = '',
+  header = '',
+  message = '',
+  subtitle = '',
+  title = '',
+} = defineProps<{
+  header?: string;
+  title?: string;
+  subtitle?: string;
+  message?: string;
+  error?: string;
+  alternative?: string;
+}>();
 
 defineSlots<{
   default: () => any;
   bottom: () => any;
 }>();
 
-const { error, message } = toRefs(props);
-
 const { t } = useI18n({ useScope: 'global' });
 
-const errorText = computed(() => {
-  const errorText = get(error);
-  const errorMessage = get(message);
-  return !errorText ? errorMessage : `${errorMessage}\n\n${errorText}`;
-});
+const errorText = computed(() => !error ? message : `${message}\n\n${error}`);
 </script>
 
 <template>

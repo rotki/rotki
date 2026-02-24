@@ -1,26 +1,25 @@
 <script setup lang="ts">
 import { useRefMap } from '@/composables/utils/useRefMap';
 
-const props = withDefaults(
-  defineProps<{
-    apiKey: string;
-    name: string;
-    loading?: boolean;
-    tooltip?: string;
-    hint?: string;
-    label?: string;
-    status?: { message: string; success?: boolean };
-    hideActions?: boolean;
-  }>(),
-  {
-    hideActions: false,
-    hint: '',
-    label: '',
-    loading: false,
-    status: undefined,
-    tooltip: '',
-  },
-);
+const {
+  apiKey,
+  hideActions = false,
+  hint = '',
+  label = '',
+  loading = false,
+  name,
+  status,
+  tooltip = '',
+} = defineProps<{
+  apiKey: string;
+  name: string;
+  loading?: boolean;
+  tooltip?: string;
+  hint?: string;
+  label?: string;
+  status?: { message: string; success?: boolean };
+  hideActions?: boolean;
+}>();
 
 const emit = defineEmits<{
   'delete-key': [value: string];
@@ -32,26 +31,25 @@ defineSlots<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { apiKey, hideActions, status } = toRefs(props);
 
 const currentValue = ref<string>('');
 const editMode = ref<boolean>(false);
 const cancellable = ref<boolean>(false);
 
-const errorMessages = useRefMap(status, (status) => {
+const errorMessages = useRefMap(() => status, (status) => {
   if (!status || status.success)
     return [];
   return [status.message];
 });
 
-const successMessages = useRefMap(status, (status) => {
+const successMessages = useRefMap(() => status, (status) => {
   if (!status || !status.success)
     return [];
   return [status.message];
 });
 
 function updateStatus() {
-  if (!get(apiKey)) {
+  if (!apiKey) {
     set(cancellable, false);
     set(editMode, true);
   }
@@ -59,17 +57,17 @@ function updateStatus() {
     set(cancellable, true);
     set(editMode, false);
   }
-  set(currentValue, get(apiKey));
+  set(currentValue, apiKey);
 }
 
 function saveHandler() {
-  if (get(editMode) || get(hideActions)) {
+  if (get(editMode) || hideActions) {
     emit('save', {
       apiKey: get(currentValue),
-      name: props.name,
+      name,
     });
 
-    if (!get(status) || get(status)?.success) {
+    if (!status || status?.success) {
       set(editMode, false);
       set(cancellable, true);
     }
@@ -81,18 +79,18 @@ function saveHandler() {
 
 function cancel() {
   set(editMode, false);
-  set(currentValue, get(apiKey));
+  set(currentValue, apiKey);
 }
 
 onMounted(() => {
   updateStatus();
 });
 
-watch(apiKey, () => {
+watch(() => apiKey, () => {
   updateStatus();
 });
 
-watch(status, (newStatus) => {
+watch(() => status, (newStatus) => {
   if (newStatus && !newStatus.success)
     set(editMode, true);
 });

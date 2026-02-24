@@ -56,34 +56,35 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(defineProps<Props>(), {
-  currency: undefined,
-  from: '',
-  pnl: false,
-  symbol: 'symbol',
-  timestamp: undefined,
-});
-
-const { from, timestamp, value, loading: loadingProp, noScramble: noScrambleProp, priceAsset } = toRefs(props);
+const {
+  from = '',
+  timestamp,
+  value,
+  loading: loadingProp,
+  noScramble: noScrambleProp,
+  priceAsset,
+  currency: currencyProp,
+  symbol: symbolProp = 'symbol',
+} = defineProps<Props>();
 
 const [DefineAmountDisplay, ReuseAmountDisplay] = createReusableTemplate();
 
 // Composables
 const { converted, loading } = useFiatConversion({
-  from,
-  timestamp,
-  value,
+  from: () => from,
+  timestamp: () => timestamp,
+  value: () => value,
 });
 const { currency: userCurrency } = useAmountDisplaySettings();
 const { findCurrency } = useCurrencies();
 
-const hasPriceAsset = computed<boolean>(() => !!get(priceAsset));
-const noScramble = computed<boolean>(() => get(noScrambleProp) || get(hasPriceAsset));
+const hasPriceAsset = computed<boolean>(() => !!priceAsset);
+const noScramble = computed<boolean>(() => noScrambleProp || get(hasPriceAsset));
 const { scrambledValue } = useScrambledValue({ value: converted, noScramble });
 
 const { assetOracle, isManualPrice } = useOracleInfo({
   isAssetPrice: hasPriceAsset,
-  priceAsset: computed<string>(() => get(priceAsset) ?? ''),
+  priceAsset: computed<string>(() => priceAsset ?? ''),
 });
 
 const showManualIndicator = computed<boolean>(() =>
@@ -96,14 +97,14 @@ const showAssetOracle = computed<boolean>(() =>
 
 // Computed
 const resolvedCurrency = computed<Currency>(() => {
-  if (props.currency)
-    return findCurrency(props.currency);
+  if (currencyProp)
+    return findCurrency(currencyProp);
   return get(userCurrency);
 });
 
 const displaySymbol = computed<string>(() => {
   const currency = get(resolvedCurrency);
-  switch (props.symbol) {
+  switch (symbolProp) {
     case 'none':
       return '';
     case 'ticker':

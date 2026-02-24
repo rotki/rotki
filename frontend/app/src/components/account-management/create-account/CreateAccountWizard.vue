@@ -13,13 +13,13 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 
 const step = defineModel<number>('step', { required: true });
 
-const props = withDefaults(
-  defineProps<{
-    loading: boolean;
-    error?: string;
-  }>(),
-  { error: '' },
-);
+const {
+  error = '',
+  loading,
+} = defineProps<{
+  loading: boolean;
+  error?: string;
+}>();
 
 const emit = defineEmits<{
   'cancel': [];
@@ -27,14 +27,12 @@ const emit = defineEmits<{
   'clear-error': [];
 }>();
 
-const { error } = toRefs(props);
-
 const cancel = (): void => emit('cancel');
 const errorClear = (): void => emit('clear-error');
 
 function prevStep(): void {
   set(step, get(step) - 1);
-  if (get(error))
+  if (error)
     errorClear();
 }
 
@@ -45,19 +43,18 @@ function nextStep(): void {
 const { t } = useI18n({ useScope: 'global' });
 
 const parsedError = computed<{ hasLink: boolean; parts: string[] }>(() => {
-  const errorMessage = get(error);
   const linkPlaceholder = '_DEVICE_LIMIT_LINK_';
 
-  if (!errorMessage || !errorMessage.includes(linkPlaceholder)) {
+  if (!error || !error.includes(linkPlaceholder)) {
     return {
       hasLink: false,
-      parts: [errorMessage],
+      parts: [error],
     };
   }
 
   return {
     hasLink: true,
-    parts: errorMessage.split(linkPlaceholder),
+    parts: error.split(linkPlaceholder),
   };
 });
 

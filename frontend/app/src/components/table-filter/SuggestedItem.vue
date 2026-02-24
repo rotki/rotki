@@ -8,24 +8,16 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { truncateAddress } from '@/utils/truncate';
 import { isPrefixed } from '@/utils/xpub';
 
-const props = withDefaults(
-  defineProps<{
-    suggestion: Suggestion;
-    chip?: boolean;
-    editMode?: boolean;
-  }>(),
-  {
-    chip: false,
-    editMode: false,
-  },
-);
+const { suggestion, chip, editMode } = defineProps<{
+  suggestion: Suggestion;
+  chip?: boolean;
+  editMode?: boolean;
+}>();
 
 const emit = defineEmits<{
   'cancel-edit': [skipClearSearch?: boolean];
   'update:search': [value: string];
 }>();
-
-const { editMode, suggestion } = toRefs(props);
 
 const search = ref<string>('');
 
@@ -36,17 +28,15 @@ const { assetInfo } = useAssetInfoRetrieval();
 const { getChainName } = useSupportedChains();
 
 const isBoolean = computed(() => {
-  const item = get(suggestion);
-  const value = item.value;
+  const value = suggestion.value;
 
   return typeof value === 'boolean';
 });
 
 const asset = computed<{ identifier: string; symbol: string } | undefined>(() => {
-  const item = get(suggestion);
-  const value = item.value;
+  const value = suggestion.value;
 
-  if (!item.asset)
+  if (!suggestion.asset)
     return undefined;
 
   let usedAsset, identifier;
@@ -63,7 +53,7 @@ const asset = computed<{ identifier: string; symbol: string } | undefined>(() =>
     return undefined;
 
   let symbol = usedAsset.symbol;
-  if (usedAsset.evmChain && !props.chip)
+  if (usedAsset.evmChain && !chip)
     symbol += ` (${get(getChainName(usedAsset.evmChain))})`;
   else if (usedAsset.isCustomAsset)
     symbol = usedAsset.name;
@@ -75,8 +65,7 @@ const asset = computed<{ identifier: string; symbol: string } | undefined>(() =>
 });
 
 const displayValue = computed(() => {
-  const item = get(suggestion);
-  const value = item.value;
+  const value = suggestion.value;
 
   if (get(isBoolean))
     return `${value}`;
@@ -122,7 +111,7 @@ function cancelEdit(skipClearSearch?: boolean) {
   emit('cancel-edit', skipClearSearch);
 }
 
-watch(editMode, (curr, prev) => {
+watch(() => editMode, (curr, prev) => {
   if (curr && !prev) {
     setTimeout(() => {
       get(editInput)?.focus?.();

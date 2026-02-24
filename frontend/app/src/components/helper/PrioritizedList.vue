@@ -9,44 +9,39 @@ import { EmptyListId, type PrioritizedListId } from '@/types/settings/prioritize
 
 const modelValue = defineModel<PrioritizedListId[]>({ required: true });
 
-const props = withDefaults(
-  defineProps<{
-    allItems: PrioritizedListData<PrioritizedListId>;
-    itemDataName?: string;
-    disableAdd?: boolean;
-    disableDelete?: boolean;
-    dense?: boolean;
-    status?: BaseMessage;
-    variant?: 'flat' | 'outlined';
-  }>(),
-  {
-    disableAdd: false,
-    disableDelete: false,
-    itemDataName: '',
-    status: undefined,
-    variant: 'outlined',
-  },
-);
+const {
+  allItems,
+  dense,
+  disableAdd,
+  disableDelete,
+  itemDataName = '',
+  status,
+  variant = 'outlined',
+} = defineProps<{
+  allItems: PrioritizedListData<PrioritizedListId>;
+  itemDataName?: string;
+  disableAdd?: boolean;
+  disableDelete?: boolean;
+  dense?: boolean;
+  status?: BaseMessage;
+  variant?: 'flat' | 'outlined';
+}>();
 
 defineSlots<{
   default: () => any;
   title: () => any;
 }>();
 
-const { allItems, itemDataName } = toRefs(props);
 const selection = ref<Nullable<PrioritizedListId>>(null);
 
 const input = (items: PrioritizedListId[]): void => set(modelValue, items);
 
-const itemNameTr = computed(() => {
-  const name = get(itemDataName);
-  return {
-    name,
-    namePluralized: pluralize(name, 2),
-  };
-});
+const itemNameTr = computed(() => ({
+  name: itemDataName,
+  namePluralized: pluralize(itemDataName, 2),
+}));
 
-const missing = computed<PrioritizedListId[]>(() => get(allItems).itemIdsNotIn(get(modelValue)));
+const missing = computed<PrioritizedListId[]>(() => allItems.itemIdsNotIn(get(modelValue)));
 
 const noResults = computed<boolean>(() => get(modelValue).length === 0);
 
@@ -58,8 +53,7 @@ function isLast(item: string): boolean {
 }
 
 function itemData(identifier: PrioritizedListId): PrioritizedListItemData<PrioritizedListId> {
-  const data = get(allItems);
-  return data.itemDataForId(identifier) ?? { identifier: EmptyListId };
+  return allItems.itemDataForId(identifier) ?? { identifier: EmptyListId };
 }
 
 function addItem(): void {

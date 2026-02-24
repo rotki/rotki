@@ -3,19 +3,17 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { type AddressProgress, AddressStatus, AddressStep, AddressSubtype } from '../types';
 
-const props = withDefaults(defineProps<{
+const { address } = defineProps<{
   address: AddressProgress;
   chain: string;
   compact?: boolean;
-}>(), {
-  compact: false,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const isComplete = computed<boolean>(() => props.address.status === AddressStatus.COMPLETE);
-const isQuerying = computed<boolean>(() => props.address.status === AddressStatus.QUERYING);
-const isDecoding = computed<boolean>(() => props.address.status === AddressStatus.DECODING);
+const isComplete = computed<boolean>(() => address.status === AddressStatus.COMPLETE);
+const isQuerying = computed<boolean>(() => address.status === AddressStatus.QUERYING);
+const isDecoding = computed<boolean>(() => address.status === AddressStatus.DECODING);
 
 const statusIcon = computed<string>(() => {
   if (get(isComplete))
@@ -41,7 +39,7 @@ const statusText = computed<string>(() => {
     return t('sync_progress.status.decoding');
 
   if (get(isQuerying)) {
-    switch (props.address.step) {
+    switch (address.step) {
       case AddressStep.TRANSACTIONS:
         return t('sync_progress.status.querying_transactions');
       case AddressStep.INTERNAL:
@@ -57,19 +55,19 @@ const statusText = computed<string>(() => {
 });
 
 const hasPeriod = computed<boolean>(() =>
-  get(isQuerying) && !!props.address.period && props.address.subtype !== AddressSubtype.BITCOIN,
+  get(isQuerying) && !!address.period && address.subtype !== AddressSubtype.BITCOIN,
 );
 
 // Current position is period[1], show "Beginning" if current is 0 or equals start (hasn't progressed)
 const showBeginning = computed<boolean>(() => {
-  const period = props.address.period;
+  const period = address.period;
   if (!period)
     return false;
   return period[1] === 0 || period[1] === period[0];
 });
 
 const hasPeriodProgress = computed<boolean>(() =>
-  get(isQuerying) && props.address.periodProgress !== undefined && props.address.subtype !== AddressSubtype.BITCOIN,
+  get(isQuerying) && address.periodProgress !== undefined && address.subtype !== AddressSubtype.BITCOIN,
 );
 </script>
 

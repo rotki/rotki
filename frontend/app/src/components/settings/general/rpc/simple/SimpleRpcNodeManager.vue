@@ -17,7 +17,7 @@ const { t } = useI18n({ useScope: 'global' });
 const openDialog = ref<boolean>(false);
 const submitting = ref<boolean>(false);
 const errorMessages = ref<ValidationErrors>({});
-const form = ref<InstanceType<typeof SimpleRpcNodeManagerForm>>();
+const form = useTemplateRef<InstanceType<typeof SimpleRpcNodeManagerForm>>('form');
 const stateUpdated = ref(false);
 const inputUrl = ref<string>('');
 

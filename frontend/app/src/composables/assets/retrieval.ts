@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter } from 'vue';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { EvmChainAddress } from '@/types/history/events';
 import type { TaskMeta } from '@/types/task';
@@ -38,7 +38,7 @@ interface AssetContractInfo {
   nftId?: string;
 }
 
-export type AssetInfoReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
+export type AssetInfoReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
 
 export type AssetSymbolReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
 
@@ -75,17 +75,17 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     computed(() => getAssociatedAssetIdentifier(identifier, get(assetAssociationMap)));
 
   const assetInfo = (
-    identifier: MaybeRef<string | undefined>,
-    options: MaybeRef<AssetResolutionOptions> = {},
+    identifier: MaybeRefOrGetter<string | undefined>,
+    options: MaybeRefOrGetter<AssetResolutionOptions> = {},
   ): ComputedRef<(AssetInfoWithId & { resolved: boolean }) | null> => computed(() => {
-    const id = get(identifier);
+    const id = toValue(identifier);
     if (!id)
       return null;
 
     const {
       associate = true,
       collectionParent = true,
-    } = get(options);
+    } = toValue(options);
 
     const key = associate ? get(getAssociatedAssetIdentifierComputed(id)) : id;
     const data = get(retrieve(key));

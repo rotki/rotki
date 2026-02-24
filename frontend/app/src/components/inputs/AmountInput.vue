@@ -24,13 +24,11 @@ defineOptions({
 
 const modelValue = defineModel<string>({ required: true });
 
-const props = withDefaults(defineProps<AmountInputProps>(), {
-  hideDetails: false,
-  integer: false,
-  rawInput: false,
-});
-
-const { integer, rawInput } = toRefs(props);
+const {
+  hideDetails = false,
+  integer = false,
+  rawInput = false,
+} = defineProps<AmountInputProps>();
 const { decimalSeparator, thousandSeparator } = storeToRefs(useFrontendSettingsStore());
 
 const textInput = useTemplateRef<InstanceType<typeof RuiTextField>>('textInput');
@@ -86,7 +84,7 @@ function updateCurrentValue(mask: InputMask<any>) {
 }
 
 function getInput(): HTMLInputElement {
-  if (get(rawInput)) {
+  if (rawInput) {
     const textField = get(rawTextInput);
     assert(textField, 'Input field is not defined');
     return textField;
@@ -111,7 +109,7 @@ function initializeInputMask(input: HTMLInputElement) {
   const maskConfig: MaskConfig = {
     mask: Number,
     radix: get(decimalSeparator),
-    scale: get(integer) ? 0 : 100,
+    scale: integer ? 0 : 100,
     thousandsSeparator: get(thousandSeparator),
   };
 

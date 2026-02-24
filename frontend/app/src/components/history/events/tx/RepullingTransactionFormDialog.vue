@@ -20,13 +20,11 @@ import { logger } from '@/utils/logging';
 const modelValue = defineModel<boolean>({ required: true });
 const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });
 
-const props = withDefaults(defineProps<{
+const { repullExchangeEvents, repullTransactions } = defineProps<{
   loading?: boolean;
   repullTransactions?: (result: RepullingTransactionResult) => void;
   repullExchangeEvents?: (exchanges: Exchange[]) => void;
-}>(), {
-  loading: false,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -100,7 +98,7 @@ async function handleExchangeSubmission(
   set(currentAction, HISTORY_EVENT_ACTIONS.REPULLING);
   const newEventsDetected = await repullingExchangeEvents(exchangePayload);
   if (newEventsDetected && exchange) {
-    props.repullExchangeEvents?.([exchange]);
+    repullExchangeEvents?.([exchange]);
     logger.debug('New exchange events detected');
   }
 }
@@ -118,7 +116,7 @@ async function handleBlockchainSubmission(data: RepullingTransactionPayload): Pr
   resetUndecodedTransactionsStatus();
   const result = await repullingTransactions(blockchainPayload);
   if (result) {
-    props.repullTransactions?.(result);
+    repullTransactions?.(result);
     logger.debug(`New transactions detected${chain ? ` for chain ${chain}` : ' for all chains'}`);
   }
 }

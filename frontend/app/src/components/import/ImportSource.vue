@@ -15,15 +15,13 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { toMessages } from '@/utils/validation';
 
-const props = withDefaults(defineProps<{ source: ImportSourceType; icon?: string }>(), { icon: '' });
+const { source } = defineProps<{ source: ImportSourceType; icon?: string }>();
 
 defineSlots<{
   'default': () => any;
   'hint': () => any;
   'upload-title': () => any;
 }>();
-
-const { source } = toRefs(props);
 const dateInputFormat = ref<string>();
 const uploaded = ref(false);
 const errorMessage = ref('');
@@ -65,17 +63,16 @@ const dateInputFormatExample = computed(() => {
 const taskType = TaskType.IMPORT_CSV;
 const { awaitTask, useIsTaskRunning } = useTaskStore();
 
-const loading = useIsTaskRunning(taskType, { source: get(source) });
+const loading = useIsTaskRunning(taskType, { source });
 const { importDataFrom, importFile } = useImportDataApi();
 
 async function uploadPackaged(file: string) {
   try {
-    const sourceVal = get(source);
-    const { taskId } = await importDataFrom(sourceVal, file, get(dateInputFormat) || null);
+    const { taskId } = await importDataFrom(source, file, get(dateInputFormat) || null);
 
     const taskMeta = {
-      source: sourceVal,
-      title: t('file_upload.task.title', { source: sourceVal }),
+      source,
+      title: t('file_upload.task.title', { source }),
     };
 
     const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
@@ -98,7 +95,7 @@ async function uploadFile() {
     }
     else {
       const formData = new FormData();
-      formData.append('source', get(source));
+      formData.append('source', source);
       formData.append('file', fileVal);
       formData.append('async_query', 'true');
       const dateInputFormatVal = get(dateInputFormat);
@@ -108,8 +105,8 @@ async function uploadFile() {
       try {
         const { taskId } = await importFile(formData);
         const taskMeta = {
-          source: get(source),
-          title: t('file_upload.task.title', { source: get(source) }),
+          source,
+          title: t('file_upload.task.title', { source }),
         };
         const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta);
 
@@ -130,7 +127,7 @@ function changeShouldCustomDateFormat() {
   else set(dateInputFormat, undefined);
 }
 
-const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
+const isRotkiCustomImport = computed<boolean>(() => source.startsWith('rotki_'));
 </script>
 
 <template>

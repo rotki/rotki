@@ -1,16 +1,11 @@
 <script setup lang="ts">
-const props = withDefaults(
-  defineProps<{
-    iso: string;
-    title?: string;
-  }>(),
-  {
-    title: '',
-  },
-);
+const { iso, title = '' } = defineProps<{
+  iso: string;
+  title?: string;
+}>();
 
-const flagIconClass = computed(() =>
-  `fi-${props.iso.toLowerCase()}`,
+const flagIconClass = computed<string>(() =>
+  `fi-${iso.toLowerCase()}`,
 );
 </script>
 

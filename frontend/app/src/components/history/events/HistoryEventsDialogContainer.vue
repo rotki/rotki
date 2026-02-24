@@ -10,19 +10,13 @@ import { DIALOG_TYPES, type DialogEventHandlers } from './dialog-types';
 const accountingRuleToEdit = defineModel<AccountingRuleEntry | undefined>('accountingRuleToEdit', { required: true });
 const currentAction = defineModel<HistoryEventAction>('currentAction', { required: true });
 
-withDefaults(defineProps<{
-  eventHandlers?: DialogEventHandlers;
+const { eventHandlers, selectedEventIds } = defineProps<{
+  eventHandlers: DialogEventHandlers;
   loading?: boolean;
   refreshing?: boolean;
   sectionLoading?: boolean;
-  selectedEventIds?: number[];
-}>(), {
-  eventHandlers: () => ({}),
-  loading: false,
-  refreshing: false,
-  sectionLoading: false,
-  selectedEventIds: () => [],
-});
+  selectedEventIds: number[];
+}>();
 
 const emit = defineEmits<{
   'accounting-rule-refresh': [];

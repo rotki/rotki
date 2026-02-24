@@ -6,20 +6,13 @@ import { useScramble } from '@/composables/scramble';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { truncateAddress } from '@/utils/truncate';
 
-const props = withDefaults(defineProps<{
+const { account, hideChainIcon = false, noTruncate = false, size = '24px', useAliasName = true } = defineProps<{
   account: Account;
   useAliasName?: boolean;
   noTruncate?: boolean;
   hideChainIcon?: boolean;
   size?: string;
-}>(), {
-  hideChainIcon: false,
-  size: '24px',
-  noTruncate: false,
-  useAliasName: true,
-});
-
-const { account, useAliasName } = toRefs(props);
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -28,13 +21,13 @@ const { addressNameSelector } = useAddressesNamesStore();
 const { scrambleAddress, scrambleData, shouldShowAmount } = useScramble();
 
 const address = computed<string>(() => {
-  const address = get(account).address;
-  return scrambleAddress(address);
+  const addr = account.address;
+  return scrambleAddress(addr);
 });
 
 const aliasName = computed<string | null>(() => {
-  if (!get(scrambleData) && get(useAliasName)) {
-    const { address, chain } = get(account);
+  if (!get(scrambleData) && useAliasName) {
+    const { address, chain } = account;
     const chainId = chain === 'ALL' ? Blockchain.ETH : chain;
     const name = get(addressNameSelector(address, chainId));
     if (name)

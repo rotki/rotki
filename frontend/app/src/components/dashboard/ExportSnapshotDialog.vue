@@ -13,19 +13,12 @@ import { downloadFileByBlob } from '@/utils/download';
 
 const display = defineModel<boolean>({ default: false, required: true });
 
-const props = withDefaults(
-  defineProps<{
-    balance: BigNumber;
-    timestamp?: number;
-  }>(),
-  {
-    timestamp: 0,
-  },
-);
+const { balance, timestamp = 0 } = defineProps<{
+  balance: BigNumber;
+  timestamp?: number;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { balance, timestamp } = toRefs(props);
 
 const editMode = ref<boolean>(false);
 const { setMessage } = useMessageStore();
@@ -33,9 +26,9 @@ const snapshotApi = useSnapshotApi();
 const { appSession, openDirectory } = useInterop();
 
 async function downloadSnapshot() {
-  const response = await snapshotApi.downloadSnapshot(get(timestamp));
+  const response = await snapshotApi.downloadSnapshot(timestamp);
 
-  const date = dayjs(get(timestamp) * 1000).format('YYYYDDMMHHmmss');
+  const date = dayjs(timestamp * 1000).format('YYYYDDMMHHmmss');
   const fileName = `${date}-snapshot.zip`;
 
   downloadFileByBlob(response, fileName);
@@ -55,7 +48,7 @@ async function exportSnapshotCSV() {
 
       const success = await snapshotApi.exportSnapshotCSV({
         path,
-        timestamp: get(timestamp),
+        timestamp,
       });
 
       message = {
@@ -97,7 +90,7 @@ async function deleteSnapshot() {
 
   try {
     const success = await snapshotApi.deleteSnapshot({
-      timestamp: get(timestamp),
+      timestamp,
     });
 
     message = {

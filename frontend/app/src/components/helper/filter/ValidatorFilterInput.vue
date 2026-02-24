@@ -4,18 +4,19 @@ import ValidatorDisplay from '@/components/display/ValidatorDisplay.vue';
 
 const model = defineModel<Eth2ValidatorEntry[]>({ required: true });
 
-withDefaults(defineProps<{
+const {
+  items,
+  loading = false,
+  dense = false,
+  hideDetails = false,
+  hint,
+} = defineProps<{
   items: Eth2ValidatorEntry[];
   loading?: boolean;
   dense?: boolean;
   hideDetails?: boolean;
   hint?: string;
-}>(), {
-  loading: false,
-  dense: false,
-  hideDetails: false,
-  hint: undefined,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

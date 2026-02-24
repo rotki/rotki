@@ -8,15 +8,11 @@ interface Props {
   chain: string;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  size: '26px',
-});
-
-const { chain } = toRefs(props);
+const { chain, size = '26px' } = defineProps<Props>();
 
 const { getChainImageUrl, matchChain } = useSupportedChains();
 
-const src = getChainImageUrl(chain);
+const src = getChainImageUrl(() => chain);
 
 const OTHER_CHAINS = [
   LOOPRING_CHAIN,

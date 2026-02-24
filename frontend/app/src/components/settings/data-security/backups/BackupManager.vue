@@ -24,7 +24,7 @@ const backups = useRefMap(
 
 const { notify } = useNotificationsStore();
 
-const directory = computed(() => {
+const directory = computed<string>(() => {
   const info = get(backupInfo);
   if (!info)
     return '';
@@ -66,7 +66,7 @@ function isSameEntry(firstDb: UserDbBackup, secondDb: UserDbBackup) {
 
 async function massRemove() {
   const currentSelection = get(selected);
-  const filepaths = currentSelection.map(db => getFilepath(db, directory));
+  const filepaths = currentSelection.map(db => getFilepath(db, get(directory)));
   try {
     await deleteBackup(filepaths);
     const backups = get(backupInfo);
@@ -93,7 +93,7 @@ async function massRemove() {
 }
 
 async function remove(db: UserDbBackup) {
-  const filepath = getFilepath(db, directory);
+  const filepath = getFilepath(db, get(directory));
   try {
     await deleteBackup([filepath]);
     const backups = get(backupInfo);

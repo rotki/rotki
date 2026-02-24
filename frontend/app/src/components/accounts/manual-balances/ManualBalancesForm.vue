@@ -28,7 +28,7 @@ defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const priceForm = ref<InstanceType<typeof ManualBalancesPriceForm>>();
+const priceForm = useTemplateRef<InstanceType<typeof ManualBalancesPriceForm>>('priceForm');
 const openCustomAssetDialog = ref<boolean>(false);
 
 const asset = useRefPropVModel(modelValue, 'asset');

@@ -16,15 +16,11 @@ defineOptions({
 
 const model = defineModel<string | undefined>({ required: true });
 
-const props = withDefaults(defineProps<{
+const { items = [] } = defineProps<{
   items?: PurgeableModule[];
-}>(), {
-  items: () => [],
-});
+}>();
 
 const modules = computed<PurgeableModuleEntry[]>(() => {
-  const items = props.items;
-
   const modules: PurgeableModuleEntry[] = [...SUPPORTED_MODULES, {
     icon: getPublicProtocolImagePath('cowswap.jpg'),
     identifier: PurgeableOnlyModule.COWSWAP,

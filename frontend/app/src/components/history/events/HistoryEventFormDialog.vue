@@ -8,9 +8,7 @@ import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 
 const modelValue = defineModel<GroupEventData | StandaloneEventData | undefined>({ required: true });
 
-withDefaults(defineProps<HistoryEventFormDialogProps>(), {
-  loading: false,
-});
+defineProps<HistoryEventFormDialogProps>();
 
 const emit = defineEmits<{
   refresh: [];

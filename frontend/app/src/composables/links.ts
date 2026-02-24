@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { externalLinks } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
 
@@ -9,9 +9,9 @@ interface UseLinksReturn {
   onLinkClick: () => void;
 }
 
-export function useLinks(url?: MaybeRef<string | undefined>): UseLinksReturn {
+export function useLinks(url?: MaybeRefOrGetter<string | undefined>): UseLinksReturn {
   const { isPackaged, openUrl } = useInterop();
-  const targetUrl = computed(() => get(url) ?? externalLinks.premium);
+  const targetUrl = computed(() => toValue(url) ?? externalLinks.premium);
   const href = computed(() => (isPackaged ? undefined : get(targetUrl)));
 
   const linkTarget = computed<'_blank' | undefined>(() => (isPackaged ? undefined : '_blank'));
@@ -22,7 +22,7 @@ export function useLinks(url?: MaybeRef<string | undefined>): UseLinksReturn {
       await openUrl(get(targetUrl));
     };
 
-  const hasLink = computed<boolean>(() => get(url)?.startsWith('http') ?? false);
+  const hasLink = computed<boolean>(() => toValue(url)?.startsWith('http') ?? false);
 
   return {
     hasLink,

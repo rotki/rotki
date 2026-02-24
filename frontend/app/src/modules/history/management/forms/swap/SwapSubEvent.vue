@@ -11,7 +11,7 @@ import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<SwapSubEventModel>({ required: true });
 
-const props = withDefaults(defineProps<{
+const { disabled, solana, type } = defineProps<{
   type: 'receive' | 'spend' | 'fee';
   index: number;
   disabled?: boolean;
@@ -19,9 +19,7 @@ const props = withDefaults(defineProps<{
   location: string;
   single: boolean;
   solana?: boolean;
-}>(), {
-  disabled: false,
-});
+}>();
 
 const emit = defineEmits<{
   remove: [index: number];
@@ -38,7 +36,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { createCommonRules } = useEventFormValidation();
 const commonRules = createCommonRules();
 
-const rules = computed(() => (props.disabled
+const rules = computed(() => (disabled
   ? {
       amount: {},
       asset: {},
@@ -48,7 +46,7 @@ const rules = computed(() => (props.disabled
   : {
       amount: commonRules.createRequiredAmountRule(),
       asset: commonRules.createRequiredAssetRule(),
-      locationLabel: props.solana ? commonRules.createValidSolanaAddressRule() : commonRules.createValidEthAddressRule(),
+      locationLabel: solana ? commonRules.createValidSolanaAddressRule() : commonRules.createValidEthAddressRule(),
       userNotes: commonRules.createExternalValidationRule(),
     }));
 
@@ -93,11 +91,11 @@ function updateModel() {
 }
 
 const userNotesLabel = computed(() => {
-  if (props.type === 'fee') {
+  if (type === 'fee') {
     return t('swap_event_form.fee_notes');
   }
 
-  if (props.type === 'receive') {
+  if (type === 'receive') {
     return t('swap_event_form.receive_notes');
   }
 

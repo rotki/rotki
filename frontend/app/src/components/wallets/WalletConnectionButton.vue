@@ -11,14 +11,7 @@ interface Props {
   connected: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  color: 'primary',
-  disabled: false,
-  fullWidth: false,
-  loading: false,
-  size: undefined,
-  variant: 'default',
-});
+const { connected } = defineProps<Props>();
 
 const emit = defineEmits<{
   click: [];
@@ -27,7 +20,7 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 function getButtonText(): string {
-  if (props.connected) {
+  if (connected) {
     return t('trade.actions.disconnect');
   }
   return t('trade.actions.connect_wallet');

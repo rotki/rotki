@@ -16,17 +16,12 @@ import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { type AssetRequestPayload, EVM_TOKEN, type IgnoredAssetsHandlingType } from '@/types/asset';
 
-const props = withDefaults(
-  defineProps<{
-    identifier?: string | null;
-    mainPage?: boolean;
-  }>(),
-  { identifier: null, mainPage: false },
-);
+const { identifier = null, mainPage = false } = defineProps<{
+  identifier?: string | null;
+  mainPage?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { identifier, mainPage } = toRefs(props);
 
 const mergeTool = ref<boolean>(false);
 const ignoredFilter = ref<{
@@ -90,7 +85,7 @@ const {
   },
   extraParams,
   filterSchema: () => useAssetFilter(assetTypes),
-  history: get(mainPage) ? 'router' : false,
+  history: mainPage ? 'router' : false,
   onUpdateFilters(query) {
     set(ignoredFilter, {
       ignoredAssetsHandling: query.ignoredAssetsHandling || 'exclude',
@@ -181,19 +176,18 @@ function showDeleteConfirmation(item: SupportedAsset) {
 
 onMounted(async () => {
   await fetchData();
-  const idToEdit = get(identifier);
   const query = get(route).query;
 
-  if (idToEdit || query.add) {
-    if (idToEdit)
-      await editAsset(get(identifier));
+  if (identifier || query.add) {
+    if (identifier)
+      await editAsset(identifier);
     else add();
 
     await router.replace({ query: {} });
   }
 });
 
-watch(identifier, async (assetId) => {
+watch(() => identifier, async (assetId) => {
   await editAsset(assetId);
 });
 

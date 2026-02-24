@@ -3,18 +3,12 @@ import type { Eth2ValidatorEntry } from '@rotki/common';
 import { useScramble } from '@/composables/scramble';
 import { truncateAddress } from '@/utils/truncate';
 
-const props = withDefaults(
-  defineProps<{
-    validator: Eth2ValidatorEntry;
-    horizontal?: boolean;
-  }>(),
-  {
-    horizontal: false,
-  },
-);
+const { horizontal = false, validator } = defineProps<{
+  validator: Eth2ValidatorEntry;
+  horizontal?: boolean;
+}>();
 
-const { horizontal } = toRefs(props);
-const length = computed(() => (get(horizontal) ? 4 : 10));
+const length = computed(() => (horizontal ? 4 : 10));
 
 const { t } = useI18n({ useScope: 'global' });
 

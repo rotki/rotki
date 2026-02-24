@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type BigNumber, Zero } from '@rotki/common';
 import { normalizeTimestamp, type Timestamp } from '@/modules/amount-display/types';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
@@ -6,13 +6,13 @@ import { useHistoricCachePriceStore } from '@/store/prices/historic';
 
 export interface UseAssetValueOptions {
   /** Asset identifier to price */
-  asset: MaybeRef<string>;
+  asset: MaybeRefOrGetter<string>;
   /** Amount of the asset */
-  amount: MaybeRef<BigNumber>;
+  amount: MaybeRefOrGetter<BigNumber>;
   /** Known price (optional, will look up if not provided) */
-  knownPrice?: MaybeRef<BigNumber | null | undefined>;
+  knownPrice?: MaybeRefOrGetter<BigNumber | null | undefined>;
   /** Timestamp for historic price lookup */
-  timestamp?: MaybeRef<Timestamp | undefined>;
+  timestamp?: MaybeRefOrGetter<Timestamp | undefined>;
 }
 
 export interface UseAssetValueReturn {
@@ -47,7 +47,7 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
   const isCurrentCurrency = isAssetPriceInCurrentCurrency(asset);
 
   const timestampToUse = computed<number>(() => {
-    const ts = normalizeTimestamp(get(timestamp));
+    const ts = normalizeTimestamp(toValue(timestamp));
     if (ts === undefined || ts <= 0) {
       return -1;
     }
@@ -55,7 +55,7 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
   });
 
   const loading = computed<boolean>(() => {
-    const assetVal = get(asset);
+    const assetVal = toValue(asset);
     const ts = get(timestampToUse);
 
     if (!assetVal) {
@@ -70,9 +70,9 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
   });
 
   const price = computed<BigNumber>(() => {
-    const assetVal = get(asset);
+    const assetVal = toValue(asset);
     const ts = get(timestampToUse);
-    const known = get(knownPrice);
+    const known = toValue(knownPrice);
 
     if (!assetVal) {
       return Zero;
@@ -96,7 +96,7 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
   });
 
   const value = computed<BigNumber>(() => {
-    const amountVal = get(amount);
+    const amountVal = toValue(amount);
     const priceVal = get(price);
 
     if (amountVal.isZero() || priceVal.isZero()) {

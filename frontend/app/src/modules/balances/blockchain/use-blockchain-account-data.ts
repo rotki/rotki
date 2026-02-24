@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter } from 'vue';
 import type {
   Accounts,
   Balances,
@@ -36,7 +36,7 @@ interface UseBlockchainAccountDataReturn {
   getAccounts: () => BlockchainAccountGroupWithBalance[];
   getAccountDetails: (chain: string, address: string) => AccountBalances;
   getBlockchainAccounts: (chain: string) => BlockchainAccountWithBalance[];
-  useAccountTags: (address: MaybeRef<string>) => ComputedRef<string[]>;
+  useAccountTags: (address: MaybeRefOrGetter<string>) => ComputedRef<string[]>;
   getAccountsByCategory: (category: MaybeRef<string>) => ComputedRef<BlockchainAccountGroupWithBalance[]>;
   getAccountList: (accountData: Accounts, balanceData: Balances) => BlockchainAccountWithBalance[];
 }
@@ -104,9 +104,9 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     address: string,
   ): AccountBalances => getAccountBalances(get(balances), get(chain), get(address), get(assetAssociationMap));
 
-  const useAccountTags = (address: MaybeRef<string>): ComputedRef<string[]> => computed<string[]>(() => {
+  const useAccountTags = (address: MaybeRefOrGetter<string>): ComputedRef<string[]> => computed<string[]>(() => {
     const accountData = get(accounts);
-    const accountAddress = get(address);
+    const accountAddress = toValue(address);
     const tags: Set<string> = new Set();
 
     for (const accounts of Object.values(accountData)) {

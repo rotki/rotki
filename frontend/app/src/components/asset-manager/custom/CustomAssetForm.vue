@@ -13,19 +13,16 @@ const modelValue = defineModel<CustomAsset>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-withDefaults(
-  defineProps<{
-    editMode?: boolean;
-    types?: string[];
-  }>(),
-  { editMode: false, types: () => [] },
-);
+const { types } = defineProps<{
+  editMode?: boolean;
+  types: string[];
+}>();
 
 const customAssetType = useRefPropVModel(modelValue, 'customAssetType');
 const name = useRefPropVModel(modelValue, 'name');
 const notes = refOptional(useRefPropVModel(modelValue, 'notes'), '');
 
-const assetIconFormRef = ref<InstanceType<typeof AssetIconForm> | null>(null);
+const assetIconFormRef = useTemplateRef<InstanceType<typeof AssetIconForm>>('assetIconFormRef');
 
 const { t } = useI18n({ useScope: 'global' });
 

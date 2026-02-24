@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useCopy } from '@/composables/copy';
 
-const props = defineProps<{
+const { disabled, tooltip, value } = defineProps<{
   tooltip?: string | null;
   disabled?: boolean;
   value: string;
@@ -15,9 +15,7 @@ defineSlots<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { value } = toRefs(props);
-
-const { copied, copy } = useCopy(value);
+const { copied, copy } = useCopy(() => value);
 </script>
 
 <template>

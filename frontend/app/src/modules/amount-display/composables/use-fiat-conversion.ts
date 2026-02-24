@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type BigNumber, One, Zero } from '@rotki/common';
 import { useAmountDisplaySettings } from '@/modules/amount-display/composables/use-amount-display-settings';
 import { normalizeTimestamp, type Timestamp } from '@/modules/amount-display/types';
@@ -8,11 +8,11 @@ import { CURRENCY_USD } from '@/types/currencies';
 
 export interface UseFiatConversionOptions {
   /** The value to convert */
-  value: MaybeRef<BigNumber | undefined>;
+  value: MaybeRefOrGetter<BigNumber | undefined>;
   /** Source currency code (e.g., 'USD', 'EUR') */
-  from: MaybeRef<string>;
+  from: MaybeRefOrGetter<string>;
   /** Timestamp for historic rate lookup */
-  timestamp?: MaybeRef<Timestamp | undefined>;
+  timestamp?: MaybeRefOrGetter<Timestamp | undefined>;
 }
 
 export interface UseFiatConversionReturn {
@@ -42,7 +42,7 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
   const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
 
   const timestampToUse = computed<number>(() => {
-    const ts = normalizeTimestamp(get(timestamp));
+    const ts = normalizeTimestamp(toValue(timestamp));
     if (ts === undefined || ts <= 0) {
       return -1;
     }
@@ -50,7 +50,7 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
   });
 
   const loading = computed<boolean>(() => {
-    const fromVal = get(from);
+    const fromVal = toValue(from);
     const ts = get(timestampToUse);
 
     if (!fromVal) {
@@ -68,13 +68,13 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
    * Converts value using current exchange rates (for real-time conversion)
    */
   const latestConvertedValue = computed<BigNumber>(() => {
-    const currentValue = get(value);
+    const currentValue = toValue(value);
     if (!currentValue) {
       return Zero;
     }
 
     const to = get(currencySymbol);
-    const fromVal = get(from);
+    const fromVal = toValue(from);
 
     // No conversion needed if currencies match or no source specified
     if (!fromVal || to === fromVal) {
@@ -93,13 +93,13 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
   });
 
   const converted = computed<BigNumber>(() => {
-    const currentValue = get(value);
+    const currentValue = toValue(value);
     if (!currentValue) {
       return Zero;
     }
 
     const to = get(currencySymbol);
-    const fromVal = get(from);
+    const fromVal = toValue(from);
     const ts = get(timestampToUse);
 
     // No conversion needed if currencies match

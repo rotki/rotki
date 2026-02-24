@@ -7,7 +7,15 @@ import { useMonitorStore } from '@/store/monitor';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toMessages } from '@/utils/validation';
 
-const props = withDefaults(defineProps<{
+const {
+  defaultValue,
+  hint = '',
+  label = '',
+  min = 1,
+  minValueMessage,
+  requiredMessage,
+  setting,
+} = defineProps<{
   setting: 'queryRetryLimit' | 'connectTimeout' | 'readTimeout';
   min?: number;
   requiredMessage: string;
@@ -15,24 +23,18 @@ const props = withDefaults(defineProps<{
   label?: string;
   hint?: string;
   defaultValue: number;
-}>(), {
-  hint: '',
-  label: '',
-  min: 1,
-});
-
-const { min, minValueMessage, requiredMessage, setting } = toRefs(props);
+}>();
 
 const inputValue = ref<string>('');
 
 const rules = {
   inputValue: {
-    min: helpers.withMessage(get(minValueMessage)(get(min)), minValue(get(min))),
-    required: helpers.withMessage(get(requiredMessage), required),
+    min: helpers.withMessage(minValueMessage(min), minValue(min)),
+    required: helpers.withMessage(requiredMessage, required),
   },
 };
 
-const { [get(setting)]: storeValue } = storeToRefs(useGeneralSettingsStore());
+const { [setting]: storeValue } = storeToRefs(useGeneralSettingsStore());
 
 function resetValue() {
   set(inputValue, get(storeValue).toString());
@@ -48,8 +50,8 @@ function transform(value: string) {
 }
 
 function reset(update: (value: number) => void) {
-  update(props.defaultValue);
-  set(inputValue, props.defaultValue.toString());
+  update(defaultValue);
+  set(inputValue, defaultValue.toString());
 }
 
 onMounted(() => {

@@ -9,45 +9,41 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    url?: string;
-    truncate?: boolean;
-    text?: string;
-    custom?: boolean;
-    premium?: boolean;
-    confirm?: boolean;
-  }>(),
-  {
-    confirm: false,
-    custom: false,
-    premium: false,
-    text: '',
-    truncate: false,
-    url: undefined,
-  },
-);
+const {
+  confirm = false,
+  custom = false,
+  premium = false,
+  text = '',
+  truncate = false,
+  url,
+} = defineProps<{
+  url?: string;
+  truncate?: boolean;
+  text?: string;
+  custom?: boolean;
+  premium?: boolean;
+  confirm?: boolean;
+}>();
 
 defineSlots<{
   default: () => any;
   append: () => any;
 }>();
 
-const { confirm, text, truncate, url } = toRefs(props);
 const { isPackaged, openUrl } = useInterop();
 const { t } = useI18n({ useScope: 'global' });
 
-const { href, linkTarget, onLinkClick: defaultOnLinkClick } = useLinks(url);
+const { href, linkTarget, onLinkClick: defaultOnLinkClick } = useLinks(() => url);
 
-const displayText = computed<string>(() => (get(truncate) ? truncateAddress(get(text)) : get(text)));
+const displayText = computed<string>(() => (truncate ? truncateAddress(text) : text));
 
-const targetUrl = computed<string>(() => get(url) ?? externalLinks.premium);
+const targetUrl = computed<string>(() => url ?? externalLinks.premium);
 
 const showConfirmation = ref<boolean>(false);
 
 async function onLinkClick(event?: Event): Promise<void> {
   // If confirm is not enabled, use default behavior
-  if (!get(confirm)) {
+  if (!confirm) {
     defaultOnLinkClick();
     return;
   }

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-withDefaults(defineProps<{ hideDivider?: boolean }>(), { hideDivider: false });
+const { hideDivider = false } = defineProps<{ hideDivider?: boolean }>();
 </script>
 
 <template>

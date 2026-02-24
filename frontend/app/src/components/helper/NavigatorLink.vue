@@ -5,24 +5,17 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    tag?: string;
-    enabled?: boolean;
-    to: RouteLocationRaw | undefined;
-  }>(),
-  {
-    enabled: true,
-    tag: 'span',
-  },
-);
+const { enabled = true, tag = 'span', to } = defineProps<{
+  tag?: string;
+  enabled?: boolean;
+  to: RouteLocationRaw | undefined;
+}>();
 
-const { enabled, to } = toRefs(props);
 const router = useRouter();
 
-async function navigate() {
-  if (get(enabled) && isDefined(to))
-    await router.push(get(to));
+async function navigate(): Promise<void> {
+  if (enabled && to !== undefined)
+    await router.push(to);
 }
 </script>
 

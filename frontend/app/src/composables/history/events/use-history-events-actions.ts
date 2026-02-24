@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { DialogEventHandlers } from '@/components/history/events/dialog-types';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { Collection } from '@/types/collection';
@@ -30,8 +30,8 @@ import {
 } from '@/utils/history/events';
 
 interface UseHistoryEventsActionsOptions {
-  onlyChains: Ref<Blockchain[]>;
-  entryTypes?: Ref<HistoryEventEntryType[] | undefined>;
+  onlyChains: MaybeRefOrGetter<Blockchain[]>;
+  entryTypes?: MaybeRefOrGetter<HistoryEventEntryType[] | undefined>;
   currentAction: Ref<HistoryEventAction>;
   fetchData: () => Promise<void>;
   groups: Ref<Collection<HistoryEventRow>>;
@@ -114,10 +114,10 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
       startPromise(fetchDataAndLocations());
 
     set(currentAction, HISTORY_EVENT_ACTIONS.QUERY);
-    const entryTypesVal = get(entryTypes) || [];
+    const entryTypesVal = toValue(entryTypes) || [];
     const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
     await refreshTransactions({
-      chains: get(onlyChains),
+      chains: toValue(onlyChains),
       disableEvmEvents,
       payload,
       userInitiated,
@@ -176,7 +176,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   async function redecodeAllEventsHandler(): Promise<void> {
     set(currentAction, HISTORY_EVENT_ACTIONS.DECODE);
     await fetchUndecodedTransactionsStatus();
-    await redecodeTransactions(get(onlyChains));
+    await redecodeTransactions(toValue(onlyChains));
     await fetchData();
   }
 

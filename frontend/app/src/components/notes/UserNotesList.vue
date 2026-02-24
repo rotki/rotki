@@ -12,9 +12,7 @@ import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 
 const open = defineModel<boolean>('open', { required: true });
 
-const props = withDefaults(defineProps<{ location?: string }>(), {
-  location: NoteLocation.GLOBAL,
-});
+const { location = NoteLocation.GLOBAL } = defineProps<{ location?: string }>();
 
 function getDefaultForm() {
   return {
@@ -25,7 +23,6 @@ function getDefaultForm() {
   };
 }
 
-const { location } = toRefs(props);
 const wrapper = ref<any>(null);
 
 const showDeleteConfirmation = ref<boolean>(false);
@@ -41,7 +38,7 @@ const { deleteUserNote, fetchUserNotes, updateUserNote } = useUserNotesApi();
 const { refresh: refreshNotesCount } = useNotesCount();
 
 const extraParams = computed(() => ({
-  location: get(location),
+  location,
   titleSubstring: get(titleSubstring),
 }));
 

@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { SearchMatcher } from '@/types/filtering';
 
 interface UseMatcherUtilsReturn {
@@ -8,16 +8,16 @@ interface UseMatcherUtilsReturn {
 }
 
 export function useMatcherUtils(
-  matchers: Ref<SearchMatcher<any, any>[]>,
+  matchers: MaybeRefOrGetter<SearchMatcher<any, any>[]>,
 ): UseMatcherUtilsReturn {
-  const validKeys = computed<string[]>(() => get(matchers).map(({ key }) => key));
+  const validKeys = computed<string[]>(() => toValue(matchers).map(({ key }) => key));
 
   function matcherForKey(searchKey: string | undefined): SearchMatcher<any, any> | undefined {
-    return get(matchers).find(({ key }) => key === searchKey);
+    return toValue(matchers).find(({ key }) => key === searchKey);
   }
 
   function matcherForKeyValue(searchKey: string | undefined): SearchMatcher<any, any> | undefined {
-    return get(matchers).find(({ keyValue }) => keyValue === searchKey);
+    return toValue(matchers).find(({ keyValue }) => keyValue === searchKey);
   }
 
   return {

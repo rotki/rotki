@@ -5,20 +5,18 @@ import SwapSubEvent from '@/modules/history/management/forms/swap/SwapSubEvent.v
 
 const modelValue = defineModel<SwapSubEventModel[]>({ required: true });
 
-const props = withDefaults(defineProps<{
+const { type } = defineProps<{
   location: string;
   disabled?: boolean;
   timestamp: number;
   solana?: boolean;
   type: 'receive' | 'spend' | 'fee';
-}>(), {
-  disabled: false,
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const label = computed<string>(() => {
-  switch (props.type) {
+  switch (type) {
     case 'receive':
       return t('backend_mappings.events.history_event_subtype.receive');
     case 'spend':

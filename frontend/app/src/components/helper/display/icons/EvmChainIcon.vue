@@ -9,25 +9,16 @@ interface Props {
   tooltip?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  size: '24px',
-  tooltip: false,
-});
-
-const { chain } = toRefs(props);
+const { chain, size = '24px', tooltip = false } = defineProps<Props>();
 
 function getImageUrl(evmChain: string): string {
   return getPublicProtocolImagePath(`${evmChain}.svg`);
 }
 
-const chainData = computed(() => {
-  const chainProp = get(chain);
-
-  return {
-    image: getImageUrl(chainProp),
-    label: toCapitalCase(chainProp),
-  };
-});
+const chainData = computed(() => ({
+  image: getImageUrl(chain),
+  label: toCapitalCase(chain),
+}));
 </script>
 
 <template>

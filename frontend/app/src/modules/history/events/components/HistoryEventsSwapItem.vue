@@ -10,7 +10,7 @@ import HistoryEventType from '@/components/history/events/HistoryEventType.vue';
 import { getHighlightClass, type HighlightType } from '@/composables/history/events/types';
 import { useHistorySwapItem } from '../composables/use-history-swap-item';
 
-const props = withDefaults(defineProps<{
+const { events: eventsProp, selection, variant = 'row' } = defineProps<{
   events: HistoryEventEntry[];
   /**
    * All events in the same group, including hidden and ignored events.
@@ -23,9 +23,7 @@ const props = withDefaults(defineProps<{
   highlightType?: HighlightType;
   selection?: UseHistoryEventsSelectionModeReturn;
   variant?: 'row' | 'card';
-}>(), {
-  variant: 'row',
-});
+}>();
 
 const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
@@ -35,7 +33,7 @@ const emit = defineEmits<{
   'toggle-expand': [];
 }>();
 
-const events = computed<HistoryEventEntry[]>(() => props.events);
+const events = computed<HistoryEventEntry[]>(() => eventsProp);
 
 const {
   chain,
@@ -56,7 +54,7 @@ const {
   toggleSelected,
 } = useHistorySwapItem({
   events,
-  selection: props.selection,
+  selection,
 });
 
 const isSelectedModel = computed<boolean>({
@@ -67,7 +65,7 @@ const isSelectedModel = computed<boolean>({
   },
 });
 
-const isCard = computed<boolean>(() => props.variant === 'card');
+const isCard = computed<boolean>(() => variant === 'card');
 </script>
 
 <template>

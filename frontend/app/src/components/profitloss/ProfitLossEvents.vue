@@ -31,19 +31,15 @@ interface PnLItem extends ProfitLossEvent {
 
 const reportEvents = defineModel<Collection<ProfitLossEvent>>('reportEvents', { required: true });
 
-const props = withDefaults(
-  defineProps<{
-    report: Report;
-    refreshing?: boolean;
-  }>(),
-  {
-    refreshing: false,
-  },
-);
+const {
+  refreshing = false,
+  report,
+} = defineProps<{
+  report: Report;
+  refreshing?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { report } = toRefs(props);
 
 const expanded = ref<PnLItem[]>([]);
 
@@ -64,7 +60,7 @@ const {
     direction: 'desc',
   }],
   extraParams: computed(() => ({
-    reportId: get(report).identifier,
+    reportId: report.identifier,
   })),
   history: 'router',
 });

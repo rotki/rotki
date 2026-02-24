@@ -1,5 +1,5 @@
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useScramble } from '@/composables/scramble';
 import { arrayify } from '@/utils/array';
@@ -34,14 +34,14 @@ export interface NoteFormat {
 }
 
 interface FormatNoteParams {
-  notes: MaybeRef<string>;
-  amount?: MaybeRef<BigNumber | BigNumber[] | undefined>;
-  assetId?: MaybeRef<string>;
-  noTxRef?: MaybeRef<boolean>;
-  validatorIndex?: MaybeRef<number | undefined>;
-  blockNumber?: MaybeRef<number | undefined>;
-  counterparty?: MaybeRef<string | undefined>;
-  extraData?: MaybeRef<Record<string, any> | undefined>;
+  notes: MaybeRefOrGetter<string>;
+  amount?: MaybeRefOrGetter<BigNumber | BigNumber[] | undefined>;
+  assetId?: MaybeRefOrGetter<string>;
+  noTxRef?: MaybeRefOrGetter<boolean>;
+  validatorIndex?: MaybeRefOrGetter<number | undefined>;
+  blockNumber?: MaybeRefOrGetter<number | undefined>;
+  counterparty?: MaybeRefOrGetter<string | undefined>;
+  extraData?: MaybeRefOrGetter<Record<string, any> | undefined>;
 }
 
 interface UseHistoryEventsNoteReturn {
@@ -199,14 +199,14 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     noTxRef,
     validatorIndex,
   }: FormatNoteParams): ComputedRef<NoteFormat[]> => computed<NoteFormat[]>(() => {
-    const asset = get(assetSymbol(assetId, { collectionParent: false }));
-    const extraDataVal = get(extraData);
+    const asset = get(assetSymbol(toValue(assetId), { collectionParent: false }));
+    const extraDataVal = toValue(extraData);
 
-    let notesVal = get(notes);
+    let notesVal = toValue(notes);
     if (!notesVal)
       return [];
 
-    const counterpartyVal = get(counterparty);
+    const counterpartyVal = toValue(counterparty);
 
     // Scramble IBAN for monerium
     if (get(scrambleData) && counterpartyVal === 'monerium')
@@ -217,16 +217,16 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     let skip = false;
 
     // Build context values once, outside the loop
-    const amountVal = get(amount);
+    const amountVal = toValue(amount);
     const ctx: Omit<WordProcessorContext, 'word' | 'index'> = {
       processedWords,
       asset: asset || undefined,
-      assetId: get(assetId),
+      assetId: toValue(assetId),
       amountArr: amountVal ? arrayify(amountVal) : [],
-      validatorIndices: buildValidatorIndices(get(validatorIndex), extraDataVal),
-      blockNumber: get(blockNumber),
+      validatorIndices: buildValidatorIndices(toValue(validatorIndex), extraDataVal),
+      blockNumber: toValue(blockNumber),
       counterparty: counterpartyVal,
-      noTxRef: get(noTxRef),
+      noTxRef: toValue(noTxRef),
       shouldFormatAllAmount: counterpartyVal === 'gnosis_pay',
       getCleanWord,
       getAssetSymbol: (id: string) => get(assetSymbol(id)),

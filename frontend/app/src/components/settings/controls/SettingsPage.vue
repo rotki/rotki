@@ -8,11 +8,9 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(defineProps<{
+const { navigation = [] } = defineProps<{
   navigation?: Nav[];
-}>(), {
-  navigation: () => [],
-});
+}>();
 
 defineSlots<{
   default: () => any;
@@ -21,7 +19,7 @@ defineSlots<{
 const { t } = useI18n({ useScope: 'global' });
 
 const parentScroller = ref<HTMLDivElement>();
-const currentId = ref<string>(props.navigation[0]?.id ?? '');
+const currentId = ref<string>(navigation[0]?.id ?? '');
 
 const { isMdAndUp } = useBreakpoint();
 
@@ -45,17 +43,17 @@ function checkVisibility() {
   const parent = get(parentScroller);
   if (parent) {
     if (parent.scrollTop === 0) {
-      set(currentId, props.navigation.at(0)?.id ?? '');
+      set(currentId, navigation.at(0)?.id ?? '');
       return;
     }
     if (parent.scrollTop + parent.clientHeight >= parent.scrollHeight - 10) {
       // If scrolled to the bottom (with a small tolerance), set to the last navigation item's id
-      set(currentId, props.navigation.at(-1)?.id ?? '');
+      set(currentId, navigation.at(-1)?.id ?? '');
       return;
     }
   }
 
-  for (const nav of props.navigation) {
+  for (const nav of navigation) {
     const element = document.getElementById(nav.id);
     if (element && isElementInViewport(element)) {
       set(currentId, nav.id);
@@ -63,7 +61,7 @@ function checkVisibility() {
     }
   }
   // If no element is visible, set to the first navigation item's id
-  set(currentId, props.navigation[0]?.id ?? '');
+  set(currentId, navigation[0]?.id ?? '');
 }
 
 function scrollToElement(navId?: string) {

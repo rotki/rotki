@@ -33,20 +33,14 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(defineProps<Props>(), {
-  format: undefined,
-  loading: false,
-  noTooltip: false,
-});
-
-const { value, noScramble } = toRefs(props);
+const { value, noScramble, format } = defineProps<Props>();
 
 // Apply scrambling for privacy
-const { scrambledValue } = useScrambledValue({ value, noScramble });
+const { scrambledValue } = useScrambledValue({ value: () => value, noScramble: () => noScramble });
 
 // Merge format with amountRoundingMode
 const formatWithRounding = computed<FormatOptions>(() => ({
-  ...props.format,
+  ...format,
   rounding: 'amount',
 }));
 </script>

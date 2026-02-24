@@ -1,17 +1,12 @@
 <script setup lang="ts">
-import { get } from '@vueuse/shared';
-
 interface Props {
   status: 'connected' | 'connecting' | 'warning' | 'disconnected';
   animate?: boolean;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  animate: false,
-});
+const { status } = defineProps<Props>();
 
 const statusConfig = computed<{ borderClass: string; bgClass: string }>(() => {
-  const status = get(props).status;
   switch (status) {
     case 'connected':
       return {

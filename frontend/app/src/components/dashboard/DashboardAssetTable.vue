@@ -14,24 +14,22 @@ import BalanceTopProtocols from '@/modules/balances/protocols/BalanceTopProtocol
 import AssetRowDetails from '@/modules/balances/protocols/components/AssetRowDetails.vue';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 
-const props = withDefaults(defineProps<{
+const { balances, loading = false, tableType, title } = defineProps<{
   title: string;
   balances: AssetBalanceWithPrice[];
   tableType: DashboardTableType;
   loading?: boolean;
-}>(), { loading: false });
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { balances, tableType, title } = toRefs(props);
 
 // Stores
 const { totalNetWorth } = useDashboardStores();
 
 // Use composables - sort needs to be defined first for the computed dependency
 const { pagination, setPage, setTablePagination, sort, tableHeaders } = useDashboardTableConfig(
-  tableType,
-  title,
+  () => tableType,
+  () => title,
   totalNetWorth,
 );
 
@@ -42,9 +40,9 @@ const {
   search,
   sorted,
   total,
-} = useDashboardAssetData(balances, sort);
+} = useDashboardAssetData(() => balances, sort);
 
-const { expanded, isRowExpandable, redirectToManualBalance } = useDashboardAssetOperations(tableType);
+const { expanded, isRowExpandable, redirectToManualBalance } = useDashboardAssetOperations(() => tableType);
 
 // Watch search to reset pagination
 watch(search, () => setPage(1));

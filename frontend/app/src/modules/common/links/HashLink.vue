@@ -71,18 +71,17 @@ interface HashLinkProps {
   showLocationIcon?: boolean;
 }
 
-const props = withDefaults(defineProps<HashLinkProps>(), {
-  displayMode: 'default',
-  hideText: false,
-  location: undefined,
-  noScramble: false,
-  showLocationIcon: false,
-  size: 12,
-  truncateLength: 4,
-  type: 'address',
-});
-
-const { text } = toRefs(props);
+const {
+  text,
+  displayMode = 'default',
+  hideText,
+  location,
+  size = 12,
+  truncateLength = 4,
+  type = 'address',
+  noScramble,
+  showLocationIcon,
+} = defineProps<HashLinkProps>();
 
 const tooltip = useTemplateRef<InstanceType<typeof RuiTooltip>>('tooltip');
 
@@ -93,7 +92,6 @@ const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = 
 const { matchChain } = useSupportedChains();
 
 const blockchain = computed<string | undefined>(() => {
-  const location = props.location;
   if (!location) {
     return undefined;
   }
@@ -105,19 +103,19 @@ const blockchain = computed<string | undefined>(() => {
   }
 });
 
-const isLocationNotBlockchain = computed(() => props.location && !isDefined(blockchain));
+const isLocationNotBlockchain = computed(() => location && !isDefined(blockchain));
 
-const showLink = computed<boolean>(() => props.displayMode !== 'copy' && props.displayMode !== 'text');
-const showCopy = computed<boolean>(() => props.displayMode !== 'link' && props.displayMode !== 'text');
+const showLink = computed<boolean>(() => displayMode !== 'copy' && displayMode !== 'text');
+const showCopy = computed<boolean>(() => displayMode !== 'link' && displayMode !== 'text');
 /**
  * Icons will only be displayed for non-numerical blockchain addresses when the text is visible.
  */
 const showIcon = computed<boolean>(() => {
-  if (props.type !== 'address' || props.hideText || get(isLocationNotBlockchain)) {
+  if (type !== 'address' || hideText || get(isLocationNotBlockchain)) {
     return false;
   }
 
-  return !/^[+-]?\d+$/.test(props.text);
+  return !/^[+-]?\d+$/.test(text);
 });
 
 /**
@@ -126,44 +124,39 @@ const showIcon = computed<boolean>(() => {
 . */
 const addressBookChain = computed<string | undefined>(() => {
   const chain = get(blockchain);
-  if (chain !== undefined && props.type === 'address' && chain !== Blockchain.ETH2) {
+  if (chain !== undefined && type === 'address' && chain !== Blockchain.ETH2) {
     return chain;
   }
   return undefined;
 });
 
-const canShowAddressInfo = computed<boolean>(() => (!get(scrambleData) || props.noScramble) && props.type === 'address' && !get(isLocationNotBlockchain));
+const canShowAddressInfo = computed<boolean>(() => (!get(scrambleData) || noScramble) && type === 'address' && !get(isLocationNotBlockchain));
 
 const aliasName = computed<string | undefined>(() => {
   if (!get(canShowAddressInfo))
     return undefined;
 
-  return get(addressNameSelector(props.text, get(blockchain)));
+  return get(addressNameSelector(text, get(blockchain)));
 });
 
 const addressSource = computed<string | undefined>(() => {
   if (!get(canShowAddressInfo))
     return undefined;
 
-  return get(addressNameSourceSelector(props.text, get(blockchain)));
+  return get(addressNameSourceSelector(text, get(blockchain)));
 });
 
 const displayText = computed<string>(() => {
-  const linkText = props.text;
-
-  if (props.noScramble) {
-    return linkText;
+  if (noScramble) {
+    return text;
   }
 
-  const linkType = props.type;
-
-  return linkType === 'block' || consistOfNumbers(linkText)
-    ? scrambleIdentifier(linkText)
-    : scrambleAddress(linkText);
+  return type === 'block' || consistOfNumbers(text)
+    ? scrambleIdentifier(text)
+    : scrambleAddress(text);
 });
 
 const finalDisplayText = computed<string>(() => {
-  const truncateLength = props.truncateLength;
   if (truncateLength === 0) {
     return get(displayText);
   }
@@ -179,17 +172,16 @@ const base = computed<string>(() => {
   const selectedChain = get(blockchain);
   let base: string | undefined;
 
-  const linkType = props.type;
   if (selectedChain && isChains(selectedChain)) {
     const defaultExplorer: ExplorerUrls = explorerUrls[selectedChain];
 
     const explorerSetting = get(explorers)[selectedChain];
 
     if (explorerSetting || defaultExplorer)
-      base = explorerSetting?.[linkType] ?? defaultExplorer[linkType];
+      base = explorerSetting?.[type] ?? defaultExplorer[type];
 
     // for token missing fallback to address
-    if (!base && linkType === 'token')
+    if (!base && type === 'token')
       base = explorerSetting?.address ?? defaultExplorer.address;
   }
 
@@ -198,7 +190,7 @@ const base = computed<string>(() => {
   return base.endsWith('/') ? base : `${base}/`;
 });
 
-const tags = useAccountTags(text);
+const tags = useAccountTags(() => text);
 </script>
 
 <template>

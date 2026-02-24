@@ -4,23 +4,17 @@ import { pluralizeLastWord, toCapitalCase } from '@rotki/common';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { calculateTotalProfitLoss } from '@/utils/report';
 
-const props = withDefaults(
-  defineProps<{
-    report: Report;
-    symbol?: string | null;
-    flat?: boolean;
-    loading?: boolean;
-  }>(),
-  {
-    flat: false,
-    loading: false,
-    symbol: null,
-  },
-);
+const {
+  loading = false,
+  report,
+} = defineProps<{
+  report: Report;
+  symbol?: string | null;
+  flat?: boolean;
+  loading?: boolean;
+}>();
 
-const { report } = toRefs(props);
-
-const total = computed<ProfitLossOverviewItem>(() => calculateTotalProfitLoss(get(report)));
+const total = computed<ProfitLossOverviewItem>(() => calculateTotalProfitLoss(report));
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

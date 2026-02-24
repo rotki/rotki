@@ -11,26 +11,24 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { uniqueStrings } from '@/utils/data';
 import { getDomain } from '@/utils/url';
 
-const props = defineProps<{
+const { item } = defineProps<{
   item: GalleryNft;
 }>();
-
-const { item } = toRefs(props);
 
 const frontendStore = useFrontendSettingsStore();
 
 const { whitelistedDomainsForNftImages } = storeToRefs(frontendStore);
 const { updateSetting } = frontendStore;
 
-const imageUrlSource = computed<string | null>(() => get(item).imageUrl);
+const imageUrlSource = computed<string | null>(() => item.imageUrl);
 
 const { isVideo, renderedMedia, shouldRender } = useNftImage(imageUrlSource);
 
-const name = computed(() => (get(item).name ? get(item).name : get(item).collection.name));
+const name = computed(() => (item.name ? item.name : item.collection.name));
 
 const { t } = useI18n({ useScope: 'global' });
 
-const domain = computed<string | null>(() => getDomain(get(imageUrlSource) || ''));
+const domain = computed<string | null>(() => getDomain(get(imageUrlSource) ?? ''));
 
 const { show } = useConfirmStore();
 
@@ -62,7 +60,7 @@ function allowDomain() {
 }
 
 const mediaStyle = computed<StyleValue>(() => {
-  const backgroundColor = get(item).backgroundColor;
+  const backgroundColor = item.backgroundColor;
   if (!get(shouldRender) || !backgroundColor)
     return {};
 

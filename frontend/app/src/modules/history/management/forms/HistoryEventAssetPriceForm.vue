@@ -33,14 +33,16 @@ interface HistoryEventAssetPriceFormProps {
 const amount = defineModel<string>('amount', { required: true });
 const asset = defineModel<string | undefined>('asset', { required: true });
 
-const props = withDefaults(defineProps<HistoryEventAssetPriceFormProps>(), {
-  disableAsset: false,
-  disabled: false,
-  hidePriceFields: false,
-  noPriceFields: false,
-});
-
-const { disableAsset, disabled, hidePriceFields, noPriceFields, timestamp } = toRefs(props);
+const {
+  timestamp,
+  disableAsset,
+  v$,
+  noPriceFields,
+  hidePriceFields,
+  location,
+  disabled,
+  type,
+} = defineProps<HistoryEventAssetPriceFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -49,7 +51,7 @@ const assetToFiatPrice = ref<string>('');
 const fiatValueFocused = ref<boolean>(false);
 const fetchedAssetToFiatPrice = ref<string>('');
 const chain = ref<string>();
-const showPriceFields = ref<boolean>(!get(hidePriceFields) && !get(noPriceFields));
+const showPriceFields = ref<boolean>(!hidePriceFields && !noPriceFields);
 
 const { useIsTaskRunning } = useTaskStore();
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
@@ -79,7 +81,7 @@ function onFiatValueChange() {
 }
 
 async function fetchHistoricPrices() {
-  const time = get(timestamp);
+  const time = timestamp;
   const assetVal = get(asset);
   if (!time || !assetVal)
     return;
@@ -95,7 +97,7 @@ async function fetchHistoricPrices() {
 }
 
 watchImmediate(
-  [timestamp, asset, showPriceFields],
+  [() => timestamp, asset, showPriceFields],
   async ([timestamp, asset, showPriceFields], [oldTimestamp, oldAsset, oldShowPriceFields]) => {
     if (timestamp !== oldTimestamp || asset !== oldAsset || (oldShowPriceFields && !showPriceFields))
       await fetchHistoricPrices();
@@ -121,7 +123,7 @@ watch(amount, () => {
 });
 
 async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
-  if (get(noPriceFields) || get(disabled))
+  if (noPriceFields || disabled)
     return { success: true };
 
   const assetVal = get(asset);
@@ -133,7 +135,7 @@ async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStat
       await savePrice({
         fromAsset: assetVal,
         price: get(assetToFiatPrice),
-        timestamp: millisecondsToSeconds(get(timestamp)),
+        timestamp: millisecondsToSeconds(timestamp),
         toAsset: currency,
       });
     }

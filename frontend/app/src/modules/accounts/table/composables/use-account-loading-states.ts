@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AccountDataRow } from '../types';
 import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
@@ -15,7 +15,7 @@ interface UseAccountLoadingStates<T extends BlockchainAccountBalance> {
 }
 
 export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
-  category: Ref<string>,
+  category: MaybeRefOrGetter<string>,
 ): UseAccountLoadingStates<T> {
   const { useIsTaskRunning } = useTaskStore();
   const { isLoading } = useStatusStore();

@@ -65,13 +65,13 @@ vi.mock('@/composables/api/assets/icon', () => ({
 
 vi.mock('@/composables/locations', () => ({
   useLocations: vi.fn().mockReturnValue({
-    locationData: vi.fn().mockImplementation((identifier) => {
-      const val = get(identifier);
-      return computed(() => ({
+    locationData: vi.fn().mockImplementation(identifier => computed(() => {
+      const val = toValue(identifier);
+      return {
         identifier: val,
         name: val,
-      }));
-    }),
+      };
+    })),
   }),
 }));
 

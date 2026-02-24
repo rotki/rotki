@@ -16,13 +16,13 @@ interface HistoryEventTypeFormProps {
 const eventType = defineModel<string>('eventType', { required: true });
 const eventSubType = defineModel<string | undefined>('eventSubtype', { required: true });
 
-const props = withDefaults(defineProps<HistoryEventTypeFormProps>(), {
-  counterparty: null,
-  disableWarning: false,
-  location: null,
-});
-
-const { counterparty, location, v$ } = toRefs(props);
+const {
+  counterparty = null,
+  location = null,
+  disabled,
+  v$,
+  disableWarning,
+} = defineProps<HistoryEventTypeFormProps>();
 
 const {
   getEventTypeData,
@@ -32,15 +32,14 @@ const {
 } = useHistoryEventMappings();
 
 const historyTypeCombination = computed(() => get(getEventTypeData({
-  counterparty: get(counterparty),
+  counterparty,
   eventSubtype: get(eventSubType) ?? 'none',
   eventType: get(eventType),
-  location: get(location),
+  location,
 }, false)));
 
 const showHistoryEventTypeCombinationWarning = computed(() => {
-  const validator = get(v$);
-  if (!validator.eventType.$dirty && !validator.eventSubtype.$dirty)
+  if (!v$.eventType.$dirty && !v$.eventSubtype.$dirty)
     return false;
 
   return !get(historyTypeCombination).identifier;

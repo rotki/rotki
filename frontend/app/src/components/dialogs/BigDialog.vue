@@ -6,7 +6,24 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(defineProps<{
+const {
+  actionDisabled = false,
+  actionHidden = false,
+  actionTooltip = '',
+  autoHeight = false,
+  autoScrollToError = false,
+  display,
+  divide = false,
+  errorCount = 0,
+  loading = false,
+  maxWidth = '900px',
+  persistent = false,
+  primaryAction,
+  promptOnClose = false,
+  secondaryAction,
+  subtitle = '',
+  title,
+} = defineProps<{
   title: string;
   subtitle?: string;
   display: boolean;
@@ -23,22 +40,7 @@ const props = withDefaults(defineProps<{
   promptOnClose?: boolean;
   errorCount?: number;
   autoScrollToError?: boolean;
-}>(), {
-  actionDisabled: false,
-  actionHidden: false,
-  actionTooltip: '',
-  autoHeight: false,
-  autoScrollToError: false,
-  divide: false,
-  errorCount: 0,
-  loading: false,
-  maxWidth: '900px',
-  persistent: false,
-  primaryAction: undefined,
-  promptOnClose: false,
-  secondaryAction: undefined,
-  subtitle: '',
-});
+}>();
 
 const emit = defineEmits<{
   confirm: [];
@@ -53,28 +55,26 @@ defineSlots<{
   'left-buttons': () => any;
 }>();
 
-const { autoScrollToError, display, errorCount, primaryAction, promptOnClose, secondaryAction, subtitle } = toRefs(props);
-
 const wrapper = useTemplateRef('wrapper');
 
 const { show } = useConfirmStore();
 const { t } = useI18n({ useScope: 'global' });
 const { scrollToFirstError } = useFormErrorScroll();
 
-const hasErrors = computed<boolean>(() => get(errorCount) > 0);
+const hasErrors = computed<boolean>(() => errorCount > 0);
 
-watch(errorCount, async (newCount, oldCount) => {
-  if (get(autoScrollToError) && newCount > 0 && oldCount === 0) {
+watch(() => errorCount, async (newCount, oldCount) => {
+  if (autoScrollToError && newCount > 0 && oldCount === 0) {
     await nextTick();
     await scrollToFirstError(get(wrapper) ?? undefined);
   }
 });
 
-const primary = computed(() => get(primaryAction) || t('common.actions.confirm'));
-const secondary = computed(() => get(secondaryAction) || t('common.actions.cancel'));
+const primary = computed(() => primaryAction || t('common.actions.confirm'));
+const secondary = computed(() => secondaryAction || t('common.actions.cancel'));
 const displayModel = computed({
   get() {
-    return get(display);
+    return display;
   },
   set(value) {
     if (!value)
@@ -91,7 +91,7 @@ function cancel() {
 }
 
 function promptClose() {
-  if (!get(promptOnClose))
+  if (!promptOnClose)
     return;
 
   show({

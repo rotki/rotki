@@ -11,11 +11,12 @@ interface SummaryCardProps {
   navigatesTo?: RouteLocationRaw;
 }
 
-withDefaults(defineProps<SummaryCardProps>(), {
-  canRefresh: false,
-  isLoading: false,
-  navigatesTo: undefined,
-});
+const {
+  name,
+  canRefresh = false,
+  isLoading = false,
+  navigatesTo,
+} = defineProps<SummaryCardProps>();
 
 const emit = defineEmits<{
   refresh: [source: string];

@@ -8,18 +8,10 @@ import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { bigNumberSum } from '@/utils/calculation';
 
-const props = withDefaults(
-  defineProps<{
-    statistic?: LiquityStatisticDetails | null;
-    pool?: LiquityPoolDetailEntry | null;
-  }>(),
-  {
-    pool: null,
-    statistic: null,
-  },
-);
-
-const { pool, statistic } = toRefs(props);
+const { pool = null, statistic = null } = defineProps<{
+  statistic?: LiquityStatisticDetails | null;
+  pool?: LiquityPoolDetailEntry | null;
+}>();
 const { assetPriceInCurrentCurrency } = usePriceUtils();
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
 const lusdPrice = assetPriceInCurrentCurrency(LUSD_ID);
@@ -32,15 +24,13 @@ const loading = isLoading(Section.DEFI_LIQUITY_STATISTICS);
 const selection = ref<'historical' | 'current'>('historical');
 
 const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() => {
-  const statisticVal = get(statistic);
-
-  if (!statisticVal)
+  if (!statistic)
     return null;
 
   if (get(selection) === 'historical')
-    return statisticVal;
+    return statistic;
 
-  const stakingGains = statisticVal.stakingGains.map((stakingGain: AssetBalance) => {
+  const stakingGains = statistic.stakingGains.map((stakingGain: AssetBalance) => {
     const price = get(assetPriceInCurrentCurrency(stakingGain.asset)) ?? One;
 
     return {
@@ -49,7 +39,7 @@ const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() =
     };
   });
 
-  const stabilityPoolGains = statisticVal.stabilityPoolGains.map((stabilityPoolGain: AssetBalance) => {
+  const stabilityPoolGains = statistic.stabilityPoolGains.map((stabilityPoolGain: AssetBalance) => {
     const price = get(assetPriceInCurrentCurrency(stabilityPoolGain.asset)) ?? One;
 
     return {
@@ -63,13 +53,13 @@ const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() =
   const totalValueGainsStaking = bigNumberSum(stakingGains.map(({ value }) => value));
 
   return {
-    ...statisticVal,
+    ...statistic,
     stabilityPoolGains,
     stakingGains,
-    totalDepositedStabilityPoolValue: statisticVal.totalDepositedStabilityPool.multipliedBy(get(lusdPrice) ?? One),
+    totalDepositedStabilityPoolValue: statistic.totalDepositedStabilityPool.multipliedBy(get(lusdPrice) ?? One),
     totalValueGainsStabilityPool,
     totalValueGainsStaking,
-    totalWithdrawnStabilityPoolValue: statisticVal.totalWithdrawnStabilityPool.multipliedBy(get(lusdPrice) ?? One),
+    totalWithdrawnStabilityPoolValue: statistic.totalWithdrawnStabilityPool.multipliedBy(get(lusdPrice) ?? One),
   };
 });
 
@@ -148,20 +138,17 @@ function calculatePnl(
 }
 
 const totalPnl = computed<BigNumber | null>(() => {
-  const statisticVal = get(statistic);
-  const poolVal = get(pool);
-
-  if (!statisticVal || !poolVal)
+  if (!statistic || !pool)
     return null;
 
   return get(
     calculatePnl(
-      statisticVal.totalDepositedStabilityPool,
-      statisticVal.totalWithdrawnStabilityPool,
-      statisticVal.totalValueGainsStabilityPool,
-      poolVal.gains,
-      poolVal.rewards,
-      poolVal.deposited,
+      statistic.totalDepositedStabilityPool,
+      statistic.totalWithdrawnStabilityPool,
+      statistic.totalValueGainsStabilityPool,
+      pool.gains,
+      pool.rewards,
+      pool.deposited,
     ),
   );
 });

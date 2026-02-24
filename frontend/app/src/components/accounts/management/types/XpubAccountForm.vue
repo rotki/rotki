@@ -15,7 +15,7 @@ defineProps<{
   loading: boolean;
 }>();
 
-const input = ref<InstanceType<typeof XpubInput>>();
+const input = useTemplateRef<InstanceType<typeof XpubInput>>('input');
 
 const xpub = computed<XpubPayload>({
   get() {

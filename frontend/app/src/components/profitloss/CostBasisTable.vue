@@ -8,21 +8,17 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 
 type Acquisition = Omit<MatchedAcquisitions, 'event'> & MatchedAcquisitionsEvent;
 
-const props = withDefaults(
-  defineProps<{
-    costBasis: CostBasis;
-    currency?: string | null;
-    showGroupLine?: boolean;
-  }>(),
-  {
-    currency: null,
-    showGroupLine: false,
-  },
-);
+const {
+  costBasis,
+  currency = null,
+  showGroupLine = false,
+} = defineProps<{
+  costBasis: CostBasis;
+  currency?: string | null;
+  showGroupLine?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { costBasis, currency } = toRefs(props);
 
 const sort = ref<DataTableSortData<Acquisition>>({
   column: 'timestamp',
@@ -52,7 +48,7 @@ const cols = computed<DataTableColumn<Acquisition>[]>(() => [
     align: 'end',
     key: 'rate',
     label: t('cost_basis_table.headers.rate', {
-      currency: get(currency),
+      currency,
     }),
     sortable: true,
   },
@@ -72,7 +68,7 @@ const cols = computed<DataTableColumn<Acquisition>[]>(() => [
 useRememberTableSorting<Acquisition>(TableId.COST_BASIS, sort, cols);
 
 const matchedAcquisitions = computed<Acquisition[]>(() => {
-  const acquisitions = get(costBasis).matchedAcquisitions;
+  const acquisitions = costBasis.matchedAcquisitions;
   if (!acquisitions)
     return [];
 

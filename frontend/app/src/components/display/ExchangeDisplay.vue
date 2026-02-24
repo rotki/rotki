@@ -3,18 +3,14 @@ import AppImage from '@/components/common/AppImage.vue';
 import { useLocations } from '@/composables/locations';
 import { useRefMap } from '@/composables/utils/useRefMap';
 
-const props = withDefaults(
-  defineProps<{
-    exchange: string;
-    size?: string;
-  }>(),
-  { size: '1.5rem' },
-);
+const { exchange, size = '1.5rem' } = defineProps<{
+  exchange: string;
+  size?: string;
+}>();
 
-const { exchange } = toRefs(props);
 const { locationData } = useLocations();
 
-const location = locationData(exchange);
+const location = locationData(() => exchange);
 const name = useRefMap(location, location => location?.name);
 const image = useRefMap(location, location => location?.image ?? undefined);
 </script>

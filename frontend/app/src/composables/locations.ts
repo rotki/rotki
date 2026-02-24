@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLocationStore } from '@/store/locations';
@@ -7,16 +7,16 @@ import { isBlockchain } from '@/types/blockchain/chains';
 export const useLocations = createSharedComposable(() => {
   const { tradeLocations } = storeToRefs(useLocationStore());
 
-  const exchangeName = (location: MaybeRef<string>): string => {
-    const exchange = get(tradeLocations).find(tl => tl.identifier === get(location));
+  const exchangeName = (location: MaybeRefOrGetter<string>): string => {
+    const exchange = get(tradeLocations).find(tl => tl.identifier === toValue(location));
 
     return exchange?.name ?? '';
   };
 
   const { getBlockchainRedirectLink, getChainImageUrl, getChainName, matchChain } = useSupportedChains();
 
-  const locationData = (identifier: MaybeRef<string | null>): ComputedRef<TradeLocationData | null> => computed(() => {
-    const id = get(identifier);
+  const locationData = (identifier: MaybeRefOrGetter<string | null>): ComputedRef<TradeLocationData | null> => computed(() => {
+    const id = toValue(identifier);
     if (!id)
       return null;
 

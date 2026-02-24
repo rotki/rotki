@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRef, MaybeRefOrGetter } from 'vue';
 import type {
   ChainInfo,
   EvmChainEntries,
@@ -195,9 +195,9 @@ export const useSupportedChains = createSharedComposable(() => {
    * getChainName('zksync_lite'); // ZKSync Lite
    * getChainName('ethereum'); // Ethereum
    */
-  const getChainName = (location: MaybeRef<string>): ComputedRef<string> =>
+  const getChainName = (location: MaybeRefOrGetter<string>): ComputedRef<string> =>
     computed(() => {
-      const locationVal = get(location);
+      const locationVal = toValue(location);
       const chain = matchChain(locationVal);
       if (!chain)
         return toHumanReadable(locationVal, 'capitalize');
@@ -205,8 +205,8 @@ export const useSupportedChains = createSharedComposable(() => {
       return get(getChainInfoById(chain))?.name || toHumanReadable(locationVal, 'capitalize');
     });
 
-  const getChainImageUrl = (chain: MaybeRef<string>): ComputedRef<string> => computed<string>(() => {
-    const chainVal = get(chain);
+  const getChainImageUrl = (chain: MaybeRefOrGetter<string>): ComputedRef<string> => computed<string>(() => {
+    const chainVal = toValue(chain);
     const image = get(getChainInfoById(chainVal))?.image || `${chainVal}.svg`;
 
     return getPublicProtocolImagePath(image);

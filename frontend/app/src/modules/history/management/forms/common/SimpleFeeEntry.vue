@@ -9,15 +9,12 @@ import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<FeeEntry>({ required: true });
 
-const props = withDefaults(defineProps<{
+const { disabled, location } = defineProps<{
   index: number;
   disabled?: boolean;
   single: boolean;
   location?: string;
-}>(), {
-  disabled: false,
-  location: undefined,
-});
+}>();
 
 const emit = defineEmits<{
   remove: [index: number];
@@ -31,7 +28,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { createCommonRules } = useEventFormValidation();
 const commonRules = createCommonRules();
 
-const rules = computed(() => (props.disabled
+const rules = computed(() => (disabled
   ? {
       amount: {},
       asset: {},
@@ -79,7 +76,7 @@ watch(asset, (asset, oldAsset) => {
   updateModel();
 });
 
-watch(() => props.location, (newLocation) => {
+watch(() => location, (newLocation) => {
   if (newLocation)
     set(chain, newLocation);
 });

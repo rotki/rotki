@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import WrappedCard from './WrappedCard.vue';
 
-withDefaults(defineProps<{
+const {
+  count = 3,
+} = defineProps<{
   count?: number;
-}>(), {
-  count: 3,
-});
+}>();
 </script>
 
 <template>

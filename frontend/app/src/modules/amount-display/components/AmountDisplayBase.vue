@@ -41,25 +41,16 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(defineProps<Props>(), {
-  format: undefined,
-  loading: false,
-  noTooltip: false,
-  noTruncate: false,
-  pnl: false,
-  symbol: '',
-});
-
-const { value } = toRefs(props);
+const { value, format, symbol = '' } = defineProps<Props>();
 
 // Extract format options
-const isInteger = computed<boolean>(() => props.format?.integer ?? false);
+const isInteger = computed<boolean>(() => format?.integer ?? false);
 
 // Get display settings
 const { currencyLocation, shouldShowAmount } = useAmountDisplaySettings();
 
 // Format the value for display
-const roundingType = computed(() => props.format?.rounding ?? 'value');
+const roundingType = computed(() => format?.rounding ?? 'value');
 
 const {
   comparisonSymbol,
@@ -69,7 +60,7 @@ const {
 } = useAmountFormatter({
   integer: isInteger,
   rounding: roundingType,
-  value,
+  value: () => value,
 });
 
 // Copy value for clipboard
@@ -77,7 +68,7 @@ const copyValue = computed<string>(() => {
   if (get(isNaN)) {
     return '-';
   }
-  return get(value).toString();
+  return value.toString();
 });
 </script>
 

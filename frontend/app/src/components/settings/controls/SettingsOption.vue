@@ -8,27 +8,23 @@ import { SettingLocation, useClearableMessages, useSettings } from '@/composable
 
 type TransformMessageCallback<T = any> = (value: any) => T;
 
-const props = withDefaults(
-  defineProps<{
-    setting: keyof SettingsUpdate | keyof FrontendSettingsPayload | keyof SessionSettings;
-    frontendSetting?: boolean;
-    sessionSetting?: boolean;
-    transform?: TransformMessageCallback | null;
-    successMessage?: string | TransformMessageCallback<string>;
-    errorMessage?: string | TransformMessageCallback<string>;
-  }>(),
-  {
-    errorMessage: '',
-    frontendSetting: false,
-    sessionSetting: false,
-    successMessage: '',
-    transform: null,
-  },
-);
+const {
+  errorMessage = '',
+  frontendSetting = false,
+  sessionSetting = false,
+  setting,
+  successMessage = '',
+  transform = null,
+} = defineProps<{
+  setting: keyof SettingsUpdate | keyof FrontendSettingsPayload | keyof SessionSettings;
+  frontendSetting?: boolean;
+  sessionSetting?: boolean;
+  transform?: TransformMessageCallback | null;
+  successMessage?: string | TransformMessageCallback<string>;
+  errorMessage?: string | TransformMessageCallback<string>;
+}>();
 
 const emit = defineEmits(['updated', 'finished']);
-
-const { errorMessage, frontendSetting, sessionSetting, setting, successMessage, transform } = toRefs(props);
 const { clearAll, error, setError, setSuccess, stop, success, wait } = useClearableMessages();
 const { updateSetting } = useSettings();
 
@@ -46,17 +42,15 @@ async function updateImmediate(newValue: any) {
   stop();
   clearAll();
   set(loading, true);
-  const func = get(transform);
-  const settingKey = get(setting);
-  const settingValue = func ? func(newValue) : newValue;
+  const settingValue = transform ? transform(newValue) : newValue;
 
-  const location = get(sessionSetting)
+  const location = sessionSetting
     ? SettingLocation.SESSION
-    : get(frontendSetting)
+    : frontendSetting
       ? SettingLocation.FRONTEND
       : SettingLocation.GENERAL;
 
-  const result = await updateSetting(settingKey, settingValue, location, {
+  const result = await updateSetting(setting, settingValue, location, {
     error: getMessage(errorMessage, newValue),
     success: getMessage(successMessage, newValue),
   });

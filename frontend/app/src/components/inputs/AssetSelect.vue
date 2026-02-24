@@ -21,7 +21,22 @@ defineOptions({
 
 const modelValue = defineModel<string | undefined>({ required: true });
 
-const props = withDefaults(defineProps<{
+const {
+  chain,
+  clearable = false,
+  disabled = false,
+  errorMessages = [] as string[],
+  excludes = [] as string[],
+  hideDetails = false,
+  hint = '',
+  includeNfts = false,
+  items = [] as string[],
+  label = 'Asset',
+  outlined = false,
+  required = false,
+  showIgnored = false,
+  successMessages = '',
+} = defineProps<{
   items?: string[];
   excludes?: string[];
   hint?: string;
@@ -37,22 +52,7 @@ const props = withDefaults(defineProps<{
   includeNfts?: boolean;
   asset?: AssetInfoWithId | NftAsset;
   chain?: string;
-}>(), {
-  asset: undefined,
-  clearable: false,
-  disabled: false,
-  errorMessages: () => [],
-  excludes: () => [],
-  hideDetails: false,
-  hint: '',
-  includeNfts: false,
-  items: () => [],
-  label: 'Asset',
-  outlined: false,
-  required: false,
-  showIgnored: false,
-  successMessages: '',
-});
+}>();
 
 const emit = defineEmits<{
   'update:asset': [value?: AssetInfoWithId | NftAsset];
@@ -61,8 +61,6 @@ const emit = defineEmits<{
 defineSlots<{
   prepend: () => any;
 }>();
-
-const { errorMessages, excludes, includeNfts, items, showIgnored } = toRefs(props);
 const { useIsAssetIgnored } = useIgnoredAssetsStore();
 const { getEvmChainName, matchChain } = useSupportedChains();
 
@@ -76,7 +74,7 @@ const { assetMapping, assetSearch } = useAssetInfoApi();
 const { t } = useI18n({ useScope: 'global' });
 
 const errors = computed(() => {
-  const messages = [...get(errorMessages)];
+  const messages = [...errorMessages];
   const errorMessage = get(error);
   if (errorMessage)
     messages.unshift(errorMessage);
@@ -85,21 +83,18 @@ const errors = computed(() => {
 });
 
 const visibleAssets = computed<AssetInfoWithId[]>(() => {
-  const itemsVal = get(items);
-  const excludesVal = get(excludes);
   const knownAssets = get(assets);
   const currentValue = get(modelValue);
 
-  const includeIgnored = get(showIgnored);
   const filtered = knownAssets.filter(({ identifier }: AssetInfoWithId) => {
     const isCurrentValue = identifier === currentValue;
-    const unIgnored = includeIgnored || isCurrentValue || !get(useIsAssetIgnored(identifier));
+    const unIgnored = showIgnored || isCurrentValue || !get(useIsAssetIgnored(identifier));
 
-    const included = itemsVal && itemsVal.length > 0 ? itemsVal.includes(identifier) : true;
+    const included = items && items.length > 0 ? items.includes(identifier) : true;
 
     const excluded
-      = excludesVal && excludesVal.length > 0
-        ? excludesVal.some(excludedId => identifier.toLowerCase() === excludedId?.toLowerCase())
+      = excludes && excludes.length > 0
+        ? excludes.some(excludedId => identifier.toLowerCase() === excludedId?.toLowerCase())
         : false;
 
     return !!identifier && unIgnored && included && !excluded;
@@ -112,13 +107,13 @@ async function searchAssets(keyword: string, signal: AbortSignal): Promise<void>
   set(loading, true);
   try {
     const { address, value } = parseAssetSearchKeyword(keyword);
-    const usedChain = getSanitizedChain(props.chain, matchChain, getEvmChainName);
+    const usedChain = getSanitizedChain(chain, matchChain, getEvmChainName);
 
     const fetchedAssets = await assetSearch({
       address,
       ...getAssetSearchTypeParams(usedChain),
       limit: 50,
-      searchNfts: get(includeNfts),
+      searchNfts: includeNfts,
       signal,
       value,
     });
@@ -212,7 +207,7 @@ watch(visibleAssets, (_, oldVisibleAssets) => {
     onUpdateModelValue('');
 });
 
-watch(() => [props.chain], async () => {
+watch(() => [chain], async () => {
   if (!get(modelValue)) {
     return;
   }

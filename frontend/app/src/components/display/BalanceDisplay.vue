@@ -6,53 +6,46 @@ import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 
-const props = withDefaults(
-  defineProps<{
-    asset?: string;
-    value?: Partial<Balance> | null;
-    noIcon?: boolean;
-    noJustify?: boolean;
-    align?: 'start' | 'end';
-    mode?: 'gain' | 'loss' | '';
-    assetPadding?: number;
-    ticker?: boolean;
-    loading?: boolean;
-    iconSize?: string;
-    calculateValue?: boolean;
-  }>(),
-  {
-    align: 'end',
-    asset: '',
-    assetPadding: 0,
-    calculateValue: false,
-    iconSize: '24px',
-    loading: false,
-    mode: '',
-    noIcon: false,
-    noJustify: false,
-    ticker: true,
-    value: null,
-  },
-);
-
-const { asset, calculateValue, value } = toRefs(props);
+const {
+  align = 'end',
+  asset = '',
+  calculateValue = false,
+  iconSize = '24px',
+  loading = false,
+  mode = '',
+  noIcon = false,
+  noJustify = false,
+  ticker = true,
+  value = null,
+} = defineProps<{
+  asset?: string;
+  value?: Partial<Balance> | null;
+  noIcon?: boolean;
+  noJustify?: boolean;
+  align?: 'start' | 'end';
+  mode?: 'gain' | 'loss' | '';
+  ticker?: boolean;
+  loading?: boolean;
+  iconSize?: string;
+  calculateValue?: boolean;
+}>();
 
 const amount = useValueOrDefault(
-  useRefMap(value, value => value?.amount),
+  useRefMap(() => value, value => value?.amount),
   Zero,
 );
 const balanceValue = useValueOrDefault(
-  useRefMap(value, value => value?.value),
+  useRefMap(() => value, value => value?.value),
   Zero,
 );
 
 const { assetPriceInCurrentCurrency } = usePriceUtils();
 
-const valueInCurrency = computed(() => {
-  if (!get(calculateValue))
+const valueInCurrency = computed<BigNumber>(() => {
+  if (!calculateValue)
     return get(balanceValue);
 
-  return get(assetPriceInCurrentCurrency(get(asset))).multipliedBy(get(amount));
+  return get(assetPriceInCurrentCurrency(asset)).multipliedBy(get(amount));
 });
 </script>
 

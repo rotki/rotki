@@ -8,20 +8,17 @@ defineOptions({
 
 const model = defineModel<string | undefined>({ required: true });
 
-const props = withDefaults(defineProps<{
+const { showWithKeyOnly, excludes = [] } = defineProps<{
   dense?: boolean;
   showWithKeyOnly?: boolean;
   excludes?: string[];
-}>(), {
-  excludes: () => [],
-  showWithKeyOnly: false,
-});
+}>();
 
 const { allExchanges, exchangesWithKey } = storeToRefs(useLocationStore());
 
 const options = computed<string[]>(() => {
-  const exchanges = get(props.showWithKeyOnly ? exchangesWithKey : allExchanges);
-  return exchanges.filter(exchange => !props.excludes.includes(exchange));
+  const exchanges = get(showWithKeyOnly ? exchangesWithKey : allExchanges);
+  return exchanges.filter(exchange => !excludes.includes(exchange));
 });
 </script>
 
