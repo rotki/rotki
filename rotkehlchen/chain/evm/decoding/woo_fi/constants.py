@@ -6,20 +6,13 @@ from rotkehlchen.types import ChainID
 CPT_WOO_FI: Final = 'woo-fi'
 CPT_WOO_FI_LABEL: Final = 'WOOFi'
 
-WOO_FI_SUPPORTED_CHAINS: Final = {
-    ChainID.ARBITRUM_ONE,
-    ChainID.BASE,
-    ChainID.BINANCE_SC,
-    ChainID.ETHEREUM,
-    ChainID.OPTIMISM,
-    ChainID.POLYGON_POS,
-}
-
 WOO_ROUTER_V2: Final = string_to_evm_address('0x4c4AF8DBc524681930a27b2F1Af5bcC8062E6fB7')
 WOO_CROSS_SWAP_ROUTER_V5: Final = string_to_evm_address('0xB84aEfEF2DDDE628d5c7F1fba320dE63e3f4757c')  # noqa: E501
 WOO_ROUTER_SWAP_TOPIC: Final = b"'\xc9\x8e\x91\x1e\xfd\xd2$\xf4\x00/l\xd81\xc3\xad\r'Y\xee\x17o\x9e\xe8Fm\x95\x82j\xf2*\x1c"  # noqa: E501
 WOO_CROSS_SWAP_ON_SRC_CHAIN_TOPIC: Final = b'\x8d\xbfa\xe7L\x14\xd5\xd85\x81jk\xda\xf0\x87K\xd5\xf7\xbf\xf3\xeeM\x8cL\x83\xd0\xe6\xbf\x8d\xa4\xcfr'  # noqa: E501
 WOO_CROSS_SWAP_ON_DEST_CHAIN_TOPIC: Final = b'\x96\xdd\xa4\xec\xb8m8\xbc\x80nC\xde }m`"IG\xe1$J#\x08\x9bV\x8fhV\xeb\xa6\xb5'  # noqa: E501
+WOO_REQUEST_WITHDRAW_TOPIC: Final = b'\xeb\xea\xa8xR\x85\xa4\xf7\xc3z0SQ\x99}\xce\xeb\xab\xc3\xc3W\xda\xb9\x80#\xdc7QJ\x1bn\xd6'  # noqa: E501
+WOO_INSTANT_WITHDRAW_TOPIC: Final = b'g \x04\xd3Z\xd2\x12O\x90)\x93q\xad\xe9\\\xf5YE\x00\xe4\x07\x05\xa7\xcfn\xaf|\x00\xb5Z\x07\xac'  # noqa: E501
 
 # For WOOFi cross-chain swaps, the only way to tell what chain it is from/to is by the LayerZero
 # endpoint id. These ids are not directly correlated to chain ids, so we need to map them here.

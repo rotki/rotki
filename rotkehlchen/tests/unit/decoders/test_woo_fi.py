@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.woo_fi.constants import CPT_WOO_FI, WOO_CROSS_SWAP_ROUTER_V5
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
@@ -333,4 +334,221 @@ def test_bridge_withdrawal_and_swap(
         location_label=user_address,
         notes=f'Receive {receive_amount} POL after WOOFi swap',
         counterparty=CPT_WOO_FI,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x706A70067BE19BdadBea3600Db0626859Ff25D74']])
+def test_supercharger_deposit(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x69f0e35913dccf5cf48e1e4b10dca993b0029176f6c80419a35168ce64577f61')),  # noqa: E501,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1771624027000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000010574845488'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831'),
+        amount=FVal(deposit_amount := '100'),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} USDC in a WOOFi supercharger vault',
+        counterparty=CPT_WOO_FI,
+        address=string_to_evm_address('0xA780432f495E5C6851fd7903FE49ad77C952F7D8'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=12,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0xA780432f495E5C6851fd7903FE49ad77C952F7D8'),
+        amount=FVal(receive_amount := '0.000000000085622842'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} weUSDC after WOOFi supercharger deposit',
+        counterparty=CPT_WOO_FI,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x087455cEdBf4CAcA6bB3F150D146dcf22325BEBE']])
+def test_supercharger_request_withdraw(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xddab8aa15d79493a1ef702b3462d04e532629b5413f5ce5406b3e90b46a27937')),  # noqa: E501,
+    )
+    wbtc_supercharger = string_to_evm_address('0xd2fdaB19b94B59C5F0E75Dd9813365Df815b56B1')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1771682380000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000384914292'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=9,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset(f'eip155:42161/erc20:{wbtc_supercharger}'),
+        amount=FVal(approve_amount := '0.000000000000108295'),
+        location_label=user_address,
+        notes=f'Set weWBTC spending approval of {user_address} by {wbtc_supercharger} to {approve_amount}',  # noqa: E501
+        address=wbtc_supercharger,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=10,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset(f'eip155:42161/erc20:{wbtc_supercharger}'),
+        amount=FVal(return_amount := '0.00000000000291167'),
+        location_label=user_address,
+        notes=f'Return {return_amount} weWBTC to WOOFi supercharger vault',
+        counterparty=CPT_WOO_FI,
+        address=wbtc_supercharger,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=11,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:42161/erc20:0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f'),
+        amount=FVal(request_amount := '0.03020103'),
+        location_label=user_address,
+        notes=f'Request withdrawal of {request_amount} WBTC from WOOFi supercharger vault',
+        counterparty=CPT_WOO_FI,
+        address=wbtc_supercharger,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xC736A2e29f4E764f548A76A960595687559d8Eac']])
+def test_supercharger_withdrawal(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1d3ce58bcea0b090a2ec8d9f9dfcfb4754bcf44a0231376e4cba691379fac9ba')),  # noqa: E501,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1768682899000)),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000000595603254'),
+        location_label=(user_address := optimism_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=A_ETH,
+        amount=FVal(withdrawal_amount := '0.000519028810487091'),
+        location_label=user_address,
+        notes=f'Withdraw {withdrawal_amount} ETH from WOOFi supercharger vault',
+        counterparty=CPT_WOO_FI,
+        address=string_to_evm_address('0x91741863A48f0B29fC0B6D10b3cdE2122feB58f7'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x0Aba70aeF4Ede2EF2a55264cce4F940b2cd3da2c']])
+def test_supercharger_instant_withdraw(
+        polygon_pos_inquirer: 'PolygonPOSInquirer',
+        polygon_pos_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xb0bc003f0bb68594f9f31dd9824de0f4eaa14e6585e35e3113352d48be3efca9')),  # noqa: E501,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1770698473000)),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
+        amount=FVal(gas_amount := '0.081035426074038696'),
+        location_label=(user_address := polygon_pos_accounts[0]),
+        notes=f'Burn {gas_amount} POL for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('eip155:137/erc20:0x9DD5dD86b978f17628f01307A83347d9Ec9B0699'),
+        amount=FVal(return_amount := '1.628563369715926556'),
+        location_label=user_address,
+        notes=f'Return {return_amount} weWMATIC to WOOFi supercharger vault',
+        counterparty=CPT_WOO_FI,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
+        amount=FVal(withdrawal_amount := '1.815769518172714667'),
+        location_label=user_address,
+        notes=f'Withdraw {withdrawal_amount} POL from WOOFi supercharger vault',
+        counterparty=CPT_WOO_FI,
+        address=string_to_evm_address('0x9DD5dD86b978f17628f01307A83347d9Ec9B0699'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
+        amount=FVal(withdrawal_fee_amount := '0.018157695181727146'),
+        location_label=user_address,
+        notes=f'Spend {withdrawal_fee_amount} POL as WOOFi instant withdrawal fee',
+        counterparty=CPT_WOO_FI,
+        address=string_to_evm_address('0x9DD5dD86b978f17628f01307A83347d9Ec9B0699'),
     )]

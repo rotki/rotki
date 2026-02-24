@@ -96,8 +96,6 @@ from .structures import (
     EvmDecodingOutput,
     TransferEnrichmentOutput,
 )
-from .woo_fi.constants import WOO_FI_SUPPORTED_CHAINS
-from .woo_fi.decoder import WooFiCommonDecoder
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
@@ -301,13 +299,6 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self._add_single_decoder(
                 class_name='Cowswap',
                 decoder_class=CowswapCommonDecoder,
-                rules=rules,
-            )
-
-        if self.evm_inquirer.chain_id in WOO_FI_SUPPORTED_CHAINS:
-            self._add_single_decoder(
-                class_name='WooFi',
-                decoder_class=WooFiCommonDecoder,
                 rules=rules,
             )
 
