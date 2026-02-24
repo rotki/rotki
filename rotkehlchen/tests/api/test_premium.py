@@ -306,6 +306,7 @@ def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
             'eth_staking_view': True,
             'graphs_view': True,
             'event_analysis_view': False,
+            'asset_movement_matching': True,
         }),
     ):
         response = requests.get(api_url_for(

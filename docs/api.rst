@@ -529,6 +529,7 @@ Querying premium capabilities
    - `graphs_view`: Boolean. Enables the graphs displayed for each asset containing historical balances and values.
    - `eth_staking_view`: Boolean. Enables the Ethereum staking view.
    - `event_analysis_view`: Boolean. Enables the statistics view and the historical analytics based on events.
+   - `asset_movement_matching`: Boolean. Enables automatic matching of exchange asset movements with onchain events when triggering the matching task.
 
    **Example Request**:
 
@@ -548,7 +549,8 @@ Querying premium capabilities
           "result": {
             "graphs_view": true,
             "eth_staking_view": false,
-            "event_analysis_view": true
+            "event_analysis_view": true,
+            "asset_movement_matching": true
           },
           "message": ""
       }
@@ -1448,7 +1450,7 @@ Trigger an async task
 
           {"task": "historical_balance_processing"}
 
-        :reqjson str task: Name of the task to run. Valid values are ``historical_balance_processing`` and ``asset_movement_matching``.
+        :reqjson str task: Name of the task to run. Valid values are ``historical_balance_processing`` and ``asset_movement_matching``. ``asset_movement_matching`` requires the premium capability ``asset_movement_matching``.
 
       **Example Response:**
 
@@ -1466,6 +1468,7 @@ Trigger an async task
         :resjson bool result: True on success
         :statuscode 200: Task started successfully
         :statuscode 401: User is not logged in
+        :statuscode 403: Task is not available for the current premium tier
         :statuscode 500: Internal Rotki error
 
 
@@ -6405,6 +6408,9 @@ Match exchange asset movements with onchain events
 
    Matches exchange asset movement events with corresponding events, or mark the asset movement as having no corresponding event.
 
+   .. note::
+      This endpoint is only available for premium users
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
@@ -6437,12 +6443,14 @@ Match exchange asset movements with onchain events
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Events matched successfully
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in or failure.
+   :statuscode 401: No user is logged in
+   :statuscode 403: Logged in user does not have premium.
    :statuscode 500: Internal rotki error
 
 .. http:get:: /api/(version)/history/events/match/asset_movements
 
    Get a list of unmatched asset movements group identifiers.
+   This endpoint does not require premium.
 
    **Example Request**:
 
@@ -6478,6 +6486,9 @@ Match exchange asset movements with onchain events
 .. http:post:: /api/(version)/history/events/match/asset_movements
 
    Find possible matching events for an unmatched asset movement.
+
+   .. note::
+      This endpoint is only available for premium users
 
    **Example Request**:
 
@@ -6519,12 +6530,17 @@ Match exchange asset movements with onchain events
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Possible matches returned successfully
    :statuscode 400: Provided JSON is in some way malformed or asset movement not found
-   :statuscode 409: No user is logged in or failure
+   :statuscode 401: No user is logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Failure
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/history/events/match/asset_movements
 
    Unlinks matched asset movements, or resets the asset movement to being simply unmatched if the asset movement is marked as having no corresponding event.
+
+   .. note::
+      This endpoint is only available for premium users
 
    **Example Request**:
 
@@ -6556,7 +6572,9 @@ Match exchange asset movements with onchain events
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Events unlinked successfully
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in or failure.
+   :statuscode 401: No user is logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Failure.
    :statuscode 500: Internal rotki error
 
 Customized history event duplicates

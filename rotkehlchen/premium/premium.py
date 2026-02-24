@@ -57,6 +57,7 @@ KUBERNETES_PLATFORM_KEY: Final = 'kubernetes'
 CONTAINER_FALLBACK_ID_FILE: Final = Path('/opt/rotki/.container-id')
 DOCKER_ENTRYPOINT_PATH: Final = '/opt/rotki/entrypoint.py'
 UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX: Final = 'unknown-container'
+ASSET_MOVEMENT_MATCHING_CAPABILITY: Final = 'asset_movement_matching'
 
 
 class RemoteMetadata(NamedTuple):
@@ -88,6 +89,7 @@ class UserLimits(TypedDict):
     eth_staking_view: bool
     graphs_view: bool
     event_analysis_view: bool
+    asset_movement_matching: bool
 
 
 # keys that will be returned as part of the capabilities
@@ -95,10 +97,12 @@ PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this
     'eth_staking_view',
     'graphs_view',
     'event_analysis_view',
+    'asset_movement_matching',
 ], ...]] = (
     'eth_staking_view',
     'graphs_view',
     'event_analysis_view',
+    'asset_movement_matching',
 )
 
 
@@ -1000,3 +1004,16 @@ def get_user_limit(premium: Premium | None, limit_type: UserLimitType) -> tuple[
 
         log.error(f'Failed to fetch limits from server: {e}. Falling back to free limits')
         return limit_type.get_free_limit(), False
+
+
+def has_premium_capability(premium: Premium | None, capability_name: str) -> bool:
+    """Helper function to check if an active premium user has a specific capability."""
+    if premium is None or premium.is_active() is False:
+        return False
+
+    try:
+        limits = premium.fetch_limits()
+        return bool(limits.get(capability_name, False))
+    except (RemoteError, PremiumAuthenticationError) as e:
+        log.error(f'Failed to fetch capabilities from server: {e}. Falling back to free tier')
+        return False

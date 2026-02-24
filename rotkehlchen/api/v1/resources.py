@@ -3751,6 +3751,7 @@ class MatchAssetMovementsResource(BaseMethodView):
         return self.rest_api.get_unmatched_asset_movements(only_ignored=only_ignored)
 
     @require_loggedin_user()
+    @require_premium_user(active_check=False)
     @use_kwargs(put_schema, location='json')
     def put(self, asset_movement: int, matched_events: list[int]) -> Response:
         return self.rest_api.match_asset_movements(
@@ -3759,6 +3760,7 @@ class MatchAssetMovementsResource(BaseMethodView):
         )
 
     @require_loggedin_user()
+    @require_premium_user(active_check=False)
     @use_kwargs(post_schema, location='json')
     def post(
             self,
@@ -3775,6 +3777,7 @@ class MatchAssetMovementsResource(BaseMethodView):
         )
 
     @require_loggedin_user()
+    @require_premium_user(active_check=False)
     @use_kwargs(delete_schema, location='json')
     def delete(self, identifier: int) -> Response:
         return self.rest_api.unlink_matched_asset_movements(identifier=identifier)
