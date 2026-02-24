@@ -232,7 +232,7 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@clippy
         with:
-          toolchain: 1.86.0
+          toolchain: 1.91
 
       - uses: Swatinem/rust-cache@v2
         with:
@@ -290,6 +290,8 @@ jobs:
       - name: Setup Rust
         if: steps.fdc-cache.outputs.cache-hit != 'true'
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.91
 
       - name: Cache Rust dependencies
         if: steps.fdc-cache.outputs.cache-hit != 'true'

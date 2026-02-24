@@ -81,6 +81,8 @@ jobs:
       - name: Setup Rust
         if: steps.colibri-cache.outputs.cache-hit != 'true'
         uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.91
 
       - name: Build Colibri
         if: steps.colibri-cache.outputs.cache-hit != 'true'
