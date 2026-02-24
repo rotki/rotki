@@ -1,15 +1,59 @@
+import type { AssetPrices } from '@/types/prices';
+import { One } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
+import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useGeneralSettingsStore } from '@/store/settings/general';
+import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 
 interface UseCurrencyUpdateReturn { onCurrencyUpdate: () => Promise<void> }
 
 export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
   const { updateSetting } = useFrontendSettingsStore();
-  const { refreshPrices } = usePriceRefresh();
+  const { adjustPrices, refreshPrices } = usePriceRefresh();
+  const { fetchExchangeRates } = usePriceTaskManager();
+  const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+  const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
+
+  const previousCurrency = ref<SupportedCurrency>(get(currencySymbol));
 
   async function onCurrencyUpdate(): Promise<void> {
-    // TODO: This is temporary fix for double conversion issue. Future solutions should try to eliminate this part.
+    const oldCurrency = get(previousCurrency);
+    const newCurrency = get(currencySymbol);
+    set(previousCurrency, newCurrency);
+
+    // Approximate prices using exchange rate ratio while real prices load
+    if (oldCurrency !== newCurrency) {
+      let rates = get(exchangeRates);
+      const oldRate = oldCurrency === CURRENCY_USD ? One : rates[oldCurrency];
+
+      // Ensure the new currency's exchange rate is available
+      if (newCurrency !== CURRENCY_USD && !rates[newCurrency]) {
+        await fetchExchangeRates(newCurrency);
+        rates = get(exchangeRates);
+      }
+
+      const newRate = newCurrency === CURRENCY_USD ? One : rates[newCurrency];
+
+      if (oldRate && newRate && !oldRate.isZero()) {
+        const ratio = newRate.div(oldRate);
+        const currentPrices = get(prices);
+        const scaledPrices: AssetPrices = {};
+
+        for (const [asset, priceData] of Object.entries(currentPrices)) {
+          scaledPrices[asset] = {
+            ...priceData,
+            value: priceData.value.multipliedBy(ratio),
+          };
+        }
+
+        set(prices, scaledPrices);
+        adjustPrices(scaledPrices);
+      }
+    }
+
     startPromise(refreshPrices(true));
 
     // Clear hide small balances state, if the currency is changed

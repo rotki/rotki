@@ -30,7 +30,7 @@ export function useLatestPrices(
   const refreshing = ref(false);
 
   const { addLatestPrice, deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
-  const { assetPriceInCurrentCurrency } = usePriceUtils();
+  const { assetPrice } = usePriceUtils();
   const { refreshPrices } = usePriceRefresh();
   const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
   const { notify } = useNotificationsStore();
@@ -53,8 +53,8 @@ export function useLatestPrices(
     return filteredItems.map((item, index) => {
       const { fromAsset, toAsset, price } = item;
       const priceInCurrency = isNft(fromAsset)
-        ? get(assetPriceInCurrentCurrency(toAsset)).multipliedBy(price)
-        : get(assetPriceInCurrentCurrency(fromAsset));
+        ? get(assetPrice(toAsset))?.multipliedBy(price)
+        : get(assetPrice(fromAsset));
 
       return {
         id: index + 1,

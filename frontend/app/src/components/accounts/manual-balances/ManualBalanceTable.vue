@@ -95,7 +95,7 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [{
   sortable: true,
 }, {
   align: 'end',
-  key: 'usdPrice',
+  key: 'price',
   label: t('common.price_in_symbol', {
     symbol: get(currencySymbol),
   }),
@@ -208,11 +208,11 @@ watchDebounced(
         />
         <ManualBalanceMissingAssetWarning v-else />
       </template>
-      <template #item.usdPrice="{ row }">
+      <template #item.price="{ row }">
         <FiatDisplay
           v-if="!row.assetIsMissing"
-          :loading="!row.usdPrice || row.usdPrice.lt(0)"
-          :value="row.usdPrice"
+          :loading="!row.price || row.price.lt(0)"
+          :value="row.price"
           :price-asset="row.asset"
         />
         <template v-else>

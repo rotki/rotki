@@ -73,7 +73,7 @@ export function useDashboardTableConfig(
       align: 'end',
       cellClass: 'py-0',
       class: 'text-no-wrap',
-      key: 'usdPrice',
+      key: 'price',
       label: t('common.price_in_symbol', {
         symbol: get(currencySymbol),
       }),

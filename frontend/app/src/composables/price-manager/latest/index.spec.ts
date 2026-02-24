@@ -61,7 +61,9 @@ describe('useLatestPrices', () => {
 
   describe('items', () => {
     it('should compute usdPrice in current currency without double conversion', async () => {
-      setupPrices('EUR', { EUR: 0.85 }, { ETH: 2000 });
+      // Prices are now fetched directly in the selected currency (EUR),
+      // so the stored price is already in EUR
+      setupPrices('EUR', { EUR: 0.85 }, { ETH: 1700 });
 
       const { useAssetPricesApi } = await import('@/composables/api/assets/prices');
       const { fetchLatestPrices } = useAssetPricesApi();
@@ -76,7 +78,7 @@ describe('useLatestPrices', () => {
 
       const result = get(items);
       expect(result).toHaveLength(1);
-      // ETH price is 2000 USD, with EUR rate 0.85, price in EUR = 2000 * 0.85 = 1700
+      // ETH price is already stored in EUR (1700), no conversion needed
       expect(result[0].usdPrice.toNumber()).toBe(1700);
     });
 

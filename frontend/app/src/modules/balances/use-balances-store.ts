@@ -6,7 +6,6 @@ import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPrices } from '@/types/prices';
 import { type BigNumber, Zero } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
-import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { updateBlockchainAssetBalances, updateExchangeBalancesPrices, updateManualBalancePrices } from '@/utils/prices';
 
 export const useBalancesStore = defineStore('balances', () => {
@@ -18,21 +17,17 @@ export const useBalancesStore = defineStore('balances', () => {
 
   const blockchainBalances = ref<Balances>({});
 
-  const { assetPriceInCurrentCurrency } = usePriceUtils();
-
-  const getAssetPriceInCurrentCurrency = (asset: string): BigNumber | undefined => get(assetPriceInCurrentCurrency(asset));
-
   const updatePrices = (prices: MaybeRef<AssetPrices>): void => {
     const latestPrices = get(prices);
-    set(blockchainBalances, updateBlockchainAssetBalances(get(blockchainBalances), latestPrices, getAssetPriceInCurrentCurrency));
+    set(blockchainBalances, updateBlockchainAssetBalances(get(blockchainBalances), latestPrices));
 
     const exchanges = { ...get(exchangeBalances) };
-    for (const exchange in exchanges) exchanges[exchange] = updateExchangeBalancesPrices(exchanges[exchange], latestPrices, getAssetPriceInCurrentCurrency);
+    for (const exchange in exchanges) exchanges[exchange] = updateExchangeBalancesPrices(exchanges[exchange], latestPrices);
 
     set(exchangeBalances, exchanges);
 
-    set(manualBalances, updateManualBalancePrices(get(manualBalances), latestPrices, assetPriceInCurrentCurrency));
-    set(manualLiabilities, updateManualBalancePrices(get(manualLiabilities), latestPrices, assetPriceInCurrentCurrency));
+    set(manualBalances, updateManualBalancePrices(get(manualBalances), latestPrices));
+    set(manualLiabilities, updateManualBalancePrices(get(manualLiabilities), latestPrices));
   };
 
   const updateBlockchainBalances = (chain: string, { perAccount }: BlockchainBalances): void => {

@@ -109,20 +109,19 @@ watch(search, () => setPage(1));
         <BalanceTopProtocols
           v-if="row.perProtocol"
           :protocols="row.perProtocol"
-          :loading="!row.usdPrice || row.usdPrice.lt(0)"
+          :loading="!row.price || row.price.lt(0)"
           :asset="row.asset"
         />
       </template>
-      <template #item.usdPrice="{ row }">
+      <template #item.price="{ row }">
         <template v-if="isAssetMissing(row)">
           -
         </template>
         <FiatDisplay
           v-else
           :price-asset="row.asset"
-          :value="row.usdPrice"
-          :loading="!row.usdPrice || row.usdPrice.lt(0)"
-          from="USD"
+          :value="row.price"
+          :loading="!row.price || row.price.lt(0)"
         />
       </template>
       <template #item.amount="{ row }">
@@ -132,7 +131,7 @@ watch(search, () => setPage(1));
         <AssetValueDisplay
           :asset="row.asset"
           :amount="row.amount"
-          :price="row.usdPrice"
+          :price="row.price"
           :value="row.value"
         />
       </template>

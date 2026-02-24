@@ -23,10 +23,10 @@ function getExchangeRate(currency: string): BigNumber {
 function createBalanceWithPrice(
   amount: string,
   asset: string,
-  usdPrice: string,
+  price: string,
 ): AssetBalanceWithPriceAndChains {
   const amountBN = new BigNumber(amount);
-  const priceBN = new BigNumber(usdPrice);
+  const priceBN = new BigNumber(price);
   const usdValue = amountBN.multipliedBy(priceBN);
   // Get current currency from settings store
   const currency = generalSettingsStore ? get(generalSettingsStore.currency).tickerSymbol : 'USD';
@@ -37,7 +37,7 @@ function createBalanceWithPrice(
   return {
     amount: amountBN,
     asset,
-    usdPrice: priceBN,
+    price: priceBN,
     value,
   };
 }

@@ -80,7 +80,7 @@ export interface HistoricPricesPayload {
 }
 
 export interface AssetPriceInfo extends Balance {
-  readonly usdPrice: BigNumber;
+  readonly price: BigNumber;
 }
 
 export const ManualPrice = z.object({

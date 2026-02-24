@@ -134,12 +134,6 @@ const displaySymbol = computed<string>(() => {
           :oracle="assetOracle"
         />
       </template>
-      <template
-        v-else
-        #tooltip
-      >
-        <slot name="tooltip" />
-      </template>
     </AmountDisplayBase>
   </DefineAmountDisplay>
 

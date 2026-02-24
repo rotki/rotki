@@ -40,11 +40,8 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
     timestamp,
   } = options;
 
-  const { assetPrice, isAssetPriceInCurrentCurrency } = usePriceUtils();
+  const { assetPrice } = usePriceUtils();
   const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
-
-  // Check if the asset's price is already in the user's current currency
-  const isCurrentCurrency = isAssetPriceInCurrentCurrency(asset);
 
   const timestampToUse = computed<number>(() => {
     const ts = normalizeTimestamp(toValue(timestamp));
@@ -86,8 +83,8 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
       }
     }
 
-    // If known price is provided and price is in current currency, use known price
-    if (known !== undefined && known !== null && get(isCurrentCurrency)) {
+    // If known price is provided, use it directly
+    if (known !== undefined && known !== null) {
       return known;
     }
 

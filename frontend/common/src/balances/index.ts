@@ -33,7 +33,7 @@ const ProtocolBalanceSchema = Balance.extend({
 
 const BaseAssetBalanceSchema = z.object({
   ...AssetBalance.shape,
-  usdPrice: NumericString,
+  price: NumericString,
 });
 
 const BreakdownSchema = BaseAssetBalanceSchema.extend({

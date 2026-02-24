@@ -37,7 +37,7 @@ export type ManualBalances = z.infer<typeof ManualBalances>;
 
 const ManualBalanceWithPrice = z.object({
   ...ManualBalanceWithValue.shape,
-  usdPrice: NumericString.optional(),
+  price: NumericString.optional(),
 });
 
 export type ManualBalanceWithPrice = z.infer<typeof ManualBalanceWithPrice>;
