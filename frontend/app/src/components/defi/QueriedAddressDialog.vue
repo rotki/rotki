@@ -13,11 +13,9 @@ import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
-const props = defineProps<{ module: Module }>();
+const { module } = defineProps<{ module: Module }>();
 
 const emit = defineEmits<{ close: [] }>();
-
-const { module } = toRefs(props);
 
 const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const ETH = Blockchain.ETH;
@@ -33,43 +31,39 @@ const { t } = useI18n({ useScope: 'global' });
 const accounts = computed<BlockchainAccount[]>(() => getAccounts(ETH));
 
 const currentModule = computed(() => {
-  const currentModule = get(module);
-  if (!currentModule)
+  if (!module)
     return undefined;
 
-  return SUPPORTED_MODULES.find(({ identifier }) => identifier === currentModule);
+  return SUPPORTED_MODULES.find(({ identifier }) => identifier === module);
 });
 
 const moduleName = useRefMap(currentModule, m => m?.name);
 const moduleIcon = useRefMap(currentModule, m => m?.icon);
 
 const addresses = computed(() => {
-  const currentModule = get(module);
-  if (!currentModule)
+  if (!module)
     return [];
 
   const addresses = get(queriedAddresses);
-  const index = transformCase(currentModule, true) as CamelCase<Module>;
+  const index = transformCase(module, true) as CamelCase<Module>;
   return addresses[index] ?? [];
 });
 
 const usableAddresses = computed(() => {
-  const currentModule = get(module);
   const accountList = getAddresses(Blockchain.ETH);
   const moduleAddresses = get(addresses);
-  if (!currentModule || moduleAddresses.length === 0)
+  if (!module || moduleAddresses.length === 0)
     return accountList;
 
   return accountList.filter(address => !moduleAddresses.includes(address));
 });
 
 async function addAddress() {
-  const currentModule = get(module);
   const currentAccount = get(selectedAccounts);
-  assert(currentModule && currentAccount.length > 0);
+  assert(module && currentAccount.length > 0);
   await addQueriedAddress({
     address: getAccountAddress(currentAccount[0]),
-    module: currentModule,
+    module,
   });
   set(selectedAccounts, []);
 }

@@ -5,25 +5,15 @@ defineOptions({
   inheritAttrs: false,
 });
 
-withDefaults(
-  defineProps<{
-    tooltip: string;
-    retainFocusOnClick?: boolean;
-    className?: string;
-    href?: string;
-    variant?: ButtonProps['variant'];
-    size?: ButtonProps['size'];
-    customColor?: boolean;
-  }>(),
-  {
-    className: '',
-    customColor: false,
-    href: undefined,
-    retainFocusOnClick: false,
-    size: undefined,
-    variant: 'text',
-  },
-);
+const { tooltip, retainFocusOnClick = false, className = '', href, variant = 'text', size, customColor = false } = defineProps<{
+  tooltip: string;
+  retainFocusOnClick?: boolean;
+  className?: string;
+  href?: string;
+  variant?: ButtonProps['variant'];
+  size?: ButtonProps['size'];
+  customColor?: boolean;
+}>();
 </script>
 
 <template>

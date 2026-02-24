@@ -260,6 +260,38 @@ async function fetchData() {
     filters?: Record<string, string>;
   }>();
   ```
+- **Reactive prop passing rules** — destructured props are reactive in `computed()`, `watch()`, and templates, but they are **not** `Ref<T>` objects. When passing to composables or watchers:
+  ```typescript
+  const { category, chains, address } = defineProps<{
+    category: string;
+    chains: string[];
+    address: string;
+  }>();
+
+  // ✅ watch() — wrap in getter
+  watch(() => category, (val) => { ... });
+
+  // ✅ MaybeRefOrGetter<T> param — pass as getter
+  const helper = useMyComposable(() => category);
+
+  // ✅ MaybeRef<T> or Ref<T> param — wrap with toRef
+  const data = useOtherComposable(toRef(() => chains));
+
+  // ✅ computed() — use directly (reactive)
+  const label = computed<string>(() => `${category}-${address}`);
+
+  // ❌ Don't use toRef when a getter suffices (MaybeRefOrGetter)
+  const helper = useMyComposable(toRef(() => category));
+
+  // ❌ Don't use toRefs(props) — destructure directly
+  const props = defineProps<{ ... }>();
+  const { category } = toRefs(props);
+  ```
+
+##### Composable argument conventions
+- When authoring composables, accept `MaybeRefOrGetter<T>` for maximum flexibility and use `toValue()` internally to normalize inputs
+- `toValue()` handles plain values, refs, and getter functions uniformly
+- Use `onWatcherCleanup()` (Vue 3.5+) instead of `onCleanup` callback parameter for cleaner extraction into helper functions
 
 ##### Emits — typed tuple syntax
 - Use the typed tuple syntax for emit definitions:

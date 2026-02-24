@@ -11,7 +11,7 @@ const props = defineProps<{
   messages: WelcomeMessage[];
 }>();
 
-const svg = ref();
+const svg = ref<string>();
 
 const { onNavigate, onPause, onResume, step, steps } = useRandomStepper(props.messages.length);
 

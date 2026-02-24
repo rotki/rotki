@@ -23,11 +23,9 @@ interface EthWithdrawalEventFormProps {
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<EthWithdrawalEventFormProps>();
+const { data } = defineProps<EthWithdrawalEventFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { data } = toRefs(props);
 
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
@@ -46,7 +44,7 @@ const commonRules = createCommonRules();
 
 const rules = {
   amount: commonRules.createRequiredAmountRule(),
-  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
+  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => data.type === 'edit'),
   timestamp: commonRules.createExternalValidationRule(),
   validatorIndex: commonRules.createRequiredValidatorIndexRule(),
   withdrawalAddress: commonRules.createRequiredValidWithdrawalAddressRule(),
@@ -122,7 +120,7 @@ async function save(): Promise<boolean> {
   if (!(await get(v$).$validate()))
     return false;
 
-  const eventData = get(data);
+  const eventData = data;
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
 
   const payload: NewEthWithdrawalEventPayload = {
@@ -145,7 +143,7 @@ async function save(): Promise<boolean> {
 }
 
 function checkPropsData() {
-  const formData = get(data);
+  const formData = data;
   if (formData.type === 'edit') {
     applyEditableData(formData.event);
     return;
@@ -157,7 +155,7 @@ function checkPropsData() {
   reset();
 }
 
-watch(data, checkPropsData);
+watch(() => data, checkPropsData);
 onMounted(() => {
   checkPropsData();
 });

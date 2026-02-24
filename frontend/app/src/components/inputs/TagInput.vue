@@ -9,15 +9,10 @@ import { renameTagInList } from '@/utils/tags';
 
 const modelValue = defineModel<string[]>({ required: true });
 
-withDefaults(
-  defineProps<{
-    disabled?: boolean;
-    label?: string;
-  }>(),
-  {
-    label: 'Tags',
-  },
-);
+const { disabled, label = 'Tags' } = defineProps<{
+  disabled?: boolean;
+  label?: string;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 const store = useTagStore();
@@ -29,7 +24,7 @@ const newTag = ref<Tag | undefined>(undefined);
 const editMode = ref<boolean>(false);
 const originalName = ref<string>('');
 
-const newTagBackground = ref(randomColor());
+const newTagBackground = ref<string>(randomColor());
 
 function remove(tag: string) {
   const tags = get(modelValue);

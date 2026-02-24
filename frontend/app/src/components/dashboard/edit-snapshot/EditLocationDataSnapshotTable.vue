@@ -15,7 +15,7 @@ import { CURRENCY_USD } from '@/types/currencies';
 
 const modelValue = defineModel<LocationDataSnapshot[]>({ required: true });
 
-const props = defineProps<{
+const { timestamp } = defineProps<{
   timestamp: number;
 }>();
 
@@ -26,8 +26,6 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 type IndexedLocationDataSnapshot = LocationDataSnapshot & { index: number };
-
-const { timestamp } = toRefs(props);
 
 const openDialog = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
@@ -104,7 +102,7 @@ function add(): void {
   set(editedIndex, null);
   set(formModel, {
     location: '',
-    timestamp: get(timestamp),
+    timestamp,
     usdValue: '',
   });
   set(
@@ -128,7 +126,7 @@ async function save(): Promise<boolean> {
   set(submitting, true);
   const index = get(editedIndex);
   const val = get(modelValue);
-  const timestampVal = get(timestamp);
+  const timestampVal = timestamp;
 
   const convertedUsdValue
     = get(currencySymbol) === CURRENCY_USD

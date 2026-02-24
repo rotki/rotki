@@ -10,14 +10,9 @@ const valid = defineModel<boolean>('valid', { required: true });
 const passwordConfirm = defineModel<string>('passwordConfirm', { required: true });
 const userPrompted = defineModel<boolean>('userPrompted', { required: true });
 
-withDefaults(
-  defineProps<{
-    loading?: boolean;
-  }>(),
-  {
-    loading: false,
-  },
-);
+const { loading = false } = defineProps<{
+  loading?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 

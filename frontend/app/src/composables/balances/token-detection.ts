@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { EthDetectedTokensInfo } from '@/types/balances';
 import { assert } from '@rotki/common';
 import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
@@ -12,19 +12,19 @@ import { arrayify } from '@/utils/array';
 interface UseTokenDetectionReturn {
   detectingTokens: ComputedRef<boolean>;
   detectedTokens: ComputedRef<EthDetectedTokensInfo>;
-  getEthDetectedTokensInfo: (chain: MaybeRef<string>, address: MaybeRef<string | null>) => ComputedRef<EthDetectedTokensInfo>;
+  getEthDetectedTokensInfo: (chain: MaybeRefOrGetter<string>, address: MaybeRefOrGetter<string | null>) => ComputedRef<EthDetectedTokensInfo>;
   detectTokens: (addresses?: string[]) => Promise<void>;
   detectTokensOfAllAddresses: () => Promise<void>;
 }
 
-export function useTokenDetection(chain: MaybeRef<string | string[]>, accountAddress: MaybeRef<string | null> = null): UseTokenDetectionReturn {
+export function useTokenDetection(chain: MaybeRefOrGetter<string | string[]>, accountAddress: MaybeRefOrGetter<string | null> = null): UseTokenDetectionReturn {
   const { useIsTaskRunning } = useTaskStore();
   const { fetchDetectedTokens: fetchDetectedTokensCaller, getEthDetectedTokensInfo } = useBlockchainTokensStore();
   const { addresses } = useAccountAddresses();
   const { supportsTransactions } = useSupportedChains();
   const { queueTokenDetection } = useBalanceQueue();
 
-  const chains = computed<string[]>(() => arrayify(get(chain)));
+  const chains = computed<string[]>(() => arrayify(toValue(chain)));
 
   const isDetectingTaskRunning = (blockchain: string, address: string | null): ComputedRef<boolean> =>
     computed(() => get(
@@ -35,7 +35,7 @@ export function useTokenDetection(chain: MaybeRef<string | string[]>, accountAdd
     ));
 
   const detectingTokens = computed<boolean>(() => {
-    const address = get(accountAddress);
+    const address = toValue(accountAddress);
     return get(chains).some(blockchain => get(isDetectingTaskRunning(blockchain, address)));
   });
 
@@ -67,7 +67,7 @@ export function useTokenDetection(chain: MaybeRef<string | string[]>, accountAdd
   };
 
   const detectTokens = async (addressList: string[] = []): Promise<void> => {
-    const address = get(accountAddress);
+    const address = toValue(accountAddress);
     assert(address || addressList.length > 0);
     const usedAddresses = address ? [address] : addressList;
     const chainsValue = get(chains);

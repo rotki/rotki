@@ -24,7 +24,7 @@ import { isNft } from '@/utils/nft';
 
 const modelValue = defineModel<Snapshot>({ required: true });
 
-const props = defineProps<{
+const { timestamp } = defineProps<{
   timestamp: number;
 }>();
 
@@ -35,8 +35,6 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 type IndexedBalanceSnapshot = BalanceSnapshot & { index: number; categoryLabel: string };
-
-const { timestamp } = toRefs(props);
 
 const openDialog = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
@@ -196,7 +194,7 @@ function add(): void {
     assetIdentifier: '',
     category: BalanceType.ASSET,
     location: '',
-    timestamp: get(timestamp),
+    timestamp,
     usdValue: '',
   });
   set(openDialog, true);
@@ -282,7 +280,7 @@ function updateData(
     else {
       locationDataSnapshot.push({
         location,
-        timestamp: get(timestamp),
+        timestamp,
         usdValue: calculatedBalance!.after,
       });
     }
@@ -321,7 +319,7 @@ async function save(): Promise<boolean> {
   set(submitting, true);
   const index = get(indexToEdit);
   const val = get(modelValue);
-  const timestampVal = get(timestamp);
+  const timestampVal = timestamp;
 
   const balancesSnapshot = [...val.balancesSnapshot];
   const payload = {

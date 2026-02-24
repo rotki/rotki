@@ -35,7 +35,7 @@ defineSlots<{
   tooltip: () => any;
 }>();
 
-const input = ref();
+const input = useTemplateRef<any>('input');
 const search = ref<string>('');
 const selectedSuggestion = ref<number>(0);
 const suggestedFilter = ref<Suggestion>({

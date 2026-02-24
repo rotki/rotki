@@ -4,18 +4,13 @@ import ValueAccuracyHint from '@/components/helper/hint/ValueAccuracyHint.vue';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { sum } from '@/utils/balances';
 
-const props = defineProps<{
+const { earned } = defineProps<{
   loading: boolean;
   totalHistorical: BigNumber;
   earned: AssetBalance[];
 }>();
 
-const { earned } = toRefs(props);
-
-const totalCurrent = computed<BigNumber>(() => {
-  const earnedAssets = get(earned);
-  return sum(earnedAssets);
-});
+const totalCurrent = computed<BigNumber>(() => sum(earned));
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

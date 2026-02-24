@@ -1,5 +1,5 @@
 import type { EChartsType } from 'echarts/core';
-import type { Ref, ShallowRef } from 'vue';
+import type { MaybeRefOrGetter, Ref, ShallowRef } from 'vue';
 import type VChart from 'vue-echarts';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { assert, type BigNumber } from '@rotki/common';
@@ -8,7 +8,7 @@ import { type TooltipData, useGraphTooltip } from '@/composables/graphs';
 interface UseNetValueEventHandlersParams {
   chartInstance: Readonly<ShallowRef<InstanceType<typeof VChart> | null>>;
   chartContainer: Readonly<ShallowRef<HTMLElement | null>>;
-  chartData: Ref<NetValueChartData>;
+  chartData: MaybeRefOrGetter<NetValueChartData>;
   onHover: (timestamp: number, value: BigNumber) => void;
 }
 
@@ -98,7 +98,7 @@ export function useNetValueEventHandlers(params: UseNetValueEventHandlersParams)
       const { axesInfo, dataIndex } = event;
       const xAxisInfo = axesInfo?.[0];
 
-      const { data: netValues, snapshotCount } = get(chartData);
+      const { data: netValues, snapshotCount } = toValue(chartData);
       const netValue = netValues[dataIndex];
       const currentBalance = dataIndex === netValues.length - 1;
       const isSnapshot = dataIndex < snapshotCount;

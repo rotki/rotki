@@ -6,31 +6,25 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    address: string;
-    avatar?: boolean;
-    size?: string | number;
-  }>(),
-  {
-    avatar: false,
-    size: '24px',
-  },
-);
+const { address, avatar = false, size = '24px' } = defineProps<{
+  address: string;
+  avatar?: boolean;
+  size?: string | number;
+}>();
 
 const success = ref<boolean>(false);
 const failed = ref<boolean>(false);
 
 const { getEnsAvatarUrl } = useAddressesNamesStore();
 
-const avatarUrl = computed<string | null>(() => get(getEnsAvatarUrl(props.address)));
+const avatarUrl = computed<string | null>(() => get(getEnsAvatarUrl(address)));
 
 const { getBlockie } = useBlockie();
 
-const style = computed(() => ({
-  height: props.size,
-  width: props.size,
-  minWidth: props.size,
+const style = computed<Record<string, string | number>>(() => ({
+  height: size,
+  width: size,
+  minWidth: size,
 }));
 </script>
 

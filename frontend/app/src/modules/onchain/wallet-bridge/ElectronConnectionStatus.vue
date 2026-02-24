@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const props = defineProps<{
+const { isConnected, isConnecting, error, onRetryConnection, onDisconnect } = defineProps<{
   isConnected: boolean;
   isConnecting: boolean;
   error?: string;
@@ -8,8 +8,6 @@ const props = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { error, isConnected, isConnecting, onDisconnect, onRetryConnection } = toRefs(props);
 </script>
 
 <template>

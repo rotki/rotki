@@ -26,11 +26,9 @@ interface HistoryEventFormProps {
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<HistoryEventFormProps>();
+const { data } = defineProps<HistoryEventFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { data } = toRefs(props);
 
 const { counterparties } = useHistoryEventCounterpartyMappings();
 
@@ -66,7 +64,7 @@ const rules = {
   counterparty: commonRules.createValidCounterpartyRule(counterparties),
   eventSubtype: commonRules.createRequiredEventSubtypeRule(),
   eventType: commonRules.createRequiredEventTypeRule(),
-  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
+  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => data.type === 'edit'),
   location: commonRules.createRequiredLocationRule(),
   locationLabel: commonRules.createExternalValidationRule(),
   notes: commonRules.createExternalValidationRule(),
@@ -108,7 +106,7 @@ const v$ = useVuelidate(
 useFormStateWatcher(states, stateUpdated);
 
 function reset() {
-  set(sequenceIndex, get(data)?.nextSequenceId || '0');
+  set(sequenceIndex, data?.nextSequenceId || '0');
   set(txRef, '');
   set(groupIdentifier, null);
   set(hasActualGroupIdentifier, false);
@@ -149,7 +147,7 @@ function applyEditableData(entry: SolanaEvent) {
 }
 
 function applyGroupHeaderData(entry: SolanaEvent) {
-  set(sequenceIndex, get(data)?.nextSequenceId || '0');
+  set(sequenceIndex, data?.nextSequenceId || '0');
   set(groupIdentifier, entry.groupIdentifier);
   set(address, entry.address ?? '');
   set(locationLabel, entry.locationLabel ?? '');
@@ -167,8 +165,7 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const eventData = get(data);
-  const editable = eventData.type === 'edit' ? eventData.event : undefined;
+  const editable = data.type === 'edit' ? data.event : undefined;
   const userNotes = get(notes).trim();
 
   const payload: NewSolanaEventPayload = {
@@ -198,20 +195,19 @@ async function save(): Promise<boolean> {
 }
 
 function checkPropsData() {
-  const formData = get(data);
-  if (formData.type === 'edit') {
-    applyEditableData(formData.event);
+  if (data.type === 'edit') {
+    applyEditableData(data.event);
     return;
   }
 
-  if (formData.type === 'group-add') {
-    applyGroupHeaderData(formData.group);
+  if (data.type === 'group-add') {
+    applyGroupHeaderData(data.group);
     return;
   }
   reset();
 }
 
-watch(data, checkPropsData);
+watch(() => data, checkPropsData);
 
 onMounted(() => {
   checkPropsData();

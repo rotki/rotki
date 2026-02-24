@@ -7,7 +7,7 @@ import type {
   YAXisComponentOption,
 } from 'echarts';
 import type { DataZoomComponentOption, GridComponentOption } from 'echarts/components';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { useGraph } from '@/composables/graphs';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -21,9 +21,9 @@ interface UseNetValueChartConfigReturn {
   chartOption: ComputedRef<EChartsOption>;
 }
 
-export function useNetValueChartConfig(chartData: Ref<NetValueChartData>): UseNetValueChartConfigReturn {
+export function useNetValueChartConfig(chartData: MaybeRefOrGetter<NetValueChartData>): UseNetValueChartConfigReturn {
   const data = computed<number[][]>(() => {
-    const { data, times } = get(chartData);
+    const { data, times } = toValue(chartData);
     if (!(times?.length && data?.length)) {
       return [];
     }

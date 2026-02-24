@@ -1,5 +1,5 @@
 import { omit } from 'es-toolkit';
-import { computed, type ComputedRef, type Ref, type WritableComputedRef } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter, type Ref, type WritableComputedRef } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { logger } from '@/utils/logging';
@@ -24,7 +24,7 @@ interface UseAssetStatisticsStateReturn {
   useHistoricalAssetBalances: Ref<boolean, boolean>;
 }
 
-export function useAssetStatisticState(asset: Ref<string | undefined>): UseAssetStatisticsStateReturn {
+export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefined>): UseAssetStatisticsStateReturn {
   const useHistoricalAssetBalances = ref<boolean>(false);
 
   const { useHistoricalAssetBalances: enabled } = storeToRefs(useFrontendSettingsStore());
@@ -36,24 +36,26 @@ export function useAssetStatisticState(asset: Ref<string | undefined>): UseAsset
 
   const rememberStateForAsset = computed<boolean>({
     get() {
-      if (!isDefined(asset)) {
+      const assetValue = toValue(asset);
+      if (!assetValue) {
         return false;
       }
-      return get(stateForAsset)[get(asset)] !== undefined;
+      return get(stateForAsset)[assetValue] !== undefined;
     },
     set(enabled: boolean) {
-      if (!isDefined(asset)) {
+      const assetValue = toValue(asset);
+      if (!assetValue) {
         return;
       }
       if (enabled) {
         set(stateForAsset, {
           ...get(stateForAsset),
-          [get(asset)]: get(useHistoricalAssetBalances) ? Preference.EVENTS : Preference.SNAPSHOT,
+          [assetValue]: get(useHistoricalAssetBalances) ? Preference.EVENTS : Preference.SNAPSHOT,
         });
       }
       else {
         set(stateForAsset, {
-          ...omit(get(stateForAsset), [get(asset)]),
+          ...omit(get(stateForAsset), [assetValue]),
         });
       }
     },
@@ -78,17 +80,18 @@ export function useAssetStatisticState(asset: Ref<string | undefined>): UseAsset
   }
 
   watch(useHistoricalAssetBalances, (enabled) => {
-    if (!(get(rememberStateForAsset)) || !isDefined(asset)) {
+    const assetValue = toValue(asset);
+    if (!(get(rememberStateForAsset)) || !assetValue) {
       return;
     }
 
     set(stateForAsset, {
       ...get(stateForAsset),
-      [get(asset)]: enabled ? Preference.EVENTS : Preference.SNAPSHOT,
+      [assetValue]: enabled ? Preference.EVENTS : Preference.SNAPSHOT,
     });
   });
 
-  watch(asset, (asset) => {
+  watch(() => toValue(asset), (asset) => {
     if (!asset) {
       return;
     }

@@ -10,15 +10,13 @@ import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { sortAssetBalances } from '@/utils/balances';
 
-const props = defineProps<{
+const { balances, loading, timestamp } = defineProps<{
   balances: AssetBalanceWithPrice[];
   loading?: boolean;
   timestamp?: number;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { balances } = toRefs(props);
 
 const expanded = ref<AssetBalanceWithPrice[]>([]);
 
@@ -32,10 +30,9 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { createKey, isPending } = useHistoricCachePriceStore();
 
 function isPriceLoading(asset: string): boolean {
-  const ts = props.timestamp;
-  if (!ts)
+  if (!timestamp)
     return false;
-  return get(isPending(createKey(asset, ts)));
+  return get(isPending(createKey(asset, timestamp)));
 }
 
 const isExpanded = (asset: string): boolean => some(get(expanded), { asset });
@@ -78,7 +75,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   sortable: true,
 }]);
 
-const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get(balances)], get(sort), assetInfo));
+const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...balances], get(sort), assetInfo));
 </script>
 
 <template>

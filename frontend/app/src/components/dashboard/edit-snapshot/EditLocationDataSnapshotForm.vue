@@ -12,14 +12,9 @@ import { toMessages } from '@/utils/validation';
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 const model = defineModel<LocationDataSnapshotPayload>({ required: true });
 
-withDefaults(
-  defineProps<{
-    excludedLocations?: string[];
-  }>(),
-  {
-    excludedLocations: () => [],
-  },
-);
+const { excludedLocations = [] } = defineProps<{
+  excludedLocations?: string[];
+}>();
 
 const location = useRefPropVModel(model, 'location');
 const value = useRefPropVModel(model, 'usdValue');

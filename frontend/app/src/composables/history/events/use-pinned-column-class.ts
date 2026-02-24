@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 
 export interface ColumnClassConfig {
   class?: string;
@@ -10,20 +10,20 @@ const PINNED_COLUMN_CLASS: ColumnClassConfig = { cellClass: '!px-2 !text-xs', cl
 const PINNED_ASSET_COLUMN_CLASS: ColumnClassConfig = { cellClass: '!pl-1 !pr-0', class: `!pl-1 !pr-0 ${PINNED_HEADER_CLASS}` };
 const PINNED_SIMPLE_TABLE_CLASS = '!text-xs [&_th]:!px-2 [&_td]:!px-2';
 
-export function usePinnedColumnClass(isPinned: Ref<boolean | undefined>): ComputedRef<ColumnClassConfig> {
+export function usePinnedColumnClass(isPinned: MaybeRefOrGetter<boolean | undefined>): ComputedRef<ColumnClassConfig> {
   return computed<ColumnClassConfig>(() =>
-    get(isPinned) ? PINNED_COLUMN_CLASS : {},
+    toValue(isPinned) ? PINNED_COLUMN_CLASS : {},
   );
 }
 
-export function usePinnedAssetColumnClass(isPinned: Ref<boolean | undefined>): ComputedRef<ColumnClassConfig> {
+export function usePinnedAssetColumnClass(isPinned: MaybeRefOrGetter<boolean | undefined>): ComputedRef<ColumnClassConfig> {
   return computed<ColumnClassConfig>(() =>
-    get(isPinned) ? PINNED_ASSET_COLUMN_CLASS : {},
+    toValue(isPinned) ? PINNED_ASSET_COLUMN_CLASS : {},
   );
 }
 
-export function usePinnedSimpleTableClass(isPinned: Ref<boolean | undefined>): ComputedRef<string> {
+export function usePinnedSimpleTableClass(isPinned: MaybeRefOrGetter<boolean | undefined>): ComputedRef<string> {
   return computed<string>(() =>
-    get(isPinned) ? PINNED_SIMPLE_TABLE_CLASS : '[&_table_td]:!py-0',
+    toValue(isPinned) ? PINNED_SIMPLE_TABLE_CLASS : '[&_table_td]:!py-0',
   );
 }

@@ -10,11 +10,9 @@ const model = defineModel<string>({
   },
 });
 
-const props = defineProps<{
+const { items } = defineProps<{
   items: string[];
 }>();
-
-const { items } = toRefs(props);
 
 const search = ref<string>('');
 

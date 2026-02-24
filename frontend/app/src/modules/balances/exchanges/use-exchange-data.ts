@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AssetProtocolBalances } from '@/types/blockchain/balances';
 import type { Exchange, ExchangeInfo } from '@/types/exchanges';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -8,7 +8,7 @@ import { sortDesc } from '@/utils/bignumbers';
 import { balanceSum, exchangeAssetSum } from '@/utils/calculation';
 
 interface UseExchangeDataReturn {
-  useBaseExchangeBalances: (exchange?: MaybeRef<string>) => ComputedRef<AssetProtocolBalances>;
+  useBaseExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => ComputedRef<AssetProtocolBalances>;
   exchanges: ComputedRef<ExchangeInfo[]>;
   syncingExchanges: ComputedRef<Exchange[]>;
   isSameExchange: (a: Exchange, b: Exchange) => boolean;
@@ -31,10 +31,10 @@ export function useExchangeData(): UseExchangeDataReturn {
   });
 
   const useBaseExchangeBalances = (
-    exchange?: MaybeRef<string>,
+    exchange?: MaybeRefOrGetter<string>,
   ): ComputedRef<AssetProtocolBalances> => computed<AssetProtocolBalances>(() => {
     const balances = get(exchangeBalances);
-    const name = exchange ? get(exchange) : undefined;
+    const name = exchange ? toValue(exchange) : undefined;
     const protocolBalances: AssetProtocolBalances = {};
 
     for (const [exchange, assets] of Object.entries(balances)) {

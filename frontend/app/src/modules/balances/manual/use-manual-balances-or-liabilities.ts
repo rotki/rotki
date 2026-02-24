@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter } from 'vue';
 import type { Collection } from '@/types/collection';
 import type {
   ManualBalanceRequestPayload,
@@ -16,11 +16,11 @@ interface UseManualBalancesOrLiabilitiesReturn {
 }
 
 export function useManualBalancesOrLiabilities(
-  type: Ref<'liabilities' | 'balances'>,
+  type: MaybeRefOrGetter<'liabilities' | 'balances'>,
 ): UseManualBalancesOrLiabilitiesReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { fetchBalances, fetchLiabilities } = useManualBalancePagination();
-  const dataSource = computed<ManualBalanceWithValue[]>(() => (get(type) === 'liabilities' ? get(manualLiabilities) : get(manualBalances)));
+  const dataSource = computed<ManualBalanceWithValue[]>(() => (toValue(type) === 'liabilities' ? get(manualLiabilities) : get(manualBalances)));
 
   const locations = computed<string[]>(() => [
     ...get(manualBalances).map(item => item.location),
@@ -29,7 +29,7 @@ export function useManualBalancesOrLiabilities(
 
   const fetch = async (
     payload: MaybeRef<ManualBalanceRequestPayload>,
-  ): Promise<Collection<ManualBalanceWithPrice>> => get(type) === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload);
+  ): Promise<Collection<ManualBalanceWithPrice>> => toValue(type) === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload);
 
   return {
     dataSource,

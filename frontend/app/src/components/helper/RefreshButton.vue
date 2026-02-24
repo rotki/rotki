@@ -1,15 +1,9 @@
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    loading?: boolean;
-    tooltip: string;
-    disabled?: boolean;
-  }>(),
-  {
-    disabled: false,
-    loading: false,
-  },
-);
+const { tooltip, loading = false, disabled = false } = defineProps<{
+  loading?: boolean;
+  tooltip: string;
+  disabled?: boolean;
+}>();
 
 const emit = defineEmits<{
   refresh: [];

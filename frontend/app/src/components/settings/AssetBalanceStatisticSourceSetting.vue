@@ -3,7 +3,7 @@ import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useAssetStatisticState } from '@/composables/settings/use-asset-statistic-state';
 
-const props = defineProps<{
+const { asset } = defineProps<{
   asset?: string;
 }>();
 
@@ -11,27 +11,25 @@ const emit = defineEmits<{
   preference: [preference?: 'events' | 'snapshot'];
 }>();
 
-const { asset } = toRefs(props);
-
 const {
   getPreference,
   name,
   rememberStateForAsset,
   suppressIfPerAsset,
   useHistoricalAssetBalances,
-} = useAssetStatisticState(asset);
+} = useAssetStatisticState(() => asset);
 
 const { t } = useI18n({ useScope: 'global' });
 
 watch(useHistoricalAssetBalances, () => {
-  if (!isDefined(asset) || !get(rememberStateForAsset)) {
+  if (!asset || !get(rememberStateForAsset)) {
     return;
   }
 
-  emit('preference', getPreference(get(asset)));
+  emit('preference', getPreference(asset));
 });
 
-watchImmediate(asset, (asset) => {
+watchImmediate(() => asset, (asset) => {
   if (!asset || !get(rememberStateForAsset)) {
     return;
   }

@@ -11,17 +11,11 @@ defineOptions({
   inheritAttrs: false,
 });
 
-withDefaults(
-  defineProps<{
-    item: Item;
-    size?: string;
-    vertical?: boolean;
-  }>(),
-  {
-    size: '1.5rem',
-    vertical: false,
-  },
-);
+const { item, size = '1.5rem', vertical = false } = defineProps<{
+  item: Item;
+  size?: string;
+  vertical?: boolean;
+}>();
 </script>
 
 <template>

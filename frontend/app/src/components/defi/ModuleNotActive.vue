@@ -20,7 +20,7 @@ function icon(module: Module): string {
 
 const { t } = useI18n({ useScope: 'global' });
 
-const wrapper = ref();
+const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
 const { top } = useElementBounding(wrapper);
 </script>
 

@@ -10,15 +10,14 @@ interface Props {
   lastQueriedTimestamp: number;
 }
 
-const props = defineProps<Props>();
-
 const {
   isNeverQueried,
   justUpdated,
   lastQueriedDisplay,
   lastQueriedTimestamp,
   longQuery,
-} = toRefs(props);
+  hasUndecodedTxs,
+} = defineProps<Props>();
 
 const { t } = useI18n({ useScope: 'global' });
 

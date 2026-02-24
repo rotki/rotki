@@ -31,11 +31,9 @@ defineOptions({
   name: 'AssetBreakdown',
 });
 
-const props = defineProps<{
+const { identifier } = defineProps<{
   identifier: string;
 }>();
-
-const { identifier } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
@@ -60,10 +58,10 @@ const assetRetrievalOption = computed<AssetResolutionOptions>(() => ({
   collectionParent: get(isCollectionParent),
 }));
 
-const name = assetName(identifier, assetRetrievalOption);
-const symbol = assetSymbol(identifier, assetRetrievalOption);
-const asset = assetInfo(identifier, assetRetrievalOption);
-const contractInfo = assetContractInfo(identifier, assetRetrievalOption);
+const name = assetName(() => identifier, assetRetrievalOption);
+const symbol = assetSymbol(() => identifier, assetRetrievalOption);
+const asset = assetInfo(() => identifier, assetRetrievalOption);
+const contractInfo = assetContractInfo(() => identifier, assetRetrievalOption);
 
 const {
   loadingIgnore,
@@ -74,7 +72,7 @@ const {
   toggleWhitelistAsset,
 } = useAssetPageActions({
   asset,
-  identifier,
+  identifier: computed<string>(() => identifier),
   name,
   refetchAssetInfo,
   symbol,
@@ -93,7 +91,7 @@ const collectionId = computed<number | undefined>(() => {
 const editRoute = computed(() => ({
   path: get(isCustomAsset) ? '/asset-manager/custom' : '/asset-manager/managed',
   query: {
-    id: get(identifier),
+    id: identifier,
   },
 }));
 
@@ -101,13 +99,13 @@ const collectionBalance = computed<AssetBalanceWithPrice[]>(() => {
   if (!get(isCollectionParent))
     return [];
 
-  return get(aggregatedBalances).find(data => data.asset === get(identifier))?.breakdown || [];
+  return get(aggregatedBalances).find(data => data.asset === identifier)?.breakdown || [];
 });
 
 const collectionAssetWithPrice = computed<string | undefined>(() => {
   const collectionBalanceVal = get(collectionBalance);
 
-  const id = get(identifier);
+  const id = identifier;
 
   if (collectionBalanceVal.length === 0) {
     return id;

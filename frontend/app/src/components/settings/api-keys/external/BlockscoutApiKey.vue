@@ -7,22 +7,21 @@ import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useNotificationsStore } from '@/store/notifications';
 import { isBlockscoutKey } from '@/types/external';
 
-const props = defineProps<{ evmChain: string; chainName: string }>();
-const { evmChain } = toRefs(props);
+const { evmChain, chainName } = defineProps<{ evmChain: string; chainName: string }>();
 
 const name = 'blockscout';
 const { t } = useI18n({ useScope: 'global' });
 
 const { actionStatus, apiKey, confirmDelete, getName, loading, save } = useExternalApiKeys(t);
 
-const key = apiKey(name, evmChain);
-const status = actionStatus(name, evmChain);
-const identifier = computed(() => getName(name, get(evmChain)));
+const key = apiKey(name, () => evmChain);
+const status = actionStatus(name, () => evmChain);
+const identifier = computed(() => getName(name, evmChain));
 
 const { prioritized, remove: removeNotification } = useNotificationsStore();
 
 function removeBlockscoutNotification() {
-  const notification = prioritized.find(data => data.i18nParam?.props?.key === get(evmChain));
+  const notification = prioritized.find(data => data.i18nParam?.props?.key === evmChain);
 
   if (!notification)
     return;
@@ -31,7 +30,7 @@ function removeBlockscoutNotification() {
 }
 
 const link = computed(() => {
-  const location = camelCase(get(evmChain));
+  const location = camelCase(evmChain);
   if (isBlockscoutKey(location))
     return blockscoutLinks[location];
 

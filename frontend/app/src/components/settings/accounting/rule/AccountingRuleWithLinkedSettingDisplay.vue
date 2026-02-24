@@ -3,22 +3,19 @@ import type { AccountingRuleWithLinkedProperty } from '@/types/settings/accounti
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import { useAccountingRuleMappings } from '@/composables/settings/accounting/rule-mapping';
 
-const props = defineProps<{
+const { identifier, item } = defineProps<{
   identifier: string;
   item: AccountingRuleWithLinkedProperty;
 }>();
-
-const { identifier, item } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { accountingRuleLinkedMappingData } = useAccountingRuleMappings();
 
-const linkableSettingOptions = accountingRuleLinkedMappingData(identifier);
+const linkableSettingOptions = accountingRuleLinkedMappingData(() => identifier);
 
 const selectedLinkableSetting = computed(() => {
-  const itemVal = get(item);
-  const linkedProperty = itemVal.linkedSetting;
+  const linkedProperty = item.linkedSetting;
   if (linkedProperty) {
     const foundItem = get(linkableSettingOptions).find(item => item.identifier === linkedProperty);
 
@@ -34,7 +31,7 @@ const value = computed<boolean>(() => {
   if (selectedLinkableSettingVal)
     return get(selectedLinkableSettingVal).state;
 
-  return get(item).value;
+  return item.value;
 });
 </script>
 

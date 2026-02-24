@@ -8,14 +8,12 @@ import {
   isWithdrawalEventRef,
 } from '@/utils/history/events';
 
-const props = defineProps<{
+const { event, groupEvents } = defineProps<{
   event: HistoryEventEntry;
   groupEvents?: HistoryEventEntry[];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { event } = toRefs(props);
 
 const { is2xlAndUp, isMd } = useBreakpoint();
 
@@ -31,11 +29,11 @@ const truncateLength = computed<number>(() => {
   return 8;
 });
 
-const blockEvent = isEthBlockEventRef(event);
-const withdrawEvent = isWithdrawalEventRef(event);
-const assetMovementEvent = isAssetMovementEventRef(event);
+const blockEvent = isEthBlockEventRef(() => event);
+const withdrawEvent = isWithdrawalEventRef(() => event);
+const assetMovementEvent = isAssetMovementEventRef(() => event);
+
 const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
-  const event = props.event;
   if ('txRef' in event && event.txRef) {
     return {
       location: event.location,
@@ -46,13 +44,13 @@ const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>
 });
 
 const allTxRefs = computed<{ location: string; txRef: string }[]>(() => {
-  if (!get(assetMovementEvent) || !props.groupEvents)
+  if (!get(assetMovementEvent) || !groupEvents)
     return [];
 
   const seen = new Set<string>();
   const result: { location: string; txRef: string }[] = [];
 
-  for (const child of props.groupEvents) {
+  for (const child of groupEvents) {
     if (!('txRef' in child) || !child.txRef || seen.has(child.txRef))
       continue;
 
@@ -73,8 +71,7 @@ const hashMenuOpen = ref<boolean>(false);
 const translationKey = computed<string>(() => {
   // consider an evm swap event as a case of evm event
   // as they are both evm events and have the same header
-  const eventVal = get(event);
-  let entryType = eventVal.entryType;
+  let entryType = event.entryType;
   const specialTypesWithTxRef: HistoryEventEntryType[] = [
     HistoryEventEntryType.ETH_DEPOSIT_EVENT,
     HistoryEventEntryType.ASSET_MOVEMENT_EVENT,

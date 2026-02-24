@@ -8,30 +8,28 @@ import { toMessages } from '@/utils/validation';
 const form = defineModel<PremiumSetup>('form', { required: true });
 const valid = defineModel<boolean>('valid', { required: true });
 
-const props = defineProps<{
+const { loading, enabled } = defineProps<{
   loading: boolean;
   enabled: boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { enabled } = toRefs(props);
-
 const apiKey = useRefPropVModel(form, 'apiKey');
 const apiSecret = useRefPropVModel(form, 'apiSecret');
 const syncDatabase = useRefPropVModel(form, 'syncDatabase');
 
-watch(enabled, (enabled) => {
+watch(() => enabled, (enabled) => {
   if (!enabled)
     set(syncDatabase, false);
 });
 
 const rules = {
   apiKey: {
-    required: helpers.withMessage(t('premium_credentials.validation.non_empty_key'), requiredIf(enabled)),
+    required: helpers.withMessage(t('premium_credentials.validation.non_empty_key'), requiredIf(() => enabled)),
   },
   apiSecret: {
-    required: helpers.withMessage(t('premium_credentials.validation.non_empty_secret'), requiredIf(enabled)),
+    required: helpers.withMessage(t('premium_credentials.validation.non_empty_secret'), requiredIf(() => enabled)),
   },
 };
 

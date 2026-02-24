@@ -11,12 +11,9 @@ import { useTaskStore } from '@/store/tasks';
 import { DialogType } from '@/types/dialogs';
 import { TaskType } from '@/types/task-type';
 
-withDefaults(
-  defineProps<{
-    dropdown?: boolean;
-  }>(),
-  { dropdown: false },
-);
+const { dropdown = false } = defineProps<{
+  dropdown?: boolean;
+}>();
 
 type ResetType = 'soft' | 'hard';
 

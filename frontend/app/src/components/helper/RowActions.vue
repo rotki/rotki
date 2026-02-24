@@ -1,26 +1,14 @@
 <script setup lang="ts">
-const props = withDefaults(
-  defineProps<{
-    disabled?: boolean;
-    editDisabled?: boolean;
-    editTooltip?: string;
-    noEdit?: boolean;
-    deleteDisabled?: boolean;
-    deleteTooltip?: string;
-    noDelete?: boolean;
-    align?: 'start' | 'center' | 'end';
-  }>(),
-  {
-    align: 'start',
-    deleteDisabled: false,
-    deleteTooltip: '',
-    disabled: false,
-    editDisabled: false,
-    editTooltip: '',
-    noDelete: false,
-    noEdit: false,
-  },
-);
+const { disabled = false, editDisabled = false, editTooltip = '', noEdit = false, deleteDisabled = false, deleteTooltip = '', noDelete = false, align = 'start' } = defineProps<{
+  disabled?: boolean;
+  editDisabled?: boolean;
+  editTooltip?: string;
+  noEdit?: boolean;
+  deleteDisabled?: boolean;
+  deleteTooltip?: string;
+  noDelete?: boolean;
+  align?: 'start' | 'center' | 'end';
+}>();
 
 const emit = defineEmits<{
   'edit-click': [];
@@ -36,7 +24,7 @@ const justify = computed<string>(() => {
     end: 'justify-end',
     start: 'justify-start',
   } as const;
-  return justify[props.align];
+  return justify[align];
 });
 </script>
 

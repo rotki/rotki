@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { ProtocolMetadata } from '@/types/defi';
 import { transformCase } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
@@ -25,23 +25,23 @@ export const useAirdropsMetadata = createSharedComposable(() => {
     { evaluating: loading },
   );
 
-  const getAirdropData = (identifier: MaybeRef<string>): ComputedRef<ProtocolMetadata | undefined> =>
-    useArrayFind(metadata, item => camelCase(item.identifier) === camelCase(get(identifier)));
+  const getAirdropData = (identifier: MaybeRefOrGetter<string>): ComputedRef<ProtocolMetadata | undefined> =>
+    useArrayFind(metadata, item => camelCase(item.identifier) === camelCase(toValue(identifier)));
 
-  const getAirdropName = (identifier: MaybeRef<string>): ComputedRef<string> =>
+  const getAirdropName = (identifier: MaybeRefOrGetter<string>): ComputedRef<string> =>
     useValueOrDefault(
       useRefMap(getAirdropData(identifier), i => i?.name),
       identifier,
     );
 
-  const getAirdropImageUrl = (identifier: Ref<string>): ComputedRef<string> =>
+  const getAirdropImageUrl = (identifier: MaybeRefOrGetter<string>): ComputedRef<string> =>
     computed(() => {
       const data = get(getAirdropData(identifier));
 
       if (data?.iconUrl)
         return data.iconUrl;
 
-      const image = data?.icon ?? `${transformCase(get(identifier), false)}.svg`;
+      const image = data?.icon ?? `${transformCase(toValue(identifier), false)}.svg`;
 
       return getPublicProtocolImagePath(image);
     });

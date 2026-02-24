@@ -4,20 +4,19 @@ import { useAggregatedBalances } from '@/composables/balances/use-aggregated-bal
 
 const selected = defineModel<string[] | undefined>('selected', { required: true });
 
-const props = defineProps<{
+const { chain, address, selectionMode } = defineProps<{
   chain: string;
   address: string;
   selectionMode?: boolean;
 }>();
 
-const { address, chain } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
 const { useBlockchainBalances } = useAggregatedBalances();
 
-const chains = computed<string[]>(() => [chain.value]);
+const chains = computed<string[]>(() => [chain]);
 
-const assets = useBlockchainBalances(chains, address);
-const liabilities = useBlockchainBalances(chains, address, 'liabilities');
+const assets = useBlockchainBalances(chains, () => address);
+const liabilities = useBlockchainBalances(chains, () => address, 'liabilities');
 </script>
 
 <template>

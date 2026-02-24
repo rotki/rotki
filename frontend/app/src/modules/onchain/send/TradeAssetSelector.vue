@@ -13,7 +13,7 @@ import { TaskType } from '@/types/task-type';
 const asset = defineModel<string>({ required: true });
 const chain = defineModel<string>('chain', { required: true });
 
-const props = defineProps<{
+const { address, amount } = defineProps<{
   address?: string;
   amount: BigNumber | undefined;
 }>();
@@ -23,14 +23,12 @@ const emit = defineEmits<{
   'refresh': [];
 }>();
 
-const { address } = toRefs(props);
-
 const openDialog = ref(false);
 const internalChain = ref<string>(Blockchain.ETH);
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { allOwnedAssets, getAssetDetail } = useTradableAsset(address);
+const { allOwnedAssets, getAssetDetail } = useTradableAsset(computed<string | undefined>(() => address));
 
 const { connected, connectedAddress, supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
 const { useIsTaskRunning } = useTaskStore();
@@ -103,7 +101,7 @@ watchImmediate(chain, (chain) => {
 
 function redetectTokens() {
   const chain = get(internalChain);
-  const addressVal = get(address);
+  const addressVal = address;
 
   if (addressVal && chain) {
     useTokenDetection(chain, addressVal).detectTokens();

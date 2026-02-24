@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
 import { z } from 'zod/v4';
@@ -23,13 +23,13 @@ export type Matcher = SearchMatcher<BlockchainAccountFilterKeys, BlockchainAccou
 
 export type Filters = MatchedKeywordWithBehaviour<BlockchainAccountFilterValueKeys>;
 
-export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], category: MaybeRef<string>): FilterSchema<Filters, Matcher> {
+export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], category: MaybeRefOrGetter<string>): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
   const { chainIds, isEvm } = useAccountCategoryHelper(category);
   const { addressNameSelector } = useAddressesNamesStore();
 
-  const filterableChains = computed(() => {
+  const filterableChains = computed<string[]>(() => {
     const evm = get(isEvm);
     const ids = get(chainIds);
     if (!evm)

@@ -11,12 +11,10 @@ import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 
-const props = defineProps<{
+const { filters, matchExactEvents } = defineProps<{
   matchExactEvents: boolean;
   filters: HistoryEventRequestPayload;
 }>();
-
-const { filters, matchExactEvents } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -30,8 +28,8 @@ const { notify } = useNotificationsStore();
 async function createCsv(directoryPath?: string): Promise<{ result: boolean | { filePath: string }; message?: string } | null> {
   try {
     const { taskId } = await exportHistoryEventsCSV({
-      ...omit(get(filters), ['limit', 'offset', 'aggregateByGroupIds']),
-      matchExactEvents: get(matchExactEvents),
+      ...omit(filters, ['limit', 'offset', 'aggregateByGroupIds']),
+      matchExactEvents,
     }, directoryPath);
     const { result } = await awaitTask<boolean | { filePath: string }, TaskMeta>(taskId, TaskType.EXPORT_HISTORY_EVENTS, {
       title: t('actions.history_events_export.title'),

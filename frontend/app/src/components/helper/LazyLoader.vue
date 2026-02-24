@@ -8,7 +8,7 @@ defineSlots<{
   default: () => any;
 }>();
 
-const wrapper = ref();
+const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
 const appear = ref<boolean>(initialAppear);
 const appearDebounced = refDebounced(appear, 200);
 const height = ref<string>('max-content');

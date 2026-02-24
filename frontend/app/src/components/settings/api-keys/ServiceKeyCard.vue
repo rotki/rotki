@@ -4,31 +4,20 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { usePremium } from '@/composables/premium';
 
-const props = withDefaults(
-  defineProps<{
-    name?: string;
-    title: string;
-    subtitle?: string;
-    imageSrc: string;
-    needPremium?: boolean;
-    roundedIcon?: boolean;
-    keySet?: boolean;
-    hideAction?: boolean;
-    primaryAction?: string;
-    actionDisabled?: boolean;
-    addButtonText?: string;
-    editButtonText?: string;
-  }>(),
-  {
-    actionDisabled: false,
-    hideAction: false,
-    keySet: false,
-    needPremium: false,
-    primaryAction: '',
-    roundedIcon: false,
-    subtitle: '',
-  },
-);
+const { name, title, subtitle = '', imageSrc, needPremium = false, roundedIcon = false, keySet = false, hideAction = false, primaryAction = '', actionDisabled = false, addButtonText, editButtonText } = defineProps<{
+  name?: string;
+  title: string;
+  subtitle?: string;
+  imageSrc: string;
+  needPremium?: boolean;
+  roundedIcon?: boolean;
+  keySet?: boolean;
+  hideAction?: boolean;
+  primaryAction?: string;
+  actionDisabled?: boolean;
+  addButtonText?: string;
+  editButtonText?: string;
+}>();
 
 const emit = defineEmits<{
   confirm: [];
@@ -53,7 +42,7 @@ const route = useRoute();
 const router = useRouter();
 
 watch(route, async (route) => {
-  if (!props.name)
+  if (!name)
     return;
 
   const { query } = route;
@@ -62,7 +51,7 @@ watch(route, async (route) => {
   }
   const { service, ...restQuery } = query;
 
-  if (service === props.name) {
+  if (service === name) {
     nextTick(() => {
       setOpen(true);
     });
@@ -70,11 +59,11 @@ watch(route, async (route) => {
   }
 }, { immediate: true });
 
-const addButtonTextComputed = computed<string>(() => props.addButtonText || t('external_services.actions.enter_api_key'));
+const addButtonTextComputed = computed<string>(() => addButtonText || t('external_services.actions.enter_api_key'));
 
-const editButtonTextComputed = computed<string>(() => props.editButtonText || t('external_services.actions.replace_key'));
+const editButtonTextComputed = computed<string>(() => editButtonText || t('external_services.actions.replace_key'));
 
-const primaryActionTextComputed = computed<string>(() => props.primaryAction || (props.keySet
+const primaryActionTextComputed = computed<string>(() => primaryAction || (keySet
   ? t('external_services.actions.replace_key')
   : t('external_services.actions.save_key')));
 

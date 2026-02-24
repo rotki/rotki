@@ -6,27 +6,21 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    variant?: 'default' | 'outlined';
-    height?: string | number;
-  }>(),
-  {
-    height: undefined,
-    variant: 'outlined',
-  },
-);
+const { variant = 'outlined', height } = defineProps<{
+  variant?: 'default' | 'outlined';
+  height?: string | number;
+}>();
 
 defineSlots<{
   default: () => any;
 }>();
 
 const style = computed<StyleValue | undefined>(() => {
-  if (!props.height)
+  if (!height)
     return undefined;
 
   return {
-    height: toRem(props.height),
+    height: toRem(height),
   };
 });
 </script>

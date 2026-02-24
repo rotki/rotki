@@ -16,14 +16,9 @@ import { FiatDisplay } from '@/modules/amount-display/components';
 import { useAppRoutes } from '@/router/routes';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
-withDefaults(
-  defineProps<{
-    isMini?: boolean;
-  }>(),
-  {
-    isMini: false,
-  },
-);
+const { isMini = false } = defineProps<{
+  isMini?: boolean;
+}>();
 
 interface SearchItem {
   value: number;
@@ -47,7 +42,7 @@ const { appRoutes } = useAppRoutes();
 const open = ref<boolean>(false);
 const isMac = ref<boolean>(false);
 
-const input = ref<any>(null);
+const input = useTemplateRef<any>('input');
 const selected = ref<number>();
 const search = ref<string>('');
 const loading = ref<boolean>(false);

@@ -5,7 +5,7 @@ import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data'
 import { useProxyProtocol } from '@/modules/balances/protocols/use-proxy-protocol';
 import HashLink from '@/modules/common/links/HashLink.vue';
 
-const props = defineProps<{
+const { protocol, size = 20, hideTooltip } = defineProps<{
   protocol: string;
   size?: number;
   hideTooltip?: boolean;
@@ -15,11 +15,9 @@ defineSlots<{
   default?: (props: { protocol: string }) => any;
 }>();
 
-const { protocol, size = 20 } = toRefs(props);
+const { isProxy, parsedProtocol, proxyAddress } = useProxyProtocol(() => protocol);
 
-const { isProxy, parsedProtocol, proxyAddress } = useProxyProtocol(protocol);
-
-const showTooltip = computed<boolean>(() => get(isProxy) && !!get(proxyAddress) && !props.hideTooltip);
+const showTooltip = computed<boolean>(() => get(isProxy) && !!get(proxyAddress) && !hideTooltip);
 
 const { protocolData } = useProtocolData(parsedProtocol);
 

@@ -8,14 +8,13 @@ import { useProxyProtocol } from '@/modules/balances/protocols/use-proxy-protoco
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-const props = defineProps<{
+const { protocolBalance, asset, loading } = defineProps<{
   protocolBalance: ProtocolBalance;
   asset?: string;
   loading?: boolean;
 }>();
 
-const { protocolBalance } = toRefs(props);
-const protocol = useRefMap(protocolBalance, balance => balance.protocol);
+const protocol = useRefMap(() => protocolBalance, balance => balance.protocol);
 
 const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 const { t } = useI18n({ useScope: 'global' });

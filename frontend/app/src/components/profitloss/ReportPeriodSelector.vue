@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { Quarter } from '@/types/settings/frontend-settings';
 import { convertToTimestamp } from '@/utils/date';
 
-const props = defineProps<{
+const { year, quarter } = defineProps<{
   year: string | 'custom';
   quarter: Quarter;
 }>();
@@ -30,8 +30,6 @@ const QUARTER_ENDS: { [quarter in Quarter]: string } = {
   [Quarter.Q4]: '31/12',
 };
 
-const { quarter, year } = toRefs(props);
-
 const { t } = useI18n({ useScope: 'global' });
 
 function updatePeriod(period: PeriodChangedEvent | null) {
@@ -44,7 +42,7 @@ function updateSelection(change: SelectionChangedEvent) {
 
 function startDateTime(selection: Quarter): number {
   const startDate = QUARTER_STARTS[selection];
-  return convertToTimestamp(`${startDate}/${get(year)} 00:00`);
+  return convertToTimestamp(`${startDate}/${year} 00:00`);
 }
 
 function isStartAfterNow(selection: Quarter) {
@@ -52,12 +50,12 @@ function isStartAfterNow(selection: Quarter) {
   return start > dayjs().unix();
 }
 
-const start = computed<number>(() => startDateTime(get(quarter)));
-const isCustom = computed<boolean>(() => get(year) === 'custom');
-const isAllTime = computed<boolean>(() => get(year) === 'all-time');
+const start = computed<number>(() => startDateTime(quarter));
+const isCustom = computed<boolean>(() => year === 'custom');
+const isAllTime = computed<boolean>(() => year === 'all-time');
 const end = computed<number>(() => {
-  const endDate = QUARTER_ENDS[get(quarter)];
-  return convertToTimestamp(`${endDate}/${get(year)} 23:59:59`);
+  const endDate = QUARTER_ENDS[quarter];
+  return convertToTimestamp(`${endDate}/${year} 23:59:59`);
 });
 
 const periodEventPayload = computed<PeriodChangedEvent>(() => ({
@@ -66,10 +64,10 @@ const periodEventPayload = computed<PeriodChangedEvent>(() => ({
 }));
 
 onMounted(() => {
-  updatePeriod(get(year) !== 'custom' ? get(periodEventPayload) : null);
+  updatePeriod(year !== 'custom' ? get(periodEventPayload) : null);
 });
 
-watch([year, quarter], () => {
+watch([() => year, () => quarter], () => {
   if (get(isCustom))
     updatePeriod(null);
   else if (get(isAllTime))
@@ -98,7 +96,7 @@ const olderPeriods = computed<string[]>(() => {
   return periods;
 });
 
-const isOlderYearSelected = computed<boolean>(() => get(olderPeriods).includes(get(year)));
+const isOlderYearSelected = computed<boolean>(() => get(olderPeriods).includes(year));
 
 function selectAllTime(): void {
   updateSelection({ quarter: Quarter.ALL, year: 'all-time' });
@@ -132,18 +130,16 @@ const subPeriods = [
 ];
 
 function onChange(change: { year?: string; quarter?: Quarter }) {
-  const yearVal = get(year);
-  const quarterVal = get(quarter);
   updateSelection({
-    quarter: change?.quarter ?? quarterVal,
-    year: change?.year ?? yearVal,
+    quarter: change?.quarter ?? quarter,
+    year: change?.year ?? year,
   });
-  updatePeriod(yearVal !== 'custom' ? get(periodEventPayload) : null);
+  updatePeriod(year !== 'custom' ? get(periodEventPayload) : null);
 }
 
 const yearModel = computed({
   get() {
-    return get(year);
+    return year;
   },
   set(year) {
     onChange({ year });
@@ -152,7 +148,7 @@ const yearModel = computed({
 
 const quarterModel = computed({
   get() {
-    return get(quarter);
+    return quarter;
   },
   set(quarter) {
     onChange({ quarter });

@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/types/filtering';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -13,7 +13,7 @@ interface UseSavedFilterReturn {
 }
 
 export function useSavedFilter(
-  location: MaybeRef<SavedFilterLocation>,
+  location: MaybeRefOrGetter<SavedFilterLocation>,
   isAsset: (key: string) => boolean,
 ): UseSavedFilterReturn {
   const frontendStore = useFrontendSettingsStore();
@@ -22,7 +22,7 @@ export function useSavedFilter(
   const { savedFilters: allSavedFilters } = storeToRefs(frontendStore);
 
   const savedFilters = computed<Suggestion[][]>(() => {
-    const baseSuggestions = get(allSavedFilters)[get(location)] || [];
+    const baseSuggestions = get(allSavedFilters)[toValue(location)] || [];
 
     return baseSuggestions.map(suggestions =>
       suggestions.map(suggestion => ({
@@ -38,14 +38,14 @@ export function useSavedFilter(
 
   const saveFilters = async (filters: BaseSuggestion[][]): Promise<ActionStatus> => {
     const allSaved = { ...get(allSavedFilters) };
-    allSaved[get(location)] = filters;
+    allSaved[toValue(location)] = filters;
     return updateSetting({
       savedFilters: allSaved,
     });
   };
 
   const addFilter = async (newFilter: Suggestion[]): Promise<ActionStatus> => {
-    const currentFilters = get(allSavedFilters)[get(location)] || [];
+    const currentFilters = get(allSavedFilters)[toValue(location)] || [];
 
     if (currentFilters.length >= LIMIT_PER_LOCATION) {
       return {

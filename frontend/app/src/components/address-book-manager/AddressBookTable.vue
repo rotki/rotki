@@ -11,7 +11,7 @@ const paginationModel = defineModel<TablePaginationData>('pagination', { require
 
 const sortModel = defineModel<DataTableSortData<AddressBookEntry>>('sort', { required: true });
 
-const props = defineProps<{
+const { collection, location, loading } = defineProps<{
   collection: Collection<AddressBookEntry>;
   location: AddressBookLocation;
   loading: boolean;
@@ -21,8 +21,6 @@ const emit = defineEmits<{
   edit: [item: AddressBookEntry];
   refresh: [];
 }>();
-
-const { location } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 

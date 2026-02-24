@@ -18,7 +18,7 @@ import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-ac
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { getGroupId } from '@/utils/blockchain/accounts/utils';
 
-const props = defineProps<{
+const { category } = defineProps<{
   category: string;
 }>();
 
@@ -26,7 +26,6 @@ const emit = defineEmits<{
   edit: [account: AccountManageState];
 }>();
 
-const { category } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
 
 const visibleTags = ref<string[]>([]);
@@ -47,7 +46,7 @@ const {
   pagination,
   sort,
 } = useAccountBalancesPagination({
-  category,
+  category: () => category,
   chainExclusionFilter,
   expanded,
   query,
@@ -55,9 +54,9 @@ const {
   visibleTags,
 });
 
-const { isLoadingActive, isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading(category);
+const { isLoadingActive, isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading(() => category);
 
-const { chainIds, isEvm } = useAccountCategoryHelper(category);
+const { chainIds, isEvm } = useAccountCategoryHelper(() => category);
 
 const { refreshClick } = useAccountBalancesRefresh({
   chainIds,
@@ -74,7 +73,7 @@ const {
 } = useAccountAssetSelection(fetchData);
 
 // Computed
-const isSolana = computed<boolean>(() => get(category) === 'solana');
+const isSolana = computed<boolean>(() => category === 'solana');
 const showSelectionToggle = computed<boolean>(() => get(isEvm) || get(isSolana));
 
 const anyExpansion = computed<boolean>(() => get(accounts).data.some(item => item.expansion));

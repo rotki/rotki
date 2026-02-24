@@ -8,7 +8,7 @@ import HashLink from '@/modules/common/links/HashLink.vue';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { isSpammableAssetType } from '@/types/asset';
 
-const props = defineProps<{
+const { asset, hideActions, isCollectionParent, iconOnly } = defineProps<{
   asset: NftAsset;
   hideActions: boolean;
   isCollectionParent: boolean;
@@ -21,20 +21,18 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { asset, isCollectionParent } = toRefs(props);
+const symbol = useRefMap(() => asset, asset => asset.symbol ?? '');
+const name = useRefMap(() => asset, asset => asset.name ?? '');
+const identifier = useRefMap(() => asset, asset => asset.identifier);
 
-const symbol = useRefMap(asset, asset => asset.symbol ?? '');
-const name = useRefMap(asset, asset => asset.name ?? '');
-const identifier = useRefMap(asset, asset => asset.identifier);
-
-const { navigateToDetails } = useAssetPageNavigation(identifier, isCollectionParent);
+const { navigateToDetails } = useAssetPageNavigation(identifier, () => isCollectionParent);
 
 type ConfirmType = 'ignore' | 'mark_as_spam';
 const confirm = ref(false);
 const confirmType = ref<ConfirmType>('ignore');
 
 const { ignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
-const isSpamAsset = computed<boolean>(() => get(asset).isSpam);
+const isSpamAsset = computed<boolean>(() => asset.isSpam);
 const isIgnoredAsset = useIsAssetIgnored(identifier);
 const { markAssetsAsSpam } = useSpamAsset();
 const { assetContractInfo, refetchAssetInfo } = useAssetInfoRetrieval();

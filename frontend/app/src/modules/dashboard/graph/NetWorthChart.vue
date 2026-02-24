@@ -9,11 +9,9 @@ import { FiatDisplay } from '@/modules/amount-display/components';
 import { useNetValueChartConfig } from '@/modules/dashboard/graph/use-net-value-chart-config';
 import { useNetValueEventHandlers } from '@/modules/dashboard/graph/use-net-value-event-handlers';
 
-const props = defineProps<{
+const { chartData } = defineProps<{
   chartData: NetValueChartData;
 }>();
-
-const { chartData } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -26,10 +24,10 @@ const showExportSnapshotDialog = ref<boolean>(false);
 
 const { isDark } = useRotkiTheme();
 
-const { chartOption } = useNetValueChartConfig(chartData);
+const { chartOption } = useNetValueChartConfig(() => chartData);
 const { setupChartEventHandlers, setupZoomToolHandler, tooltipData } = useNetValueEventHandlers({
   chartContainer,
-  chartData,
+  chartData: () => chartData,
   chartInstance,
   onHover: (timestamp: number, balance: BigNumber) => {
     set(selectedTimestamp, timestamp);

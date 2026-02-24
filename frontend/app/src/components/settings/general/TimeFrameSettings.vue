@@ -6,7 +6,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { isPeriodAllowed } from '@/utils/settings';
 
-const props = defineProps<{
+const { currentSessionTimeframe, message, value, visibleTimeframes } = defineProps<{
   message: { error: string; success: string };
   value: TimeFrameSetting;
   visibleTimeframes: TimeFramePeriod[];
@@ -18,13 +18,11 @@ const emit = defineEmits<{
   'visible-timeframes-change': [timeframes: TimeFrameSetting[]];
 }>();
 
-const { currentSessionTimeframe, message, value, visibleTimeframes } = toRefs(props);
-
 const timeframes = Object.values(TimeFramePeriod);
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 
-const appendedVisibleTimeframes = computed(() => [TimeFramePersist.REMEMBER, ...get(visibleTimeframes)]);
+const appendedVisibleTimeframes = computed(() => [TimeFramePersist.REMEMBER, ...visibleTimeframes]);
 
 const invisibleTimeframes = computed(() => timeframes.filter(item => !isTimeframeVisible(item)));
 
@@ -33,12 +31,12 @@ const selectableTimeframes = computed(() =>
 );
 
 const text = computed<string>(() => {
-  const { error, success } = get(message);
+  const { error, success } = message;
   return success || error;
 });
 
 function isTimeframeVisible(timeframe: TimeFramePeriod): boolean {
-  return get(visibleTimeframes).includes(timeframe);
+  return visibleTimeframes.includes(timeframe);
 }
 
 function isTimeframesToggleable(timeframe: TimeFrameSetting) {
@@ -76,16 +74,16 @@ async function updateVisibleTimeframes(newTimeFrames: TimeFramePeriod[], replace
 }
 
 async function addVisibleTimeframe(timeframe: TimeFramePeriod) {
-  await updateVisibleTimeframes([...get(visibleTimeframes), timeframe]);
+  await updateVisibleTimeframes([...visibleTimeframes, timeframe]);
 }
 
 async function removeVisibleTimeframe(timeframe: TimeFrameSetting) {
-  if (timeframe === get(value))
+  if (timeframe === value)
     timeframeChange(TimeFramePersist.REMEMBER);
 
   await updateVisibleTimeframes(
-    get(visibleTimeframes).filter(item => item !== timeframe),
-    timeframe === get(currentSessionTimeframe),
+    visibleTimeframes.filter(item => item !== timeframe),
+    timeframe === currentSessionTimeframe,
   );
 }
 </script>

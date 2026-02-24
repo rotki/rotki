@@ -13,14 +13,12 @@ import { getKeyType, getPrefix, isPrefixed, keyType, XpubPrefix, type XpubType }
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const xpub = defineModel<XpubPayload | undefined>('xpub');
 
-const props = defineProps<{
+const { disabled, blockchain } = defineProps<{
   disabled: boolean;
   blockchain: BtcChains;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { blockchain, disabled } = toRefs(props);
 
 const xpubKey = ref<string>('');
 const derivationPath = ref<string>('');
@@ -43,7 +41,7 @@ function setXpubKeyType(value: string) {
 }
 
 function onPasteXpub(event: ClipboardEvent) {
-  if (get(disabled))
+  if (disabled)
     return;
 
   const paste = trimOnPaste(event);
@@ -54,7 +52,7 @@ function onPasteXpub(event: ClipboardEvent) {
 }
 
 const keyTypeListData = computed<XpubType[]>(() => {
-  if (get(blockchain) === Blockchain.BTC)
+  if (blockchain === Blockchain.BTC)
     return keyType;
 
   return keyType.filter(item => ![XpubPrefix.ZPUB, XpubPrefix.P2TR].includes(item.value));
@@ -102,7 +100,7 @@ watchImmediate(xpub, (xpub) => {
     set(derivationPath, xpub?.derivationPath || '');
 });
 
-watch(blockchain, () => {
+watch(() => blockchain, () => {
   set(xpubKeyPrefix, get(keyTypeListData)[0].value);
 });
 

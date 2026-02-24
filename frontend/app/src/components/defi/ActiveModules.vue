@@ -13,11 +13,9 @@ interface ModuleWithStatus {
   readonly enabled: boolean;
 }
 
-const props = defineProps<{
+const { modules } = defineProps<{
   modules: Module[];
 }>();
-
-const { modules } = toRefs(props);
 const manageModule = ref<Nullable<Module>>(null);
 const confirmEnable = ref<Nullable<Module>>(null);
 
@@ -29,7 +27,7 @@ const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
 const moduleStatus = computed(() => {
   const active = get(activeModules);
-  return get(modules)
+  return modules
     .map(module => ({
       enabled: active.includes(module),
       identifier: module,

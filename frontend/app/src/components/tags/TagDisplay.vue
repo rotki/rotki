@@ -2,18 +2,11 @@
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagStore } from '@/store/session/tags';
 
-withDefaults(
-  defineProps<{
-    tags?: string[];
-    small?: boolean;
-    wrapperClass?: string;
-  }>(),
-  {
-    small: false,
-    tags: () => [],
-    wrapperClass: '',
-  },
-);
+const { tags = [], small = false, wrapperClass = '' } = defineProps<{
+  tags?: string[];
+  small?: boolean;
+  wrapperClass?: string;
+}>();
 
 const { allTags } = storeToRefs(useTagStore());
 </script>

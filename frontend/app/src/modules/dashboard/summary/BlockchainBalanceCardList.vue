@@ -13,16 +13,14 @@ interface BlockChainBalanceCardListProps {
   total: BlockchainTotal;
 }
 
-const props = defineProps<BlockChainBalanceCardListProps>();
-
-const { total } = toRefs(props);
+const { total } = defineProps<BlockChainBalanceCardListProps>();
 
 const { getBlockchainRedirectLink, getChainName } = useSupportedChains();
 
-const chain = useRefMap(total, ({ chain }) => chain);
+const chain = useRefMap(() => total, ({ chain }) => chain);
 const name = getChainName(chain);
 
-const navTarget = computed<RouteLocationRaw>(() => getBlockchainRedirectLink(props.total.chain));
+const navTarget = computed<RouteLocationRaw>(() => getBlockchainRedirectLink(total.chain));
 </script>
 
 <template>

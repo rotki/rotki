@@ -2,7 +2,7 @@
 import type { Message } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
 
-const props = defineProps<{
+const { message } = defineProps<{
   message: Message;
 }>();
 
@@ -10,11 +10,9 @@ const emit = defineEmits<{
   dismiss: [];
 }>();
 
-const { message } = toRefs(props);
-
 const { t } = useI18n({ useScope: 'global' });
 
-const icon = computed<RuiIcons>(() => (get(props.message.success) ? 'lu-circle-check' : 'lu-circle-alert'));
+const icon = computed<RuiIcons>(() => (message.success ? 'lu-circle-check' : 'lu-circle-alert'));
 </script>
 
 <template>

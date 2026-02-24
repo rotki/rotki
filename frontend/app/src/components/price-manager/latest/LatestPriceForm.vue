@@ -16,16 +16,10 @@ const modelValue = defineModel<ManualPriceFormPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-withDefaults(
-  defineProps<{
-    disableFromAsset?: boolean;
-    editMode?: boolean;
-  }>(),
-  {
-    disableFromAsset: false,
-    editMode: false,
-  },
-);
+const { disableFromAsset = false, editMode = false } = defineProps<{
+  disableFromAsset?: boolean;
+  editMode?: boolean;
+}>();
 
 const { assetSymbol } = useAssetInfoRetrieval();
 

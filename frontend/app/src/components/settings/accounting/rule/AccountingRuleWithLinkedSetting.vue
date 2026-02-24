@@ -6,13 +6,12 @@ import { useRefPropVModel } from '@/utils/model';
 
 const modelValue = defineModel<AccountingRuleWithLinkedProperty>({ required: true });
 
-const props = defineProps<{
+const { identifier, label, hint } = defineProps<{
   identifier: string;
   label: string;
   hint: string;
 }>();
 
-const { identifier } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
 
 const value = useRefPropVModel(modelValue, 'value');
@@ -23,7 +22,7 @@ function updateModelValue(newValue: AccountingRuleWithLinkedProperty): void {
 
 const { accountingRuleLinkedMappingData } = useAccountingRuleMappings();
 
-const linkableSettingOptions = accountingRuleLinkedMappingData(identifier);
+const linkableSettingOptions = accountingRuleLinkedMappingData(() => identifier);
 
 const linkedModel = computed<boolean>({
   get() {
@@ -69,7 +68,7 @@ const linkedPropertyValue = computed<boolean | null>(() => {
   return get(item.state);
 });
 
-const elemID = computed(() => `${get(identifier)}-switch`);
+const elemID = computed(() => `${identifier}-switch`);
 </script>
 
 <template>

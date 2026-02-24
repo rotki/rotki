@@ -18,13 +18,12 @@ defineOptions({
   name: 'LocationBreakdown',
 });
 
-const props = defineProps<{
+const { identifier } = defineProps<{
   identifier: string;
 }>();
 
-const { identifier } = toRefs(props);
 const { locationData } = useLocations();
-const location = locationData(identifier);
+const location = locationData(() => identifier);
 </script>
 
 <template>

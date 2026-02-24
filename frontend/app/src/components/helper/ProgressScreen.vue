@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import FullSizeContent from '@/components/common/FullSizeContent.vue';
 
-const props = withDefaults(
-  defineProps<{
-    progress?: string;
-  }>(),
-  { progress: '' },
-);
+const { progress = '' } = defineProps<{
+  progress?: string;
+}>();
 
 defineSlots<{
   default: () => any;
   message: () => any;
 }>();
 
-const progress = computed(() => {
-  const currentProgress = props.progress;
+const progressValue = computed<string | number>(() => {
+  const currentProgress = progress;
   if (!currentProgress)
     return 0;
 
@@ -22,7 +19,7 @@ const progress = computed(() => {
   return Number.isNaN(number) ? 0 : number.toFixed(2);
 });
 
-const percentage = useToNumber(progress);
+const percentage = useToNumber(progressValue);
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

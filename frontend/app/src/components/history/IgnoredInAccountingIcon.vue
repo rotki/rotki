@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 
-withDefaults(
-  defineProps<{
-    mobile?: boolean;
-  }>(),
-  {
-    mobile: false,
-  },
-);
+const { mobile = false } = defineProps<{
+  mobile?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

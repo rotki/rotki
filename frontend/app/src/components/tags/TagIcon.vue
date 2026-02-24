@@ -5,17 +5,11 @@ defineOptions({
   inheritAttrs: false,
 });
 
-withDefaults(
-  defineProps<{
-    tag: Tag;
-    small?: boolean;
-    showDescription?: boolean;
-  }>(),
-  {
-    showDescription: false,
-    small: false,
-  },
-);
+const { tag, small = false, showDescription = false } = defineProps<{
+  tag: Tag;
+  small?: boolean;
+  showDescription?: boolean;
+}>();
 </script>
 
 <template>

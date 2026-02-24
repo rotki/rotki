@@ -27,12 +27,10 @@ definePage({
   props: true,
 });
 
-const props = defineProps<{ exchange?: string }>();
+const { exchange } = defineProps<{ exchange?: string }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
-
-const { exchange } = toRefs(props);
+const selectedTab = ref<string | undefined>(exchange ?? undefined);
 const { useIsTaskRunning } = useTaskStore();
 const { useExchangeBalances } = useAggregatedBalances();
 const { refreshExchangeSavings } = useBinanceSavings();
@@ -93,7 +91,7 @@ function openExchangeDetails() {
 }
 
 const balances = computed(() => {
-  const currentExchange = get(exchange);
+  const currentExchange = exchange;
   if (!currentExchange)
     return [];
 
@@ -111,7 +109,7 @@ function navigate() {
 
 const exchangeDetailTabs = ref<number>(0);
 
-watch(exchange, () => {
+watch(() => exchange, () => {
   set(exchangeDetailTabs, 0);
 });
 

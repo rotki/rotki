@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { ActionDataEntry } from '@/types/action';
 import type {
   HistoryEventCategoryDetailWithId,
@@ -14,7 +14,7 @@ import { useLocationStore } from '@/store/locations';
 import { useNotificationsStore } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
 
-type Event = MaybeRef<{
+type Event = MaybeRefOrGetter<{
   eventType: string;
   eventSubtype: string;
   counterparty?: string | null;
@@ -100,7 +100,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     }));
 
   const getEventType = (event: Event): ComputedRef<string | undefined> => computed(() => {
-    const { entryType, eventSubtype, eventType, isExit, location } = get(event);
+    const { entryType, eventSubtype, eventType, isExit, location } = toValue(event);
 
     if (entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT) {
       const withdrawalEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]
@@ -149,7 +149,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   ): ComputedRef<HistoryEventCategoryDetailWithId> => computed(() => {
     const defaultKey = 'default';
     const type = get(getEventType(event));
-    const { counterparty, eventSubtype, eventType } = get(event);
+    const { counterparty, eventSubtype, eventType } = toValue(event);
     const counterpartyVal = counterparty || defaultKey;
     const data = type && get(transactionEventTypesData)[type];
 
@@ -168,8 +168,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     return getFallbackData(showFallbackLabel, eventSubtype, eventType);
   });
 
-  const getAccountingEventTypeData = (type: MaybeRef<string>): ComputedRef<ActionDataEntry> => computed(() => {
-    const typeVal = get(type);
+  const getAccountingEventTypeData = (type: MaybeRefOrGetter<string>): ComputedRef<ActionDataEntry> => computed(() => {
+    const typeVal = toValue(type);
     return (
       get(accountingEventsTypeData).find(({ identifier }) => identifier === typeVal) || {
         icon: 'lu-circle-question-mark',

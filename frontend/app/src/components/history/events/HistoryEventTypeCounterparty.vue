@@ -7,13 +7,11 @@ import { useScramble } from '@/composables/scramble';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
-const props = defineProps<{
+const { counterparty, location, address } = defineProps<{
   counterparty?: string;
   location: string;
   address?: string;
 }>();
-
-const { address, counterparty, location } = toRefs(props);
 
 const { getEventCounterpartyData } = useHistoryEventCounterpartyMappings();
 const { addressNameSelector } = useAddressesNamesStore();
@@ -22,7 +20,7 @@ const { scrambleAddress, scrambleData } = useScramble();
 
 const { isDark } = useRotkiTheme();
 
-const counterpartyData = getEventCounterpartyData(counterparty);
+const counterpartyData = getEventCounterpartyData(() => counterparty);
 
 const useDarkModeImage = computed(() => get(isDark) && get(counterpartyData)?.darkmodeImage);
 
@@ -44,22 +42,19 @@ const counterpartyImageSrc = computed<string | undefined>(() => {
 });
 
 const addressAliasName = computed<string | undefined>(() => {
-  const addressVal = get(address);
-  if (!addressVal || get(scrambleData)) {
+  if (!address || get(scrambleData)) {
     return undefined;
   }
 
-  return get(addressNameSelector(addressVal, getChain(get(location))));
+  return get(addressNameSelector(address, getChain(location)));
 });
 
 const displayAddress = computed<string | undefined>(() => {
-  const addressVal = get(address);
-
-  if (!addressVal) {
+  if (!address) {
     return undefined;
   }
 
-  return scrambleAddress(addressVal);
+  return scrambleAddress(address);
 });
 </script>
 

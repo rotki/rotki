@@ -17,7 +17,7 @@ import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 const query = defineModel<LocationQuery>('query', { default: () => ({}), required: false });
 const selected = defineModel<string[] | undefined>('selected', { required: true });
 
-const props = defineProps<{
+const { groupId, chains, tags, category, selectionMode } = defineProps<{
   groupId: string;
   chains: string[];
   tags?: string[];
@@ -28,8 +28,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   edit: [account: AccountManageState];
 }>();
-
-const { category } = toRefs(props);
 
 const expanded = ref<string[]>([]);
 
@@ -58,12 +56,12 @@ const {
   },
   query,
   requestParams: computed(() => ({
-    chain: props.chains,
-    groupId: props.groupId,
-    tags: props.tags,
+    chain: chains,
+    groupId,
+    tags,
   })),
 });
-useBlockchainAccountLoading(category);
+useBlockchainAccountLoading(() => category);
 
 watchImmediate([accountsState, balances], () => {
   fetchData();

@@ -4,29 +4,17 @@ import type { Component } from 'vue';
 import type { RouteLocationRaw } from 'vue-router';
 import AppImage from '@/components/common/AppImage.vue';
 
-const props = withDefaults(
-  defineProps<{
-    mini?: boolean;
-    icon?: RuiIcons;
-    text: string;
-    image?: string;
-    iconComponent?: Component;
-    active?: boolean;
-    subMenu?: boolean;
-    parent?: boolean;
-    to?: RouteLocationRaw;
-  }>(),
-  {
-    active: false,
-    icon: undefined,
-    iconComponent: undefined,
-    image: '',
-    mini: false,
-    parent: false,
-    subMenu: false,
-    to: undefined,
-  },
-);
+const { mini = false, icon, text, image = '', iconComponent, active = false, subMenu = false, parent = false, to } = defineProps<{
+  mini?: boolean;
+  icon?: RuiIcons;
+  text: string;
+  image?: string;
+  iconComponent?: Component;
+  active?: boolean;
+  subMenu?: boolean;
+  parent?: boolean;
+  to?: RouteLocationRaw;
+}>();
 
 defineSlots<{
   default: () => any;
@@ -36,8 +24,8 @@ const router = useRouter();
 
 const [DefineImage, ReuseImage] = createReusableTemplate();
 
-const outer = ref<HTMLDivElement>();
-const inner = ref<HTMLDivElement>();
+const outer = useTemplateRef<HTMLDivElement>('outer');
+const inner = useTemplateRef<HTMLDivElement>('inner');
 const { height: innerHeight } = useElementSize(inner);
 const subMenuExpanded = ref<boolean>(false);
 
@@ -55,11 +43,11 @@ function toggleExpand(): void {
 }
 
 function onBodyClick(): void {
-  if (!props.parent)
+  if (!parent)
     return;
 
-  if (props.to && !get(subMenuExpanded)) {
-    router.push(props.to);
+  if (to && !get(subMenuExpanded)) {
+    router.push(to);
     toggleExpand();
   }
   else {
@@ -68,7 +56,7 @@ function onBodyClick(): void {
 }
 
 onMounted(() => {
-  if (props.parent && props.active)
+  if (parent && active)
     set(subMenuExpanded, true);
 });
 </script>

@@ -10,7 +10,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useStatisticsStore } from '@/store/statistics';
 import { sortDesc } from '@/utils/bignumbers';
 
-const props = defineProps<{
+const { timestamp } = defineProps<{
   timestamp: number;
 }>();
 
@@ -18,8 +18,6 @@ const emit = defineEmits<{
   close: [];
   finish: [];
 }>();
-
-const { timestamp } = toRefs(props);
 
 const snapshotData = ref<Snapshot | null>(null);
 const step = ref<number>(1);
@@ -40,7 +38,7 @@ const locationDataSnapshot = computed<LocationDataSnapshot[]>(() => {
 });
 
 async function fetchSnapshotData() {
-  const result = await api.getSnapshotData(get(timestamp));
+  const result = await api.getSnapshotData(timestamp);
 
   const { balancesSnapshot, locationDataSnapshot } = result;
   balancesSnapshot.sort((a, b) => sortDesc(a.usdValue, b.usdValue));
@@ -106,7 +104,7 @@ async function save(): Promise<boolean> {
   };
 
   try {
-    result = await api.updateSnapshotData(get(timestamp), payload);
+    result = await api.updateSnapshotData(timestamp, payload);
 
     if (!result)
       notifyError();

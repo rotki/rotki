@@ -10,7 +10,7 @@ import { bigNumberifyFromRef } from '@/utils/bignumbers';
 
 const model = defineModel<string>({ required: true });
 
-const props = defineProps<{
+const { asset, chain, address, max, amountExceeded, loading } = defineProps<{
   asset: string;
   chain: string;
   address?: string;
@@ -21,15 +21,13 @@ const props = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { address, asset, chain } = toRefs(props);
-
 const fiatValue = ref<string>('0');
 const isAmountSelected = ref<boolean>(true);
 
 const { currency } = storeToRefs(useGeneralSettingsStore());
 
-const { getAssetDetail } = useTradableAsset(address);
-const assetDetail = getAssetDetail(asset, chain);
+const { getAssetDetail } = useTradableAsset(computed<string | undefined>(() => address));
+const assetDetail = getAssetDetail(computed<string>(() => asset), computed<string>(() => chain));
 const price = useRefMap(assetDetail, m => m?.price);
 const fiatValueToBigNumber = bigNumberifyFromRef(fiatValue);
 const amountToBigNumber = bigNumberifyFromRef(model);
@@ -72,10 +70,10 @@ function swapInput(): void {
 }
 
 function setMax(): void {
-  set(model, props.max);
+  set(model, max);
   const priceVal = get(price);
   if (get(isAmountSelected) && priceVal) {
-    set(fiatValue, bigNumberify(props.max).multipliedBy(priceVal).toString());
+    set(fiatValue, bigNumberify(max).multipliedBy(priceVal).toString());
   }
 }
 

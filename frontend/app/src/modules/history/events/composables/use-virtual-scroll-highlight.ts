@@ -1,5 +1,5 @@
 import type { TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { VirtualRow } from './use-virtual-rows';
 import type { HighlightType } from '@/composables/history/events/types';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
@@ -12,8 +12,8 @@ interface UseVirtualScrollHighlightOptions {
   flattenedRows: ComputedRef<VirtualRow[]>;
   getRowHeight: (index: number) => number;
   getCardHeight: (index: number) => number;
-  highlightedIdentifiers: ComputedRef<string[] | undefined>;
-  highlightTypes: ComputedRef<Record<string, HighlightType> | undefined>;
+  highlightedIdentifiers: MaybeRefOrGetter<string[] | undefined>;
+  highlightTypes: MaybeRefOrGetter<Record<string, HighlightType> | undefined>;
   loading: Ref<boolean>;
   pagination: Ref<TablePaginationData>;
 }
@@ -129,7 +129,7 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
    * Check if an event should be highlighted.
    */
   function isHighlighted(event: HistoryEventEntry): boolean {
-    const identifiers = get(highlightedIdentifiers);
+    const identifiers = toValue(highlightedIdentifiers);
     if (!identifiers || identifiers.length === 0)
       return false;
     return identifiers.includes(event.identifier.toString());
@@ -139,7 +139,7 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
    * Get the highlight type for an event.
    */
   function getHighlightType(event: HistoryEventEntry): HighlightType | undefined {
-    const types = get(highlightTypes);
+    const types = toValue(highlightTypes);
     if (!types)
       return undefined;
     return types[event.identifier.toString()];
@@ -149,7 +149,7 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
    * Check if any event in a swap/movement group should be highlighted.
    */
   function isSwapHighlighted(swapEvents: HistoryEventEntry[]): boolean {
-    const identifiers = get(highlightedIdentifiers);
+    const identifiers = toValue(highlightedIdentifiers);
     if (!identifiers || identifiers.length === 0)
       return false;
     return swapEvents.some(e => identifiers.includes(e.identifier.toString()));
@@ -159,7 +159,7 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
    * Get the highlight type for a swap/movement group (returns the first matched type).
    */
   function getSwapHighlightType(swapEvents: HistoryEventEntry[]): HighlightType | undefined {
-    const types = get(highlightTypes);
+    const types = toValue(highlightTypes);
     if (!types)
       return undefined;
     for (const event of swapEvents) {
@@ -170,7 +170,7 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
     return undefined;
   }
 
-  watch(highlightedIdentifiers, () => {
+  watch(() => toValue(highlightedIdentifiers), () => {
     set(hasScrolledToHighlight, false);
     set(pendingHighlightScroll, true);
   });
@@ -184,7 +184,7 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
     }
   });
 
-  watchDebounced([flattenedRows, highlightedIdentifiers, loading], ([rows, identifiers, isLoading]) => {
+  watchDebounced([flattenedRows, (): string[] | undefined => toValue(highlightedIdentifiers), loading], ([rows, identifiers, isLoading]) => {
     if (isLoading || !identifiers || identifiers.length === 0 || rows.length === 0 || get(hasScrolledToHighlight))
       return;
 

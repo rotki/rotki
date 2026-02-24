@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef, MaybeRefOrGetter } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { EvmChainAddress } from '@/types/history/events';
 import type { TaskMeta } from '@/types/task';
@@ -40,11 +40,11 @@ interface AssetContractInfo {
 
 export type AssetInfoReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
 
-export type AssetSymbolReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
+export type AssetSymbolReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<string>;
 
-export type AssetNameReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<string>;
+export type AssetNameReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<string>;
 
-type AssetContractInfoReturn = (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<AssetContractInfo | undefined>;
+type AssetContractInfoReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<AssetContractInfo | undefined>;
 
 interface UseAssetInfoRetrievalReturn {
   assetAssociationMap: ComputedRef<Record<string, string>>;
@@ -57,7 +57,7 @@ interface UseAssetInfoRetrievalReturn {
   getAssetSymbol: (identifier: string | undefined, options?: AssetResolutionOptions) => string;
   getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>;
   refetchAssetInfo: (key: string) => void;
-  tokenAddress: (identifier: MaybeRef<string>, options?: AssetResolutionOptions) => ComputedRef<string>;
+  tokenAddress: (identifier: MaybeRefOrGetter<string>, options?: AssetResolutionOptions) => ComputedRef<string>;
 }
 
 export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
@@ -109,10 +109,10 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   });
 
   const assetSymbol = (
-    identifier: MaybeRef<string | undefined>,
-    options?: MaybeRef<AssetResolutionOptions>,
+    identifier: MaybeRefOrGetter<string | undefined>,
+    options?: MaybeRefOrGetter<AssetResolutionOptions>,
   ): ComputedRef<string> => computed(() => {
-    const id = get(identifier);
+    const id = toValue(identifier);
     if (!id)
       return '';
 
@@ -127,10 +127,10 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   };
 
   const assetName = (
-    identifier: MaybeRef<string | undefined>,
-    options?: MaybeRef<AssetResolutionOptions>,
+    identifier: MaybeRefOrGetter<string | undefined>,
+    options?: MaybeRefOrGetter<AssetResolutionOptions>,
   ): ComputedRef<string> => computed(() => {
-    const id = get(identifier);
+    const id = toValue(identifier);
     if (!id)
       return '';
 
@@ -139,10 +139,10 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   });
 
   const assetContractInfo = (
-    identifier: MaybeRef<string | undefined>,
-    options?: MaybeRef<AssetResolutionOptions>,
+    identifier: MaybeRefOrGetter<string | undefined>,
+    options?: MaybeRefOrGetter<AssetResolutionOptions>,
   ): ComputedRef<AssetContractInfo | undefined> => computed(() => {
-    const id = get(identifier);
+    const id = toValue(identifier);
     if (!id)
       return undefined;
 
@@ -186,8 +186,8 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   });
 
   const tokenAddress = (
-    identifier: MaybeRef<string>,
-    options?: MaybeRef<AssetResolutionOptions>,
+    identifier: MaybeRefOrGetter<string>,
+    options?: MaybeRefOrGetter<AssetResolutionOptions>,
   ): ComputedRef<string> =>
     computed(() => get(assetContractInfo(identifier, options))?.address || '');
 

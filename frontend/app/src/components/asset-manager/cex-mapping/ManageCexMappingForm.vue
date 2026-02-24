@@ -15,14 +15,9 @@ const forAllExchanges = defineModel<boolean>('forAllExchanges', { required: true
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-withDefaults(
-  defineProps<{
-    editMode?: boolean;
-  }>(),
-  {
-    editMode: false,
-  },
-);
+const { editMode = false } = defineProps<{
+  editMode?: boolean;
+}>();
 
 const EXCLUDED_EXCHANGES = [
   'binanceus',

@@ -9,17 +9,11 @@ interface AssetForIgnoreSwitch {
   protocol?: string | null;
 }
 
-const props = withDefaults(
-  defineProps<{
-    asset: AssetForIgnoreSwitch;
-    loading?: boolean;
-    menuLoading?: boolean;
-  }>(),
-  {
-    loading: false,
-    menuLoading: false,
-  },
-);
+const { asset, loading = false, menuLoading = false } = defineProps<{
+  asset: AssetForIgnoreSwitch;
+  loading?: boolean;
+  menuLoading?: boolean;
+}>();
 
 const emit = defineEmits<{
   'toggle-ignore': [];
@@ -32,14 +26,14 @@ const { t } = useI18n({ useScope: 'global' });
 const { useIsAssetIgnored } = useIgnoredAssetsStore();
 const { useIsAssetWhitelisted } = useWhitelistedAssetsStore();
 
-const identifier = computed<string>(() => props.asset.identifier);
-const isSpam = computed<boolean>(() => props.asset.protocol === 'spam');
-const showMoreOptions = computed<boolean>(() => isSpammableAssetType(props.asset.assetType));
+const identifier = computed<string>(() => asset.identifier);
+const isSpam = computed<boolean>(() => asset.protocol === 'spam');
+const showMoreOptions = computed<boolean>(() => isSpammableAssetType(asset.assetType));
 
 const isIgnored = useIsAssetIgnored(identifier);
 const isWhitelisted = useIsAssetWhitelisted(identifier);
 
-const isLoading = computed<boolean>(() => props.loading || props.menuLoading);
+const isLoading = computed<boolean>(() => loading || menuLoading);
 
 const isIgnoringDisabled = computed<boolean>(() => get(isSpam) || get(isWhitelisted) || get(isLoading));
 

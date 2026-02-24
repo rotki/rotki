@@ -7,16 +7,10 @@ import { useTagStore } from '@/store/session/tags';
 
 const modelValue = defineModel<Tag | undefined>({ required: true });
 
-const props = withDefaults(
-  defineProps<{
-    editMode?: boolean;
-    originalName?: string;
-  }>(),
-  {
-    editMode: false,
-    originalName: '',
-  },
-);
+const { editMode = false, originalName = '' } = defineProps<{
+  editMode?: boolean;
+  originalName?: string;
+}>();
 
 const emit = defineEmits<{
   saved: [{ tag: Tag; originalName: string }];
@@ -42,11 +36,11 @@ async function save() {
     set(submitting, false);
     return;
   }
-  const originalName = props.originalName || newTag.name;
-  const status = await (props.editMode ? editTag(newTag, originalName) : addTag(newTag));
+  const tagOriginalName = originalName || newTag.name;
+  const status = await (editMode ? editTag(newTag, tagOriginalName) : addTag(newTag));
 
   if (status.success) {
-    emit('saved', { tag: newTag, originalName });
+    emit('saved', { tag: newTag, originalName: tagOriginalName });
     closeDialog();
   }
   set(submitting, false);

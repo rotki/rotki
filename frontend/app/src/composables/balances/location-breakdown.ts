@@ -4,7 +4,7 @@ import type { Balances } from '@/types/blockchain/accounts';
 import type { AssetProtocolBalances } from '@/types/blockchain/balances';
 import type { ExchangeInfo } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
-import { computed, type ComputedRef, type MaybeRef } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
@@ -42,11 +42,11 @@ export function getExchangeByLocationBalances(
  * Hook for getting location breakdown
  */
 export function useLocationBreakdown(
-  location: MaybeRef<string>,
-  blockchainBalances: MaybeRef<Balances>,
-  assetAssociationMap: MaybeRef<Record<string, string>>,
-  manualBalances: MaybeRef<ManualBalanceWithValue[]>,
-  useBaseExchangeBalances: (exchange?: MaybeRef<string>) => MaybeRef<AssetProtocolBalances>,
+  location: MaybeRefOrGetter<string>,
+  blockchainBalances: MaybeRefOrGetter<Balances>,
+  assetAssociationMap: MaybeRefOrGetter<Record<string, string>>,
+  manualBalances: MaybeRefOrGetter<ManualBalanceWithValue[]>,
+  useBaseExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => MaybeRefOrGetter<AssetProtocolBalances>,
   isAssetIgnored: (identifier: string) => boolean,
   useCollectionId: (asset: string) => { value: string | undefined },
   useCollectionMainAsset: (collectionId: string) => { value: string | undefined },
@@ -54,18 +54,18 @@ export function useLocationBreakdown(
   noPrice: BigNumber,
 ): ComputedRef<AssetBalanceWithPrice[]> {
   return computed<AssetBalanceWithPrice[]>(() => {
-    const selectedLocation = get(location);
-    const associatedAssets = get(assetAssociationMap);
+    const selectedLocation = toValue(location);
+    const associatedAssets = toValue(assetAssociationMap);
 
     const sources: Record<string, AssetProtocolBalances> = {
       blockchain: selectedLocation === TRADE_LOCATION_BLOCKCHAIN
-        ? blockchainToAssetProtocolBalances(get(blockchainBalances))
+        ? blockchainToAssetProtocolBalances(toValue(blockchainBalances))
         : {},
       exchanges: selectedLocation === TRADE_LOCATION_BLOCKCHAIN
         ? {}
-        : get(useBaseExchangeBalances(selectedLocation)),
+        : toValue(useBaseExchangeBalances(selectedLocation)),
       manual: manualToAssetProtocolBalances(
-        get(manualBalances).filter(balance => balance.location === selectedLocation),
+        toValue(manualBalances).filter(balance => balance.location === selectedLocation),
       ),
     };
 

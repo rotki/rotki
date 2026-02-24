@@ -129,7 +129,7 @@ function doAction(id: number, action: NotificationAction) {
     dismiss(id);
 }
 
-const message = ref();
+const message = useTemplateRef<HTMLDivElement>('message');
 const MAX_HEIGHT = 64;
 
 const { height } = useElementSize(message);

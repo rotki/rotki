@@ -4,7 +4,7 @@ import dayjs, { type Dayjs } from 'dayjs';
 
 const selectedDate = defineModel<Dayjs>('selectedDate', { required: true });
 
-const props = defineProps<{
+const { event, visibleDate } = defineProps<{
   visibleDate: Dayjs;
   event: CalendarEvent;
 }>();
@@ -13,40 +13,38 @@ const emit = defineEmits<{
   edit: [event: CalendarEvent];
 }>();
 
-function edit(event: CalendarEvent) {
-  emit('edit', event);
+function edit(calendarEvent: CalendarEvent) {
+  emit('edit', calendarEvent);
 }
 
-const { event } = toRefs(props);
-
-const time = computed(() => dayjs(get(event).timestamp * 1000).format('HH:mm'));
+const time = computed<string>(() => dayjs(event.timestamp * 1000).format('HH:mm'));
 
 const MAX_LENGTH = 70;
 
 const showTooltip = computed<boolean>(() => {
-  const description = get(event).description;
-  return description !== undefined && description.length > MAX_LENGTH;
+  const desc = event.description;
+  return desc !== undefined && desc.length > MAX_LENGTH;
 });
 
 const description = computed<string>(() => {
-  const description = get(event).description;
-  if (description === undefined) {
+  const desc = event.description;
+  if (desc === undefined) {
     return '';
   }
   if (!get(showTooltip))
-    return description;
+    return desc;
 
-  return `${description.slice(0, MAX_LENGTH)}...`;
+  return `${desc.slice(0, MAX_LENGTH)}...`;
 });
 
 const { t } = useI18n({ useScope: 'global' });
 
-function onEventClicked(event: CalendarEvent) {
-  if (!get(selectedDate).isSame(props.visibleDate, 'month')) {
-    set(selectedDate, dayjs(event.timestamp * 1000));
+function onEventClicked(calendarEvent: CalendarEvent) {
+  if (!get(selectedDate).isSame(visibleDate, 'month')) {
+    set(selectedDate, dayjs(calendarEvent.timestamp * 1000));
   }
 
-  edit(event);
+  edit(calendarEvent);
 }
 </script>
 

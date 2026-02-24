@@ -20,7 +20,7 @@ import { useManualBalancesOrLiabilities } from '@/modules/balances/manual/use-ma
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
-const props = defineProps<{
+const { title, type } = defineProps<{
   title: string;
   type: 'liabilities' | 'balances';
 }>();
@@ -30,14 +30,12 @@ const emit = defineEmits<{
   edit: [value: ManualBalance];
 }>();
 
-const { type } = toRefs(props);
-
 const { t } = useI18n({ useScope: 'global' });
 
 const tags = ref<string[]>([]);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(type);
+const { dataSource, fetch, locations } = useManualBalancesOrLiabilities(() => type);
 const { prepareForEdit, pricesLoading, refresh, refreshing, showDeleteConfirmation } = useManualBalanceTableActions();
 
 const {

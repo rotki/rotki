@@ -1,30 +1,24 @@
 <script setup lang="ts">
-const props = defineProps<{
+const { remoteVersion, status } = defineProps<{
   status: 'checking' | 'applying';
   remoteVersion: number;
 }>();
 
-const { remoteVersion, status } = toRefs(props);
-
 const { t } = useI18n({ useScope: 'global' });
 
 const title = computed(() => {
-  const updateStatus = get(status);
-
-  if (updateStatus === 'checking')
+  if (status === 'checking')
     return t('asset_update_status.checking.title');
 
   return t('asset_update_status.applying.title');
 });
 
 const message = computed(() => {
-  const updateStatus = get(status);
-
-  if (updateStatus === 'checking')
+  if (status === 'checking')
     return t('asset_update_status.checking.message');
 
   return t('asset_update_status.applying.message', {
-    remoteVersion: get(remoteVersion),
+    remoteVersion,
   });
 });
 </script>

@@ -3,7 +3,7 @@ import AppImage from '@/components/common/AppImage.vue';
 import { useAirdropsMetadata } from '@/composables/defi/airdrops/metadata';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
-const props = defineProps<{
+const { source, iconUrl, icon } = defineProps<{
   source: string;
   iconUrl?: string;
   icon?: string;
@@ -11,16 +11,14 @@ const props = defineProps<{
 
 const { getAirdropImageUrl, getAirdropName, loading } = useAirdropsMetadata();
 
-const { icon, source } = toRefs(props);
+const name = getAirdropName(() => source);
+const image = getAirdropImageUrl(() => source);
 
-const name = getAirdropName(source);
-const image = getAirdropImageUrl(source);
-const imageFromIconName = computed(() => {
-  const iconVal = get(icon);
-  if (!iconVal)
+const imageFromIconName = computed<string | undefined>(() => {
+  if (!icon)
     return undefined;
 
-  return getPublicProtocolImagePath(iconVal);
+  return getPublicProtocolImagePath(icon);
 });
 </script>
 

@@ -2,7 +2,7 @@
 import type { Dayjs } from 'dayjs';
 import type { CalendarEvent } from '@/types/history/calendar';
 
-const props = defineProps<{
+const { day, events, isPast, isToday, isSelected } = defineProps<{
   day: {
     date: Dayjs;
     isCurrentMonth: boolean;
@@ -19,9 +19,7 @@ const emit = defineEmits<{
   'add': [];
 }>();
 
-const { day, events, isPast } = toRefs(props);
-
-const label = computed(() => get(day).date.format('D'));
+const label = computed<string>(() => day.date.format('D'));
 
 function selectDate() {
   emit('select-date');
@@ -35,15 +33,14 @@ function add() {
   emit('add');
 }
 
-const visibleEvents = computed(() => {
-  const eventsVal = get(events);
-  if (eventsVal.length <= 3)
-    return eventsVal;
+const visibleEvents = computed<CalendarEvent[]>(() => {
+  if (events.length <= 3)
+    return events;
 
-  return eventsVal.slice(0, 2);
+  return events.slice(0, 2);
 });
 
-const hidden = computed(() => get(events).length - get(visibleEvents).length);
+const hidden = computed<number>(() => events.length - get(visibleEvents).length);
 
 const { t } = useI18n({ useScope: 'global' });
 

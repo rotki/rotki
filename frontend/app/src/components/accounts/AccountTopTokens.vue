@@ -9,25 +9,23 @@ import { ValueDisplay } from '@/modules/amount-display/components';
 import { sortDesc } from '@/utils/bignumbers';
 import { getAccountAddress, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 
-const props = defineProps<{
+const { chains, row, loading } = defineProps<{
   chains: string[];
   row: BlockchainAccountBalance;
   loading: boolean;
 }>();
 
-const { chains } = toRefs(props);
 const { useBlockchainBalances } = useAggregatedBalances();
 const router = useRouter();
 
-const address = computed<string>(() => getAccountAddress(props.row));
-const balances = useBlockchainBalances(chains, address);
+const address = computed<string>(() => getAccountAddress(row));
+const balances = useBlockchainBalances(() => chains, address);
 
 const topTokens = computed<AssetBalance[]>(() => get(balances)
   .map(balance => pick(balance, ['asset', 'amount', 'value']))
   .sort((a, b) => sortDesc(a.value, b.value)));
 
 const assets = computed<AssetBalance[]>(() => {
-  const row = props.row;
   if (isXpubAccount(row) && row.nativeAsset) {
     return [{
       amount: row.amount || Zero,

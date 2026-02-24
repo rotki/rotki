@@ -13,13 +13,11 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 
-const props = defineProps<{
+const { exchange } = defineProps<{
   exchange: 'binance' | 'binanceus';
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { exchange } = toRefs(props);
 
 const savingsAssets = ref<string[]>([]);
 const savingsReceived = ref<AssetBalance[]>([]);
@@ -31,7 +29,7 @@ const loading = isSectionLoading(Section.EXCHANGE_SAVINGS);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const defaultParams = computed(() => ({
-  location: get(exchange).toString(),
+  location: exchange.toString(),
 }));
 
 const {
@@ -54,7 +52,7 @@ const {
     direction: 'asc',
   },
   history: 'router',
-  locationOverview: exchange,
+  locationOverview: () => exchange,
 });
 
 const receivedTableSort = ref<DataTableSortData<AssetBalance>>({

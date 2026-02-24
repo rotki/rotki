@@ -7,21 +7,19 @@ import { useLocations } from '@/composables/locations';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { Routes } from '@/router/routes';
 
-const props = defineProps<{
+const { name, amount } = defineProps<{
   name: string;
   amount: BigNumber;
 }>();
 
-const { name } = toRefs(props);
-
 const manualBalancesRoute = computed<RouteLocationRaw>(() => ({
   path: `${Routes.BALANCES_MANUAL}/assets`,
-  query: { location: get(name) },
+  query: { location: name },
 }));
 
 const { locationData } = useLocations();
 
-const location = locationData(name);
+const location = locationData(() => name);
 </script>
 
 <template>

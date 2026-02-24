@@ -9,7 +9,7 @@ import { Section } from '@/types/status';
 
 const show = defineModel<boolean>('show', { required: true });
 
-const props = defineProps<{
+const { processing, mainPage } = defineProps<{
   processing: boolean;
   mainPage: boolean;
 }>();
@@ -21,8 +21,6 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
-const { mainPage, processing } = toRefs(props);
-
 const { isFirstLoad } = useStatusUpdater(Section.HISTORY);
 
 const {
@@ -32,7 +30,7 @@ const {
   unmatchedCount,
 } = useUnmatchedAssetMovements();
 
-const loading = useRefWithDebounce(logicOr(processing, autoMatchLoading), 200);
+const loading = useRefWithDebounce(logicOr(() => processing, autoMatchLoading), 200);
 
 const {
   autoFixCount,
@@ -50,7 +48,7 @@ const showManualReviewDuplicates = computed<boolean>(() => get(manualReviewCount
 const hasAlerts = logicOr(showUnmatchedMovements, showAutoFixDuplicates, showManualReviewDuplicates);
 const refreshing = logicOr(unmatchedLoading, duplicatesLoading);
 
-const showAlerts = logicAnd(mainPage, hasAlerts, show);
+const showAlerts = logicAnd(() => mainPage, hasAlerts, show);
 
 function closeAlerts(): void {
   set(show, false);
@@ -74,7 +72,7 @@ async function viewDuplicates(groupIds: string[], status: DuplicateHandlingStatu
 }
 
 watchImmediate(loading, async (isLoading) => {
-  if (!isLoading && get(mainPage) && !isFirstLoad()) {
+  if (!isLoading && mainPage && !isFirstLoad()) {
     await Promise.all([
       refreshUnmatchedAssetMovements(),
       fetchCustomizedEventDuplicates(),

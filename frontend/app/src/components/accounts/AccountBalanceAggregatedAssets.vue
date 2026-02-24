@@ -4,16 +4,15 @@ import { useAggregatedBalances } from '@/composables/balances/use-aggregated-bal
 
 const selected = defineModel<string[] | undefined>('selected', { required: true });
 
-const props = defineProps<{
+const { groupId, chains, selectionMode } = defineProps<{
   groupId: string;
   chains: string[];
   selectionMode?: boolean;
 }>();
 
-const { chains, groupId } = toRefs(props);
-
 const { useBlockchainBalances } = useAggregatedBalances();
-const balances = useBlockchainBalances(chains, groupId);
+
+const balances = useBlockchainBalances(() => chains, () => groupId);
 </script>
 
 <template>

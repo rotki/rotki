@@ -10,21 +10,19 @@ import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/u
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 
-const props = defineProps<{
+const { category, title } = defineProps<{
   category: string;
   title: string;
 }>();
-
-const { category } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
 const account = ref<AccountManageState>();
 const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
 const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
-const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading(category);
+const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading(() => category);
 
-const { chainIds } = useAccountCategoryHelper(category);
+const { chainIds } = useAccountCategoryHelper(() => category);
 
 const route = useRoute();
 const router = useRouter();

@@ -14,11 +14,9 @@ import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { CURRENCY_USD } from '@/types/currencies';
 
-const props = defineProps<{ identifier: string }>();
+const { identifier } = defineProps<{ identifier: string }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { identifier } = toRefs(props);
 
 const sort = ref<DataTableSortData<AssetLocation>>({
   column: 'amount',
@@ -41,7 +39,7 @@ const {
   totalValue,
   visibleAssetLocations,
 } = useAssetLocationsData({
-  identifier,
+  identifier: () => identifier,
   locationFilter,
   onlyTags,
   selectedAccounts,

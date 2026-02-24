@@ -2,15 +2,12 @@
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
-withDefaults(
-  defineProps<{
-    dialog?: boolean;
-    confirm?: boolean;
-  }>(),
-  { confirm: false, dialog: false },
-);
+const { dialog = false, confirm = false } = defineProps<{
+  dialog?: boolean;
+  confirm?: boolean;
+}>();
 
-const value = ref(false);
+const value = ref<boolean>(false);
 const { askUserUponSizeDiscrepancy } = storeToRefs(useGeneralSettingsStore());
 
 watchImmediate(askUserUponSizeDiscrepancy, (askUser) => {

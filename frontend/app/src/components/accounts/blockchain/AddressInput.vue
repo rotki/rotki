@@ -10,14 +10,13 @@ import { toMessages } from '@/utils/validation';
 const addresses = defineModel<string[]>('addresses', { required: true });
 const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
 
-const props = defineProps<{
+const { disabled, multi, showWalletImport } = defineProps<{
   disabled: boolean;
   multi: boolean;
   showWalletImport?: boolean;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { disabled } = toRefs(props);
 
 const address = ref<string>('');
 const userAddresses = ref<string>('');
@@ -41,7 +40,7 @@ const entries = computed(() => {
 });
 
 function onPasteMulti(event: ClipboardEvent) {
-  if (get(disabled))
+  if (disabled)
     return;
 
   const paste = trimOnPaste(event);
@@ -50,7 +49,7 @@ function onPasteMulti(event: ClipboardEvent) {
 }
 
 function onPasteAddress(event: ClipboardEvent) {
-  if (get(disabled))
+  if (disabled)
     return;
 
   const paste = trimOnPaste(event);

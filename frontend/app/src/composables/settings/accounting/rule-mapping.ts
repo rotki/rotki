@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { AccountingRuleLinkedSettingMap } from '@/types/settings/accounting';
 import { assert, toHumanReadable, transformCase } from '@rotki/common';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
@@ -21,9 +21,9 @@ export const useAccountingRuleMappings = createSharedComposable(() => {
 
   const stateIsBoolean = (state: MaybeRef<any>): state is MaybeRef<boolean> => typeof get(state) === 'boolean';
 
-  const accountingRuleLinkedMappingData = (key: MaybeRef<string>): ComputedRef<AccountingRuleLinkedSettingMap[]> =>
+  const accountingRuleLinkedMappingData = (key: MaybeRefOrGetter<string>): ComputedRef<AccountingRuleLinkedSettingMap[]> =>
     computed(() => {
-      const data = get(accountingRuleLinkedMapping)[get(key)];
+      const data = get(accountingRuleLinkedMapping)[toValue(key)];
 
       if (!data)
         return [];

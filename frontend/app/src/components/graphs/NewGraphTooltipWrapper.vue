@@ -1,14 +1,9 @@
 <script setup lang="ts">
 import type { TooltipData } from '@/composables/graphs';
 
-withDefaults(
-  defineProps<{
-    tooltipOption?: TooltipData;
-  }>(),
-  {
-    tooltipOption: undefined,
-  },
-);
+const { tooltipOption } = defineProps<{
+  tooltipOption?: TooltipData;
+}>();
 
 defineSlots<{
   default: () => any;

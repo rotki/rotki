@@ -1,12 +1,10 @@
 <script lang="ts" setup>
 import CopyTooltip from '@/components/helper/CopyTooltip.vue';
 
-const props = defineProps<{
+const { text, size } = defineProps<{
   text: string;
   size: string | number;
 }>();
-
-const { text } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

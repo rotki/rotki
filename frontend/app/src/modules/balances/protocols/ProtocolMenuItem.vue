@@ -5,14 +5,13 @@ import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
 
-const props = defineProps<{
+const { protocolBalance, asset, loading } = defineProps<{
   protocolBalance: ProtocolBalance;
   asset?: string;
   loading?: boolean;
 }>();
 
-const { protocolBalance } = toRefs(props);
-const protocol = useRefMap(protocolBalance, balance => balance.protocol);
+const protocol = useRefMap(() => protocolBalance, balance => balance.protocol);
 
 const { t } = useI18n({ useScope: 'global' });
 const { protocolData } = useProtocolData(protocol);

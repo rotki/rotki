@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { LocationAndTxRef } from '@/types/history/events';
 import { HistoryEventEntryType } from '@rotki/common';
 import { snakeCase } from 'es-toolkit';
@@ -47,9 +47,9 @@ function isWithdrawalEvent(event: HistoryEvent): event is EthWithdrawalEvent {
   return isWithdrawalEventType(event.entryType);
 }
 
-export function isWithdrawalEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<EthWithdrawalEvent | undefined> {
+export function isWithdrawalEventRef(event: MaybeRefOrGetter<HistoryEvent>): ComputedRef<EthWithdrawalEvent | undefined> {
   return computed(() => {
-    const eventVal = get(event);
+    const eventVal = toValue(event);
     return isWithdrawalEvent(eventVal) ? eventVal : undefined;
   });
 }
@@ -62,9 +62,9 @@ export function isEthBlockEvent<T extends HistoryEvent>(event: T): event is T & 
   return isEthBlockEventType(event.entryType);
 }
 
-export function isEthBlockEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<EthBlockEvent | undefined> {
+export function isEthBlockEventRef(event: MaybeRefOrGetter<HistoryEvent>): ComputedRef<EthBlockEvent | undefined> {
   return computed(() => {
-    const eventVal = get(event);
+    const eventVal = toValue(event);
     return isEthBlockEvent(eventVal) ? eventVal : undefined;
   });
 }
@@ -89,9 +89,9 @@ export function isAssetMovementEvent(event: HistoryEvent): event is AssetMovemen
   return isAssetMovementEventType(event.entryType);
 }
 
-export function isAssetMovementEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<AssetMovementEvent | undefined> {
+export function isAssetMovementEventRef(event: MaybeRefOrGetter<HistoryEvent>): ComputedRef<AssetMovementEvent | undefined> {
   return computed(() => {
-    const eventVal = get(event);
+    const eventVal = toValue(event);
     return isAssetMovementEvent(eventVal) ? eventVal : undefined;
   });
 }

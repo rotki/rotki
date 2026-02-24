@@ -4,16 +4,15 @@ import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useLocations } from '@/composables/locations';
 import { FiatDisplay } from '@/modules/amount-display/components';
 
-const props = defineProps<{
+const { balance, exchange } = defineProps<{
   balance: BigNumber;
   exchange: string;
 }>();
 
-const { exchange } = toRefs(props);
 const { exchangeName } = useLocations();
 
 const name = computed<string>(() => {
-  if (!get(exchange))
+  if (!exchange)
     return '';
 
   return exchangeName(exchange);
