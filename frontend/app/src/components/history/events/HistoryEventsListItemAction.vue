@@ -18,7 +18,7 @@ import {
   isEvmEvent,
 } from '@/utils/history/events';
 
-const props = defineProps<{
+const { item, index, completeGroupEvents, canUnlink, collapsed, collapseAction } = defineProps<{
   item: HistoryEventEntry;
   index: number;
   /**
@@ -42,9 +42,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const COLLAPSE_ACTION_CLASSES = 'w-0 group-hover/row:w-auto 2xl:!w-24 2xl:opacity-0 2xl:group-hover/row:opacity-100 2xl:focus-within:opacity-100';
 
-const { item } = toRefs(props);
-
-const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(item)));
+const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(item));
 
 function hideEditDeleteActions(item: HistoryEventEntry, index: number): boolean {
   const isSwapButNotSpend = isSwapTypeEvent(item.entryType) && index !== 0;
@@ -55,15 +53,15 @@ function hideEditDeleteActions(item: HistoryEventEntry, index: number): boolean 
 function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
   if (isSwapTypeEvent(item.entryType)) {
     return {
-      eventsInGroup: props.completeGroupEvents as GroupEditableHistoryEvents[],
+      eventsInGroup: completeGroupEvents as GroupEditableHistoryEvents[],
       type: 'edit-group',
     };
   }
 
   if (isGroupEditableHistoryEvent(item)) {
-    const idx = props.completeGroupEvents.findIndex(e => e.identifier === item.identifier);
+    const idx = completeGroupEvents.findIndex(e => e.identifier === item.identifier);
     const eventsInGroup: GroupEditableHistoryEvents[] = [item];
-    const nextEvent = props.completeGroupEvents[idx + 1];
+    const nextEvent = completeGroupEvents[idx + 1];
     if (nextEvent && isAssetMovementEvent(nextEvent) && nextEvent.eventSubtype === 'fee')
       eventsInGroup.push(nextEvent);
 
@@ -84,14 +82,14 @@ function editEvent(item: HistoryEvent) {
 }
 
 function deleteEvent(item: HistoryEventEntry) {
-  const isSingleEvmEvent = isEvmEvent(item) && props.completeGroupEvents.length === 1;
+  const isSingleEvmEvent = isEvmEvent(item) && completeGroupEvents.length === 1;
   const payload: HistoryEventDeletePayload = isSingleEvmEvent
     ? {
         event: item,
         type: 'ignore',
       }
     : {
-        ids: isGroupEditableHistoryEvent(item) || isSwapTypeEvent(item.entryType) ? props.completeGroupEvents.map(event => event.identifier) : [item.identifier],
+        ids: isGroupEditableHistoryEvent(item) || isSwapTypeEvent(item.entryType) ? completeGroupEvents.map(event => event.identifier) : [item.identifier],
         type: 'delete',
       };
 

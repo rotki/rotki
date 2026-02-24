@@ -2,14 +2,9 @@
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { usePremium } from '@/composables/premium';
 
-withDefaults(
-  defineProps<{
-    hideOnSmallScreen?: boolean;
-  }>(),
-  {
-    hideOnSmallScreen: false,
-  },
-);
+const { hideOnSmallScreen = false } = defineProps<{
+  hideOnSmallScreen?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();

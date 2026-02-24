@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import type { ConfirmationMessage } from '@/modules/history/events/composables/use-deletion-strategies';
 import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
@@ -27,8 +27,8 @@ interface Status {
 interface UseExternalApiKeysReturn {
   loading: Ref<boolean>;
   getName: (name: ExternalServiceName, chain?: string) => string;
-  apiKey: (name: MaybeRef<ExternalServiceName>, chain?: MaybeRef<string>) => ComputedRef<string>;
-  actionStatus: (name: MaybeRef<ExternalServiceName>, chain?: MaybeRef<string>) => ComputedRef<Status | undefined>;
+  apiKey: (name: MaybeRefOrGetter<ExternalServiceName>, chain?: MaybeRefOrGetter<string>) => ComputedRef<string>;
+  actionStatus: (name: MaybeRefOrGetter<ExternalServiceName>, chain?: MaybeRefOrGetter<string>) => ComputedRef<Status | undefined>;
   load: () => Promise<void>;
   save: (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void) => Promise<void>;
   confirmDelete: (name: string, postConfirmAction?: () => Promise<void> | void, confirmation?: Partial<ConfirmationMessage>) => void;
@@ -56,18 +56,18 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
   );
 
   const apiKey = (
-    name: MaybeRef<ExternalServiceName>,
-    chain?: MaybeRef<string>,
+    name: MaybeRefOrGetter<ExternalServiceName>,
+    chain?: MaybeRefOrGetter<string>,
   ): ComputedRef<string> => computed(() => {
     const items = get(keys);
-    const service = get(name);
+    const service = toValue(name);
 
     if (!items)
       return '';
 
     if (service === 'blockscout') {
       const itemService = items[service];
-      const chainId = get(chain);
+      const chainId = toValue(chain);
       assert(chainId, `missing chain for ${service}`);
 
       const transformedChainId = transformCase(chainId, true);
@@ -89,10 +89,10 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
   });
 
   const actionStatus = (
-    name: MaybeRef<ExternalServiceName>,
-    chain?: MaybeRef<string>,
+    name: MaybeRefOrGetter<ExternalServiceName>,
+    chain?: MaybeRefOrGetter<string>,
   ): ComputedRef<Status | undefined> => computed(() => {
-    const key = getName(get(name), get(chain));
+    const key = getName(toValue(name), toValue(chain));
     return get(status)[key];
   });
 

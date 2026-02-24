@@ -21,7 +21,7 @@ const { t } = useI18n({ useScope: 'global' });
 const datetime = ref<number>(0);
 const open = ref(false);
 
-const activatorRef = ref();
+const activatorRef = useTemplateRef<any>('activatorRef');
 const menuContainerRef = useTemplateRef<InstanceType<typeof HTMLDivElement>>('menuContainerRef');
 
 const { focused: menuFocusedWithin } = useFocusWithin(menuContainerRef);

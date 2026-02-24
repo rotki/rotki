@@ -4,9 +4,8 @@ import type { BaseAccountingSettings, CostBasisMethod } from '@/types/user';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import { useCostBasisMethod } from '@/composables/reports';
 
-const props = defineProps<{ accountingSettings: BaseAccountingSettings }>();
+const { accountingSettings } = defineProps<{ accountingSettings: BaseAccountingSettings }>();
 
-const { accountingSettings } = toRefs(props);
 const { t } = useI18n({ useScope: 'global' });
 const { costBasisMethodData } = useCostBasisMethod();
 
@@ -16,7 +15,7 @@ function taxFreePeriod(period: number) {
 }
 
 const costBasisMethodItem = computed<ActionDataEntry<CostBasisMethod> | null>(() => {
-  const method = get(accountingSettings).costBasisMethod;
+  const method = accountingSettings.costBasisMethod;
   if (!method)
     return null;
 
@@ -29,7 +28,7 @@ interface Item {
 }
 
 const items = computed<Item[]>(() => {
-  const settings = get(accountingSettings);
+  const settings = accountingSettings;
   const items = [
     {
       data: settings.calculatePastCostBasis,

@@ -10,18 +10,11 @@ import { ApiValidationError } from '@/types/api/errors';
 
 const modelValue = defineModel<AccountingRuleEntry | undefined>({ required: true });
 
-const props = withDefaults(
-  defineProps<{
-    editMode?: boolean;
-    loading?: boolean;
-    eventIds?: number[];
-  }>(),
-  {
-    editMode: false,
-    eventIds: undefined,
-    loading: false,
-  },
-);
+const { editMode = false, loading = false, eventIds } = defineProps<{
+  editMode?: boolean;
+  loading?: boolean;
+  eventIds?: number[];
+}>();
 
 const emit = defineEmits<{
   refresh: [];
@@ -29,12 +22,12 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const submitting = ref(false);
+const submitting = ref<boolean>(false);
 const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof AccountingRuleForm>>('form');
-const stateUpdated = ref(false);
+const stateUpdated = ref<boolean>(false);
 
-const dialogTitle = computed<string>(() => props.editMode
+const dialogTitle = computed<string>(() => editMode
   ? t('accounting_settings.rule.edit')
   : t('accounting_settings.rule.add'));
 
@@ -52,7 +45,6 @@ async function save() {
 
   const data = get(modelValue);
   let success;
-  const editMode = props.editMode;
   set(submitting, true);
   try {
     if (editMode) {
@@ -61,8 +53,8 @@ async function save() {
     else {
       const ruleData = omit(data, ['identifier']);
       // Include eventIds if provided (for custom accounting rules)
-      if (props.eventIds) {
-        ruleData.eventIds = props.eventIds;
+      if (eventIds) {
+        ruleData.eventIds = eventIds;
       }
       success = await addAccountingRule(ruleData);
     }

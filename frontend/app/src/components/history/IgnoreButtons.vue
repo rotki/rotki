@@ -1,11 +1,8 @@
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    disabled?: boolean;
-    disabledActions?: { ignore?: boolean; unIgnore?: boolean };
-  }>(),
-  { disabled: false, disabledActions: undefined },
-);
+const { disabled = false, disabledActions } = defineProps<{
+  disabled?: boolean;
+  disabledActions?: { ignore?: boolean; unIgnore?: boolean };
+}>();
 
 const emit = defineEmits<{
   ignore: [ignored: boolean];

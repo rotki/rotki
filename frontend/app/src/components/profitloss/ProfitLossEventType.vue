@@ -2,14 +2,13 @@
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 import { useRefMap } from '@/composables/utils/useRefMap';
 
-const props = defineProps<{
+const { type } = defineProps<{
   type: string;
 }>();
 
 const { getAccountingEventTypeData } = useHistoryEventMappings();
 
-const { type } = toRefs(props);
-const data = getAccountingEventTypeData(type);
+const data = getAccountingEventTypeData(() => type);
 const icon = useRefMap(data, ({ icon }) => icon);
 const label = useRefMap(data, ({ label }) => label);
 </script>

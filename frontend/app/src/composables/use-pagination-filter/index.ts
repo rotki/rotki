@@ -1,7 +1,7 @@
 /* eslint-disable max-lines */
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { FetchError } from 'ofetch';
-import type { ComputedRef, MaybeRef, Ref, WritableComputedRef } from 'vue';
+import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
 import type { TableId } from '@/modules/table/use-remember-table-sorting';
 import type { Collection } from '@/types/collection';
@@ -48,7 +48,7 @@ interface UsePaginationFiltersOptions<
   TSuggestionMatcher extends SearchMatcher<string, string> | void = undefined,
 > {
   history?: false | 'router' | 'external';
-  locationOverview?: Ref<string>;
+  locationOverview?: MaybeRefOrGetter<string>;
   filterSchema?: () => FilterSchema<TFilter, TSuggestionMatcher>;
   onUpdateFilters?: (query: LocationQuery) => void;
   extraParams?: ComputedRef<RawLocationQuery>;
@@ -225,7 +225,7 @@ export function usePaginationFilters<
     const offset = (page - 1) * limit;
 
     const selectedFilters = get(filters);
-    const location = get(locationOverview);
+    const location = toValue(locationOverview);
     if (location && typeof selectedFilters === 'object' && 'location' in selectedFilters)
       selectedFilters.location = location;
 
@@ -340,7 +340,7 @@ export function usePaginationFilters<
     const sorting = get(internalSorting);
     const selectedFilters = get(filters);
 
-    const location = get(locationOverview);
+    const location = toValue(locationOverview);
     if (location && typeof selectedFilters === 'object' && 'location' in selectedFilters)
       selectedFilters.location = location;
 

@@ -18,11 +18,9 @@ import { bigNumberifyFromRef } from '@/utils/bignumbers';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{ data: StandaloneEventData<OnlineHistoryEvent> }>();
+const { data } = defineProps<{ data: StandaloneEventData<OnlineHistoryEvent> }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { data } = toRefs(props);
 
 const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCATION_EXTERNAL);
 
@@ -65,7 +63,7 @@ const {
     asset: commonRules.createRequiredAssetRule(),
     eventSubtype: commonRules.createRequiredEventSubtypeRule(),
     eventType: commonRules.createRequiredEventTypeRule(),
-    groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
+    groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => data.type === 'edit'),
     location: commonRules.createRequiredLocationRule(),
     locationLabel: commonRules.createExternalValidationRule(),
     notes: commonRules.createExternalValidationRule(),
@@ -89,7 +87,7 @@ const locationLabelSuggestions = computed(() =>
 );
 
 function reset() {
-  set(sequenceIndex, get(data)?.nextSequenceId || '0');
+  set(sequenceIndex, data?.nextSequenceId || '0');
   set(groupIdentifier, '');
   set(hasActualGroupIdentifier, false);
   set(timestamp, dayjs().valueOf());
@@ -124,7 +122,7 @@ function applyEditableData(entry: OnlineHistoryEvent) {
 }
 
 function applyGroupHeaderData(entry: OnlineHistoryEvent) {
-  set(sequenceIndex, get(data)?.nextSequenceId || '0');
+  set(sequenceIndex, data?.nextSequenceId || '0');
   set(location, entry.location || get(lastLocation));
   set(locationLabel, entry.locationLabel ?? '');
   set(groupIdentifier, entry.groupIdentifier);
@@ -136,7 +134,7 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const eventData = get(data);
+  const eventData = data;
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
   const userNotes = get(notes).trim();
 
@@ -167,7 +165,7 @@ async function save(): Promise<boolean> {
 }
 
 function checkPropsData() {
-  const formData = get(data);
+  const formData = data;
   if (formData.type === 'edit') {
     applyEditableData(formData.event);
     return;
@@ -184,7 +182,7 @@ watch(location, (location: string) => {
     set(lastLocation, location);
 });
 
-watch(data, checkPropsData);
+watch(() => data, checkPropsData);
 
 onMounted(() => {
   checkPropsData();

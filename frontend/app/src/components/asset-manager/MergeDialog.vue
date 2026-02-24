@@ -10,7 +10,7 @@ type Errors = Partial<Record<'targetIdentifier' | 'sourceIdentifier', string[]>>
 
 const display = defineModel<boolean>({ required: true });
 
-const props = defineProps<{
+const { sourceIdentifier: propSourceIdentifier, targetIdentifier: propTargetIdentifier } = defineProps<{
   sourceIdentifier?: string;
   targetIdentifier?: string;
 }>();
@@ -18,8 +18,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   merged: [events: { sourceIdentifier: string; targetIdentifier: string }];
 }>();
-
-const { sourceIdentifier: propSourceIdentifier, targetIdentifier: propTargetIdentifier } = toRefs(props);
 
 const done = ref(false);
 const errorMessages = ref<Errors>({});
@@ -108,13 +106,13 @@ const excluded = computed(() => {
   return [source];
 });
 
-watch([display, propSourceIdentifier, propTargetIdentifier], ([isDisplayed, propSourceIdentifier, propTargetIdentifier]) => {
+watch([display, () => propSourceIdentifier, () => propTargetIdentifier], ([isDisplayed, propSource, propTarget]) => {
   if (isDisplayed) {
-    if (propSourceIdentifier) {
-      set(sourceIdentifier, propSourceIdentifier);
+    if (propSource) {
+      set(sourceIdentifier, propSource);
     }
-    if (propTargetIdentifier) {
-      set(targetIdentifier, propTargetIdentifier);
+    if (propTarget) {
+      set(targetIdentifier, propTarget);
     }
   }
 });

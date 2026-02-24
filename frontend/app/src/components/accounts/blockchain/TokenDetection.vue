@@ -2,15 +2,13 @@
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 
-const props = defineProps<{
+const { address, loading, chains } = defineProps<{
   address: string;
   loading: boolean;
   chains: string[];
 }>();
 
-const { address, chains } = toRefs(props);
-
-const { detectedTokens, detectingTokens, detectTokens } = useTokenDetection(chains, address);
+const { detectedTokens, detectingTokens, detectTokens } = useTokenDetection(() => chains, () => address);
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

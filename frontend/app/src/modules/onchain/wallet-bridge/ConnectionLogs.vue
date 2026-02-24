@@ -5,13 +5,11 @@ interface LogEntry {
   type: 'info' | 'success' | 'error';
 }
 
-const props = defineProps<{
+const { logs } = defineProps<{
   logs: LogEntry[];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { logs } = toRefs(props);
 </script>
 
 <template>

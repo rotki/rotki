@@ -1,14 +1,8 @@
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    success?: boolean;
-    size?: string | number;
-  }>(),
-  {
-    size: 20,
-    success: false,
-  },
-);
+const { success = false, size = 20 } = defineProps<{
+  success?: boolean;
+  size?: string | number;
+}>();
 </script>
 
 <template>

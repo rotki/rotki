@@ -19,11 +19,9 @@ interface Props {
   processingPercentage: number;
 }
 
-const props = defineProps<Props>();
+const { processingMessage, processingPercentage, progress } = defineProps<Props>();
 
-const { processingMessage, processingPercentage, progress } = toRefs(props);
-
-const currentOperationData = computed(() => get(progress).currentOperationData);
+const currentOperationData = computed(() => progress.currentOperationData);
 </script>
 
 <template>

@@ -13,12 +13,10 @@ import { useMessageStore } from '@/store/message';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { toMessages } from '@/utils/validation';
 
-const props = defineProps<{
+const { event, currency } = defineProps<{
   event: ProfitLossEvent;
   currency: string;
 }>();
-
-const { currency, event } = toRefs(props);
 
 const { resetHistoricalPricesData } = useHistoricCachePriceStore();
 const { getHistoricPrice } = usePriceTaskManager();
@@ -31,17 +29,17 @@ const price = ref<string>('');
 async function openEditHistoricPriceDialog() {
   set(showDialog, true);
   set(fetchingPrice, true);
-  const { assetIdentifier, timestamp } = get(event);
+  const { assetIdentifier, timestamp } = event;
   const historicPrice = await getHistoricPrice({
     fromAsset: assetIdentifier,
     timestamp,
-    toAsset: get(currency),
+    toAsset: currency,
   });
   set(price, historicPrice.isPositive() ? historicPrice.toFixed() : '0');
   set(fetchingPrice, false);
 }
 
-const timestamp = useRefMap(event, item => item.timestamp);
+const timestamp = useRefMap(() => event, item => item.timestamp);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -68,10 +66,10 @@ async function savePrice(payload: HistoricalPriceFormPayload) {
 
 async function updatePrice() {
   const payload: HistoricalPriceFormPayload = {
-    fromAsset: get(event).assetIdentifier,
+    fromAsset: event.assetIdentifier,
     price: get(price),
-    timestamp: get(event).timestamp,
-    toAsset: get(currency),
+    timestamp: event.timestamp,
+    toAsset: currency,
   };
 
   try {

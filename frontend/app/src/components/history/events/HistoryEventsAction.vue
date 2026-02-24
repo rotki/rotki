@@ -32,7 +32,7 @@ import {
   toLocationAndTxRef,
 } from '@/utils/history/events';
 
-const props = defineProps<{
+const { event, loading, duplicateHandlingStatus } = defineProps<{
   event: HistoryEventEntry;
   loading: boolean;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
@@ -55,26 +55,22 @@ const {
 
 const { confirmAndFixDuplicate, confirmAndMarkNonDuplicated, fixLoading, ignoreLoading } = useCustomizedEventDuplicates();
 
-const { duplicateHandlingStatus, event } = toRefs(props);
-
-const isAutoFixable = computed<boolean>(() => get(duplicateHandlingStatus) === DuplicateHandlingStatus.AUTO_FIX);
-const isDuplicate = computed<boolean>(() => !!get(duplicateHandlingStatus) && get(duplicateHandlingStatus) !== DuplicateHandlingStatus.IGNORED);
+const isAutoFixable = computed<boolean>(() => duplicateHandlingStatus === DuplicateHandlingStatus.AUTO_FIX);
+const isDuplicate = computed<boolean>(() => !!duplicateHandlingStatus && duplicateHandlingStatus !== DuplicateHandlingStatus.IGNORED);
 
 const showMenu = ref<boolean>(false);
 
 const evmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
-  const currentEvent = get(event);
-  if (isEvmSwapEvent(currentEvent) || isEvmEvent(currentEvent)) {
-    return currentEvent;
+  if (isEvmSwapEvent(event) || isEvmEvent(event)) {
+    return event;
   }
 
   return undefined;
 });
 
 const solanaEvent = computed<SolanaEvent | SolanaSwapEvent | undefined>(() => {
-  const currentEvent = get(event);
-  if (isSolanaSwapEvent(currentEvent) || isSolanaEvent(currentEvent)) {
-    return currentEvent;
+  if (isSolanaSwapEvent(event) || isSolanaEvent(event)) {
+    return event;
   }
 
   return undefined;
@@ -83,7 +79,6 @@ const solanaEvent = computed<SolanaEvent | SolanaSwapEvent | undefined>(() => {
 const eventWithDecoding = computed<DecodableEventType | undefined>(() => get(evmEvent) || get(solanaEvent));
 
 const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
-  const currentEvent = get(event);
   const evm = get(evmEvent);
   const solana = get(solanaEvent);
   if (evm) {
@@ -100,17 +95,17 @@ const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>
     };
   }
 
-  if (isOnlineHistoryEvent(currentEvent) && 'txRef' in currentEvent && currentEvent.txRef) {
+  if (isOnlineHistoryEvent(event) && 'txRef' in event && event.txRef) {
     return {
-      location: currentEvent.location,
-      txRef: currentEvent.txRef,
+      location: event.location,
+      txRef: event.txRef,
     };
   }
 
   return undefined;
 });
 
-const blockEvent = isEthBlockEventRef(event);
+const blockEvent = isEthBlockEventRef(() => event);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -161,7 +156,7 @@ function openReportDialog(): void {
   const description = [
     t('actions.history_events.report_issue.description_intro'),
     txRef ? t('actions.history_events.report_issue.tx_hash', { hash: txRef }) : '',
-    t('actions.history_events.report_issue.location', { location: get(event).location }),
+    t('actions.history_events.report_issue.location', { location: event.location }),
     '',
     t('actions.history_events.report_issue.more_detail'),
     t('actions.history_events.report_issue.placeholder'),
@@ -174,7 +169,7 @@ function openReportDialog(): void {
 }
 
 function confirmFixDuplicate(): void {
-  const groupIdentifier = get(event).groupIdentifier;
+  const groupIdentifier = event.groupIdentifier;
   if (!groupIdentifier)
     return;
 
@@ -182,7 +177,7 @@ function confirmFixDuplicate(): void {
 }
 
 function confirmIgnoreDuplicate(): void {
-  const groupIdentifier = get(event).groupIdentifier;
+  const groupIdentifier = event.groupIdentifier;
   if (!groupIdentifier)
     return;
 

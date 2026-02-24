@@ -5,18 +5,11 @@ import { FiatDisplay } from '@/modules/amount-display/components';
 
 const model = defineModel<string>({ default: '', required: true });
 
-withDefaults(
-  defineProps<{
-    locations?: string[];
-    previewLocationBalance?: Record<string, BigNumber> | null;
-    optionalShowExisting?: boolean;
-  }>(),
-  {
-    locations: () => [],
-    optionalShowExisting: false,
-    previewLocationBalance: null,
-  },
-);
+const { locations = [], optionalShowExisting = false, previewLocationBalance = null } = defineProps<{
+  locations?: string[];
+  previewLocationBalance?: Record<string, BigNumber> | null;
+  optionalShowExisting?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 

@@ -8,7 +8,7 @@ import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composable
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { AssetAmountDisplay, AssetValueDisplay } from '@/modules/amount-display/components';
 
-const props = defineProps<{
+const { event, dense, disableOptions } = defineProps<{
   event: HistoryEventEntry;
   dense?: boolean;
   disableOptions?: boolean;
@@ -18,12 +18,11 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
-const { event } = toRefs(props);
 const { assetSymbol, assetInfo } = useAssetInfoRetrieval();
 
-const showBalance = computed<boolean>(() => get(event).eventType !== 'informational');
+const showBalance = computed<boolean>(() => event.eventType !== 'informational');
 
-const eventAsset = useRefMap(event, ({ asset }) => asset);
+const eventAsset = useRefMap(() => event, ({ asset }) => asset);
 
 const symbol = assetSymbol(eventAsset, {
   collectionParent: false,

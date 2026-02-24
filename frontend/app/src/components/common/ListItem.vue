@@ -1,22 +1,12 @@
 <script setup lang="ts">
-const props = withDefaults(
-  defineProps<{
-    size?: 'sm' | 'md' | 'lg';
-    title?: string;
-    subtitle?: string;
-    noPadding?: boolean;
-    noHover?: boolean;
-    loading?: boolean;
-  }>(),
-  {
-    loading: false,
-    noHover: false,
-    noPadding: false,
-    size: 'sm',
-    subtitle: '',
-    title: '',
-  },
-);
+const { size = 'sm', title = '', subtitle = '', noPadding = false, noHover = false, loading = false } = defineProps<{
+  size?: 'sm' | 'md' | 'lg';
+  title?: string;
+  subtitle?: string;
+  noPadding?: boolean;
+  noHover?: boolean;
+  loading?: boolean;
+}>();
 
 defineSlots<{
   default: () => any;
@@ -25,10 +15,10 @@ defineSlots<{
   subtitle: () => any;
 }>();
 
-const avatarSizeClasses = computed(() => {
-  if (props.size === 'md')
+const avatarSizeClasses = computed<string>(() => {
+  if (size === 'md')
     return 'w-10 h-10';
-  else if (props.size === 'lg')
+  else if (size === 'lg')
     return 'w-12 h-12';
 
   return 'w-8 h-8';

@@ -23,7 +23,20 @@ import HistoryEventsVirtualHeader from './HistoryEventsVirtualHeader.vue';
 const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
-const props = defineProps<{
+const {
+  groups: rawGroups,
+  pageParams,
+  excludeIgnored,
+  groupLoading,
+  hasActiveFilters,
+  tableHeightOffset,
+  identifiers,
+  highlightedIdentifiers,
+  highlightTypes,
+  hideActions,
+  selection,
+  duplicateHandlingStatus,
+} = defineProps<{
   groups: Collection<HistoryEventRow>;
   pageParams: HistoryEventRequestPayload | undefined;
   excludeIgnored: boolean;
@@ -50,11 +63,10 @@ const { t } = useI18n({ useScope: 'global' });
 const DEFAULT_TABLE_HEIGHT_OFFSET = 390;
 
 const tableContainerStyle = computed<{ height: string }>(() => ({
-  height: `calc(100vh - ${props.tableHeightOffset ?? DEFAULT_TABLE_HEIGHT_OFFSET}px)`,
+  height: `calc(100vh - ${tableHeightOffset ?? DEFAULT_TABLE_HEIGHT_OFFSET}px)`,
 }));
 
 const RedecodeConfirmationDialog = defineAsyncComponent(() => import('./RedecodeConfirmationDialog.vue'));
-const { groupLoading, groups: rawGroups, pageParams } = toRefs(props);
 
 // Event data management
 const {
@@ -78,11 +90,11 @@ const {
   toggleShowIgnoredAssets,
   total,
 } = useHistoryEventsData({
-  excludeIgnored: toRef(props, 'excludeIgnored'),
-  groupLoading,
-  groups: rawGroups,
-  identifiers: toRef(props, 'identifiers'),
-  pageParams,
+  excludeIgnored: () => excludeIgnored,
+  groupLoading: () => groupLoading,
+  groups: () => rawGroups,
+  identifiers: () => identifiers,
+  pageParams: () => pageParams,
 }, emit);
 
 // Virtual rows - flatten groups into virtual row list
@@ -107,8 +119,8 @@ const {
   flattenedRows,
   getRowHeight,
   getCardHeight,
-  highlightedIdentifiers: computed(() => props.highlightedIdentifiers),
-  highlightTypes: computed(() => props.highlightTypes),
+  highlightedIdentifiers: () => highlightedIdentifiers,
+  highlightTypes: () => highlightTypes,
   loading,
   pagination,
 });

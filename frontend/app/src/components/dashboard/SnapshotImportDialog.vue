@@ -11,16 +11,10 @@ const locationFile = defineModel<File>('locationFile', {
   default: undefined,
 });
 
-withDefaults(
-  defineProps<{
-    loading?: boolean;
-    persistent?: boolean;
-  }>(),
-  {
-    loading: false,
-    persistent: false,
-  },
-);
+const { loading = false, persistent = false } = defineProps<{
+  loading?: boolean;
+  persistent?: boolean;
+}>();
 
 const emit = defineEmits<{
   import: [];

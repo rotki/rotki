@@ -7,7 +7,7 @@ import { compareTextByKeyword } from '@/utils/assets';
 import { logger } from '@/utils/logging';
 import { splitSearch } from '@/utils/search';
 
-const props = defineProps<{
+const { keyword, matchers, selectedMatcher, selectedSuggestion } = defineProps<{
   matches: MatchedKeywordWithBehaviour<any>;
   matchers: SearchMatcher<any>[];
   selectedMatcher?: SearchMatcher<any>;
@@ -21,9 +21,7 @@ const emit = defineEmits<{
   'apply-filter': [item: Suggestion];
 }>();
 
-const { keyword, selectedMatcher, selectedSuggestion } = toRefs(props);
-
-const keywordSplit = computed(() => splitSearch(get(keyword)));
+const keywordSplit = computed(() => splitSearch(keyword));
 
 const lastSuggestion = ref<Suggestion | null>(null);
 const suggested = ref<Suggestion[]>([]);
@@ -47,7 +45,7 @@ function applyFilter(item: Suggestion) {
     emit('apply-filter', item);
 }
 
-watch(selectedSuggestion, (index) => {
+watch(() => selectedSuggestion, (index) => {
   updateSuggestion(get(suggested), index);
 });
 
@@ -62,7 +60,7 @@ watch(suggested, (value) => {
   }
 });
 
-watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
+watch([() => keyword, () => selectedMatcher], async ([keyword, selectedMatcher]) => {
   if (!keyword || !selectedMatcher)
     return [];
 
@@ -143,7 +141,7 @@ watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
 
 const { t } = useI18n({ useScope: 'global' });
 
-watch(selectedSuggestion, async () => {
+watch(() => selectedSuggestion, async () => {
   await nextTick(() => {
     document.getElementsByClassName('highlightedMatcher')[0]?.scrollIntoView?.({ block: 'nearest' });
   });

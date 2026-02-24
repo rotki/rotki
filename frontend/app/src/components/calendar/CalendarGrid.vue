@@ -6,7 +6,7 @@ import CalendarWeekdays from '@/components/calendar/CalendarWeekdays.vue';
 
 const selectedDate = defineModel<Dayjs>('selectedDate', { required: true });
 
-const props = defineProps<{
+const { eventsWithDate, today, visibleDate } = defineProps<{
   today: Dayjs;
   visibleDate: Dayjs;
   eventsWithDate: (CalendarEvent & { date: string })[];
@@ -30,17 +30,15 @@ function add(day: Dayjs): void {
   emit('add', day);
 }
 
-const { eventsWithDate, today, visibleDate } = toRefs(props);
-
-const month = computed(() => Number(get(visibleDate).format('M')));
-const year = computed(() => Number(get(visibleDate).format('YYYY')));
+const month = computed<number>(() => Number(visibleDate.format('M')));
+const year = computed<number>(() => Number(visibleDate.format('YYYY')));
 
 function getWeekday(date: string | Dayjs) {
   const dayjsValue = typeof date === 'string' ? dayjs(date) : date;
   return dayjsValue.weekday();
 }
 
-const numberOfDaysInMonth = computed<number>(() => dayjs(get(visibleDate)).daysInMonth());
+const numberOfDaysInMonth = computed<number>(() => dayjs(visibleDate).daysInMonth());
 
 const currentMonthDays = computed(() =>
   [...new Array(get(numberOfDaysInMonth))].map((_, index) => ({
@@ -94,7 +92,7 @@ watchImmediate(days, (days) => {
 });
 
 function getEvents(day: Dayjs) {
-  return get(eventsWithDate).filter(item => item.date === day.format('YYYY-MM-DD'));
+  return eventsWithDate.filter(item => item.date === day.format('YYYY-MM-DD'));
 }
 </script>
 

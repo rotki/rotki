@@ -25,11 +25,9 @@ interface AssetMovementEventFormProps {
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<AssetMovementEventFormProps>();
+const { data } = defineProps<AssetMovementEventFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { data } = toRefs(props);
 
 const historyEventTypesData = [{
   identifier: 'receive',
@@ -178,7 +176,7 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const eventData = get(data);
+  const eventData = data;
   const editable = eventData.type === 'edit-group' ? eventData.eventsInGroup[0] : undefined;
 
   // Generate UUID for uniqueId if not present and not in edit mode
@@ -219,7 +217,7 @@ async function save(): Promise<boolean> {
 }
 
 function checkPropsData() {
-  const formData = get(data);
+  const formData = data;
 
   if (formData.type === 'edit-group') {
     const editable = formData.eventsInGroup[0];
@@ -230,8 +228,8 @@ function checkPropsData() {
   reset();
 }
 
-watchImmediate(data, (data, oldData) => {
-  if (isEqual(data, oldData)) {
+watchImmediate(() => data, (newData, oldData) => {
+  if (isEqual(newData, oldData)) {
     return;
   }
   checkPropsData();

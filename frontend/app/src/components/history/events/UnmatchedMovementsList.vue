@@ -22,7 +22,14 @@ interface UnmatchedMovementRow {
 
 const selected = defineModel<string[]>('selected', { required: true });
 
-const props = defineProps<{
+const {
+  movements,
+  highlightedGroupIdentifier,
+  ignoreLoading,
+  isPinned,
+  showRestore,
+  loading,
+} = defineProps<{
   movements: UnmatchedAssetMovement[];
   highlightedGroupIdentifier?: string;
   ignoreLoading?: boolean;
@@ -41,10 +48,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { isPinned } = toRefs(props);
-
-const pinnedColumnClass = usePinnedColumnClass(isPinned);
-const pinnedAssetColumnClass = usePinnedAssetColumnClass(isPinned);
+const pinnedColumnClass = usePinnedColumnClass(() => isPinned);
+const pinnedAssetColumnClass = usePinnedAssetColumnClass(() => isPinned);
 
 function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetClass: ColumnClassConfig): DataTableColumn<UnmatchedMovementRow>[] {
   const columns: DataTableColumn<UnmatchedMovementRow>[] = [
@@ -89,10 +94,10 @@ function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetCla
   return columns;
 }
 
-const columns = computed<DataTableColumn<UnmatchedMovementRow>[]>(() => createColumns(props.isPinned ?? false, get(pinnedColumnClass), get(pinnedAssetColumnClass)));
+const columns = computed<DataTableColumn<UnmatchedMovementRow>[]>(() => createColumns(isPinned ?? false, get(pinnedColumnClass), get(pinnedAssetColumnClass)));
 
 const rows = computed<UnmatchedMovementRow[]>(() =>
-  props.movements.map((movement) => {
+  movements.map((movement) => {
     const { entry, ...meta } = getEventEntryFromCollection(movement.events);
     const eventEntry = { ...entry, ...meta };
     return {
@@ -108,7 +113,7 @@ const rows = computed<UnmatchedMovementRow[]>(() =>
 );
 
 const emptyDescription = computed<string>(() =>
-  props.showRestore
+  showRestore
     ? t('asset_movement_matching.dialog.no_ignored')
     : t('asset_movement_matching.dialog.no_unmatched'),
 );
@@ -117,14 +122,14 @@ const descriptionEl = useTemplateRef<HTMLElement>('description');
 const { height: descriptionHeight } = useElementSize(descriptionEl);
 
 const pinnedTableStyle = computed<Record<string, string> | undefined>(() => {
-  if (!props.isPinned)
+  if (!isPinned)
     return undefined;
   return { height: `calc(100vh - 15.4rem - ${get(descriptionHeight)}px)` };
 });
 
 function getRowClass(row: UnmatchedMovementRow): string {
   const classes = ['transition-all'];
-  if (row.groupIdentifier === props.highlightedGroupIdentifier) {
+  if (row.groupIdentifier === highlightedGroupIdentifier) {
     classes.push('!bg-rui-warning/15');
   }
   return classes.join(' ');

@@ -2,7 +2,7 @@ import type { EthBalance } from '@/types/blockchain/balances';
 import type { AssetPriceInfo } from '@/types/prices';
 import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, NoPrice, Zero } from '@rotki/common';
 import { storeToRefs } from 'pinia';
-import { computed, type ComputedRef, type MaybeRef, type MaybeRefOrGetter } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';
@@ -22,9 +22,9 @@ interface UseAggregatedBalancesReturn {
   liabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   assetPriceInfo: (identifier: MaybeRefOrGetter<string>, groupCollection?: MaybeRefOrGetter<boolean>) => ComputedRef<AssetPriceInfo>;
   assets: ComputedRef<string[]>;
-  useBlockchainBalances: (chains: MaybeRef<string[]>, address?: MaybeRef<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
-  useExchangeBalances: (exchange?: MaybeRef<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
-  useLocationBreakdown: (location: MaybeRef<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
+  useBlockchainBalances: (chains: MaybeRefOrGetter<string[]>, address?: MaybeRefOrGetter<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
+  useExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
+  useLocationBreakdown: (location: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   balancesByLocation: ComputedRef<Record<string, BigNumber>>;
 }
 
@@ -91,13 +91,13 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     });
 
   const useBlockchainBalances = (
-    chains: MaybeRef<string[]> = [],
-    address?: MaybeRef<string>,
+    chains: MaybeRefOrGetter<string[]> = [],
+    address?: MaybeRefOrGetter<string>,
     key: keyof EthBalance = 'assets',
   ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => {
-    const selectedChains = get(chains);
+    const selectedChains = toValue(chains);
     const filter = selectedChains.length > 0 ? selectedChains : undefined;
-    const accountAddress = address ? get(address) : undefined;
+    const accountAddress = address ? toValue(address) : undefined;
     const blockchain = blockchainToAssetProtocolBalances(get(blockchainBalances), key, filter, accountAddress);
     return summarizeAssetProtocols({
       associatedAssets: get(assetAssociationMap),
@@ -116,7 +116,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   });
 
   const useExchangeBalances = (
-    exchange?: MaybeRef<string>,
+    exchange?: MaybeRefOrGetter<string>,
   ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => {
     const exchanges = get(useBaseExchangeBalances(exchange));
     return summarizeAssetProtocols({
@@ -206,7 +206,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     liabilities,
     useBlockchainBalances,
     useExchangeBalances,
-    useLocationBreakdown: (location: MaybeRef<string>) => useLocationBreakdown(
+    useLocationBreakdown: (location: MaybeRefOrGetter<string>) => useLocationBreakdown(
       location,
       blockchainBalances,
       assetAssociationMap,

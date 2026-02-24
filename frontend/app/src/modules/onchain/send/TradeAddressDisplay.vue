@@ -2,7 +2,7 @@
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
-const props = defineProps<{
+const { address, chain, name, readonly, dense } = defineProps<{
   address: string;
   chain?: string;
   name?: string;
@@ -10,16 +10,15 @@ const props = defineProps<{
   dense?: boolean;
 }>();
 
-const { address, chain, name } = toRefs(props);
-
 const { addressNameSelector } = useAddressesNamesStore();
 
+const addressName = addressNameSelector(computed<string>(() => address), computed<string>(() => chain ?? ''));
+
 const aliasName = computed<string | undefined>(() => {
-  const forceName = get(name);
-  if (forceName) {
-    return forceName;
+  if (name) {
+    return name;
   }
-  return get(addressNameSelector(get(address), get(chain)));
+  return get(addressName);
 });
 </script>
 

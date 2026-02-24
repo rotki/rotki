@@ -30,16 +30,14 @@ const selectedProtocol = defineModel<string>('selectedProtocol');
 const source = defineModel<HistoricalBalanceSource>('source', { required: true });
 const selectedAccount = defineModel<BlockchainAccount<AddressData>>('selectedAccount');
 
-const props = withDefaults(defineProps<{
+const { fieldErrors = {} } = defineProps<{
   fieldErrors?: ValidationErrors;
-}>(), {
-  fieldErrors: () => ({}),
-});
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const assetErrors = computed<string[]>(() => {
-  const errors = props.fieldErrors.asset;
+  const errors = fieldErrors.asset;
   if (!errors)
     return [];
   return arrayify(errors);

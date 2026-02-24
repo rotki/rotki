@@ -23,11 +23,9 @@ interface EthDepositEventFormProps {
 }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
-const props = defineProps<EthDepositEventFormProps>();
+const { data } = defineProps<EthDepositEventFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { data } = toRefs(props);
 
 const assetPriceForm = useTemplateRef<InstanceType<typeof HistoryEventAssetPriceForm>>('assetPriceForm');
 
@@ -49,7 +47,7 @@ const commonRules = createCommonRules();
 const rules = {
   amount: commonRules.createRequiredAmountRule(),
   depositor: commonRules.createRequiredValidDepositorRule(),
-  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
+  groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => data.type === 'edit'),
   sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
   timestamp: commonRules.createExternalValidationRule(),
   txRef: commonRules.createValidTxHashRule(),
@@ -87,7 +85,7 @@ useFormStateWatcher(states, stateUpdated);
 const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 function reset() {
-  set(sequenceIndex, get(data)?.nextSequenceId || '0');
+  set(sequenceIndex, data?.nextSequenceId || '0');
   set(txRef, '');
   set(groupIdentifier, null);
   set(hasActualGroupIdentifier, false);
@@ -118,7 +116,7 @@ function applyEditableData(entry: EthDepositEvent) {
 }
 
 function applyGroupHeaderData(entry: EthDepositEvent) {
-  set(sequenceIndex, get(data)?.nextSequenceId || '0');
+  set(sequenceIndex, data?.nextSequenceId || '0');
   set(groupIdentifier, entry.groupIdentifier);
   set(txRef, entry.txRef);
   set(validatorIndex, entry.validatorIndex.toString());
@@ -135,7 +133,7 @@ async function save(): Promise<boolean> {
   if (!(await get(v$).$validate()))
     return false;
 
-  const eventData = get(data);
+  const eventData = data;
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
 
   const payload: NewEthDepositEventPayload = {
@@ -160,7 +158,7 @@ async function save(): Promise<boolean> {
 }
 
 function checkPropsData() {
-  const formData = get(data);
+  const formData = data;
   if (formData.type === 'edit') {
     applyEditableData(formData.event);
     return;
@@ -172,7 +170,7 @@ function checkPropsData() {
   reset();
 }
 
-watch(data, checkPropsData);
+watch(() => data, checkPropsData);
 
 onMounted(() => {
   checkPropsData();

@@ -7,15 +7,10 @@ const form = defineModel<LoginCredentials>('form', { required: true });
 const passwordConfirm = defineModel<string>('passwordConfirm', { required: true });
 const userPrompted = defineModel<boolean>('userPrompted', { required: true });
 
-withDefaults(
-  defineProps<{
-    syncDatabase?: boolean;
-    loading: boolean;
-  }>(),
-  {
-    syncDatabase: false,
-  },
-);
+const { loading, syncDatabase = false } = defineProps<{
+  syncDatabase?: boolean;
+  loading: boolean;
+}>();
 
 const emit = defineEmits<{
   back: [];

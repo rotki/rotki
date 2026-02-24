@@ -23,11 +23,9 @@ interface HistoryEventFormProps {
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<HistoryEventFormProps>();
+const { data } = defineProps<HistoryEventFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { data } = toRefs(props);
 
 const { counterparties } = useHistoryEventCounterpartyMappings();
 
@@ -85,7 +83,7 @@ const { v$, captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEventFor
     counterparty: commonRules.createValidCounterpartyRule(counterparties),
     eventSubtype: commonRules.createRequiredEventSubtypeRule(),
     eventType: commonRules.createRequiredEventTypeRule(),
-    groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => get(data).type === 'edit'),
+    groupIdentifier: commonRules.createRequiredGroupIdentifierRule(() => data.type === 'edit'),
     location: commonRules.createRequiredLocationRule(),
     locationLabel: commonRules.createExternalValidationRule(),
     notes: commonRules.createExternalValidationRule(),
@@ -99,7 +97,7 @@ const { v$, captureEditModeStateFromRefs, shouldSkipSaveFromRefs } = useEventFor
 });
 
 function reset() {
-  set(sequenceIndex, get(data)?.nextSequenceId || '0');
+  set(sequenceIndex, data?.nextSequenceId || '0');
   set(txRef, '');
   set(groupIdentifier, null);
   set(hasActualGroupIdentifier, false);
@@ -142,7 +140,7 @@ function applyEditableData(entry: EvmHistoryEvent) {
 }
 
 function applyGroupHeaderData(entry: EvmHistoryEvent) {
-  set(sequenceIndex, get(data)?.nextSequenceId || '0');
+  set(sequenceIndex, data?.nextSequenceId || '0');
   set(groupIdentifier, entry.groupIdentifier);
   set(location, entry.location || get(lastLocation));
   set(address, entry.address ?? '');
@@ -156,7 +154,7 @@ async function save(): Promise<boolean> {
     return false;
   }
 
-  const eventData = get(data);
+  const eventData = data;
   const editable = eventData.type === 'edit' ? eventData.event : undefined;
   const userNotes = get(notes).trim();
 
@@ -188,7 +186,7 @@ async function save(): Promise<boolean> {
 }
 
 function checkPropsData() {
-  const formData = get(data);
+  const formData = data;
   if (formData.type === 'edit') {
     applyEditableData(formData.event);
     return;
@@ -206,7 +204,7 @@ watch(location, (location: string) => {
     set(lastLocation, location);
 });
 
-watch(data, checkPropsData);
+watch(() => data, checkPropsData);
 
 onMounted(() => {
   checkPropsData();

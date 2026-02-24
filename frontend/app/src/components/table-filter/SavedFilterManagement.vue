@@ -5,7 +5,7 @@ import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import { useSavedFilter } from '@/composables/filters/saved';
 import { useMessageStore } from '@/store/message';
 
-const props = defineProps<{
+const { disabled, location, matchers, selection } = defineProps<{
   matchers: SearchMatcher<any>[];
   selection: Suggestion[];
   location: SavedFilterLocation;
@@ -17,8 +17,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { location, matchers, selection } = toRefs(props);
 
 const open = ref<boolean>(false);
 
@@ -46,14 +44,14 @@ const { start: startAnimation } = useTimeoutFn(
 );
 
 function isAsset(searchKey: string): boolean {
-  const found = get(matchers).find(({ key }) => key === searchKey);
+  const found = matchers.find(({ key }) => key === searchKey);
   return !!found && 'asset' in found;
 }
 
-const { addFilter, deleteFilter, savedFilters } = useSavedFilter(location, isAsset);
+const { addFilter, deleteFilter, savedFilters } = useSavedFilter(() => location, isAsset);
 
 const filtersList = computed(() => {
-  const matcherKeys = get(matchers).map(item => item.key);
+  const matcherKeys = matchers.map(item => item.key);
   return get(savedFilters)
     // Filter out keys that doesn't supported in the matchers list
     .map(filters => filters.filter(filter => matcherKeys.includes(filter.key)))
@@ -72,7 +70,7 @@ const filtersList = computed(() => {
 const { setMessage } = useMessageStore();
 
 async function addToSavedFilter() {
-  const status = await addFilter(get(selection));
+  const status = await addFilter(selection);
   if (status.success) {
     if (get(isPending)) {
       stop();

@@ -7,14 +7,9 @@ import { useHistoricPrices } from '@/composables/price-manager/historic';
 
 const modelValue = defineModel<HistoricalPriceFormPayload | undefined>({ required: true });
 
-const props = withDefaults(
-  defineProps<{
-    editMode?: boolean;
-  }>(),
-  {
-    editMode: false,
-  },
-);
+const { editMode = false } = defineProps<{
+  editMode?: boolean;
+}>();
 
 const emit = defineEmits<{
   refresh: [];
@@ -25,10 +20,10 @@ const { t } = useI18n({ useScope: 'global' });
 const loading = ref<boolean>(false);
 const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof HistoricPriceForm>>('form');
-const stateUpdated = ref(false);
+const stateUpdated = ref<boolean>(false);
 
 const dialogTitle = computed<string>(() =>
-  props.editMode
+  editMode
     ? t('price_management.dialog.edit_title')
     : t('price_management.dialog.add_title'),
 );
@@ -45,7 +40,6 @@ async function save() {
     return false;
 
   const data = get(modelValue);
-  const editMode = props.editMode;
   set(loading, true);
   const success = await saveAction(data, editMode);
 

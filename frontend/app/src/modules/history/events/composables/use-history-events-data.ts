@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { HistoryEventsTableEmitFn } from '@/modules/history/events/types';
 import type { Collection } from '@/types/collection';
@@ -18,11 +18,11 @@ import { logger } from '@/utils/logging';
 import { useCompleteEvents } from './use-complete-events';
 
 interface UseHistoryEventsDataOptions {
-  groups: Ref<Collection<HistoryEventRow>>;
-  pageParams: Ref<HistoryEventRequestPayload | undefined>;
-  excludeIgnored: Ref<boolean>;
-  groupLoading: Ref<boolean>;
-  identifiers?: Ref<string[] | undefined>;
+  groups: MaybeRefOrGetter<Collection<HistoryEventRow>>;
+  pageParams: MaybeRefOrGetter<HistoryEventRequestPayload | undefined>;
+  excludeIgnored: MaybeRefOrGetter<boolean>;
+  groupLoading: MaybeRefOrGetter<boolean>;
+  identifiers?: MaybeRefOrGetter<string[] | undefined>;
 }
 
 interface UseHistoryEventsDataReturn {
@@ -107,11 +107,11 @@ export function useHistoryEventsData(
 
     try {
       const response = await fetchHistoryEvents({
-        ...get(pageParams),
+        ...toValue(pageParams),
         aggregateByGroupIds: false,
         excludeIgnoredAssets: false,
         groupIdentifiers: groupIds,
-        identifiers: get(identifiers),
+        identifiers: toValue(identifiers),
         limit: -1,
         offset: 0,
       }, { tags: [EVENTS_CANCEL_TAG] });
@@ -182,7 +182,7 @@ export function useHistoryEventsData(
   /** Events grouped by groupIdentifier, with both hidden and ignored-asset events filtered out. */
   const displayedEventsMapped = computed<Record<string, HistoryEventRow[]>>(() => {
     const base = get(completeEventsMapped);
-    if (!get(excludeIgnored))
+    if (!toValue(excludeIgnored))
       return base;
 
     const showingIgnored = get(groupsShowingIgnoredAssets);
@@ -229,7 +229,7 @@ export function useHistoryEventsData(
 
   // Track which groups have events hidden due to ignored assets filter
   const groupsWithHiddenIgnoredAssets = computed<Set<string>>(() => {
-    if (!get(excludeIgnored))
+    if (!toValue(excludeIgnored))
       return new Set();
 
     const all = get(completeEventsMapped);
@@ -286,7 +286,7 @@ export function useHistoryEventsData(
   });
 
   // Cancel stale events fetch as soon as new groups fetch starts
-  watch(groupLoading, (loading) => {
+  watch(() => toValue(groupLoading), (loading) => {
     if (loading)
       api.cancelByTag(EVENTS_CANCEL_TAG);
   });

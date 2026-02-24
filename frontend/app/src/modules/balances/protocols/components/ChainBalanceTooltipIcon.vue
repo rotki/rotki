@@ -5,19 +5,17 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
-const props = defineProps<{
+const { chainId } = defineProps<{
   chainId: string;
   chainBalance: Balance;
   asset?: string;
   loading?: boolean;
 }>();
 
-const { chainId } = toRefs(props);
-
 const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
 const { getChainName } = useSupportedChains();
 
-const chainName = getChainName(chainId);
+const chainName = getChainName(() => chainId);
 </script>
 
 <template>

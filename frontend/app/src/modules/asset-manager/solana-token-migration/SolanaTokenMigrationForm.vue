@@ -20,14 +20,12 @@ const modelValue = defineModel<SolanaTokenMigrationData>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{
+const { loading, oldAsset } = defineProps<{
   loading?: boolean;
   oldAsset?: string;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { oldAsset } = toRefs(props);
 
 const address = useRefPropVModel(modelValue, 'address');
 const decimals = useRefPropVModel(modelValue, 'decimals');
@@ -35,21 +33,20 @@ const tokenKind = useRefPropVModel(modelValue, 'tokenKind');
 const { assetInfo } = useAssetInfoRetrieval();
 
 const assetDetails = computed<string | undefined>(() => {
-  if (!isDefined(oldAsset)) {
+  if (!oldAsset) {
     return undefined;
   }
-  const identifier = get(oldAsset);
-  const details = get(assetInfo(identifier));
+  const details = get(assetInfo(oldAsset));
 
   if (!details) {
-    return identifier;
+    return oldAsset;
   }
 
   let description = '';
   if (details.symbol) {
     description += `[${details.symbol}] `;
   }
-  return `${description}${details.name} (${identifier})`;
+  return `${description}${details.name} (${oldAsset})`;
 });
 
 const decimalsModel = computed({

@@ -24,11 +24,9 @@ definePage({
   props: true,
 });
 
-const props = defineProps<{
+const { tab } = defineProps<{
   tab: string;
 }>();
-
-const { tab } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
@@ -42,7 +40,7 @@ const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
 const { isModuleEnabled } = useModules();
 const isEth2Enabled = isModuleEnabled(Module.ETH2);
 
-const isAccountsTabSelected = computed(() => get(tab) === 'accounts');
+const isAccountsTabSelected = computed<boolean>(() => tab === 'accounts');
 
 const { chainIds } = useAccountCategoryHelper(category);
 const usedChainIds = computed(() => {

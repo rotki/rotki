@@ -8,7 +8,7 @@ import HistoryEventTypeCombination from '@/components/history/events/HistoryEven
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 
-const props = defineProps<{
+const { event, groupLocationLabel, icon, highlight, hideStateChips } = defineProps<{
   event: HistoryEventEntry;
   chain: Blockchain;
   groupLocationLabel?: string;
@@ -17,23 +17,20 @@ const props = defineProps<{
   hideStateChips?: boolean;
 }>();
 
-const { event } = toRefs(props);
-
 const { getEventTypeData } = useHistoryEventMappings();
-const attrs = getEventTypeData(event);
+const attrs = getEventTypeData(() => event);
 
-const isInformational = computed<boolean>(() => get(event).eventType === 'informational');
+const isInformational = computed<boolean>(() => event.eventType === 'informational');
 
-const eventStates = computed<HistoryEventState[]>(() => get(event).states ?? []);
+const eventStates = computed<HistoryEventState[]>(() => event.states ?? []);
 
 const showLocationLabel = computed<boolean>(() => {
-  const eventLabel = get(event).locationLabel;
+  const eventLabel = event.locationLabel;
   if (!eventLabel)
     return false;
 
-  const groupLabel = props.groupLocationLabel;
   // Show only when different from group (or no group context)
-  return !groupLabel || eventLabel !== groupLabel;
+  return !groupLocationLabel || eventLabel !== groupLocationLabel;
 });
 </script>
 

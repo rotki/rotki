@@ -5,21 +5,12 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    to: RouteLocationRaw;
-    exact?: boolean;
-    activeClass?: string;
-    exactActiveClass?: string;
-    replace?: boolean;
-  }>(),
-  {
-    activeClass: '',
-    exact: false,
-    exactActiveClass: '',
-    replace: false,
-  },
-);
+const { to, activeClass = '', exactActiveClass = '', replace = false } = defineProps<{
+  to: RouteLocationRaw;
+  activeClass?: string;
+  exactActiveClass?: string;
+  replace?: boolean;
+}>();
 
 defineSlots<{
   default: () => any;
@@ -30,7 +21,10 @@ defineSlots<{
   <RouterLink
     #default="{ href, navigate, isActive, isExactActive }"
     custom
-    v-bind="props"
+    :to="to"
+    :replace="replace"
+    :active-class="activeClass"
+    :exact-active-class="exactActiveClass"
   >
     <a
       :class="{

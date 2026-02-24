@@ -29,8 +29,8 @@ const nftEnabled = isModuleEnabled(Module.NFTS);
 const { loadingBalancesAndDetection: isAnyLoading } = useBalancesLoading();
 const dismissedMessage = useSessionStorage('rotki.messages.dash.dismissed', false);
 
-const dashboardRef = ref<HTMLElement>();
-const floatingRef = ref<HTMLElement>();
+const dashboardRef = useTemplateRef<HTMLElement>('dashboardRef');
+const floatingRef = useTemplateRef<HTMLElement>('floatingRef');
 const dashboardWidth = ref(0);
 
 const { width } = useElementSize(dashboardRef);

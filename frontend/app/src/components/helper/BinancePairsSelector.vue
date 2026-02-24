@@ -9,7 +9,7 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = defineProps<{
+const { name, edit, location, errorMessages } = defineProps<{
   name: string;
   edit: boolean;
   location: string;
@@ -21,8 +21,6 @@ const emit = defineEmits<{
 }>();
 
 const MAX_RETRIES = 3;
-
-const { edit, errorMessages, location, name } = toRefs(props);
 
 const updateSelection = (value: string[]) => emit('update:selection', value);
 
@@ -101,7 +99,7 @@ async function queryAllMarkets() {
   try {
     const markets = await backoff(
       MAX_RETRIES,
-      () => api.queryBinanceMarkets(get(location)),
+      () => api.queryBinanceMarkets(location),
       1000, // Initial delay of 1 second
     );
     set(allMarkets, markets);
@@ -121,9 +119,9 @@ async function queryAllMarkets() {
 }
 
 async function loadUserMarkets() {
-  if (get(edit)) {
+  if (edit) {
     try {
-      const markets = await api.queryBinanceUserMarkets(get(name), get(location));
+      const markets = await api.queryBinanceUserMarkets(name, location);
       set(queriedMarkets, markets);
       set(selection, markets);
     }

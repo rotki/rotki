@@ -18,13 +18,11 @@ import {
   getPlaceholderNode,
 } from '@/types/settings/rpc';
 
-const props = defineProps<{
+const { chain } = defineProps<{
   chain: Blockchain;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { chain } = toRefs(props);
 
 const nodes = ref<BlockchainRpcNodeList>([]);
 const state = ref<BlockchainRpcNodeManageState>();
@@ -36,9 +34,9 @@ const { setMessage } = useMessageStore();
 const { connectedNodes, failedToConnect } = storeToRefs(usePeriodicStore());
 const { show } = useConfirmStore();
 const { getChainName } = useSupportedChains();
-const api = useEvmNodesApi(chain);
+const api = useEvmNodesApi(() => chain);
 
-const chainName = getChainName(chain);
+const chainName = getChainName(() => chain);
 const anyDisconnected = computed(() => get(nodes).some(node => !isNodeConnected(node) && node.active));
 
 async function loadNodes(): Promise<void> {
@@ -49,7 +47,7 @@ async function loadNodes(): Promise<void> {
     notify({
       message: error.message,
       title: t('evm_rpc_node_manager.loading_error.title', {
-        chain: get(chain),
+        chain,
       }),
     });
   }
@@ -65,7 +63,7 @@ function editRpcNode(node: BlockchainRpcNode) {
 function addNewRpcNode() {
   set(state, {
     mode: 'add',
-    node: getPlaceholderNode(get(chain)),
+    node: getPlaceholderNode(chain),
   });
 }
 
@@ -80,7 +78,7 @@ async function deleteNode(node: BlockchainRpcNode) {
       description: error.message,
       success: false,
       title: t('evm_rpc_node_manager.delete_error.title', {
-        chain: get(chain),
+        chain,
       }),
     });
   }
@@ -108,8 +106,7 @@ function isEtherscan(item: BlockchainRpcNode) {
 }
 
 function isNodeInDataset(dataset: Record<string, string[]>, item: BlockchainRpcNode): boolean {
-  const chainVal = get(chain);
-  const blockchain = camelCase(chainVal);
+  const blockchain = camelCase(chain);
   const nodes = dataset?.[blockchain] || [];
   return nodes.includes(item.name);
 }

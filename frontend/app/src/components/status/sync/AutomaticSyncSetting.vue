@@ -6,18 +6,12 @@ defineOptions({
   inheritAttrs: false,
 });
 
-withDefaults(
-  defineProps<{
-    disabled?: boolean;
-    dense?: boolean;
-  }>(),
-  {
-    dense: false,
-    disabled: false,
-  },
-);
+const { disabled = false, dense = false } = defineProps<{
+  disabled?: boolean;
+  dense?: boolean;
+}>();
 
-const sync = ref(false);
+const sync = ref<boolean>(false);
 const { premiumSync } = storeToRefs(usePremiumStore());
 
 watchImmediate(premiumSync, (premiumSync) => {

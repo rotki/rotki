@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/types/balances';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { TaskMeta } from '@/types/task';
@@ -111,16 +111,16 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   };
 
   const getEthDetectedTokensInfo = (
-    chain: MaybeRef<string>,
-    address: MaybeRef<string | null>,
+    chain: MaybeRefOrGetter<string>,
+    address: MaybeRefOrGetter<string | null>,
   ): ComputedRef<EthDetectedTokensInfo> => computed<EthDetectedTokensInfo>(() => {
-    const blockchain = get(chain);
+    const blockchain = toValue(chain);
     if (!supportsTransactions(blockchain))
       return noTokens();
 
     const state = get(tokensState);
     const detected: EvmTokensRecord | undefined = state[blockchain];
-    const addr = get(address);
+    const addr = toValue(address);
 
     if (!addr)
       return noTokens();

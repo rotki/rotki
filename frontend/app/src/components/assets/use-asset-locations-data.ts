@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { AddressData, AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
 import { type BigNumber, type Blockchain, toSentenceCase } from '@rotki/common';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
@@ -19,7 +19,7 @@ export interface AssetLocation extends AssetBreakdown {
 export type AssetLocations = AssetLocation[];
 
 interface UseAssetLocationsDataOptions {
-  identifier: Ref<string>;
+  identifier: MaybeRefOrGetter<string>;
   locationFilter: Ref<string>;
   onlyTags: Ref<string[]>;
   selectedAccounts: Ref<BlockchainAccount<AddressData>[]>;
@@ -49,7 +49,7 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
   const totalValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).value);
 
   const assetLocations = computed<AssetLocations>(() => {
-    const breakdowns = get(useAssetBreakdown(get(identifier)));
+    const breakdowns = get(useAssetBreakdown(toValue(identifier)));
     return breakdowns.map((item: AssetBreakdown) => {
       const account = item.address ? getAccountByAddress(item.address, item.location) : undefined;
       return {

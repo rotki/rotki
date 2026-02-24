@@ -19,14 +19,11 @@ const expandedModel = defineModel<CustomAsset[]>('expanded', { required: true })
 
 const filtersModel = defineModel<Filters>('filters', { required: true });
 
-withDefaults(
-  defineProps<{
-    assets: CustomAsset[];
-    matchers: Matcher[];
-    loading?: boolean;
-  }>(),
-  { loading: false },
-);
+const { assets, matchers, loading = false } = defineProps<{
+  assets: CustomAsset[];
+  matchers: Matcher[];
+  loading?: boolean;
+}>();
 
 const emit = defineEmits<{
   'edit': [asset: CustomAsset];

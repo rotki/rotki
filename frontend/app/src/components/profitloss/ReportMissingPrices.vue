@@ -12,7 +12,7 @@ import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-t
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { ApiValidationError } from '@/types/api/errors';
 
-const props = defineProps<{
+const { items, isPinned } = defineProps<{
   items: MissingPrice[];
   isPinned: boolean;
 }>();
@@ -22,7 +22,6 @@ defineSlots<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { isPinned, items } = toRefs(props);
 const prices = ref<HistoricalPrice[]>([]);
 const errorMessages = ref<Record<string, string[]>>({});
 const refreshing = ref<boolean>(false);
@@ -43,7 +42,7 @@ async function getHistoricalPrices(): Promise<void> {
 }
 
 const formattedItems = computed<EditableMissingPrice[]>(() =>
-  get(items).map((item) => {
+  items.map((item) => {
     const savedHistoricalPrice = get(prices).find(
       price => price.fromAsset === item.fromAsset && price.toAsset === item.toAsset && price.timestamp === item.time,
     );
@@ -108,7 +107,7 @@ async function updatePrice(item: EditableMissingPrice) {
 }
 
 const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => {
-  const pinned = get(isPinned);
+  const pinned = isPinned;
   return [
     {
       key: 'fromAsset',

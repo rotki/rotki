@@ -21,7 +21,7 @@ interface MappedGroupedItems {
   acquisitions: MissingAcquisition[];
 }
 
-const props = defineProps<{
+const { items, isPinned } = defineProps<{
   items: MissingAcquisition[];
   isPinned: boolean;
 }>();
@@ -34,15 +34,13 @@ defineSlots<{
   actions: () => any;
 }>();
 
-const { isPinned, items } = toRefs(props);
-
 const router = useRouter();
 const { ignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
 
 const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
   const grouped: GroupedItems = {};
 
-  get(items).forEach((item: MissingAcquisition) => {
+  items.forEach((item: MissingAcquisition) => {
     if (grouped[item.asset])
       grouped[item.asset].push(item);
     else grouped[item.asset] = [item];
@@ -87,7 +85,7 @@ const headers = computed<DataTableColumn<MappedGroupedItems>[]>(() => [{
   key: 'asset',
   label: t('common.asset'),
   sortable: true,
-}, ...(get(isPinned)
+}, ...(isPinned
   ? []
   : [
     {

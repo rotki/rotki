@@ -5,16 +5,10 @@ import { useTagStore } from '@/store/session/tags';
 
 const model = defineModel<string[]>({ required: true });
 
-withDefaults(
-  defineProps<{
-    disabled?: boolean;
-    hideDetails?: boolean;
-  }>(),
-  {
-    disabled: false,
-    hideDetails: false,
-  },
-);
+const { disabled = false, hideDetails = false } = defineProps<{
+  disabled?: boolean;
+  hideDetails?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 

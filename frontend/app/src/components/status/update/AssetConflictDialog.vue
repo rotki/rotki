@@ -7,7 +7,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AssetConflictRow from '@/components/status/update/AssetConflictRow.vue';
 import { uniqueObjects, uniqueStrings } from '@/utils/data';
 
-const props = defineProps<{
+const { conflicts } = defineProps<{
   conflicts: AssetUpdateConflictResult[];
 }>();
 
@@ -17,8 +17,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { conflicts } = toRefs(props);
 
 const tableHeaders = computed<DataTableColumn<AssetUpdateConflictResult>[]>(() => [
   {
@@ -44,7 +42,7 @@ const resolution = ref<ConflictResolution>({});
 const strategyModeForAll = ref<ConflictResolutionStrategy>();
 const resolutionLength = computed(() => Object.keys(get(resolution)).length);
 const activeStrategyForAll = computed(() => {
-  if (get(conflicts).length === 0 || get(resolutionLength) !== get(conflicts).length)
+  if (conflicts.length === 0 || get(resolutionLength) !== conflicts.length)
     return { local: false, remote: false };
 
   const strategy = get(strategyModeForAll);
@@ -53,10 +51,10 @@ const activeStrategyForAll = computed(() => {
 });
 
 function setResolution(strategy: ConflictResolutionStrategy) {
-  const length = get(conflicts).length;
+  const length = conflicts.length;
   const resolutionStrategy: Writeable<ConflictResolution> = {};
   for (let i = 0; i < length; i++) {
-    const conflict = get(conflicts)[i];
+    const conflict = conflicts[i];
     resolutionStrategy[conflict.identifier] = strategy;
   }
 
@@ -89,11 +87,11 @@ function isDiff(conflict: AssetUpdateConflictResult, field: AssetKey) {
 
 const remaining = computed(() => {
   const resolved = get(resolutionLength);
-  return uniqueObjects(get(conflicts), ({ identifier }) => identifier).length - resolved;
+  return uniqueObjects(conflicts, ({ identifier }) => identifier).length - resolved;
 });
 
 const warnDuplicate = computed<boolean>(() => {
-  const identifiers = get(conflicts)
+  const identifiers = conflicts
     .map(({ identifier }) => identifier)
     .sort();
   const uniqueIdentifiers = identifiers.filter(uniqueStrings);
@@ -101,14 +99,14 @@ const warnDuplicate = computed<boolean>(() => {
 });
 
 const duplicateIdentifiers = computed<string[]>(() =>
-  get(conflicts)
+  conflicts
     .map(({ identifier }) => identifier)
     .sort()
     .filter((e, i, a) => a.indexOf(e) !== i),
 );
 
 const valid = computed<boolean>(() => {
-  const identifiers = get(conflicts)
+  const identifiers = conflicts
     .map(({ identifier }) => identifier)
     .filter(uniqueStrings)
     .sort();

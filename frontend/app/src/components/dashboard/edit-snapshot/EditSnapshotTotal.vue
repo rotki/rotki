@@ -14,7 +14,7 @@ import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<LocationDataSnapshot[]>({ required: true });
 
-const props = defineProps<{
+const { timestamp, balancesSnapshot } = defineProps<{
   timestamp: number;
   balancesSnapshot: BalanceSnapshot[];
 }>();
@@ -24,8 +24,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-
-const { balancesSnapshot, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
 
@@ -36,13 +34,13 @@ const isCurrencyCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CU
 const rate = computed<BigNumber>(() => {
   if (get(isCurrencyCurrencyUsd))
     return One;
-  return get(historicPriceInCurrentCurrency(CURRENCY_USD, get(timestamp)));
+  return get(historicPriceInCurrentCurrency(CURRENCY_USD, timestamp));
 });
 
-const fetchingRate = isPending(createKey(CURRENCY_USD, get(timestamp)));
+const fetchingRate = isPending(createKey(CURRENCY_USD, timestamp));
 
 const assetTotal = computed<BigNumber>(() => {
-  const numbers = get(balancesSnapshot).map((item: BalanceSnapshot) => {
+  const numbers = balancesSnapshot.map((item: BalanceSnapshot) => {
     if (item.category === 'asset')
       return item.usdValue;
 
@@ -64,7 +62,7 @@ const locationTotal = computed<BigNumber>(() => {
 });
 
 const nftsTotal = computed<BigNumber>(() => {
-  const numbers = get(balancesSnapshot).map((item: BalanceSnapshot) => {
+  const numbers = balancesSnapshot.map((item: BalanceSnapshot) => {
     if (!isNft(item.assetIdentifier))
       return Zero;
 
@@ -146,7 +144,7 @@ const v$ = useVuelidate(
 
 const suggestionsLabel = computed(() => ({
   asset: t('dashboard.snapshot.edit.dialog.total.use_calculated_asset', {
-    length: get(balancesSnapshot).length,
+    length: balancesSnapshot.length,
   }),
   location: t('dashboard.snapshot.edit.dialog.total.use_calculated_location', {
     length: get(modelValue).length,

@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { Collection, CollectionResponse } from '@/types/collection';
 import { type BigNumber, Zero } from '@rotki/common';
 import { usePremium } from '@/composables/premium';
@@ -30,7 +30,7 @@ export function defaultCollectionState<T>(): Collection<T> {
 
 type TotalValue = BigNumber | undefined | null;
 
-export function getCollectionData<T>(collection: Ref<Collection<T>>): {
+export function getCollectionData<T>(collection: MaybeRefOrGetter<Collection<T>>): {
   data: ComputedRef<T[]>;
   limit: ComputedRef<number>;
   found: ComputedRef<number>;
@@ -38,12 +38,12 @@ export function getCollectionData<T>(collection: Ref<Collection<T>>): {
   entriesFoundTotal: ComputedRef<number | undefined>;
   totalValue: ComputedRef<TotalValue>;
 } {
-  const data = computed<T[]>(() => get(collection).data);
-  const limit = computed<number>(() => get(collection).limit);
-  const found = computed<number>(() => get(collection).found);
-  const total = computed<number>(() => get(collection).total);
-  const entriesFoundTotal = computed<number | undefined>(() => get(collection).entriesFoundTotal);
-  const totalValue = computed<TotalValue>(() => get(collection).totalValue);
+  const data = computed<T[]>(() => toValue(collection).data);
+  const limit = computed<number>(() => toValue(collection).limit);
+  const found = computed<number>(() => toValue(collection).found);
+  const total = computed<number>(() => toValue(collection).total);
+  const entriesFoundTotal = computed<number | undefined>(() => toValue(collection).entriesFoundTotal);
+  const totalValue = computed<TotalValue>(() => toValue(collection).totalValue);
 
   return {
     data,

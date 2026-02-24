@@ -23,7 +23,7 @@ function getDefaultForm() {
   };
 }
 
-const wrapper = ref<any>(null);
+const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
 
 const showDeleteConfirmation = ref<boolean>(false);
 const idToDelete = ref<number | null>(null);

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const wrapper = ref();
+const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
 const topOffset = ref<number>(0);
 
 useResizeObserver(wrapper, (a) => {
@@ -8,8 +8,9 @@ useResizeObserver(wrapper, (a) => {
 });
 
 onMounted(() => {
-  if (get(wrapper))
-    set(topOffset, get(wrapper).offsetTop + 156);
+  const el = get(wrapper);
+  if (el)
+    set(topOffset, el.offsetTop + 156);
 });
 </script>
 

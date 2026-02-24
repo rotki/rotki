@@ -11,32 +11,26 @@ import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-na
 import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
 
-const props = defineProps<{
+const { account } = defineProps<{
   account: BlockchainAccount | BlockchainAccountBalance;
 }>();
-
-const { account } = toRefs(props);
 const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();
 const { addressNameSelector, ensNameSelector } = useAddressesNamesStore();
 const { t } = useI18n({ useScope: 'global' });
 
-const accountAddress = computed<string>(() => getAccountAddress(get(account)));
+const accountAddress = computed<string>(() => getAccountAddress(account));
 
 const derivationPath = computed<string | undefined>(() => {
-  const accountInfo = get(account);
-  if ('xpub' in accountInfo.data)
-    return accountInfo.data.derivationPath;
+  if ('xpub' in account.data)
+    return account.data.derivationPath;
 
   return undefined;
 });
 
-const isXpub = computed<boolean>(() => {
-  const accountInfo = get(account);
-  return 'xpub' in accountInfo.data;
-});
+const isXpub = computed<boolean>(() => 'xpub' in account.data);
 
 const label = computed<string>(() => {
-  const label = getAccountLabel(get(account));
+  const label = getAccountLabel(account);
 
   if (consistOfNumbers(label))
     return scrambleIdentifier(label);
@@ -48,11 +42,10 @@ const aliasName = computed<string>(() => {
   if (get(scrambleData))
     return '';
 
-  const accountData = get(account);
-  const chain = getChain(accountData);
+  const chain = getChain(account);
   const labelVal = get(label);
 
-  if (isXpubAccount(accountData)) {
+  if (isXpubAccount(account)) {
     return labelVal;
   }
   const name = get(addressNameSelector(get(accountAddress), chain));
@@ -72,7 +65,7 @@ const ensName = computed<string | null>(() => {
 
 const address = computed<string>(() => scrambleAddress(get(accountAddress)));
 
-const displayedLabel = ref<HTMLDivElement>();
+const displayedLabel = useTemplateRef<HTMLDivElement>('displayedLabel');
 const { width: displayedLabelWidth } = useElementSize(displayedLabel);
 
 const labelDisplayed = computed(() => {

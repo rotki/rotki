@@ -17,7 +17,7 @@ enum TabCategory {
   ERROR = 'error',
 }
 
-const contentWrapper = ref();
+const contentWrapper = useTemplateRef<HTMLDivElement>('contentWrapper');
 const selectedTab = ref<TabCategory>(TabCategory.VIEW_ALL);
 const initialAppear = ref<boolean>(false);
 const pendingTasksExpanded = ref<boolean>(false);

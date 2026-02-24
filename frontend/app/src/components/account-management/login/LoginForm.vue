@@ -61,8 +61,8 @@ const customBackendSessionOnly = ref<boolean>(false);
 const customBackendSaved = ref<boolean>(false);
 const dynamicMessageDialog = ref<boolean>(false);
 
-const usernameRef: Ref = ref();
-const passwordRef: Ref = ref();
+const usernameRef = useTemplateRef('usernameRef');
+const passwordRef = useTemplateRef('passwordRef');
 
 const { savedRememberPassword, savedRememberUsername, savedUsername } = useRememberSettings();
 const { activeWelcomeMessages, welcomeMessage } = useDynamicMessages();

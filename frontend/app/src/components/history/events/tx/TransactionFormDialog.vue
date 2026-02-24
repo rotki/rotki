@@ -8,14 +8,9 @@ import { useMessageStore } from '@/store/message';
 
 const modelValue = defineModel<AddTransactionHashPayload | undefined>({ required: true });
 
-withDefaults(
-  defineProps<{
-    loading?: boolean;
-  }>(),
-  {
-    loading: false,
-  },
-);
+const { loading = false } = defineProps<{
+  loading?: boolean;
+}>();
 
 const emit = defineEmits<{
   reload: [event: LocationAndTxRef];
@@ -26,7 +21,7 @@ const { t } = useI18n({ useScope: 'global' });
 const submitting = ref<boolean>(false);
 const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof TransactionForm>>('form');
-const stateUpdated = ref(false);
+const stateUpdated = ref<boolean>(false);
 
 const { setMessage } = useMessageStore();
 const { addTransactionHash } = useHistoryTransactions();

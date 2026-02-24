@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 
-const props = defineProps<{
+const { event, canUnlink } = defineProps<{
   event: HistoryEventEntry;
   canUnlink?: boolean;
 }>();
@@ -12,12 +12,10 @@ const emit = defineEmits<{
 
 const vueRouter = useRouter();
 
-const { event } = toRefs(props);
-
 const { t } = useI18n({ useScope: 'global' });
 
 function onEditRule(): void {
-  const entry = get(event);
+  const entry = event;
 
   const data = {
     counterparty: '',

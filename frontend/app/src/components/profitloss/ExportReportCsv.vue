@@ -4,15 +4,10 @@ import { useInterop } from '@/composables/electron-interop';
 import { useMessageStore } from '@/store/message';
 import { useReportsStore } from '@/store/reports';
 
-const props = withDefaults(
-  defineProps<{
-    list?: boolean;
-    reportId: number;
-  }>(),
-  {
-    list: false,
-  },
-);
+const { list = false, reportId } = defineProps<{
+  list?: boolean;
+  reportId: number;
+}>();
 
 const { createCsv } = useReportsStore();
 const { setMessage } = useMessageStore();
@@ -37,10 +32,10 @@ async function exportCSV() {
       if (!directory)
         return;
 
-      await createCsv(props.reportId, directory);
+      await createCsv(reportId, directory);
     }
     else {
-      const result = await downloadReportCSV(props.reportId);
+      const result = await downloadReportCSV(reportId);
       if (!result.success)
         showMessage(result.message ?? t('profit_loss_report.download_failed'));
     }
@@ -50,7 +45,7 @@ async function exportCSV() {
   }
 }
 
-const label = computed(() => (appSession ? t('common.actions.export_csv') : t('common.actions.download_csv')));
+const label = computed<string>(() => (appSession ? t('common.actions.export_csv') : t('common.actions.download_csv')));
 </script>
 
 <template>

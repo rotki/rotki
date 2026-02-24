@@ -3,12 +3,11 @@ import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 
 type GetKey = (item: any) => string;
 
-const props = defineProps<{
+const { items, identifier } = defineProps<{
   items: any[];
   identifier: GetKey;
 }>();
 
-const { items } = toRefs(props);
 const { isXlAndDown, isXs } = useBreakpoint();
 const page = ref(1);
 const itemsPerPage = ref(8);
@@ -33,7 +32,7 @@ const paginationData = computed({
       limit: get(itemsPerPage),
       limits: get(limits),
       page: get(page),
-      total: get(items).length,
+      total: items.length,
     };
   },
   set(value: TablePaginationData) {
@@ -44,14 +43,14 @@ const paginationData = computed({
 
 const visible = computed(() => {
   const start = (get(page) - 1) * get(itemsPerPage);
-  return get(items).slice(start, start + get(itemsPerPage));
+  return items.slice(start, start + get(itemsPerPage));
 });
 
 watchImmediate(firstLimit, () => {
   set(itemsPerPage, get(firstLimit));
 });
 
-watch([items, firstLimit], () => set(page, 1));
+watch([() => items, firstLimit], () => set(page, 1));
 </script>
 
 <template>

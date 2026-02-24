@@ -27,7 +27,7 @@ const onlyExpectedAssets = defineModel<boolean>('onlyExpectedAssets', { required
 
 const tolerancePercentage = defineModel<string>('tolerancePercentage', { required: true });
 
-const props = defineProps<{
+const { movement, matches, loading, isPinned, highlightedIdentifier } = defineProps<{
   movement: UnmatchedAssetMovement;
   matches: PotentialMatchRow[];
   loading: boolean;
@@ -43,15 +43,13 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { isPinned } = toRefs(props);
-
 const { getHistoryEventSubTypeName, getHistoryEventTypeName } = useHistoryEventMappings();
 
 const [DefineRowActions, ReuseRowActions] = createReusableTemplate<{ row: PotentialMatchRow }>();
 
-const pinnedColumnClass = usePinnedColumnClass(isPinned);
-const pinnedAssetColumnClass = usePinnedAssetColumnClass(isPinned);
-const pinnedSimpleTableClass = usePinnedSimpleTableClass(isPinned);
+const pinnedColumnClass = usePinnedColumnClass(() => isPinned);
+const pinnedAssetColumnClass = usePinnedAssetColumnClass(() => isPinned);
+const pinnedSimpleTableClass = usePinnedSimpleTableClass(() => isPinned);
 
 function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetClass: ColumnClassConfig): DataTableColumn<PotentialMatchRow>[] {
   const columns: DataTableColumn<PotentialMatchRow>[] = [
@@ -94,7 +92,7 @@ function createColumns(isPinned: boolean, baseClass: ColumnClassConfig, assetCla
   return columns;
 }
 
-const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => createColumns(props.isPinned ?? false, get(pinnedColumnClass), get(pinnedAssetColumnClass)));
+const columns = computed<DataTableColumn<PotentialMatchRow>[]>(() => createColumns(isPinned ?? false, get(pinnedColumnClass), get(pinnedAssetColumnClass)));
 
 function isSelected(row: PotentialMatchRow): boolean {
   return get(selectedMatchIds).includes(row.entry.identifier);
@@ -112,11 +110,11 @@ function toggleSelection(row: PotentialMatchRow): void {
 }
 
 function getRowClass(row: PotentialMatchRow): string {
-  return row.entry.identifier === props.highlightedIdentifier ? '!bg-rui-success/15' : '';
+  return row.entry.identifier === highlightedIdentifier ? '!bg-rui-success/15' : '';
 }
 
 const movementEntry = computed<HistoryEventEntry>(() => {
-  const { entry, ...meta } = getEventEntryFromCollection(props.movement.events);
+  const { entry, ...meta } = getEventEntryFromCollection(movement.events);
   return { ...entry, ...meta };
 });
 
@@ -124,13 +122,13 @@ const searchControlsEl = useTemplateRef<HTMLElement>('searchControls');
 const { height: searchControlsHeight } = useElementSize(searchControlsEl);
 
 const tableClass = computed<string>(() => {
-  if (props.isPinned)
+  if (isPinned)
     return '!overflow-auto !max-h-none';
   return 'table-inside-dialog !max-h-[calc(100vh-33rem)]';
 });
 
 const pinnedTableStyle = computed<Record<string, string> | undefined>(() => {
-  if (!props.isPinned)
+  if (!isPinned)
     return undefined;
   return { height: `calc(100vh - 28.4rem - ${get(searchControlsHeight)}px)` };
 });

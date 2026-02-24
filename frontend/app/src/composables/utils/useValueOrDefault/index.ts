@@ -1,11 +1,11 @@
-import type { ComputedRef, MaybeRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 
-export function useValueOrDefault<T, D>(item: Ref<T | undefined>, defaultValue: MaybeRef<D>): ComputedRef<T | D> {
+export function useValueOrDefault<T, D>(item: MaybeRefOrGetter<T | undefined>, defaultValue: MaybeRefOrGetter<D>): ComputedRef<T | D> {
   return computed(() => {
-    const value = get(item);
+    const value = toValue(item);
     if (value)
       return value;
 
-    return get(defaultValue);
+    return toValue(defaultValue);
   });
 }

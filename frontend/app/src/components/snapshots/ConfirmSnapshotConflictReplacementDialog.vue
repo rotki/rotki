@@ -6,7 +6,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { isNft } from '@/utils/nft';
 
-const props = defineProps<{
+const { snapshot } = defineProps<{
   snapshot: BalanceSnapshot | null;
 }>();
 const emit = defineEmits<{
@@ -15,11 +15,9 @@ const emit = defineEmits<{
 }>();
 const { t } = useI18n({ useScope: 'global' });
 
-const { snapshot } = toRefs(props);
+const display = computed<boolean>(() => !!snapshot);
 
-const display = computed<boolean>(() => !!get(snapshot));
-
-const asset = computed<string>(() => get(snapshot)?.assetIdentifier ?? '');
+const asset = computed<string>(() => snapshot?.assetIdentifier ?? '');
 </script>
 
 <template>

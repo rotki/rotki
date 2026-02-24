@@ -1,5 +1,5 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
 import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
@@ -18,7 +18,7 @@ import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-bloc
 import { fromUriEncoded, toUriEncoded } from '@/utils/route-uri';
 
 interface UseAccountBalancesPaginationOptions {
-  category: Ref<string>;
+  category: MaybeRefOrGetter<string>;
   visibleTags: Ref<string[]>;
   chainExclusionFilter: Ref<Record<string, string[]>>;
   tab: Ref<number>;
@@ -57,7 +57,7 @@ export function useAccountBalancesPagination(
   const filterSchema = useBlockchainAccountFilter(t, category);
 
   const extraParams = computed<RawLocationQuery>(() => ({
-    category: get(category),
+    category: toValue(category),
     tags: get(visibleTags),
   }));
 

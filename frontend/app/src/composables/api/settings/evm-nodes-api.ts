@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import { Blockchain } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { api } from '@/modules/api/rotki-api';
@@ -14,8 +14,8 @@ interface UseEvmNodesApiReturn {
   reConnectNode: (identifier?: number) => Promise<boolean>;
 }
 
-export function useEvmNodesApi(chain: MaybeRef<string> = Blockchain.ETH): UseEvmNodesApiReturn {
-  const url = computed<string>(() => `/blockchains/${get(chain)}/nodes`);
+export function useEvmNodesApi(chain: MaybeRefOrGetter<string> = Blockchain.ETH): UseEvmNodesApiReturn {
+  const url = computed<string>(() => `/blockchains/${toValue(chain)}/nodes`);
 
   const fetchEvmNodes = async (): Promise<BlockchainRpcNodeList> => {
     const response = await api.get<BlockchainRpcNodeList>(get(url));

@@ -21,14 +21,9 @@ const modelValue = defineModel<AddressBookPayload>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-withDefaults(
-  defineProps<{
-    editMode?: boolean;
-  }>(),
-  {
-    editMode: false,
-  },
-);
+const { editMode = false } = defineProps<{
+  editMode?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -85,7 +80,7 @@ function fetchNames() {
   });
 }
 
-const chainOptions = computed(() => [
+const chainOptions = computed<string[]>(() => [
   'all',
   ...get(supportedChains).map(item => item.id).filter(item => item !== Blockchain.ETH2),
 ]);

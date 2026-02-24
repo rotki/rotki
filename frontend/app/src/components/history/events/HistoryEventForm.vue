@@ -26,16 +26,14 @@ interface HistoryEventFormProps {
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<HistoryEventFormProps>();
+const { data } = defineProps<HistoryEventFormProps>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { data } = toRefs(props);
 
 const entryType = ref<HistoryEventEntryType>(HistoryEventEntryType.HISTORY_EVENT);
 const form = useTemplateRef<ComponentPublicInstance<FormComponent>>('form');
 
 const isEvmGroupAdd = computed<boolean>(() => {
-  const data = props.data;
   if (data.type !== 'group-add') {
     return false;
   }
@@ -43,7 +41,6 @@ const isEvmGroupAdd = computed<boolean>(() => {
 });
 
 const isSolanaGroupAdd = computed<boolean>(() => {
-  const data = props.data;
   if (data.type !== 'group-add') {
     return false;
   }
@@ -89,7 +86,7 @@ async function save() {
   return await get(form).save();
 }
 
-watchImmediate(data, (data) => {
+watchImmediate(() => data, (data) => {
   if (!data) {
     return;
   }

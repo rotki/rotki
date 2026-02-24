@@ -1,12 +1,11 @@
 <script setup lang="ts">
-const props = defineProps<{
+const { value, tooltip, size } = defineProps<{
   value: string;
   tooltip: string;
   size?: 'sm' | 'lg';
 }>();
 
-const { value } = toRefs(props);
-const { copy } = useClipboard({ source: value });
+const { copy } = useClipboard({ source: () => value });
 </script>
 
 <template>

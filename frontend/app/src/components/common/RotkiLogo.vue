@@ -6,18 +6,11 @@ defineOptions({
   inheritAttrs: false,
 });
 
-withDefaults(
-  defineProps<{
-    uniqueKey?: LogoProps['uniqueKey'];
-    text?: LogoProps['text'];
-    size?: LogoProps['size'];
-  }>(),
-  {
-    size: undefined,
-    text: false,
-    uniqueKey: undefined,
-  },
-);
+const { text = false, uniqueKey, size } = defineProps<{
+  uniqueKey?: LogoProps['uniqueKey'];
+  text?: LogoProps['text'];
+  size?: LogoProps['size'];
+}>();
 
 const branch = checkIfDevelopment() ? 'develop' : 'main';
 </script>

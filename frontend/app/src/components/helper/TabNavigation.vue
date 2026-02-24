@@ -2,21 +2,14 @@
 import type { RouteLocationRaw } from 'vue-router';
 import { getClass, type TabContent } from '@/types/tabs';
 
-withDefaults(
-  defineProps<{
-    tabs: TabContent[];
-    hideRouterView?: boolean;
-    child?: boolean;
-    plain?: boolean;
-  }>(),
-  {
-    child: false,
-    hideRouterView: false,
-    plain: false,
-  },
-);
+const { tabs, hideRouterView = false, child = false, plain = false } = defineProps<{
+  tabs: TabContent[];
+  hideRouterView?: boolean;
+  child?: boolean;
+  plain?: boolean;
+}>();
 
-const model = ref('');
+const model = ref<string>('');
 
 const router = useRouter();
 

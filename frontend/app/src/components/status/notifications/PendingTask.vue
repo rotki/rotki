@@ -7,25 +7,24 @@ import { useReportsStore } from '@/store/reports';
 import { TaskType } from '@/types/task-type';
 import { calculatePercentage } from '@/utils/calculation';
 
-const props = defineProps<{ task: Task<TaskMeta> }>();
+const { task } = defineProps<{ task: Task<TaskMeta> }>();
 const emit = defineEmits<{
   cancel: [task: Task<TaskMeta>];
 }>();
 
-const { task } = toRefs(props);
 const { progress: taskProgress } = storeToRefs(useReportsStore());
 const { historicalDailyPriceStatus } = storeToRefs(useHistoricCachePriceStore());
 const { t } = useI18n({ useScope: 'global' });
 
 const hasDeterminateProgress = computed(() => {
-  const { type } = get(task);
+  const { type } = task;
   return type === TaskType.TRADE_HISTORY || type === TaskType.FETCH_DAILY_HISTORIC_PRICE;
 });
 
-const time = computed<string>(() => dayjs(task.value.time).format('LLL'));
+const time = computed<string>(() => dayjs(task.time).format('LLL'));
 
 const progress = computed<number | undefined>(() => {
-  const { type } = get(task);
+  const { type } = task;
   if (type === TaskType.TRADE_HISTORY) {
     return parseInt(get(taskProgress));
   }

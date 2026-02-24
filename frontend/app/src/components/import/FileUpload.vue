@@ -23,10 +23,10 @@ const emit = defineEmits<{
   'update:error-message': [message: string];
 }>();
 
-const wrapper = ref<HTMLDivElement>();
+const wrapper = useTemplateRef<HTMLDivElement>('wrapper');
 
 const error = ref('');
-const select = ref<HTMLInputElement>();
+const select = useTemplateRef<HTMLInputElement>('select');
 const { t } = useI18n({ useScope: 'global' });
 
 function isValidFile(file: File, acceptString: string) {

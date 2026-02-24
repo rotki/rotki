@@ -28,14 +28,9 @@ interface DividerItem {
 
 type MenuItem = NavItem | NavGroupItem | DividerItem;
 
-withDefaults(
-  defineProps<{
-    isMini?: boolean;
-  }>(),
-  {
-    isMini: false,
-  },
-);
+const { isMini = false } = defineProps<{
+  isMini?: boolean;
+}>();
 
 const { appRoutes } = useAppRoutes();
 const navItems = computed<MenuItem[]>(() => {

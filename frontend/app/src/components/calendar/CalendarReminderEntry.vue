@@ -7,15 +7,13 @@ import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<CalendarReminderTemporaryPayload>({ required: true });
 
-const props = defineProps<{
+const { latest } = defineProps<{
   latest: boolean;
 }>();
 
 const emit = defineEmits<{
   delete: [];
 }>();
-
-const { latest } = toRefs(props);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -159,9 +157,9 @@ function triggerUpdate() {
   }
 }
 
-const amountInputWrapper = ref();
+const amountInputWrapper = useTemplateRef<InstanceType<typeof AmountInput>>('amountInputWrapper');
 onMounted(() => {
-  if (get(latest)) {
+  if (latest) {
     const input = get(amountInputWrapper)?.$el.querySelector('input');
     input?.select();
   }

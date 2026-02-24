@@ -3,7 +3,7 @@ import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { useConfirmStore } from '@/store/confirm';
 
-const props = defineProps<{
+const { groupIdentifiers, duplicateHandlingStatus } = defineProps<{
   groupIdentifiers?: string[];
   duplicateHandlingStatus?: DuplicateHandlingStatus;
 }>();
@@ -23,14 +23,9 @@ const {
   manualReviewGroupIds,
 } = useCustomizedEventDuplicates();
 
-const { duplicateHandlingStatus, groupIdentifiers } = toRefs(props);
+const isAutoFixable = computed<boolean>(() => duplicateHandlingStatus === DuplicateHandlingStatus.AUTO_FIX);
 
-const isAutoFixable = computed<boolean>(() => get(duplicateHandlingStatus) === DuplicateHandlingStatus.AUTO_FIX);
-
-const hasGroupIdentifiers = computed<boolean>(() => {
-  const ids = get(groupIdentifiers);
-  return !!ids && ids.length > 0;
-});
+const hasGroupIdentifiers = computed<boolean>(() => !!groupIdentifiers && groupIdentifiers.length > 0);
 
 const duplicateChipText = computed<string>(() => {
   if (get(isAutoFixable))
@@ -45,7 +40,7 @@ const currentValidGroupIds = computed<string[]>(() =>
 
 // Calculate the difference between URL params and current valid IDs
 const duplicateChanges = computed<{ resolved: number; added: number; remaining: string[] }>(() => {
-  const urlIds = get(groupIdentifiers) ?? [];
+  const urlIds = groupIdentifiers ?? [];
   const validIds = get(currentValidGroupIds);
 
   if (urlIds.length === 0)
@@ -105,7 +100,7 @@ function removeDuplicateEventsParam(): void {
 }
 
 async function fixDuplicateEvent(): Promise<void> {
-  const ids = get(groupIdentifiers);
+  const ids = groupIdentifiers;
   if (!ids || ids.length === 0)
     return;
 
@@ -117,7 +112,7 @@ async function fixDuplicateEvent(): Promise<void> {
 }
 
 function confirmFixDuplicate(): void {
-  const count = get(groupIdentifiers)?.length ?? 0;
+  const count = groupIdentifiers?.length ?? 0;
   show({
     message: t('customized_event_duplicates.actions.fix_selected_confirm', { count }),
     primaryAction: t('common.actions.confirm'),

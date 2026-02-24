@@ -8,7 +8,7 @@ defineOptions({
 
 const expandedGroupKey = defineModel<string | undefined>('expandedGroupKey');
 
-const props = defineProps<{
+const { item } = defineProps<{
   item: Suggestion;
   chipAttrs: Record<string, unknown>;
   displayType: 'normal' | 'grouped' | 'hidden';
@@ -26,12 +26,10 @@ const emit = defineEmits<{
   'remove-grouped-item': [item: Suggestion];
 }>();
 
-const { item } = toRefs(props);
-
-const isMenuOpen = computed<boolean>(() => get(expandedGroupKey) === get(item).key);
+const isMenuOpen = computed<boolean>(() => get(expandedGroupKey) === item.key);
 
 function onMenuUpdate(value: boolean): void {
-  set(expandedGroupKey, value ? get(item).key : undefined);
+  set(expandedGroupKey, value ? item.key : undefined);
 }
 </script>
 

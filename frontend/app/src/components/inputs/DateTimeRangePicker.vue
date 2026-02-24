@@ -11,28 +11,16 @@ interface QuickOption {
 const start = defineModel<number | undefined>('start', { required: true });
 const end = defineModel<number | undefined>('end', { required: true });
 
-const props = withDefaults(
-  defineProps<{
-    allowEmpty?: boolean;
-    dense?: boolean;
-    disabled?: boolean;
-    endErrorMessages?: string[];
-    endLabel?: string;
-    maxEndDate?: number | 'now';
-    startErrorMessages?: string[];
-    startLabel?: string;
-  }>(),
-  {
-    allowEmpty: false,
-    dense: false,
-    disabled: false,
-    endErrorMessages: () => [],
-    endLabel: '',
-    maxEndDate: undefined,
-    startErrorMessages: () => [],
-    startLabel: '',
-  },
-);
+const { allowEmpty = false, dense = false, disabled = false, endErrorMessages = [], endLabel = '', maxEndDate, startErrorMessages = [], startLabel = '' } = defineProps<{
+  allowEmpty?: boolean;
+  dense?: boolean;
+  disabled?: boolean;
+  endErrorMessages?: string[];
+  endLabel?: string;
+  maxEndDate?: number | 'now';
+  startErrorMessages?: string[];
+  startLabel?: string;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -48,8 +36,8 @@ const quickOptions: QuickOption[] = [
   { label: t('date_time_range_picker.last_1_year'), unit: 'year', value: 1 },
 ];
 
-const startLabelComputed = computed<string>(() => props.startLabel || t('generate.labels.start_date'));
-const endLabelComputed = computed<string>(() => props.endLabel || t('generate.labels.end_date'));
+const startLabelComputed = computed<string>(() => startLabel || t('generate.labels.start_date'));
+const endLabelComputed = computed<string>(() => endLabel || t('generate.labels.end_date'));
 
 const invalidRange = computed<boolean>(() => {
   const startVal = get(start);
@@ -61,14 +49,14 @@ const startErrorMessagesComputed = computed<string[]>(() => {
   if (get(invalidRange)) {
     return [t('generate.validation.end_after_start')];
   }
-  return props.startErrorMessages;
+  return startErrorMessages;
 });
 
 const endErrorMessagesComputed = computed<string[]>(() => {
   if (get(invalidRange)) {
     return [' '];
   }
-  return props.endErrorMessages;
+  return endErrorMessages;
 });
 
 function applyQuickOption(option: QuickOption): void {

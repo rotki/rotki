@@ -4,14 +4,9 @@ import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 
-withDefaults(
-  defineProps<{
-    stake?: LiquityStakingDetailEntry | null;
-  }>(),
-  {
-    stake: null,
-  },
-);
+const { stake = null } = defineProps<{
+  stake?: LiquityStakingDetailEntry | null;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
 
