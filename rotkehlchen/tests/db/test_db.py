@@ -157,6 +157,7 @@ TABLES_AT_INIT = [
     'rpc_nodes',
     'user_notes',
     'chain_events_info',
+    'bitcoin_events_addresses',
     'eth_staking_events_info',
     'skipped_external_events',
     'accounting_rule_events',

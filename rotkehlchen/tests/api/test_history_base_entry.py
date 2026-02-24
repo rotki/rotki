@@ -11,6 +11,7 @@ from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.manager import BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -1752,20 +1753,39 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: 'APIServer') -> No
         address=make_solana_address(),
         notes=f'Solana event {idx}',
     ) for idx in range(2)])
-    all_events.extend([HistoryEvent(
-        group_identifier=group_identifier,
+    btc_event = HistoryEvent(
+        group_identifier=f'{BTC_GROUP_IDENTIFIER_PREFIX}{btc_tx_id}',
         sequence_index=0,
         timestamp=TimestampMS(0),
-        location=location,
+        location=Location.BITCOIN,
         event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.FEE,
-        asset=asset,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BTC,
         amount=ZERO,
-        notes=f'{asset.identifier} event',
-    ) for group_identifier, location, asset in (
-        (f'{BTC_GROUP_IDENTIFIER_PREFIX}{btc_tx_id}', Location.BITCOIN, A_BTC),
-        (f'{BCH_GROUP_IDENTIFIER_PREFIX}{bch_tx_id}', Location.BITCOIN_CASH, A_BCH),
-    )])
+        notes='Custom BTC send note',
+    )
+    setattr(
+        btc_event,
+        BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY,
+        ['1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp'],
+    )
+    bch_event = HistoryEvent(
+        group_identifier=f'{BCH_GROUP_IDENTIFIER_PREFIX}{bch_tx_id}',
+        sequence_index=0,
+        timestamp=TimestampMS(0),
+        location=Location.BITCOIN_CASH,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_BCH,
+        amount=ZERO,
+        notes='Custom BCH receive note',
+    )
+    setattr(
+        bch_event,
+        BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY,
+        ['bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt'],
+    )
+    all_events.extend([btc_event, bch_event])
 
     with rotki.data.db.conn.write_ctx() as write_cursor:
         db.add_history_events(write_cursor=write_cursor, history=all_events)
@@ -1782,6 +1802,19 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: 'APIServer') -> No
         'Solana event 1',
     }
 
+    # Check btc and bch events can be retrieved by their counterparty addresses
+    result = assert_proper_sync_response_with_result(requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'addresses': [
+            '1G3MiaKdccQmiTr4gYSKmrCVDaLQ5nvBRp',
+            'bitcoincash:qpplh0vyfn67cupcmhq4g2dt3s50rlarmclu9vnndt',
+        ]},
+    ))
+    assert {x['entry']['user_notes'] for x in result['entries']} == {
+        'Custom BTC send note',
+        'Custom BCH receive note',
+    }
+
     # Check all events are retrieved by their tx refs
     result = assert_proper_sync_response_with_result(requests.post(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
@@ -1792,8 +1825,8 @@ def test_tx_ref_and_address_filtering(rotkehlchen_api_server: 'APIServer') -> No
         'Evm event 1',
         'Solana event 0',
         'Solana event 1',
-        'BTC event',
-        'BCH event',
+        'Custom BTC send note',
+        'Custom BCH receive note',
     }
 
     # Check with a combination of addresses and tx_refs

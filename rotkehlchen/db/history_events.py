@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 from collections import defaultdict
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
@@ -12,7 +13,9 @@ from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.bitcoin.bch.constants import BCH_GROUP_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.bitcoin.btc.constants import BTC_GROUP_IDENTIFIER_PREFIX
+from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.cache import IGNORED_CUSTOMIZED_EVENT_DUPLICATE_PREFIX, DBCacheDynamic
@@ -92,6 +95,29 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+NOTES_ADDRESS_MARKER_RE = re.compile(r'\b(?:to|from)\b\s+(.+)$')
+BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY = 'bitcoin_counterparty_addresses'
+
+
+def _get_bitcoin_counterparty_addresses(
+        location: Location,
+        notes: str | None,
+) -> list[str]:
+    """Extract counterparty addresses from normalized bitcoin/bch notes."""
+    if notes is None:
+        return []
+
+    if (match := NOTES_ADDRESS_MARKER_RE.search(notes)) is None:
+        return []
+
+    validator = is_valid_btc_address if location == Location.BITCOIN else (
+        lambda value: is_valid_bitcoin_cash_address(value) or is_valid_btc_address(value)
+    )
+    return [
+        address for entry in match.group(1).split(',')
+        if validator(address := entry.strip())
+    ]
 
 
 def _build_matched_movement_exclusion(
@@ -244,6 +270,47 @@ class DBHistoryEvents:
             ),
         )
 
+    @staticmethod
+    def _store_bitcoin_event_counterparty_addresses(
+            write_cursor: 'DBCursor',
+            identifier: int,
+            location: Location,
+            event_type: HistoryEventType,
+            notes: str | None,
+            decoded_addresses: list[str] | None,
+    ) -> None:
+        write_cursor.execute(
+            'DELETE FROM bitcoin_events_addresses WHERE event_identifier=?',
+            (identifier,),
+        )
+        if (
+            location not in (Location.BITCOIN, Location.BITCOIN_CASH) or
+            event_type not in (
+                HistoryEventType.SPEND,
+                HistoryEventType.RECEIVE,
+                HistoryEventType.TRANSFER,
+            )
+        ):
+            return
+
+        if decoded_addresses is not None:
+            addresses = decoded_addresses
+        else:
+            addresses = _get_bitcoin_counterparty_addresses(
+                location=location,
+                notes=notes,
+            )
+
+        if len(addresses) == 0:
+            return
+
+        write_cursor.executemany(
+            'INSERT OR IGNORE INTO bitcoin_events_addresses('
+            'event_identifier, address'
+            ') VALUES(?, ?)',
+            [(identifier, address) for address in addresses],
+        )
+
     def add_history_event(
             self,
             write_cursor: 'DBCursor',
@@ -286,6 +353,16 @@ class DBHistoryEvents:
                 'VALUES(?, ?, ?)',
                 [(identifier, k, v.serialize_for_db()) for k, v in mapping_values.items()],
             )
+
+        assert identifier is not None
+        self._store_bitcoin_event_counterparty_addresses(
+            write_cursor=write_cursor,
+            identifier=identifier,
+            location=event.location,
+            event_type=event.event_type,
+            notes=event.notes,
+            decoded_addresses=getattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY, None),
+        )
 
         # TODO (balances): add _mark_events_modified for event.timestamp if not skip_tracking
         return identifier
@@ -460,6 +537,7 @@ class DBHistoryEvents:
             'FROM history_events WHERE identifier=?',
             (event.identifier,),
         ).fetchone()
+        assert event.identifier is not None
 
         if save_backup:
             self.save_history_event_backup(write_cursor=write_cursor, identifier=event.identifier)
@@ -482,6 +560,15 @@ class DBHistoryEvents:
 
             else:  # all other data
                 write_cursor.execute(f'{updatestr} WHERE identifier=?', (*bindings, event.identifier))  # noqa: E501
+
+        self._store_bitcoin_event_counterparty_addresses(
+            write_cursor=write_cursor,
+            identifier=event.identifier,
+            location=event.location,
+            event_type=event.event_type,
+            notes=event.notes,
+            decoded_addresses=getattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY, None),
+        )
 
         # Mark event state and store original position for duplicate prevention during redecode.
         # Only store original position on first customization (when INSERT succeeds).
