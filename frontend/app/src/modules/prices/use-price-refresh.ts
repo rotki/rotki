@@ -36,7 +36,7 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
   const { missingCustomAssets } = useManualBalanceData();
   const { assets: regularAssets } = useAggregatedBalances();
   const { hasCachedPrice } = usePriceUtils();
-  const { cacheEuroCollectionAssets, fetchExchangeRates, fetchPrices } = usePriceTaskManager();
+  const { fetchExchangeRates, fetchPrices } = usePriceTaskManager();
   const { setStatus } = useStatusUpdater(Section.PRICES);
 
   const assets = computed<string[]>(() => [...get(regularAssets), ...get(collectionMainAssets)]);
@@ -58,7 +58,6 @@ export const usePriceRefresh = createSharedComposable((): UsePriceRefreshReturn 
   ): Promise<void> => {
     try {
       setStatus(Status.LOADING);
-      await cacheEuroCollectionAssets();
 
       if (ignoreCache) {
         await fetchExchangeRates();

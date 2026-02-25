@@ -105,11 +105,10 @@ const copyValue = computed<string>(() => {
       >
         <FormattedNumber :number-parts="numberParts" />
         <template #tooltip>
-          <slot name="tooltip">
-            <div v-if="tooltip">
-              {{ tooltip }}
-            </div>
-          </slot>
+          <slot name="tooltip" />
+          <div v-if="tooltip">
+            {{ tooltip }}
+          </div>
         </template>
       </CopyTooltip>
 

@@ -53,13 +53,10 @@ export function nonEmptyProperties<T extends object>(
       continue;
 
     if (Array.isArray(val)) {
-      // TODO: monitor releases for a fix and restore when fix is released.
-      // This is needed due to a bug in ts 5.1 where isArray doesn't narrow properly.
-      const valArr = val as any[];
-      if (valArr.length === 0)
+      if (val.length === 0)
         continue;
 
-      partial[key] = valArr.map((v) => {
+      partial[key] = val.map((v) => {
         if (typeof v === 'object')
           return nonEmptyProperties(v);
 

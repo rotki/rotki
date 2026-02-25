@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
+import type { ManualPriceFormPayload } from '@/types/prices';
 import RowActions from '@/components/helper/RowActions.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
@@ -20,7 +20,7 @@ const { identifier, isCollectionParent = false } = defineProps<{
 }>();
 
 const { assetPriceInfo } = useAggregatedBalances();
-const { assetPriceInCurrentCurrency } = usePriceUtils();
+const { assetPrice } = usePriceUtils();
 
 const { assetName } = useAssetInfoRetrieval();
 const { refreshPrice } = usePriceRefresh();
@@ -28,8 +28,8 @@ const { isLoading } = useStatusStore();
 
 const refreshingPrices = isLoading(Section.PRICES);
 
-const info = computed<AssetPriceInfo>(() => get(assetPriceInfo(() => identifier, () => isCollectionParent)));
-const price = assetPriceInCurrentCurrency(() => identifier);
+const info = assetPriceInfo(() => identifier, () => isCollectionParent);
+const price = assetPrice(() => identifier);
 
 const { isManualAssetPrice } = usePriceUtils();
 const isManualPrice = isManualAssetPrice(() => identifier);
@@ -47,7 +47,7 @@ function setPriceForm() {
   const toAsset = get(currencySymbol);
   set(customPrice, {
     fromAsset: identifier,
-    price: get(price).toFixed(),
+    price: get(price)?.toFixed() ?? '0',
     toAsset,
   });
   set(openPriceDialog, true);
@@ -69,7 +69,7 @@ function showDeleteConfirmation() {
 
 const pricesLoading = computed(() => {
   const infoVal = get(info);
-  return get(refreshing) || get(refreshingPrices) || !infoVal.usdPrice || infoVal.usdPrice.lt(0);
+  return get(refreshing) || get(refreshingPrices) || !infoVal.price || infoVal.price.lt(0);
 });
 </script>
 
@@ -104,10 +104,9 @@ const pricesLoading = computed(() => {
       <div class="px-4 pb-3 flex flex-wrap items-center gap-1 md:gap-3">
         <FiatDisplay
           class="flex-1 text-h5 font-medium text-rui-text-secondary"
-          :value="info.usdPrice"
+          :value="info.price"
           :loading="pricesLoading"
           :price-asset="identifier"
-          from="USD"
         />
 
         <RowActions
@@ -147,7 +146,7 @@ const pricesLoading = computed(() => {
         class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
         :asset="identifier"
         :amount="info.amount"
-        :price="info.usdPrice"
+        :price="info.price"
         :value="info.value"
         :loading="refreshing"
       />

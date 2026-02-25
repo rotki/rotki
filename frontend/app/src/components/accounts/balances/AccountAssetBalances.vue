@@ -47,7 +47,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   align: 'end',
   cellClass: 'py-1',
   class: 'text-no-wrap',
-  key: 'usdPrice',
+  key: 'price',
   label: t('common.price_in_symbol', {
     symbol: get(currencySymbol),
   }),
@@ -103,16 +103,15 @@ useRememberTableSorting<AssetBalanceWithPrice>(TableId.ACCOUNT_ASSET_BALANCES, s
         <BalanceTopProtocols
           v-if="row.perProtocol"
           :protocols="row.perProtocol"
-          :loading="!row.usdPrice || row.usdPrice.lt(0)"
+          :loading="!row.price || row.price.lt(0)"
           :asset="row.asset"
         />
       </template>
-      <template #item.usdPrice="{ row }">
+      <template #item.price="{ row }">
         <FiatDisplay
-          :value="row.usdPrice"
-          :loading="!row.usdPrice || row.usdPrice.lt(0)"
+          :value="row.price"
+          :loading="!row.price || row.price.lt(0)"
           :price-asset="row.asset"
-          from="USD"
         />
       </template>
       <template #item.amount="{ row }">

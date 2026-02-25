@@ -170,7 +170,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
 
     return {
       amount: assetValue?.amount ?? Zero,
-      usdPrice: assetValue?.usdPrice ?? Zero,
+      price: assetValue?.price ?? Zero,
       value: assetValue?.value ?? Zero,
     };
   });

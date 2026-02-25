@@ -39,7 +39,7 @@ export function useManualBalanceTableActions(): UseManualBalanceTableActionsRetu
 
   function prepareForEdit(balance: ManualBalanceWithPrice): ManualBalance {
     return {
-      ...omit(balance, ['assetIsMissing', 'usdPrice', 'value']),
+      ...omit(balance, ['assetIsMissing', 'price', 'value']),
       asset: balance.assetIsMissing ? '' : balance.asset,
     };
   }

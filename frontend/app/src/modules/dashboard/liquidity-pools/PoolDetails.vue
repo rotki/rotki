@@ -38,7 +38,7 @@ const cols = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
 }, {
   align: 'end',
   class: 'text-no-wrap',
-  key: 'usdPrice',
+  key: 'price',
   label: t('common.price', {
     symbol: get(currencySymbol),
   }),
@@ -64,7 +64,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
   const transformed: AssetBalanceWithPrice[] = assets.map(item => ({
     amount: item.userBalance.amount,
     asset: item.asset,
-    usdPrice: get(assetPrice(item.asset)) ?? Zero,
+    price: get(assetPrice(item.asset)) ?? Zero,
     value: item.userBalance.value,
   }));
 
@@ -86,12 +86,11 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
     <template #item.asset="{ row }">
       <AssetDetails :asset="row.asset" />
     </template>
-    <template #item.usdPrice="{ row }">
+    <template #item.price="{ row }">
       <FiatDisplay
-        v-if="row.usdPrice && row.usdPrice.gte(0)"
-        :value="row.usdPrice"
+        v-if="row.price && row.price.gte(0)"
+        :value="row.price"
         :price-asset="row.asset"
-        from="USD"
       />
       <span v-else>-</span>
     </template>
@@ -102,7 +101,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
       <AssetValueDisplay
         :asset="row.asset"
         :amount="row.amount"
-        :price="row.usdPrice"
+        :price="row.price"
         :value="row.value"
       />
     </template>

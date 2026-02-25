@@ -39,13 +39,13 @@ const balanceValue = useValueOrDefault(
   Zero,
 );
 
-const { assetPriceInCurrentCurrency } = usePriceUtils();
+const { assetPrice } = usePriceUtils();
 
 const valueInCurrency = computed<BigNumber>(() => {
   if (!calculateValue)
     return get(balanceValue);
 
-  return get(assetPriceInCurrentCurrency(asset)).multipliedBy(get(amount));
+  return (get(assetPrice(asset)) ?? Zero).multipliedBy(get(amount));
 });
 </script>
 

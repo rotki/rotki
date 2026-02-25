@@ -151,7 +151,7 @@ describe('store::balances/manual', () => {
       },
     };
 
-    // Update the price store so assetPriceInCurrentCurrency can find the prices
+    // Update the price store so balance price calculations can find the prices
     const { prices } = storeToRefs(useBalancePricesStore());
     set(prices, newPrices);
 

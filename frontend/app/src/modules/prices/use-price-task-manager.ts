@@ -1,15 +1,14 @@
 import type { ActionStatus } from '@/types/action';
 import type { FetchPricePayload } from '@/types/blockchain/accounts';
+import type { SupportedCurrency } from '@/types/currencies';
 import type { TaskMeta } from '@/types/task';
 import { type BigNumber, One } from '@rotki/common';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatusUpdater } from '@/composables/status';
-import { useCollectionIdentifiers } from '@/modules/assets/use-collection-identifiers';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
-import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 import { AssetPriceResponse, type HistoricPricePayload, HistoricPrices, type OracleCachePayload } from '@/types/prices';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -24,7 +23,6 @@ interface UsePriceTaskManagerReturn {
   fetchExchangeRates: (symbol?: SupportedCurrency) => Promise<void>;
   fetchPrices: (payload: FetchPricePayload) => Promise<void>;
   getHistoricPrice: (payload: HistoricPricePayload) => Promise<BigNumber>;
-  cacheEuroCollectionAssets: () => Promise<void>;
 }
 
 export function usePriceTaskManager(): UsePriceTaskManagerReturn {
@@ -32,20 +30,19 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-  const { euroCollectionAssets, euroCollectionAssetsLoaded, exchangeRates, prices } = storeToRefs(useBalancePricesStore());
+  const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
   const {
     createPriceCache,
     queryFiatExchangeRates,
     queryHistoricalRate,
     queryPrices,
   } = usePriceApi();
-  const { getCollectionAssets } = useCollectionIdentifiers();
 
   const fetchPrices = async (payload: FetchPricePayload): Promise<void> => {
     const taskType = TaskType.UPDATE_PRICES;
 
     const fetch = async (assets: string[]): Promise<void> => {
-      const { taskId } = await queryPrices(assets, CURRENCY_USD, payload.ignoreCache);
+      const { taskId } = await queryPrices(assets, get(currencySymbol), payload.ignoreCache);
       const { result } = await awaitTask<AssetPriceResponse, TaskMeta>(
         taskId,
         taskType,
@@ -220,23 +217,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     }
   };
 
-  async function cacheEuroCollectionAssets(): Promise<void> {
-    if (get(euroCollectionAssetsLoaded)) {
-      return;
-    }
-    try {
-      const assets = await getCollectionAssets('240');
-      set(euroCollectionAssets, assets);
-      set(euroCollectionAssetsLoaded, true);
-      logger.info(`${assets.length} Euro collection assets cached`);
-    }
-    catch (error: any) {
-      logger.error(error);
-    }
-  }
-
   return {
-    cacheEuroCollectionAssets,
     createOracleCache,
     fetchExchangeRates,
     fetchPrices,

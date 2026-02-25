@@ -264,7 +264,7 @@ export function createAssetBalanceFromAggregated(
   const assetTotal = perProtocolBalanceSum(zeroBalance(), protocolBalances);
   return {
     asset,
-    usdPrice: getAssetPrice(asset),
+    price: getAssetPrice(asset),
     ...assetTotal,
     perProtocol: getSortedProtocolBalances(protocolBalances),
   };
@@ -276,7 +276,7 @@ interface IntermediateGroupRepresentation {
   perProtocol: ProtocolBalancesWithManual;
   value: BigNumber;
   amount: BigNumber;
-  usdPrice: BigNumber;
+  price: BigNumber;
 }
 
 /**
@@ -311,7 +311,7 @@ export function processCollectionGrouping(
       asset,
       perProtocol: protocolBalances,
       ...perProtocolBalanceSum(zeroBalance(), protocolBalances),
-      usdPrice: getAssetPrice(asset, noPrice),
+      price: getAssetPrice(asset, noPrice),
       ...(mainAsset === asset ? { isMain: true } : {}),
     });
   }
@@ -328,7 +328,7 @@ export function processCollectionGrouping(
           isMain: true,
           perProtocol: {},
           ...zeroBalance(),
-          usdPrice: getAssetPrice(mainAsset, noPrice),
+          price: getAssetPrice(mainAsset, noPrice),
         });
       }
     }

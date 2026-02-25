@@ -12,9 +12,9 @@ const { pool = null, statistic = null } = defineProps<{
   statistic?: LiquityStatisticDetails | null;
   pool?: LiquityPoolDetailEntry | null;
 }>();
-const { assetPriceInCurrentCurrency } = usePriceUtils();
+const { assetPrice } = usePriceUtils();
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
-const lusdPrice = assetPriceInCurrentCurrency(LUSD_ID);
+const lusdPrice = assetPrice(LUSD_ID);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -31,7 +31,7 @@ const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() =
     return statistic;
 
   const stakingGains = statistic.stakingGains.map((stakingGain: AssetBalance) => {
-    const price = get(assetPriceInCurrentCurrency(stakingGain.asset)) ?? One;
+    const price = get(assetPrice(stakingGain.asset)) ?? One;
 
     return {
       ...stakingGain,
@@ -40,7 +40,7 @@ const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() =
   });
 
   const stabilityPoolGains = statistic.stabilityPoolGains.map((stabilityPoolGain: AssetBalance) => {
-    const price = get(assetPriceInCurrentCurrency(stabilityPoolGain.asset)) ?? One;
+    const price = get(assetPrice(stabilityPoolGain.asset)) ?? One;
 
     return {
       ...stabilityPoolGain,
@@ -121,9 +121,9 @@ function calculatePnl(
   return computed(() => {
     const expectedAmount = totalDepositedStabilityPool.minus(totalWithdrawnStabilityPool);
 
-    const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(get(assetPriceInCurrentCurrency(poolGains.asset)) ?? One);
+    const liquidationGainsInCurrentPrice = poolGains.amount.multipliedBy(get(assetPrice(poolGains.asset)) ?? One);
 
-    const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(get(assetPriceInCurrentCurrency(poolRewards.asset)) ?? One);
+    const rewardsInCurrentPrice = poolRewards.amount.multipliedBy(get(assetPrice(poolRewards.asset)) ?? One);
 
     const totalWithdrawals = totalValueGainsStabilityPool
       .plus(liquidationGainsInCurrentPrice)

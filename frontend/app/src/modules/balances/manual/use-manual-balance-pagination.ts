@@ -13,19 +13,13 @@ interface UseManualBalancePaginationReturn {
 
 export function useManualBalancePagination(): UseManualBalancePaginationReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
-  const { assetPriceInCurrentCurrency } = usePriceUtils();
+  const { assetPrice } = usePriceUtils();
 
   const resolvers: {
     resolveAssetPrice: (asset: string) => BigNumber | undefined;
   } = {
-    /**
-     * Resolves the asset price in the selected currency.
-     * We use this to make sure that total is not affected by double conversion problems.
-     *
-     * @param asset The asset for which we want the price
-     */
     resolveAssetPrice(asset: string): BigNumber | undefined {
-      return get(assetPriceInCurrentCurrency(asset));
+      return get(assetPrice(asset));
     },
   };
 

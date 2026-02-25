@@ -114,7 +114,7 @@ describe('useAggregatedBalances', () => {
       perProtocol: [
         createProtocolTestBalance('kraken', 50, 50),
       ],
-      usdPrice: bigNumberify(1),
+      price: bigNumberify(1),
       value: bigNumberify(50),
     }, {
       amount: bigNumberify(220),
@@ -125,7 +125,7 @@ describe('useAggregatedBalances', () => {
         createProtocolTestBalance('kraken', 50, 50),
         createProtocolTestBalance('aave', 20, 20, true),
       ],
-      usdPrice: bigNumberify(1),
+      price: bigNumberify(1),
       value: bigNumberify(220),
     }, {
       amount: bigNumberify(150),
@@ -134,7 +134,7 @@ describe('useAggregatedBalances', () => {
         createProtocolTestBalance('address', 100, 100),
         createProtocolTestBalance('kraken', 50, 50),
       ],
-      usdPrice: bigNumberify(40000),
+      price: bigNumberify(40000),
       value: bigNumberify(150),
     }, {
       amount: bigNumberify(150),
@@ -143,7 +143,7 @@ describe('useAggregatedBalances', () => {
         createProtocolTestBalance('address', 100, 100),
         createProtocolTestBalance('kraken', 50, 50),
       ],
-      usdPrice: bigNumberify(3000),
+      price: bigNumberify(3000),
       value: bigNumberify(150),
     }, {
       amount: bigNumberify(100),
@@ -151,7 +151,7 @@ describe('useAggregatedBalances', () => {
       perProtocol: [
         createProtocolTestBalance('address', 100, 100),
       ],
-      usdPrice: bigNumberify(1),
+      price: bigNumberify(1),
       value: bigNumberify(100),
     }] satisfies AssetBalanceWithPrice[], ['asset']);
 
@@ -239,7 +239,7 @@ describe('useAggregatedBalances', () => {
         perProtocol: [
           createProtocolTestBalance('compound', 100, 100, true),
         ],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(100),
       }]);
     });
@@ -293,7 +293,7 @@ describe('useAggregatedBalances', () => {
 
       expect(result).toMatchObject({
         amount: Zero,
-        usdPrice: Zero,
+        price: Zero,
         value: Zero,
       });
     });
@@ -316,7 +316,7 @@ describe('useAggregatedBalances', () => {
       const result = get(assetPriceInfo('BTC'));
 
       expect(result.amount).toEqual(bigNumberify(1));
-      expect(result.usdPrice).toEqual(bigNumberify(50000));
+      expect(result.price).toEqual(bigNumberify(50000));
       expect(result.value).toEqual(bigNumberify(50000));
     });
 
@@ -357,12 +357,12 @@ describe('useAggregatedBalances', () => {
 
       // Ungrouped should only show ETH balances (no collection grouping)
       expect(ungrouped.amount).toEqual(bigNumberify(3));
-      expect(ungrouped.usdPrice).toEqual(bigNumberify(40000));
+      expect(ungrouped.price).toEqual(bigNumberify(40000));
       expect(ungrouped.value).toEqual(bigNumberify(120000));
 
       // Grouped should include both ETH and WETH in the collection
       expect(grouped.amount).toEqual(bigNumberify(3.5));
-      expect(grouped.usdPrice).toEqual(bigNumberify(40000));
+      expect(grouped.price).toEqual(bigNumberify(40000));
       expect(grouped.value).toEqual(bigNumberify(140000));
     });
 
@@ -373,7 +373,7 @@ describe('useAggregatedBalances', () => {
       const result = get(assetPriceInfo(reactiveAsset));
 
       expect(result).toHaveProperty('amount');
-      expect(result).toHaveProperty('usdPrice');
+      expect(result).toHaveProperty('price');
       expect(result).toHaveProperty('value');
 
       reactiveAsset.value = 'ETH';
@@ -417,7 +417,7 @@ describe('useAggregatedBalances', () => {
 
       // Should use ETH as the main asset (not WETH)
       expect(collectionResult.asset).toBe('ETH');
-      expect(collectionResult.usdPrice).toEqual(bigNumberify(4000));
+      expect(collectionResult.price).toEqual(bigNumberify(4000));
 
       // Should have breakdown only WETH
       expect(collectionResult.breakdown).toHaveLength(1);
@@ -528,7 +528,7 @@ describe('useAggregatedBalances', () => {
           protocol: 'external',
           value: bigNumberify(50),
         }],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(50),
       }, {
         amount: bigNumberify(100),
@@ -539,7 +539,7 @@ describe('useAggregatedBalances', () => {
           protocol: 'external',
           value: bigNumberify(100),
         }],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(100),
       }]);
 
@@ -548,7 +548,7 @@ describe('useAggregatedBalances', () => {
       expect(get(breakdown)).toMatchObject([{
         amount: bigNumberify(150),
         asset: 'ETH',
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(150),
       }]);
     });
@@ -597,7 +597,7 @@ describe('useAggregatedBalances', () => {
             protocol: 'kraken',
             value: bigNumberify(2500),
           }],
-          usdPrice: bigNumberify(-1),
+          price: bigNumberify(-1),
           value: bigNumberify(2500),
         }, {
           amount: bigNumberify(1000),
@@ -607,7 +607,7 @@ describe('useAggregatedBalances', () => {
             protocol: 'kraken',
             value: bigNumberify(1000),
           }],
-          usdPrice: bigNumberify(-1),
+          price: bigNumberify(-1),
           value: bigNumberify(1000),
         }, {
           amount: bigNumberify(500),
@@ -618,7 +618,7 @@ describe('useAggregatedBalances', () => {
             protocol: 'kraken',
             value: bigNumberify(500),
           }],
-          usdPrice: bigNumberify(-1),
+          price: bigNumberify(-1),
           value: bigNumberify(500),
         }],
         perProtocol: [{
@@ -627,7 +627,7 @@ describe('useAggregatedBalances', () => {
           protocol: 'kraken',
           value: bigNumberify(4000),
         }],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(4000),
       }, {
         amount: bigNumberify(2000),
@@ -638,7 +638,7 @@ describe('useAggregatedBalances', () => {
           protocol: 'kraken',
           value: bigNumberify(2000),
         }],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(2000),
       }];
       expect(get(locationBreakdown)).toStrictEqual(expectedResult);
@@ -672,7 +672,7 @@ describe('useAggregatedBalances', () => {
         perProtocol: [
           createProtocolTestBalance('kraken', 1000, 1000),
         ],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(1000),
       }, {
         amount: bigNumberify(1000),
@@ -680,7 +680,7 @@ describe('useAggregatedBalances', () => {
         perProtocol: [
           createProtocolTestBalance('kraken', 1000, 1000),
         ],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(1000),
       }]);
 
@@ -694,7 +694,7 @@ describe('useAggregatedBalances', () => {
         perProtocol: [
           createProtocolTestBalance('kraken', 2000, 2000),
         ],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(2000),
       }]);
     });
@@ -724,7 +724,7 @@ describe('useAggregatedBalances', () => {
         perProtocol: [
           createProtocolTestBalance('kraken', 1000, 1000),
         ],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(1000),
       }, {
         amount: bigNumberify(1000),
@@ -732,7 +732,7 @@ describe('useAggregatedBalances', () => {
         perProtocol: [
           createProtocolTestBalance('kraken', 1000, 1000),
         ],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(1000),
       }]);
 
@@ -746,7 +746,7 @@ describe('useAggregatedBalances', () => {
         perProtocol: [
           createProtocolTestBalance('kraken', 2000, 2000),
         ],
-        usdPrice: bigNumberify(-1),
+        price: bigNumberify(-1),
         value: bigNumberify(2000),
       }]);
     });

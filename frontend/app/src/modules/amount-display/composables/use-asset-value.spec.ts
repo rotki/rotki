@@ -8,7 +8,6 @@ import { useCurrencies } from '@/types/currencies';
 vi.mock('@/modules/prices/use-price-utils', () => ({
   usePriceUtils: (): {
     assetPrice: (asset: string) => ComputedRef<BigNumber | null>;
-    isAssetPriceInCurrentCurrency: () => ComputedRef<boolean>;
   } => ({
     assetPrice: (asset: string): ComputedRef<BigNumber | null> => computed<BigNumber | null>(() => {
       if (asset === 'ETH')
@@ -17,7 +16,6 @@ vi.mock('@/modules/prices/use-price-utils', () => ({
         return bigNumberify(50000);
       return null;
     }),
-    isAssetPriceInCurrentCurrency: (): ComputedRef<boolean> => computed<boolean>(() => true),
   }),
 }));
 

@@ -1,10 +1,11 @@
 import { bigNumberify } from '@rotki/common';
+import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useTaskStore } from '@/store/tasks';
-import { CURRENCY_USD } from '@/types/currencies';
+import { useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
 
 vi.mock('@/store/tasks', () => ({
@@ -34,18 +35,19 @@ describe('usePriceTaskManager', () => {
   });
 
   describe('fetchPrices', () => {
-    const createMockPriceResponse = (assets: Record<string, [number, number]>): PriceResponse => ({
+    const createMockPriceResponse = (assets: Record<string, [number, number]>, targetAsset = 'USD'): PriceResponse => ({
       assets,
       oracles: {
         [PriceOracle.COINGECKO]: 0,
         [PriceOracle.MANUALCURRENT]: 1,
       },
-      targetAsset: CURRENCY_USD,
+      targetAsset,
     });
 
     const executeFetchPrices = async (
       assets: string[],
       mockResponse: PriceResponse,
+      expectedCurrency = 'USD',
     ): Promise<void> => {
       vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
         meta: { title: '' },
@@ -57,7 +59,7 @@ describe('usePriceTaskManager', () => {
         selectedAssets: assets,
       });
 
-      expect(usePriceApi().queryPrices).toHaveBeenCalledWith(assets, CURRENCY_USD, false);
+      expect(usePriceApi().queryPrices).toHaveBeenCalledWith(assets, expectedCurrency, false);
     };
 
     it('should update the prices when fetchPrices is called', async () => {
@@ -90,6 +92,18 @@ describe('usePriceTaskManager', () => {
           value: bigNumberify(2),
         },
       });
+    });
+
+    it('should use the selected currency symbol when fetching prices', async () => {
+      const { findCurrency } = useCurrencies();
+      updateGeneralSettings({ mainCurrency: findCurrency('EUR') });
+
+      const mockPricesResponse = createMockPriceResponse({ DAI: [1, 0] }, 'EUR');
+
+      await executeFetchPrices(['DAI'], mockPricesResponse, 'EUR');
+
+      // Reset to USD for other tests
+      updateGeneralSettings({ mainCurrency: findCurrency('USD') });
     });
   });
 

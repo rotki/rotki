@@ -1,9 +1,7 @@
 import { bigNumberify } from '@rotki/common';
-import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useCurrencies } from '@/types/currencies';
 
 describe('usePriceUtils', () => {
   let store: ReturnType<typeof useBalancePricesStore>;
@@ -43,15 +41,6 @@ describe('usePriceUtils', () => {
     });
   });
 
-  it('should convert the price toSelectedCurrency', () => {
-    const { findCurrency } = useCurrencies();
-    updateGeneralSettings({ mainCurrency: findCurrency('EUR') });
-
-    const convertedValue = utils.toSelectedCurrency(bigNumberify(10));
-
-    expect(get(convertedValue)).toEqual(bigNumberify(15));
-  });
-
   describe('assetPrice', () => {
     it('should return the price if it is found', () => {
       expect(get(utils.assetPrice('DAI'))).toEqual(bigNumberify(1));
@@ -62,13 +51,32 @@ describe('usePriceUtils', () => {
     });
   });
 
+  describe('getAssetPrice', () => {
+    it('should return the price if it is found', () => {
+      expect(utils.getAssetPrice('DAI')).toEqual(bigNumberify(1));
+    });
+
+    it('should return undefined if the price is not found', () => {
+      expect(utils.getAssetPrice('BTC')).toEqual(undefined);
+    });
+
+    it('should return the default value if the price is not found', () => {
+      expect(utils.getAssetPrice('BTC', bigNumberify(0))).toEqual(bigNumberify(0));
+    });
+  });
+
+  describe('hasCachedPrice', () => {
+    it('should return true if the asset has a cached price', () => {
+      expect(utils.hasCachedPrice('DAI')).toBe(true);
+    });
+
+    it('should return false if the asset has no cached price', () => {
+      expect(utils.hasCachedPrice('BTC')).toBe(false);
+    });
+  });
+
   it('should return if it isManualAssetPrice', () => {
     expect(get(utils.isManualAssetPrice('DAI'))).toBe(false);
     expect(get(utils.isManualAssetPrice('ETH'))).toBe(true);
-  });
-
-  it('should return if isAssetPriceInCurrentCurrency', () => {
-    expect(get(utils.isAssetPriceInCurrentCurrency('DAI'))).toBe(false);
-    expect(get(utils.isAssetPriceInCurrentCurrency('ETH'))).toBe(false);
   });
 });

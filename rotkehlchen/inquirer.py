@@ -89,6 +89,7 @@ from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETH,
     A_ETH2,
+    A_EUR,
     A_FARM_CRVRENWBTC,
     A_FARM_DAI,
     A_FARM_RENBTC,
@@ -352,6 +353,8 @@ class Inquirer:
     _msg_aggregator: 'MessagesAggregator'
     # save only the identifier of the special tokens since we only check if assets are in this set
     special_tokens: set[str]
+    # asset identifiers in the EURe collection (collection_id=240), pegged to EUR
+    eur_pegged_assets: set[str]
     weth: EvmToken
     usd: FiatAsset
 
@@ -421,6 +424,9 @@ class Inquirer:
             A_3CRV.identifier,
             'eip155:1/erc20:0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D',  # vTHOR
         }
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute('SELECT asset FROM multiasset_mappings WHERE collection_id=240')
+            Inquirer.eur_pegged_assets = {row[0] for row in cursor}
         try:
             Inquirer.usd = A_USD.resolve_to_fiat_asset()
             Inquirer.weth = A_WETH.resolve_to_evm_token()
@@ -642,30 +648,41 @@ class Inquirer:
         Returns a tuple containing a list of assets without prices and a dict of found prices.
         For non-USD target currencies, converts the USD prices to the target currency.
         """
-        found_prices, assets_without_special_price = {}, []
+        usd_found_prices, found_prices, assets_without_special_price, eur_collection_assets = {}, {}, [], []  # noqa: E501
         for from_asset in from_assets:
             if from_asset == A_BSQ:
                 # BSQ is defined as 100 satohis but can be traded. Before we were using an api
                 # to query the BSQ market but it isn't available anymore so we assume BTC_PER_BSQ
                 # to obtain a price based on BTC price.
                 btc_price = Inquirer.find_usd_price(A_BTC)
-                found_prices[from_asset] = Price(BTC_PER_BSQ * btc_price), CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
+                usd_found_prices[from_asset] = Price(BTC_PER_BSQ * btc_price), CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
             elif from_asset == A_KFEE:  # KFEE is a kraken special asset where 1000 KFEE = 10 USD
-                found_prices[from_asset] = Price(FVal(0.01)), CurrentPriceOracle.FIAT
+                usd_found_prices[from_asset] = Price(FVal(0.01)), CurrentPriceOracle.FIAT
+            elif from_asset.identifier in Inquirer.eur_pegged_assets:
+                eur_collection_assets.append(from_asset)
             elif (price_and_oracle := Inquirer._maybe_get_evm_token_usd_price(asset=from_asset)) is not None:  # noqa: E501
-                found_prices[from_asset] = price_and_oracle
+                usd_found_prices[from_asset] = price_and_oracle
             else:
                 assets_without_special_price.append(from_asset)
 
         if (
                 to_asset != A_USD and
-                len(found_prices) > 0 and
+                len(usd_found_prices) > 0 and
                 (rate_price := Inquirer.find_price(from_asset=A_USD, to_asset=to_asset)) != ZERO_PRICE  # noqa: E501
         ):  # convert USD prices to target currency if needed
             found_prices = {
                 asset: (Price(price * rate_price), oracle)
-                for asset, (price, oracle) in found_prices.items()
+                for asset, (price, oracle) in usd_found_prices.items()
             }
+        else:
+            found_prices = usd_found_prices
+
+        if (  # EURe collection assets are pegged to EUR
+                len(eur_collection_assets) > 0 and
+                (eur_to_target := Inquirer.find_price(from_asset=A_EUR, to_asset=to_asset)) != ZERO_PRICE  # noqa: E501
+        ):
+            for from_asset in eur_collection_assets:
+                found_prices[from_asset] = eur_to_target, CurrentPriceOracle.FIAT
 
         return assets_without_special_price, found_prices
 

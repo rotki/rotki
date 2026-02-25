@@ -1,5 +1,4 @@
-import type { Balance, BigNumber } from '@rotki/common';
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { Balance } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 import type {
   AssetProtocolBalances,
@@ -8,12 +7,9 @@ import type {
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import type { AssetPrices } from '@/types/prices';
 
-type AssetPriceGetter = (asset: string) => BigNumber | undefined;
-
 export function updateBalancesPrices(
   balances: AssetProtocolBalances,
   prices: AssetPrices,
-  getAssetPriceInCurrentCurrency?: AssetPriceGetter,
 ): AssetProtocolBalances {
   // Early return for empty objects
   const balanceKeys = Object.keys(balances);
@@ -38,14 +34,12 @@ export function updateBalancesPrices(
     }
 
     const protocolResult: typeof protocols = {};
-    const currentCurrencyPrice = getAssetPriceInCurrentCurrency?.(asset);
 
     for (const protocol of protocolKeys) {
       const balance = protocols[protocol];
-      const priceToUse = currentCurrencyPrice ?? assetPrice.value;
       const newBalance: Balance = {
         amount: balance.amount,
-        value: priceToUse ? balance.amount.times(priceToUse) : balance.value,
+        value: assetPrice.value ? balance.amount.times(assetPrice.value) : balance.value,
       };
       protocolResult[protocol] = newBalance;
     }
@@ -57,7 +51,6 @@ export function updateBalancesPrices(
 export function updateExchangeBalancesPrices(
   balances: AssetBalances,
   prices: AssetPrices,
-  getAssetPriceInCurrentCurrency?: AssetPriceGetter,
 ): AssetBalances {
   // Early return for empty objects
   const balanceKeys = Object.keys(balances);
@@ -75,11 +68,9 @@ export function updateExchangeBalancesPrices(
       continue;
     }
 
-    const currentCurrencyPrice = getAssetPriceInCurrentCurrency?.(asset);
-    const priceToUse = currentCurrencyPrice ?? assetPrice.value;
     result[asset] = {
       amount: assetInfo.amount,
-      value: priceToUse ? assetInfo.amount.times(priceToUse) : assetInfo.value,
+      value: assetPrice.value ? assetInfo.amount.times(assetPrice.value) : assetInfo.value,
     };
   }
   return result;
@@ -88,7 +79,6 @@ export function updateExchangeBalancesPrices(
 export function updateBlockchainAssetBalances(
   balances: Record<string, BlockchainAssetBalances>,
   prices: AssetPrices,
-  getAssetPriceInCurrentCurrency?: AssetPriceGetter,
 ): Record<string, BlockchainAssetBalances> {
   // Early return for empty objects
   const chainKeys = Object.keys(balances);
@@ -111,8 +101,8 @@ export function updateBlockchainAssetBalances(
     for (const address of addressKeys) {
       const { assets, liabilities } = chainBalances[address];
       chainResult[address] = {
-        assets: updateBalancesPrices(assets, prices, getAssetPriceInCurrentCurrency),
-        liabilities: updateBalancesPrices(liabilities, prices, getAssetPriceInCurrentCurrency),
+        assets: updateBalancesPrices(assets, prices),
+        liabilities: updateBalancesPrices(liabilities, prices),
       };
     }
     result[chain] = chainResult;
@@ -120,7 +110,7 @@ export function updateBlockchainAssetBalances(
   return result;
 }
 
-export function updateManualBalancePrices(data: ManualBalanceWithValue[], prices: AssetPrices, assetPriceInCurrentCurrency: (asset: MaybeRef<string>) => ComputedRef<BigNumber>): ManualBalanceWithValue[] {
+export function updateManualBalancePrices(data: ManualBalanceWithValue[], prices: AssetPrices): ManualBalanceWithValue[] {
   return data.map((item) => {
     const assetPrice = prices[item.asset];
     if (!assetPrice)
@@ -128,7 +118,7 @@ export function updateManualBalancePrices(data: ManualBalanceWithValue[], prices
 
     return {
       ...item,
-      value: item.amount.times(get(assetPriceInCurrentCurrency(item.asset))),
+      value: assetPrice.value ? item.amount.times(assetPrice.value) : item.value,
     };
   });
 }

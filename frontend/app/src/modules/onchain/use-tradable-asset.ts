@@ -15,7 +15,7 @@ interface UseTradableAssetReturn {
 
 export function useTradableAsset(address: MaybeRef<string | undefined>): UseTradableAssetReturn {
   const { balances } = storeToRefs(useBalancesStore());
-  const { assetPriceInCurrentCurrency } = usePriceUtils();
+  const { assetPrice } = usePriceUtils();
   const { supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
   const { getNativeAsset, isEvm } = useSupportedChains();
 
@@ -88,14 +88,14 @@ export function useTradableAsset(address: MaybeRef<string | undefined>): UseTrad
 
     // Pre-fetch all prices
     for (const assetId of uniqueAssets) {
-      priceCache.set(assetId, get(assetPriceInCurrentCurrency(assetId)));
+      priceCache.set(assetId, get(assetPrice(assetId)));
     }
 
     return assets.map((item) => {
-      const price = priceCache.get(item.asset)!;
+      const price = priceCache.get(item.asset);
       return {
         ...item,
-        fiatValue: price.multipliedBy(item.amount),
+        fiatValue: price?.multipliedBy(item.amount),
         price,
       };
     }).sort((a, b) => {

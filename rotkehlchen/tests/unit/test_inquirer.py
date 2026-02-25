@@ -629,6 +629,70 @@ def test_bsq_price_non_usd(inquirer: 'Inquirer') -> None:
     assert bsq_eur_price.is_close(btc_eur_price * BTC_PER_BSQ, max_diff='0.0001'), 'BSQ price in EUR should be close to BTC price in EUR * BTC_PER_BSQ'  # noqa: E501
 
 
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_eur_pegged_asset_special_price(inquirer: 'Inquirer') -> None:
+    """Test that assets in the EURe collection (collection 240) are priced
+    using the EUR exchange rate via _get_special_prices."""
+    from rotkehlchen.constants.assets import A_ETH_EURE
+
+    # Verify the asset is loaded in the cached set
+    assert A_ETH_EURE.identifier in Inquirer.eur_pegged_assets
+
+    # Test pricing to USD: EUR→USD rate is used
+    eur_usd_rate = Price(FVal('1.1'))
+    with patch.object(Inquirer, 'find_price', return_value=eur_usd_rate):
+        assets_without_price, found_prices = Inquirer._get_special_prices(
+            from_assets=[A_ETH_EURE],
+            to_asset=A_USD,
+        )
+
+    assert len(assets_without_price) == 0
+    assert A_ETH_EURE in found_prices
+    price, oracle = found_prices[A_ETH_EURE]
+    assert price == eur_usd_rate
+    assert oracle == CurrentPriceOracle.FIAT
+
+    # Test that when EUR→target price is zero, the asset is not priced
+    with patch.object(Inquirer, 'find_price', return_value=ZERO_PRICE):
+        assets_without_price, found_prices = Inquirer._get_special_prices(
+            from_assets=[A_ETH_EURE],
+            to_asset=A_USD,
+        )
+
+    assert A_ETH_EURE not in found_prices
+    assert len(assets_without_price) == 0  # it's still not in the "without price" list
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_eur_pegged_asset_special_price_non_usd(inquirer: 'Inquirer') -> None:
+    """Test that EURe collection assets are correctly priced in non-USD target currencies."""
+    from rotkehlchen.constants.assets import A_ETH_EURE
+
+    eur_jpy_rate = Price(FVal('162.5'))
+
+    def mock_find_price(from_asset, to_asset, **kwargs):  # pylint: disable=unused-argument
+        if from_asset == A_EUR:
+            return eur_jpy_rate
+        return ZERO_PRICE
+
+    with patch.object(Inquirer, 'find_price', side_effect=mock_find_price):
+        assets_without_price, found_prices = Inquirer._get_special_prices(
+            from_assets=[A_ETH_EURE, A_KFEE],
+            to_asset=A_JPY,
+        )
+
+    assert len(assets_without_price) == 0
+    # EURe should be priced at the EUR→JPY rate
+    price, oracle = found_prices[A_ETH_EURE]
+    assert price == eur_jpy_rate
+    assert oracle == CurrentPriceOracle.FIAT
+    # KFEE has a USD price of 0.01, but USD→JPY returned ZERO_PRICE
+    # so it falls back to the raw USD price
+    kfee_price, kfee_oracle = found_prices[A_KFEE]
+    assert kfee_price == Price(FVal('0.01'))
+    assert kfee_oracle == CurrentPriceOracle.FIAT
+
+
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_asset_with_no_api_oracles(inquirer_defi):
