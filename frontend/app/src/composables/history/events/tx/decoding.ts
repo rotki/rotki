@@ -5,8 +5,8 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { snakeCaseTransformer } from '@/modules/api/transformers';
 import { EvmUndecodedTransactionResponse } from '@/modules/messaging/types';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useHistoryStore } from '@/store/history';
-import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import {
   type PullEthBlockEventPayload,
@@ -23,7 +23,7 @@ import { logger } from '@/utils/logging';
 
 export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
 
   const {
     decodeTransactions,
@@ -85,18 +85,14 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         resetUndecodedTransactionsStatus();
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isTaskCancelled(error))
         return;
 
       const description = t('actions.history.fetch_undecoded_transactions.error.message', {
-        message: error.message,
+        message: getErrorMessage(error),
       });
-      notify({
-        display: true,
-        message: description,
-        title,
-      });
+      notifyError(title, description);
     }
   };
 
@@ -135,14 +131,13 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     catch (error) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.transactions_redecode_by_chain.error.description', {
+        notifyError(
+          t('actions.transactions_redecode_by_chain.error.title'),
+          t('actions.transactions_redecode_by_chain.error.description', {
             chain: get(getChainName(chain)),
             error,
           }),
-          title: t('actions.transactions_redecode_by_chain.error.title'),
-        });
+        );
       }
     }
   };
@@ -182,13 +177,12 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   };
 
   const pullAndDecodeTransactions = async (payload: PullTransactionPayload): Promise<void> => {
-    const notifyUser = (error: string): void => notify({
-      display: true,
-      message: t('actions.transactions_redecode.error.description', {
+    const notifyUser = (error: string): void => notifyError(
+      t('actions.transactions_redecode.error.title'),
+      t('actions.transactions_redecode.error.description', {
         error,
       }),
-      title: t('actions.transactions_redecode.error.title'),
-    });
+    );
 
     try {
       const taskType = TaskType.TRANSACTIONS_DECODING;
@@ -221,13 +215,13 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         notifyUser(message ?? '');
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isTaskCancelled(error)) {
         return;
       }
 
       logger.error(error);
-      notifyUser(error);
+      notifyUser(getErrorMessage(error));
     }
   };
 
@@ -323,16 +317,15 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       if (result)
         clearDependedSection();
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.eth_block_events_redecoding.error.description', {
+        notifyError(
+          t('actions.eth_block_events_redecoding.error.title'),
+          t('actions.eth_block_events_redecoding.error.description', {
             error,
           }),
-          title: t('actions.eth_block_events_redecoding.error.title'),
-        });
+        );
       }
     }
   };

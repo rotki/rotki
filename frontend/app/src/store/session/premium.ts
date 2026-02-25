@@ -2,6 +2,7 @@ import type { ActionStatus } from '@/types/action';
 import type { PremiumCapabilities, PremiumCredentialsPayload } from '@/types/session';
 import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 export const usePremiumStore = defineStore('session/premium', () => {
@@ -24,8 +25,8 @@ export const usePremiumStore = defineStore('session/premium', () => {
 
       return { success };
     }
-    catch (error: any) {
-      let errors: string | ValidationErrors = error.message;
+    catch (error: unknown) {
+      let errors: string | ValidationErrors = getErrorMessage(error);
       if (error instanceof ApiValidationError) {
         errors = error.getValidationErrors({
           apiKey,
@@ -50,9 +51,9 @@ export const usePremiumStore = defineStore('session/premium', () => {
 
       return { success };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       return {
-        message: error.message,
+        message: getErrorMessage(error),
         success: false,
       };
     }
@@ -64,7 +65,7 @@ export const usePremiumStore = defineStore('session/premium', () => {
         const result = await api.getPremiumCapabilities();
         set(capabilities, result);
       }
-      catch (error: any) {
+      catch (error: unknown) {
         logger.error('Failed to fetch premium capabilities:', error);
       }
     }

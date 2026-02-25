@@ -6,6 +6,7 @@ import { useBackupApi } from '@/composables/api/backup';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useNotificationsStore } from '@/store/notifications';
 import { size } from '@/utils/data';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface UserDbInfo {
@@ -88,12 +89,12 @@ async function loadInfo() {
     set(loading, true);
     set(backupInfo, await info());
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
     notify({
       display: true,
       message: t('database_backups.load_error.message', {
-        message: error.message,
+        message: getErrorMessage(error),
       }),
       title: t('database_backups.load_error.title'),
     });

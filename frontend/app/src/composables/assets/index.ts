@@ -10,7 +10,7 @@ import type {
 import type { TaskMeta } from '@/types/task';
 import { useAssetsApi } from '@/composables/api/assets';
 import { useInterop } from '@/composables/electron-interop';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
@@ -45,7 +45,7 @@ export function useAssets(): UseAssetsReturn {
     restoreAssetsDatabase: restoreAssetsDatabaseCaller,
   } = useAssetsApi();
 
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
 
   const checkForUpdate = async (): Promise<AssetUpdateCheckResult> => {
     try {
@@ -60,18 +60,14 @@ export function useAssets(): UseAssetsReturn {
         versions: result,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         const title = t('actions.assets.versions.task.title');
         const description = t('actions.assets.versions.error.description', {
-          message: error.message,
+          message: getErrorMessage(error),
         }).toString();
 
-        notify({
-          display: true,
-          message: description,
-          title,
-        });
+        notifyError(title, description);
       }
       return {
         updateAvailable: false,
@@ -96,17 +92,13 @@ export function useAssets(): UseAssetsReturn {
         done: false,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         const title = t('actions.assets.update.task.title');
         const description = t('actions.assets.update.error.description', {
-          message: error.message,
+          message: getErrorMessage(error),
         }).toString();
-        notify({
-          display: true,
-          message: description,
-          title,
-        });
+        notifyError(title, description);
       }
       return {
         done: false,
@@ -124,8 +116,8 @@ export function useAssets(): UseAssetsReturn {
         success,
       };
     }
-    catch (error: any) {
-      let message: string | ValidationErrors = error.message;
+    catch (error: unknown) {
+      let message: string | ValidationErrors = getErrorMessage(error);
       if (error instanceof ApiValidationError)
         message = error.getValidationErrors({ sourceIdentifier, targetIdentifier });
 
@@ -148,12 +140,12 @@ export function useAssets(): UseAssetsReturn {
         success: true,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error))
         logger.error(error);
 
       return {
-        message: error.message,
+        message: getErrorMessage(error),
         success: false,
       };
     }
@@ -183,12 +175,12 @@ export function useAssets(): UseAssetsReturn {
 
       return { directory, filePath: result.filePath };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error))
         logger.error(error);
 
       return {
-        message: error.message,
+        message: getErrorMessage(error),
         success: false,
       };
     }
@@ -205,12 +197,12 @@ export function useAssets(): UseAssetsReturn {
         success: true,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error))
         logger.error(error);
 
       return {
-        message: error.message,
+        message: getErrorMessage(error),
         success: false,
       };
     }

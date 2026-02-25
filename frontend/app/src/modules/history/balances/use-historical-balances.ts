@@ -25,6 +25,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
+import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseHistoricalBalancesReturn {
   balances: ComputedRef<AssetBalanceWithPrice[]>;
@@ -275,7 +276,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
         timestamp: ts,
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (error instanceof ApiValidationError) {
         const payload = { asset: get(selectedAsset) };
         const errors = error.getValidationErrors(payload);
@@ -287,11 +288,14 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
           set(fieldErrors, errors);
         }
       }
-      else if (error.message?.includes('404') || error.message?.includes('No historical data')) {
-        set(errorMessage, t('historical_balances.no_data'));
-      }
       else {
-        set(errorMessage, error.message);
+        const message = getErrorMessage(error);
+        if (message.includes('404') || message.includes('No historical data')) {
+          set(errorMessage, t('historical_balances.no_data'));
+        }
+        else {
+          set(errorMessage, message);
+        }
       }
 
       set(loading, false);

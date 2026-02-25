@@ -73,7 +73,7 @@ export class IndexedDb {
 
       request.onerror = (e: any): void => callback?.(e.target.error);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       this.logger.error(error);
     }
   }
@@ -95,7 +95,7 @@ export class IndexedDb {
       };
       request.onerror = (e: any): void => callback(e.target.error);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       this.logger.error(error);
     }
   }

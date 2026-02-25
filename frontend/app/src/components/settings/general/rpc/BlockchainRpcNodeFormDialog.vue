@@ -9,6 +9,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const model = defineModel<BlockchainRpcNodeManageState | undefined>({ required: true });
 
@@ -73,7 +74,7 @@ async function save() {
     resetForm();
     emit('complete');
   }
-  catch (error: any) {
+  catch (error: unknown) {
     const chainProp = get(chainName);
     const errorTitle = editing
       ? t('evm_rpc_node_manager.edit_error.title', { chain: chainProp })
@@ -99,7 +100,7 @@ async function save() {
     }
     else {
       setMessage({
-        description: error.message,
+        description: getErrorMessage(error),
         success: false,
         title: errorTitle,
       });

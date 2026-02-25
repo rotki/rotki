@@ -4,6 +4,7 @@ import { useUsersApi } from '@/composables/api/session/users';
 import { useInterop } from '@/composables/electron-interop';
 import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface UseChangePasswordReturn {
@@ -30,7 +31,7 @@ export function useChangePassword(): UseChangePasswordReturn {
           await colibriLogout();
           await colibriLogin({ username: get(username), password: newPassword });
         }
-        catch (error: any) {
+        catch (error: unknown) {
           logger.error('Failed to re-authenticate with colibri after password change', error);
         }
 
@@ -45,14 +46,15 @@ export function useChangePassword(): UseChangePasswordReturn {
         success,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
       setMessage({
         description: t('actions.session.password_change.error', {
-          message: error.message,
+          message,
         }),
       });
       return {
-        message: error.message,
+        message,
         success: false,
       };
     }

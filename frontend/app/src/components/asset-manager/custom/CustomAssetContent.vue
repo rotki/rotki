@@ -10,6 +10,7 @@ import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useCommonTableProps } from '@/modules/table/use-common-table-props';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const { identifier = null, mainPage = false } = defineProps<{
   identifier?: string | null;
@@ -35,11 +36,11 @@ async function deleteAsset(assetId: string) {
     if (success)
       await refresh();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     setMessage({
       description: t('asset_management.delete_error', {
         address: assetId,
-        message: error.message,
+        message: getErrorMessage(error),
       }),
     });
   }

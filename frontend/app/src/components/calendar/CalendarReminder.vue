@@ -4,6 +4,7 @@ import type { CalendarReminderTemporaryPayload, CalenderReminderPayload } from '
 import CalendarReminderEntry from '@/components/calendar/CalendarReminderEntry.vue';
 import { useCalendarReminderApi } from '@/composables/history/calendar/reminder';
 import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 const modelValue = defineModel<CalendarEvent>({ required: true });
@@ -58,12 +59,12 @@ async function addCalendarReminderHandler(reminders: CalenderReminderPayload[]) 
       });
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
     notify({
       display: true,
       message: t('calendar.reminder.add_error.message', {
-        message: error.message,
+        message: getErrorMessage(error),
       }),
       title: t('calendar.reminder.add_error.title'),
     });
@@ -83,12 +84,12 @@ async function refreshTemporaryData() {
     const newData = [...sortedReminders.map(item => ({ ...item, isTemporary: false })), ...oldData];
     set(temporaryData, newData);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
     notify({
       display: true,
       message: t('calendar.reminder.fetch_error.message', {
-        message: error.message,
+        message: getErrorMessage(error),
       }),
       title: t('calendar.reminder.fetch_error.title'),
     });
@@ -144,12 +145,12 @@ async function deleteData(index: number) {
     try {
       await deleteCalendarReminder(data.identifier);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       notify({
         display: true,
         message: t('calendar.reminder.delete_error.message', {
-          message: error.message,
+          message: getErrorMessage(error),
         }),
         title: t('calendar.reminder.delete_error.title'),
       });
@@ -177,12 +178,12 @@ async function updateData(index: number, { secsBefore }: CalendarReminderTempora
           secsBefore,
         });
       }
-      catch (error: any) {
+      catch (error: unknown) {
         logger.error(error);
         notify({
           display: true,
           message: t('calendar.reminder.edit_error.message', {
-            message: error.message,
+            message: getErrorMessage(error),
           }),
           title: t('calendar.reminder.edit_error.title'),
         });

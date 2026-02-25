@@ -5,6 +5,7 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTaskStore } from '@/store/tasks';
 import { NftResponse } from '@/types/nfts';
 import { TaskType } from '@/types/task-type';
+import { getErrorMessage } from '@/utils/error-handling';
 import { getDomain } from '@/utils/url';
 
 interface UseNftsReturn {
@@ -33,9 +34,9 @@ export function useNfts(): UseNftsReturn {
         result: NftResponse.parse(result),
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       return {
-        message: error.message,
+        message: getErrorMessage(error),
         result: null,
       };
     }

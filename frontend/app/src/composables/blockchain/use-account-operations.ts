@@ -9,8 +9,8 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -42,7 +42,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   const { getAddresses } = useAccountAddresses();
 
   const { awaitTask } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const { resetStatus: resetNftSectionStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
@@ -102,16 +102,15 @@ export function useAccountOperations(): UseAccountOperationsReturn {
         title: t('actions.detect_evm_accounts.task.title'),
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.detect_evm_accounts.error.message', {
-            message: error.message,
+        notifyError(
+          t('actions.detect_evm_accounts.error.title'),
+          t('actions.detect_evm_accounts.error.message', {
+            message: getErrorMessage(error),
           }),
-          title: t('actions.detect_evm_accounts.error.title'),
-        });
+        );
       }
     }
   };

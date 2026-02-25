@@ -2,8 +2,8 @@ import type { Ref } from 'vue';
 import type { NonFungibleBalance } from '@/types/nfbalances';
 import type { ManualPriceFormPayload } from '@/types/prices';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useConfirmStore } from '@/store/confirm';
-import { useNotificationsStore } from '@/store/notifications';
 
 interface UseNftPriceManagementReturn {
   customPrice: Ref<ManualPriceFormPayload | null>;
@@ -17,7 +17,7 @@ export function useNftPriceManagement(
   fetchData: () => Promise<void>,
 ): UseNftPriceManagementReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { deleteLatestPrice } = useAssetPricesApi();
   const { show } = useConfirmStore();
 
@@ -30,13 +30,12 @@ export function useNftPriceManagement(
       await fetchData();
     }
     catch {
-      notify({
-        display: true,
-        message: t('assets.custom_price.delete.error.message', {
+      notifyError(
+        t('assets.custom_price.delete.error.title'),
+        t('assets.custom_price.delete.error.message', {
           asset: toDeletePrice.name ?? toDeletePrice.id,
         }),
-        title: t('assets.custom_price.delete.error.title'),
-      });
+      );
     }
   }
 

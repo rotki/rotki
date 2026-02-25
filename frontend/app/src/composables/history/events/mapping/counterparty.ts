@@ -4,6 +4,7 @@ import { isValidEthAddress, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 interface Counterparty {
@@ -23,7 +24,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
     try {
       set(dataEntries, await getHistoryEventCounterpartiesData());
     }
-    catch (error: any) {
+    catch (error: unknown) {
       notify({
         action: [
           {
@@ -34,7 +35,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
         ],
         display: true,
         message: t('actions.fetch_counterparties.error.description', {
-          message: error.message,
+          message: getErrorMessage(error),
         }),
         title: t('actions.fetch_counterparties.error.title'),
       });

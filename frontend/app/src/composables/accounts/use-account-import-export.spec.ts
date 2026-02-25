@@ -8,7 +8,6 @@ import { useAccountImportExport } from '@/composables/accounts/use-account-impor
 import { useTagsApi } from '@/composables/api/tags';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts/index';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useNotificationsStore } from '@/store/notifications/index';
 import { createAccount, createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { downloadFileByTextContent } from '@/utils/download';
 
@@ -88,14 +87,15 @@ vi.mock('@/composables/blockchain/use-account-addition-notifications', () => ({
   })),
 }));
 
-vi.mock('@/store/notifications', () => {
-  const mock = {
-    notify: vi.fn(),
-  };
-  return {
-    useNotificationsStore: vi.fn().mockReturnValue(mock),
-  };
-});
+const mockNotifyError = vi.fn();
+const mockNotifyInfo = vi.fn();
+
+vi.mock('@/modules/notifications/use-notifications', () => ({
+  useNotifications: vi.fn((): { notifyError: typeof mockNotifyError; notifyInfo: typeof mockNotifyInfo } => ({
+    notifyError: mockNotifyError,
+    notifyInfo: mockNotifyInfo,
+  })),
+}));
 
 vi.mock('@/utils/download', () => ({
   downloadFileByTextContent: vi.fn(),
@@ -273,7 +273,6 @@ describe('useAccountImportExport', () => {
     });
 
     it('should not import from csv with missing headers', async () => {
-      const { notify } = useNotificationsStore();
       const mockFile = createMockCSV([
         'label,tags',
         'Name1,tag1;tag2',
@@ -283,11 +282,10 @@ describe('useAccountImportExport', () => {
       const { importAccounts } = useAccountImportExport();
 
       await expect(importAccounts(mockFile)).resolves.toBeUndefined();
-      expect(notify).toHaveBeenCalledWith({
-        display: true,
-        message: 'blockchain_balances.import_error.invalid_format',
-        title: 'blockchain_balances.import_blockchain_accounts',
-      });
+      expect(mockNotifyError).toHaveBeenCalledWith(
+        'blockchain_balances.import_blockchain_accounts',
+        'blockchain_balances.import_error.invalid_format',
+      );
     });
 
     it('should import an xpub address', async () => {

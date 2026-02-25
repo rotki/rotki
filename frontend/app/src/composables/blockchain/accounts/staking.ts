@@ -14,6 +14,7 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface UseEthStakingReturn {
@@ -71,11 +72,11 @@ export function useEthStaking(): UseEthStakingReturn {
         success: result,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error))
         logger.error(error);
 
-      let message = error.message;
+      let message: ValidationErrors | string = getErrorMessage(error);
       if (error instanceof ApiValidationError)
         message = error.getValidationErrors(payload);
 
@@ -94,9 +95,9 @@ export function useEthStaking(): UseEthStakingReturn {
       const success = await editEth2ValidatorCaller(payload);
       return { message: '', success };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      let message = error.message;
+      let message: ValidationErrors | string = getErrorMessage(error);
       if (error instanceof ApiValidationError)
         message = error.getValidationErrors(payload);
 
@@ -124,11 +125,11 @@ export function useEthStaking(): UseEthStakingReturn {
       }
       return success;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       setMessage({
         description: t('actions.delete_eth2_validator.error.description', {
-          message: error.message,
+          message: getErrorMessage(error),
         }),
         success: false,
         title: t('actions.delete_eth2_validator.error.title'),

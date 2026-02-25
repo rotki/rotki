@@ -26,7 +26,7 @@ async function fetchSvg(): Promise<string | null> {
   try {
     return await ofetch(url, { responseType: 'text' });
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
     return null;
   }

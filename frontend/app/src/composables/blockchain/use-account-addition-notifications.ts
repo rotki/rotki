@@ -1,8 +1,7 @@
 import type { EvmAccountsResult } from '@/types/api/accounts';
 import type { AccountPayload } from '@/types/blockchain/accounts';
-import { Severity } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 
 interface NotificationParams { account: AccountPayload; isAll: boolean; chains: string[] }
 
@@ -17,7 +16,7 @@ interface UseAccountAdditionNotificationsReturn {
 
 export function useAccountAdditionNotifications(): UseAccountAdditionNotificationsReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notifyError, notifyInfo, notifyWarning } = useNotifications();
   const { getChainName } = useSupportedChains();
 
   const getChainsText = (chains: string[], explanation?: string): string => chains.map((chain) => {
@@ -29,15 +28,13 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
   }).join('\n');
 
   const notifyUser = ({ account, chains, isAll }: NotificationParams): void => {
-    notify({
-      display: true,
-      message: t('actions.balances.blockchain_accounts_add.success.description', {
+    notifyInfo(
+      t('actions.balances.blockchain_accounts_add.task.title', { blockchain: 'EVM' }),
+      t('actions.balances.blockchain_accounts_add.success.description', {
         address: account.address,
         list: !isAll ? getChainsText(chains) : '',
       }, isAll ? 1 : 2),
-      severity: Severity.INFO,
-      title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: 'EVM' }),
-    });
+    );
   };
 
   const notifyFailedToAddAddress = (accounts: AccountPayload[], address: number, blockchain: string = 'EVM'): void => {
@@ -48,11 +45,7 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
       list: accounts.map(({ address }) => `- ${address}`).join('\n'),
     });
 
-    notify({
-      display: true,
-      message,
-      title,
-    });
+    notifyError(title, message);
   };
 
   function createFailureNotification(
@@ -80,15 +73,13 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
     if (listOfFailureText.length <= 0)
       return;
 
-    notify({
-      display: true,
-      message: t('actions.balances.blockchain_accounts_add.error.failed', {
+    notifyWarning(
+      t('actions.balances.blockchain_accounts_add.task.title', { blockchain: 'EVM' }),
+      t('actions.balances.blockchain_accounts_add.error.failed', {
         address: account.address,
         list: listOfFailureText.join('\n'),
       }),
-      severity: Severity.WARNING,
-      title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: 'EVM' }),
-    });
+    );
   }
 
   return {

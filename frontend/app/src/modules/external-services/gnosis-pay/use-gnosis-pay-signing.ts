@@ -127,14 +127,14 @@ Issued At: ${issuedAt}`;
         throw new Error(t('external_services.gnosispay.siwe.failed'));
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         if (isUserRejectedError(error)) {
           setError(GnosisPayError.SIGNATURE_REJECTED);
         }
         else {
           setMessage({
-            description: error.toString(),
+            description: String(error),
             success: false,
             title: t('external_services.gnosispay.siwe.failed'),
           });

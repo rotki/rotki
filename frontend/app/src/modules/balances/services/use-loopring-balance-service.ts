@@ -7,7 +7,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { AccountAssetBalances } from '@/types/balances';
@@ -24,7 +24,7 @@ interface UseLoopringBalanceServiceReturn {
 
 export function useLoopringBalanceService(): UseLoopringBalanceServiceReturn {
   const { awaitTask } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { queryLoopringBalances } = useBlockchainBalancesApi();
   const { updateBalances } = useBalancesStore();
   const { updateAccounts } = useBlockchainAccountsStore();
@@ -101,15 +101,14 @@ export function useLoopringBalanceService(): UseLoopringBalanceServiceReturn {
       updateAccounts(LOOPRING_CHAIN, accounts);
       setStatus(Status.LOADED, { subsection: LOOPRING_CHAIN });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.balances.loopring.error.description', {
-            error: error.message,
+        notifyError(
+          t('actions.balances.loopring.error.title'),
+          t('actions.balances.loopring.error.description', {
+            error: getErrorMessage(error),
           }),
-          title: t('actions.balances.loopring.error.title'),
-        });
+        );
       }
       resetStatus({ subsection: LOOPRING_CHAIN });
     }

@@ -9,6 +9,7 @@ import ManageCounterpartyMappingTable from '@/modules/asset-manager/counterparty
 import { useCounterpartyMappingApi } from '@/modules/asset-manager/counterparty-mapping/use-counterparty-mapping-api';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
@@ -87,10 +88,10 @@ async function confirmDelete(mapping: CounterpartyMapping) {
     if (success)
       await fetchData();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     setMessage({
       description: t('asset_management.cex_mapping.delete_error', {
-        message: error.message,
+        message: getErrorMessage(error),
       }),
     });
   }

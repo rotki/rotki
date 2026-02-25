@@ -1,14 +1,14 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
-import { NotificationCategory, type NotificationPayload, Severity, Zero } from '@rotki/common';
+import { Zero } from '@rotki/common';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useStatusUpdater } from '@/composables/status';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
 import { CURRENCY_USD } from '@/types/currencies';
 import { Section } from '@/types/status';
+import { getErrorMessage } from '@/utils/error-handling';
 import { isNft } from '@/utils/nft';
 
 interface UseLatestPricesReturn {
@@ -33,8 +33,7 @@ export function useLatestPrices(
   const { assetPrice } = usePriceUtils();
   const { refreshPrices } = usePriceRefresh();
   const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
-  const { notify } = useNotificationsStore();
-  const { setMessage } = useMessageStore();
+  const { notifyError, showErrorMessage } = useNotifications();
 
   const latestAssets = computed<string[]>(() =>
     get(latestPrices)
@@ -69,17 +68,11 @@ export function useLatestPrices(
     try {
       set(latestPrices, await fetchLatestPrices());
     }
-    catch (error: any) {
-      const notification: NotificationPayload = {
-        category: NotificationCategory.DEFAULT,
-        display: true,
-        message: t('price_table.fetch.failure.message', {
-          message: error.message,
-        }),
-        severity: Severity.ERROR,
-        title: t('price_table.fetch.failure.title'),
-      };
-      notify(notification);
+    catch (error: unknown) {
+      notifyError(
+        t('price_table.fetch.failure.title'),
+        t('price_table.fetch.failure.message', { message: getErrorMessage(error) }),
+      );
     }
     finally {
       set(loading, false);
@@ -90,18 +83,14 @@ export function useLatestPrices(
     try {
       return await addLatestPrice(data);
     }
-    catch (error: any) {
-      const values = { message: error.message };
+    catch (error: unknown) {
+      const values = { message: getErrorMessage(error) };
       const title = update ? t('price_management.edit.error.title') : t('price_management.add.error.title');
       const description = update
         ? t('price_management.edit.error.description', values)
         : t('price_management.add.error.description', values);
 
-      setMessage({
-        description,
-        success: false,
-        title,
-      });
+      showErrorMessage(title, description);
       return false;
     }
   };
@@ -120,17 +109,11 @@ export function useLatestPrices(
       await deleteLatestPrice(fromAsset);
       await refreshCurrentPrices([fromAsset]);
     }
-    catch (error: any) {
-      const notification: NotificationPayload = {
-        category: NotificationCategory.DEFAULT,
-        display: true,
-        message: t('price_table.delete.failure.message', {
-          message: error.message,
-        }),
-        severity: Severity.ERROR,
-        title: t('price_table.delete.failure.title'),
-      };
-      notify(notification);
+    catch (error: unknown) {
+      notifyError(
+        t('price_table.delete.failure.title'),
+        t('price_table.delete.failure.message', { message: getErrorMessage(error) }),
+      );
     }
   };
 

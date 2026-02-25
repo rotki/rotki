@@ -1,9 +1,9 @@
 import type { MaybeRef } from 'vue';
 import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
-import { NotificationCategory, Severity } from '@rotki/common';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useConfirmStore } from '@/store/confirm';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseAddressBookDeletionReturn {
   deleteAddressBook: (address: string, blockchain: string | null) => Promise<void>;
@@ -16,7 +16,7 @@ export function useAddressBookDeletion(
 ): UseAddressBookDeletionReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { show } = useConfirmStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { deleteAddressBook: deleteAddressBookCaller } = useAddressesNamesStore();
 
   const deleteAddressBook = async (address: string, blockchain: string | null): Promise<void> => {
@@ -24,18 +24,15 @@ export function useAddressBookDeletion(
       await deleteAddressBookCaller(get(location), [{ address, blockchain }]);
       onSuccess?.();
     }
-    catch (error: any) {
-      notify({
-        category: NotificationCategory.DEFAULT,
-        display: true,
-        message: t('address_book.actions.delete.error.description', {
+    catch (error: unknown) {
+      notifyError(
+        t('address_book.actions.delete.error.title'),
+        t('address_book.actions.delete.error.description', {
           address,
           chain: blockchain || t('common.multi_chain'),
-          message: error.message,
+          message: getErrorMessage(error),
         }),
-        severity: Severity.ERROR,
-        title: t('address_book.actions.delete.error.title'),
-      });
+      );
     }
   };
 

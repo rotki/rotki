@@ -11,6 +11,7 @@ import {
   type FrontendSettingsPayload,
   getDefaultFrontendSettings,
 } from '@/types/settings/frontend-settings';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
@@ -104,10 +105,10 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
         success: true,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       return {
-        message: error.message,
+        message: getErrorMessage(error),
         success: false,
       };
     }
@@ -120,7 +121,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     try {
       await updateSetting({ itemsPerPage: value });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
     }
   }, { debounce: 800, maxWait: 1200 });

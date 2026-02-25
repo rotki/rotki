@@ -9,6 +9,7 @@ import { useHistoryEvents } from '@/composables/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 import { buildDeletionConfirmationMessage, DELETION_STRATEGY_TYPE, type DeletionStrategy } from './use-deletion-strategies';
 import { analyzeSelectedEvents, type TransactionGroup } from './use-event-analysis';
 
@@ -37,7 +38,7 @@ export function useHistoryEventsDeletion(
     refreshCallback,
   );
 
-  const isDeleting = ref<boolean>(false);
+  const isDeleting = shallowRef<boolean>(false);
 
   async function deleteCompleteTransactions(
     transactions: Map<string, TransactionGroup>,
@@ -48,9 +49,9 @@ export function useHistoryEventsDeletion(
 
       return { success: true };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       return {
-        message: error.message,
+        message: getErrorMessage(error),
         success: false,
       };
     }
@@ -85,9 +86,9 @@ export function useHistoryEventsDeletion(
       }
       return { success: true };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       return {
-        message: error.message,
+        message: getErrorMessage(error),
         success: false,
       };
     }
@@ -166,8 +167,8 @@ export function useHistoryEventsDeletion(
               await refreshCallback();
             }
           }
-          catch (error: any) {
-            showDeletionResult(false, totalCount, 'delete', error.message, true);
+          catch (error: unknown) {
+            showDeletionResult(false, totalCount, 'delete', getErrorMessage(error), true);
           }
           resolve();
         },

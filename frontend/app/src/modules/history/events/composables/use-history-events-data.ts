@@ -119,7 +119,7 @@ export function useHistoryEventsData(
       if (currentVersion === fetchVersion)
         set(events, response.data);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!(error instanceof RequestCancelledError))
         logger.error(error);
     }

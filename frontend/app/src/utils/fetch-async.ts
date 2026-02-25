@@ -1,9 +1,8 @@
 import type { Ref } from 'vue';
 import type { FetchData } from '@/types/fetch';
 import type { TaskMeta } from '@/types/task';
-import { Severity } from '@rotki/common';
 import { useStatusUpdater } from '@/composables/status';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -35,16 +34,11 @@ export async function fetchDataAsync<T extends TaskMeta, R>(data: FetchData<T, R
     const { result } = await awaitTask<R, T>(taskId, task.type, task.meta);
     set(state, task.parser ? task.parser(result) : result);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     if (!isTaskCancelled(error)) {
       logger.error(`action failure for task ${TaskType[task.type]}:`, error);
-      const { notify } = useNotificationsStore();
-      notify({
-        display: true,
-        message: task.onError.error(error.message),
-        severity: Severity.ERROR,
-        title: task.onError.title,
-      });
+      const { notifyError } = useNotifications();
+      notifyError(task.onError.title, task.onError.error(getErrorMessage(error)));
     }
   }
   setStatus(Status.LOADED);

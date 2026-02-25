@@ -18,6 +18,7 @@ import { useTaskStore } from '@/store/tasks';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
+import { getErrorMessage } from '@/utils/error-handling';
 
 type OracleCacheEntry = OracleCacheMeta & { id: number };
 
@@ -95,11 +96,11 @@ async function clearCache(entry: OracleCacheMeta) {
     await deletePriceCache(get(selection), fromAsset, toAsset);
     await load();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     const title = t('oracle_cache_management.notification.title');
 
     const message = t('oracle_cache_management.clear_error', {
-      error: error.message,
+      error: getErrorMessage(error),
       fromAsset: get(assetSymbol(fromAsset)),
       toAsset: get(assetSymbol(toAsset)),
     });

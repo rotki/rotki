@@ -1,10 +1,9 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/messaging/types';
 import type { TaskMeta } from '@/types/task';
-import { Severity } from '@rotki/common';
 import { useSyncApi } from '@/composables/api/session/sync';
 import { serializer } from '@/composables/dynamic-messages';
 import { api } from '@/modules/api/rotki-api';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useTaskStore } from '@/store/tasks';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 import { TaskType } from '@/types/task-type';
@@ -12,7 +11,7 @@ import { isTaskCancelled } from '@/utils';
 
 export const useSync = createSharedComposable(() => {
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError, notifyInfo } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const syncAction = ref<SyncAction>(SYNC_DOWNLOAD);
   const displaySyncConfirmation = ref(false);
@@ -44,11 +43,7 @@ export const useSync = createSharedComposable(() => {
         error,
       });
 
-      notify({
-        display: true,
-        message,
-        title,
-      });
+      notifyError(title, message);
     };
 
     try {
@@ -67,12 +62,7 @@ export const useSync = createSharedComposable(() => {
         const title = t('actions.session.force_sync.success.title');
         const message = t('actions.session.force_sync.success.message');
 
-        notify({
-          display: true,
-          message,
-          severity: Severity.INFO,
-          title,
-        });
+        notifyInfo(title, message);
 
         if (action === SYNC_DOWNLOAD)
           await logout();
@@ -81,9 +71,9 @@ export const useSync = createSharedComposable(() => {
         notifyFailure(message ?? '');
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error))
-        notifyFailure(error.message);
+        notifyFailure(getErrorMessage(error));
     }
   };
 

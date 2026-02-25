@@ -4,6 +4,7 @@ import { assert } from '@rotki/common';
 import { createSharedComposable } from '@vueuse/core';
 import { BrowserProvider, getAddress } from 'ethers';
 import { useInterop } from '@/composables/electron-interop';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 import { supportedNetworks } from '../wallet-connect/use-wallet-connect';
 import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
@@ -187,16 +188,16 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
         params: [{ eth_accounts: {} }],
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       // wallet_revokePermissions is not widely supported
-      logger.debug('wallet_revokePermissions not supported:', error.message);
+      logger.debug('wallet_revokePermissions not supported:', getErrorMessage(error));
       try {
         if ('disconnect' in injectedProvider && typeof injectedProvider.disconnect === 'function') {
           await injectedProvider.disconnect();
         }
       }
-      catch (error: any) {
-        logger.debug('disconnect failed:', error.message);
+      catch (error: unknown) {
+        logger.debug('disconnect failed:', getErrorMessage(error));
       }
     }
   }
@@ -251,9 +252,9 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
 
         await updateChainId();
       }
-      catch (error: any) {
+      catch (error: unknown) {
         // If the chain doesn't exist, try to add it
-        if (error.code === 4902) {
+        if (error instanceof Object && 'code' in error && error.code === 4902) {
           const network = supportedNetworks.find(item => BigInt(item.id) === chainId);
           if (network) {
             await injectedProvider.request({

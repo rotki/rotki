@@ -5,6 +5,7 @@ import ManageCexMappingForm from '@/components/asset-manager/cex-mapping/ManageC
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<CexMapping | undefined>({ required: true });
 
@@ -56,9 +57,9 @@ async function save(): Promise<boolean> {
     else
       success = await addCexMapping(payload);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     success = false;
-    const obj = { message: error.message };
+    const obj = { message: getErrorMessage(error) };
     setMessage({
       description: editMode
         ? t('asset_management.cex_mapping.add_error', obj)

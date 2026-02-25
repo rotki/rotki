@@ -3,8 +3,9 @@ import type { ComputedRef, Ref } from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { HIGHLIGHT_LOADING_START_TIMEOUT, type HistoryEventNavigationRequest, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { Routes } from '@/router/routes';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const historyEventsPath = Routes.HISTORY_EVENTS.toString();
 
@@ -27,7 +28,7 @@ export function useHistoryEventNavigationConsumer(
   const route = useRoute();
   const { getHistoryEventGroupPosition } = useHistoryEventsApi();
   const { consumeNavigation, pendingNavigation, requestNavigation, setHighlightTarget } = useHistoryEventNavigation();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
 
   // Watch for route-based navigation from external packages
   watchImmediate(route, ({ query }) => {
@@ -138,14 +139,13 @@ export function useHistoryEventNavigationConsumer(
         break;
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       // Only show notification for user-initiated navigation, not filter-change re-navigation
       if (!request.preserveFilters) {
-        notify({
-          display: true,
-          message: error.message,
-          title: t('asset_movement_matching.dialog.show_in_events'),
-        });
+        notifyError(
+          t('asset_movement_matching.dialog.show_in_events'),
+          getErrorMessage(error),
+        );
       }
     }
     finally {

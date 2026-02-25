@@ -2,6 +2,7 @@ import type { Ref } from 'vue';
 import type { EIP1193Provider } from '@/types';
 import { set } from '@vueuse/shared';
 import { getAddress } from 'ethers';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface UseWalletConnectionReturn {
@@ -13,7 +14,7 @@ interface UseWalletConnectionReturn {
   connectionError: Readonly<Ref<string | undefined>>;
   connectToProvider: (provider: EIP1193Provider) => Promise<void>;
   disconnectFromProvider: (provider?: EIP1193Provider) => Promise<void>;
-  handleConnectionError: (error: any, context: string) => string;
+  handleConnectionError: (error: unknown, context: string) => string;
   isConnecting: Readonly<Ref<boolean>>;
   resetError: () => void;
   setupProvider: (provider: EIP1193Provider) => Promise<void>;
@@ -40,8 +41,8 @@ export function useWalletConnection(): UseWalletConnectionReturn {
     set(connectionError, undefined);
   };
 
-  const handleConnectionError = (error: any, context: string): string => {
-    const errorMessage = 'message' in error ? error.message : `Failed to ${context}`;
+  const handleConnectionError = (error: unknown, context: string): string => {
+    const errorMessage = error instanceof Object && 'message' in error ? getErrorMessage(error) : `Failed to ${context}`;
     logger.error(`Error ${context}:`, error);
     set(connectionError, errorMessage);
     return errorMessage;
@@ -134,7 +135,7 @@ export function useWalletConnection(): UseWalletConnectionReturn {
         throw new Error('No accounts returned from wallet.');
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       handleConnectionError(error, 'connect wallet');
       clearConnectionState();
       throw error;

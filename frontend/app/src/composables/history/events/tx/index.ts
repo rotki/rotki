@@ -9,11 +9,11 @@ import type {
   RepullingTransactionResponse,
 } from '@/types/history/events';
 import type { TaskMeta } from '@/types/task';
-import { Severity, toHumanReadable } from '@rotki/common';
+import { toHumanReadable } from '@rotki/common';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useRefreshTransactions } from '@/composables/history/events/tx/use-refresh-transactions';
 import { displayDateFormatter } from '@/data/date-formatter';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
@@ -28,7 +28,7 @@ export interface RepullingTransactionResult {
 
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notifyError, notifyInfo } = useNotifications();
   const {
     addTransactionHash: addTransactionHashCaller,
     repullingEthStakingEvents: repullingEthStakingEventsCaller,
@@ -54,8 +54,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
       await addTransactionHashCaller(payload);
       success = true;
     }
-    catch (error: any) {
-      message = error.message;
+    catch (error: unknown) {
+      message = getErrorMessage(error);
       if (error instanceof ApiValidationError) {
         message = error.getValidationErrors(payload);
       }
@@ -104,18 +104,17 @@ export const useHistoryTransactions = createSharedComposable(() => {
       const { result } = await awaitTask<RepullingTransactionResponse, TaskMeta>(taskId, taskType, taskMeta, true);
       return result;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isTaskCancelled(error)) {
         return undefined;
       }
       logger.error(error);
-      notify({
-        display: true,
-        message: isAddressSpecified
+      notifyError(
+        t('actions.repulling_transaction.task.title'),
+        isAddressSpecified
           ? t('actions.repulling_transaction.error.description', messagePayload)
           : t('actions.repulling_transaction.error.no_address_or_chain_transaction', messagePayload),
-        title: t('actions.repulling_transaction.task.title'),
-      });
+      );
     }
     return undefined;
   };
@@ -138,25 +137,22 @@ export const useHistoryTransactions = createSharedComposable(() => {
     try {
       const { result } = await awaitTask<RepullingExchangeEventsResponse, TaskMeta>(taskId, taskType, taskMeta, true);
       const { storedEvents } = result;
-      notify({
-        display: true,
-        message: storedEvents ? t('actions.repulling_exchange_events.success.description', { length: storedEvents }) : t('actions.repulling_exchange_events.success.no_events_description'),
-        severity: Severity.INFO,
-        title: t('actions.repulling_exchange_events.task.title'),
-      });
+      notifyInfo(
+        t('actions.repulling_exchange_events.task.title'),
+        storedEvents ? t('actions.repulling_exchange_events.success.description', { length: storedEvents }) : t('actions.repulling_exchange_events.success.no_events_description'),
+      );
 
       return storedEvents > 0;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isTaskCancelled(error)) {
         return false;
       }
       logger.error(error);
-      notify({
-        display: true,
-        message: t('actions.repulling_exchange_events.error.description', messagePayload),
-        title: t('actions.repulling_exchange_events.task.title'),
-      });
+      notifyError(
+        t('actions.repulling_exchange_events.task.title'),
+        t('actions.repulling_exchange_events.error.description', messagePayload),
+      );
     }
     return false;
   };
@@ -193,27 +189,24 @@ export const useHistoryTransactions = createSharedComposable(() => {
         addressDetails ? `${t('actions.repulling_eth_staking.success.per_address')}:\n${addressDetails}` : '',
       ].filter(Boolean).join('\n\n');
 
-      notify({
-        display: true,
-        message: total
+      notifyInfo(
+        t('actions.repulling_eth_staking.task.title'),
+        total
           ? `${t('actions.repulling_eth_staking.success.description', { ...messagePayload, count: total })}\n${details}`
           : t('actions.repulling_eth_staking.success.no_events_description', messagePayload),
-        severity: Severity.INFO,
-        title: t('actions.repulling_eth_staking.task.title'),
-      });
+      );
 
       return total > 0;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isTaskCancelled(error)) {
         return false;
       }
       logger.error(error);
-      notify({
-        display: true,
-        message: t('actions.repulling_eth_staking.error.description', messagePayload),
-        title: t('actions.repulling_eth_staking.task.title'),
-      });
+      notifyError(
+        t('actions.repulling_eth_staking.task.title'),
+        t('actions.repulling_eth_staking.error.description', messagePayload),
+      );
     }
     return false;
   };

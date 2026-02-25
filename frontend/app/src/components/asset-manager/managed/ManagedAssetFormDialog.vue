@@ -6,7 +6,8 @@ import ManagedAssetForm from '@/components/asset-manager/managed/ManagedAssetFor
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError } from '@/types/api/errors';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<SupportedAsset | undefined>({ required: true });
 
@@ -21,65 +22,59 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const loading = ref(false);
+const loading = ref<boolean>(false);
+const stateUpdated = ref<boolean>(false);
 const errorMessages = ref<Record<string, string[]>>({});
 const form = useTemplateRef<InstanceType<typeof ManagedAssetForm>>('form');
-const stateUpdated = ref(false);
 
 const dialogTitle = computed<string>(() =>
   editMode ? t('asset_management.edit_title') : t('asset_management.add_title'),
 );
 
 const { setMessage } = useMessageStore();
+const { deleteCacheKey } = useAssetCacheStore();
 
-function getUnderlyingTokenErrors(underlyingTokens: string | Record<string, { address: string[]; weight: string[] }>) {
-  if (typeof underlyingTokens === 'string')
-    return [underlyingTokens];
-
-  const messages: string[] = [];
-  for (const underlyingToken of Object.values(underlyingTokens)) {
-    const ut = underlyingToken;
-    if (ut.address)
-      messages.push(...ut.address);
-
-    if (underlyingTokens.weight)
-      messages.push(...ut.weight);
-  }
-  return messages;
-}
-
-interface UnderlyingTokensValidationError {
-  underlyingTokens: string | Record<string, { address: string[]; weight: string[] }>;
-}
-
-type SchemaValidationError = {
-  _schema: string[];
-} | {
-  Schema: string[];
-};
-
-function handleError(
-  message:
-    | UnderlyingTokensValidationError
-    | SchemaValidationError,
-) {
-  if ('underlyingTokens' in message) {
-    const messages = getUnderlyingTokenErrors(message.underlyingTokens);
-    setMessage({
-      description: messages.join(','),
-      title: t('asset_form.underlying_tokens'),
-    });
+function handleValidationErrors(errors: ValidationErrors): void {
+  if ('underlyingTokens' in errors) {
+    const underlyingTokens = errors.underlyingTokens;
+    if (underlyingTokens) {
+      const messages = Array.isArray(underlyingTokens) ? underlyingTokens : [underlyingTokens];
+      setMessage({
+        description: messages.join(','),
+        title: t('asset_form.underlying_tokens'),
+      });
+    }
   }
   else {
-    const schema = '_schema' in message ? message._schema : message.Schema;
-    setMessage({
-      description: schema[0],
-      title: t('asset_form.underlying_tokens'),
-    });
+    const schema = '_schema' in errors ? errors._schema : errors.Schema;
+    if (Array.isArray(schema)) {
+      setMessage({
+        description: schema[0],
+        title: t('asset_form.underlying_tokens'),
+      });
+    }
   }
 }
 
-const { deleteCacheKey } = useAssetCacheStore();
+function handleSaveError(error: unknown): void {
+  let errors: string | ValidationErrors = getErrorMessage(error);
+  if (error instanceof ApiValidationError)
+    errors = error.getValidationErrors({});
+
+  if (typeof errors === 'string') {
+    setMessage({
+      description: errors,
+      title: editMode ? t('asset_form.edit_error') : t('asset_form.add_error'),
+    });
+    return;
+  }
+
+  if ('underlyingTokens' in errors || '_schema' in errors || 'Schema' in errors)
+    handleValidationErrors(errors);
+
+  set(errorMessages, omit(errors, ['underlyingTokens', '_schema', 'Schema']));
+  get(form)?.validate();
+}
 
 async function save(): Promise<boolean> {
   if (!isDefined(modelValue))
@@ -90,54 +85,26 @@ async function save(): Promise<boolean> {
   if (!valid)
     return false;
 
-  let success;
-  let identifier;
-
   set(loading, true);
-
   try {
-    identifier = await formRef?.saveAsset();
-    if (identifier) {
-      success = true;
-
-      deleteCacheKey(identifier);
-
-      if (identifier) {
-        formRef?.saveIcon(identifier);
-      }
+    const identifier = await formRef?.saveAsset();
+    if (!identifier) {
+      return false;
     }
-    else {
-      success = false;
-    }
-  }
-  catch (error: any) {
-    success = false;
 
-    let errors = error.message;
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors({});
-
-    if (typeof errors === 'string') {
-      setMessage({
-        description: errors,
-        title: editMode ? t('asset_form.edit_error') : t('asset_form.add_error'),
-      });
-    }
-    else {
-      if (errors.underlyingTokens || errors._schema || errors.Schema)
-        handleError(errors);
-
-      set(errorMessages, omit(errors, ['underlyingTokens', '_schema', 'Schema']));
-      formRef?.validate();
-    }
-  }
-
-  set(loading, false);
-  if (success) {
+    deleteCacheKey(identifier);
+    formRef?.saveIcon(identifier);
     set(modelValue, undefined);
     emit('refresh');
+    return true;
   }
-  return success;
+  catch (error: unknown) {
+    handleSaveError(error);
+    return false;
+  }
+  finally {
+    set(loading, false);
+  }
 }
 </script>
 

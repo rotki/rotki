@@ -6,8 +6,7 @@ import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useStatusUpdater } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import { AssetBalances } from '@/types/balances';
@@ -16,6 +15,7 @@ import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseExchangesReturn {
   fetchConnectedExchangeBalances: (refresh?: boolean) => Promise<void>;
@@ -31,7 +31,7 @@ export function useExchanges(): UseExchangesReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const { awaitTask, isTaskRunning, metadata } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError, showErrorMessage } = useNotifications();
   const { exchangeBalances } = storeToRefs(useBalancesStore());
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
   const { setConnectedExchanges } = useSessionSettingsStore();
@@ -39,7 +39,6 @@ export function useExchanges(): UseExchangesReturn {
   const valueThreshold = useValueThreshold(BalanceSource.EXCHANGES);
 
   const { callSetupExchange, queryRemoveExchange } = useExchangeApi();
-  const { setMessage } = useMessageStore();
 
   const fetchExchangeBalances = async (payload: ExchangeBalancePayload): Promise<void> => {
     const { ignoreCache, location } = payload;
@@ -73,21 +72,17 @@ export function useExchanges(): UseExchangesReturn {
       });
       setStatus(Status.LOADED);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         const message = t('actions.balances.exchange_balances.error.message', {
-          error: error.message,
+          error: getErrorMessage(error),
           location,
         });
         const title = t('actions.balances.exchange_balances.error.title', {
           location: toSentenceCase(location),
         });
 
-        notify({
-          display: true,
-          message,
-          title,
-        });
+        notifyError(title, message);
       }
       resetStatus();
     }
@@ -163,14 +158,14 @@ export function useExchanges(): UseExchangesReturn {
 
       return success;
     }
-    catch (error: any) {
-      setMessage({
-        description: t('actions.balances.exchange_removal.description', {
-          error: error.message,
+    catch (error: unknown) {
+      showErrorMessage(
+        t('actions.balances.exchange_removal.title'),
+        t('actions.balances.exchange_removal.description', {
+          error: getErrorMessage(error),
           exchange,
         }),
-        title: t('actions.balances.exchange_removal.title'),
-      });
+      );
       return false;
     }
   };

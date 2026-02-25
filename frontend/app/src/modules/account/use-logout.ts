@@ -8,6 +8,7 @@ import { api } from '@/modules/api';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface UseLogoutReturn {
@@ -45,10 +46,10 @@ export function useLogout(): UseLogoutReturn {
     try {
       await callLogout(user);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       setMessage({
-        description: error.message,
+        description: getErrorMessage(error),
         title: 'Logout failed',
       });
     }
@@ -70,12 +71,13 @@ export function useLogout(): UseLogoutReturn {
 
       return { success: true };
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
       setMessage({
-        description: error.message,
+        description: message,
         title: 'Remote session logout failure',
       });
-      return { message: error.message, success: false };
+      return { message, success: false };
     }
   };
 

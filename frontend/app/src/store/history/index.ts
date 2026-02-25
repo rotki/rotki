@@ -4,9 +4,10 @@ import { startPromise } from '@shared/utils';
 import { useHistoryApi } from '@/composables/api/history';
 import { type TransactionStatus, useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 const HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS = 15000;
@@ -116,7 +117,7 @@ export const useHistoryStore = defineStore('history', () => {
   };
 
   const { fetchAssociatedLocations: fetchAssociatedLocationsApi, fetchLocationLabels: fetchLocationLabelsApi } = useHistoryApi();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const getUndecodedTransactionStatus = (): EvmUnDecodedTransactionsData[] =>
@@ -126,14 +127,12 @@ export const useHistoryStore = defineStore('history', () => {
     try {
       set(associatedLocations, await fetchAssociatedLocationsApi());
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      const message = error?.message ?? error ?? '';
-      notify({
-        display: true,
-        message: t('actions.history.fetch_associated_locations.error.message', { message }),
-        title: t('actions.history.fetch_associated_locations.error.title'),
-      });
+      notifyError(
+        t('actions.history.fetch_associated_locations.error.title'),
+        t('actions.history.fetch_associated_locations.error.message', { message: getErrorMessage(error) }),
+      );
     }
   };
 
@@ -142,7 +141,7 @@ export const useHistoryStore = defineStore('history', () => {
       const result = await getTransactionStatusSummary();
       set(transactionStatusSummary, result);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
     }
   };
@@ -151,14 +150,12 @@ export const useHistoryStore = defineStore('history', () => {
     try {
       set(locationLabels, await fetchLocationLabelsApi());
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      const message = error?.message ?? error ?? '';
-      notify({
-        display: true,
-        message: t('actions.history.fetch_location_labels.error.message', { message }),
-        title: t('actions.history.fetch_location_labels.error.title'),
-      });
+      notifyError(
+        t('actions.history.fetch_location_labels.error.title'),
+        t('actions.history.fetch_location_labels.error.message', { message: getErrorMessage(error) }),
+      );
     }
   };
 

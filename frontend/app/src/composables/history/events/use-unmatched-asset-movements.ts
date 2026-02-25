@@ -10,6 +10,7 @@ import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { arrayify } from '@/utils/array';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface RawUnmatchedAssetMovement {
@@ -124,10 +125,10 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
       set(movementsRef, movements);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error('Failed to fetch unmatched asset movements:', error);
       setMessage({
-        description: t('actions.asset_movement_matching.fetch_error.description', { error: error.message }),
+        description: t('actions.asset_movement_matching.fetch_error.description', { error: getErrorMessage(error) }),
         title: t('actions.asset_movement_matching.fetch_error.title'),
       });
     }
@@ -154,13 +155,14 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
       return { message: '', success };
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
       logger.error('Failed to match asset movement:', error);
       setMessage({
-        description: t('actions.asset_movement_matching.error.description', { error: error.message }),
+        description: t('actions.asset_movement_matching.error.description', { error: message }),
         title: t('actions.asset_movement_matching.error.title'),
       });
-      return { message: error.message, success: false };
+      return { message, success: false };
     }
   };
 
@@ -191,10 +193,10 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
       await refreshUnmatchedAssetMovements(true);
       signalEventsModified();
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error('Failed to trigger auto match:', error);
       setMessage({
-        description: t('asset_movement_matching.auto_match.error', { error: error.message }),
+        description: t('asset_movement_matching.auto_match.error', { error: getErrorMessage(error) }),
         title: t('asset_movement_matching.auto_match.error_title'),
       });
     }

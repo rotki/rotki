@@ -2,6 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { EnhancedProviderDetail } from '@/modules/onchain/wallet-providers/provider-detection';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useProviderSelection } from '@/modules/onchain/wallet-providers/use-provider-selection';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 import { type GnosisPayAdminsMapping, GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySiweApi } from './use-gnosis-pay-api';
@@ -70,10 +71,10 @@ export function useGnosisPayWallet(options: UseGnosisPayWalletOptions): UseGnosi
       set(hasRegisteredAccounts, true);
       set(gnosisPayAdminsMapping, admins);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       set(hasRegisteredAccounts, false);
       logger.error('Failed to check registered accounts:', error);
-      setError(GnosisPayError.OTHER, { message: error.message || error.toString() });
+      setError(GnosisPayError.OTHER, { message: getErrorMessage(error) });
     }
     finally {
       set(checkingRegisteredAccounts, false);
@@ -115,10 +116,10 @@ export function useGnosisPayWallet(options: UseGnosisPayWalletOptions): UseGnosi
       set(isAddressValid, true);
       set(controlledSafeAddresses, foundSafeAddresses);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       clearValidation();
       logger.error('Address validation failed:', error);
-      setError(GnosisPayError.OTHER, { message: error.message || error.toString() });
+      setError(GnosisPayError.OTHER, { message: getErrorMessage(error) });
     }
     finally {
       set(validatingAddress, false);
@@ -132,9 +133,9 @@ export function useGnosisPayWallet(options: UseGnosisPayWalletOptions): UseGnosi
       await connectWallet();
       // Address validation will be triggered by the watcher when connectedAddress changes
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      setError(GnosisPayError.CONNECTION_FAILED, { message: error.message });
+      setError(GnosisPayError.CONNECTION_FAILED, { message: getErrorMessage(error) });
     }
   }
 
@@ -144,9 +145,9 @@ export function useGnosisPayWallet(options: UseGnosisPayWalletOptions): UseGnosi
       clearValidation();
       await disconnectWallet();
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      setError(GnosisPayError.CONNECTION_FAILED, { message: error.message });
+      setError(GnosisPayError.CONNECTION_FAILED, { message: getErrorMessage(error) });
     }
   }
 

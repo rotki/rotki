@@ -5,6 +5,7 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ManageCounterpartyMappingForm from '@/modules/asset-manager/counterparty-mapping/ManageCounterpartyMappingForm.vue';
 import { useCounterpartyMappingApi } from '@/modules/asset-manager/counterparty-mapping/use-counterparty-mapping-api';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<CounterpartyMapping | undefined>({ required: true });
 
@@ -51,9 +52,9 @@ async function save(): Promise<boolean> {
     else
       success = await addCounterpartyMapping(data);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     success = false;
-    const obj = { message: error.message };
+    const obj = { message: getErrorMessage(error) };
     setMessage({
       description: editMode
         ? t('asset_management.cex_mapping.add_error', obj)

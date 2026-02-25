@@ -15,6 +15,7 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { type AssetRequestPayload, EVM_TOKEN, type IgnoredAssetsHandlingType } from '@/types/asset';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const { identifier = null, mainPage = false } = defineProps<{
   identifier?: string | null;
@@ -138,11 +139,11 @@ async function deleteAssetHandler(identifier: string) {
       deleteCacheKey(identifier);
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     setMessage({
       description: t('asset_management.delete_error', {
         address: identifier,
-        message: error.message,
+        message: getErrorMessage(error),
       }),
     });
   }
@@ -200,10 +201,10 @@ onBeforeMount(async () => {
   try {
     set(assetTypes, await getAssetTypes());
   }
-  catch (error: any) {
+  catch (error: unknown) {
     setMessage({
       description: t('asset_form.types.error', {
-        message: error.message,
+        message: getErrorMessage(error),
       }),
     });
   }

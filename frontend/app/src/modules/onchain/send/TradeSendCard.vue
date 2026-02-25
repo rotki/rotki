@@ -20,6 +20,12 @@ import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unif
 import { logger } from '@/utils/logging';
 import { useTradeApi } from './use-trade-api';
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error)
+    return error.message;
+  return String(error);
+}
+
 const { t } = useI18n({ useScope: 'global' });
 
 const amount = ref<string>('');
@@ -194,12 +200,12 @@ async function send() {
     await sendTransaction(params);
     resetInput();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     if (isUserRejectedError(error)) {
       set(errorMessage, 'Request is rejected by user');
     }
     else {
-      set(errorMessage, error.toString());
+      set(errorMessage, getErrorMessage(error));
     }
   }
 }
@@ -253,9 +259,9 @@ async function connect() {
     set(errorMessage, '');
     await connectWallet();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
-    set(errorMessage, error.message);
+    set(errorMessage, getErrorMessage(error));
   }
 }
 
@@ -264,9 +270,9 @@ async function disconnect() {
     set(errorMessage, '');
     await disconnectWallet();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
-    set(errorMessage, error.message);
+    set(errorMessage, getErrorMessage(error));
   }
 }
 
@@ -286,7 +292,7 @@ watch([connectedAddress, toAddress], async ([fromAddress, toAddress]) => {
     const result = await getIsInteractedBefore(fromAddress, toAddress);
     set(showNeverInteractedWarning, !result);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     set(showNeverInteractedWarning, false);
     logger.error(error);
   }
@@ -330,8 +336,8 @@ watchImmediate([
 
     set(estimatedGasFee, '0');
   }
-  catch (error: any) {
-    if (error.message !== 'Gas estimation cancelled') {
+  catch (error: unknown) {
+    if (getErrorMessage(error) !== 'Gas estimation cancelled') {
       set(estimatedGasFee, '0');
       logger.error(error);
     }

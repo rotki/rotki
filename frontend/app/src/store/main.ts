@@ -111,7 +111,7 @@ export const useMainStore = defineStore('main', () => {
           await getVersion();
         }
       }
-      catch (error: any) {
+      catch (error: unknown) {
         logger.error(error);
       }
       finally {

@@ -7,6 +7,7 @@ import { type CustomizedEventDuplicates, useCustomizedEventDuplicatesApi } from 
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { arrayify } from '@/utils/array';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 export interface DuplicateRow {
@@ -96,10 +97,10 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
       set(rawManualReviewGroupIds, result.manualReviewGroupIds);
       set(rawIgnoredGroupIds, result.ignoredGroupIds);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error('Failed to fetch customized event duplicates:', error);
       setMessage({
-        description: t('actions.customized_event_duplicates.fetch_error.description', { error: error.message }),
+        description: t('actions.customized_event_duplicates.fetch_error.description', { error: getErrorMessage(error) }),
         title: t('actions.customized_event_duplicates.fetch_error.title'),
       });
     }
@@ -184,13 +185,14 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
 
       return { success: true };
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
       logger.error('Failed to fix customized event duplicates:', error);
       setMessage({
-        description: t('actions.customized_event_duplicates.fix_error.description', { error: error.message }),
+        description: t('actions.customized_event_duplicates.fix_error.description', { error: message }),
         title: t('actions.customized_event_duplicates.fix_error.title'),
       });
-      return { message: error.message, success: false };
+      return { message, success: false };
     }
     finally {
       set(fixLoading, false);
@@ -204,13 +206,14 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
       await fetchCustomizedEventDuplicates();
       return { success: true };
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
       logger.error('Failed to ignore customized event duplicates:', error);
       setMessage({
-        description: t('actions.customized_event_duplicates.mark_non_duplicated_error.description', { error: error.message }),
+        description: t('actions.customized_event_duplicates.mark_non_duplicated_error.description', { error: message }),
         title: t('actions.customized_event_duplicates.mark_non_duplicated_error.title'),
       });
-      return { message: error.message, success: false };
+      return { message, success: false };
     }
     finally {
       set(ignoreLoading, false);
@@ -224,13 +227,14 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
       await fetchCustomizedEventDuplicates();
       return { success: true };
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
       logger.error('Failed to unignore customized event duplicates:', error);
       setMessage({
-        description: t('actions.customized_event_duplicates.unignore_error.description', { error: error.message }),
+        description: t('actions.customized_event_duplicates.unignore_error.description', { error: message }),
         title: t('actions.customized_event_duplicates.unignore_error.title'),
       });
-      return { message: error.message, success: false };
+      return { message, success: false };
     }
     finally {
       set(ignoreLoading, false);

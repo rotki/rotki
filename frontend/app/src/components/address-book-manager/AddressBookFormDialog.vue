@@ -6,7 +6,8 @@ import AddressBookForm from '@/components/address-book-manager/AddressBookForm.v
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError } from '@/types/api/errors';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const open = defineModel<boolean>('open', { required: true });
 
@@ -47,7 +48,7 @@ const emptyForm: () => AddressBookPayload = () => ({
 const { addAddressBook, updateAddressBook } = useAddressesNamesStore();
 const { setMessage } = useMessageStore();
 
-async function save() {
+async function save(): Promise<boolean> {
   if (!isDefined(modelValue))
     return false;
 
@@ -71,15 +72,16 @@ async function save() {
       success = await updateAddressBook(location, [payload]);
     else success = await addAddressBook(location, [payload], root);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     success = false;
-    let errors = error.message;
+    const message = getErrorMessage(error);
+    let errors: string | ValidationErrors = message;
 
     if (error instanceof ApiValidationError)
       errors = error.getValidationErrors(get(modelValue));
 
     if (typeof errors === 'string') {
-      const values = { message: error.message };
+      const values = { message };
       const title = isEdit
         ? t('address_book.actions.edit.error.title')
         : t('address_book.actions.add.error.title');

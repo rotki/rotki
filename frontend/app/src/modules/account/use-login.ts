@@ -21,6 +21,7 @@ import { migrateSettingsIfNeeded } from '@/types/settings/frontend-settings-migr
 import { TaskType } from '@/types/task-type';
 import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/types/user';
 import { lastLogin } from '@/utils/account-management';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface UseLoginReturn {
@@ -50,7 +51,7 @@ export function useLogin(): UseLoginReturn {
     set(logged, false);
   });
 
-  const createActionStatus = (error: any): ActionStatus => {
+  const createActionStatus = (error: unknown): ActionStatus => {
     let message = '';
     if (error instanceof IncompleteUpgradeError) {
       set(incompleteUpgradeConflict, {
@@ -64,7 +65,7 @@ export function useLogin(): UseLoginReturn {
       });
     }
     else {
-      message = error.message;
+      message = getErrorMessage(error);
     }
 
     return { message, success: false };
@@ -80,7 +81,7 @@ export function useLogin(): UseLoginReturn {
 
       return { success: true };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       return createActionStatus(error);
     }
@@ -105,9 +106,9 @@ export function useLogin(): UseLoginReturn {
       await colibriLogin(objectPick(payload.credentials, ['username', 'password']));
       return response;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      return { message: error.message, success: false };
+      return { message: getErrorMessage(error), success: false };
     }
   };
 
@@ -171,7 +172,7 @@ export function useLogin(): UseLoginReturn {
         username,
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       authStore.clearUpgradeMessages();
       return createActionStatus(error);

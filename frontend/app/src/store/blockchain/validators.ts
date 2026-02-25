@@ -12,7 +12,7 @@ import { usePremium } from '@/composables/premium';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { Module } from '@/types/modules';
@@ -36,7 +36,7 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
 
   const isEth2Enabled = (): boolean => get(activeModules).includes(Module.ETH2);
   const { getNativeAsset } = useSupportedChains();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const stakingValidatorsLimits = ref<{
@@ -97,16 +97,15 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
       );
       set(stakingValidatorsLimits, { limit: validators.entriesLimit, total: validators.entriesFound });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      notify({
-        display: true,
-        message: t('actions.get_accounts.error.description', {
+      notifyError(
+        t('actions.get_accounts.error.title'),
+        t('actions.get_accounts.error.description', {
           blockchain: Blockchain.ETH2,
-          message: error.message,
+          message: getErrorMessage(error),
         }),
-        title: t('actions.get_accounts.error.title'),
-      });
+      );
     }
   };
 

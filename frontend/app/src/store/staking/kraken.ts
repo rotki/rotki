@@ -9,7 +9,7 @@ import { omit } from 'es-toolkit';
 import { useKrakenApi } from '@/composables/api/staking/kraken';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useStatusUpdater } from '@/composables/status';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
@@ -75,7 +75,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
   });
 
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { isFirstLoad, loading, setStatus } = useStatusUpdater(Section.STAKING_KRAKEN);
 
   const refreshEvents = async (): Promise<void> => {
@@ -118,16 +118,15 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
 
       setStatus(isTaskRunning(taskType) ? Status.REFRESHING : Status.LOADED);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       setStatus(Status.LOADED);
-      notify({
-        display: true,
-        message: t('actions.kraken_staking.error.message', {
-          message: error.message,
+      notifyError(
+        t('actions.kraken_staking.error.title'),
+        t('actions.kraken_staking.error.message', {
+          message: getErrorMessage(error),
         }),
-        title: t('actions.kraken_staking.error.title'),
-      });
+      );
     }
   };
 

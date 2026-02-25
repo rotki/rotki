@@ -4,6 +4,7 @@ import { invertColor, randomColor } from '@rotki/common';
 import { useTagsApi } from '@/composables/api/tags';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 export const useTagStore = defineStore('session/tags', () => {
@@ -21,13 +22,14 @@ export const useTagStore = defineStore('session/tags', () => {
       set(allTags, await queryAddTag(tag));
       return { success: true };
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
       setMessage({
-        description: error.message,
+        description: message,
         title: t('actions.session.tag_add.error.title'),
       });
       return {
-        message: error.message,
+        message,
         success: false,
       };
     }
@@ -40,13 +42,14 @@ export const useTagStore = defineStore('session/tags', () => {
         renameTag(originalName, tag.name);
       return { success: true };
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
       setMessage({
-        description: error.message,
+        description: message,
         title: t('actions.session.tag_edit.error.title'),
       });
       return {
-        message: error.message,
+        message,
         success: false,
       };
     }
@@ -57,9 +60,9 @@ export const useTagStore = defineStore('session/tags', () => {
       set(allTags, await queryDeleteTag(name));
       removeTag(name);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       setMessage({
-        description: error.message,
+        description: getErrorMessage(error),
         title: t('actions.session.tag_delete.error.title'),
       });
     }
@@ -69,7 +72,7 @@ export const useTagStore = defineStore('session/tags', () => {
     try {
       set(allTags, await queryTags());
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error('Tags fetch failed', error);
     }
   };

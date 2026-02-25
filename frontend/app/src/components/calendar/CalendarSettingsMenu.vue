@@ -12,6 +12,7 @@ import { useInterop } from '@/composables/electron-interop';
 import { useBackendMessagesStore } from '@/store/backend-messages';
 import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -59,7 +60,7 @@ async function checkGoogleCalendarStatus() {
       set(connectedUserEmail, '');
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error('Failed to check Google Calendar status:', error);
   }
 }
@@ -88,10 +89,10 @@ async function connectToGoogle() {
       title: t('external_services.google_calendar.authorizing'),
     });
   }
-  catch (error: any) {
+  catch (error: unknown) {
     notify({
       display: true,
-      message: error.message || t('external_services.google_calendar.auth_failed'),
+      message: getErrorMessage(error) || t('external_services.google_calendar.auth_failed'),
       severity: Severity.ERROR,
       title: t('external_services.google_calendar.error'),
     });
@@ -99,11 +100,11 @@ async function connectToGoogle() {
   }
 }
 
-function notifyOAuthError(error: any): void {
+function notifyOAuthError(error: unknown): void {
   logger.error('OAuth failed:', error);
   notify({
     display: true,
-    message: error.message || t('external_services.google_calendar.auth_failed'),
+    message: getErrorMessage(error) || t('external_services.google_calendar.auth_failed'),
     severity: Severity.ERROR,
     title: t('external_services.google_calendar.error'),
   });
@@ -144,7 +145,7 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
       notifyOAuthError(result);
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     notifyOAuthError(error);
   }
   finally {
@@ -179,10 +180,10 @@ async function syncCalendar() {
       title: t('external_services.google_calendar.success'),
     });
   }
-  catch (error: any) {
+  catch (error: unknown) {
     notify({
       display: true,
-      message: error.message || t('external_services.google_calendar.sync_failed'),
+      message: getErrorMessage(error) || t('external_services.google_calendar.sync_failed'),
       severity: Severity.ERROR,
       title: t('external_services.google_calendar.error'),
     });
@@ -230,10 +231,10 @@ async function disconnect() {
     set(isConnected, false);
     set(connectedUserEmail, '');
   }
-  catch (error: any) {
+  catch (error: unknown) {
     notify({
       display: true,
-      message: error.message || t('external_services.google_calendar.disconnect_failed'),
+      message: getErrorMessage(error) || t('external_services.google_calendar.disconnect_failed'),
       severity: Severity.ERROR,
       title: t('external_services.google_calendar.error'),
     });

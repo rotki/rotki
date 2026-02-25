@@ -15,6 +15,7 @@ import {
 } from '@/types/reports';
 import { type PendingTask, PendingTaskSchema } from '@/types/task';
 import { downloadFileByUrl } from '@/utils/download';
+import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseReportsApi {
   generateReport: ({ end, start }: ProfitLossReportPeriod) => Promise<PendingTask>;
@@ -56,8 +57,8 @@ export function useReportsApi(): UseReportsApi {
       downloadFileByUrl(url, 'reports.zip');
       return { success: true };
     }
-    catch (error: any) {
-      return { message: error.message, success: false };
+    catch (error: unknown) {
+      return { message: getErrorMessage(error), success: false };
     }
   };
 

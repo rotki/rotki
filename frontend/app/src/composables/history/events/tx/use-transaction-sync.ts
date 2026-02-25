@@ -3,8 +3,8 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { type BlockchainAddress, type ChainAddress, TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/types/history/events';
 import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
@@ -28,7 +28,7 @@ interface UseTransactionSyncReturn {
 
 export function useTransactionSync(): UseTransactionSyncReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const queue = new LimitedParallelizationQueue(1);
   const { fetchTransactionsTask } = useHistoryEventsApi();
 
@@ -76,21 +76,20 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     try {
       await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (error instanceof BackendCancelledTaskError) {
         logger.debug(error);
         removeQueryStatus(account);
       }
       else if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.transactions.error.description', {
+        notifyError(
+          t('actions.transactions.error.title'),
+          t('actions.transactions.error.description', {
             address,
             chain: chainName,
             error,
           }),
-          title: t('actions.transactions.error.title'),
-        });
+        );
       }
     }
     finally {

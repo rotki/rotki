@@ -9,6 +9,7 @@ import { useSolanaTokenMigrationApi } from '@/modules/asset-manager/solana-token
 import { useSolanaTokenMigrationStore } from '@/modules/asset-manager/solana-token-migration/solana-token-migration-store';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
 import SolanaTokenMigrationForm from './SolanaTokenMigrationForm.vue';
 
 interface SolanaTokenMigrationData {
@@ -88,8 +89,8 @@ async function save(): Promise<boolean> {
       return false;
     }
   }
-  catch (error: any) {
-    let errors = error.message;
+  catch (error: unknown) {
+    let errors: ValidationErrors | string = getErrorMessage(error);
     if (error instanceof ApiValidationError) {
       errors = error.getValidationErrors({});
     }

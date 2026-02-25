@@ -22,6 +22,7 @@ import { useTaskStore } from '@/store/tasks';
 import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
 import { isAbortError, isTaskCancelled } from '@/utils';
+import { getErrorMessage } from '@/utils/error-handling';
 
 export interface AssetResolutionOptions {
   associate?: boolean;
@@ -200,12 +201,12 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       });
       return result;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         notify({
           display: true,
           message: t('actions.assets.erc20.error.description', {
-            message: error.message,
+            message: getErrorMessage(error),
           }),
           title: t('actions.assets.erc20.error.title', payload),
         });
@@ -219,7 +220,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       const evmChain = params.evmChain && getChain(params.evmChain) ? params.evmChain : undefined;
       return await assetSearchCaller({ ...params, evmChain });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isAbortError(error))
         return [];
 
@@ -227,7 +228,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
         display: true,
         group: NotificationGroup.ASSET_SEARCH_ERROR,
         message: t('asset_search.error.message', {
-          message: error.message,
+          message: getErrorMessage(error),
         }),
         severity: Severity.ERROR,
         title: t('asset_search.error.title'),

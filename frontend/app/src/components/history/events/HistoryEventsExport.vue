@@ -10,6 +10,7 @@ import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const { filters, matchExactEvents } = defineProps<{
   matchExactEvents: boolean;
@@ -39,12 +40,12 @@ async function createCsv(directoryPath?: string): Promise<{ result: boolean | { 
       result,
     };
   }
-  catch (error: any) {
+  catch (error: unknown) {
     if (isTaskCancelled(error))
       return null;
 
     return {
-      message: error.message,
+      message: getErrorMessage(error),
       result: false,
     };
   }
@@ -83,11 +84,11 @@ async function exportCSV(): Promise<void> {
       await downloadHistoryEventsCSV(result.filePath);
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     message = {
       display: true,
       message: t('actions.history_events_export.message.failure', {
-        description: error.message,
+        description: getErrorMessage(error),
       }),
       severity: Severity.ERROR,
       title: t('actions.history_events_export.title'),

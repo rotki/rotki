@@ -1,12 +1,13 @@
 import type { MaybeRef } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import { useAssetWhitelistApi } from '@/composables/api/assets/whitelist';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 
 export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () => {
   const whitelistedAssets = ref<string[]>([]);
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const { addAssetToWhitelist, getWhitelistedAssets, removeAssetFromWhitelist } = useAssetWhitelistApi();
@@ -18,16 +19,13 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
       const whitelisted = await getWhitelistedAssets();
       set(whitelistedAssets, whitelisted);
     }
-    catch (error: any) {
-      const title = t('actions.session.whitelisted_assets.error.title');
-      const message = t('actions.session.whitelisted_assets.error.message', {
-        error: error.message,
-      });
-      notify({
-        display: true,
-        message,
-        title,
-      });
+    catch (error: unknown) {
+      notifyError(
+        t('actions.session.whitelisted_assets.error.title'),
+        t('actions.session.whitelisted_assets.error.message', {
+          error: getErrorMessage(error),
+        }),
+      );
     }
   };
 
@@ -38,15 +36,15 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
       await fetchIgnoredAssets();
       return { success: true };
     }
-    catch (error: any) {
-      notify({
-        display: true,
-        message: t('ignore.whitelist.failed.whitelist_message', {
-          message: error.message,
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
+      notifyError(
+        t('ignore.whitelist.failed.whitelist_title'),
+        t('ignore.whitelist.failed.whitelist_message', {
+          message,
         }),
-        title: t('ignore.whitelist.failed.whitelist_title'),
-      });
-      return { message: error.message, success: false };
+      );
+      return { message, success: false };
     }
   };
 
@@ -57,15 +55,15 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
       await fetchIgnoredAssets();
       return { success: true };
     }
-    catch (error: any) {
-      notify({
-        display: true,
-        message: t('ignore.whitelist.failed.unwhitelist_message', {
-          message: error.message,
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
+      notifyError(
+        t('ignore.whitelist.failed.unwhitelist_title'),
+        t('ignore.whitelist.failed.unwhitelist_message', {
+          message,
         }),
-        title: t('ignore.whitelist.failed.unwhitelist_title'),
-      });
-      return { message: error.message, success: false };
+      );
+      return { message, success: false };
     }
   };
 

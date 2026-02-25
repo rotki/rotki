@@ -2,6 +2,7 @@
 import WalletImportSelection from '@/components/accounts/blockchain/WalletImportSelection.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 
 defineProps<{
   disabled: boolean;
@@ -22,9 +23,9 @@ async function importAddresses() {
     const addresses = await metamaskImport();
     emit('update:addresses', addresses);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     setMessage({
-      description: error.message,
+      description: getErrorMessage(error),
       success: false,
       title: t('input_mode_select.import_from_wallet.label'),
     });

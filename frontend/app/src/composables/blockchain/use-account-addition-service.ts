@@ -12,6 +12,7 @@ import { useTagStore } from '@/store/session/tags';
 import { useSettingsStore } from '@/store/settings';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface EvmAccountAdditionSuccess {
@@ -168,11 +169,11 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
         type: 'success',
       };
     }
-    catch (error: any) {
-      logger.error(error.message);
+    catch (error: unknown) {
+      logger.error(getErrorMessage(error));
       return {
         account,
-        error,
+        error: error instanceof Error ? error : new Error(getErrorMessage(error)),
         type: 'error',
       };
     }
@@ -217,11 +218,11 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
         type: 'success',
       };
     }
-    catch (error: any) {
-      logger.error(error.message);
+    catch (error: unknown) {
+      logger.error(getErrorMessage(error));
       return {
         account,
-        error,
+        error: error instanceof Error ? error : new Error(getErrorMessage(error)),
         type: 'error',
       };
     }

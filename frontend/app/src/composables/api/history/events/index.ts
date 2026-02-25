@@ -30,6 +30,7 @@ import {
 } from '@/types/history/events/schemas';
 import { type PendingTask, PendingTaskSchema } from '@/types/task';
 import { downloadFileByUrl } from '@/utils/download';
+import { getErrorMessage } from '@/utils/error-handling';
 import { getFilename } from '@/utils/file';
 
 const TransactionStatusSchema = z.object({
@@ -291,8 +292,8 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
       downloadFileByUrl(fullUrl, getFilename(filePath));
       return { success: true };
     }
-    catch (error: any) {
-      return { message: error.message, success: false };
+    catch (error: unknown) {
+      return { message: getErrorMessage(error), success: false };
     }
   };
 

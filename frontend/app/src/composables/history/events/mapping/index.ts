@@ -13,6 +13,7 @@ import { useRefMap } from '@/composables/utils/useRefMap';
 import { useLocationStore } from '@/store/locations';
 import { useNotificationsStore } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
+import { getErrorMessage } from '@/utils/error-handling';
 
 type Event = MaybeRefOrGetter<{
   eventType: string;
@@ -191,7 +192,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     try {
       set(historyEventTypeData, await getTransactionTypeMappings());
     }
-    catch (error: any) {
+    catch (error: unknown) {
       notify({
         action: [
           {
@@ -202,7 +203,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
         ],
         display: true,
         message: t('actions.history_events.fetch_mapping.error.description', {
-          message: error.message,
+          message: getErrorMessage(error),
         }),
         title: t('actions.history_events.fetch_mapping.error.title'),
       });

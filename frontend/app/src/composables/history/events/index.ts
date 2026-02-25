@@ -14,13 +14,14 @@ import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { RequestCancelledError } from '@/modules/api/request-queue/errors';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useHistoryStore } from '@/store/history';
-import { useNotificationsStore } from '@/store/notifications';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { arrayify } from '@/utils/array';
 import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
 import { millisecondsToSeconds } from '@/utils/date';
+import { getErrorMessage } from '@/utils/error-handling';
 import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';
 
@@ -34,7 +35,7 @@ interface UseHistoryEventsReturn {
 
 export function useHistoryEvents(): UseHistoryEventsReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
 
   const {
     addHistoryEvent: addHistoryEventCaller,
@@ -119,18 +120,15 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
 
       return { data: flatData, ...others };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (error instanceof RequestCancelledError)
         throw error;
 
       logger.error(error);
-      notify({
-        display: true,
-        message: t('actions.history_events.error.description', {
-          error,
-        }).toString(),
-        title: t('actions.history_events.error.title'),
-      });
+      notifyError(
+        t('actions.history_events.error.title'),
+        t('actions.history_events.error.description', { error }).toString(),
+      );
       return defaultCollectionState();
     }
   };
@@ -143,8 +141,8 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
       success = true;
       signalEventsModified();
     }
-    catch (error: any) {
-      message = error.message;
+    catch (error: unknown) {
+      message = getErrorMessage(error);
       if (error instanceof ApiValidationError)
         message = error.getValidationErrors(event);
     }
@@ -160,8 +158,8 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
       success = true;
       signalEventsModified();
     }
-    catch (error: any) {
-      message = error.message;
+    catch (error: unknown) {
+      message = getErrorMessage(error);
       if (error instanceof ApiValidationError)
         message = error.getValidationErrors(event);
     }
@@ -177,8 +175,8 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
       if (success)
         signalEventsModified();
     }
-    catch (error: any) {
-      message = error.message;
+    catch (error: unknown) {
+      message = getErrorMessage(error);
     }
 
     return { message, success };

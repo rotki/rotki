@@ -8,6 +8,7 @@ import { useAssetCexMappingApi } from '@/composables/api/assets/cex-mapping';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
@@ -86,10 +87,10 @@ async function confirmDelete(mapping: CexMapping) {
     if (success)
       await fetchData();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     setMessage({
       description: t('asset_management.cex_mapping.delete_error', {
-        message: error.message,
+        message: getErrorMessage(error),
       }),
     });
   }

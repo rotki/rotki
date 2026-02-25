@@ -11,6 +11,7 @@ import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { ApiValidationError } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const { items, isPinned } = defineProps<{
   items: MissingPrice[];
@@ -89,8 +90,8 @@ async function updatePrice(item: EditableMissingPrice) {
       await deleteHistoricalPrice(payload);
     }
   }
-  catch (error: any) {
-    let errorMessage = error.message;
+  catch (error: unknown) {
+    let errorMessage = getErrorMessage(error);
     if (error instanceof ApiValidationError) {
       const errors = error.getValidationErrors({ price: '' });
       errorMessage = typeof errors === 'string' ? error.message : errors.price[0];

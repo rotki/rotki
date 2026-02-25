@@ -7,7 +7,6 @@ import type { TableId } from '@/modules/table/use-remember-table-sorting';
 import type { Collection } from '@/types/collection';
 import type { PaginationRequestPayload } from '@/types/common';
 import type { LocationQuery, RawLocationQuery } from '@/types/route';
-import { Severity } from '@rotki/common';
 import { isEqual } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
@@ -20,8 +19,8 @@ import {
   parseQueryPagination,
 } from '@/composables/use-pagination-filter/utils';
 import { api, RequestCancelledError } from '@/modules/api';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useRememberTableFilter } from '@/modules/table/use-remember-table-filter';
-import { useNotificationsStore } from '@/store/notifications';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
 import { defaultCollectionState } from '@/utils/collection';
 import { nonEmptyProperties } from '@/utils/data';
@@ -99,7 +98,7 @@ export function usePaginationFilters<
   options: UsePaginationFiltersOptions<TItem, TPayload, TFilter, TSuggestionMatcher> = {},
 ): UsePaginationFilterReturn<TItem, TPayload, TFilter, TSuggestionMatcher> {
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const itemsPerPage = useItemsPerPage();
   const router = useRouter();
   const route = useRoute();
@@ -262,12 +261,7 @@ export function usePaginationFilters<
 
         logger.error(error);
         if (Number(code) >= 400) {
-          notify({
-            display: true,
-            message: t('error.generic.message', { code, message, path }),
-            severity: Severity.ERROR,
-            title: t('error.generic.title'),
-          });
+          notifyError(t('error.generic.title'), t('error.generic.message', { code, message, path }));
         }
       },
       resetOnExecute: false,

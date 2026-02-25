@@ -6,7 +6,8 @@ import CalendarForm from '@/components/calendar/CalendarForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useCalendarApi } from '@/composables/history/calendar';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError } from '@/types/api/errors';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<CalendarEvent | undefined>({ required: true });
 
@@ -59,11 +60,11 @@ async function save() {
 
     success = true;
   }
-  catch (error: any) {
+  catch (error: unknown) {
     success = false;
     const errorTitle = editMode ? t('calendar.edit_error') : t('calendar.add_error');
 
-    let errors = error.message;
+    let errors: string | ValidationErrors = getErrorMessage(error);
     if (error instanceof ApiValidationError)
       errors = error.getValidationErrors(payload);
 

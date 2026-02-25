@@ -1,6 +1,7 @@
 import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
 import { useQueriedAddressApi } from '@/composables/api/session/queried-addresses';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 
 export const useQueriedAddressesStore = defineStore('session/queried-addresses', () => {
   const queriedAddresses = ref<QueriedAddresses>({});
@@ -13,10 +14,10 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
     try {
       set(queriedAddresses, await api.addQueriedAddress(payload));
     }
-    catch (error: any) {
+    catch (error: unknown) {
       setMessage({
         description: t('actions.session.add_queriable_address.error.message', {
-          message: error.message,
+          message: getErrorMessage(error),
         }),
       });
     }
@@ -26,10 +27,10 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
     try {
       set(queriedAddresses, await api.deleteQueriedAddress(payload));
     }
-    catch (error: any) {
+    catch (error: unknown) {
       setMessage({
         description: t('actions.session.delete_queriable_address.error.message', {
-          message: error.message,
+          message: getErrorMessage(error),
         }),
       });
     }
@@ -39,10 +40,10 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
     try {
       set(queriedAddresses, await api.queriedAddresses());
     }
-    catch (error: any) {
+    catch (error: unknown) {
       setMessage({
         description: t('actions.session.fetch_queriable_address.error.message', {
-          message: error.message,
+          message: getErrorMessage(error),
         }),
       });
     }
