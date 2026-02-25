@@ -12,10 +12,6 @@ import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFo
 
 const filter = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });
 
-defineProps<{
-  disableStatus?: boolean;
-}>();
-
 enum Eth2StakingFilterKeys {
   START = 'start',
   END = 'end',

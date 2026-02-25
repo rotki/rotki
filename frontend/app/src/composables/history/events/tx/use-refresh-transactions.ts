@@ -65,11 +65,13 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       : get(syncingExchanges);
 
     // Determine initial accounts to check
-    const allCurrentAccounts = accounts?.length
-      ? accounts
-      : fullRefresh
-        ? getAllAccounts(chains)
-        : [];
+    let allCurrentAccounts: ChainAddress[];
+    if (accounts?.length)
+      allCurrentAccounts = accounts;
+    else if (fullRefresh)
+      allCurrentAccounts = getAllAccounts(chains);
+    else
+      allCurrentAccounts = [];
 
     const newAccountsList = getNewAccounts(allCurrentAccounts);
     const hasNewAccounts = newAccountsList.length > 0;

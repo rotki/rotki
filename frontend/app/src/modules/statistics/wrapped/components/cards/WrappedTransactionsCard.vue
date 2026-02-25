@@ -6,7 +6,7 @@ import { ValueDisplay } from '@/modules/amount-display/components';
 import { sortDesc } from '@/utils/bignumbers';
 import WrappedCard from '../WrappedCard.vue';
 
-const props = defineProps<{
+const { transactionsPerChain } = defineProps<{
   transactionsPerChain?: Record<string, BigNumber>;
 }>();
 
@@ -14,9 +14,9 @@ const { t } = useI18n({ useScope: 'global' });
 const { getChain } = useSupportedChains();
 
 const chainItems = computed<Array<[string, BigNumber]>>(() => {
-  if (!props.transactionsPerChain)
+  if (!transactionsPerChain)
     return [];
-  return Object.entries(props.transactionsPerChain).sort((a, b) => sortDesc(a[1], b[1]));
+  return Object.entries(transactionsPerChain).sort((a, b) => sortDesc(a[1], b[1]));
 });
 </script>
 

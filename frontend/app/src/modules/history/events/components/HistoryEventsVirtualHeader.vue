@@ -8,8 +8,6 @@ const pagination = defineModel<TablePaginationData>('pagination', { required: tr
 
 defineProps<{
   loading?: boolean;
-  total: number;
-  found: number;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -19,7 +17,9 @@ const { isSmAndDown } = useBreakpoint();
 
 function getSortArray() {
   const sortData = get(sort);
-  return Array.isArray(sortData) ? sortData : (sortData ? [sortData] : []);
+  if (Array.isArray(sortData))
+    return sortData;
+  return sortData ? [sortData] : [];
 }
 
 const sortColumn = computed<'timestamp' | undefined>({
@@ -36,9 +36,9 @@ const sortColumn = computed<'timestamp' | undefined>({
     }
     const sortArray = getSortArray();
     const currentDirection = sortArray[0]?.direction ?? 'desc';
-    const newDirection = sortArray[0]?.column === column
-      ? (currentDirection === 'asc' ? 'desc' : 'asc')
-      : 'desc';
+    let newDirection: 'asc' | 'desc' = 'desc';
+    if (sortArray[0]?.column === column)
+      newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
     set(sort, [{ column, direction: newDirection }]);
   },
 });

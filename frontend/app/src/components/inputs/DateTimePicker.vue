@@ -10,20 +10,37 @@ interface QuickOption {
 
 const modelValue = defineModel<number>({ required: true });
 
-const props = defineProps<RuiDateTimePickerProps>();
+const {
+  accuracy,
+  allowEmpty,
+  dense,
+  disabled,
+  errorMessages,
+  format,
+  hideDetails,
+  hint,
+  label,
+  maxDate,
+  minDate,
+  readonly,
+  required,
+  successMessages,
+  type,
+  variant,
+} = defineProps<RuiDateTimePickerProps>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const quickOptions: QuickOption[] = [
+const quickOptions = computed<QuickOption[]>(() => [
   { label: t('date_time_picker.one_day_before'), unit: 'day', value: 1 },
   { label: t('date_time_picker.week_before'), unit: 'week', value: 1 },
   { label: t('date_time_picker.month_before'), unit: 'month', value: 1 },
   { label: t('date_time_picker.days_before', { days: 90 }), unit: 'day', value: 90 },
   { label: t('date_time_picker.months_before', { months: 6 }), unit: 'month', value: 6 },
   { label: t('date_time_picker.year_before'), unit: 'year', value: 1 },
-];
+]);
 
-const useMilliseconds = computed<boolean>(() => props.accuracy === 'millisecond');
+const useMilliseconds = computed<boolean>(() => accuracy === 'millisecond');
 
 function applyQuickOption(option: QuickOption): void {
   const currentValue = get(modelValue);
@@ -36,7 +53,22 @@ function applyQuickOption(option: QuickOption): void {
 <template>
   <RuiDateTimePicker
     v-model="modelValue"
-    v-bind="props"
+    :accuracy="accuracy"
+    :allow-empty="allowEmpty"
+    :dense="dense"
+    :disabled="disabled"
+    :error-messages="errorMessages"
+    :format="format"
+    :hide-details="hideDetails"
+    :hint="hint"
+    :label="label"
+    :max-date="maxDate"
+    :min-date="minDate"
+    :readonly="readonly"
+    :required="required"
+    :success-messages="successMessages"
+    :type="type"
+    :variant="variant"
   >
     <template #menu-content>
       <div class="border-t border-default flex flex-col pt-2">

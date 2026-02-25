@@ -7,14 +7,16 @@ import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 
-const emit = defineEmits(['update:selection']);
+const emit = defineEmits<{
+  'update:selection': [modules: Module[]];
+}>();
 
 const enabledModules = ref<Module[]>([]);
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const queriedAddressesStore = useQueriedAddressesStore();
 const { queriedAddresses } = storeToRefs(queriedAddressesStore);
 
-function updateSelection(modules: string[]) {
+function updateSelection(modules: Module[]) {
   emit('update:selection', modules);
 }
 

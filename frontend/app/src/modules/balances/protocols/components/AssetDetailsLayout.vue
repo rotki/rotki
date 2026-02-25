@@ -2,7 +2,7 @@
 import type { AssetBalanceWithPrice } from '@rotki/common';
 import { isEvmNativeToken } from '@/types/asset';
 
-const props = defineProps<{
+const { row } = defineProps<{
   row: AssetBalanceWithPrice;
 }>();
 
@@ -11,13 +11,13 @@ const { t } = useI18n({ useScope: 'global' });
 const tab = ref(0);
 
 const hasPerProtocol = computed<boolean>(() => {
-  const perProtocol = props.row.perProtocol;
+  const perProtocol = row.perProtocol;
   return (perProtocol && perProtocol.length > 1) ?? false;
 });
 
 const hasBreakdown = computed<boolean>(() => {
-  const breakdown = props.row.breakdown;
-  const isNativeToken = isEvmNativeToken(props.row.asset);
+  const breakdown = row.breakdown;
+  const isNativeToken = isEvmNativeToken(row.asset);
   const hasBreakdown = breakdown && breakdown.length > 0;
   return ((hasBreakdown && !isNativeToken) || (isNativeToken && hasBreakdown && !get(hasPerProtocol))) ?? false;
 });

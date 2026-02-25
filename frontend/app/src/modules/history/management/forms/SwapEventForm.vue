@@ -35,7 +35,7 @@ interface FormData {
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{ data: GroupEventData<SwapEvent> }>();
+const { data } = defineProps<{ data: GroupEventData<SwapEvent> }>();
 
 function emptyEvent(): FormData {
   return {
@@ -190,7 +190,7 @@ function getNotes(event?: SwapEvent): string {
   return event.userNotes;
 }
 
-watchImmediate(() => props.data, (data) => {
+watchImmediate(() => data, (data) => {
   if (data.type !== 'edit-group')
     return;
 

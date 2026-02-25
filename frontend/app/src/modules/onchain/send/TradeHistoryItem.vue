@@ -5,12 +5,12 @@ import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import HistoryEventNote from '@/components/history/events/HistoryEventNote.vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
 
-const props = defineProps<{
+const { item } = defineProps<{
   item: RecentTransaction;
 }>();
 
 const color = computed<'error' | 'success' | 'warning'>(() => {
-  const status = props.item.status;
+  const status = item.status;
   if (status === 'completed') {
     return 'success';
   }

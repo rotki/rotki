@@ -2,7 +2,7 @@
 import { useLinks } from '@/composables/links';
 import { truncateAddress } from '@/utils/truncate';
 
-const props = defineProps<{
+const { base, text, isToken } = defineProps<{
   base: string;
   text: string;
   size: string | number;
@@ -10,12 +10,11 @@ const props = defineProps<{
 }>();
 
 const url = computed<string>(() => {
-  const isToken = props.isToken;
-  const linkText = isToken ? props.text.replace('/', '?a=') : props.text;
-  return props.base + linkText;
+  const linkText = isToken ? text.replace('/', '?a=') : text;
+  return base + linkText;
 });
 
-const displayUrl = computed<string>(() => props.base + truncateAddress(props.text, 10));
+const displayUrl = computed<string>(() => base + truncateAddress(text, 10));
 
 const { href, onLinkClick } = useLinks(url);
 const { t } = useI18n({ useScope: 'global' });

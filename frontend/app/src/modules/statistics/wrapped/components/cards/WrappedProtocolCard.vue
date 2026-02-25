@@ -10,16 +10,16 @@ interface ProtocolActivity {
   transactions: BigNumber;
 }
 
-const props = defineProps<{
+const { transactionsPerProtocol } = defineProps<{
   transactionsPerProtocol?: ProtocolActivity[];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const sortedProtocols = computed<ProtocolActivity[]>(() => {
-  if (!props.transactionsPerProtocol)
+  if (!transactionsPerProtocol)
     return [];
-  return [...props.transactionsPerProtocol].sort((a, b) => sortDesc(a.transactions, b.transactions));
+  return [...transactionsPerProtocol].sort((a, b) => sortDesc(a.transactions, b.transactions));
 });
 </script>
 

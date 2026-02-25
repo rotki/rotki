@@ -5,15 +5,17 @@ import en from './locales/en.json';
 const loadedLocales = new Set<string>(['en']);
 
 export const i18n = createI18n({
-  fallbackLocale: (import.meta.env.VITE_I18N_FALLBACK_LOCALE as string | undefined) || 'en',
-  locale: (import.meta.env.VITE_I18N_LOCALE as string | undefined) || 'en',
+  fallbackLocale: import.meta.env.VITE_I18N_FALLBACK_LOCALE || 'en',
+  locale: import.meta.env.VITE_I18N_LOCALE || 'en',
   messages: { en },
   modifiers: {
-    quote: (val, type) => type === 'text' && typeof val === 'string'
-      ? `"${val}"`
-      : type === 'vnode' && typeof val === 'object' && '__v_isVNode' in val
-        ? `"${(val as any).children}"`
-        : `"${val.toString()}"`,
+    quote(val, type) {
+      if (type === 'text' && typeof val === 'string')
+        return `"${val}"`;
+      if (type === 'vnode' && typeof val === 'object' && '__v_isVNode' in val)
+        return `"${(val as any).children}"`;
+      return `"${val.toString()}"`;
+    },
   },
   silentTranslationWarn: import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true',
 });

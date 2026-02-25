@@ -5,7 +5,7 @@ interface SlotProps {
   className?: string;
 }
 
-const props = defineProps<{
+const { location } = defineProps<{
   location: string;
 }>();
 
@@ -69,7 +69,6 @@ const defaultData: Record<LocationKey, SlotProps> = {
 };
 
 const slotData = computed(() => {
-  const location = props.location;
   const locationConfig = customLabel[location] || {};
 
   return LOCATION_KEYS

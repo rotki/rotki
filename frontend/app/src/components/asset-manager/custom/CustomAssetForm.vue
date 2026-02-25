@@ -14,7 +14,6 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
 const { types } = defineProps<{
-  editMode?: boolean;
   types: string[];
 }>();
 

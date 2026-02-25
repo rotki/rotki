@@ -3,7 +3,7 @@ import { type BigNumber, Zero } from '@rotki/common';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { FiatDisplay } from '@/modules/amount-display';
 
-const props = defineProps<{ identifier: string }>();
+const { identifier } = defineProps<{ identifier: string }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -11,7 +11,7 @@ const { balancesByLocation } = useAggregatedBalances();
 
 const totalValue = computed<BigNumber>(() => {
   const locations = get(balancesByLocation);
-  return locations?.[props.identifier] ?? Zero;
+  return locations?.[identifier] ?? Zero;
 });
 </script>
 

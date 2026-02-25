@@ -2,13 +2,13 @@
 import type { HistoryEventState } from '@/types/history/events/schemas';
 import { useHistoryEventStateMapping } from '@/composables/history/events/mapping/state';
 
-const props = defineProps<{
+const { state } = defineProps<{
   state: HistoryEventState;
 }>();
 
 const { stateConfigs } = useHistoryEventStateMapping();
 
-const config = computed(() => stateConfigs[props.state]);
+const config = computed(() => stateConfigs[state]);
 </script>
 
 <template>

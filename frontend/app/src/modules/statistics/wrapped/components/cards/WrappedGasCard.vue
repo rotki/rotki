@@ -5,7 +5,7 @@ import HashLink from '@/modules/common/links/HashLink.vue';
 import { sortDesc } from '@/utils/bignumbers';
 import WrappedCard from '../WrappedCard.vue';
 
-const props = defineProps<{
+const { ethOnGasPerAddress } = defineProps<{
   ethOnGas?: BigNumber;
   ethOnGasPerAddress?: Record<string, BigNumber>;
 }>();
@@ -14,9 +14,9 @@ const { t } = useI18n({ useScope: 'global' });
 const { isSmAndDown } = useBreakpoint();
 
 const gasPerAddressItems = computed<Array<[string, BigNumber]>>(() => {
-  if (!props.ethOnGasPerAddress)
+  if (!ethOnGasPerAddress)
     return [];
-  return Object.entries(props.ethOnGasPerAddress).sort((a, b) => sortDesc(a[1], b[1]));
+  return Object.entries(ethOnGasPerAddress).sort((a, b) => sortDesc(a[1], b[1]));
 });
 </script>
 

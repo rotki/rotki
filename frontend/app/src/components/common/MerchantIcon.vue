@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 
-const props = defineProps<{
+const { code } = defineProps<{
   code: string;
 }>();
 
@@ -32,7 +32,7 @@ const mccIconMap: Record<string, RuiIcons> = {
 
 const DEFAULT_ICON = 'lu-store';
 
-const iconName = computed<string>(() => mccIconMap[props.code] ?? DEFAULT_ICON);
+const iconName = computed<string>(() => mccIconMap[code] ?? DEFAULT_ICON);
 </script>
 
 <template>

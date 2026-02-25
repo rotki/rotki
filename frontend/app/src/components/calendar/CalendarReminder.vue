@@ -8,7 +8,7 @@ import { logger } from '@/utils/logging';
 
 const modelValue = defineModel<CalendarEvent>({ required: true });
 
-const props = defineProps<{
+const { editMode } = defineProps<{
   editMode: boolean;
 }>();
 
@@ -71,7 +71,7 @@ async function addCalendarReminderHandler(reminders: CalenderReminderPayload[]) 
 }
 
 async function refreshTemporaryData() {
-  if (!props.editMode) {
+  if (!editMode) {
     return;
   }
   const item = get(modelValue);
@@ -108,7 +108,7 @@ async function addReminder(secsBefore: number = 900, inTimeReminder = false) {
 
   const item = get(modelValue);
 
-  if (!props.editMode || isSameSecsBeforeExist(secsBefore) || inTimeReminder) {
+  if (!editMode || isSameSecsBeforeExist(secsBefore) || inTimeReminder) {
     const newId = Date.now();
     const newData: CalendarReminderTemporaryPayload = {
       identifier: newId,
@@ -140,7 +140,7 @@ async function deleteData(index: number) {
   const temp = [...get(temporaryData)];
   const data = temp[index];
 
-  if (!data.isTemporary && props.editMode) {
+  if (!data.isTemporary && editMode) {
     try {
       await deleteCalendarReminder(data.identifier);
     }
@@ -167,7 +167,7 @@ async function updateData(index: number, { secsBefore }: CalendarReminderTempora
   const temp = [...get(temporaryData)];
   const data = temp[index];
 
-  if (props.editMode) {
+  if (editMode) {
     if (!data.isTemporary) {
       try {
         await editCalendarReminder({

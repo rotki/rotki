@@ -76,7 +76,7 @@ export function useMissingMappingsDB(): UseMappingDBReturn {
     const { data, total } = await getPage<MissingMapping, 'id'>(table, {
       limit,
       offset,
-      order: ascending.length > 0 ? (ascending[0] ? 'asc' : 'desc') : 'asc',
+      order: ascending.length > 0 && !ascending[0] ? 'desc' : 'asc',
       orderBy: orderByAttributes.length > 0 ? orderByAttributes[0] : 'location',
     }, filter);
 

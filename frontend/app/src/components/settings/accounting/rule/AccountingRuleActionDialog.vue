@@ -2,16 +2,19 @@
 import type { AccountingRuleAction, AccountingRuleEntry } from '@/types/settings/accounting';
 import AccountingRuleEventsDialog from '@/components/settings/accounting/rule/AccountingRuleEventsDialog.vue';
 
-export interface Props {
-  hasEventSpecificRule: boolean;
-  hasGeneralRule: boolean;
+export interface ActionDialogContext {
   eventId: number;
   generalRule?: AccountingRuleEntry;
   eventSpecificRule?: AccountingRuleEntry;
+}
+
+interface Props {
+  hasEventSpecificRule: boolean;
+  hasGeneralRule: boolean;
   eventIds?: number[];
 }
 
-const props = defineProps<Props>();
+const { eventIds } = defineProps<Props>();
 
 const emit = defineEmits<{
   close: [];
@@ -23,7 +26,7 @@ const { t } = useI18n({ useScope: 'global' });
 const display = ref<boolean>(true);
 const showEventsList = ref<boolean>(false);
 
-const affectedEventsCount = computed<number>(() => props.eventIds?.length ?? 0);
+const affectedEventsCount = computed<number>(() => eventIds?.length ?? 0);
 
 function onSelect(action: AccountingRuleAction) {
   emit('select', action);

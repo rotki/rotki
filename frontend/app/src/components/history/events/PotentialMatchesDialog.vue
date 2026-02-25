@@ -7,7 +7,7 @@ import { useAreaVisibilityStore } from '@/store/session/visibility';
 
 const modelValue = defineModel<boolean>({ required: true });
 
-const props = defineProps<{
+const { movement } = defineProps<{
   movement: UnmatchedAssetMovement;
 }>();
 
@@ -31,7 +31,7 @@ function onMatched(): void {
 function showUnmatchedInEvents(): void {
   const pin: Pinned = {
     name: 'match-asset-movements-pinned',
-    props: { highlightedGroupIdentifier: props.movement.groupIdentifier },
+    props: { highlightedGroupIdentifier: movement.groupIdentifier },
   };
 
   set(pinned, pin);
@@ -44,7 +44,7 @@ function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier:
   const pin: Pinned = {
     name: 'match-asset-movements-pinned',
     props: {
-      highlightedGroupIdentifier: props.movement.groupIdentifier,
+      highlightedGroupIdentifier: movement.groupIdentifier,
       highlightedPotentialMatchIdentifier: data.identifier,
       potentialMatchGroupIdentifier: data.groupIdentifier,
     },

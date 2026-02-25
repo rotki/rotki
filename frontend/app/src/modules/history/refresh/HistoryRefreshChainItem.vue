@@ -4,7 +4,7 @@ import LocationIcon from '@/components/history/LocationIcon.vue';
 
 const modelValue = defineModel<string[]>({ required: true });
 
-const props = defineProps<{
+const { addresses } = defineProps<{
   item: ChainData;
   addresses: string[];
   processing: boolean;
@@ -19,7 +19,7 @@ function toggleSelect(): void {
     set(modelValue, []);
   }
   else {
-    set(modelValue, props.addresses);
+    set(modelValue, addresses);
   }
 }
 </script>

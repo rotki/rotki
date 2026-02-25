@@ -15,13 +15,14 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { toMessages } from '@/utils/validation';
 
-const { source } = defineProps<{ source: ImportSourceType; icon?: string }>();
+const { source } = defineProps<{ source: ImportSourceType }>();
 
 defineSlots<{
   'default': () => any;
   'hint': () => any;
   'upload-title': () => any;
 }>();
+
 const dateInputFormat = ref<string>();
 const uploaded = ref(false);
 const errorMessage = ref('');

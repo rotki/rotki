@@ -3,7 +3,7 @@ import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import HashLink from '@/modules/common/links/HashLink.vue';
 
-const props = defineProps<{
+const { location } = defineProps<{
   location: string;
   locationLabel: string;
   dense?: boolean;
@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const { matchChain } = useSupportedChains();
 
-const isExchangeLocation = computed<boolean>(() => !matchChain(props.location));
+const isExchangeLocation = computed<boolean>(() => !matchChain(location));
 </script>
 
 <template>

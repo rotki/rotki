@@ -32,7 +32,11 @@ const moduleStatus = computed(() => {
       enabled: active.includes(module),
       identifier: module,
     }))
-    .sort((a, b) => (a.enabled === b.enabled ? 0 : a.enabled ? -1 : 1));
+    .sort((a, b) => {
+      if (a.enabled === b.enabled)
+        return 0;
+      return a.enabled ? -1 : 1;
+    });
 });
 
 function onModulePress(module: ModuleWithStatus) {

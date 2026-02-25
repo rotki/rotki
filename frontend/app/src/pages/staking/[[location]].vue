@@ -22,7 +22,7 @@ definePage({
   props: true,
 });
 
-const props = defineProps<{
+const { location: locationProp } = defineProps<{
   location: NavType | '';
 }>();
 
@@ -41,7 +41,7 @@ const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 
 const location = computed({
   get() {
-    return props.location || undefined;
+    return locationProp || undefined;
   },
   set(value?: NavType) {
     set(lastLocation, value);
@@ -95,8 +95,8 @@ const page = computed(() => {
 });
 
 onMounted(async () => {
-  if (props.location) {
-    set(location, props.location);
+  if (locationProp) {
+    set(location, locationProp);
     return;
   }
   const lastLocationVal = get(lastLocation);

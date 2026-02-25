@@ -26,7 +26,6 @@ const { title, type } = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  refresh: [];
   edit: [value: ManualBalance];
 }>();
 

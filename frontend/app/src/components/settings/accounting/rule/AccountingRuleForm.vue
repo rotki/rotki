@@ -15,13 +15,13 @@ const modelValue = defineModel<AccountingRuleEntry>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{
+const { eventIds } = defineProps<{
   eventIds?: number[];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const isEventSpecificRule = computed<boolean>(() => !!props.eventIds && props.eventIds.length > 0);
+const isEventSpecificRule = computed<boolean>(() => !!eventIds && eventIds.length > 0);
 
 const counterparty = refOptional(useRefPropVModel(modelValue, 'counterparty'), '');
 const accountingTreatment = useRefPropVModel(modelValue, 'accountingTreatment');

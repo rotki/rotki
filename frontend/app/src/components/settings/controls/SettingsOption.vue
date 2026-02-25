@@ -24,7 +24,10 @@ const {
   errorMessage?: string | TransformMessageCallback<string>;
 }>();
 
-const emit = defineEmits(['updated', 'finished']);
+const emit = defineEmits<{
+  updated: [];
+  finished: [];
+}>();
 const { clearAll, error, setError, setSuccess, stop, success, wait } = useClearableMessages();
 const { updateSetting } = useSettings();
 
@@ -44,11 +47,13 @@ async function updateImmediate(newValue: any) {
   set(loading, true);
   const settingValue = transform ? transform(newValue) : newValue;
 
-  const location = sessionSetting
-    ? SettingLocation.SESSION
-    : frontendSetting
-      ? SettingLocation.FRONTEND
-      : SettingLocation.GENERAL;
+  let location: SettingLocation;
+  if (sessionSetting)
+    location = SettingLocation.SESSION;
+  else if (frontendSetting)
+    location = SettingLocation.FRONTEND;
+  else
+    location = SettingLocation.GENERAL;
 
   const result = await updateSetting(setting, settingValue, location, {
     error: getMessage(errorMessage, newValue),

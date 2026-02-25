@@ -52,9 +52,11 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   };
 
   const fetchAccounts = async (blockchain?: string | string[], refreshEns: boolean = false): Promise<void> => {
-    const chains = blockchain
-      ? (Array.isArray(blockchain) ? blockchain : [blockchain])
-      : get(supportedChains).map(chain => chain.id);
+    let chains: string[];
+    if (blockchain)
+      chains = Array.isArray(blockchain) ? blockchain : [blockchain];
+    else
+      chains = get(supportedChains).map(chain => chain.id);
     await awaitParallelExecution(chains, chain => chain, fetch, 2);
 
     const namesPayload: AddressBookSimplePayload[] = [];

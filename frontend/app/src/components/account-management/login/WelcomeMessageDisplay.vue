@@ -7,15 +7,15 @@ import FadeTransition from '@/components/helper/FadeTransition.vue';
 import { useRandomStepper } from '@/composables/random-stepper';
 import { logger } from '@/utils/logging';
 
-const props = defineProps<{
+const { messages } = defineProps<{
   messages: WelcomeMessage[];
 }>();
 
 const svg = ref<string>();
 
-const { onNavigate, onPause, onResume, step, steps } = useRandomStepper(props.messages.length);
+const { onNavigate, onPause, onResume, step, steps } = useRandomStepper(messages.length);
 
-const activeItem = computed(() => props.messages[get(step) - 1]);
+const activeItem = computed(() => messages[get(step) - 1]);
 
 async function fetchSvg(): Promise<string | null> {
   const url = get(activeItem).icon;

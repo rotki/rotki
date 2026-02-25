@@ -7,7 +7,7 @@ import { isOfEnum } from '@/utils';
 
 const inputMode = defineModel<InputMode>('inputMode', { required: true });
 
-const props = defineProps<{
+const { blockchain } = defineProps<{
   blockchain: string;
 }>();
 
@@ -21,7 +21,7 @@ const internalValue = computed<string>({
   },
 });
 
-const isBitcoin = computed<boolean>(() => isBtcChain(props.blockchain));
+const isBitcoin = computed<boolean>(() => isBtcChain(blockchain));
 const isXpub = computed<boolean>(() => get(inputMode) === InputMode.XPUB_ADD);
 
 const { t } = useI18n({ useScope: 'global' });

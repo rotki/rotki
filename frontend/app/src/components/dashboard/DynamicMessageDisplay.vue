@@ -4,7 +4,7 @@ import ExternalLink from '@/components/helper/ExternalLink.vue';
 import FadeTransition from '@/components/helper/FadeTransition.vue';
 import { useRandomStepper } from '@/composables/random-stepper';
 
-const props = defineProps<{
+const { messages } = defineProps<{
   messages: DashboardMessage[];
 }>();
 
@@ -12,9 +12,9 @@ const emit = defineEmits<{
   dismiss: [];
 }>();
 
-const { onNavigate, onPause, onResume, step, steps } = useRandomStepper(props.messages.length);
+const { onNavigate, onPause, onResume, step, steps } = useRandomStepper(messages.length);
 
-const activeItem = computed<DashboardMessage>(() => props.messages[get(step) - 1]);
+const activeItem = computed<DashboardMessage>(() => messages[get(step) - 1]);
 </script>
 
 <template>

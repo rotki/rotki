@@ -4,7 +4,7 @@ import UnmatchedMovementsList from '@/components/history/events/UnmatchedMovemen
 import { useAssetMovementActions } from '@/composables/history/events/use-asset-movement-actions';
 import { type UnmatchedAssetMovement, useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 
-const props = defineProps<{
+const { isPinned, onActionComplete } = defineProps<{
   highlightedGroupIdentifier?: string;
   isPinned?: boolean;
   onActionComplete?: () => Promise<void>;
@@ -41,9 +41,9 @@ const {
   restoreMovement,
   selectedIgnored,
   selectedUnmatched,
-} = useAssetMovementActions({ onActionComplete: props.onActionComplete });
+} = useAssetMovementActions({ onActionComplete });
 
-const buttonSize = computed<'sm' | undefined>(() => props.isPinned ? 'sm' : undefined);
+const buttonSize = computed<'sm' | undefined>(() => isPinned ? 'sm' : undefined);
 
 onBeforeMount(async () => {
   await refreshUnmatchedAssetMovements();

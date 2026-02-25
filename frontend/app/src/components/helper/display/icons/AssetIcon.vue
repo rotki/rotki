@@ -17,7 +17,6 @@ interface AssetIconProps {
   noTooltip?: boolean;
   circle?: boolean;
   padding?: string;
-  enableAssociation?: boolean;
   showChain?: boolean;
   flat?: boolean;
   resolutionOptions?: AssetResolutionOptions;

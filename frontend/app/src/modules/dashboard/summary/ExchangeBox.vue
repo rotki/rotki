@@ -11,13 +11,13 @@ interface ExchangeBoxProps {
   amount: BigNumber;
 }
 
-const props = defineProps<ExchangeBoxProps>();
+const { location } = defineProps<ExchangeBoxProps>();
 
 const { exchangeName } = useLocations();
 
 const exchangeLocationRoute = computed<string>(() => {
   const route = Routes.BALANCES_EXCHANGE;
-  return `${route}/${props.location}`;
+  return `${route}/${location}`;
 });
 </script>
 

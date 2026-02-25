@@ -16,7 +16,7 @@ interface LocationData {
   total: number;
 }
 
-const props = defineProps<{
+const { decodingStatus } = defineProps<{
   refreshing: boolean;
   decodingStatus: EvmUnDecodedTransactionsData[];
 }>();
@@ -53,7 +53,7 @@ const { checkMissingEventsAndRedecode } = useHistoryTransactionDecoding();
 const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(useHistoryStore());
 
 function refresh() {
-  if (props.decodingStatus.length === 0)
+  if (decodingStatus.length === 0)
     emit('reset-undecoded-transactions');
 }
 
@@ -75,7 +75,7 @@ const headers: DataTableColumn<LocationData>[] = [{
 }];
 
 const total = computed<number>(() =>
-  props.decodingStatus.reduce((sum, item) => sum + (item.total - item.processed), 0),
+  decodingStatus.reduce((sum, item) => sum + (item.total - item.processed), 0),
 );
 
 const [DefineProgress, ReuseProgress] = createReusableTemplate<{
@@ -92,7 +92,7 @@ watch(isFullyDecoding, (loading) => {
 });
 
 const combinedDecodingStatus = computed(() => {
-  const data = [...props.decodingStatus].reverse();
+  const data = [...decodingStatus].reverse();
   if (!get(receivingProtocolCacheStatus))
     return data;
 

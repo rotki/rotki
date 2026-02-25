@@ -1,10 +1,7 @@
 <script setup lang="ts">
-import type { HistoryEventEntry } from '@/types/history/events/schemas';
-
-const props = defineProps<{
+const { labelType } = defineProps<{
   eventCount: number;
   labelType?: 'swap' | 'movement';
-  events?: HistoryEventEntry[];
 }>();
 
 const emit = defineEmits<{
@@ -14,7 +11,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const isMovement = computed<boolean>(() => props.labelType === 'movement');
+const isMovement = computed<boolean>(() => labelType === 'movement');
 
 const { isMdAndUp } = useBreakpoint();
 </script>

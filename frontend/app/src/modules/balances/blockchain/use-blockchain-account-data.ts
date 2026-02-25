@@ -139,6 +139,14 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     return accountsWithBalances;
   };
 
+  function getExpansionType(chains: string[], hasAssets: boolean): 'accounts' | 'assets' | undefined {
+    if (chains.length > 1)
+      return 'accounts';
+    if (hasAssets)
+      return 'assets';
+    return undefined;
+  }
+
   const getGroups = (accounts: Accounts, balances: Balances): BlockchainAccountGroupWithBalance[] => {
     const accountData = omit(accounts, [Blockchain.ETH2]);
     const balanceData = omit(balances, [Blockchain.ETH2]);
@@ -172,7 +180,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
         category: getChainAccountType(chains[0]),
         chains,
         data: accountsForAddress.length === 1 ? accountsForAddress[0].data : { address, type: 'address' },
-        expansion: chains.length > 1 ? 'accounts' : (hasAssets ? 'assets' : undefined),
+        expansion: getExpansionType(chains, hasAssets),
         label,
         tags: tags.length > 0 ? tags : undefined,
         type: 'group',

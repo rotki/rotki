@@ -24,7 +24,7 @@ const emit = defineEmits<{
   edit: [account: AccountManageState];
 }>();
 
-const detailsTable = ref<ComponentExposed<typeof AccountGroupDetailsTable>>();
+const detailsTable = useTemplateRef<ComponentExposed<typeof AccountGroupDetailsTable>>('detailsTable');
 
 async function refresh(): Promise<void> {
   if (!isDefined(detailsTable))

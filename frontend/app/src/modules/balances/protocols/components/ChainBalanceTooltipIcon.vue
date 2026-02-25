@@ -9,7 +9,6 @@ const { chainId } = defineProps<{
   chainId: string;
   chainBalance: Balance;
   asset?: string;
-  loading?: boolean;
 }>();
 
 const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());

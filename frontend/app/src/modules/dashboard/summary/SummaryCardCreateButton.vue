@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 
-const props = defineProps<{ to?: RouteLocationRaw }>();
+const { to } = defineProps<{ to?: RouteLocationRaw }>();
 
 const router = useRouter();
 
 function navigate() {
-  if (props.to) {
-    router.push(props.to);
+  if (to) {
+    router.push(to);
   }
 }
 </script>

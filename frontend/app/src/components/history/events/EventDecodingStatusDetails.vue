@@ -4,16 +4,16 @@ import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
-const props = defineProps<{ item: EvmUnDecodedTransactionsData }>();
+const { item } = defineProps<{ item: EvmUnDecodedTransactionsData }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { useIsTaskRunning } = useTaskStore();
 
-const remaining = computed<number>(() => props.item.total - props.item.processed);
+const remaining = computed<number>(() => item.total - item.processed);
 const isComplete = computed<boolean>(() => get(remaining) === 0);
 const taskMeta = computed(() => ({
-  chain: props.item.chain,
+  chain: item.chain,
 }));
 
 const decoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING, taskMeta);

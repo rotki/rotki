@@ -18,7 +18,7 @@ defineProps<{
 
 const validator = useRefPropVModel(modelValue, 'data');
 
-const input = ref<ComponentExposed<typeof Eth2Input>>();
+const input = useTemplateRef<ComponentExposed<typeof Eth2Input>>('input');
 
 function validate(): Promise<boolean> {
   assert(isDefined(input));

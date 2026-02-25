@@ -4,7 +4,7 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { getPublicProtocolImagePath } from '@/utils/file';
 import { PoolType } from './types';
 
-const props = defineProps<{
+const { assets, type } = defineProps<{
   assets: string[];
   type: PoolType;
 }>();
@@ -18,7 +18,7 @@ const data = [{
 }] as const;
 
 const icon = computed<string | undefined>(() => {
-  const selected = data.find(({ identifier }) => identifier === props.type);
+  const selected = data.find(({ identifier }) => identifier === type);
 
   if (!selected)
     return undefined;
@@ -26,7 +26,7 @@ const icon = computed<string | undefined>(() => {
   return selected.icon;
 });
 
-const multiple = computed<boolean>(() => props.assets.length > 2);
+const multiple = computed<boolean>(() => assets.length > 2);
 </script>
 
 <template>

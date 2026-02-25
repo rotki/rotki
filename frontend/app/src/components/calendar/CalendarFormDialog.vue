@@ -10,7 +10,7 @@ import { ApiValidationError } from '@/types/api/errors';
 
 const modelValue = defineModel<CalendarEvent | undefined>({ required: true });
 
-const props = defineProps<{
+const { editMode } = defineProps<{
   editMode: boolean;
   loading: boolean;
 }>();
@@ -40,7 +40,6 @@ async function save() {
     return false;
 
   const data = get(modelValue);
-  const editMode = props.editMode;
   const payload = {
     ...data,
   };
@@ -89,7 +88,7 @@ async function save() {
 }
 
 const dialogTitle = computed<string>(() =>
-  props.editMode ? t('calendar.dialog.edit.title') : t('calendar.dialog.add.title'),
+  editMode ? t('calendar.dialog.edit.title') : t('calendar.dialog.add.title'),
 );
 </script>
 

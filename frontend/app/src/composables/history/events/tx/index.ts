@@ -72,7 +72,11 @@ export const useHistoryTransactions = createSharedComposable(() => {
       return '';
 
     // 0 = only from, 1 = only to, 2 = both
-    const choice = from && to ? 2 : (from ? 0 : 1);
+    let choice: number;
+    if (from && to)
+      choice = 2;
+    else
+      choice = from ? 0 : 1;
     return t('actions.date_range', { from, to }, choice);
   };
 

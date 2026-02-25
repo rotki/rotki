@@ -3,23 +3,23 @@ import type { UnderlyingToken } from '@rotki/common';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
 
-const props = defineProps<{
+const { field, value } = defineProps<{
   field: string;
   value?: string | number | boolean | null | UnderlyingToken[];
   diff: boolean;
 }>();
 
-const isStarted = computed(() => props.field === 'started');
-const isAddress = computed(() => props.field === 'address');
+const isStarted = computed(() => field === 'started');
+const isAddress = computed(() => field === 'address');
 const started = computed(() => {
-  if (typeof props.value === 'number')
-    return props.value;
+  if (typeof value === 'number')
+    return value;
 
   return undefined;
 });
 const address = computed(() => {
-  if (typeof props.value === 'string')
-    return props.value;
+  if (typeof value === 'string')
+    return value;
 
   return undefined;
 });

@@ -16,7 +16,7 @@ import {
 
 const show = defineModel<boolean>('show', { required: true });
 
-const props = defineProps<{
+const { payload } = defineProps<{
   payload: PullEventPayload | undefined;
   hasCustomEvents?: boolean;
   showIndexerOptions?: boolean;
@@ -40,7 +40,6 @@ const availableIndexers = new PrioritizedListData<PrioritizedListId>([
 ]);
 
 const isEvmEvent = computed<boolean>(() => {
-  const payload = props.payload;
   if (!payload)
     return false;
 
@@ -49,7 +48,6 @@ const isEvmEvent = computed<boolean>(() => {
 });
 
 const evmChainName = computed<string | undefined>(() => {
-  const payload = props.payload;
   if (!payload)
     return undefined;
 
@@ -86,7 +84,6 @@ function resetState(): void {
 }
 
 function confirmRedecode(): void {
-  const payload = props.payload;
   if (payload) {
     const indexerOrder = get(localIndexerOrder);
     emit('confirm', {

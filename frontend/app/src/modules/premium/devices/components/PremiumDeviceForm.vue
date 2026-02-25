@@ -13,7 +13,7 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false });
 
-const props = defineProps<{
+const { device } = defineProps<{
   device: PremiumDevice;
 }>();
 
@@ -21,7 +21,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const rules = {
   deviceName: {
-    notEqual: helpers.withMessage(t('premium_devices.form.device_name.error.not_equal'), not(sameAs(props.device.deviceName))),
+    notEqual: helpers.withMessage(t('premium_devices.form.device_name.error.not_equal'), not(sameAs(device.deviceName))),
     required: helpers.withMessage(t('premium_devices.form.device_name.error.required'), required),
   },
 };

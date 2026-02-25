@@ -9,7 +9,7 @@ import { logger } from '@/utils/logging';
 const open = defineModel<boolean>('open', { required: true });
 const model = defineModel<Partial<UserNote>>({ required: true });
 
-const props = defineProps<{
+const { editMode, location } = defineProps<{
   editMode: boolean;
   location: string;
 }>();
@@ -39,14 +39,12 @@ async function save() {
 
   const data = get(model);
   let success;
-  const editMode = props.editMode;
-
   set(loading, true);
   try {
     if (editMode)
       success = await updateUserNote(data);
     else
-      success = await addUserNote({ ...data, location: props.location });
+      success = await addUserNote({ ...data, location });
   }
   catch (error: any) {
     success = false;
