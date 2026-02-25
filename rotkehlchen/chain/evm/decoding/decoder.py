@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Protocol
 
 import gevent
+from eth_abi.exceptions import DecodingError
 from web3.exceptions import Web3Exception
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -233,7 +234,12 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             premium=premium,
             base_tools=base_tools,
             misc_counterparties=misc_counterparties,
-            possible_decoding_exceptions=(NotERC721Conformant, NotERC20Conformant, Web3Exception),
+            possible_decoding_exceptions=(
+                NotERC721Conformant,
+                NotERC20Conformant,
+                Web3Exception,
+                DecodingError,
+            ),
         )
 
     def _add_builtin_decoders(self, rules: EvmDecodingRules) -> None:
