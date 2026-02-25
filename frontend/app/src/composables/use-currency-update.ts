@@ -6,7 +6,7 @@ import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
+import { CURRENCY_USD } from '@/types/currencies';
 
 interface UseCurrencyUpdateReturn { onCurrencyUpdate: () => Promise<void> }
 
@@ -15,12 +15,14 @@ export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
   const { adjustPrices, refreshPrices } = usePriceRefresh();
   const { fetchExchangeRates } = usePriceTaskManager();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-  const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
+  const { exchangeRates, previousCurrency, prices } = storeToRefs(useBalancePricesStore());
 
-  const previousCurrency = ref<SupportedCurrency>(get(currencySymbol));
+  if (!get(previousCurrency)) {
+    set(previousCurrency, get(currencySymbol));
+  }
 
   async function onCurrencyUpdate(): Promise<void> {
-    const oldCurrency = get(previousCurrency);
+    const oldCurrency = get(previousCurrency)!;
     const newCurrency = get(currencySymbol);
     set(previousCurrency, newCurrency);
 

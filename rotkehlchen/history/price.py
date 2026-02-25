@@ -196,7 +196,7 @@ class PriceHistorian:
             )
             return Price(usd_price * usd_to_target_price) if usd_to_target_price is not None else None  # noqa: E501
 
-        if GlobalDBHandler.asset_in_collection(collection_id=240, asset_id=from_asset.identifier):  # part of the EURe collection # noqa: E501  # todo: Super hacky. Figure out a way to generalize
+        if from_asset.identifier in Inquirer.eur_pegged_assets:  # part of the EURe collection  # todo: Super hacky. Figure out a way to generalize  # noqa: E501
             return PriceHistorian._get_cached_price_or_query(
                 from_asset=A_EUR,
                 to_asset=to_asset,

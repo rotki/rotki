@@ -353,6 +353,8 @@ class Inquirer:
     _msg_aggregator: 'MessagesAggregator'
     # save only the identifier of the special tokens since we only check if assets are in this set
     special_tokens: set[str]
+    # asset identifiers in the EURe collection (collection_id=240), pegged to EUR
+    eur_pegged_assets: set[str]
     weth: EvmToken
     usd: FiatAsset
 
@@ -422,6 +424,9 @@ class Inquirer:
             A_3CRV.identifier,
             'eip155:1/erc20:0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D',  # vTHOR
         }
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute('SELECT asset FROM multiasset_mappings WHERE collection_id=240')
+            Inquirer.eur_pegged_assets = {row[0] for row in cursor}
         try:
             Inquirer.usd = A_USD.resolve_to_fiat_asset()
             Inquirer.weth = A_WETH.resolve_to_evm_token()
@@ -653,7 +658,7 @@ class Inquirer:
                 usd_found_prices[from_asset] = Price(BTC_PER_BSQ * btc_price), CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
             elif from_asset == A_KFEE:  # KFEE is a kraken special asset where 1000 KFEE = 10 USD
                 usd_found_prices[from_asset] = Price(FVal(0.01)), CurrentPriceOracle.FIAT
-            elif GlobalDBHandler.asset_in_collection(collection_id=240, asset_id=from_asset.identifier):  # EURe collection: pegged to EUR  # noqa: E501
+            elif from_asset.identifier in Inquirer.eur_pegged_assets:
                 eur_collection_assets.append(from_asset)
             elif (price_and_oracle := Inquirer._maybe_get_evm_token_usd_price(asset=from_asset)) is not None:  # noqa: E501
                 usd_found_prices[from_asset] = price_and_oracle

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetPriceInfo, ManualPriceFormPayload } from '@/types/prices';
+import type { ManualPriceFormPayload } from '@/types/prices';
 import RowActions from '@/components/helper/RowActions.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
@@ -28,7 +28,7 @@ const { isLoading } = useStatusStore();
 
 const refreshingPrices = isLoading(Section.PRICES);
 
-const info = computed<AssetPriceInfo>(() => get(assetPriceInfo(identifier, isCollectionParent)));
+const info = assetPriceInfo(() => identifier, () => isCollectionParent);
 const price = assetPrice(() => identifier);
 
 const { isManualAssetPrice } = usePriceUtils();
