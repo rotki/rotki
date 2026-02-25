@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.woo_fi.decoder import WooFiCommonDecoder
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -21,4 +22,5 @@ class WooFiDecoder(WooFiCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             earn_vaults=[],  # There are no WOOFi earn (supercharger) vaults deployed on ethereum.
+            woo_token_address=string_to_evm_address('0x4691937a7508860F876c9c0a2a617E7d9E945D4B'),
         )

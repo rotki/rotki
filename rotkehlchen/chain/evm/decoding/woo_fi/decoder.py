@@ -1,10 +1,21 @@
 import logging
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from rotkehlchen.assets.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.assets.utils import (
+    asset_normalized_value,
+    asset_raw_value,
+    token_normalized_value,
+)
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.constants import DEPOSIT_TOPIC, WITHDRAW_TOPIC_V2, ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import (
+    DEPOSIT_TOPIC,
+    HARVEST_TOPIC,
+    STAKE_TOPIC,
+    UNSTAKE_TOPIC,
+    WITHDRAW_TOPIC_V2,
+    ZERO_ADDRESS,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -19,12 +30,16 @@ from rotkehlchen.chain.evm.decoding.woo_fi.constants import (
     WOO_CROSS_SWAP_ON_SRC_CHAIN_TOPIC,
     WOO_CROSS_SWAP_ROUTER_V5,
     WOO_INSTANT_WITHDRAW_TOPIC,
+    WOO_ON_REWARDED_TOPIC,
     WOO_REQUEST_WITHDRAW_TOPIC,
+    WOO_REWARD_MASTER_CHEF,
+    WOO_REWARD_MASTER_CHEF_ABI,
     WOO_ROUTER_SWAP_TOPIC,
     WOO_ROUTER_V2,
 )
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -52,6 +67,8 @@ class WooFiCommonDecoder(EvmDecoderInterface):
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             earn_vaults: list[WooVaultInfo],
+            woo_token_address: 'ChecksumEvmAddress',
+            stake_v1_address: 'ChecksumEvmAddress | None' = None,
     ) -> None:
         """Common decoder for the WOOFi protocol.
         `earn_tokens` is a list of WooVaultInfo tuples. Each tuple contains the address of the
@@ -64,6 +81,9 @@ class WooFiCommonDecoder(EvmDecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
+        self.woo_token_address = woo_token_address
+        self.stake_v1_address = stake_v1_address
+        self.rewarder_addresses: dict[int, ChecksumEvmAddress] = {}
         self.superchargers = {}
         self.withdrawal_managers = {}
         for earn_vault in earn_vaults:
@@ -515,12 +535,178 @@ class WooFiCommonDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_stake_unstake_vault_token(
+            self,
+            context: DecoderContext,
+            is_stake: bool,
+    ) -> EvmDecodingOutput:
+        """Decode WOOFi supercharger vault token stake/unstake events."""
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        self._maybe_decode_staked_vault_token_rewards(context=context)
+        if is_stake:
+            expected_event_type = HistoryEventType.SPEND
+            new_event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            notes = f'Stake {{amount}} {{asset}} in {CPT_WOO_FI_LABEL}'
+        else:
+            expected_event_type = HistoryEventType.RECEIVE
+            new_event_subtype = HistoryEventSubType.REMOVE_ASSET
+            notes = f'Unstake {{amount}} {{asset}} from {CPT_WOO_FI_LABEL}'
+
+        raw_amount = int.from_bytes(context.tx_log.data[0:32])
+        staking_event, reward_events = None, []
+        for event in context.decoded_events:
+            if (
+                event.event_type == expected_event_type and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.location_label == user_address and
+                event.address == context.tx_log.address and
+                raw_amount == asset_raw_value(
+                    amount=event.amount,
+                    asset=(resolved_asset := event.asset.resolve_to_crypto_asset()),
+                )
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = new_event_subtype
+                event.counterparty = CPT_WOO_FI
+                event.notes = notes.format(amount=event.amount, asset=resolved_asset.symbol)
+                staking_event = event
+            elif (
+                event.event_type == HistoryEventType.STAKING and
+                event.event_subtype == HistoryEventSubType.REWARD and
+                event.counterparty == CPT_WOO_FI
+            ):
+                reward_events.append(event)
+
+        if staking_event is None:
+            log.error(f'Failed to find {CPT_WOO_FI_LABEL} staking event in {context.transaction}')
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        maybe_reshuffle_events(
+            events_list=context.decoded_events,
+            ordered_events=(staking_event, *reward_events),
+        )
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _decode_stake_vault_token_harvest_rewards(
+            self,
+            context: DecoderContext,
+    ) -> EvmDecodingOutput:
+        """Decode harvesting rewards from staked supercharger vault tokens.
+        This handles rewards associated with a Harvest log event on the WOO_REWARD_MASTER_CHEF
+        contract. Other types of rewards are handled in _maybe_decode_staked_vault_token_rewards.
+        """
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        self._maybe_decode_staked_vault_token_rewards(context=context)
+        amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token=(reward_token := self.base.get_or_create_evm_token(
+                address=self.stake_v1_address if self.stake_v1_address is not None else self.woo_token_address,  # noqa: E501
+            )),
+        )
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.amount == amount and
+                event.asset == reward_token and
+                event.location_label == user_address and
+                event.address == context.tx_log.address
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_WOO_FI
+                event.notes = f'Receive {event.amount} {reward_token.symbol} as {CPT_WOO_FI_LABEL} staking reward'  # noqa: E501
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _get_rewarder_address(self, pool_id: int) -> 'ChecksumEvmAddress | None':
+        """Get the address of the Rewarder contract associated with a given pool id.
+        Stores the address in a temporary cache for future lookups in a given decoding run.
+        """
+        if (rewarder_address := self.rewarder_addresses.get(pool_id)) is None:
+            if len(result := self.node_inquirer.call_contract(
+                contract_address=WOO_REWARD_MASTER_CHEF,
+                abi=WOO_REWARD_MASTER_CHEF_ABI,
+                method_name='poolInfo',
+                arguments=[pool_id],
+            )) != 5:
+                log.error(f'Failed to retrieve poolInfo for pool id {pool_id} from WOOFi RewardMasterChef contract.')  # noqa: E501
+                return None
+
+            rewarder_address = deserialize_evm_address(result[4])
+            self.rewarder_addresses[pool_id] = rewarder_address
+
+        return rewarder_address if rewarder_address != ZERO_ADDRESS else None
+
+    def _maybe_decode_staked_vault_token_rewards(self, context: DecoderContext) -> None:
+        """Decode rewards that may be present in txs involving the WOO_REWARD_MASTER_CHEF contract.
+        Handles two cases:
+        * WOO or xWOO tokens received from the master chef contract with no associated log event
+        * Any token received from the Rewarder contract associated with the current pool id
+          matching the amount in the OnRewarded log.
+        """
+        raw_on_rewarded_amount = user_address = None
+        if (rewarder_address := self._get_rewarder_address(
+            pool_id=int.from_bytes(context.tx_log.topics[2]),
+        )) is not None:
+            for tx_log in context.all_logs:
+                if (
+                    tx_log.address == rewarder_address and
+                    len(tx_log.topics) > 0 and
+                    tx_log.topics[0] == WOO_ON_REWARDED_TOPIC and
+                    self.base.is_tracked(user_address := bytes_to_address(tx_log.topics[1]))
+                ):
+                    raw_on_rewarded_amount = int.from_bytes(tx_log.data[0:32])
+                    break
+
+        woo_xwoo_address = self.woo_token_address if self.stake_v1_address is None else self.stake_v1_address  # noqa: E501
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                ((
+                    event.address == WOO_REWARD_MASTER_CHEF and
+                    woo_xwoo_address in event.asset.identifier
+                ) or (
+                    user_address is not None and
+                    event.location_label == user_address and
+                    rewarder_address is not None and
+                    event.address == rewarder_address and
+                    raw_on_rewarded_amount == asset_raw_value(
+                        amount=event.amount,
+                        asset=event.asset.resolve_to_crypto_asset(),
+                    )
+                ))
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_WOO_FI
+                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as {CPT_WOO_FI_LABEL} staking reward'  # noqa: E501
+
+    def _decode_master_chef_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode events associated with staking supercharger vault tokens on the
+        WOO_REWARD_MASTER_CHEF contract.
+        """
+        if context.tx_log.topics[0] == STAKE_TOPIC:
+            return self._decode_stake_unstake_vault_token(context=context, is_stake=True)
+        if context.tx_log.topics[0] == UNSTAKE_TOPIC:
+            return self._decode_stake_unstake_vault_token(context=context, is_stake=False)
+        if context.tx_log.topics[0] == HARVEST_TOPIC:
+            return self._decode_stake_vault_token_harvest_rewards(context=context)
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return {
             WOO_ROUTER_V2: (self._decode_swap,),
             WOO_CROSS_SWAP_ROUTER_V5: (self._decode_cross_swap_router_events,),
+            WOO_REWARD_MASTER_CHEF: (self._decode_master_chef_events,),
         } | dict.fromkeys(self.superchargers, (self._decode_supercharger_events,)) \
         | dict.fromkeys(self.withdrawal_managers, (self._decode_withdraw,))
 
