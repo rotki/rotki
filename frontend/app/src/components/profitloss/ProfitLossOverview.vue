@@ -9,8 +9,6 @@ const {
   report,
 } = defineProps<{
   report: Report;
-  symbol?: string | null;
-  flat?: boolean;
   loading?: boolean;
 }>();
 

@@ -11,7 +11,7 @@ import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { ApiValidationError } from '@/types/api/errors';
 
-const props = defineProps<{
+const { asset } = defineProps<{
   asset: string;
 }>();
 
@@ -35,9 +35,9 @@ const { resetHistoricalPricesData } = store;
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
 
-const name = assetName(props.asset);
+const name = assetName(asset);
 
-const failedPrices = computed<FailedHistoricalAssetPriceResponse>(() => get(failedDailyPrices)[props.asset]);
+const failedPrices = computed<FailedHistoricalAssetPriceResponse>(() => get(failedDailyPrices)[asset]);
 
 const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
   {
@@ -52,7 +52,7 @@ const headers = computed<DataTableColumn<EditableMissingPrice>[]>(() => [
 ]);
 
 const formattedItems = computed<EditableMissingPrice[]>(() => {
-  const fromAsset = props.asset;
+  const fromAsset = asset;
   const toAsset = get(currencySymbol);
 
   return get(failedPrices).noPricesTimestamps.map((time) => {

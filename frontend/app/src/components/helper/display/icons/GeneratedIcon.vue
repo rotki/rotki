@@ -14,7 +14,6 @@ const {
   size: string;
   asset?: string;
   customAsset?: boolean;
-  flat?: boolean;
 }>();
 
 const dimensions = computed<Dimension>(() => {

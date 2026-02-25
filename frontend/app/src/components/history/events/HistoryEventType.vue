@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Blockchain } from '@rotki/common';
 import type { RuiIcons } from '@rotki/ui-library';
 import type { HistoryEventEntry, HistoryEventState } from '@/types/history/events/schemas';
 import HistoryEventAccount from '@/components/history/events/HistoryEventAccount.vue';
@@ -10,7 +9,6 @@ import { useHistoryEventMappings } from '@/composables/history/events/mapping';
 
 const { event, groupLocationLabel, icon, highlight, hideStateChips } = defineProps<{
   event: HistoryEventEntry;
-  chain: Blockchain;
   groupLocationLabel?: string;
   icon?: RuiIcons;
   highlight?: boolean;

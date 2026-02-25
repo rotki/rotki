@@ -10,7 +10,7 @@ import { BalanceSource, type BalanceValueThreshold } from '@/types/settings/fron
 import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
 
-const props = defineProps<{
+const { source } = defineProps<{
   source: BalanceSource;
 }>();
 
@@ -54,7 +54,7 @@ const loading = computed(() => {
 
   return get(applyToAllBalances)
     ? Object.values(loadingStates).some(Boolean)
-    : loadingStates[props.source];
+    : loadingStates[source];
 });
 
 const hint = computed(() => {
@@ -85,8 +85,8 @@ async function applyChanges(): Promise<void> {
   }
   else {
     newState = {
-      ...omit(get(balanceValueThreshold), [props.source]),
-      ...(usedNumber ? { [props.source]: usedNumber } : {}),
+      ...omit(get(balanceValueThreshold), [source]),
+      ...(usedNumber ? { [source]: usedNumber } : {}),
     };
   }
 
@@ -94,7 +94,7 @@ async function applyChanges(): Promise<void> {
 }
 
 watchImmediate([balanceValueThreshold, open], ([balanceValueThreshold]) => {
-  const data = balanceValueThreshold[props.source];
+  const data = balanceValueThreshold[source];
 
   if (data) {
     set(hide, true);

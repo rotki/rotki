@@ -1,7 +1,6 @@
 <script setup lang="ts">
 defineProps<{
   hiddenCount: number;
-  totalCount: number;
 }>();
 
 const emit = defineEmits<{

@@ -6,7 +6,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 
-const props = defineProps<{
+const { data } = defineProps<{
   data: TradableAsset;
   list?: boolean;
   amount?: BigNumber;
@@ -21,8 +21,8 @@ const { t } = useI18n({ useScope: 'global' });
 const { assetName, assetSymbol } = useAssetInfoRetrieval();
 const { getEvmChainName } = useSupportedChains();
 
-const symbol = assetSymbol(props.data.asset, { collectionParent: false });
-const name = assetName(props.data.asset, { collectionParent: false });
+const symbol = assetSymbol(data.asset, { collectionParent: false });
+const name = assetName(data.asset, { collectionParent: false });
 </script>
 
 <template>

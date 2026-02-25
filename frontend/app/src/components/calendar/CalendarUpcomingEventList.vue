@@ -7,7 +7,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 
 const selectedDate = defineModel<Dayjs>('selectedDate', { required: true });
 
-const props = defineProps<{
+const { events } = defineProps<{
   events: CalendarEvent[];
   visibleDate: Dayjs;
 }>();
@@ -18,7 +18,7 @@ const emit = defineEmits<{
 
 const groupedEvents = computed(() => {
   const grouped: Record<string, CalendarEvent[]> = {};
-  props.events.forEach((event) => {
+  events.forEach((event) => {
     const date = dayjs(event.timestamp * 1000).format('YYYY-MM-DD');
     if (!grouped[date]) {
       grouped[date] = [];

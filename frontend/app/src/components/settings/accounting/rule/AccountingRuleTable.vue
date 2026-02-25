@@ -19,10 +19,9 @@ interface AccountingRuleTableProps {
 
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
-const props = defineProps<AccountingRuleTableProps>();
+const { isCustom } = defineProps<AccountingRuleTableProps>();
 
 const emit = defineEmits<{
-  'set-page': [page: number];
   'delete-click': [item: AccountingRuleEntry];
   'edit-click': [item: AccountingRuleEntry];
 }>();
@@ -50,15 +49,15 @@ const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => {
       label: t('transactions.events.form.resulting_combination.label'),
     },
     {
-      cellClass: props.isCustom ? '' : 'border-r border-default',
-      class: props.isCustom ? '' : 'border-r border-default',
+      cellClass: isCustom ? '' : 'border-r border-default',
+      class: isCustom ? '' : 'border-r border-default',
       key: 'counterparty',
       label: t('common.counterparty'),
     },
   );
 
   // For special rules view (custom rules with eventIds), show event IDs instead of event type/subtype/counterparty
-  if (props.isCustom) {
+  if (isCustom) {
     baseColumns.push({
       cellClass: 'py-4 border-r border-default',
       class: 'border-r border-default',

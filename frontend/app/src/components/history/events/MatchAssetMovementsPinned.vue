@@ -12,7 +12,7 @@ import {
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { getEventEntryFromCollection } from '@/utils/history/events';
 
-const props = defineProps<{
+const { highlightedGroupIdentifier, highlightedPotentialMatchIdentifier, potentialMatchGroupIdentifier } = defineProps<{
   highlightedGroupIdentifier?: string;
   highlightedPotentialMatchIdentifier?: number;
   potentialMatchGroupIdentifier?: string;
@@ -22,8 +22,8 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute();
 
-const activeGroupIdentifier = ref<string | undefined>(props.highlightedGroupIdentifier);
-const activePotentialMatchIdentifier = ref<number | undefined>(props.highlightedPotentialMatchIdentifier);
+const activeGroupIdentifier = ref<string | undefined>(highlightedGroupIdentifier);
+const activePotentialMatchIdentifier = ref<number | undefined>(highlightedPotentialMatchIdentifier);
 const potentialMatchMovement = ref<UnmatchedAssetMovement>();
 const showPotentialMatchesDrawer = ref<boolean>(false);
 
@@ -139,15 +139,15 @@ function navigateToHighlightedMovement(targetGroupIdentifier: string): boolean {
 
   if (movement) {
     // If potential match identifier is also provided, open the drawer and navigate to potential match
-    if (props.highlightedPotentialMatchIdentifier && props.potentialMatchGroupIdentifier) {
+    if (highlightedPotentialMatchIdentifier && potentialMatchGroupIdentifier) {
       const identifier = getEventEntryFromCollection(movement.events).entry.identifier;
       set(potentialMatchMovement, movement);
       set(showPotentialMatchesDrawer, true);
       set(activeGroupIdentifier, movement.groupIdentifier);
       showPotentialMatchInHistoryEvents(
         {
-          groupIdentifier: props.potentialMatchGroupIdentifier,
-          identifier: props.highlightedPotentialMatchIdentifier,
+          groupIdentifier: potentialMatchGroupIdentifier,
+          identifier: highlightedPotentialMatchIdentifier,
         },
         identifier,
       );
@@ -162,7 +162,7 @@ function navigateToHighlightedMovement(targetGroupIdentifier: string): boolean {
 
 // Watch for data to load and navigate to initial highlight if provided
 watch([unmatchedMovements, ignoredMovements], () => {
-  const initialHighlight = props.highlightedGroupIdentifier;
+  const initialHighlight = highlightedGroupIdentifier;
   if (!initialHighlight || get(hasNavigatedToInitialHighlight))
     return;
 
@@ -172,7 +172,7 @@ watch([unmatchedMovements, ignoredMovements], () => {
 });
 
 // Watch for prop changes to handle navigation when pinned section is already open
-watch(() => props.highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
+watch(() => highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
   // Only trigger if the highlight actually changed (not on initial mount)
   if (!newHighlight || newHighlight === oldHighlight)
     return;

@@ -22,7 +22,7 @@ definePage({
   props: true,
 });
 
-const props = defineProps<{
+const { tab } = defineProps<{
   tab: string;
 }>();
 
@@ -39,7 +39,7 @@ function add() {
   set(balance, {
     amount: Zero,
     asset: '',
-    balanceType: props.tab === 'liabilities' ? BalanceType.LIABILITY : BalanceType.ASSET,
+    balanceType: tab === 'liabilities' ? BalanceType.LIABILITY : BalanceType.ASSET,
     label: '',
     location: TRADE_LOCATION_EXTERNAL,
     tags: null,

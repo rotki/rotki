@@ -2,7 +2,7 @@
 import { type LocationProgress, LocationStatus } from '../types';
 import LocationProgressItem from './LocationProgressItem.vue';
 
-const props = defineProps<{
+const { locations } = defineProps<{
   locations: LocationProgress[];
 }>();
 
@@ -11,11 +11,11 @@ const { t } = useI18n({ useScope: 'global' });
 const showCompleted = ref<boolean>(false);
 
 const inProgressLocations = computed<LocationProgress[]>(() =>
-  props.locations.filter(l => l.status !== LocationStatus.COMPLETE),
+  locations.filter(l => l.status !== LocationStatus.COMPLETE),
 );
 
 const completedLocations = computed<LocationProgress[]>(() =>
-  props.locations.filter(l => l.status === LocationStatus.COMPLETE),
+  locations.filter(l => l.status === LocationStatus.COMPLETE),
 );
 
 const hasInProgress = computed<boolean>(() => get(inProgressLocations).length > 0);

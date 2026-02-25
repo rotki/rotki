@@ -26,7 +26,9 @@ const editMode = computed(() => get(modelValue).mode === 'edit');
 const tags = computed<string[]>({
   get() {
     const model = get(modelValue);
-    return (model.mode === 'edit' ? model.data.tags : model.data.length > 0 ? model.data[0].tags : null) ?? [];
+    if (model.mode === 'edit')
+      return model.data.tags ?? [];
+    return (model.data.length > 0 ? model.data[0].tags : null) ?? [];
   },
   set(tags: string[]) {
     const model = get(modelValue);
@@ -52,7 +54,9 @@ const tags = computed<string[]>({
 const label = computed<string>({
   get() {
     const model = get(modelValue);
-    return (model.mode === 'edit' ? model.data.label : model.data.length > 0 ? model.data[0].label : null) ?? '';
+    if (model.mode === 'edit')
+      return model.data.label ?? '';
+    return (model.data.length > 0 ? model.data[0].label : null) ?? '';
   },
   set(label: string) {
     const model = get(modelValue);

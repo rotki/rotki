@@ -12,10 +12,6 @@ const modelValue = defineModel<Tag>({ required: true });
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { required: true });
 
-defineProps<{
-  editMode: boolean;
-}>();
-
 const { t } = useI18n({ useScope: 'global' });
 
 const name = useRefPropVModel(modelValue, 'name');

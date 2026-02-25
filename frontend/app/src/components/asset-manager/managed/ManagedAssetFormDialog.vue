@@ -10,7 +10,7 @@ import { ApiValidationError } from '@/types/api/errors';
 
 const modelValue = defineModel<SupportedAsset | undefined>({ required: true });
 
-const props = defineProps<{
+const { editMode } = defineProps<{
   editMode: boolean;
   assetTypes: string[];
 }>();
@@ -27,7 +27,7 @@ const form = useTemplateRef<InstanceType<typeof ManagedAssetForm>>('form');
 const stateUpdated = ref(false);
 
 const dialogTitle = computed<string>(() =>
-  props.editMode ? t('asset_management.edit_title') : t('asset_management.add_title'),
+  editMode ? t('asset_management.edit_title') : t('asset_management.add_title'),
 );
 
 const { setMessage } = useMessageStore();
@@ -120,7 +120,7 @@ async function save(): Promise<boolean> {
     if (typeof errors === 'string') {
       setMessage({
         description: errors,
-        title: props.editMode ? t('asset_form.edit_error') : t('asset_form.add_error'),
+        title: editMode ? t('asset_form.edit_error') : t('asset_form.add_error'),
       });
     }
     else {

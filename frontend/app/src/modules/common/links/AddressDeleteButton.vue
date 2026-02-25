@@ -8,24 +8,22 @@ interface AddressDeleteButtonProps {
   source: string | null;
 }
 
-const props = defineProps<AddressDeleteButtonProps>();
+const { text, source } = defineProps<AddressDeleteButtonProps>();
 
-const canDelete = computed<boolean>(() => {
-  const { source } = props;
-  return source === AddressNamePriority.PRIVATE_ADDRESSBOOK || source === AddressNamePriority.GLOBAL_ADDRESSBOOK;
-});
+const canDelete = computed<boolean>(() =>
+  source === AddressNamePriority.PRIVATE_ADDRESSBOOK || source === AddressNamePriority.GLOBAL_ADDRESSBOOK,
+);
 
-const location = computed<AddressBookLocation>(() => {
-  const { source } = props;
-  return source === AddressNamePriority.GLOBAL_ADDRESSBOOK ? 'global' : 'private';
-});
+const location = computed<AddressBookLocation>(() =>
+  source === AddressNamePriority.GLOBAL_ADDRESSBOOK ? 'global' : 'private',
+);
 
 const { t } = useI18n({ useScope: 'global' });
 
 const { showDeleteConfirmation } = useAddressBookDeletion(location);
 
 const entry = computed<AddressBookEntry>(() => ({
-  address: props.text,
+  address: text,
   blockchain: null,
   name: '',
 }));

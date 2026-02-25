@@ -9,7 +9,7 @@ import { Routes } from '@/router/routes';
 
 const modelValue = defineModel<boolean>({ required: true });
 
-const props = defineProps<{
+const { negativeBalances } = defineProps<{
   negativeBalances: NegativeBalanceDetectedData[];
 }>();
 
@@ -17,10 +17,9 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 
 const lastRunTs = computed<number | undefined>(() => {
-  const balances = props.negativeBalances;
-  if (balances.length === 0)
+  if (negativeBalances.length === 0)
     return undefined;
-  return balances[0].lastRunTs ?? undefined;
+  return negativeBalances[0].lastRunTs ?? undefined;
 });
 
 const headers = computed<DataTableColumn<NegativeBalanceDetectedData>[]>(() => [

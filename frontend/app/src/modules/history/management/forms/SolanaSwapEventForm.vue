@@ -16,7 +16,7 @@ import { useRefPropVModel } from '@/utils/model';
 
 const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
 
-const props = defineProps<{ data: StandaloneEventData<SolanaEvent> | GroupEventData<SolanaSwapEvent> }>();
+const { data } = defineProps<{ data: StandaloneEventData<SolanaEvent> | GroupEventData<SolanaSwapEvent> }>();
 
 const { emptySubEvent, handleValidationErrors, submitAllPrices, addHistoryEvent, editHistoryEvent } = useSwapEventForm();
 
@@ -118,7 +118,7 @@ async function save(): Promise<boolean> {
   return result.success;
 }
 
-watchImmediate(() => props.data, (data) => {
+watchImmediate(() => data, (data) => {
   if (data.type === 'group-add') {
     const group = data.group;
 

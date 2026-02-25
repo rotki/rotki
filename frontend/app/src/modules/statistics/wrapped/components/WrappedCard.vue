@@ -1,7 +1,7 @@
 <script setup lang="ts" generic="T extends object">
 import WrappedItem from '@/components/wrapped/WrappedItem.vue';
 
-const props = defineProps<{
+const { items } = defineProps<{
   items: T[];
 }>();
 
@@ -9,12 +9,11 @@ const { t } = useI18n({ useScope: 'global' });
 
 const INITIAL_LENGTH = 5;
 
-const showMoreButton = computed<boolean>(() => props.items.length > INITIAL_LENGTH);
+const showMoreButton = computed<boolean>(() => items.length > INITIAL_LENGTH);
 
 const showAll = ref<boolean>(false);
 
 const itemsToUse = computed<T[]>(() => {
-  const items = props.items;
   if (get(showAll))
     return items;
 

@@ -2,7 +2,7 @@
 import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { FetchError } from 'ofetch';
 import type { ComputedRef, MaybeRef, MaybeRefOrGetter, Ref, WritableComputedRef } from 'vue';
-import type { FilterSchema, Sorting } from '@/composables/use-pagination-filter/types';
+import type { FilterSchema, SingleColumnSorting, Sorting } from '@/composables/use-pagination-filter/types';
 import type { TableId } from '@/modules/table/use-remember-table-sorting';
 import type { Collection } from '@/types/collection';
 import type { PaginationRequestPayload } from '@/types/common';
@@ -331,6 +331,10 @@ export function usePaginationFilters<
     set(internalSorting, parseQueryHistory(routeQuery, defaultSorting()));
   };
 
+  function getSortColumns(sorting: SingleColumnSorting<TItem>): string[] {
+    return sorting.column ? [sorting.column as string] : [];
+  }
+
   /**
    * Returns the parsed pagination and filter query params
    * @returns {LocationQuery}
@@ -355,7 +359,7 @@ export function usePaginationFilters<
     const sortParams = isEqual(sorting, defaultSorting())
       ? undefined
       : {
-          sort: Array.isArray(sorting) ? sorting.map(item => item.column) : (sorting.column ? [sorting.column] : []),
+          sort: Array.isArray(sorting) ? sorting.map(item => item.column) : getSortColumns(sorting),
           sortOrder: Array.isArray(sorting) ? sorting.map(item => item.direction) : [sorting.direction],
         };
 

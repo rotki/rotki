@@ -3,17 +3,17 @@ import AccountDisplay from '@/components/display/AccountDisplay.vue';
 
 const modelValue = defineModel<string[]>({ required: true });
 
-const props = defineProps<{
+const { addresses, search } = defineProps<{
   addresses: string[];
   chain: string;
   processing: boolean;
   search: string;
 }>();
 
-const filteredAddresses = computed<string[]>(() => props.addresses.filter(matchesSearch));
+const filteredAddresses = computed<string[]>(() => addresses.filter(matchesSearch));
 
 function matchesSearch(address: string): boolean {
-  return address.toLocaleLowerCase().includes(props.search.toLocaleLowerCase());
+  return address.toLocaleLowerCase().includes(search.toLocaleLowerCase());
 }
 
 function toggleSelect(address: string): void {

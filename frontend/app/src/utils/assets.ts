@@ -75,8 +75,14 @@ export function getSanitizedChain(
  * Gets asset search parameters based on chain type.
  */
 export function getAssetSearchTypeParams(usedChain: string | undefined): { assetType?: string; evmChain?: string } {
+  let assetType: string | undefined;
+  if (usedChain === SOLANA_CHAIN)
+    assetType = SOLANA_TOKEN;
+  else if (usedChain)
+    assetType = EVM_TOKEN;
+
   return {
-    assetType: usedChain === SOLANA_CHAIN ? SOLANA_TOKEN : (usedChain ? EVM_TOKEN : undefined),
+    assetType,
     evmChain: usedChain === SOLANA_CHAIN ? undefined : usedChain,
   };
 }

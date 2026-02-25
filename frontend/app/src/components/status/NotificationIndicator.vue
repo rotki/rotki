@@ -7,7 +7,9 @@ defineProps<{
   visible: boolean;
 }>();
 
-const emit = defineEmits(['click']);
+const emit = defineEmits<{
+  click: [];
+}>();
 const { count } = storeToRefs(useNotificationsStore());
 
 function click() {

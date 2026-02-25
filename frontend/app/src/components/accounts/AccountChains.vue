@@ -7,20 +7,17 @@ type Row = ({ chain: string } | { chains: string[] }) & { id: string };
 
 const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { required: true });
 
-const props = defineProps<{ row: Row }>();
+const { row } = defineProps<{ row: Row }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const chains = computed<string[]>(() => {
-  const row = props.row;
-  return 'chains' in row ? row.chains : [row.chain];
-});
+const chains = computed<string[]>(() => 'chains' in row ? row.chains : [row.chain]);
 
 const { getChainName } = useSupportedChains();
 
 const chainStatus = computed<{ chain: string; enabled: boolean }[]>(() => {
   const activated = get(chains);
-  const filter = get(chainFilter)[props.row.id] ?? [];
+  const filter = get(chainFilter)[row.id] ?? [];
   return activated.map(chain => ({ chain, enabled: !filter.includes(chain) })).reverse();
 });
 
@@ -28,20 +25,20 @@ function updateChain(chain: string, enabled: boolean) {
   if (!(get(chains).length > 1))
     return;
 
-  const currentFilter = get(chainFilter)[props.row.id] ?? [];
+  const currentFilter = get(chainFilter)[row.id] ?? [];
   if (!enabled) {
     set(chainFilter, {
       ...get(chainFilter),
-      [props.row.id]: [...currentFilter, chain].filter(uniqueStrings),
+      [row.id]: [...currentFilter, chain].filter(uniqueStrings),
     });
   }
   else {
     const updatedFilter = { ...get(chainFilter) };
     const excluded = currentFilter.filter(entry => entry !== chain);
     if (excluded.length === 0)
-      delete updatedFilter[props.row.id];
+      delete updatedFilter[row.id];
     else
-      updatedFilter[props.row.id] = excluded;
+      updatedFilter[row.id] = excluded;
 
     set(chainFilter, updatedFilter);
   }
@@ -52,7 +49,7 @@ const anyDisabled = computed(() => get(chainStatus).some(item => !item.enabled))
 function reset() {
   set(chainFilter, {
     ...get(chainFilter),
-    [props.row.id]: [],
+    [row.id]: [],
   });
 }
 </script>

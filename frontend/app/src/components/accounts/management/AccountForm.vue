@@ -35,11 +35,11 @@ defineProps<{
 
 const inputMode = ref<InputMode>(InputMode.MANUAL_ADD);
 
-const form = ref<
+const form = useTemplateRef<
   | InstanceType<typeof AddressAccountForm>
   | InstanceType<typeof ValidatorAccountForm>
   | InstanceType<typeof XpubAccountForm>
->();
+>('form');
 
 const chain = useRefPropVModel(modelValue, 'chain');
 

@@ -10,7 +10,7 @@ interface TopDay {
   amount: BigNumber;
 }
 
-const props = defineProps<{
+const { topDaysByNumberOfTransactions } = defineProps<{
   topDaysByNumberOfTransactions?: TopDay[];
 }>();
 
@@ -18,9 +18,9 @@ const { t } = useI18n({ useScope: 'global' });
 const { formatDate } = useWrappedFormatters();
 
 const sortedDays = computed<TopDay[]>(() => {
-  if (!props.topDaysByNumberOfTransactions)
+  if (!topDaysByNumberOfTransactions)
     return [];
-  return [...props.topDaysByNumberOfTransactions].sort((a, b) => sortDesc(a.amount, b.amount));
+  return [...topDaysByNumberOfTransactions].sort((a, b) => sortDesc(a.amount, b.amount));
 });
 </script>
 

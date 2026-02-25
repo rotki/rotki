@@ -16,7 +16,7 @@ import WrappedDateFilter from './WrappedDateFilter.vue';
 import WrappedHeader from './WrappedHeader.vue';
 import WrappedSkeletonCards from './WrappedSkeletonCards.vue';
 
-const props = defineProps<{
+const { highlightedYear } = defineProps<{
   highlightedYear?: number;
 }>();
 
@@ -46,10 +46,10 @@ const {
 } = useWrappedGnosisPay(summary);
 
 const isHighlightedYear = computed<boolean>(() => {
-  if (!isDefined(props.highlightedYear))
+  if (!isDefined(highlightedYear))
     return false;
 
-  const range = getYearRange(props.highlightedYear);
+  const range = getYearRange(highlightedYear);
   return get(start) === range.start && get(end) === range.end;
 });
 

@@ -10,7 +10,7 @@ interface Props {
   eventIds: number[];
 }
 
-const props = defineProps<Props>();
+const { eventIds } = defineProps<Props>();
 
 const emit = defineEmits<{
   close: [];
@@ -22,7 +22,7 @@ const display = ref<boolean>(true);
 
 const { fetchHistoryEvents } = useHistoryEvents();
 
-const eventIdentifiers = computed<string[]>(() => props.eventIds.map(id => id.toString()));
+const eventIdentifiers = computed<string[]>(() => eventIds.map(id => id.toString()));
 
 const {
   fetchData,

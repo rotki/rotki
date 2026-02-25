@@ -2,7 +2,7 @@
 import type { DecodingProgress } from '../types';
 import DecodingProgressItem from './DecodingProgressItem.vue';
 
-const props = defineProps<{
+const { decoding } = defineProps<{
   decoding: DecodingProgress[];
 }>();
 
@@ -11,11 +11,11 @@ const { t } = useI18n({ useScope: 'global' });
 const showCompleted = ref<boolean>(false);
 
 const inProgressDecoding = computed<DecodingProgress[]>(() =>
-  props.decoding.filter(d => d.processed < d.total),
+  decoding.filter(d => d.processed < d.total),
 );
 
 const completedDecoding = computed<DecodingProgress[]>(() =>
-  props.decoding.filter(d => d.processed >= d.total),
+  decoding.filter(d => d.processed >= d.total),
 );
 
 const hasInProgress = computed<boolean>(() => get(inProgressDecoding).length > 0);

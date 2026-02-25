@@ -30,7 +30,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const visibleTags = ref<string[]>([]);
 const chainExclusionFilter = ref<Record<string, string[]>>({});
-const expandedRowContent = ref<ComponentExposed<typeof AccountExpandedRowContent>>();
+const expandedRowContent = useTemplateRef<ComponentExposed<typeof AccountExpandedRowContent>>('expandedRowContent');
 const tab = ref<number>(0);
 const expanded = ref<string[]>([]);
 const query = ref<LocationQuery>({});

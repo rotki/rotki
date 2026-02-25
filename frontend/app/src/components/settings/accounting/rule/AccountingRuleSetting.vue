@@ -5,7 +5,7 @@ import type {
   AccountingRuleRequestPayload,
 } from '@/types/settings/accounting';
 import { z } from 'zod/v4';
-import AccountingRuleActionDialog, { type Props as AccountingRuleActionDialogProps } from '@/components/settings/accounting/rule/AccountingRuleActionDialog.vue';
+import AccountingRuleActionDialog, { type ActionDialogContext } from '@/components/settings/accounting/rule/AccountingRuleActionDialog.vue';
 import AccountingRuleConflictsDialog from '@/components/settings/accounting/rule/AccountingRuleConflictsDialog.vue';
 import AccountingRuleFormDialog from '@/components/settings/accounting/rule/AccountingRuleFormDialog.vue';
 import AccountingRuleImportDialog from '@/components/settings/accounting/rule/AccountingRuleImportDialog.vue';
@@ -52,7 +52,10 @@ const customRuleHandling = ref<CustomRuleHandling>(CustomRuleHandling.EXCLUDE);
 const modelValue = ref<AccountingRuleEntry>();
 const eventIdsForRule = ref<number[]>();
 const actionDialog = ref<boolean>(false);
-const actionDialogProps = ref<AccountingRuleActionDialogProps>();
+const actionDialogContext = ref<ActionDialogContext>();
+const actionDialogHasEventSpecific = ref<boolean>(false);
+const actionDialogHasGeneral = ref<boolean>(false);
+const actionDialogEventIds = ref<number[]>();
 
 const {
   fetchData,
@@ -183,11 +186,10 @@ function addRuleFromQuery(eventIds?: number[]): void {
 
 async function handleAddRule(eventIdNum?: number): Promise<void> {
   if (eventIdNum) {
-    set(actionDialogProps, {
-      eventId: eventIdNum,
-      hasEventSpecificRule: false,
-      hasGeneralRule: false,
-    });
+    set(actionDialogContext, { eventId: eventIdNum });
+    set(actionDialogHasEventSpecific, false);
+    set(actionDialogHasGeneral, false);
+    set(actionDialogEventIds, undefined);
     set(actionDialog, true);
     return;
   }
@@ -215,14 +217,14 @@ async function handleEditRuleWithEventId(eventIdNum: number, ruleQuery: Accounti
   const hasEventSpecificRule = !!eventSpecificRule;
   const hasGeneralRule = !!generalRule;
 
-  set(actionDialogProps, {
+  set(actionDialogContext, {
     eventId: eventIdNum,
-    eventIds: eventSpecificRule?.eventIds ?? undefined,
     eventSpecificRule,
     generalRule,
-    hasEventSpecificRule,
-    hasGeneralRule,
   });
+  set(actionDialogHasEventSpecific, hasEventSpecificRule);
+  set(actionDialogHasGeneral, hasGeneralRule);
+  set(actionDialogEventIds, eventSpecificRule?.eventIds ?? undefined);
   set(actionDialog, true);
 }
 
@@ -250,11 +252,11 @@ async function handleEditRule(eventIdNum: number | undefined, ruleQuery: Account
 }
 
 async function handleRuleAction(action: AccountingRuleAction) {
-  const props = get(actionDialogProps);
-  if (!props)
+  const ctx = get(actionDialogContext);
+  if (!ctx)
     return;
 
-  const { eventId, eventSpecificRule, generalRule } = props;
+  const { eventId, eventSpecificRule, generalRule } = ctx;
 
   switch (action) {
     case 'add-general':
@@ -459,8 +461,10 @@ const importFileDialog = ref<boolean>(false);
       />
 
       <AccountingRuleActionDialog
-        v-if="actionDialog && actionDialogProps"
-        v-bind="actionDialogProps"
+        v-if="actionDialog && actionDialogContext"
+        :has-event-specific-rule="actionDialogHasEventSpecific"
+        :has-general-rule="actionDialogHasGeneral"
+        :event-ids="actionDialogEventIds"
         @close="actionDialog = false"
         @select="handleRuleAction($event)"
       />

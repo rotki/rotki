@@ -13,7 +13,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { getEventEntryFromCollection } from '@/utils/history/events';
 import { logger } from '@/utils/logging';
 
-const props = defineProps<{
+const { isPinned, movement } = defineProps<{
   movement: UnmatchedAssetMovement;
   isPinned?: boolean;
   highlightedIdentifier?: number;
@@ -57,7 +57,7 @@ const tolerancePercentage = ref<string>(getDefaultTolerancePercentage());
 function percentageToDecimal(percentage: string): string {
   return bigNumberify(percentage).dividedBy(100).toString();
 }
-const buttonSize = computed<'sm' | undefined>(() => props.isPinned ? 'sm' : undefined);
+const buttonSize = computed<'sm' | undefined>(() => isPinned ? 'sm' : undefined);
 
 function transformToMatchRow(row: HistoryEventCollectionRow, isCloseMatch: boolean): PotentialMatchRow {
   const { entry, ...meta } = getEventEntryFromCollection(row);
@@ -74,7 +74,7 @@ async function searchPotentialMatches(): Promise<void> {
   set(potentialMatches, []);
 
   try {
-    const groupIdentifier = props.movement.groupIdentifier;
+    const groupIdentifier = movement.groupIdentifier;
 
     const hours = Number.parseInt(get(searchTimeRange), 10) || getDefaultHourRange();
     const timeRangeInSeconds = hours * 60 * 60;
@@ -124,7 +124,7 @@ async function confirmMatch(): Promise<void> {
   set(matchingLoading, true);
 
   try {
-    const eventEntry = getEventEntryFromCollection(props.movement.events);
+    const eventEntry = getEventEntryFromCollection(movement.events);
     const assetMovementId = eventEntry.entry.identifier;
 
     if (!assetMovementId)
@@ -146,7 +146,7 @@ function close(): void {
   emit('close');
 }
 
-watchImmediate(() => props.movement, async () => {
+watchImmediate(() => movement, async () => {
   set(potentialMatches, []);
   set(selectedMatchIds, []);
   set(searchTimeRange, getDefaultHourRange().toString());

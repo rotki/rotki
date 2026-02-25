@@ -4,7 +4,7 @@ import LocationIcon from '@/components/history/LocationIcon.vue';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 
-const props = defineProps<{
+const { item } = defineProps<{
   item: EvmChainInfo;
   detecting: boolean;
   enabled: boolean;
@@ -20,7 +20,7 @@ const { useIsTaskRunning } = useTaskStore();
 const { t } = useI18n({ useScope: 'global' });
 
 const taskMeta = computed(() => ({
-  chain: props.item.id,
+  chain: item.id,
 }));
 
 const isDetectingChain = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS, taskMeta);

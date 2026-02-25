@@ -2,7 +2,7 @@
 import type { ChainProgress } from '../types';
 import ChainProgressItem from './ChainProgressItem.vue';
 
-const props = defineProps<{
+const { chains } = defineProps<{
   chains: ChainProgress[];
 }>();
 
@@ -11,11 +11,11 @@ const { t } = useI18n({ useScope: 'global' });
 const showCompleted = ref<boolean>(false);
 
 const inProgressChains = computed<ChainProgress[]>(() =>
-  props.chains.filter(c => c.completed < c.total || c.total === 0),
+  chains.filter(c => c.completed < c.total || c.total === 0),
 );
 
 const completedChains = computed<ChainProgress[]>(() =>
-  props.chains.filter(c => c.completed === c.total && c.total > 0),
+  chains.filter(c => c.completed === c.total && c.total > 0),
 );
 
 const hasInProgress = computed<boolean>(() => get(inProgressChains).length > 0);

@@ -7,7 +7,6 @@ const { item, horizontal, icon, size = '24px', imageClass } = defineProps<{
   horizontal?: boolean;
   icon?: boolean;
   size?: string;
-  noPadding?: boolean;
   imageClass?: string;
 }>();
 

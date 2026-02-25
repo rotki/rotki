@@ -48,7 +48,6 @@ const {
   highlightTypes?: Record<string, HighlightType>;
   hideActions?: boolean;
   selection?: UseHistoryEventsSelectionModeReturn;
-  matchExactEvents?: boolean;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
 }>();
 

@@ -5,16 +5,16 @@ import { ValueDisplay } from '@/modules/amount-display/components';
 import { sortDesc } from '@/utils/bignumbers';
 import WrappedCard from '../WrappedCard.vue';
 
-const props = defineProps<{
+const { tradesByExchange } = defineProps<{
   tradesByExchange?: Record<string, BigNumber>;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const exchangeItems = computed<Array<[string, BigNumber]>>(() => {
-  if (!props.tradesByExchange)
+  if (!tradesByExchange)
     return [];
-  return Object.entries(props.tradesByExchange).sort((a, b) => sortDesc(a[1], b[1]));
+  return Object.entries(tradesByExchange).sort((a, b) => sortDesc(a[1], b[1]));
 });
 </script>
 

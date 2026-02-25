@@ -7,7 +7,6 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { assets, visible = 3 } = defineProps<{
   assets: AssetBalance[];
-  loading: boolean;
   visible?: number;
   resolutionOptions?: AssetResolutionOptions;
   showChain?: boolean;

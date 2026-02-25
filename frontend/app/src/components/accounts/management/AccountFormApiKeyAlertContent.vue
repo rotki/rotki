@@ -2,20 +2,20 @@
 import type { RouteLocationRaw } from 'vue-router';
 import { Routes } from '@/router/routes';
 
-const props = defineProps<{
+const { service } = defineProps<{
   service: 'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc';
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const message = computed<string>(() => {
-  if (props.service === 'etherscan')
+  if (service === 'etherscan')
     return t('external_services.etherscan.api_key_message');
 
-  if (props.service === 'consensusRpc')
+  if (service === 'consensusRpc')
     return t('general_settings.rpc_node_setting.consensus_rpc.api_key_message');
 
-  if (props.service === 'beaconchain')
+  if (service === 'beaconchain')
     return t('external_services.beaconchain.api_key_message');
 
   return t('external_services.helius.api_key_message');

@@ -2,7 +2,7 @@
 import type { ProtocolCacheProgress } from '../types';
 import ProtocolCacheProgressItem from './ProtocolCacheProgressItem.vue';
 
-const props = defineProps<{
+const { protocolCache } = defineProps<{
   protocolCache: ProtocolCacheProgress[];
 }>();
 
@@ -11,11 +11,11 @@ const { t } = useI18n({ useScope: 'global' });
 const showCompleted = ref<boolean>(false);
 
 const inProgressCache = computed<ProtocolCacheProgress[]>(() =>
-  props.protocolCache.filter(p => p.processed < p.total),
+  protocolCache.filter(p => p.processed < p.total),
 );
 
 const completedCache = computed<ProtocolCacheProgress[]>(() =>
-  props.protocolCache.filter(p => p.processed >= p.total),
+  protocolCache.filter(p => p.processed >= p.total),
 );
 
 const hasInProgress = computed<boolean>(() => get(inProgressCache).length > 0);

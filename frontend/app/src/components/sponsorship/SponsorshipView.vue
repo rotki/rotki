@@ -4,7 +4,7 @@ import AppImage from '@/components/common/AppImage.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useMainStore } from '@/store/main';
 
-const props = defineProps<{
+const { drawer } = defineProps<{
   drawer?: boolean;
 }>();
 
@@ -52,7 +52,7 @@ const loginIndex = useLocalStorage<number>('rotki.sponsorship.login_index', -1);
 
 function getCurrentSponsor(): Sponsor {
   const length = sponsors.length;
-  if (!props.drawer) {
+  if (!drawer) {
     const loginIndexVal = get(loginIndex);
     // Login screen: determine and save the flipped index
     if (loginIndexVal === -1) {

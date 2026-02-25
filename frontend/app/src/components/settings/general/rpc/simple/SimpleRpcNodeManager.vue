@@ -8,7 +8,7 @@ import { SettingLocation, useSettings } from '@/composables/settings';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
-const props = defineProps<{
+const { setting } = defineProps<{
   setting: 'ksmRpcEndpoint' | 'dotRpcEndpoint' | 'beaconRpcEndpoint' | 'btcMempoolApi';
 }>();
 
@@ -24,7 +24,7 @@ const inputUrl = ref<string>('');
 const generalSettings = storeToRefs(useGeneralSettingsStore());
 const { updateSetting } = useSettings();
 
-const value = computed(() => get(generalSettings[props.setting]));
+const value = computed(() => get(generalSettings[setting]));
 
 function addNewRpcNode() {
   set(openDialog, true);
@@ -44,7 +44,7 @@ async function save(force: boolean = false) {
 
   set(submitting, true);
 
-  const result = await updateSetting(props.setting, value, SettingLocation.GENERAL, {
+  const result = await updateSetting(setting, value, SettingLocation.GENERAL, {
     error: '',
     success: '',
   });

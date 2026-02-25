@@ -5,7 +5,7 @@ import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-a
 
 const modelValue = defineModel<string>({ required: true });
 
-const props = defineProps<{
+const { location } = defineProps<{
   location: string;
   errorMessages: string[];
 }>();
@@ -19,7 +19,7 @@ const { getAddresses } = useAccountAddresses();
 const { matchChain } = useSupportedChains();
 
 const addressSuggestions = computed(() => {
-  const chain = matchChain(props.location);
+  const chain = matchChain(location);
   if (!chain)
     return [];
   return getAddresses(chain);
