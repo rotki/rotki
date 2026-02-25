@@ -57,7 +57,7 @@ describe('usePriceUtils', () => {
     });
 
     it('should return undefined if the price is not found', () => {
-      expect(utils.getAssetPrice('BTC')).toEqual(undefined);
+      expect(utils.getAssetPrice('BTC')).toBeUndefined();
     });
 
     it('should return the default value if the price is not found', () => {

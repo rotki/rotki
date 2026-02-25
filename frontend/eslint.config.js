@@ -10,6 +10,16 @@ export default rotki({
   },
   stylistic: true,
   rotki: {
+    src: path.join('app', 'src'),
+    ignoreKeys: [
+      '/backend_mappings.*/',
+      '/notification_messages.missing_api_key.*/',
+      '/premium_components.*/',
+      '/transactions.query_status.*/',
+      '/transactions.query_status_events.*/',
+      '/transactions.events.headers.*/',
+      ...translationKeys(),
+    ],
     overrides: {
       '@rotki/consistent-ref-type-annotation': ['error', {
         allowInference: true,
@@ -24,20 +34,17 @@ export default rotki({
   },
   vueI18n: {
     src: path.join('app', 'src'),
-    ignores: [
-      '/backend_mappings.*/',
-      '/notification_messages.missing_api_key.*/',
-      '/premium_components.*/',
-      '/transactions.query_status.*/',
-      '/transactions.query_status_events.*/',
-      '/transactions.events.headers.*/',
-      ...translationKeys(),
-    ],
     overrides: {
       '@intlify/vue-i18n/no-i18n-t-path-prop': 'error',
       '@intlify/vue-i18n/no-deprecated-i18n-component': 'error',
     },
-    enableNoUnusedKeys: 'ci',
+  },
+}, {
+  files: ['**/*.ts', '**/*.vue'],
+  rules: {
+    '@typescript-eslint/consistent-type-assertions': ['warn', {
+      assertionStyle: 'never',
+    }],
   },
 }, {
   files: ['**/src/**/*.ts'],

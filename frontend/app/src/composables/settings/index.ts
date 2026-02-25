@@ -54,7 +54,7 @@ interface UseSettingsReturn {
     settingKey: T,
     settingValue: any,
     settingLocation: SettingLocation,
-    message: BaseMessage
+    message: BaseMessage,
   ) => Promise<UpdateResult>;
 }
 

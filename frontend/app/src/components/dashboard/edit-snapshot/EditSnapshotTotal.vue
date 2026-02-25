@@ -108,9 +108,9 @@ watchImmediate(rate, (rate) => {
 
   if (totalEntry) {
     const convertedFiatValue
-        = get(isCurrencyCurrencyUsd)
-          ? totalEntry.usdValue.toFixed()
-          : totalEntry.usdValue.multipliedBy(get(rate)).toFixed();
+      = get(isCurrencyCurrencyUsd)
+        ? totalEntry.usdValue.toFixed()
+        : totalEntry.usdValue.multipliedBy(get(rate)).toFixed();
 
     set(total, convertedFiatValue);
   }

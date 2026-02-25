@@ -137,6 +137,26 @@ cargo run -- --database ../data/global.db --port 4343
 - **Logical separation**: Each composable should have a single, well-defined responsibility
 - **Maintainability focus**: Prioritize code readability and maintainability over brevity
 
+#### Lint & Warning Hygiene
+- **Leave code cleaner than you found it**: When touching a file, fix any existing lint warnings in the code you modify. The goal is to steadily reduce the overall warning count over time.
+- **Avoid type assertions (`as`)**: Prefer type guards, `instanceof`, `satisfies`, or discriminated unions over `as` casts. Type assertions bypass the compiler and hide bugs.
+  ```typescript
+  // ✅ Correct — type guard
+  function isUser(value: unknown): value is User {
+    return typeof value === 'object' && value !== null && 'id' in value;
+  }
+
+  // ✅ Correct — satisfies (validates shape without widening)
+  const config = { timeout: 5000 } satisfies Partial<Config>;
+
+  // ✅ Correct — discriminated union
+  if (event.type === 'trade') { /* event is narrowed */ }
+
+  // ❌ Incorrect — type assertion
+  const user = response.data as User;
+  const element = event.target as HTMLInputElement;
+  ```
+
 #### Vue.js and TypeScript Conventions
 - Use VueUse utilities for reactive state management
 - **IMPORTANT: Use `get()` and `set()` from VueUse instead of `.value` when working with refs**

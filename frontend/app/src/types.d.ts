@@ -91,24 +91,24 @@ export interface EIP1193Provider {
   readonly path?: string;
   sendAsync?: (
     request: RpcRequest,
-    callback: (error: Error | null, response: unknown) => void
+    callback: (error: Error | null, response: unknown) => void,
   ) => void;
   send?: (
     request: RpcRequest,
-    callback: (error: Error | null, response: unknown) => void
+    callback: (error: Error | null, response: unknown) => void,
   ) => void;
   request: <T = unknown>(request: RpcRequest) => Promise<T>;
   on?: <K extends EIP1193EventName>(
     event: K,
-    callback: (...args: EIP1193ProviderEvents[K]) => void
+    callback: (...args: EIP1193ProviderEvents[K]) => void,
   ) => void;
   removeListener?: <K extends EIP1193EventName>(
     event: K,
-    callback: (...args: EIP1193ProviderEvents[K]) => void
+    callback: (...args: EIP1193ProviderEvents[K]) => void,
   ) => void;
   off?: <K extends EIP1193EventName>(
     event: K,
-    callback: (...args: EIP1193ProviderEvents[K]) => void
+    callback: (...args: EIP1193ProviderEvents[K]) => void,
   ) => void;
   disconnect?: () => Promise<void>;
 }
