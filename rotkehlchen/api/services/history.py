@@ -361,6 +361,7 @@ class HistoryService:
                 aggregate_by_group_ids=aggregate_by_group_ids,
                 match_exact_events=True,
                 entries_total=entries_total,
+                need_entries_found=has_premium is False,
             )
             group_has_ignored_assets = {
                 joined_group_ids.get(group_identifier, group_identifier)
@@ -466,6 +467,7 @@ class HistoryService:
                 aggregate_by_group_ids=False,
                 match_exact_events=match_exact_events,
                 entries_total=0,
+                need_entries_found=False,
             )
             processed_events_result = history_query_result[1]  # type: ignore[assignment]
         if len(processed_events_result) == 0:
@@ -658,6 +660,7 @@ class HistoryService:
             aggregate_by_group_ids: bool,
             match_exact_events: bool,
             entries_total: int,
+            need_entries_found: bool,
     ) -> tuple[
         HistoryEventsWithCountResult,
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry],
@@ -674,6 +677,7 @@ class HistoryService:
             entries_limit=entries_limit,
             aggregate_by_group_ids=aggregate_by_group_ids,
             match_exact_events=match_exact_events,
+            need_entries_found=need_entries_found,
         )
         (
             processed_events_result,

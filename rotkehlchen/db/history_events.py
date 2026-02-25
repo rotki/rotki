@@ -174,12 +174,13 @@ HistoryEventsReturnType: TypeAlias = list[HistoryBaseEntry] | list[tuple[int, Hi
 class HistoryEventsResult:
     events: HistoryEventsReturnType
     ignored_group_identifiers: set[str]
+    entries_with_limit_count: int | None = None
 
 
 @dataclass(frozen=True)
 class HistoryEventsWithCountResult(HistoryEventsResult):
-    entries_found: int
-    entries_with_limit: int
+    entries_found: int = 0
+    entries_with_limit: int = 0
 
 
 class DBHistoryEvents:
@@ -990,6 +991,7 @@ class DBHistoryEvents:
             aggregate_by_group_ids: bool = False,
             match_exact_events: bool = True,
             include_order: bool = True,
+            include_entries_with_limit_count: bool = False,
     ) -> tuple[str, list]:
         """Returns the sql queries and bindings for the history events without pagination."""
         chain_fields, staking_fields, join_clause = DBHistoryEvents._build_events_query_parts(
@@ -1014,7 +1016,11 @@ class DBHistoryEvents:
                 with_order=match_exact_events is True and include_order is True,  # same as above
                 with_pagination=False,
             )
-            prefix = 'SELECT *'
+            prefix = (
+                'SELECT COUNT(*) OVER(), *'
+                if include_entries_with_limit_count else
+                'SELECT *'
+            )
 
         if entries_limit is None:
             suffix, limit = base_suffix, []
@@ -1351,6 +1357,7 @@ class DBHistoryEvents:
             entries_limit: int | None,
             aggregate_by_group_ids: bool = False,
             match_exact_events: bool = True,
+            include_entries_with_limit_count: bool = False,
     ) -> HistoryEventsResult:
         base_query, filters_bindings = self._create_history_events_query(
             filter_query=filter_query,
@@ -1358,6 +1365,7 @@ class DBHistoryEvents:
             match_exact_events=match_exact_events,
             entries_limit=entries_limit,
             include_order=True,
+            include_entries_with_limit_count=include_entries_with_limit_count,
         )
         if filter_query.pagination is not None:
             base_query = f'SELECT * FROM ({base_query}) {filter_query.pagination.prepare()}'
@@ -1367,7 +1375,13 @@ class DBHistoryEvents:
         output_grouped: list[tuple[int, HistoryBaseEntry]] = []
         output_flat: list[HistoryBaseEntry] = []
         ignored_group_identifiers: set[str] = set()
-        type_idx = 1 if aggregate_by_group_ids else 0
+        has_entries_count_column = (
+            include_entries_with_limit_count and aggregate_by_group_ids is False
+        )
+        entries_with_limit_count: int | None = None
+        type_idx = 1 if has_entries_count_column else 0
+        if aggregate_by_group_ids is True:
+            type_idx = 1
         data_start_idx = type_idx + 1
         failed_to_deserialize = False
         # Fixed position of group_has_ignored_assets (after entry_type, base, chain, staking).
@@ -1378,6 +1392,8 @@ class DBHistoryEvents:
         )
 
         for entry in cursor:
+            if has_entries_count_column and entries_with_limit_count is None:
+                entries_with_limit_count = int(entry[0])
             # group_has_ignored_assets is computed via MAX(ignored) OVER window function,
             # so it detects groups with ignored assets even when those rows are filtered out.
             group_has_ignored_assets = entry[group_has_ignored_assets_idx] == 1
@@ -1462,10 +1478,12 @@ class DBHistoryEvents:
             return HistoryEventsResult(
                 events=output_grouped,
                 ignored_group_identifiers=ignored_group_identifiers,
+                entries_with_limit_count=entries_with_limit_count,
             )
         return HistoryEventsResult(
             events=output_flat,
             ignored_group_identifiers=ignored_group_identifiers,
+            entries_with_limit_count=entries_with_limit_count,
         )
 
     @overload
@@ -1655,6 +1673,7 @@ class DBHistoryEvents:
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[True],
             match_exact_events: bool,
+            need_entries_found: bool = ...,
     ) -> HistoryEventsWithCountResult:
         ...
 
@@ -1666,6 +1685,7 @@ class DBHistoryEvents:
             entries_limit: int | None,
             aggregate_by_group_ids: Literal[False] = ...,
             match_exact_events: bool = ...,
+            need_entries_found: bool = ...,
     ) -> HistoryEventsWithCountResult:
         ...
 
@@ -1677,6 +1697,7 @@ class DBHistoryEvents:
             entries_limit: int | None,
             aggregate_by_group_ids: bool = False,
             match_exact_events: bool = ...,
+            need_entries_found: bool = ...,
     ) -> HistoryEventsWithCountResult:
         """
         This fallback is needed due to
@@ -1690,6 +1711,7 @@ class DBHistoryEvents:
             entries_limit: int | None,
             aggregate_by_group_ids: bool = False,
             match_exact_events: bool = False,
+            need_entries_found: bool = True,
     ) -> HistoryEventsWithCountResult:
         """Gets all history events for all types, based on the filter query.
 
@@ -1702,13 +1724,27 @@ class DBHistoryEvents:
             entries_limit=entries_limit,
             aggregate_by_group_ids=aggregate_by_group_ids,
             match_exact_events=match_exact_events,
+            include_entries_with_limit_count=aggregate_by_group_ids is False,
         )
-        count_without_limit, count_with_limit = self.get_history_events_count(
-            cursor=cursor,
-            query_filter=filter_query,
-            entries_limit=entries_limit,
-            aggregate_by_group_ids=aggregate_by_group_ids,
-        )
+        if events_result.entries_with_limit_count is not None:
+            count_with_limit = events_result.entries_with_limit_count
+            if need_entries_found is False or entries_limit is None:
+                count_without_limit = count_with_limit
+            else:
+                count_without_limit, _ = self.get_history_events_count(
+                    cursor=cursor,
+                    query_filter=filter_query,
+                    entries_limit=None,
+                    aggregate_by_group_ids=aggregate_by_group_ids,
+                )
+        else:
+            count_without_limit, count_with_limit = self.get_history_events_count(
+                cursor=cursor,
+                query_filter=filter_query,
+                entries_limit=entries_limit,
+                aggregate_by_group_ids=aggregate_by_group_ids,
+                need_count_without_limit=need_entries_found,
+            )
         return HistoryEventsWithCountResult(
             events=events_result.events,
             entries_found=count_without_limit,
@@ -1826,6 +1862,7 @@ class DBHistoryEvents:
             query_filter: HistoryBaseEntryFilterQuery,
             aggregate_by_group_ids: bool = False,
             entries_limit: int | None = None,
+            need_count_without_limit: bool = True,
     ) -> tuple[int, int]:
         """
         Returns how many events matching the filter but ignoring pagination are in the DB.
@@ -1833,22 +1870,25 @@ class DBHistoryEvents:
         the number of events if any limit is applied, otherwise the second value matches
         the first.
         """
-        query_without_limit, query_without_limit_bindings = (
-            self._create_history_events_count_query(
-                filter_query=query_filter,
-                aggregate_by_group_ids=aggregate_by_group_ids,
-                entries_limit=None,
+        if need_count_without_limit:
+            query_without_limit, query_without_limit_bindings = (
+                self._create_history_events_count_query(
+                    filter_query=query_filter,
+                    aggregate_by_group_ids=aggregate_by_group_ids,
+                    entries_limit=None,
+                )
             )
-        )
-        count_without_limit = cursor.execute(
-            f'SELECT COUNT(*) FROM ({query_without_limit})',
-            query_without_limit_bindings,
-        ).fetchone()[0]
+            count_without_limit = cursor.execute(
+                f'SELECT COUNT(*) FROM ({query_without_limit})',
+                query_without_limit_bindings,
+            ).fetchone()[0]
 
-        # When we have a limit but the total is already smaller or equal,
-        # just return the total for both counts
-        if entries_limit is None or count_without_limit <= entries_limit:
-            return count_without_limit, count_without_limit
+            # When we have a limit but the total is already smaller or equal,
+            # just return the total for both counts
+            if entries_limit is None or count_without_limit <= entries_limit:
+                return count_without_limit, count_without_limit
+        else:
+            count_without_limit = 0
 
         # Otherwise, get the limited count
         query_with_limit, query_with_limit_bindings = self._create_history_events_count_query(
@@ -1863,7 +1903,7 @@ class DBHistoryEvents:
 
         # If we're grouping by event IDs and got 0 results but should have some,
         # fall back to using the minimum of limit and total
-        if aggregate_by_group_ids and count_with_limit == 0 and entries_limit > 0:
+        if aggregate_by_group_ids and count_with_limit == 0 and entries_limit is not None and entries_limit > 0:  # noqa: E501
             count_with_limit = min(entries_limit, count_without_limit)
 
         return count_without_limit, count_with_limit
