@@ -1,14 +1,14 @@
 import type { Eth2Validator } from '@/types/balances';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
-import { Blockchain, Severity } from '@rotki/common';
+import { Blockchain } from '@rotki/common';
 import { z } from 'zod/v4';
 import { type StakingValidatorManage, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { useBlockchains } from '@/composables/blockchain/index';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { useNotificationsStore } from '@/store/notifications/index';
 import { useTagStore } from '@/store/session/tags';
 import { useStatusStore } from '@/store/status';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
@@ -75,7 +75,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   const { attemptTagCreation } = useTagStore();
   const { isLoading } = useStatusStore();
   const { save } = useAccountManage();
-  const { notify } = useNotificationsStore();
+  const { notifyError, notifyInfo } = useNotifications();
   const { generateCSV, parseCSV } = useCsvImportExport();
   const { t } = useI18n({ useScope: 'global' });
   const { allTags } = useTagStore();
@@ -261,16 +261,14 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
 
     const { skipped, total } = get(progress);
 
-    notify({
-      display: true,
-      message: t('blockchain_balances.import_blockchain_accounts_complete', {
+    notifyInfo(
+      t('blockchain_balances.import_blockchain_accounts'),
+      t('blockchain_balances.import_blockchain_accounts_complete', {
         imported: total - skipped,
         skipped,
         total,
       }),
-      severity: Severity.INFO,
-      title: t('blockchain_balances.import_blockchain_accounts'),
-    });
+    );
 
     setTotal(0);
   }
@@ -290,11 +288,10 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
             error,
           });
       logger.error(message);
-      notify({
-        display: true,
+      notifyError(
+        t('blockchain_balances.import_blockchain_accounts'),
         message,
-        title: t('blockchain_balances.import_blockchain_accounts'),
-      });
+      );
     }
   }
 

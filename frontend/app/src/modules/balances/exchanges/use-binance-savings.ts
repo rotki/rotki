@@ -7,7 +7,7 @@ import type {
 import type { TaskMeta } from '@/types/task';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useStatusUpdater } from '@/composables/status';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
@@ -25,7 +25,7 @@ interface UseBinanceSavingsReturn {
 export function useBinanceSavings(): UseBinanceSavingsReturn {
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { getExchangeSavings, getExchangeSavingsTask } = useExchangeApi();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -63,15 +63,12 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
       await awaitTask<ExchangeSavingsCollectionResponse, TaskMeta>(taskId, taskType, taskMeta, true);
       return true;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.balances.exchange_savings_interest.error.message', { location }),
-          title: t('actions.balances.exchange_savings_interest.error.title', {
-            location,
-          }),
-        });
+        notifyError(
+          t('actions.balances.exchange_savings_interest.error.title', { location }),
+          t('actions.balances.exchange_savings_interest.error.message', { location }),
+        );
       }
     }
 

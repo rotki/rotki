@@ -24,9 +24,9 @@ vi.mock('@/composables/api/history/events', () => ({
   })),
 }));
 
-vi.mock('@/store/notifications', () => ({
-  useNotificationsStore: vi.fn(() => ({
-    notify: mockNotify,
+vi.mock('@/modules/notifications/use-notifications', () => ({
+  useNotifications: vi.fn((): { notifyError: typeof mockNotify } => ({
+    notifyError: mockNotify,
   })),
 }));
 
@@ -279,11 +279,10 @@ describe('use-history-event-navigation-consumer', () => {
       composable.requestNavigation({ targetGroupIdentifier: 'group-bad' });
       await flushPromises();
 
-      expect(mockNotify).toHaveBeenCalledWith({
-        display: true,
-        message: 'API failure',
-        title: expect.any(String),
-      });
+      expect(mockNotify).toHaveBeenCalledWith(
+        expect.any(String),
+        'API failure',
+      );
       expect(get(composable.isNavigating)).toBe(false);
       expect(get(composable.pendingNavigation)).toBeUndefined();
     });

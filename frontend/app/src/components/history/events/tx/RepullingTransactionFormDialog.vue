@@ -15,6 +15,7 @@ import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError } from '@/types/api/errors';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { TaskType } from '@/types/task-type';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 const modelValue = defineModel<boolean>({ required: true });
@@ -63,11 +64,11 @@ function resetForm(): void {
 }
 
 async function handleSubmissionError(
-  error: any,
+  error: unknown,
   data: RepullingTransactionPayload,
   formRef: InstanceType<typeof RepullingTransactionForm> | null,
 ): Promise<void> {
-  let message: string | Record<string, string[] | string> = error.message;
+  let message: string | Record<string, string[] | string> = getErrorMessage(error);
 
   if (error instanceof ApiValidationError)
     message = error.getValidationErrors(data);
@@ -144,7 +145,7 @@ async function performSubmission(): Promise<void> {
 
     resetForm();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     await handleSubmissionError(error, data, formRef);
   }
   finally {

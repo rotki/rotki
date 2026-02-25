@@ -3,7 +3,7 @@ import type { TaskMeta } from '@/types/task';
 import { type BigNumber, type CommonQueryStatusData, type FailedHistoricalAssetPriceResponse, NoPrice } from '@rotki/common';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useItemCache } from '@/composables/item-cache';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { HistoricPrices } from '@/types/prices';
@@ -21,7 +21,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
   const { queryHistoricalRates } = usePriceApi();
   const { awaitTask, cancelTaskByTaskType } = useTaskStore();
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
 
   const createKey = (fromAsset: string, timestamp: number | string): string => `${fromAsset}#${timestamp}`;
 
@@ -60,15 +60,14 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
       );
       data = result;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.balances.historic_fetch_price.error.message', {
-            message: error.message,
+        notifyError(
+          t('actions.balances.historic_fetch_price.task.title'),
+          t('actions.balances.historic_fetch_price.error.message', {
+            message: getErrorMessage(error),
           }),
-          title: t('actions.balances.historic_fetch_price.task.title'),
-        });
+        );
       }
     }
 

@@ -29,7 +29,7 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
     try {
       return await assetMapping(identifiers);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       return undefined;
     }
@@ -91,7 +91,7 @@ export const useAssetSelectInfo = createSharedComposable((): UseAssetSelectInfoR
 
       pendingAssets.clear();
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error('Error processing asset info batch for AssetSelect', error);
     }
   }, 1500);

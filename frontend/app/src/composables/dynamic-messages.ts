@@ -86,7 +86,7 @@ export const useDynamicMessages = createSharedComposable(() => {
 
       return WelcomeSchema.parse(camelCaseTransformer(response));
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!(error instanceof FetchError))
         logger.error(error);
 
@@ -102,7 +102,7 @@ export const useDynamicMessages = createSharedComposable(() => {
       );
       return DashboardSchema.parse(camelCaseTransformer(response));
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!(error instanceof FetchError))
         logger.error(error);
 

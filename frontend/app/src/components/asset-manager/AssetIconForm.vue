@@ -4,9 +4,9 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { useAssetIconApi } from '@/composables/api/assets/icon';
 import { useInterop } from '@/composables/electron-interop';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useAssetIconStore } from '@/store/assets/icon';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const { identifier, refreshable = false } = defineProps<{
   identifier: string;
@@ -18,9 +18,8 @@ const icon = ref<File>();
 
 const refreshIconLoading = ref<boolean>(false);
 const refreshKey = ref<number>(0);
-const { notify } = useNotificationsStore();
+const { notifyError, showErrorMessage } = useNotifications();
 const { getPath } = useInterop();
-const { setMessage } = useMessageStore();
 const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -37,15 +36,14 @@ async function refreshIcon() {
     await refresh(identifierVal);
     set(refreshKey, get(refreshKey) + 1);
   }
-  catch (error: any) {
-    notify({
-      display: true,
-      message: t('asset_form.fetch_latest_icon.description', {
+  catch (error: unknown) {
+    notifyError(
+      t('asset_form.fetch_latest_icon.title'),
+      t('asset_form.fetch_latest_icon.description', {
         identifier: identifierVal,
-        message: error.message,
+        message: getErrorMessage(error),
       }),
-      title: t('asset_form.fetch_latest_icon.title'),
-    });
+    );
   }
   set(refreshIconLoading, false);
   setLastRefreshedAssetIcon();
@@ -65,15 +63,11 @@ async function saveIcon(identifier: string) {
 
     setLastRefreshedAssetIcon();
   }
-  catch (error: any) {
-    const message = error.message;
-
-    setMessage({
-      description: t('asset_form.icon_upload.description', {
-        message,
-      }),
-      title: t('asset_form.icon_upload.title'),
-    });
+  catch (error: unknown) {
+    showErrorMessage(
+      t('asset_form.icon_upload.title'),
+      t('asset_form.icon_upload.description', { message: getErrorMessage(error) }),
+    );
   }
 }
 

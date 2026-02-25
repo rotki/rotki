@@ -46,7 +46,7 @@ async function save() {
     else
       success = await addUserNote({ ...data, location });
   }
-  catch (error: any) {
+  catch (error: unknown) {
     success = false;
     logger.error(error);
   }

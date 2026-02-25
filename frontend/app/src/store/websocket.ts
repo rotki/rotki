@@ -27,7 +27,7 @@ export const useWebsocketStore = defineStore('websocket', () => {
       await connect();
       logger.debug('websocket reconnection complete');
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.debug(error, 'Reconnect failed');
     }
   };

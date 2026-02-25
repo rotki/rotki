@@ -2,10 +2,10 @@ import type { ActionStatus } from '@/types/action';
 import { useAssetSpamApi } from '@/composables/api/assets/spam';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseSpamAssetReturn {
   markAssetsAsSpam: (tokens: string[]) => Promise<ActionStatus>;
@@ -13,7 +13,7 @@ interface UseSpamAssetReturn {
 }
 
 export function useSpamAsset(): UseSpamAssetReturn {
-  const { notify } = useNotificationsStore();
+  const { notifyError, showErrorMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const {
@@ -26,8 +26,6 @@ export function useSpamAsset(): UseSpamAssetReturn {
 
   const { getAssetSymbol } = useAssetInfoRetrieval();
   const { manualBalancesAssets } = useManualBalanceData();
-  const { setMessage } = useMessageStore();
-
   const markAssetsAsSpam = async (tokens: string[]): Promise<ActionStatus> => {
     try {
       const includedInManualBalances: string[] = [];
@@ -44,12 +42,12 @@ export function useSpamAsset(): UseSpamAssetReturn {
 
       // Display a warning message if any assets are included in manual balances
       if (includedInManualBalances.length > 0) {
-        setMessage({
-          description: t('ignore.spam.warning.manual_balances_message', {
+        showErrorMessage(
+          t('ignore.spam.warning.manual_balances_title'),
+          t('ignore.spam.warning.manual_balances_message', {
             assets: includedInManualBalances.map(item => getAssetSymbol(item)).join(', '),
           }),
-          title: t('ignore.spam.warning.manual_balances_title'),
-        });
+        );
       }
 
       if (notIncludedInManualBalances.length > 0) {
@@ -60,15 +58,15 @@ export function useSpamAsset(): UseSpamAssetReturn {
 
       return { success: true };
     }
-    catch (error: any) {
-      notify({
-        display: true,
-        message: t('ignore.spam.failed.mark_message', {
-          message: error.message,
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
+      notifyError(
+        t('ignore.spam.failed.mark_title'),
+        t('ignore.spam.failed.mark_message', {
+          message,
         }),
-        title: t('ignore.spam.failed.mark_title'),
-      });
-      return { message: error.message, success: false };
+      );
+      return { message, success: false };
     }
   };
 
@@ -79,15 +77,15 @@ export function useSpamAsset(): UseSpamAssetReturn {
       await fetchIgnoredAssets();
       return { success: true };
     }
-    catch (error: any) {
-      notify({
-        display: true,
-        message: t('ignore.spam.failed.unmark_message', {
-          message: error.message,
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
+      notifyError(
+        t('ignore.spam.failed.unmark_title'),
+        t('ignore.spam.failed.unmark_message', {
+          message,
         }),
-        title: t('ignore.spam.failed.unmark_title'),
-      });
-      return { message: error.message, success: false };
+      );
+      return { message, success: false };
     }
   };
 

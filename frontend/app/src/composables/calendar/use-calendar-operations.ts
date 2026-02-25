@@ -6,6 +6,7 @@ import { useCalendarApi } from '@/composables/history/calendar';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseCalendarOperationsReturn {
   add: (selectedDate?: Dayjs) => void;
@@ -64,9 +65,9 @@ export function useCalendarOperations(
         fetchData();
         set(modelValue, null);
       }
-      catch (error: any) {
+      catch (error: unknown) {
         setMessage({
-          description: t('calendar.delete_error.message', { message: error.message }),
+          description: t('calendar.delete_error.message', { message: getErrorMessage(error) }),
           success: false,
           title: t('calendar.delete_event'),
         });

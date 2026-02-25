@@ -4,8 +4,7 @@ import { useManualBalancesApi } from '@/composables/api/balances/manual';
 import { useStatusUpdater } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { BalanceType } from '@/types/balances';
@@ -19,6 +18,7 @@ import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface UseManualBalancesReturn {
@@ -31,8 +31,7 @@ interface UseManualBalancesReturn {
 
 export function useManualBalances(): UseManualBalancesReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
-  const { notify } = useNotificationsStore();
-  const { setMessage } = useMessageStore();
+  const { notifyError, showErrorMessage } = useNotifications();
   const { awaitTask } = useTaskStore();
   const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.MANUAL_BALANCES);
   const { addManualBalances, deleteManualBalances, editManualBalances, queryManualBalances } = useManualBalancesApi();
@@ -80,16 +79,13 @@ export function useManualBalances(): UseManualBalancesReturn {
 
       setStatus(Status.LOADED);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.balances.manual_balances.error.message', {
-            message: error.message,
-          }),
-          title: t('actions.balances.manual_balances.error.title'),
-        });
+        notifyError(
+          t('actions.balances.manual_balances.error.title'),
+          t('actions.balances.manual_balances.error.message', { message: getErrorMessage(error) }),
+        );
       }
       resetStatus();
     }
@@ -108,11 +104,11 @@ export function useManualBalances(): UseManualBalancesReturn {
         success: true,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error))
         logger.error(error);
 
-      let messages = error.message;
+      let messages: ValidationErrors | string = getErrorMessage(error);
       if (error instanceof ApiValidationError)
         messages = error.getValidationErrors(balance);
 
@@ -136,11 +132,11 @@ export function useManualBalances(): UseManualBalancesReturn {
         success: true,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error))
         logger.error(error);
 
-      let message = error.message;
+      let message: ValidationErrors | string = getErrorMessage(error);
       if (error instanceof ApiValidationError)
         message = error.getValidationErrors(balance);
 
@@ -159,11 +155,8 @@ export function useManualBalances(): UseManualBalancesReturn {
       const { balances } = await deleteManualBalances([id]);
       updateBalances(balances);
     }
-    catch (error: any) {
-      setMessage({
-        description: error.message,
-        title: t('actions.balances.manual_delete.error.title'),
-      });
+    catch (error: unknown) {
+      showErrorMessage(t('actions.balances.manual_delete.error.title'), getErrorMessage(error));
     }
   };
 

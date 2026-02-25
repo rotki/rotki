@@ -6,7 +6,7 @@ import { useEth2Api } from '@/composables/api/staking/eth2';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -32,7 +32,7 @@ export function useEth2Staking(): UseEthStakingReturn {
 
   const premium = usePremium();
   const { awaitTask } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const api = useEth2Api();
@@ -65,16 +65,15 @@ export function useEth2Staking(): UseEthStakingReturn {
       setStatus(Status.LOADED);
       return true;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.staking.eth2.error.description', {
-            error: error.message,
+        notifyError(
+          t('actions.staking.eth2.error.title'),
+          t('actions.staking.eth2.error.description', {
+            error: getErrorMessage(error),
           }),
-          title: t('actions.staking.eth2.error.title'),
-        });
+        );
       }
       resetStatus();
     }

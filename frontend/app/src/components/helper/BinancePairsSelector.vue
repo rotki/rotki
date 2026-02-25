@@ -3,6 +3,7 @@ import { Severity } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 import { trimOnPaste } from '@/utils/event';
 
 defineOptions({
@@ -104,10 +105,10 @@ async function queryAllMarkets() {
     );
     set(allMarkets, markets);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     const title = t('binance_market_selector.query_all.title');
     const description = t('binance_market_selector.query_all.error', {
-      message: error.message,
+      message: getErrorMessage(error),
     });
     notify({
       display: true,
@@ -125,10 +126,10 @@ async function loadUserMarkets() {
       set(queriedMarkets, markets);
       set(selection, markets);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       const title = t('binance_market_selector.query_user.title');
       const description = t('binance_market_selector.query_user.error', {
-        message: error.message,
+        message: getErrorMessage(error),
       });
       notify({
         display: true,

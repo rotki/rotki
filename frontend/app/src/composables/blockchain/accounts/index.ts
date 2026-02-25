@@ -13,8 +13,8 @@ import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts'
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
@@ -51,7 +51,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const { updateAccounts } = useBlockchainAccountsStore();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
 
   const { resetAddressNamesData } = useAddressesNamesStore();
   const { t } = useI18n({ useScope: 'global' });
@@ -104,7 +104,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
       return result;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error))
         throw error;
       return {};
@@ -122,7 +122,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         addressBookPayload,
       ]);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
     }
   };
@@ -171,7 +171,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         }),
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         const title = t('actions.balances.blockchain_account_removal.error.title', {
@@ -179,13 +179,9 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
           count: accounts.length,
         });
         const description = t('actions.balances.blockchain_account_removal.error.description', {
-          error: error.message,
+          error: getErrorMessage(error),
         });
-        notify({
-          display: true,
-          message: description,
-          title,
-        });
+        notifyError(title, description);
       }
     }
   };
@@ -199,20 +195,16 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         title: t('actions.balances.blockchain_account_removal.agnostic.task.title'),
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         const title = t('actions.balances.blockchain_account_removal.agnostic.error.title', {
           address,
         });
         const description = t('actions.balances.blockchain_account_removal.error.description', {
-          error: error.message,
+          error: getErrorMessage(error),
         });
-        notify({
-          display: true,
-          message: description,
-          title,
-        });
+        notifyError(title, description);
       }
     }
   };
@@ -231,16 +223,15 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       );
       return accounts.map(account => account.address);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      notify({
-        display: true,
-        message: t('actions.get_accounts.error.description', {
+      notifyError(
+        t('actions.get_accounts.error.title'),
+        t('actions.get_accounts.error.description', {
           blockchain: chain.toUpperCase(),
-          message: error.message,
+          message: getErrorMessage(error),
         }),
-        title: t('actions.get_accounts.error.title'),
-      });
+      );
       return null;
     }
   };
@@ -251,16 +242,15 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       updateAccounts(chain, convertBtcAccounts(getNativeAsset, chain, accounts));
       return true;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      notify({
-        display: true,
-        message: t('actions.get_accounts.error.description', {
+      notifyError(
+        t('actions.get_accounts.error.title'),
+        t('actions.get_accounts.error.description', {
           blockchain: chain.toUpperCase(),
-          message: error.message,
+          message: getErrorMessage(error),
         }),
-        title: t('actions.get_accounts.error.title'),
-      });
+      );
       return false;
     }
   };
@@ -280,19 +270,15 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         title: t('actions.balances.xpub_removal.task.title'),
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         const title = t('actions.balances.xpub_removal.error.title');
         const description = t('actions.balances.xpub_removal.error.description', {
-          error: error.message,
+          error: getErrorMessage(error),
           xpub: params.xpub,
         });
-        notify({
-          display: true,
-          message: description,
-          title,
-        });
+        notifyError(title, description);
       }
     }
   };

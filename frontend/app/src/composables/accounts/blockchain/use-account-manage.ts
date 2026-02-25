@@ -16,6 +16,7 @@ import { useMessageStore } from '@/store/message';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 import { getKeyType, guessPrefix } from '@/utils/xpub';
 
@@ -162,9 +163,9 @@ export function useAccountManage(): UseAccountManageReturn {
   const { editAccount, editAgnosticAccount } = useBlockchainAccounts();
   const { setMessage } = useMessageStore();
 
-  function handleErrors(error: any, props: Record<string, any> = {}): void {
+  function handleErrors(error: unknown, props: Record<string, any> = {}): void {
     logger.error(error);
-    let errors = error.message;
+    let errors: ValidationErrors | string = getErrorMessage(error);
 
     if (error instanceof ApiValidationError)
       errors = error.getValidationErrors(props);
@@ -205,7 +206,7 @@ export function useAccountManage(): UseAccountManageReturn {
         }
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       handleErrors(error);
       return false;
     }
@@ -221,7 +222,7 @@ export function useAccountManage(): UseAccountManageReturn {
       await editAgnosticAccount(state.category, state.data);
       updateAccountData(state.data);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       handleErrors(error);
       return false;
     }
@@ -245,7 +246,7 @@ export function useAccountManage(): UseAccountManageReturn {
         await addAccounts(chain, state.data);
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       handleErrors(error, {
         derivationPath: '',
         xpub: '',

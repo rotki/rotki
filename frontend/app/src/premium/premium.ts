@@ -112,7 +112,7 @@ async function load(name: string): Promise<Component> {
     if (library[name])
       return library[name];
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
   }
 

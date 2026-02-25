@@ -7,6 +7,7 @@ import { useExternalServicesApi } from '@/composables/api/settings/external-serv
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { DialogType } from '@/types/dialogs';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 function getName(name: ExternalServiceName, chain?: string): string {
@@ -140,8 +141,8 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
       });
       await postConfirmAction?.();
     }
-    catch (error: any) {
-      const errorMessage = error.message;
+    catch (error: unknown) {
+      const errorMessage = getErrorMessage(error);
       setStatus(name, {
         message: t('external_services.set.error.message', {
           error: errorMessage,
@@ -158,10 +159,10 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     try {
       set(keys, await deleteExternalServices(name));
     }
-    catch (error: any) {
+    catch (error: unknown) {
       setStatus(name, {
         message: t('external_services.delete_error.description', {
-          message: error.message,
+          message: getErrorMessage(error),
         }),
       });
     }

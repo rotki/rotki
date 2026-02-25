@@ -16,9 +16,10 @@ import { useHistoryEvents } from '@/composables/history/events';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useCompleteEvents } from '@/modules/history/events/composables/use-complete-events';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useConfirmStore } from '@/store/confirm';
-import { useNotificationsStore } from '@/store/notifications';
 import { isTaskCancelled } from '@/utils';
+import { getErrorMessage } from '@/utils/error-handling';
 import { isAssetMovementEvent, isCustomizedEvent } from '@/utils/history/events';
 
 interface UseHistoryEventsOperationsOptions {
@@ -61,7 +62,7 @@ export function useHistoryEventsOperations(
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { show } = useConfirmStore();
   const { getChain } = useSupportedChains();
 
@@ -123,12 +124,11 @@ export function useHistoryEventsOperations(
       await refreshUnmatchedAssetMovements();
       emit('refresh');
     }
-    catch (error: any) {
-      notify({
-        display: true,
-        message: error.message,
-        title: t('transactions.events.unlink_error'),
-      });
+    catch (error: unknown) {
+      notifyError(
+        t('transactions.events.unlink_error'),
+        getErrorMessage(error),
+      );
     }
   }
 
@@ -161,19 +161,15 @@ export function useHistoryEventsOperations(
       await deleteTransactions(chain, txRef);
       emit('refresh');
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isTaskCancelled(error))
         return;
 
       const title = t('transactions.dialog.delete.error.title');
       const message = t('transactions.dialog.delete.error.message', {
-        message: error.message,
+        message: getErrorMessage(error),
       });
-      notify({
-        display: true,
-        message,
-        title,
-      });
+      notifyError(title, message);
     }
   }
 

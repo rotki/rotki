@@ -11,8 +11,8 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useDefiApi } from '@/composables/api/defi';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import {
   type Airdrop,
@@ -32,7 +32,7 @@ type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed' | 'missed';
 const ETH = Blockchain.ETH;
 const { t } = useI18n({ useScope: 'global' });
 const { awaitTask } = useTaskStore();
-const { notify } = useNotificationsStore();
+const { notifyError } = useNotifications();
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
 const hideUnknownAlert = useLocalStorage('rotki.airdrops.hide_unknown_alert', false);
 
@@ -159,16 +159,15 @@ async function fetchAirdrops() {
     });
     set(airdrops, Airdrops.parse(result));
   }
-  catch (error: any) {
+  catch (error: unknown) {
     if (!isTaskCancelled(error)) {
       logger.error(error);
-      notify({
-        display: true,
-        message: t('actions.defi.airdrops.error.description', {
-          error: error.message,
+      notifyError(
+        t('actions.defi.airdrops.error.title'),
+        t('actions.defi.airdrops.error.description', {
+          error: getErrorMessage(error),
         }),
-        title: t('actions.defi.airdrops.error.title'),
-      });
+      );
     }
   }
   finally {

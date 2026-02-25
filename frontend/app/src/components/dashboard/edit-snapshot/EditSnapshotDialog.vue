@@ -5,8 +5,7 @@ import EditLocationDataSnapshotTable from '@/components/dashboard/edit-snapshot/
 import EditSnapshotTotal from '@/components/dashboard/edit-snapshot/EditSnapshotTotal.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useStatisticsStore } from '@/store/statistics';
 import { sortDesc } from '@/utils/bignumbers';
 
@@ -57,7 +56,7 @@ function close() {
   emit('close');
 }
 
-const { notify } = useNotificationsStore();
+const { notifyError, showSuccessMessage } = useNotifications();
 
 function updateLocationDataSnapshot(locationDataSnapshot: LocationDataSnapshot[]) {
   const data = get(snapshotData);
@@ -93,24 +92,21 @@ async function save(): Promise<boolean> {
 
   let result = false;
 
-  const notifyError = (e?: any) => {
-    notify({
-      display: true,
-      message: t('dashboard.snapshot.edit.dialog.message.error', {
-        message: e,
-      }),
-      title: t('dashboard.snapshot.edit.dialog.message.title'),
-    });
+  const notifySaveError = (e?: any): void => {
+    notifyError(
+      t('dashboard.snapshot.edit.dialog.message.title'),
+      t('dashboard.snapshot.edit.dialog.message.error', { message: e }),
+    );
   };
 
   try {
     result = await api.updateSnapshotData(timestamp, payload);
 
     if (!result)
-      notifyError();
+      notifySaveError();
   }
-  catch (error: any) {
-    notifyError(error);
+  catch (error: unknown) {
+    notifySaveError(error);
   }
 
   if (result)
@@ -119,17 +115,14 @@ async function save(): Promise<boolean> {
   return result;
 }
 
-const { setMessage } = useMessageStore();
-
 async function finish() {
   const success = await save();
 
   if (success) {
-    setMessage({
-      description: t('dashboard.snapshot.edit.dialog.message.success'),
-      success: true,
-      title: t('dashboard.snapshot.edit.dialog.message.title'),
-    });
+    showSuccessMessage(
+      t('dashboard.snapshot.edit.dialog.message.title'),
+      t('dashboard.snapshot.edit.dialog.message.success'),
+    );
     await fetchNetValue();
     emit('finish');
   }

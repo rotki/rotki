@@ -22,6 +22,7 @@ import { isBlockchain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { mapCollectionResponse } from '@/utils/collection';
+import { getErrorMessage } from '@/utils/error-handling';
 import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';
 import { isTransactionEvent } from '@/utils/report';
@@ -116,9 +117,9 @@ export const useReportsStore = defineStore('reports', () => {
         title: t('actions.reports.csv_export.title'),
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       message = {
-        description: error.message,
+        description: getErrorMessage(error),
         success: false,
         title: t('actions.reports.csv_export.title'),
       };
@@ -130,7 +131,7 @@ export const useReportsStore = defineStore('reports', () => {
     try {
       set(reports, await fetchReportsCaller());
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       notify({
         message: t('actions.reports.fetch.error.description'),
@@ -144,7 +145,7 @@ export const useReportsStore = defineStore('reports', () => {
       await deleteReportCaller(reportId);
       await fetchReports();
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       notify({
         message: t('actions.reports.delete.error.description'),
@@ -182,7 +183,7 @@ export const useReportsStore = defineStore('reports', () => {
       fetchEnsNamesFromTransactions(events);
       return events;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       notify({
         message: t('actions.report_events.fetch.error.description', { error }),
@@ -227,10 +228,10 @@ export const useReportsStore = defineStore('reports', () => {
       }
       return result;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         set(reportError, {
-          error: error.message,
+          error: getErrorMessage(error),
           message: t('actions.reports.generate.error.description'),
         });
       }
@@ -264,10 +265,10 @@ export const useReportsStore = defineStore('reports', () => {
 
       return result;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         set(reportError, {
-          error: error.message,
+          error: getErrorMessage(error),
           message: t('actions.reports.generate.error.description'),
         });
       }

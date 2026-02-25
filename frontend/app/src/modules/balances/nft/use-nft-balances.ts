@@ -9,7 +9,7 @@ import type { TaskMeta } from '@/types/task';
 import { useNftBalancesApi } from '@/composables/api/balances/nft';
 import { useStatusUpdater } from '@/composables/status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { Module } from '@/types/modules';
@@ -17,6 +17,7 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { mapCollectionResponse } from '@/utils/collection';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface NftBalancesReturn {
@@ -28,7 +29,7 @@ export function useNftBalances(): NftBalancesReturn {
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNfBalances, fetchNfBalancesTask } = useNftBalancesApi();
 
@@ -64,15 +65,14 @@ export function useNftBalances(): NftBalancesReturn {
         title: t('actions.nft_balances.task.title'),
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.nft_balances.error.message', {
-            message: error.message,
+        notifyError(
+          t('actions.nft_balances.error.title'),
+          t('actions.nft_balances.error.message', {
+            message: getErrorMessage(error),
           }),
-          title: t('actions.nft_balances.error.title'),
-        });
+        );
         throw error;
       }
     }
@@ -94,7 +94,7 @@ export function useNftBalances(): NftBalancesReturn {
       await syncNonFungiblesTask();
       setStatus(Status.LOADED);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       resetStatus();
     }

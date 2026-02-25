@@ -7,6 +7,7 @@ import type { EntryMeta } from '@/types/history/meta';
 import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
 import { useMessageStore } from '@/store/message';
 import { uniqueStrings } from '@/utils/data';
+import { getErrorMessage } from '@/utils/error-handling';
 
 interface CommonIgnoreAction<T extends EntryMeta> {
   toData: (t: T) => string;
@@ -36,7 +37,7 @@ export function useIgnore<T extends EntryMeta>(
         await api.unignoreActions(payload);
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       let title: string;
       let description: string;
       if (ignore)
@@ -45,12 +46,12 @@ export function useIgnore<T extends EntryMeta>(
 
       if (ignore) {
         description = t('actions.ignore.error.description', {
-          error: error.message,
+          error: getErrorMessage(error),
         }).toString();
       }
       else {
         description = t('actions.unignore.error.description', {
-          error: error.message,
+          error: getErrorMessage(error),
         }).toString();
       }
       setMessage({

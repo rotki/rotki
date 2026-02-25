@@ -10,6 +10,7 @@ import { usePremiumDevicesApi } from '@/modules/premium/devices/composables/devi
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { usePremiumStore } from '@/store/session/premium';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -62,9 +63,9 @@ async function fetchDevices(): Promise<void> {
     set(devicesLimit, response.limit);
     set(currentDeviceId, response.currentDeviceId);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     setMessage({
-      description: error.message || error,
+      description: getErrorMessage(error),
       title: t('premium_devices.fetch.error.title'),
     });
   }
@@ -92,9 +93,9 @@ async function deleteDevice(device: PremiumDevice): Promise<void> {
     await deletePremiumDevice(device.deviceIdentifier);
     await fetchDevices();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     setMessage({
-      description: error.message || error,
+      description: getErrorMessage(error),
       title: t('premium_devices.delete.error.title'),
     });
   }

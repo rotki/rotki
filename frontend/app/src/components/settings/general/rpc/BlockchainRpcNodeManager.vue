@@ -17,6 +17,7 @@ import {
   type BlockchainRpcNodeManageState,
   getPlaceholderNode,
 } from '@/types/settings/rpc';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const { chain } = defineProps<{
   chain: Blockchain;
@@ -43,9 +44,9 @@ async function loadNodes(): Promise<void> {
   try {
     set(nodes, await api.fetchEvmNodes());
   }
-  catch (error: any) {
+  catch (error: unknown) {
     notify({
-      message: error.message,
+      message: getErrorMessage(error),
       title: t('evm_rpc_node_manager.loading_error.title', {
         chain,
       }),
@@ -73,9 +74,9 @@ async function deleteNode(node: BlockchainRpcNode) {
     await api.deleteEvmNode(identifier);
     await loadNodes();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     setMessage({
-      description: error.message,
+      description: getErrorMessage(error),
       success: false,
       title: t('evm_rpc_node_manager.delete_error.title', {
         chain,
@@ -90,9 +91,9 @@ async function onActiveChange(active: boolean, node: BlockchainRpcNode) {
     await api.editEvmNode(state);
     await loadNodes();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     setMessage({
-      description: error.message,
+      description: getErrorMessage(error),
       success: false,
       title: t('evm_rpc_node_manager.activate_error.title', {
         node: node.name,

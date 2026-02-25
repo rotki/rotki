@@ -1,4 +1,3 @@
-import type { Message } from '@rotki/common';
 import type { MaybeRef } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
@@ -12,8 +11,7 @@ import type {
 import type { TaskMeta } from '@/types/task';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { useInterop } from '@/composables/electron-interop';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
@@ -43,7 +41,7 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { notify } = useNotificationsStore();
+  const { notifyError, showErrorMessage, showSuccessMessage } = useNotifications();
 
   const getAccountingRule = async (
     payload: MaybeRef<AccountingRuleRequestPayload>,
@@ -52,17 +50,16 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
     try {
       return await fetchAccountingRule(get(payload), counterparty) ?? undefined;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      const message = error?.message ?? error ?? '';
+      const message = getErrorMessage(error);
 
-      notify({
-        display: true,
-        message: t('accounting_settings.rule.fetch_error.message', {
+      notifyError(
+        t('accounting_settings.rule.fetch_error.title'),
+        t('accounting_settings.rule.fetch_error.message', {
           message,
         }),
-        title: t('accounting_settings.rule.fetch_error.title'),
-      });
+      );
 
       return undefined;
     }
@@ -76,17 +73,16 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
 
       return mapCollectionResponse(response);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      const message = error?.message ?? error ?? '';
+      const message = getErrorMessage(error);
 
-      notify({
-        display: true,
-        message: t('accounting_settings.rule.fetch_error.message', {
+      notifyError(
+        t('accounting_settings.rule.fetch_error.title'),
+        t('accounting_settings.rule.fetch_error.message', {
           message,
         }),
-        title: t('accounting_settings.rule.fetch_error.title'),
-      });
+      );
 
       return defaultCollectionState();
     }
@@ -100,17 +96,16 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
 
       return mapCollectionResponse(response);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      const message = error?.message ?? error ?? '';
+      const message = getErrorMessage(error);
 
-      notify({
-        display: true,
-        message: t('accounting_settings.rule.conflicts.fetch_error.message', {
+      notifyError(
+        t('accounting_settings.rule.conflicts.fetch_error.title'),
+        t('accounting_settings.rule.conflicts.fetch_error.message', {
           message,
         }),
-        title: t('accounting_settings.rule.conflicts.fetch_error.title'),
-      });
+      );
 
       return defaultCollectionState();
     }
@@ -122,13 +117,12 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
 
       return { success: true };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      return { message: error.message, success: false };
+      return { message: getErrorMessage(error), success: false };
     }
   };
 
-  const { setMessage } = useMessageStore();
   const { awaitTask } = useTaskStore();
 
   const exportAccountingRulesData = async (
@@ -144,12 +138,12 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
         result,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error))
         return null;
 
       return {
-        message: error.message,
+        message: getErrorMessage(error),
         result: false,
       };
     }
@@ -158,7 +152,7 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
   const { appSession, getPath, openDirectory } = useInterop();
 
   async function exportJSON(): Promise<void> {
-    let message: Message | null = null;
+    const title = t('actions.accounting_rules.export.title');
 
     try {
       let directoryPath;
@@ -175,32 +169,24 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
       const { message: taskMessage, result } = response;
 
       if (appSession) {
-        message = {
-          description: result
-            ? t('actions.accounting_rules.export.message.success')
-            : t('actions.accounting_rules.export.message.failure', {
-                description: taskMessage,
-              }),
-          success: !!result,
-          title: t('actions.accounting_rules.export.title'),
-        };
+        if (result) {
+          showSuccessMessage(title, t('actions.accounting_rules.export.message.success'));
+        }
+        else {
+          showErrorMessage(title, t('actions.accounting_rules.export.message.failure', {
+            description: taskMessage,
+          }));
+        }
       }
       else {
         downloadFileByTextContent(JSON.stringify(result, null, 2), 'accounting_rules.json', 'application/json');
       }
     }
-    catch (error: any) {
-      message = {
-        description: t('actions.accounting_rules.export.message.failure', {
-          description: error.message,
-        }),
-        success: false,
-        title: t('actions.accounting_rules.export.title'),
-      };
+    catch (error: unknown) {
+      showErrorMessage(title, t('actions.accounting_rules.export.message.failure', {
+        description: getErrorMessage(error),
+      }));
     }
-
-    if (message)
-      setMessage(message);
   }
 
   async function importJSON(file: File): Promise<ActionStatus | null> {
@@ -220,11 +206,11 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
       });
       success = result;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isTaskCancelled(error))
         return null;
 
-      message = error.message;
+      message = getErrorMessage(error);
       success = false;
     }
 

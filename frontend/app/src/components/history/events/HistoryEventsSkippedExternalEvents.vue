@@ -7,6 +7,7 @@ import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useSkippedHistoryEventsApi } from '@/composables/api/history/events/skipped';
 import { useInterop } from '@/composables/electron-interop';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface Location {
@@ -80,9 +81,9 @@ async function createCsv(path: string): Promise<void> {
       title: t('actions.online_events.skipped.csv_export.title'),
     };
   }
-  catch (error: any) {
+  catch (error: unknown) {
     message = {
-      description: error.message,
+      description: getErrorMessage(error),
       success: false,
       title: t('actions.online_events.skipped.csv_export.title'),
     };
@@ -105,8 +106,8 @@ async function exportCSV() {
         showExportCSVError(result.message ?? t('transactions.events.skipped.download_failed'));
     }
   }
-  catch (error: any) {
-    showExportCSVError(error.message);
+  catch (error: unknown) {
+    showExportCSVError(getErrorMessage(error));
   }
 }
 
@@ -140,10 +141,10 @@ async function reProcessSkippedEvents() {
       };
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
     message = {
-      description: error.message,
+      description: getErrorMessage(error),
       success: false,
       title: t('transactions.events.skipped.reprocess.failed.title'),
     };

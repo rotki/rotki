@@ -77,7 +77,7 @@ export const useAssetIconStore = defineStore('assets/icon', () => {
         cache.set(identifier, { exists: false, timestamp: Date.now() });
         return false;
       }
-      catch (error: any) {
+      catch (error: unknown) {
         logger.error(error);
         return false;
       }

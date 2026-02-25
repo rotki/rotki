@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressBookImport } from '@/composables/address-book/use-address-book-import';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useNotificationsStore } from '@/store/notifications';
 
-// Mocks
-vi.mock('@/store/notifications', () => ({
-  useNotificationsStore: vi.fn().mockReturnValue({
-    notify: vi.fn(),
-  }),
+const mockNotifyError = vi.fn();
+
+vi.mock('@/modules/notifications/use-notifications', () => ({
+  useNotifications: vi.fn((): { notifyError: typeof mockNotifyError } => ({
+    notifyError: mockNotifyError,
+  })),
 }));
 
 vi.mock('@/store/blockchain/accounts/addresses-names', () => ({
@@ -21,13 +21,11 @@ vi.mock('@/store/blockchain/accounts/addresses-names', () => ({
 
 describe('useAddressBookImport', () => {
   let addressesNameStore: ReturnType<typeof useAddressesNamesStore>;
-  let notificationStore: ReturnType<typeof useNotificationsStore>;
   setActivePinia(createPinia());
   const { parseCSV } = useCsvImportExport();
 
   beforeEach(() => {
     addressesNameStore = useAddressesNamesStore();
-    notificationStore = useNotificationsStore();
     vi.clearAllMocks();
   });
 
@@ -71,11 +69,10 @@ describe('useAddressBookImport', () => {
 
     expect(result).toBe(0);
     expect(addressesNameStore.addAddressBook).not.toHaveBeenCalled();
-    expect(notificationStore.notify).toHaveBeenCalledWith({
-      display: true,
-      message: expect.stringMatching(/^address_book\.import\.import_error\.message.*/),
-      title: 'address_book.import.title',
-    });
+    expect(mockNotifyError).toHaveBeenCalledWith(
+      'address_book.import.title',
+      expect.stringMatching(/^address_book\.import\.import_error\.message.*/),
+    );
   });
 
   it('should throw an error if headers are missing', async () => {
@@ -99,11 +96,10 @@ describe('useAddressBookImport', () => {
     await flushPromises();
 
     expect(result).toBe(0);
-    expect(notificationStore.notify).toHaveBeenCalledWith({
-      display: true,
-      message: expect.stringMatching(/^address_book\.import\.import_error\.invalid_format\.*/),
-      title: 'address_book.import.title',
-    });
+    expect(mockNotifyError).toHaveBeenCalledWith(
+      'address_book.import.title',
+      expect.stringMatching(/^address_book\.import\.import_error\.invalid_format\.*/),
+    );
   });
 
   it('should handle rows with location specified', async () => {

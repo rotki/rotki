@@ -6,6 +6,7 @@ import CustomAssetForm from '@/components/asset-manager/custom/CustomAssetForm.v
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const open = defineModel<boolean>('open', { required: true });
 const savedAssetId = defineModel<string>('savedAssetId', { required: false });
@@ -68,9 +69,9 @@ async function save() {
       formRef?.saveIcon(identifier);
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     success = false;
-    const obj = { message: error.message };
+    const obj = { message: getErrorMessage(error) };
     setMessage({
       description: editMode
         ? t('asset_management.edit_error', obj)

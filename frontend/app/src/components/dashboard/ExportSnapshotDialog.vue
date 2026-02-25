@@ -10,6 +10,7 @@ import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useStatisticsStore } from '@/store/statistics';
 import { downloadFileByBlob } from '@/utils/download';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const display = defineModel<boolean>({ default: false, required: true });
 
@@ -65,9 +66,9 @@ async function exportSnapshotCSV() {
       await downloadSnapshot();
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     message = {
-      description: error.message,
+      description: getErrorMessage(error),
       success: false,
       title: t('dashboard.snapshot.download.message.title'),
     };
@@ -104,9 +105,9 @@ async function deleteSnapshot() {
     set(display, false);
     await fetchNetValue();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     message = {
-      description: error.message,
+      description: getErrorMessage(error),
       success: false,
       title: t('dashboard.snapshot.download.message.title'),
     };

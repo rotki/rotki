@@ -5,7 +5,8 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PremiumDeviceForm from '@/modules/premium/devices/components/PremiumDeviceForm.vue';
 import { usePremiumDevicesApi } from '@/modules/premium/devices/composables/devices';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError } from '@/types/api/errors';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<PremiumDevice | undefined>({ required: true });
 
@@ -42,9 +43,9 @@ async function save(): Promise<boolean> {
     success = await updatePremiumDevice(payload);
     set(modelValue, undefined);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     success = false;
-    let errors = error.message;
+    let errors: ValidationErrors | string = getErrorMessage(error);
     if (error instanceof ApiValidationError)
       errors = error.getValidationErrors(payload);
 
@@ -53,7 +54,7 @@ async function save(): Promise<boolean> {
     }
     else {
       setMessage({
-        description: errors || error,
+        description: errors,
         title: t('premium_devices.form.error.title'),
       });
     }

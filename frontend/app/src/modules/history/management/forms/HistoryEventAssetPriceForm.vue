@@ -17,6 +17,7 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { millisecondsToSeconds } from '@/utils/date';
+import { getErrorMessage } from '@/utils/error-handling';
 import { toMessages } from '@/utils/validation';
 
 interface HistoryEventAssetPriceFormProps {
@@ -142,8 +143,8 @@ async function submitPrice(payload?: NewHistoryEventPayload): Promise<ActionStat
 
     return { success: true };
   }
-  catch (error: any) {
-    let message: ValidationErrors | string = error.message;
+  catch (error: unknown) {
+    let message: ValidationErrors | string = getErrorMessage(error);
     if (error instanceof ApiValidationError && payload)
       message = error.getValidationErrors(payload);
 

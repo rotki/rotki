@@ -29,7 +29,7 @@ export const useCollectionInfo = createSharedComposable((): UseCollectionInfoRet
     try {
       return await assetMapping(identifiers);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       return undefined;
     }
@@ -91,7 +91,7 @@ export const useCollectionInfo = createSharedComposable((): UseCollectionInfoRet
 
       pendingAssets.clear();
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error('Error processing asset collection batch', error);
     }
   }, 1500);

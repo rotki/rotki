@@ -10,6 +10,7 @@ import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { ApiValidationError } from '@/types/api/errors';
 import { uniqueStrings } from '@/utils/data';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 export const useSettingsStore = defineStore('settings', () => {
@@ -34,17 +35,17 @@ export const useSettingsStore = defineStore('settings', () => {
         title: t('actions.session.kraken_account.success.title'),
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       setMessage({
-        description: error.message,
+        description: getErrorMessage(error),
         title: t('actions.session.kraken_account.error.title'),
       });
     }
   };
 
-  function handleErrors(error: any, keys: string[]): string {
+  function handleErrors(error: unknown, keys: string[]): string {
     if (!(error instanceof ApiValidationError)) {
-      return error.message;
+      return getErrorMessage(error);
     }
 
     const settingsErrors = error.errors.settings as unknown as Record<string, string | string[]>;
@@ -54,7 +55,7 @@ export const useSettingsStore = defineStore('settings', () => {
       return Array.isArray(errorValues) ? errorValues.join(', ') : errorValues;
     }
 
-    return error.message;
+    return getErrorMessage(error);
   }
 
   const update = async (update: SettingsUpdate): Promise<ActionStatus> => {
@@ -72,7 +73,7 @@ export const useSettingsStore = defineStore('settings', () => {
       accountingStore.update(accounting);
       success = true;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       message = handleErrors(error, Object.keys(update));
     }

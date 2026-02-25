@@ -10,6 +10,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { ApiValidationError } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const { asset } = defineProps<{
   asset: string;
@@ -107,8 +108,8 @@ async function updatePrice(item: EditableMissingPrice) {
       await deleteHistoricalPrice(payload);
     }
   }
-  catch (error: any) {
-    let errorMessage = error.message;
+  catch (error: unknown) {
+    let errorMessage = getErrorMessage(error);
     if (error instanceof ApiValidationError) {
       const errors = error.getValidationErrors({ price: '' });
       errorMessage = typeof errors === 'string' ? error.message : errors.price[0];

@@ -13,6 +13,7 @@ import { useTaskStore } from '@/store/tasks';
 import { DateFormat } from '@/types/date-format';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
+import { getErrorMessage } from '@/utils/error-handling';
 import { toMessages } from '@/utils/validation';
 
 const { source } = defineProps<{ source: ImportSourceType }>();
@@ -81,9 +82,9 @@ async function uploadPackaged(file: string) {
     if (result)
       set(uploaded, true);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     if (!isTaskCancelled(error))
-      set(errorMessage, error.message);
+      set(errorMessage, getErrorMessage(error));
   }
 }
 
@@ -114,9 +115,9 @@ async function uploadFile() {
         if (result)
           set(uploaded, true);
       }
-      catch (error: any) {
+      catch (error: unknown) {
         if (!isTaskCancelled(error))
-          set(errorMessage, error.message);
+          set(errorMessage, getErrorMessage(error));
       }
     }
   }

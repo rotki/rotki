@@ -1,7 +1,7 @@
 import type { TaskMeta } from '@/types/task';
 import { useSessionApi } from '@/composables/api/session';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useHistoryStore } from '@/store/history';
-import { useNotificationsStore } from '@/store/notifications';
 import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
 import { Purgeable } from '@/types/session/purge';
@@ -18,7 +18,7 @@ export function useSessionPurge(): UseSessionPurge {
   const { refreshGeneralCacheTask } = useSessionApi();
   const { resetStatus } = useStatusStore();
   const { awaitTask } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { resetProtocolCacheUpdatesStatus } = useHistoryStore();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -37,18 +37,17 @@ export function useSessionPurge(): UseSessionPurge {
         title: t('actions.session.refresh_general_cache.task.title', { name: source }),
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isTaskCancelled(error)) {
         return;
       }
-      notify({
-        display: true,
-        message: t('actions.session.refresh_general_cache.error.message', {
-          message: error.message,
+      notifyError(
+        t('actions.session.refresh_general_cache.task.title', { name: source }),
+        t('actions.session.refresh_general_cache.error.message', {
+          message: getErrorMessage(error),
           name: source,
         }),
-        title: t('actions.session.refresh_general_cache.task.title', { name: source }),
-      });
+      );
     }
   };
 

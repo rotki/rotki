@@ -7,6 +7,7 @@ import { useBackupApi } from '@/composables/api/backup';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 import { getFilepath } from '@/utils/file';
 import { logger } from '@/utils/logging';
 
@@ -45,12 +46,12 @@ async function loadInfo() {
     set(loading, true);
     set(backupInfo, await info());
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
     notify({
       display: true,
       message: t('database_backups.load_error.message', {
-        message: error.message,
+        message: getErrorMessage(error),
       }),
       title: t('database_backups.load_error.title'),
     });
@@ -80,12 +81,12 @@ async function massRemove() {
     }
     set(selected, []);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
     notify({
       display: true,
       message: t('database_backups.delete_error.mass_message', {
-        message: error.message,
+        message: getErrorMessage(error),
       }),
       title: t('database_backups.delete_error.title'),
     });
@@ -112,13 +113,13 @@ async function remove(db: UserDbBackup) {
       }
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
     notify({
       display: true,
       message: t('database_backups.delete_error.message', {
         file: filepath,
-        message: error.message,
+        message: getErrorMessage(error),
       }),
       title: t('database_backups.delete_error.title'),
     });
@@ -140,12 +141,12 @@ async function backup() {
 
     await loadInfo();
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error(error);
     notify({
       display: true,
       message: t('database_backups.backup_error.message', {
-        message: error.message,
+        message: getErrorMessage(error),
       }),
       title: t('database_backups.backup_error.title'),
     });

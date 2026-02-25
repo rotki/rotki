@@ -1,3 +1,4 @@
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 /**
@@ -5,21 +6,7 @@ import { logger } from '@/utils/logging';
  * Converts unknown errors to string format with proper logging
  */
 export function handleMessageError(error: unknown, context: string): string {
-  let errorMessage: string;
-
-  if (error instanceof Error) {
-    errorMessage = error.message;
-  }
-  else if (typeof error === 'string') {
-    errorMessage = error;
-  }
-  else if (error && typeof error === 'object' && 'message' in error) {
-    errorMessage = String((error as { message: unknown }).message);
-  }
-  else {
-    errorMessage = 'Unknown error occurred';
-  }
-
+  const errorMessage = getErrorMessage(error);
   logger.error(`${context}:`, errorMessage, error);
   return errorMessage;
 }

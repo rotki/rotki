@@ -9,8 +9,8 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
@@ -38,7 +38,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { addresses } = useAccountAddresses();
   const { fetchDetectedTokens: fetchDetectedTokensCaller, fetchDetectedTokensTask } = useBlockchainBalancesApi();
   const { getChainName, supportsTransactions, txEvmChains } = useSupportedChains();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
 
   const monitoredAddresses = computed<Record<string, string[]>>(() => {
     const addressesPerChain = get(addresses);
@@ -83,19 +83,18 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         setState(chain, result);
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
 
-        notify({
-          display: true,
-          message: t('actions.balances.detect_tokens.error.message', {
+        notifyError(
+          t('actions.balances.detect_tokens.task.title'),
+          t('actions.balances.detect_tokens.error.message', {
             address,
             chain: get(getChainName(chain)),
-            error: error.message,
+            error: getErrorMessage(error),
           }),
-          title: t('actions.balances.detect_tokens.task.title'),
-        });
+        );
       }
     }
   };

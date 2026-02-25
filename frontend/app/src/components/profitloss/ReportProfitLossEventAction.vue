@@ -11,6 +11,7 @@ import { useRefMap } from '@/composables/utils/useRefMap';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useMessageStore } from '@/store/message';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { getErrorMessage } from '@/utils/error-handling';
 import { toMessages } from '@/utils/validation';
 
 const { event, currency } = defineProps<{
@@ -76,8 +77,8 @@ async function updatePrice() {
     await savePrice(payload);
     set(showDialog, false);
   }
-  catch (error: any) {
-    const values = { message: error.message };
+  catch (error: unknown) {
+    const values = { message: getErrorMessage(error) };
     const title = t('price_management.add.error.title');
     const description = t('price_management.add.error.description', values);
     setMessage({

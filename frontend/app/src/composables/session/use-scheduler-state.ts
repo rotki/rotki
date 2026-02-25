@@ -37,7 +37,7 @@ export const useSchedulerState = createSharedComposable((): UseSchedulerStateRet
       set(schedulerEnabled, true);
       logger.info('Task scheduler enabled');
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error('Failed to enable task scheduler:', error);
     }
   };

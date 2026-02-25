@@ -2,7 +2,7 @@ import type { TaskMeta } from '@/types/task';
 import { type HistoricalAssetPricePayload, HistoricalAssetPriceResponse } from '@rotki/common';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -19,7 +19,7 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
   const api = useStatisticsApi();
   const { awaitTask } = useTaskStore();
   const { assetName } = useAssetInfoRetrieval();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
 
   const resetFailedStates = (asset: string, parsed: HistoricalAssetPriceResponse, excludeTimestamps: number[]): void => {
@@ -77,14 +77,13 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
       resetFailedStates(asset, parsed, excludeTimestamps);
       return parsed;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
       if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.balances.historic_fetch_price.daily.error.message'),
-          title: t('actions.balances.historic_fetch_price.daily.task.title'),
-        });
+        notifyError(
+          t('actions.balances.historic_fetch_price.daily.task.title'),
+          t('actions.balances.historic_fetch_price.daily.error.message'),
+        );
       }
 
       return {

@@ -5,6 +5,7 @@ import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useBackendMessagesStore } from '@/store/backend-messages';
 import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 import { getPublicServiceImagePath } from '@/utils/file';
 import { logger } from '@/utils/logging';
 import { useMoneriumOAuth } from './use-monerium-auth';
@@ -26,11 +27,11 @@ const { authenticated, completeOAuth, disconnect: disconnectOAuth, status } = us
 
 const connectedEmail = computed<string>(() => get(status)?.userEmail ?? '');
 
-function notifyOAuthError(error: any): void {
+function notifyOAuthError(error: unknown): void {
   logger.error('Monerium OAuth failed:', error);
   notify({
     display: true,
-    message: error.message || t('external_services.monerium.auth_failed'),
+    message: getErrorMessage(error) || t('external_services.monerium.auth_failed'),
     severity: Severity.ERROR,
     title: t('external_services.monerium.error'),
   });
@@ -69,7 +70,7 @@ async function handleOAuthCallback(oAuthResult: OAuthResult): Promise<void> {
     set(manualAccessToken, '');
     set(manualRefreshToken, '');
   }
-  catch (error: any) {
+  catch (error: unknown) {
     notifyOAuthError(error);
   }
   finally {
@@ -103,7 +104,7 @@ async function connect(): Promise<void> {
       title: t('external_services.monerium.authorizing'),
     });
   }
-  catch (error: any) {
+  catch (error: unknown) {
     notifyOAuthError(error);
   }
   finally {
@@ -122,7 +123,7 @@ async function disconnect(): Promise<void> {
       title: t('external_services.monerium.success'),
     });
   }
-  catch (error: any) {
+  catch (error: unknown) {
     notifyOAuthError(error);
   }
   finally {

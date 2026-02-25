@@ -7,6 +7,7 @@ import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { type DuplicateRow, useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { Routes } from '@/router/routes';
 import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 const modelValue = defineModel<boolean>({ default: false });
@@ -60,11 +61,11 @@ async function loadRows(
     });
     set(rows, result.data);
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error('Failed to load duplicate event rows:', error);
     notify({
       display: true,
-      message: t('actions.customized_event_duplicates.fetch_events_error.description', { error: error.message }),
+      message: t('actions.customized_event_duplicates.fetch_events_error.description', { error: getErrorMessage(error) }),
       severity: Severity.ERROR,
       title: t('actions.customized_event_duplicates.fetch_events_error.title'),
     });

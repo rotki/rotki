@@ -4,7 +4,7 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useModules } from '@/composables/session/modules';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useTaskStore } from '@/store/tasks';
 import { type Exchange, QueryExchangeEventsPayload } from '@/types/exchanges';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
@@ -21,7 +21,7 @@ interface UseRefreshHandlersReturn {
 
 export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { queryExchangeEvents, queryOnlineHistoryEvents } = useHistoryEventsApi();
   const { awaitTask } = useTaskStore();
   const { isModuleEnabled } = useModules();
@@ -67,17 +67,16 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     try {
       await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.online_events.error.description', {
+        notifyError(
+          t('actions.online_events.error.title'),
+          t('actions.online_events.error.description', {
             error,
             queryType,
           }),
-          title: t('actions.online_events.error.title'),
-        });
+        );
       }
     }
     logger.debug(`finished querying for ${queryType} events`);
@@ -98,17 +97,16 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
       const { taskId } = await queryExchangeEvents(payload);
       await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.exchange_events.error.description', {
+        notifyError(
+          t('actions.exchange_events.error.title'),
+          t('actions.exchange_events.error.description', {
             error,
             ...payload,
           }),
-          title: t('actions.exchange_events.error.title'),
-        });
+        );
       }
     }
   };

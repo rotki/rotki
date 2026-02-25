@@ -15,6 +15,7 @@ import { useMessageStore } from '@/store/message';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useStatisticsStore } from '@/store/statistics';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const ignoreErrors = ref<boolean>(false);
 const visible = ref<boolean>(false);
@@ -68,8 +69,8 @@ async function importSnapshot() {
 
     success = true;
   }
-  catch (error: any) {
-    message = error.message;
+  catch (error: unknown) {
+    message = getErrorMessage(error);
   }
 
   if (!success) {

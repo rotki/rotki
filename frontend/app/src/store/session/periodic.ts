@@ -1,6 +1,6 @@
 import { backoff } from '@shared/utils';
 import { useSessionApi } from '@/composables/api/session';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 
 export const usePeriodicStore = defineStore('session/periodic', () => {
   const lastBalanceSave = ref(0);
@@ -9,7 +9,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
   const failedToConnect = ref<Record<string, string[]>>({});
   const periodicRunning = ref(false);
 
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchPeriodicData } = useSessionApi();
 
@@ -41,14 +41,13 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
       set(connectedNodes, connected);
       set(failedToConnect, failed);
     }
-    catch (error: any) {
-      notify({
-        display: true,
-        message: t('actions.session.periodic_query.error.message', {
-          message: error.message,
+    catch (error: unknown) {
+      notifyError(
+        t('actions.session.periodic_query.error.title'),
+        t('actions.session.periodic_query.error.message', {
+          message: getErrorMessage(error),
         }),
-        title: t('actions.session.periodic_query.error.title'),
-      });
+      );
     }
     finally {
       set(periodicRunning, false);

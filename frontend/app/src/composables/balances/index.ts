@@ -4,9 +4,9 @@ import { useBalancesApi } from '@/composables/api/balances';
 import { useBlockchains } from '@/composables/blockchain';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
-import { useNotificationsStore } from '@/store/notifications';
 import { useStatisticsStore } from '@/store/statistics';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -19,7 +19,7 @@ export const useBalances = createSharedComposable(() => {
   const { queryBalancesAsync } = useBalancesApi();
   const { fetchExchangeRates } = usePriceTaskManager();
   const { refreshPrices } = usePriceRefresh();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNetValue } = useStatisticsStore();
@@ -35,15 +35,14 @@ export const useBalances = createSharedComposable(() => {
         title: t('actions.balances.all_balances.task.title'),
       });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.balances.all_balances.error.message', {
-            message: error.message,
+        notifyError(
+          t('actions.balances.all_balances.error.title'),
+          t('actions.balances.all_balances.error.message', {
+            message: getErrorMessage(error),
           }),
-          title: t('actions.balances.all_balances.error.title'),
-        });
+        );
       }
     }
   };

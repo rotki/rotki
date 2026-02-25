@@ -2,6 +2,7 @@
 import type { EIP1193Provider, EIP6963ProviderDetail } from '@/types';
 import { useClearableMessages } from '@/composables/settings';
 import { getAddressesFromWallet, getAllBrowserWalletProviders } from '@/modules/onchain/wallet-providers/provider-detection';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const emit = defineEmits<{
   'import-addresses': [addresses: string[]];
@@ -36,8 +37,8 @@ async function importAddressesWithProvider(provider: EIP1193Provider) {
     emit('import-addresses', addresses);
     setSuccess(t('input_mode_select.import_from_wallet.imported'));
   }
-  catch (error: any) {
-    setError(error.message);
+  catch (error: unknown) {
+    setError(getErrorMessage(error));
   }
 }
 

@@ -1,11 +1,10 @@
 import type { AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { ChainAddress } from '@/types/history/events';
-import { Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useAccountAdditionService } from '@/composables/blockchain/use-account-addition-service';
 import { type RefreshAccountsParams, useAccountOperations } from '@/composables/blockchain/use-account-operations';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
@@ -30,7 +29,7 @@ export function useBlockchains(): UseBlockchainsReturn {
   // Keep essential stores and composables
   const { getChainName } = useSupportedChains();
   const { isTaskRunning } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyInfo } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const addEvmAccounts = async (payload: AddAccountsPayload, options?: AddAccountsOption): Promise<void> => {
@@ -68,12 +67,7 @@ export function useBlockchains(): UseBlockchainsReturn {
         blockchain: get(getChainName(chain)),
       });
       const message = t('actions.balances.blockchain_accounts_add.no_new.description');
-      notify({
-        display: true,
-        message,
-        severity: Severity.INFO,
-        title,
-      });
+      notifyInfo(title, message);
       return;
     }
 

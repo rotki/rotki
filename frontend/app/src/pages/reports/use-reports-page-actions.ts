@@ -14,6 +14,7 @@ import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { downloadFileByTextContent } from '@/utils/download';
+import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseReportsPageActionsOptions {
   getPath: (file: File) => string | undefined;
@@ -43,7 +44,7 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
   const { appSession, openDirectory } = useInterop();
   const { importReportData, uploadReportData } = useReportsApi();
 
-  const importDataLoading = ref<boolean>(false);
+  const importDataLoading = shallowRef<boolean>(false);
 
   async function generate(period: ProfitLossReportPeriod): Promise<void> {
     if (get(pinned)?.name === 'report-actionable-card')
@@ -103,9 +104,9 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
         downloadFileByTextContent(JSON.stringify(result, null, 2), 'pnl_debug.json', 'application/json');
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       setMessage({
-        description: error.message,
+        description: getErrorMessage(error),
         success: false,
         title: t('profit_loss_reports.debug.export_message.title'),
       });
@@ -135,14 +136,14 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
       });
       success = result;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isTaskCancelled(error)) {
         await fetchReports();
         set(importDataLoading, false);
         return;
       }
 
-      message = error.message;
+      message = getErrorMessage(error);
       success = false;
     }
 

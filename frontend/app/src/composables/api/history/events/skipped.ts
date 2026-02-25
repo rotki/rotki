@@ -2,6 +2,7 @@ import type { ActionStatus } from '@/types/action';
 import { api } from '@/modules/api/rotki-api';
 import { ProcessSkippedHistoryEventsResponse, SkippedHistoryEventsSummary } from '@/types/history/events';
 import { downloadFileByUrl } from '@/utils/download';
+import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseSkippedHistoryEventsApiReturn {
   getSkippedEventsSummary: () => Promise<SkippedHistoryEventsSummary>;
@@ -42,8 +43,8 @@ export function useSkippedHistoryEventsApi(): UseSkippedHistoryEventsApiReturn {
       downloadFileByUrl(url, 'skipped_external_events.csv');
       return { success: true };
     }
-    catch (error: any) {
-      return { message: error.message, success: false };
+    catch (error: unknown) {
+      return { message: getErrorMessage(error), success: false };
     }
   };
 

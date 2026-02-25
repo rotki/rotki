@@ -6,6 +6,7 @@ import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unified-providers';
 import { useMessageStore } from '@/store/message';
+import { getErrorMessage } from '@/utils/error-handling';
 import { getPublicServiceImagePath } from '@/utils/file';
 import { logger } from '@/utils/logging';
 import { AuthStep, GnosisPayError } from '../types';
@@ -156,9 +157,9 @@ async function switchToGnosis(): Promise<void> {
     set(switchingNetwork, true);
     await switchNetwork(BigInt(gnosis.id));
   }
-  catch (error: any) {
+  catch (error: unknown) {
     logger.error('Failed to switch to Gnosis network:', error);
-    setError(GnosisPayError.CONNECTION_FAILED, { message: error.message });
+    setError(GnosisPayError.CONNECTION_FAILED, { message: getErrorMessage(error) });
   }
   finally {
     set(switchingNetwork, false);

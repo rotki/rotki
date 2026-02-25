@@ -1,11 +1,10 @@
 import type { Ref } from 'vue';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
-import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseHistoricPricesReturn {
   items: Ref<HistoricalPrice[]>;
@@ -24,25 +23,18 @@ export function useHistoricPrices(
 
   const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
   const { resetHistoricalPricesData } = useHistoricCachePriceStore();
-  const { setMessage } = useMessageStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError, showErrorMessage } = useNotifications();
 
   const fetchPrices = async (payload?: Partial<ManualPricePayload>): Promise<void> => {
     set(loading, true);
     try {
       set(items, await fetchHistoricalPrices(payload));
     }
-    catch (error: any) {
-      const notification: NotificationPayload = {
-        category: NotificationCategory.DEFAULT,
-        display: true,
-        message: t('price_table.fetch.failure.message', {
-          message: error.message,
-        }),
-        severity: Severity.ERROR,
-        title: t('price_table.fetch.failure.title'),
-      };
-      notify(notification);
+    catch (error: unknown) {
+      notifyError(
+        t('price_table.fetch.failure.title'),
+        t('price_table.fetch.failure.message', { message: getErrorMessage(error) }),
+      );
     }
     finally {
       set(loading, false);
@@ -68,17 +60,13 @@ export function useHistoricPrices(
 
       return await addHistoricalPrice(data);
     }
-    catch (error: any) {
-      const values = { message: error.message };
+    catch (error: unknown) {
+      const values = { message: getErrorMessage(error) };
       const title = update ? t('price_management.edit.error.title') : t('price_management.add.error.title');
       const description = update
         ? t('price_management.edit.error.description', values)
         : t('price_management.add.error.description', values);
-      setMessage({
-        description,
-        success: false,
-        title,
-      });
+      showErrorMessage(title, description);
 
       return false;
     }
@@ -93,17 +81,11 @@ export function useHistoricPrices(
         modified: true,
       });
     }
-    catch (error: any) {
-      const notification: NotificationPayload = {
-        category: NotificationCategory.DEFAULT,
-        display: true,
-        message: t('price_table.delete.failure.message', {
-          message: error.message,
-        }),
-        severity: Severity.ERROR,
-        title: t('price_table.delete.failure.title'),
-      };
-      notify(notification);
+    catch (error: unknown) {
+      notifyError(
+        t('price_table.delete.failure.title'),
+        t('price_table.delete.failure.message', { message: getErrorMessage(error) }),
+      );
     }
   };
 

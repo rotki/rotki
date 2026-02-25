@@ -7,6 +7,7 @@ import ExchangeKeysForm from '@/components/settings/api-keys/exchange/ExchangeKe
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<ExchangeFormData | undefined>({ required: true });
 
@@ -46,8 +47,8 @@ async function save(): Promise<void> {
   try {
     success = await setupExchange(payload);
   }
-  catch (error: any) {
-    let errors = error.message;
+  catch (error: unknown) {
+    let errors: string | ValidationErrors = getErrorMessage(error);
 
     if (error instanceof ApiValidationError) {
       errors = error.getValidationErrors(payload);

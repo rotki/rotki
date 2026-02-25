@@ -38,7 +38,7 @@ export function resetState(): void {
     try {
       store.$reset();
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(`error while clearing the ${name} store`, error);
     }
   }

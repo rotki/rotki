@@ -14,7 +14,7 @@ import { Blockchain, isValidBchAddress, isValidBtcAddress, isValidEthAddress, is
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useItemCache } from '@/composables/item-cache';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTaskStore } from '@/store/tasks';
 import { isBlockchain } from '@/types/blockchain/chains';
@@ -22,6 +22,7 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { defaultCollectionState } from '@/utils/collection';
 import { uniqueStrings } from '@/utils/data';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 export const useAddressesNamesStore = defineStore('blockchains/accounts/addresses-names', () => {
@@ -33,7 +34,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
 
   const { awaitTask } = useTaskStore();
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { supportedChains } = useSupportedChains();
 
   const {
@@ -84,14 +85,9 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     try {
       result = await getAddressesNames(payload);
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      const message = error?.message ?? error ?? '';
-      notify({
-        display: true,
-        message: t('alias_names.error.message', { message }),
-        title: t('alias_names.error.title'),
-      });
+      notifyError(t('alias_names.error.title'), t('alias_names.error.message', { message: getErrorMessage(error) }));
       result = [];
     }
 
@@ -208,16 +204,14 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     try {
       return await fetchAddressBook(location, get(payload));
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
-      const message = error?.message ?? error ?? '';
-      notify({
-        display: true,
-        message: t('address_book.actions.fetch.error.message', {
-          message,
+      notifyError(
+        t('address_book.actions.fetch.error.title'),
+        t('address_book.actions.fetch.error.message', {
+          message: getErrorMessage(error),
         }),
-        title: t('address_book.actions.fetch.error.title'),
-      });
+      );
 
       return defaultCollectionState();
     }
@@ -307,13 +301,9 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
         );
         newResult = result;
       }
-      catch (error: any) {
+      catch (error: unknown) {
         if (!isTaskCancelled(error)) {
-          notify({
-            display: true,
-            message: t('ens_names.error.message', { message: error.message }),
-            title: t('ens_names.task.title'),
-          });
+          notifyError(t('ens_names.task.title'), t('ens_names.error.message', { message: getErrorMessage(error) }));
         }
       }
     }

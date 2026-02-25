@@ -4,6 +4,7 @@ import { api } from '@/modules/api/rotki-api';
 import { VALID_FILE_OPERATION_STATUS, VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
 import { type PendingTask, PendingTaskSchema } from '@/types/task';
 import { downloadFileByUrl } from '@/utils/download';
+import { getErrorMessage } from '@/utils/error-handling';
 import { getFilename } from '@/utils/file';
 
 interface UseAssetApiReturn {
@@ -97,8 +98,8 @@ export function useAssetsApi(): UseAssetApiReturn {
       downloadFileByUrl(fullUrl, getFilename(filePath));
       return { success: true };
     }
-    catch (error: any) {
-      return { message: error.message, success: false };
+    catch (error: unknown) {
+      return { message: getErrorMessage(error), success: false };
     }
   };
 

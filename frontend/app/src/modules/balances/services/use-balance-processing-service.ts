@@ -4,7 +4,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useTaskStore } from '@/store/tasks';
 import {
   BlockchainBalances,
@@ -15,6 +15,7 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { convertBtcBalances } from '@/utils/blockchain/accounts';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 function isBtcBalances(data?: BtcBalances | any): data is BtcBalances {
@@ -27,7 +28,7 @@ interface UseBalanceProcessingServiceReturn {
 
 export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn {
   const { awaitTask } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { queryBlockchainBalances, queryXpubBalances } = useBlockchainBalancesApi();
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { updateBalances } = useBalancesStore();
@@ -81,16 +82,15 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
 
       setStatus(Status.LOADED, { subsection: blockchain });
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         logger.error(error);
-        notify({
-          display: true,
-          message: t('actions.balances.blockchain.error.description', {
-            error: error.message,
+        notifyError(
+          t('actions.balances.blockchain.error.title'),
+          t('actions.balances.blockchain.error.description', {
+            error: getErrorMessage(error),
           }),
-          title: t('actions.balances.blockchain.error.title'),
-        });
+        );
       }
       resetStatus({ subsection: blockchain });
     }

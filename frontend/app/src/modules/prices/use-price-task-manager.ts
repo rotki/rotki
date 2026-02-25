@@ -5,8 +5,8 @@ import type { TaskMeta } from '@/types/task';
 import { type BigNumber, One } from '@rotki/common';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatusUpdater } from '@/composables/status';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
 import { AssetPriceResponse, type HistoricPricePayload, HistoricPrices, type OracleCachePayload } from '@/types/prices';
@@ -28,7 +28,7 @@ interface UsePriceTaskManagerReturn {
 export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { awaitTask, isTaskRunning } = useTaskStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
   const {
@@ -68,17 +68,13 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
         await fetch(batch);
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error)) {
         const title = t('actions.session.fetch_prices.error.title');
         const message = t('actions.session.fetch_prices.error.message', {
-          error: error.message,
+          error: getErrorMessage(error),
         });
-        notify({
-          display: true,
-          message,
-          title,
-        });
+        notifyError(title, message);
       }
     }
     finally {
@@ -105,24 +101,19 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
       const rate = rates[selectedCurrency];
 
       if (rate && rate.eq(0)) {
-        notify({
-          display: true,
-          message: t('missing_exchange_rate.message'),
-          title: t('missing_exchange_rate.title'),
-        });
+        notifyError(t('missing_exchange_rate.title'), t('missing_exchange_rate.message'));
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (isTaskCancelled(error)) {
         return;
       }
-      notify({
-        display: true,
-        message: t('actions.balances.exchange_rates.error.message', {
-          message: error.message,
+      notifyError(
+        t('actions.balances.exchange_rates.error.title'),
+        t('actions.balances.exchange_rates.error.message', {
+          message: getErrorMessage(error),
         }),
-        title: t('actions.balances.exchange_rates.error.title'),
-      });
+      );
     }
   };
 
@@ -155,7 +146,7 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
       const parsed = HistoricPrices.parse(result);
       return parsed.assets[fromAsset]?.[timestamp] ?? One.negated();
     }
-    catch (error: any) {
+    catch (error: unknown) {
       if (!isTaskCancelled(error))
         logger.error(error);
 
@@ -195,19 +186,19 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
         success: result,
       };
     }
-    catch (error: any) {
+    catch (error: unknown) {
+      const message = getErrorMessage(error);
       if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.balances.create_oracle_cache.error.message', {
-            message: error.message,
+        notifyError(
+          t('actions.balances.create_oracle_cache.error.title'),
+          t('actions.balances.create_oracle_cache.error.message', {
+            message,
           }),
-          title: t('actions.balances.create_oracle_cache.error.title'),
-        });
+        );
       }
       return {
         message: t('actions.balances.create_oracle_cache.failed', {
-          error: error.message,
+          error: message,
           fromAsset,
           source,
           toAsset,

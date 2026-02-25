@@ -1,8 +1,8 @@
 import { groupBy, omit } from 'es-toolkit';
 import { z } from 'zod/v4';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useNotificationsStore } from '@/store/notifications';
 import { logger } from '@/utils/logging';
 
 const CSVRow = z.object({
@@ -22,7 +22,7 @@ interface UseAddressBookImport {
 
 export function useAddressBookImport(): UseAddressBookImport {
   const { parseCSV } = useCsvImportExport();
-  const { notify } = useNotificationsStore();
+  const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { addAddressBook } = useAddressesNamesStore();
 
@@ -64,11 +64,7 @@ export function useAddressBookImport(): UseAddressBookImport {
             error,
           });
       logger.error(message);
-      notify({
-        display: true,
-        message,
-        title: t('address_book.import.title'),
-      });
+      notifyError(t('address_book.import.title'), message);
       return 0;
     }
   }

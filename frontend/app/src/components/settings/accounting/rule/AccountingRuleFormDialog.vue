@@ -6,7 +6,8 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import AccountingRuleForm from '@/components/settings/accounting/rule/AccountingRuleForm.vue';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { useMessageStore } from '@/store/message';
-import { ApiValidationError } from '@/types/api/errors';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
 
 const modelValue = defineModel<AccountingRuleEntry | undefined>({ required: true });
 
@@ -34,7 +35,7 @@ const dialogTitle = computed<string>(() => editMode
 const { addAccountingRule, editAccountingRule } = useAccountingApi();
 const { setMessage } = useMessageStore();
 
-async function save() {
+async function save(): Promise<boolean> {
   if (!isDefined(modelValue))
     return false;
 
@@ -59,13 +60,13 @@ async function save() {
       success = await addAccountingRule(ruleData);
     }
   }
-  catch (error: any) {
+  catch (error: unknown) {
     success = false;
     const errorTitle = editMode
       ? t('accounting_settings.rule.edit_error')
       : t('accounting_settings.rule.add_error');
 
-    let errors = error.message;
+    let errors: string | ValidationErrors = getErrorMessage(error);
     if (error instanceof ApiValidationError)
       errors = error.getValidationErrors(data);
 

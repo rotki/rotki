@@ -167,7 +167,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
         try {
           await operation;
         }
-        catch (error: any) {
+        catch (error: unknown) {
           logger.error(error);
         }
       }

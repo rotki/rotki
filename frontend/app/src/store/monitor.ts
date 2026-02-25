@@ -58,7 +58,7 @@ export const useMonitorStore = defineStore('monitor', () => {
         set(monitors, activeMonitors);
       }
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error(error);
     }
   };

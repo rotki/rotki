@@ -2,6 +2,7 @@ import type { EIP1193Provider, EIP6963ProviderInfo } from '@/types';
 import { wait } from '@shared/utils';
 import { createSharedComposable, get, set, useLocalStorage } from '@vueuse/core';
 import { computed, type ComputedRef, readonly, ref, type Ref } from 'vue';
+import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 import { type EnhancedProviderDetail, getAllWalletProviders, type ProviderDetectionOptions } from './provider-detection';
 
@@ -176,9 +177,9 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
 
       return detectedProviders;
     }
-    catch (error: any) {
+    catch (error: unknown) {
       logger.error('[UnifiedProviders] Provider detection failed:', error);
-      set(detectionError, error.message || 'Failed to detect providers');
+      set(detectionError, getErrorMessage(error) || 'Failed to detect providers');
       set(availableProviders, []);
       return [];
     }

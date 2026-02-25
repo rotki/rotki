@@ -15,6 +15,7 @@ import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 import { millisecondsToSeconds } from '@/utils/date';
+import { getErrorMessage } from '@/utils/error-handling';
 
 function defaultNetValue(): NetValue {
   return {
@@ -187,11 +188,11 @@ export const useStatisticsStore = defineStore('statistics', () => {
     try {
       set(netValue, await api.queryNetValueData(get(nftsInNetValue)));
     }
-    catch (error: any) {
+    catch (error: unknown) {
       notify({
         display: false,
         message: t('actions.statistics.net_value.error.message', {
-          message: error.message,
+          message: getErrorMessage(error),
         }),
         title: t('actions.statistics.net_value.error.title'),
       });
