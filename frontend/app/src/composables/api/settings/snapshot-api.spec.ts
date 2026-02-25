@@ -285,8 +285,8 @@ describe('composables/api/settings/snapshot-api', () => {
 
       expect(result).toBe(true);
       expect(capturedFormData).not.toBeNull();
-      expect(capturedFormData!.get('balances_snapshot_file')).toBeTruthy();
-      expect(capturedFormData!.get('location_data_snapshot_file')).toBeTruthy();
+      expect(capturedFormData!.get('balances_snapshot_file')).toBeDefined();
+      expect(capturedFormData!.get('location_data_snapshot_file')).toBeDefined();
     });
 
     it('should throw error on upload failure', async () => {

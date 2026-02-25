@@ -1,6 +1,7 @@
 import { bigNumberify, Blockchain } from '@rotki/common';
 import { createTestBalance, createTestManualBalance, createTestPriceInfo } from '@test/utils/create-data';
 import { updateGeneralSettings } from '@test/utils/general-settings';
+import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -205,15 +206,10 @@ describe('usePriceRefresh', () => {
       const { refreshPrice, refreshPrices } = usePriceRefresh();
 
       // Configure mock for execution order tracking
-      mockFetchPrices.mockImplementation(async (params: any) =>
-        // Add a small delay to simulate async operation
-        new Promise((resolve) => {
-          setTimeout(() => {
-            executionOrder.push(params.selectedAssets.join(','));
-            resolve({});
-          }, 10);
-        }),
-      );
+      mockFetchPrices.mockImplementation(async (params: any) => {
+        executionOrder.push(params.selectedAssets.join(','));
+        return {};
+      });
 
       // Fire multiple requests simultaneously
       const promise1 = refreshPrice('BTC');
@@ -250,14 +246,15 @@ describe('usePriceRefresh', () => {
     });
 
     it('should not start multiple queue processors simultaneously', async () => {
+      vi.useFakeTimers();
       const { refreshPrices } = usePriceRefresh();
 
-      // Configure mock to track concurrent executions
+      // Configure mock to track concurrent executions with fake-timer delays
       mockFetchPrices.mockImplementation(async () => {
         processingCount++;
         maxConcurrent = Math.max(maxConcurrent, processingCount);
 
-        return new Promise((resolve) => {
+        return new Promise<Record<string, never>>((resolve) => {
           setTimeout(() => {
             processingCount--;
             resolve({});
@@ -273,7 +270,14 @@ describe('usePriceRefresh', () => {
         refreshPrices(false, ['USDT']),
       ];
 
+      // Advance fake timers to process all queued requests
+      for (let i = 0; i < 4; i++) {
+        await vi.advanceTimersByTimeAsync(20);
+        await flushPromises();
+      }
+
       await Promise.all(promises);
+      vi.useRealTimers();
 
       // Should never have more than 1 concurrent execution
       expect(maxConcurrent).toBe(1);

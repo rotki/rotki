@@ -8,7 +8,7 @@ import { setupDayjs } from '@/utils/date';
 
 function getEmittedValue(wrapper: VueWrapper, event: string, callIndex: number): number {
   const emitted = wrapper.emitted(event);
-  expect(emitted).toBeTruthy();
+  expect(emitted).toBeDefined();
   const value = emitted![callIndex][0];
   expect(value).toEqual(expect.any(Number));
   return Number(value);

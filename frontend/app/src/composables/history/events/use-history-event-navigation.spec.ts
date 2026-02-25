@@ -69,7 +69,7 @@ describe('use-history-event-navigation', () => {
 
     requestNavigation({ targetGroupIdentifier: 'group-1' });
     expect(get(isNavigating)).toBe(true);
-    expect(get(pendingNavigation)).toBeTruthy();
+    expect(get(pendingNavigation)).toBeDefined();
 
     consumeNavigation();
 

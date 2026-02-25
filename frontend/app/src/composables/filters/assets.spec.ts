@@ -3,6 +3,7 @@ import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { AssetRequestPayload } from '@/types/asset';
 import type { Collection } from '@/types/collection';
+import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
@@ -71,7 +72,7 @@ describe('useAssetsFilter', () => {
 
       set(userAction, true);
       await nextTick();
-      fetchData().catch(() => {});
+      startPromise(fetchData());
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       await flushPromises();

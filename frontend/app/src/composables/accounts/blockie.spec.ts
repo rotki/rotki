@@ -27,10 +27,10 @@ describe('useBlockie', () => {
 
   it('should stop caching blockie after cache limit is reached', () => {
     expect(cache.size).toBe(1);
-    expect(cache.has(address)).toBeTruthy();
+    expect(cache.has(address)).toBe(true);
     for (let i = 0; i < 100; i++) getBlockie(i.toString());
 
     expect(cache.size).toBe(100);
-    expect(cache.has(address)).toBeFalsy();
+    expect(cache.has(address)).toBe(false);
   });
 });

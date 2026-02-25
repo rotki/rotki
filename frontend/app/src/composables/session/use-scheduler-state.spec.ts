@@ -18,6 +18,9 @@ vi.mock('@/utils/logging', () => ({
   },
 }));
 
+/** Matches TEN_MINUTES_MS in use-scheduler-state.ts */
+const TEN_MINUTES_MS = 10 * 60 * 1000;
+
 describe('composables::session::use-scheduler-state', () => {
   let scope: EffectScope;
 
@@ -52,7 +55,7 @@ describe('composables::session::use-scheduler-state', () => {
       expect(mockSetSchedulerState).not.toHaveBeenCalled();
 
       // Advance time by 10 minutes
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
       await flushPromises();
 
       expect(mockSetSchedulerState).toHaveBeenCalledWith(true);
@@ -72,7 +75,7 @@ describe('composables::session::use-scheduler-state', () => {
       scheduler.onBalancesLoaded();
 
       // Advance time by 10 minutes
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
       await flushPromises();
 
       // Should not call setSchedulerState again
@@ -88,13 +91,13 @@ describe('composables::session::use-scheduler-state', () => {
       scheduler.onBalancesLoaded();
 
       // Advance time partially
-      vi.advanceTimersByTime(5 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS / 2);
 
       // Cancel the timer by calling onHistoryStarted
       scheduler.onHistoryStarted();
 
       // Advance past the original timeout
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
       await flushPromises();
 
       // Scheduler should not have been enabled via fallback
@@ -126,7 +129,7 @@ describe('composables::session::use-scheduler-state', () => {
       mockSetSchedulerState.mockClear();
 
       // Advance past fallback timeout
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
       await flushPromises();
 
       // Should not call again
@@ -170,7 +173,7 @@ describe('composables::session::use-scheduler-state', () => {
       scheduler.reset();
 
       // Advance past timeout
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
       await flushPromises();
 
       expect(mockSetSchedulerState).not.toHaveBeenCalled();
@@ -204,7 +207,7 @@ describe('composables::session::use-scheduler-state', () => {
       scheduler.onBalancesLoaded();
 
       // Advance time by just under 10 minutes
-      vi.advanceTimersByTime(10 * 60 * 1000 - 1);
+      vi.advanceTimersByTime(TEN_MINUTES_MS - 1);
       await flushPromises();
 
       expect(mockSetSchedulerState).not.toHaveBeenCalled();
@@ -223,7 +226,7 @@ describe('composables::session::use-scheduler-state', () => {
 
       scheduler.onBalancesLoaded();
 
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
       await flushPromises();
 
       expect(logger.error).toHaveBeenCalledWith('Failed to enable task scheduler:', expect.any(Error));
@@ -255,7 +258,7 @@ describe('composables::session::use-scheduler-state', () => {
       scheduler.onBalancesLoaded();
 
       // User never visits history, wait for fallback
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
       await flushPromises();
 
       expect(mockSetSchedulerState).toHaveBeenCalledWith(true);
@@ -304,7 +307,7 @@ describe('composables::session::use-scheduler-state', () => {
       scheduler.onBalancesLoaded();
 
       // Verify timer was started by checking it fires after 10 minutes
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
       await flushPromises();
 
       expect(mockSetSchedulerState).toHaveBeenCalledWith(true);
@@ -320,7 +323,7 @@ describe('composables::session::use-scheduler-state', () => {
       scheduler.onHistoryStarted();
 
       // Verify timer was stopped - it should not fire
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
       await flushPromises();
 
       expect(mockSetSchedulerState).not.toHaveBeenCalled();
@@ -354,7 +357,7 @@ describe('composables::session::use-scheduler-state', () => {
       scheduler.reset();
 
       // Verify timer was stopped
-      vi.advanceTimersByTime(10 * 60 * 1000);
+      vi.advanceTimersByTime(TEN_MINUTES_MS);
       await flushPromises();
       expect(mockSetSchedulerState).not.toHaveBeenCalled();
 

@@ -3,6 +3,7 @@ import type { MaybeRef } from 'vue';
 import type * as Vue from 'vue';
 import type { Collection } from '@/types/collection';
 import type { ExchangeSavingsCollection, ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/types/exchanges';
+import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
@@ -83,7 +84,7 @@ describe('useBinanceSavings', () => {
 
       set(userAction, true);
       await nextTick();
-      fetchData().catch((): void => {});
+      startPromise(fetchData());
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       await flushPromises();

@@ -4,6 +4,7 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { Collection } from '@/types/collection';
 import type { HistoryEvent, HistoryEventRow } from '@/types/history/events/schemas';
 import { type Account, Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
@@ -97,7 +98,7 @@ describe('useHistoryEvents', () => {
 
       set(userAction, true);
       await nextTick();
-      fetchData().catch((): void => {});
+      startPromise(fetchData());
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       await flushPromises();
@@ -238,7 +239,7 @@ describe('useHistoryEvents', () => {
       });
 
       set(userAction, true);
-      fetchData().catch((): void => {});
+      startPromise(fetchData());
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(isLoading)).toBe(false);

@@ -224,7 +224,7 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
 
       await wrapper.trigger('click');
 
-      expect(wrapper.emitted('toggle')).toBeTruthy();
+      expect(wrapper.emitted('toggle')).toBeDefined();
     });
   });
 
@@ -252,7 +252,7 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
       const dismissButton = wrapper.find('[data-testid="button"]');
       await dismissButton.trigger('click');
 
-      expect(wrapper.emitted('dismiss')).toBeTruthy();
+      expect(wrapper.emitted('dismiss')).toBeDefined();
     });
   });
 

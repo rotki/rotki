@@ -12,6 +12,9 @@ vi.mock('@/store/tasks', () => ({
   }),
 }));
 
+/** Exceeds CACHE_EXPIRY (10 min) from item-cache.ts to ensure cache invalidation */
+const PAST_CACHE_EXPIRY_MS = 1000 * 60 * 11;
+
 describe('useHistoricPricesStore', () => {
   let store: ReturnType<typeof useHistoricCachePriceStore>;
 
@@ -67,7 +70,7 @@ describe('useHistoricPricesStore', () => {
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
     expect(get(firstRetrieval)).toBeNull();
     expect(get(secondRetrieval)).toBeNull();
-    vi.advanceTimersByTime(1000 * 60 * 11);
+    vi.advanceTimersByTime(PAST_CACHE_EXPIRY_MS);
     const thirdRetrieval: ComputedRef<BigNumber | null> = store.retrieve(key);
     vi.advanceTimersToNextTimer();
     await flushPromises();
@@ -96,7 +99,7 @@ describe('useHistoricPricesStore', () => {
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
     expect(get(firstRetrieval)).toEqual(bigNumberify(mockPrice));
-    vi.advanceTimersByTime(1000 * 60 * 11);
+    vi.advanceTimersByTime(PAST_CACHE_EXPIRY_MS);
     const secondRetrieval: ComputedRef<BigNumber | null> = store.retrieve(key);
     vi.advanceTimersToNextTimer();
     await flushPromises();

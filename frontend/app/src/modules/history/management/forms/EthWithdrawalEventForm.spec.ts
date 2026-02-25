@@ -132,7 +132,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
 
     expect(validatorIndexInput.element.value).toBe('');
     expect(withdrawalAddressInput.element.value).toBe('');
-    expect(isExitCheckbox.element.checked).toBeFalsy();
+    expect(isExitCheckbox.element.checked).toBe(false);
   });
 
   it('should update the fields when adding an event in an existing group', async () => {
@@ -148,7 +148,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     expect(validatorIndexInput.element.value).toBe(event.validatorIndex.toString());
     expect(withdrawalAddressInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe('0');
-    expect(isExitedCheckbox.element.checked).toBeFalsy();
+    expect(isExitedCheckbox.element.checked).toBe(false);
   });
 
   it('should update the fields when editing an event', async () => {
@@ -164,7 +164,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     expect(validatorIndexInput.element.value).toBe(event.validatorIndex.toString());
     expect(withdrawalAddressInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe(event.amount.toString());
-    expect(isExitedCheckbox.element.checked).toBeTruthy();
+    expect(isExitedCheckbox.element.checked).toBe(true);
   });
 
   it('should add a new withdrawal event when form is submitted', async () => {
