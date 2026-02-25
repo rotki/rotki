@@ -1316,6 +1316,11 @@
       "label": "Fiat",
       "tooltip": "This is a fiat currency movement. Fiat movements typically don't have a corresponding on-chain event and can usually be safely ignored."
     },
+    "premium": {
+      "free_tooltip": "Asset movement matching requires a minimum of {tier} tier. {link} to unlock this feature.",
+      "link": "Upgrade",
+      "premium_tooltip": "Asset movement matching requires a minimum of {tier} tier. Your current tier is {currentTier}. {link} to unlock it."
+    },
     "settings": {
       "amount_tolerance": {
         "hint": "Maximum allowed percentage difference between the asset movement amount and the on-chain event amount for automatic matching. For example, 1% tolerance on a 0.1 BTC movement allows matching with events between 0.099 and 0.101 BTC.",

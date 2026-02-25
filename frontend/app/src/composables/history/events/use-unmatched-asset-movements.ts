@@ -5,9 +5,11 @@ import type { TaskMeta } from '@/types/task';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { usePremiumHelper } from '@/composables/premium';
 import { useHistoryStore } from '@/store/history';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
+import { PremiumFeature } from '@/types/session';
 import { TaskType } from '@/types/task-type';
 import { arrayify } from '@/utils/array';
 import { logger } from '@/utils/logging';
@@ -36,6 +38,8 @@ interface UseUnmatchedAssetMovementsReturn {
   loading: Ref<boolean>;
   ignoredLoading: Ref<boolean>;
   autoMatchLoading: ComputedRef<boolean>;
+  autoMatchMinimumTier: ComputedRef<string>;
+  isAutoMatchAllowed: ComputedRef<boolean>;
   fetchUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<void>;
   matchAssetMovement: (assetMovementId: number, matchedEventIds: number[]) => Promise<ActionStatus>;
   refreshUnmatchedAssetMovements: (skipIgnored?: boolean) => Promise<void>;
@@ -61,6 +65,9 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     triggerAssetMovementMatching,
   } = useAssetMovementMatchingApi();
   const { signalEventsModified } = useHistoryStore();
+  const { getFeatureMinimumTier, isFeatureAllowed } = usePremiumHelper();
+  const isAssetMovementMatchingAllowed = isFeatureAllowed(PremiumFeature.ASSET_MOVEMENT_MATCHING);
+  const assetMovementMatchingMinimumTier = getFeatureMinimumTier(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
   const isTaskRunning = useIsTaskRunning(TaskType.MATCH_ASSET_MOVEMENTS);
   const autoMatchLoading = logicOr(triggerAutoMatchLoading, isTaskRunning);
@@ -172,7 +179,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   };
 
   const triggerAssetMovementAutoMatching = async (): Promise<void> => {
-    if (get(isTaskRunning))
+    if (!get(isAssetMovementMatchingAllowed) || get(isTaskRunning))
       return;
 
     set(triggerAutoMatchLoading, true);
@@ -205,7 +212,9 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
   return {
     autoMatchLoading,
+    autoMatchMinimumTier: assetMovementMatchingMinimumTier,
     fetchUnmatchedAssetMovements,
+    isAutoMatchAllowed: isAssetMovementMatchingAllowed,
     ignoredCount,
     ignoredLoading,
     ignoredMovements,
