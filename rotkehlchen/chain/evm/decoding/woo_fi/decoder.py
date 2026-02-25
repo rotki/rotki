@@ -5,10 +5,12 @@ from rotkehlchen.assets.utils import (
     asset_normalized_value,
     asset_raw_value,
     token_normalized_value,
+    token_normalized_value_decimals,
 )
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.constants import (
+    DEFAULT_TOKEN_DECIMALS,
     DEPOSIT_TOPIC,
     HARVEST_TOPIC,
     STAKE_TOPIC,
@@ -29,9 +31,11 @@ from rotkehlchen.chain.evm.decoding.woo_fi.constants import (
     WOO_CROSS_SWAP_ON_DEST_CHAIN_TOPIC,
     WOO_CROSS_SWAP_ON_SRC_CHAIN_TOPIC,
     WOO_CROSS_SWAP_ROUTER_V5,
+    WOO_INSTANT_UNSTAKE_TOPIC,
     WOO_INSTANT_WITHDRAW_TOPIC,
     WOO_ON_REWARDED_TOPIC,
     WOO_REQUEST_WITHDRAW_TOPIC,
+    WOO_RESERVE_WITHDRAW_TOPIC,
     WOO_REWARD_MASTER_CHEF,
     WOO_REWARD_MASTER_CHEF_ABI,
     WOO_ROUTER_SWAP_TOPIC,
@@ -43,6 +47,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import CryptoAsset, EvmToken
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.types import ChecksumEvmAddress
@@ -375,14 +380,21 @@ class WooFiCommonDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
-    def _decode_supercharger_request_withdraw(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decode WooFi supercharger vault withdrawal requests."""
+    def _decode_request_withdraw(
+            self,
+            context: DecoderContext,
+            shares_asset: 'EvmToken',
+            return_notes: str,
+            underlying_asset: 'CryptoAsset',
+            info_notes: str,
+    ) -> EvmDecodingOutput:
+        """Decode withdrawal requests for supercharger vaults and WOO staking."""
         if not self.base.is_tracked(owner_address := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         shares_amount = token_normalized_value(
             token_amount=int.from_bytes(context.tx_log.data[32:64]),
-            token=(shares_asset := self.base.get_or_create_evm_token(context.tx_log.address)),
+            token=shares_asset,
         )
         for event in context.decoded_events:
             if (
@@ -391,26 +403,24 @@ class WooFiCommonDecoder(EvmDecoderInterface):
                 event.amount == shares_amount and
                 event.asset == shares_asset and
                 event.location_label == owner_address and
-                event.address == context.tx_log.address
+                event.address in (context.tx_log.address, ZERO_ADDRESS)
             ):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_WOO_FI
-                event.notes = f'Return {shares_amount} {shares_asset.symbol} to {CPT_WOO_FI_LABEL} supercharger vault'  # noqa: E501
+                event.notes = return_notes.format(amount=shares_amount, asset=shares_asset.symbol)
 
         context.decoded_events.append(self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
-            asset=(underlying_asset := self.base.get_or_create_evm_asset(
-                address=self.superchargers[context.tx_log.address],
-            )),
+            asset=underlying_asset,
             amount=(assets_amount := asset_normalized_value(
                 amount=int.from_bytes(context.tx_log.data[0:32]),
                 asset=underlying_asset,
             )),
             location_label=owner_address,
-            notes=f'Request withdrawal of {assets_amount} {underlying_asset.symbol} from {CPT_WOO_FI_LABEL} supercharger vault',  # noqa: E501
+            notes=info_notes.format(amount=assets_amount, asset=underlying_asset.symbol),
             counterparty=CPT_WOO_FI,
             address=context.tx_log.address,
         ))
@@ -497,7 +507,15 @@ class WooFiCommonDecoder(EvmDecoderInterface):
         if context.tx_log.topics[0] == DEPOSIT_TOPIC:
             return self._decode_supercharger_deposit(context=context)
         if context.tx_log.topics[0] == WOO_REQUEST_WITHDRAW_TOPIC:
-            return self._decode_supercharger_request_withdraw(context=context)
+            return self._decode_request_withdraw(
+                context=context,
+                shares_asset=self.base.get_or_create_evm_token(context.tx_log.address),
+                return_notes=f'Return {{amount}} {{asset}} to {CPT_WOO_FI_LABEL} supercharger vault',  # noqa: E501
+                underlying_asset=self.base.get_or_create_evm_asset(
+                    address=self.superchargers[context.tx_log.address],
+                ),
+                info_notes=f'Request withdrawal of {{amount}} {{asset}} from {CPT_WOO_FI_LABEL} supercharger vault',  # noqa: E501
+            )
         if context.tx_log.topics[0] == WOO_INSTANT_WITHDRAW_TOPIC:
             return self._decode_instant_withdraw(context=context)
 
@@ -700,15 +718,142 @@ class WooFiCommonDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_v1_stake_woo(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode staking WOO tokens on the stake_v1 contract."""
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        deposit_amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # WOO has 18 decimals
+        )
+        mint_shares = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[32:64]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # xWOO has 18 decimals
+        )
+        out_event = in_event = None
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.amount == deposit_amount and
+                self.woo_token_address in event.asset.identifier and
+                event.location_label == user_address and
+                event.address == context.tx_log.address
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                event.counterparty = CPT_WOO_FI
+                event.notes = f'Stake {deposit_amount} WOO in {CPT_WOO_FI_LABEL}'
+                out_event = event
+            elif (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.amount == mint_shares and
+                context.tx_log.address in event.asset.identifier and
+                event.location_label == user_address and
+                event.address == ZERO_ADDRESS
+            ):
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.counterparty = CPT_WOO_FI
+                event.notes = f'Receive {mint_shares} xWOO after staking in {CPT_WOO_FI_LABEL}'
+                in_event = event
+
+        if out_event is None or in_event is None:
+            log.error(
+                f'Failed to find both out and in events for {CPT_WOO_FI_LABEL} '
+                f'staking deposit in {context.transaction}',
+            )
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        maybe_reshuffle_events(
+            events_list=context.decoded_events,
+            ordered_events=(out_event, in_event),
+        )
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _decode_v1_unstake(self, context: DecoderContext, is_instant: bool) -> EvmDecodingOutput:
+        """Decode unstake of WOO tokens from the stake_v1 contract."""
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        withdraw_amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # WOO has 18 decimals
+        )
+        out_event = in_event = None
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.amount == withdraw_amount and
+                self.woo_token_address in event.asset.identifier and
+                event.location_label == user_address and
+                event.address == context.tx_log.address
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                event.counterparty = CPT_WOO_FI
+                event.notes = f'Unstake {withdraw_amount} WOO from {CPT_WOO_FI_LABEL}'
+                in_event = event
+            elif (
+                is_instant and
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                context.tx_log.address in event.asset.identifier and
+                event.location_label == user_address and
+                event.address == ZERO_ADDRESS
+            ):
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.counterparty = CPT_WOO_FI
+                event.notes = f'Return {event.amount} xWOO to {CPT_WOO_FI_LABEL}'
+                out_event = event
+
+        if is_instant and (out_event is None or in_event is None):
+            log.error(
+                f'Failed to find both out and in events for {CPT_WOO_FI_LABEL} '
+                f'instant unstake in {context.transaction}',
+            )
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        maybe_reshuffle_events(
+            events_list=context.decoded_events,
+            ordered_events=(out_event, in_event),
+        )
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _decode_stake_v1_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode events associated with the stake_v1 contract."""
+        if context.tx_log.topics[0] == STAKE_TOPIC:
+            return self._decode_v1_stake_woo(context=context)
+        if context.tx_log.topics[0] == WOO_RESERVE_WITHDRAW_TOPIC:
+            return self._decode_request_withdraw(
+                context=context,
+                shares_asset=self.base.get_or_create_evm_token(context.tx_log.address),
+                return_notes=f'Return {{amount}} {{asset}} to {CPT_WOO_FI_LABEL}',
+                underlying_asset=self.base.get_or_create_evm_asset(self.woo_token_address),
+                info_notes=f'Request unstake of {{amount}} {{asset}} from {CPT_WOO_FI_LABEL}',
+            )
+        if context.tx_log.topics[0] == UNSTAKE_TOPIC:
+            return self._decode_v1_unstake(context=context, is_instant=False)
+        if context.tx_log.topics[0] == WOO_INSTANT_UNSTAKE_TOPIC:
+            return self._decode_v1_unstake(context=context, is_instant=True)
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
-        return {
+        mappings = {
             WOO_ROUTER_V2: (self._decode_swap,),
             WOO_CROSS_SWAP_ROUTER_V5: (self._decode_cross_swap_router_events,),
             WOO_REWARD_MASTER_CHEF: (self._decode_master_chef_events,),
         } | dict.fromkeys(self.superchargers, (self._decode_supercharger_events,)) \
         | dict.fromkeys(self.withdrawal_managers, (self._decode_withdraw,))
+        if self.stake_v1_address is not None:
+            mappings[self.stake_v1_address] = (self._decode_stake_v1_events,)
+
+        return mappings
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

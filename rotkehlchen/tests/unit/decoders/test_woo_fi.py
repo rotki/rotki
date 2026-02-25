@@ -760,3 +760,207 @@ def test_harvest_staked_vault_woo_and_op_rewards(
         counterparty=CPT_WOO_FI,
         address=string_to_evm_address('0x8E5DDc0106059e6A31ED802aaeF91e4600E103d8'),
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x6a1f4BE0bdcC111B503844A235ACC39A0e482030']])
+def test_staking_v1_stake_woo(
+        polygon_pos_inquirer: 'PolygonPOSInquirer',
+        polygon_pos_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd96fb1d763e1ea03eac9a0f2625049605b1e2fc7ecbcac627035376a259fe5b6')),  # noqa: E501,
+    )
+    xwoo_contract = string_to_evm_address('0x9BCf8b0B62F220f3900e2dc42dEB85C3f79b405B')
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1684949794000)),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
+        amount=FVal(gas_amount := '0.017775896'),
+        location_label=(user_address := polygon_pos_accounts[0]),
+        notes=f'Burn {gas_amount} POL for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=142,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:137/erc20:0x1B815d120B3eF02039Ee11dC2d33DE7aA4a8C603'),
+        amount=FVal(approve_amount := '115792089237316195423570985008687907853269984665640564037761.136699335095676969'),  # noqa: E501
+        location_label=user_address,
+        notes=f'Set WOO spending approval of {user_address} by {xwoo_contract} to {approve_amount}',  # noqa: E501
+        address=xwoo_contract,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=143,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:137/erc20:0x1B815d120B3eF02039Ee11dC2d33DE7aA4a8C603'),
+        amount=FVal(stake_amount := '1696.447308578033962966'),
+        location_label=user_address,
+        notes=f'Stake {stake_amount} WOO in WOOFi',
+        counterparty=CPT_WOO_FI,
+        address=xwoo_contract,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=144,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:137/erc20:0x9BCf8b0B62F220f3900e2dc42dEB85C3f79b405B'),
+        amount=FVal(receive_amount := '1590.478343869938021301'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} xWOO after staking in WOOFi',
+        counterparty=CPT_WOO_FI,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xf210960432bEb69926611943a4a1C55EB03aFc34']])
+def test_staking_v1_request_unstake_woo(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf261c074e72af881601eca2df66e53772c6993cb771eefd49dc29c18a4da56a9')),  # noqa: E501,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1737867772000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000119338'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=41,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0x9321785D257b3f0eF7Ff75436a87141C683DC99d'),
+        amount=FVal(return_amount := '33.1773343568624805'),
+        location_label=user_address,
+        notes=f'Return {return_amount} xWOO to WOOFi',
+        counterparty=CPT_WOO_FI,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=42,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:42161/erc20:0xcAFcD85D8ca7Ad1e1C6F82F651fA15E33AEfD07b'),
+        amount=FVal(unstake_amount := '34.883996675360991753'),
+        location_label=user_address,
+        notes=f'Request unstake of {unstake_amount} WOO from WOOFi',
+        counterparty=CPT_WOO_FI,
+        address=string_to_evm_address('0x9321785D257b3f0eF7Ff75436a87141C683DC99d'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xf210960432bEb69926611943a4a1C55EB03aFc34']])
+def test_staking_v1_unstake_woo(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x05ddc0ff5a85b5507e0de305db98807a7041e1c8088f05717a1ab9fecaf33de0')),  # noqa: E501,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1737867782000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000094931'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:42161/erc20:0xcAFcD85D8ca7Ad1e1C6F82F651fA15E33AEfD07b'),
+        amount=FVal(unstake_amount := '34.883996675360991753'),
+        location_label=user_address,
+        notes=f'Unstake {unstake_amount} WOO from WOOFi',
+        counterparty=CPT_WOO_FI,
+        address=string_to_evm_address('0x9321785D257b3f0eF7Ff75436a87141C683DC99d'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x0Ac74C5c9D16091fB86C22a36c86802B6b9C2C45']])
+def test_staking_v1_instant_unstake_woo(
+        polygon_pos_inquirer: 'PolygonPOSInquirer',
+        polygon_pos_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x5750ad4215d74fd118395465f854e86542799a57bbc4db0126b7f37b45059efa')),  # noqa: E501,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1733159901000)),
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=Asset('eip155:137/erc20:0x0000000000000000000000000000000000001010'),
+        amount=FVal(gas_amount := '0.007224854533987272'),
+        location_label=(user_address := polygon_pos_accounts[0]),
+        notes=f'Burn {gas_amount} POL for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('eip155:137/erc20:0x9BCf8b0B62F220f3900e2dc42dEB85C3f79b405B'),
+        amount=FVal(return_amount := '1118.233305551845414638'),
+        location_label=user_address,
+        notes=f'Return {return_amount} xWOO to WOOFi',
+        counterparty=CPT_WOO_FI,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('eip155:137/erc20:0x1B815d120B3eF02039Ee11dC2d33DE7aA4a8C603'),
+        amount=FVal(unstake_amount := '1192.891742354107606938'),
+        location_label=user_address,
+        notes=f'Unstake {unstake_amount} WOO from WOOFi',
+        counterparty=CPT_WOO_FI,
+        address=string_to_evm_address('0x9BCf8b0B62F220f3900e2dc42dEB85C3f79b405B'),
+    )]
