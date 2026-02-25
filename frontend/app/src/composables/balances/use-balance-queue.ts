@@ -16,11 +16,11 @@ interface UseBalanceQueueReturn {
   queueTokenDetection: (
     chain: string,
     addresses: string[],
-    fetchFn: (address: string) => Promise<void>
+    fetchFn: (address: string) => Promise<void>,
   ) => Promise<void>;
   queueBalanceQueries: (
     chains: string[],
-    fetchFn: (chain: string) => Promise<void>
+    fetchFn: (chain: string) => Promise<void>,
   ) => Promise<void>;
   queueMixedOperations: (operations: {
     tokenDetection?: Array<{

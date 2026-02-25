@@ -8,14 +8,14 @@ interface UsePriceUtilsReturn {
   assetPrice: (asset: MaybeRefOrGetter<string>) => ComputedRef<BigNumber | undefined>;
   useExchangeRate: <T extends BigNumber | undefined = undefined>(
     currency: MaybeRefOrGetter<string>,
-    defaultValue?: T
+    defaultValue?: T,
   ) => ComputedRef<T extends undefined ? BigNumber | undefined : BigNumber>;
   getAssetPriceOracle: (asset: MaybeRefOrGetter<string>) => ComputedRef<string>;
   isManualAssetPrice: (asset: MaybeRefOrGetter<string>) => ComputedRef<boolean>;
   hasCachedPrice: (asset: string) => boolean;
   getAssetPrice: <T extends BigNumber | undefined = undefined>(
     asset: string,
-    defaultValue?: T
+    defaultValue?: T,
   ) => T extends undefined ? BigNumber | undefined : BigNumber;
 }
 

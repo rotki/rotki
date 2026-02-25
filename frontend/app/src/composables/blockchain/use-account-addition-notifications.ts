@@ -9,7 +9,7 @@ interface NotificationParams { account: AccountPayload; isAll: boolean; chains: 
 interface UseAccountAdditionNotificationsReturn {
   createFailureNotification: (
     failures: Omit<EvmAccountsResult, 'added'>,
-    account: AccountPayload
+    account: AccountPayload,
   ) => void;
   notifyUser: (params: NotificationParams) => void;
   notifyFailedToAddAddress: (accounts: AccountPayload[], address: number, blockchain?: string) => void;
