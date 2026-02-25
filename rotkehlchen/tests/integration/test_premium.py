@@ -24,13 +24,17 @@ from rotkehlchen.errors.api import (
     RotkehlchenPermissionError,
 )
 from rotkehlchen.premium.premium import (
+    DOCKER_ENTRYPOINT_PATH,
     DOCKER_PLATFORM_KEY,
     KUBERNETES_PLATFORM_KEY,
+    UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX,
     Premium,
     PremiumCredentials,
     check_docker_container,
     extended_get_machine_id,
     get_kubernetes_pod_name,
+    get_or_create_fallback_container_id,
+    is_running_in_rotki_docker_image,
 )
 from rotkehlchen.tests.utils.constants import A_GBP, DEFAULT_TESTS_MAIN_CURRENCY
 from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
@@ -939,3 +943,31 @@ def test_extended_get_machine_id_uses_container_identifier():
             digestmod=hashlib.sha256,
         ).hexdigest()
         assert extended_get_machine_id(username) == expected
+
+
+def test_get_or_create_fallback_container_id_persists(tmp_path: Path) -> None:
+    fallback_path = tmp_path / 'rotki-container-id'
+    with patch('rotkehlchen.premium.premium.CONTAINER_FALLBACK_ID_FILE', fallback_path):
+        generated_id = get_or_create_fallback_container_id()
+        assert generated_id is not None
+        assert generated_id.startswith(f'{UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX}-')
+        assert generated_id == fallback_path.read_text(encoding='utf-8').strip()
+        assert get_or_create_fallback_container_id() == generated_id
+
+
+def test_check_docker_container_uses_fallback_identifier() -> None:
+    fallback_id = 'f' * 32
+    with (
+        patch.dict(os.environ, {}, clear=True),
+        patch('rotkehlchen.premium.premium.Path.read_text', return_value='rootfs / rw'),
+        patch('rotkehlchen.premium.premium.is_running_in_rotki_docker_image', return_value=True),
+        patch('rotkehlchen.premium.premium.get_or_create_fallback_container_id', return_value=fallback_id),  # noqa: E501
+    ):
+        assert check_docker_container() == (fallback_id, DOCKER_PLATFORM_KEY)
+
+
+def test_is_running_in_rotki_docker_image_detects_init_cmdline() -> None:
+    with (
+        patch('rotkehlchen.premium.premium.Path.read_bytes', return_value=f'python3\x00{DOCKER_ENTRYPOINT_PATH}\x00'.encode()),  # noqa: E501
+    ):
+        assert is_running_in_rotki_docker_image() is True
