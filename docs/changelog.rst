@@ -10,6 +10,7 @@ Changelog
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
 * :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
 * :feature:`10712` bitcoin events can now be filtered by address.
+* :feature:`10542` StakeDAO v2 votemarket events will now be properly decoded.
 
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.
