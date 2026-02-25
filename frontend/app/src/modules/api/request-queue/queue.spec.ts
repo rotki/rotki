@@ -11,7 +11,11 @@ describe('requestQueue', () => {
   const mockFetchWrapper = async <T>(
     url: string,
     options?: Record<string, unknown>,
-  ): Promise<T> => mockFetch(url, options) as Promise<T>;
+  ): Promise<T> => {
+    const result = await mockFetch(url, options);
+    // @ts-expect-error mock returns unknown but generic wrapper needs T
+    return result;
+  };
 
   beforeEach(() => {
     vi.useFakeTimers();
@@ -69,7 +73,7 @@ describe('requestQueue', () => {
       await vi.advanceTimersByTimeAsync(10);
 
       // Third request should now be active and have a resolver
-      expect(resolvers.length).toBe(3);
+      expect(resolvers).toHaveLength(3);
 
       // Resolve third
       resolvers[2]({ data: 'done' });

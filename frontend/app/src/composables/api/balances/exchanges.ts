@@ -13,7 +13,7 @@ import {
 } from '@/types/exchanges';
 import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
-interface UseExchangeApiReturn {
+export interface UseExchangeApiReturn {
   queryRemoveExchange: ({ location, name }: Exchange) => Promise<boolean>;
   queryExchangeBalances: (location: string, ignoreCache?: boolean, valueThreshold?: string) => Promise<PendingTask>;
   callSetupExchange: (payload: ExchangeFormData) => Promise<boolean>;

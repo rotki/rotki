@@ -6,6 +6,14 @@ import { defineComponent, h, type VNode } from 'vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { setupDayjs } from '@/utils/date';
 
+function getEmittedValue(wrapper: VueWrapper, event: string, callIndex: number): number {
+  const emitted = wrapper.emitted(event);
+  expect(emitted).toBeTruthy();
+  const value = emitted![callIndex][0];
+  expect(value).toEqual(expect.any(Number));
+  return Number(value);
+}
+
 // Mock RuiDateTimePicker to render the menu-content slot
 const RuiDateTimePickerStub = defineComponent({
   emits: ['update:modelValue'],
@@ -19,7 +27,10 @@ const RuiDateTimePickerStub = defineComponent({
   setup(props, { emit, slots }): () => VNode {
     return (): VNode => h('div', { class: 'rui-date-time-picker' }, [
       h('input', {
-        onInput: (e: Event) => emit('update:modelValue', Number((e.target as HTMLInputElement).value)),
+        onInput: (e: Event) => {
+          if (e.target instanceof HTMLInputElement)
+            emit('update:modelValue', Number(e.target.value));
+        },
         value: props.modelValue,
       }),
       slots['menu-content']?.(),
@@ -72,7 +83,7 @@ describe('components/inputs/DateTimePicker.vue', () => {
       wrapper = createWrapper();
 
       const quickOptionButtons = wrapper.findAll('.border-t button');
-      expect(quickOptionButtons.length).toBe(6);
+      expect(quickOptionButtons).toHaveLength(6);
     });
 
     it('should subtract time from current model value when quick option is clicked (unix seconds)', async () => {
@@ -93,9 +104,7 @@ describe('components/inputs/DateTimePicker.vue', () => {
       await yearBeforeButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const firstEmit = wrapper.emitted('update:modelValue');
-      expect(firstEmit).toBeTruthy();
-      const firstValue = firstEmit![0][0] as number;
+      const firstValue = getEmittedValue(wrapper, 'update:modelValue', 0);
 
       const expectedFirstValue = initialDate.subtract(1, 'year').unix();
       expect(firstValue).toBe(expectedFirstValue);
@@ -107,9 +116,7 @@ describe('components/inputs/DateTimePicker.vue', () => {
       await yearBeforeButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const secondEmit = wrapper.emitted('update:modelValue');
-      expect(secondEmit).toBeTruthy();
-      const secondValue = secondEmit![1][0] as number;
+      const secondValue = getEmittedValue(wrapper, 'update:modelValue', 1);
 
       const expectedSecondValue = initialDate.subtract(2, 'year').unix();
       expect(secondValue).toBe(expectedSecondValue);
@@ -134,9 +141,7 @@ describe('components/inputs/DateTimePicker.vue', () => {
       await monthBeforeButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const firstEmit = wrapper.emitted('update:modelValue');
-      expect(firstEmit).toBeTruthy();
-      const firstValue = firstEmit![0][0] as number;
+      const firstValue = getEmittedValue(wrapper, 'update:modelValue', 0);
 
       const expectedFirstValue = initialDate.subtract(1, 'month').valueOf();
       expect(firstValue).toBe(expectedFirstValue);
@@ -148,9 +153,7 @@ describe('components/inputs/DateTimePicker.vue', () => {
       await monthBeforeButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const secondEmit = wrapper.emitted('update:modelValue');
-      expect(secondEmit).toBeTruthy();
-      const secondValue = secondEmit![1][0] as number;
+      const secondValue = getEmittedValue(wrapper, 'update:modelValue', 1);
 
       const expectedSecondValue = initialDate.subtract(2, 'month').valueOf();
       expect(secondValue).toBe(expectedSecondValue);
@@ -173,9 +176,7 @@ describe('components/inputs/DateTimePicker.vue', () => {
       await yesterdayButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const emittedEvents = wrapper.emitted('update:modelValue');
-      expect(emittedEvents).toBeTruthy();
-      const emittedValue = emittedEvents![0][0] as number;
+      const emittedValue = getEmittedValue(wrapper, 'update:modelValue', 0);
 
       const expectedValue = initialDate.subtract(1, 'day').unix();
       expect(emittedValue).toBe(expectedValue);
@@ -198,9 +199,7 @@ describe('components/inputs/DateTimePicker.vue', () => {
       await weekBeforeButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const emittedEvents = wrapper.emitted('update:modelValue');
-      expect(emittedEvents).toBeTruthy();
-      const emittedValue = emittedEvents![0][0] as number;
+      const emittedValue = getEmittedValue(wrapper, 'update:modelValue', 0);
 
       const expectedValue = initialDate.subtract(1, 'week').unix();
       expect(emittedValue).toBe(expectedValue);
@@ -223,9 +222,7 @@ describe('components/inputs/DateTimePicker.vue', () => {
       await ninetyDaysButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const emittedEvents = wrapper.emitted('update:modelValue');
-      expect(emittedEvents).toBeTruthy();
-      const emittedValue = emittedEvents![0][0] as number;
+      const emittedValue = getEmittedValue(wrapper, 'update:modelValue', 0);
 
       const expectedValue = initialDate.subtract(90, 'day').unix();
       expect(emittedValue).toBe(expectedValue);
@@ -248,9 +245,7 @@ describe('components/inputs/DateTimePicker.vue', () => {
       await sixMonthsButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const emittedEvents = wrapper.emitted('update:modelValue');
-      expect(emittedEvents).toBeTruthy();
-      const emittedValue = emittedEvents![0][0] as number;
+      const emittedValue = getEmittedValue(wrapper, 'update:modelValue', 0);
 
       const expectedValue = initialDate.subtract(6, 'month').unix();
       expect(emittedValue).toBe(expectedValue);

@@ -1,5 +1,6 @@
 import type { EffectScope } from 'vue';
 import type { HistoryEventNavigationRequest } from './use-history-event-navigation';
+import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockRouterPush = vi.fn().mockResolvedValue(undefined);
@@ -127,6 +128,10 @@ describe('use-history-event-navigation', () => {
     expect(get(highlightTargets)).toEqual({});
   });
 
+  function createFilterPayload(): HistoryEventRequestPayload {
+    return { aggregateByGroupIds: false, limit: 0, offset: 0 };
+  }
+
   describe('findHighlightPage', () => {
     it('should return correct page when event is found', async () => {
       mockGetHistoryEventGroupPosition.mockResolvedValue(25);
@@ -136,16 +141,16 @@ describe('use-history-event-navigation', () => {
 
       setHighlightTarget('assetMovement', { groupIdentifier: 'group-1', identifier: 100 });
 
-      const page = await findHighlightPage({} as any, 10);
+      const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(3); // position 25, limit 10 → page 3
-      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-1', {});
+      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-1', createFilterPayload());
     });
 
     it('should return -1 when no highlights are active', async () => {
       const { useHistoryEventNavigation } = await importFresh();
       const { findHighlightPage } = scope.run(() => useHistoryEventNavigation())!;
 
-      const page = await findHighlightPage({} as any, 10);
+      const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(-1);
       expect(mockGetHistoryEventGroupPosition).not.toHaveBeenCalled();
     });
@@ -161,12 +166,12 @@ describe('use-history-event-navigation', () => {
       setHighlightTarget('assetMovement', { groupIdentifier: 'group-yellow', identifier: 100 });
       setHighlightTarget('negativeBalance', { groupIdentifier: 'group-red', identifier: 300 });
 
-      const page = await findHighlightPage({} as any, 10);
+      const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(1); // position 5, limit 10 → page 1
 
       // Only the green candidate should have been checked (found immediately)
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledTimes(1);
-      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-green', {});
+      expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledWith('group-green', createFilterPayload());
     });
 
     it('should fall back to next candidate when position is -1', async () => {
@@ -180,7 +185,7 @@ describe('use-history-event-navigation', () => {
       setHighlightTarget('potentialMatch', { groupIdentifier: 'group-green', identifier: 200 });
       setHighlightTarget('assetMovement', { groupIdentifier: 'group-yellow', identifier: 100 });
 
-      const page = await findHighlightPage({} as any, 10);
+      const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(2); // position 15, limit 10 → page 2
       expect(mockGetHistoryEventGroupPosition).toHaveBeenCalledTimes(2);
     });
@@ -193,7 +198,7 @@ describe('use-history-event-navigation', () => {
 
       setHighlightTarget('assetMovement', { groupIdentifier: 'group-1', identifier: 100 });
 
-      const page = await findHighlightPage({} as any, 10);
+      const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(-1);
     });
 
@@ -205,7 +210,7 @@ describe('use-history-event-navigation', () => {
 
       setHighlightTarget('assetMovement', { groupIdentifier: 'group-1', identifier: 100 });
 
-      const page = await findHighlightPage({} as any, 10);
+      const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(-1);
     });
   });

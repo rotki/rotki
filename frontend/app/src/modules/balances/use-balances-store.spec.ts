@@ -15,6 +15,7 @@ describe('useBalancesStore', () => {
   });
 
   it('should update the balance prices and value', () => {
+    const { balances } = storeToRefs(store);
     const { updateBalances, updatePrices } = store;
     const assetPrices: AssetPrices = {
       ETH: {
@@ -60,7 +61,7 @@ describe('useBalancesStore', () => {
 
     updatePrices(assetPrices);
 
-    expect(store.balances.eth['0xacc'].assets.ETH.address).toMatchObject({
+    expect(get(balances).eth['0xacc'].assets.ETH.address).toMatchObject({
       amount: bigNumberify(10),
       value: bigNumberify(25000),
     });

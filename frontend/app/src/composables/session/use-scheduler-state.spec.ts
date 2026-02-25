@@ -297,7 +297,7 @@ describe('composables::session::use-scheduler-state', () => {
   });
 
   describe('trigger functions call expected behavior', () => {
-    it('onBalancesLoaded triggers fallback timer to start', async () => {
+    it('should start fallback timer on onBalancesLoaded', async () => {
       const scheduler = await createSchedulerState();
 
       // Call the trigger
@@ -310,7 +310,7 @@ describe('composables::session::use-scheduler-state', () => {
       expect(mockSetSchedulerState).toHaveBeenCalledWith(true);
     });
 
-    it('onHistoryStarted triggers fallback timer to stop', async () => {
+    it('should stop fallback timer on onHistoryStarted', async () => {
       const scheduler = await createSchedulerState();
 
       // Start the timer first
@@ -326,7 +326,7 @@ describe('composables::session::use-scheduler-state', () => {
       expect(mockSetSchedulerState).not.toHaveBeenCalled();
     });
 
-    it('onHistoryFinished triggers setSchedulerState to be called with true', async () => {
+    it('should call setSchedulerState with true on onHistoryFinished', async () => {
       const scheduler = await createSchedulerState();
 
       // Call the trigger
@@ -338,7 +338,7 @@ describe('composables::session::use-scheduler-state', () => {
       expect(mockSetSchedulerState).toHaveBeenCalledWith(true);
     });
 
-    it('reset triggers fallback timer to stop and resets internal state', async () => {
+    it('should reset triggers fallback timer to stop and resets internal state', async () => {
       const scheduler = await createSchedulerState();
 
       // Enable scheduler first
@@ -364,7 +364,7 @@ describe('composables::session::use-scheduler-state', () => {
       expect(mockSetSchedulerState).toHaveBeenCalledWith(true);
     });
 
-    it('onHistoryFinished after onHistoryStarted triggers scheduler enable', async () => {
+    it('should enable scheduler on onHistoryFinished after onHistoryStarted', async () => {
       const scheduler = await createSchedulerState();
 
       // Typical flow: start then finish

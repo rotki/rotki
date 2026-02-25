@@ -58,7 +58,7 @@ describe('store/staking/kraken', () => {
     vi.clearAllMocks();
   });
 
-  it('sets status to LOADED on first load error so the UI is not stuck loading', async () => {
+  it('should set status to LOADED on first load error so the UI is not stuck loading', async () => {
     const { useStatusStore } = await import('@/store/status');
 
     mockFetchKrakenStakingEvents.mockRejectedValueOnce(new Error('Request timeout'));
@@ -73,7 +73,7 @@ describe('store/staking/kraken', () => {
     expect(mockNotify).toHaveBeenCalledOnce();
   });
 
-  it('loads events successfully on first load', async () => {
+  it('should load events successfully on first load', async () => {
     const { useStatusStore } = await import('@/store/status');
 
     const eventsData = {
@@ -95,7 +95,7 @@ describe('store/staking/kraken', () => {
     expect(mockNotify).not.toHaveBeenCalled();
   });
 
-  it('sets status to LOADED when refresh task fails', async () => {
+  it('should set status to LOADED when refresh task fails', async () => {
     const { useStatusStore } = await import('@/store/status');
 
     mockFetchKrakenStakingEvents.mockResolvedValueOnce(defaultEvents());

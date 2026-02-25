@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
@@ -18,12 +18,12 @@ describe('composables/api/assets/info', () => {
   }
 
   describe('assetMapping', () => {
-    it('fetches asset mapping for identifiers', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should fetch asset mapping for identifiers', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${colibriUrl}/assets/mappings`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               assets: {
@@ -58,7 +58,7 @@ describe('composables/api/assets/info', () => {
       expect(result.assets.BTC.symbol).toBe('BTC');
     });
 
-    it('handles empty identifiers', async () => {
+    it('should handle empty identifiers', async () => {
       server.use(
         http.post(`${colibriUrl}/assets/mappings`, () =>
           HttpResponse.json({
@@ -76,7 +76,7 @@ describe('composables/api/assets/info', () => {
       expect(result.assets).toEqual({});
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${colibriUrl}/assets/mappings`, () =>
           HttpResponse.json({
@@ -94,12 +94,12 @@ describe('composables/api/assets/info', () => {
   });
 
   describe('assetSearch', () => {
-    it('searches assets with basic query', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should search assets with basic query', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/search/levenshtein`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: [
               {
@@ -131,12 +131,12 @@ describe('composables/api/assets/info', () => {
       expect(result[0].identifier).toBe('ETH');
     });
 
-    it('searches with all parameters', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should search with all parameters', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/search/levenshtein`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: [
               {
@@ -171,7 +171,7 @@ describe('composables/api/assets/info', () => {
       });
     });
 
-    it('handles empty search results', async () => {
+    it('should handle empty search results', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/search/levenshtein`, () =>
           HttpResponse.json({
@@ -186,7 +186,7 @@ describe('composables/api/assets/info', () => {
       expect(result).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/search/levenshtein`, () =>
           HttpResponse.json({
@@ -204,7 +204,7 @@ describe('composables/api/assets/info', () => {
   });
 
   describe('erc20details', () => {
-    it('fetches ERC20 details as async task', async () => {
+    it('should fetch ERC20 details as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -230,7 +230,7 @@ describe('composables/api/assets/info', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/evm/erc20details`, () =>
           HttpResponse.json({

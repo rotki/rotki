@@ -2,7 +2,7 @@ import type { SupportedCurrency } from '@/types/currencies';
 import type { HistoricPricesPayload } from '@/types/prices';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { PriceOracle } from '@/types/settings/price-oracle';
 
@@ -21,12 +21,12 @@ describe('composables/api/balances/price', () => {
   }
 
   describe('queryPrices', () => {
-    it('queries latest prices as async task', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should query latest prices as async task', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/latest`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 123 },
             message: '',
@@ -45,12 +45,12 @@ describe('composables/api/balances/price', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('includes ignore_cache when set to true', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should include ignore_cache when set to true', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/latest`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 456 },
             message: '',
@@ -69,7 +69,7 @@ describe('composables/api/balances/price', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/latest`, () =>
           HttpResponse.json({
@@ -87,12 +87,12 @@ describe('composables/api/balances/price', () => {
   });
 
   describe('queryCachedPrices', () => {
-    it('queries cached prices synchronously and parses response', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should query cached prices synchronously and parses response', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/latest`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               assets: {
@@ -125,7 +125,7 @@ describe('composables/api/balances/price', () => {
       expect(result.BTC.oracle).toBe('cryptocompare');
     });
 
-    it('identifies manual prices correctly', async () => {
+    it('should identify manual prices correctly', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/latest`, () =>
           HttpResponse.json({
@@ -150,7 +150,7 @@ describe('composables/api/balances/price', () => {
       expect(result.ETH.oracle).toBe('manualcurrent');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/latest`, () =>
           HttpResponse.json({
@@ -168,7 +168,7 @@ describe('composables/api/balances/price', () => {
   });
 
   describe('queryFiatExchangeRates', () => {
-    it('queries fiat exchange rates as async task', async () => {
+    it('should query fiat exchange rates as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -191,7 +191,7 @@ describe('composables/api/balances/price', () => {
       expect(result.taskId).toBe(789);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/exchange_rates`, () =>
           HttpResponse.json({
@@ -209,12 +209,12 @@ describe('composables/api/balances/price', () => {
   });
 
   describe('queryHistoricalRate', () => {
-    it('queries historical rate as async task', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should query historical rate as async task', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/historical`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 111 },
             message: '',
@@ -233,7 +233,7 @@ describe('composables/api/balances/price', () => {
       expect(result.taskId).toBe(111);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/historical`, () =>
           HttpResponse.json({
@@ -251,12 +251,12 @@ describe('composables/api/balances/price', () => {
   });
 
   describe('queryHistoricalRates', () => {
-    it('queries historical rates as async task', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should query historical rates as async task', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/historical`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 222 },
             message: '',
@@ -279,7 +279,7 @@ describe('composables/api/balances/price', () => {
       expect(result.taskId).toBe(222);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/historical`, () =>
           HttpResponse.json({
@@ -297,12 +297,12 @@ describe('composables/api/balances/price', () => {
   });
 
   describe('queryOnlyCacheHistoricalRates', () => {
-    it('queries cached historical rates synchronously', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should query cached historical rates synchronously', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/historical`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               assets: {
@@ -338,7 +338,7 @@ describe('composables/api/balances/price', () => {
       expect(result.targetAsset).toBe('USD');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/historical`, () =>
           HttpResponse.json({
@@ -360,7 +360,7 @@ describe('composables/api/balances/price', () => {
   });
 
   describe('getPriceCache', () => {
-    it('gets oracle price cache', async () => {
+    it('should get oracle price cache', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/oracles/coingecko/cache`, () =>
           HttpResponse.json({
@@ -392,7 +392,7 @@ describe('composables/api/balances/price', () => {
       expect(result[0].toTimestamp).toBe('1700100000');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/oracles/coingecko/cache`, () =>
           HttpResponse.json({
@@ -410,12 +410,12 @@ describe('composables/api/balances/price', () => {
   });
 
   describe('createPriceCache', () => {
-    it('creates price cache as async task', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should create price cache as async task', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/oracles/coingecko/cache`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 333 },
             message: '',
@@ -434,12 +434,12 @@ describe('composables/api/balances/price', () => {
       expect(result.taskId).toBe(333);
     });
 
-    it('includes purge_old when set to true', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should include purge_old when set to true', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/oracles/cryptocompare/cache`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 444 },
             message: '',
@@ -458,7 +458,7 @@ describe('composables/api/balances/price', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/oracles/coingecko/cache`, () =>
           HttpResponse.json({
@@ -476,12 +476,12 @@ describe('composables/api/balances/price', () => {
   });
 
   describe('deletePriceCache', () => {
-    it('deletes price cache', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should delete price cache', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/oracles/coingecko/cache`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -499,7 +499,7 @@ describe('composables/api/balances/price', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/oracles/coingecko/cache`, () =>
           HttpResponse.json({

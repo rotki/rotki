@@ -32,14 +32,14 @@ describe('usePriceUtils', () => {
   });
 
   describe('exchangeRate', () => {
-    it('price is found', () => {
+    it('should return price when found', () => {
       const exchangeRate = utils.useExchangeRate('EUR');
       expect(get(exchangeRate)).toEqual(bigNumberify(1.5));
     });
 
-    it('price is not found ', () => {
+    it('should return undefined when price is not found', () => {
       const exchangeRate = utils.useExchangeRate('JPY');
-      expect(get(exchangeRate)).toEqual(undefined);
+      expect(get(exchangeRate)).toBeUndefined();
     });
   });
 
@@ -58,17 +58,17 @@ describe('usePriceUtils', () => {
     });
 
     it('should return undefined if the price is not found', () => {
-      expect(get(utils.assetPrice('BTC'))).toEqual(undefined);
+      expect(get(utils.assetPrice('BTC'))).toBeUndefined();
     });
   });
 
   it('should return if it isManualAssetPrice', () => {
-    expect(get(utils.isManualAssetPrice('DAI'))).toEqual(false);
-    expect(get(utils.isManualAssetPrice('ETH'))).toEqual(true);
+    expect(get(utils.isManualAssetPrice('DAI'))).toBe(false);
+    expect(get(utils.isManualAssetPrice('ETH'))).toBe(true);
   });
 
   it('should return if isAssetPriceInCurrentCurrency', () => {
-    expect(get(utils.isAssetPriceInCurrentCurrency('DAI'))).toEqual(false);
-    expect(get(utils.isAssetPriceInCurrentCurrency('ETH'))).toEqual(false);
+    expect(get(utils.isAssetPriceInCurrentCurrency('DAI'))).toBe(false);
+    expect(get(utils.isAssetPriceInCurrentCurrency('ETH'))).toBe(false);
   });
 });

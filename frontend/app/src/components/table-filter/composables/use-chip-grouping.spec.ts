@@ -16,7 +16,7 @@ describe('composables/use-chip-grouping', () => {
   }
 
   describe('groupedKeysCounts', () => {
-    it('counts items per key correctly', () => {
+    it('should count items per key correctly', () => {
       const selection = ref<Suggestion[]>([
         createSuggestion('type', 'value1'),
         createSuggestion('type', 'value2'),
@@ -32,7 +32,7 @@ describe('composables/use-chip-grouping', () => {
       });
     });
 
-    it('returns empty object for empty selection', () => {
+    it('should return empty object for empty selection', () => {
       const selection = ref<Suggestion[]>([]);
       const updateMatches = vi.fn();
 
@@ -43,7 +43,7 @@ describe('composables/use-chip-grouping', () => {
   });
 
   describe('groupedKeys', () => {
-    it('identifies keys with more than 3 items', () => {
+    it('should identify keys with more than 3 items', () => {
       const selection = ref<Suggestion[]>([
         createSuggestion('type', 'value1'),
         createSuggestion('type', 'value2'),
@@ -59,7 +59,7 @@ describe('composables/use-chip-grouping', () => {
       expect(get(groupedKeys).has('status')).toBe(false);
     });
 
-    it('does not group keys with exactly 3 items', () => {
+    it('should not group keys with exactly 3 items', () => {
       const selection = ref<Suggestion[]>([
         createSuggestion('type', 'value1'),
         createSuggestion('type', 'value2'),
@@ -74,7 +74,7 @@ describe('composables/use-chip-grouping', () => {
   });
 
   describe('isKeyGrouped', () => {
-    it('returns true for grouped keys', () => {
+    it('should return true for grouped keys', () => {
       const selection = ref<Suggestion[]>([
         createSuggestion('type', 'value1'),
         createSuggestion('type', 'value2'),
@@ -88,7 +88,7 @@ describe('composables/use-chip-grouping', () => {
       expect(isKeyGrouped('type')).toBe(true);
     });
 
-    it('returns false for non-grouped keys', () => {
+    it('should return false for non-grouped keys', () => {
       const selection = ref<Suggestion[]>([
         createSuggestion('type', 'value1'),
         createSuggestion('type', 'value2'),
@@ -102,7 +102,7 @@ describe('composables/use-chip-grouping', () => {
   });
 
   describe('getChipDisplayType', () => {
-    it('returns "normal" for non-grouped items', () => {
+    it('should return "normal" for non-grouped items', () => {
       const item = createSuggestion('type', 'value1');
       const selection = ref<Suggestion[]>([item]);
       const updateMatches = vi.fn();
@@ -112,7 +112,7 @@ describe('composables/use-chip-grouping', () => {
       expect(getChipDisplayType(item)).toBe('normal');
     });
 
-    it('returns "grouped" for first item of grouped key', () => {
+    it('should return "grouped" for first item of grouped key', () => {
       const items = [
         createSuggestion('type', 'value1'),
         createSuggestion('type', 'value2'),
@@ -127,7 +127,7 @@ describe('composables/use-chip-grouping', () => {
       expect(getChipDisplayType(get(selection)[0])).toBe('grouped');
     });
 
-    it('returns "hidden" for non-first items of grouped key', () => {
+    it('should return "hidden" for non-first items of grouped key', () => {
       const items = [
         createSuggestion('type', 'value1'),
         createSuggestion('type', 'value2'),
@@ -146,7 +146,7 @@ describe('composables/use-chip-grouping', () => {
   });
 
   describe('getGroupedOverflowCount', () => {
-    it('returns count minus 1 for grouped keys', () => {
+    it('should return count minus 1 for grouped keys', () => {
       const item = createSuggestion('type', 'value1');
       const selection = ref<Suggestion[]>([
         item,
@@ -162,7 +162,7 @@ describe('composables/use-chip-grouping', () => {
       expect(getGroupedOverflowCount(item)).toBe(4);
     });
 
-    it('returns -1 for non-existent keys', () => {
+    it('should return -1 for non-existent keys', () => {
       const selection = ref<Suggestion[]>([]);
       const updateMatches = vi.fn();
 
@@ -173,7 +173,7 @@ describe('composables/use-chip-grouping', () => {
   });
 
   describe('toggleGroupMenu', () => {
-    it('sets expandedGroupKey when not expanded', () => {
+    it('should set expandedGroupKey when not expanded', () => {
       const selection = ref<Suggestion[]>([]);
       const updateMatches = vi.fn();
 
@@ -183,7 +183,7 @@ describe('composables/use-chip-grouping', () => {
       expect(get(expandedGroupKey)).toBe('type');
     });
 
-    it('clears expandedGroupKey when already expanded', () => {
+    it('should clear expandedGroupKey when already expanded', () => {
       const selection = ref<Suggestion[]>([]);
       const updateMatches = vi.fn();
 
@@ -194,7 +194,7 @@ describe('composables/use-chip-grouping', () => {
       expect(get(expandedGroupKey)).toBeUndefined();
     });
 
-    it('switches to different key', () => {
+    it('should switch to different key', () => {
       const selection = ref<Suggestion[]>([]);
       const updateMatches = vi.fn();
 
@@ -207,7 +207,7 @@ describe('composables/use-chip-grouping', () => {
   });
 
   describe('removeGroupedItem', () => {
-    it('calls updateMatches with item removed', () => {
+    it('should call updateMatches with item removed', () => {
       const items = [
         createSuggestion('type', 'value1'),
         createSuggestion('type', 'value2'),
@@ -223,7 +223,7 @@ describe('composables/use-chip-grouping', () => {
   });
 
   describe('removeAllItemsForKey', () => {
-    it('removes all items with the specified key', () => {
+    it('should remove all items with the specified key', () => {
       const item1 = createSuggestion('type', 'value1');
       const item2 = createSuggestion('type', 'value2');
       const item3 = createSuggestion('status', 'active');
@@ -236,7 +236,7 @@ describe('composables/use-chip-grouping', () => {
       expect(updateMatches).toHaveBeenCalledWith([item3]);
     });
 
-    it('clears expandedGroupKey after removal', () => {
+    it('should clear expandedGroupKey after removal', () => {
       const selection = ref<Suggestion[]>([createSuggestion('type', 'value1')]);
       const updateMatches = vi.fn();
 
@@ -249,7 +249,7 @@ describe('composables/use-chip-grouping', () => {
   });
 
   describe('getGroupedItemsForKey', () => {
-    it('returns all items for a specific key', () => {
+    it('should return all items for a specific key', () => {
       const item1 = createSuggestion('type', 'value1');
       const item2 = createSuggestion('type', 'value2');
       const item3 = createSuggestion('status', 'active');
@@ -261,7 +261,7 @@ describe('composables/use-chip-grouping', () => {
       expect(getGroupedItemsForKey(item1)).toEqual([item1, item2]);
     });
 
-    it('returns empty array for non-existent key', () => {
+    it('should return empty array for non-existent key', () => {
       const selection = ref<Suggestion[]>([createSuggestion('type', 'value1')]);
       const updateMatches = vi.fn();
 

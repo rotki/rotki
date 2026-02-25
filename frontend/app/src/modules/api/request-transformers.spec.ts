@@ -3,12 +3,12 @@ import { transformRequestBody, transformRequestQuery } from './request-transform
 
 describe('request-transformers', () => {
   describe('transformRequestBody', () => {
-    it('returns null/undefined as-is', () => {
+    it('should return null/undefined as-is', () => {
       expect(transformRequestBody(null, {})).toBeNull();
       expect(transformRequestBody(undefined, {})).toBeUndefined();
     });
 
-    it('returns FormData as-is without transformation', () => {
+    it('should return FormData as-is without transformation', () => {
       const formData = new FormData();
       formData.append('key', 'value');
 
@@ -17,7 +17,7 @@ describe('request-transformers', () => {
       expect(result).toBe(formData);
     });
 
-    it('converts keys to snake_case by default', () => {
+    it('should convert keys to snake_case by default', () => {
       const body = { userName: 'test', isActive: true };
 
       const result = transformRequestBody(body, {});
@@ -25,7 +25,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ user_name: 'test', is_active: true });
     });
 
-    it('skips snake_case conversion when skipSnakeCase is true', () => {
+    it('should skip snake_case conversion when skipSnakeCase is true', () => {
       const body = { userName: 'test', isActive: true };
 
       const result = transformRequestBody(body, { skipSnakeCase: true });
@@ -33,7 +33,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ userName: 'test', isActive: true });
     });
 
-    it('skips nested transformation for specified keys when skipSnakeCase is an array', () => {
+    it('should skip nested transformation for specified keys when skipSnakeCase is an array', () => {
       const body = {
         asyncQuery: true,
         upToVersion: 5,
@@ -55,7 +55,7 @@ describe('request-transformers', () => {
       });
     });
 
-    it('filters empty properties when filterEmptyProperties is true', () => {
+    it('should filter empty properties when filterEmptyProperties is true', () => {
       const body = { userName: 'test', emptyField: null, undefinedField: undefined };
 
       const result = transformRequestBody(body, { filterEmptyProperties: true });
@@ -63,7 +63,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ user_name: 'test' });
     });
 
-    it('filters empty properties with custom options', () => {
+    it('should filter empty properties with custom options', () => {
       const body = { userName: 'test', emptyString: '', keepThis: null };
 
       const result = transformRequestBody(body, {
@@ -73,7 +73,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ user_name: 'test', keep_this: null });
     });
 
-    it('applies both filtering and snake_case conversion', () => {
+    it('should apply both filtering and snake_case conversion', () => {
       const body = { firstName: 'John', lastName: null, middleName: undefined };
 
       const result = transformRequestBody(body, { filterEmptyProperties: true });
@@ -81,7 +81,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ first_name: 'John' });
     });
 
-    it('handles nested objects', () => {
+    it('should handle nested objects', () => {
       const body = { userData: { firstName: 'John', lastName: 'Doe' } };
 
       const result = transformRequestBody(body, {});
@@ -89,7 +89,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ user_data: { first_name: 'John', last_name: 'Doe' } });
     });
 
-    it('handles arrays in body', () => {
+    it('should handle arrays in body', () => {
       const body = { userIds: [1, 2, 3], tagNames: ['one', 'two'] };
 
       const result = transformRequestBody(body, {});
@@ -99,13 +99,13 @@ describe('request-transformers', () => {
   });
 
   describe('transformRequestQuery', () => {
-    it('returns undefined for undefined input', () => {
+    it('should return undefined for undefined input', () => {
       const result = transformRequestQuery(undefined, {});
 
       expect(result).toBeUndefined();
     });
 
-    it('converts keys to snake_case by default', () => {
+    it('should convert keys to snake_case by default', () => {
       const query = { pageSize: 10, sortOrder: 'asc' };
 
       const result = transformRequestQuery(query, {});
@@ -114,7 +114,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ page_size: 10, sort_order: 'asc' });
     });
 
-    it('skips snake_case conversion when skipSnakeCase is true', () => {
+    it('should skip snake_case conversion when skipSnakeCase is true', () => {
       const query = { pageSize: 10, sortOrder: 'asc' };
 
       const result = transformRequestQuery(query, { skipSnakeCase: true });
@@ -122,7 +122,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ pageSize: 10, sortOrder: 'asc' });
     });
 
-    it('skips nested transformation for specified keys when skipSnakeCase is an array', () => {
+    it('should skip nested transformation for specified keys when skipSnakeCase is an array', () => {
       const query = {
         pageSize: 10,
         filterData: { nestedKey: 'value' },
@@ -136,7 +136,7 @@ describe('request-transformers', () => {
       });
     });
 
-    it('filters empty properties when filterEmptyProperties is true', () => {
+    it('should filter empty properties when filterEmptyProperties is true', () => {
       const query = { page: 1, filter: null, search: undefined };
 
       const result = transformRequestQuery(query, { filterEmptyProperties: true });
@@ -145,7 +145,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ page: 1 });
     });
 
-    it('filters empty strings when removeEmptyString is set', () => {
+    it('should filter empty strings when removeEmptyString is set', () => {
       const query = { page: 1, search: '', filter: 'active' };
 
       const result = transformRequestQuery(query, {
@@ -156,7 +156,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ page: 1, filter: 'active' });
     });
 
-    it('keeps alwaysPickKeys even if empty', () => {
+    it('should keep alwaysPickKeys even if empty', () => {
       const query = { page: 1, required: '', optional: null };
 
       const result = transformRequestQuery(query, {
@@ -167,7 +167,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ page: 1, required: '' });
     });
 
-    it('handles boolean values', () => {
+    it('should handle boolean values', () => {
       const query = { isActive: true, isDeleted: false };
 
       const result = transformRequestQuery(query, {});
@@ -176,7 +176,7 @@ describe('request-transformers', () => {
       expect(result).toEqual({ is_active: true, is_deleted: false });
     });
 
-    it('handles numeric values', () => {
+    it('should handle numeric values', () => {
       const query = { limit: 100, offset: 0 };
 
       const result = transformRequestQuery(query, {});

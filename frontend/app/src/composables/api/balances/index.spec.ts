@@ -12,7 +12,7 @@ describe('composables/api/balances/index', () => {
   });
 
   describe('queryBalancesAsync', () => {
-    it('fetches balances with async_query param', async () => {
+    it('should fetch balances with async_query param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -35,7 +35,7 @@ describe('composables/api/balances/index', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('includes all payload params in snake_case', async () => {
+    it('should include all payload params in snake_case', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -65,7 +65,7 @@ describe('composables/api/balances/index', () => {
       expect(capturedParams!.get('ignore_errors')).toBe('false');
     });
 
-    it('handles partial payload', async () => {
+    it('should handle partial payload', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -90,7 +90,7 @@ describe('composables/api/balances/index', () => {
       expect(capturedParams!.get('ignore_errors')).toBeNull();
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/balances`, () =>
           HttpResponse.json({

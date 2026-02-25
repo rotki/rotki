@@ -1,7 +1,7 @@
 import type { SnapshotPayload } from '@/types/snapshots';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BalanceType } from '@/types/balances';
 import { useSnapshotApi } from './snapshot-api';
@@ -14,7 +14,7 @@ describe('composables/api/settings/snapshot-api', () => {
   });
 
   describe('getSnapshotData', () => {
-    it('fetches snapshot data for a given timestamp', async () => {
+    it('should fetch snapshot data for a given timestamp', async () => {
       const mockSnapshot = {
         balances_snapshot: [
           {
@@ -53,7 +53,7 @@ describe('composables/api/settings/snapshot-api', () => {
       expect(result.locationDataSnapshot[0].location).toBe('binance');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/snapshots/:timestamp`, () =>
           HttpResponse.json({
@@ -71,14 +71,14 @@ describe('composables/api/settings/snapshot-api', () => {
   });
 
   describe('updateSnapshotData', () => {
-    it('sends PATCH request with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.patch(`${backendUrl}/api/1/snapshots/:timestamp`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -132,7 +132,7 @@ describe('composables/api/settings/snapshot-api', () => {
   });
 
   describe('exportSnapshotCSV', () => {
-    it('sends GET request with action and path params in snake_case', async () => {
+    it('should send GET request with action and path params in snake_case', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -159,7 +159,7 @@ describe('composables/api/settings/snapshot-api', () => {
   });
 
   describe('downloadSnapshot', () => {
-    it('sends GET request with download action param', async () => {
+    it('should send GET request with download action param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -180,12 +180,12 @@ describe('composables/api/settings/snapshot-api', () => {
   });
 
   describe('deleteSnapshot', () => {
-    it('sends DELETE request with snake_case payload in body', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send DELETE request with snake_case payload in body', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/snapshots`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -202,7 +202,7 @@ describe('composables/api/settings/snapshot-api', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/snapshots`, () =>
           HttpResponse.json({
@@ -220,12 +220,12 @@ describe('composables/api/settings/snapshot-api', () => {
   });
 
   describe('importBalancesSnapshot', () => {
-    it('sends PUT request with snake_case file paths', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with snake_case file paths', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/snapshots`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -246,7 +246,7 @@ describe('composables/api/settings/snapshot-api', () => {
       });
     });
 
-    it('throws error on import failure', async () => {
+    it('should throw error on import failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/snapshots`, () =>
           HttpResponse.json({
@@ -264,12 +264,12 @@ describe('composables/api/settings/snapshot-api', () => {
   });
 
   describe('uploadBalancesSnapshot', () => {
-    it('sends POST request with multipart form data', async () => {
+    it('should send POST request with multipart form data', async () => {
       let capturedFormData: FormData | null = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/snapshots`, async ({ request }) => {
-          capturedFormData = await request.formData() as unknown as FormData;
+          capturedFormData = await request.formData();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -289,7 +289,7 @@ describe('composables/api/settings/snapshot-api', () => {
       expect(capturedFormData!.get('location_data_snapshot_file')).toBeTruthy();
     });
 
-    it('throws error on upload failure', async () => {
+    it('should throw error on upload failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/snapshots`, () =>
           HttpResponse.json({

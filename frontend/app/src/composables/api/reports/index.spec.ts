@@ -1,7 +1,7 @@
 import type { ProfitLossEventsPayload, ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useReportsApi } from './index';
 
@@ -13,7 +13,7 @@ describe('composables/api/reports/index', () => {
   });
 
   describe('generateReport', () => {
-    it('sends GET request with snake_case params', async () => {
+    it('should send GET request with snake_case params', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -40,7 +40,7 @@ describe('composables/api/reports/index', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history`, () =>
           HttpResponse.json({
@@ -58,7 +58,7 @@ describe('composables/api/reports/index', () => {
   });
 
   describe('exportReportCSV', () => {
-    it('sends GET request with directory path in snake_case', async () => {
+    it('should send GET request with directory path in snake_case', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -79,7 +79,7 @@ describe('composables/api/reports/index', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/reports/:reportId/export`, () =>
           HttpResponse.json({
@@ -97,7 +97,7 @@ describe('composables/api/reports/index', () => {
   });
 
   describe('downloadReportCSV', () => {
-    it('returns success on 200 response', async () => {
+    it('should return success on 200 response', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/reports/:reportId/download`, () =>
           new HttpResponse(new Blob(['zip content'], { type: 'application/zip' }), {
@@ -114,7 +114,7 @@ describe('composables/api/reports/index', () => {
       expect(result.success).toBe(true);
     });
 
-    it('returns failure with message on error response', async () => {
+    it('should return failure with message on error response', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/reports/:reportId/download`, () =>
           HttpResponse.json({
@@ -130,18 +130,17 @@ describe('composables/api/reports/index', () => {
       const result = await downloadReportCSV(1);
 
       expect(result.success).toBe(false);
-      if (!result.success)
-        expect(result.message).toBe('No report available');
+      expect(result).toHaveProperty('message', 'No report available');
     });
   });
 
   describe('exportReportData', () => {
-    it('sends POST request with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/history/debug`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 456 },
             message: '',
@@ -166,12 +165,12 @@ describe('composables/api/reports/index', () => {
       expect(result.taskId).toBe(456);
     });
 
-    it('sends POST without directoryPath when not provided', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST without directoryPath when not provided', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/history/debug`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 789 },
             message: '',
@@ -192,7 +191,7 @@ describe('composables/api/reports/index', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/history/debug`, () =>
           HttpResponse.json({
@@ -210,12 +209,12 @@ describe('composables/api/reports/index', () => {
   });
 
   describe('importReportData', () => {
-    it('sends PUT request with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/history/debug`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 101 },
             message: '',
@@ -233,7 +232,7 @@ describe('composables/api/reports/index', () => {
       expect(result.taskId).toBe(101);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/history/debug`, () =>
           HttpResponse.json({
@@ -251,7 +250,7 @@ describe('composables/api/reports/index', () => {
   });
 
   describe('uploadReportData', () => {
-    it('sends PATCH request with FormData', async () => {
+    it('should send PATCH request with FormData', async () => {
       let capturedContentType = '';
       let capturedFormData: FormData | null = null;
 
@@ -276,7 +275,7 @@ describe('composables/api/reports/index', () => {
       expect(result.taskId).toBe(202);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/history/debug`, () =>
           HttpResponse.json({
@@ -295,7 +294,7 @@ describe('composables/api/reports/index', () => {
   });
 
   describe('fetchActionableItems', () => {
-    it('fetches and parses actionable items', async () => {
+    it('should fetch and parses actionable items', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/actionable_items`, () =>
           HttpResponse.json({
@@ -332,7 +331,7 @@ describe('composables/api/reports/index', () => {
       expect(result.missingPrices[0].fromAsset).toBe('ETH');
     });
 
-    it('handles empty actionable items', async () => {
+    it('should handle empty actionable items', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/actionable_items`, () =>
           HttpResponse.json({
@@ -351,7 +350,7 @@ describe('composables/api/reports/index', () => {
       expect(result.missingPrices).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/actionable_items`, () =>
           HttpResponse.json({
@@ -369,7 +368,7 @@ describe('composables/api/reports/index', () => {
   });
 
   describe('fetchReports', () => {
-    it('fetches and parses reports list', async () => {
+    it('should fetch and parses reports list', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/reports`, () =>
           HttpResponse.json({
@@ -416,7 +415,7 @@ describe('composables/api/reports/index', () => {
       expect(result.entriesFound).toBe(1);
     });
 
-    it('handles empty reports list', async () => {
+    it('should handle empty reports list', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/reports`, () =>
           HttpResponse.json({
@@ -436,7 +435,7 @@ describe('composables/api/reports/index', () => {
       expect(result.entriesFound).toBe(0);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/reports`, () =>
           HttpResponse.json({
@@ -454,7 +453,7 @@ describe('composables/api/reports/index', () => {
   });
 
   describe('fetchReport', () => {
-    it('fetches and parses single report overview', async () => {
+    it('should fetch and parses single report overview', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/reports/1`, () =>
           HttpResponse.json({
@@ -483,7 +482,7 @@ describe('composables/api/reports/index', () => {
       expect(result.BTC.free.toString()).toBe('0.5');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/reports/999`, () =>
           HttpResponse.json({
@@ -501,14 +500,14 @@ describe('composables/api/reports/index', () => {
   });
 
   describe('fetchReportEvents', () => {
-    it('sends POST request with snake_case payload (excluding reportId)', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with snake_case payload (excluding reportId)', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.post(`${backendUrl}/api/1/reports/:reportId/data`, async ({ request, params }) => {
           capturedUrl = `/reports/${String(params.reportId)}/data`;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries: [
@@ -562,7 +561,7 @@ describe('composables/api/reports/index', () => {
       expect(result.entries[0].pnlFree.toString()).toBe('100');
     });
 
-    it('handles null cost_basis', async () => {
+    it('should handle null cost_basis', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/reports/:reportId/data`, () =>
           HttpResponse.json({
@@ -598,7 +597,7 @@ describe('composables/api/reports/index', () => {
       expect(result.entries[0].notes).toBeNull();
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/reports/:reportId/data`, () =>
           HttpResponse.json({
@@ -616,7 +615,7 @@ describe('composables/api/reports/index', () => {
   });
 
   describe('deleteReport', () => {
-    it('sends DELETE request for report ID', async () => {
+    it('should send DELETE request for report ID', async () => {
       let capturedUrl = '';
 
       server.use(
@@ -636,7 +635,7 @@ describe('composables/api/reports/index', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/reports/:reportId`, () =>
           HttpResponse.json({

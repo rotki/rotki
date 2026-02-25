@@ -40,27 +40,27 @@ describe('managedAssetIgnoreSwitch', () => {
     });
   }
 
-  it('shows spam/whitelist menu for EVM token assets', () => {
+  it('should show spam/whitelist menu for EVM token assets', () => {
     wrapper = createWrapper({ identifier: 'eip155:1/erc20:0x1234', assetType: 'evm token' });
     expect(wrapper.findComponent({ name: 'RuiMenu' }).exists()).toBe(true);
   });
 
-  it('shows spam/whitelist menu for Solana token assets', () => {
+  it('should show spam/whitelist menu for Solana token assets', () => {
     wrapper = createWrapper({ identifier: 'solana:SOL/spl:TokenAddr', assetType: 'solana token' });
     expect(wrapper.findComponent({ name: 'RuiMenu' }).exists()).toBe(true);
   });
 
-  it('hides spam/whitelist menu for custom assets', () => {
+  it('should hide spam/whitelist menu for custom assets', () => {
     wrapper = createWrapper({ identifier: 'my-custom-asset', assetType: 'custom asset' });
     expect(wrapper.findComponent({ name: 'RuiMenu' }).exists()).toBe(false);
   });
 
-  it('hides spam/whitelist menu for assets with no type', () => {
+  it('should hide spam/whitelist menu for assets with no type', () => {
     wrapper = createWrapper({ identifier: 'BTC', assetType: null });
     expect(wrapper.findComponent({ name: 'RuiMenu' }).exists()).toBe(false);
   });
 
-  it('hides spam/whitelist menu for unknown asset types', () => {
+  it('should hide spam/whitelist menu for unknown asset types', () => {
     wrapper = createWrapper({ identifier: 'some-asset', assetType: 'other type' });
     expect(wrapper.findComponent({ name: 'RuiMenu' }).exists()).toBe(false);
   });

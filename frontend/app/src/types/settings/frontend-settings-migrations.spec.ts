@@ -14,7 +14,8 @@ describe('frontend-settings-migrations', () => {
   });
 
   it('should apply the frontend schema migration from v0 to v2', () => {
-    expect(FrontendSettings.parse(applyMigrations({ ...frontendSettingsV0 } as any))).toEqual(getDefaultFrontendSettings());
+    // @ts-expect-error intentionally passing v0 settings to test migration
+    expect(FrontendSettings.parse(applyMigrations({ ...frontendSettingsV0 }))).toEqual(getDefaultFrontendSettings());
   });
 
   it('should apply the frontend schema migration from v0 and preserve user values', () => {
@@ -26,7 +27,9 @@ describe('frontend-settings-migrations', () => {
         MANUAL: '0',
       },
     };
-    expect(FrontendSettings.parse(applyMigrations(settings as any))).toEqual(getDefaultFrontendSettings({
+
+    // @ts-expect-error intentionally passing v0 settings to test migration
+    expect(FrontendSettings.parse(applyMigrations(settings))).toEqual(getDefaultFrontendSettings({
       balanceValueThreshold: {
         BLOCKCHAIN: '10',
         EXCHANGES: '11',
@@ -42,7 +45,9 @@ describe('frontend-settings-migrations', () => {
         BLOCKCHAIN: '15',
       },
     };
-    expect(FrontendSettings.parse(applyMigrations(v1Settings as any))).toEqual(getDefaultFrontendSettings({
+
+    // @ts-expect-error intentionally passing v1 settings to test migration
+    expect(FrontendSettings.parse(applyMigrations(v1Settings))).toEqual(getDefaultFrontendSettings({
       balanceValueThreshold: {
         BLOCKCHAIN: '15',
       },
@@ -57,7 +62,7 @@ describe('frontend-settings-migrations', () => {
   it('should return the settings string if they are migrated', () => {
     const settings = JSON.stringify(frontendSettingsV0);
     const migratedSettings = migrateSettingsIfNeeded(settings);
-    expect(migratedSettings).not.toBeUndefined();
+    expect(migratedSettings).toBeDefined();
     expect(getDefaultFrontendSettings()).toMatchObject(expect.objectContaining(JSON.parse(migratedSettings ?? '')));
   });
 

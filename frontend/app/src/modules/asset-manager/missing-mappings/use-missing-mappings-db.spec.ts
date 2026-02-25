@@ -9,56 +9,56 @@ import {
   useMissingMappingsDB,
 } from './use-missing-mappings-db';
 
-const TEST_USER = 'test-user-mappings';
-const TEST_DATA_DIR = '/test/data/dir';
-
-let scope: EffectScope;
-
-beforeEach(async () => {
-  setActivePinia(createPinia());
-  scope = effectScope();
-
-  await scope.run(async () => {
-    const { db, isReady } = useDatabase();
-
-    // Set up user identifier
-    const user = useLoggedUserIdentifier();
-    set(user, TEST_USER);
-
-    // Set up data directory
-    const mainStore = useMainStore();
-    const { dataDirectory } = storeToRefs(mainStore);
-    set(dataDirectory, TEST_DATA_DIR);
-
-    // Wait for database to become ready
-    await until(isReady).toBe(true);
-
-    // Clear the table before each test
-    await db().missingMappings.clear();
-  });
-});
-
-afterEach(() => {
-  scope.stop();
-});
-
-function createMissingMapping(data: Pick<AddMissingMapping, 'location' | 'identifier'>): AddMissingMapping {
-  return {
-    details: 'test',
-    name: data.location ? `${data.location} 1` : 'test',
-    ...data,
-  };
-}
-
-function getAssets(length = 10): string[] {
-  const digits = length.toString().length;
-  return Array.from({ length }, (_, i) => {
-    const number = (i + 1).toString().padStart(digits, '0');
-    return `ID_${number}`;
-  });
-}
-
 describe('useMissingMappingsDB', () => {
+  const TEST_USER = 'test-user-mappings';
+  const TEST_DATA_DIR = '/test/data/dir';
+
+  let scope: EffectScope;
+
+  beforeEach(async () => {
+    setActivePinia(createPinia());
+    scope = effectScope();
+
+    await scope.run(async () => {
+      const { db, isReady } = useDatabase();
+
+      // Set up user identifier
+      const user = useLoggedUserIdentifier();
+      set(user, TEST_USER);
+
+      // Set up data directory
+      const mainStore = useMainStore();
+      const { dataDirectory } = storeToRefs(mainStore);
+      set(dataDirectory, TEST_DATA_DIR);
+
+      // Wait for database to become ready
+      await until(isReady).toBe(true);
+
+      // Clear the table before each test
+      await db().missingMappings.clear();
+    });
+  });
+
+  afterEach(() => {
+    scope.stop();
+  });
+
+  function createMissingMapping(data: Pick<AddMissingMapping, 'location' | 'identifier'>): AddMissingMapping {
+    return {
+      details: 'test',
+      name: data.location ? `${data.location} 1` : 'test',
+      ...data,
+    };
+  }
+
+  function getAssets(length = 10): string[] {
+    const digits = length.toString().length;
+    return Array.from({ length }, (_, i) => {
+      const number = (i + 1).toString().padStart(digits, '0');
+      return `ID_${number}`;
+    });
+  }
+
   it('should insert a new mapping into the database', async () => {
     const { put } = useMissingMappingsDB();
     const { db } = useDatabase();
@@ -100,7 +100,7 @@ describe('useMissingMappingsDB', () => {
 
     const { data, found, total } = await getData(requestPayload);
 
-    expect(data.length).toBe(2);
+    expect(data).toHaveLength(2);
     expect(found).toBe(3);
     expect(total).toBe(3);
     expect(data[0].location).toBe('location1');
@@ -131,7 +131,7 @@ describe('useMissingMappingsDB', () => {
     };
 
     const { data, found, total } = await getData(requestPayload);
-    expect(data.length).toBe(10);
+    expect(data).toHaveLength(10);
     expect(found).toBe(30);
     expect(total).toBe(30);
 
@@ -169,7 +169,7 @@ describe('useMissingMappingsDB', () => {
 
       const { data, found, total } = await getData(requestPayload);
 
-      expect(data.length).toBe(10);
+      expect(data).toHaveLength(10);
       expect(found).toBe(20);
       expect(total).toBe(20);
 
@@ -192,7 +192,7 @@ describe('useMissingMappingsDB', () => {
 
     const { data, found, total } = await getData(requestPayload);
 
-    expect(data.length).toBe(3);
+    expect(data).toHaveLength(3);
     expect(found).toBe(3);
     expect(total).toBe(3);
     expect(data.map(m => m.location)).toEqual(order === 'desc' ? [...locations].reverse() : locations);

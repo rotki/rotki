@@ -1,6 +1,6 @@
 import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useUsersApi } from './users';
 
@@ -13,7 +13,7 @@ describe('composables/api/session/users', () => {
   });
 
   describe('getUserProfiles', () => {
-    it('returns list of user profile names', async () => {
+    it('should return list of user profile names', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/users`, () =>
           HttpResponse.json({
@@ -34,7 +34,7 @@ describe('composables/api/session/users', () => {
   });
 
   describe('checkIfLogged', () => {
-    it('returns true when user is logged in', async () => {
+    it('should return true when user is logged in', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/users`, () =>
           HttpResponse.json({
@@ -52,7 +52,7 @@ describe('composables/api/session/users', () => {
       expect(result).toBe(true);
     });
 
-    it('returns false when user is logged out', async () => {
+    it('should return false when user is logged out', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/users`, () =>
           HttpResponse.json({
@@ -71,7 +71,7 @@ describe('composables/api/session/users', () => {
   });
 
   describe('loggedUsers', () => {
-    it('returns only logged in users', async () => {
+    it('should return only logged in users', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/users`, () =>
           HttpResponse.json({
@@ -91,7 +91,7 @@ describe('composables/api/session/users', () => {
       expect(result).toEqual(['user1', 'user3']);
     });
 
-    it('returns empty array when no users are logged in', async () => {
+    it('should return empty array when no users are logged in', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/users`, () =>
           HttpResponse.json({
@@ -111,12 +111,12 @@ describe('composables/api/session/users', () => {
   });
 
   describe('createAccount', () => {
-    it('sends PUT request with snake_case payload for basic account creation', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with snake_case payload for basic account creation', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/users`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 123,
@@ -150,12 +150,12 @@ describe('composables/api/session/users', () => {
       });
     });
 
-    it('sends PUT request with premium setup when provided', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with premium setup when provided', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/users`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 456,
@@ -199,14 +199,14 @@ describe('composables/api/session/users', () => {
   });
 
   describe('login', () => {
-    it('sends POST request with snake_case credentials', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with snake_case credentials', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.post(`${backendUrl}/api/1/users/:username`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 789,
@@ -236,12 +236,12 @@ describe('composables/api/session/users', () => {
       });
     });
 
-    it('sends POST request with minimal credentials', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with minimal credentials', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/users/:username`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 101,
@@ -268,13 +268,13 @@ describe('composables/api/session/users', () => {
   });
 
   describe('colibriLogin', () => {
-    it('sends POST request to colibri API with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request to colibri API with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       // Note: colibri endpoints use baseURL override, so no /api/1 prefix
       server.use(
         http.post(`${colibriUrl}/user`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -297,8 +297,8 @@ describe('composables/api/session/users', () => {
   });
 
   describe('logout', () => {
-    it('sends PATCH request with logout action', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request with logout action', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       // Note: colibri logout uses baseURL override, so no /api/1 prefix
@@ -310,7 +310,7 @@ describe('composables/api/session/users', () => {
           })),
         http.patch(`${backendUrl}/api/1/users/:username`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -328,7 +328,7 @@ describe('composables/api/session/users', () => {
       });
     });
 
-    it('returns true when logout returns 409 conflict', async () => {
+    it('should return true when logout returns 409 conflict', async () => {
       // Note: colibri logout uses baseURL override, so no /api/1 prefix
       server.use(
         http.post(`${colibriUrl}/user/logout`, () =>
@@ -351,14 +351,14 @@ describe('composables/api/session/users', () => {
   });
 
   describe('changeUserPassword', () => {
-    it('sends PATCH request with password change payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request with password change payload', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.patch(`${backendUrl}/api/1/users/:username/password`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -378,7 +378,7 @@ describe('composables/api/session/users', () => {
       });
     });
 
-    it('throws error on authentication failure', async () => {
+    it('should throw error on authentication failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/users/:username/password`, () =>
           HttpResponse.json({

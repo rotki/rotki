@@ -101,132 +101,130 @@ describe('store/history/query-status/tx-query-status', () => {
       });
     });
 
-    describe('evm transaction status', () => {
-      it('should set originalPeriodEnd from period[1] on STARTED status', () => {
-        const store = useTxQueryStatusStore();
+    it('should set originalPeriodEnd from period[1] on STARTED status', () => {
+      const store = useTxQueryStatusStore();
 
-        store.setUnifiedTxQueryStatus({
-          address: '0x123',
-          chain: 'ETH',
-          period: [0, 2000],
-          status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
-          subtype: 'evm',
-        });
-
-        const status = get(store.queryStatus)['0x123eth'];
-        expect(hasPeriodsFields(status) && status.originalPeriodEnd).toBe(2000);
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 2000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
+        subtype: 'evm',
       });
 
-      it('should preserve originalPeriodEnd on subsequent updates', () => {
-        const store = useTxQueryStatusStore();
+      const status = get(store.queryStatus)['0x123eth'];
+      expect(hasPeriodsFields(status) && status.originalPeriodEnd).toBe(2000);
+    });
 
-        // First: STARTED with period end
-        store.setUnifiedTxQueryStatus({
-          address: '0x123',
-          chain: 'ETH',
-          period: [0, 2000],
-          status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
-          subtype: 'evm',
-        });
+    it('should preserve originalPeriodEnd on subsequent updates', () => {
+      const store = useTxQueryStatusStore();
 
-        // Update: Status changes but originalPeriodEnd preserved
-        store.setUnifiedTxQueryStatus({
-          address: '0x123',
-          chain: 'ETH',
-          period: [0, 1500],
-          status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
-          subtype: 'evm',
-        });
-
-        const status = get(store.queryStatus)['0x123eth'];
-        expect(hasPeriodsFields(status) && status.originalPeriodEnd).toBe(2000);
-        expect(hasPeriodsFields(status) && status.period).toEqual([0, 1500]);
+      // First: STARTED with period end
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 2000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
+        subtype: 'evm',
       });
 
-      it('should NOT set originalPeriodStart from STARTED status period[1]', () => {
-        const store = useTxQueryStatusStore();
-
-        // STARTED status should only set originalPeriodEnd, not originalPeriodStart
-        // This is the fix for the 100% progress bug
-        store.setUnifiedTxQueryStatus({
-          address: '0x123',
-          chain: 'ETH',
-          period: [0, 2000],
-          status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
-          subtype: 'evm',
-        });
-
-        const status = get(store.queryStatus)['0x123eth'];
-        // originalPeriodStart should NOT be set from STARTED status
-        expect(hasPeriodsFields(status) && status.originalPeriodStart).toBeUndefined();
+      // Update: Status changes but originalPeriodEnd preserved
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1500],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
       });
 
-      it('should set originalPeriodStart from first QUERYING status with non-zero period[1]', () => {
-        const store = useTxQueryStatusStore();
+      const status = get(store.queryStatus)['0x123eth'];
+      expect(hasPeriodsFields(status) && status.originalPeriodEnd).toBe(2000);
+      expect(hasPeriodsFields(status) && status.period).toEqual([0, 1500]);
+    });
 
-        // STARTED status - should NOT set originalPeriodStart
-        store.setUnifiedTxQueryStatus({
-          address: '0x123',
-          chain: 'ETH',
-          period: [0, 2000],
-          status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
-          subtype: 'evm',
-        });
+    it('should NOT set originalPeriodStart from STARTED status period[1]', () => {
+      const store = useTxQueryStatusStore();
 
-        // First QUERYING status - should set originalPeriodStart
-        store.setUnifiedTxQueryStatus({
-          address: '0x123',
-          chain: 'ETH',
-          period: [0, 1800],
-          status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
-          subtype: 'evm',
-        });
-
-        const status = get(store.queryStatus)['0x123eth'];
-        expect(hasPeriodsFields(status) && status.originalPeriodStart).toBe(1800);
-        expect(hasPeriodsFields(status) && status.originalPeriodEnd).toBe(2000);
+      // STARTED status should only set originalPeriodEnd, not originalPeriodStart
+      // This is the fix for the 100% progress bug
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 2000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
+        subtype: 'evm',
       });
 
-      it('should use period[0] as originalPeriodStart when non-zero', () => {
-        const store = useTxQueryStatusStore();
+      const status = get(store.queryStatus)['0x123eth'];
+      // originalPeriodStart should NOT be set from STARTED status
+      expect(hasPeriodsFields(status) && status.originalPeriodStart).toBeUndefined();
+    });
 
-        store.setUnifiedTxQueryStatus({
-          address: '0x123',
-          chain: 'ETH',
-          period: [500, 2000],
-          status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
-          subtype: 'evm',
-        });
+    it('should set originalPeriodStart from first QUERYING status with non-zero period[1]', () => {
+      const store = useTxQueryStatusStore();
 
-        const status = get(store.queryStatus)['0x123eth'];
-        expect(hasPeriodsFields(status) && status.originalPeriodStart).toBe(500);
+      // STARTED status - should NOT set originalPeriodStart
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 2000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
+        subtype: 'evm',
       });
 
-      it('should preserve originalPeriodStart on subsequent updates', () => {
-        const store = useTxQueryStatusStore();
-
-        // First update sets originalPeriodStart
-        store.setUnifiedTxQueryStatus({
-          address: '0x123',
-          chain: 'ETH',
-          period: [0, 1800],
-          status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
-          subtype: 'evm',
-        });
-
-        // Subsequent update should preserve originalPeriodStart
-        store.setUnifiedTxQueryStatus({
-          address: '0x123',
-          chain: 'ETH',
-          period: [0, 1500],
-          status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
-          subtype: 'evm',
-        });
-
-        const status = get(store.queryStatus)['0x123eth'];
-        expect(hasPeriodsFields(status) && status.originalPeriodStart).toBe(1800);
-        expect(hasPeriodsFields(status) && status.period).toEqual([0, 1500]);
+      // First QUERYING status - should set originalPeriodStart
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1800],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
       });
+
+      const status = get(store.queryStatus)['0x123eth'];
+      expect(hasPeriodsFields(status) && status.originalPeriodStart).toBe(1800);
+      expect(hasPeriodsFields(status) && status.originalPeriodEnd).toBe(2000);
+    });
+
+    it('should use period[0] as originalPeriodStart when non-zero', () => {
+      const store = useTxQueryStatusStore();
+
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [500, 2000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
+      });
+
+      const status = get(store.queryStatus)['0x123eth'];
+      expect(hasPeriodsFields(status) && status.originalPeriodStart).toBe(500);
+    });
+
+    it('should preserve originalPeriodStart on subsequent updates', () => {
+      const store = useTxQueryStatusStore();
+
+      // First update sets originalPeriodStart
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1800],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
+      });
+
+      // Subsequent update should preserve originalPeriodStart
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1500],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
+      });
+
+      const status = get(store.queryStatus)['0x123eth'];
+      expect(hasPeriodsFields(status) && status.originalPeriodStart).toBe(1800);
+      expect(hasPeriodsFields(status) && status.period).toEqual([0, 1500]);
     });
 
     it('should normalize chain to lowercase', () => {
@@ -260,9 +258,7 @@ describe('store/history/query-status/tx-query-status', () => {
         subtype: 'evmlike',
       });
       expect(hasPeriodsFields(status)).toBe(true);
-      if (hasPeriodsFields(status)) {
-        expect(status.originalPeriodEnd).toBe(1000);
-      }
+      expect(status).toHaveProperty('originalPeriodEnd', 1000);
     });
 
     it('should set finished status for evmlike chains', () => {
@@ -281,15 +277,13 @@ describe('store/history/query-status/tx-query-status', () => {
       store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'started');
       const startedStatus = get(store.queryStatus)['0x123scroll'];
       expect(hasPeriodsFields(startedStatus)).toBe(true);
-      const originalEnd = hasPeriodsFields(startedStatus) ? startedStatus.originalPeriodEnd : undefined;
+      expect(startedStatus).toHaveProperty('originalPeriodEnd', 1000);
 
       store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'finished');
       const finishedStatus = get(store.queryStatus)['0x123scroll'];
 
       expect(hasPeriodsFields(finishedStatus)).toBe(true);
-      if (hasPeriodsFields(finishedStatus)) {
-        expect(finishedStatus.originalPeriodEnd).toBe(originalEnd);
-      }
+      expect(finishedStatus).toHaveProperty('originalPeriodEnd', 1000);
     });
   });
 

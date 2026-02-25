@@ -11,7 +11,7 @@ describe('modules/dashboard/liquidity-pools/use-pool-api', () => {
   });
 
   describe('getUniswapV2Balances', () => {
-    it('fetches uniswap v2 balances as async task', async () => {
+    it('should fetch uniswap v2 balances as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -34,7 +34,7 @@ describe('modules/dashboard/liquidity-pools/use-pool-api', () => {
       expect(result.taskId).toBe(1);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/eth/modules/uniswap/v2/balances`, () =>
           HttpResponse.json({
@@ -52,7 +52,7 @@ describe('modules/dashboard/liquidity-pools/use-pool-api', () => {
   });
 
   describe('getSushiswapBalances', () => {
-    it('fetches sushiswap balances as async task', async () => {
+    it('should fetch sushiswap balances as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -75,7 +75,7 @@ describe('modules/dashboard/liquidity-pools/use-pool-api', () => {
       expect(result.taskId).toBe(2);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/eth/modules/sushiswap/balances`, () =>
           HttpResponse.json({

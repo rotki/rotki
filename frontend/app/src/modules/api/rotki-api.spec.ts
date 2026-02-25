@@ -31,16 +31,16 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('constructor and setup', () => {
-    it('initializes with default API URLs', () => {
+    it('should initialize with default API URLs', () => {
       expect(api.serverUrl).toBe(defaultApiUrls.coreApiUrl);
       expect(api.baseURL).toBe(`${defaultApiUrls.coreApiUrl}/api/1/`);
     });
 
-    it('returns true for defaultBackend when using default URL', () => {
+    it('should return true for defaultBackend when using default URL', () => {
       expect(api.defaultBackend).toBe(true);
     });
 
-    it('configures custom server URL via setup', () => {
+    it('should configure custom server URL via setup', () => {
       const customUrl = 'http://custom-server:8080';
       api.setup(customUrl);
 
@@ -51,30 +51,30 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('buildUrl', () => {
-    it('builds a URL without query parameters', () => {
+    it('should build a URL without query parameters', () => {
       const url = api.buildUrl('assets');
       expect(url).toBe(`${api.baseURL}assets`);
     });
 
-    it('builds a URL with query parameters', () => {
+    it('should build a URL with query parameters', () => {
       const url = api.buildUrl('assets', { limit: 10, offset: 0 });
       expect(url).toContain('limit=10');
       expect(url).toContain('offset=0');
     });
 
-    it('transforms query keys to snake_case', () => {
+    it('should transform query keys to snake_case', () => {
       const url = api.buildUrl('assets', { assetType: 'crypto' });
       expect(url).toContain('asset_type=crypto');
     });
 
-    it('skips null and undefined query values', () => {
+    it('should skip null and undefined query values', () => {
       const url = api.buildUrl('assets', { limit: 10, filter: null, search: undefined });
       expect(url).toContain('limit=10');
       expect(url).not.toContain('filter');
       expect(url).not.toContain('search');
     });
 
-    it('handles relative base URL by using window.location.origin', () => {
+    it('should handle relative base URL by using window.location.origin', () => {
       const relativeApi = new RotkiApi();
       // Simulate a relative base URL (e.g., when VITE_PUBLIC_PATH is set)
       relativeApi.setup('/rotki');
@@ -85,7 +85,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('fetch - success cases', () => {
-    it('makes a successful GET request and unwraps ActionResult', async () => {
+    it('should make a successful GET request and unwraps ActionResult', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -99,7 +99,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toEqual({ id: 1, name: 'Test' });
     });
 
-    it('makes a successful POST request with body transformation', async () => {
+    it('should make a successful POST request with body transformation', async () => {
       let capturedBody: unknown;
 
       server.use(
@@ -117,7 +117,7 @@ describe('modules/api/rotki-api', () => {
       expect(capturedBody).toEqual({ user_name: 'test', user_age: 25 });
     });
 
-    it('makes a successful PUT request', async () => {
+    it('should make a successful PUT request', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -131,7 +131,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toEqual({ updated: true });
     });
 
-    it('makes a successful PATCH request', async () => {
+    it('should make a successful PATCH request', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -145,7 +145,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toEqual({ patched: true });
     });
 
-    it('makes a successful DELETE request', async () => {
+    it('should make a successful DELETE request', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -159,7 +159,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toBe(true);
     });
 
-    it('handles falsy result value 0 correctly', async () => {
+    it('should handle falsy result value 0 correctly', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -172,7 +172,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toBe(0);
     });
 
-    it('handles falsy result value false correctly (no message)', async () => {
+    it('should handle falsy result value false correctly (no message)', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -185,7 +185,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toBe(false);
     });
 
-    it('handles falsy result value empty string correctly (no message)', async () => {
+    it('should handle falsy result value empty string correctly (no message)', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -200,7 +200,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('fetch - transformation options', () => {
-    it('skips camelCase transformation when skipCamelCase is true', async () => {
+    it('should skip camelCase transformation when skipCamelCase is true', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -214,7 +214,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toEqual({ user_name: 'test', created_at: '2024-01-01' });
     });
 
-    it('uses noRootCamelCase transformer when skipRootCamelCase is true', async () => {
+    it('should use noRootCamelCase transformer when skipRootCamelCase is true', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -228,7 +228,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toEqual({ _custom_key_: { nestedValue: 1 } });
     });
 
-    it('skips snake_case transformation when skipSnakeCase is true', async () => {
+    it('should skip snake_case transformation when skipSnakeCase is true', async () => {
       let capturedBody: unknown;
 
       server.use(
@@ -246,7 +246,7 @@ describe('modules/api/rotki-api', () => {
       expect(capturedBody).toEqual({ userName: 'test' });
     });
 
-    it('does not transform FormData body', async () => {
+    it('should not transform FormData body', async () => {
       let capturedContentType: string | null = null;
 
       server.use(
@@ -269,7 +269,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('fetch - skipResultUnwrap option', () => {
-    it('returns raw response when skipResultUnwrap is true', async () => {
+    it('should return raw response when skipResultUnwrap is true', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -290,7 +290,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('fetch - defaultValue option', () => {
-    it('returns defaultValue when result is null', async () => {
+    it('should return defaultValue when result is null', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -304,7 +304,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toEqual([]);
     });
 
-    it('returns defaultValue when result is undefined', async () => {
+    it('should return defaultValue when result is undefined', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -318,7 +318,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toBe(0);
     });
 
-    it('throws error when result is null and no defaultValue provided', async () => {
+    it('should throw error when result is null and no defaultValue provided', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -332,7 +332,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('fetch - treat409AsSuccess option', () => {
-    it('returns true when status is 409 and treat409AsSuccess is enabled', async () => {
+    it('should return true when status is 409 and treat409AsSuccess is enabled', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/logout`, () =>
           HttpResponse.json(
@@ -349,7 +349,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toBe(true);
     });
 
-    it('does not treat 409 as success when option is not set', async () => {
+    it('should not treat 409 as success when option is not set', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json(
@@ -366,7 +366,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('fetch - filterEmptyProperties option', () => {
-    it('filters empty properties from body when filterEmptyProperties is true', async () => {
+    it('should filter empty properties from body when filterEmptyProperties is true', async () => {
       let capturedBody: unknown;
 
       server.use(
@@ -389,7 +389,7 @@ describe('modules/api/rotki-api', () => {
       expect(capturedBody).toEqual({ name: 'test', valid: 'value' });
     });
 
-    it('filters empty properties from query when filterEmptyProperties is true', async () => {
+    it('should filter empty properties from query when filterEmptyProperties is true', async () => {
       let capturedUrl: string = '';
 
       server.use(
@@ -412,7 +412,7 @@ describe('modules/api/rotki-api', () => {
       expect(capturedUrl).not.toContain('list');
     });
 
-    it('respects alwaysPickKeys option', async () => {
+    it('should respect alwaysPickKeys option', async () => {
       let capturedBody: unknown;
 
       server.use(
@@ -437,7 +437,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('fetch - error handling', () => {
-    it('handles 401 unauthorized by calling auth failure action and redirecting', async () => {
+    it('should handle 401 unauthorized by calling auth failure action and redirecting', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json(
@@ -459,7 +459,7 @@ describe('modules/api/rotki-api', () => {
       expect(window.location.href).toBe('/#/');
     });
 
-    it('throws ApiValidationError for 400 status with message', async () => {
+    it('should throw ApiValidationError for 400 status with message', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json(
@@ -474,7 +474,7 @@ describe('modules/api/rotki-api', () => {
       await expect(api.get('test')).rejects.toThrow(ApiValidationError);
     });
 
-    it('throws error for status codes not in validateStatus', async () => {
+    it('should throw error for status codes not in validateStatus', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json(
@@ -486,7 +486,7 @@ describe('modules/api/rotki-api', () => {
       await expect(api.get('test')).rejects.toThrow();
     });
 
-    it('throws Error for conflict status with message', async () => {
+    it('should throw Error for conflict status with message', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json(
@@ -501,7 +501,7 @@ describe('modules/api/rotki-api', () => {
       await expect(api.get('test')).rejects.toThrow('Resource conflict');
     });
 
-    it('uses custom validStatuses array', async () => {
+    it('should use custom validStatuses array', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json(
@@ -520,7 +520,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toEqual({ data: 'test' });
     });
 
-    it('throws error when status is not in validStatuses', async () => {
+    it('should throw error when status is not in validStatuses', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json(
@@ -536,7 +536,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('fetch - query transformation', () => {
-    it('transforms query keys to snake_case', async () => {
+    it('should transform query keys to snake_case', async () => {
       let capturedUrl: string = '';
 
       server.use(
@@ -555,7 +555,7 @@ describe('modules/api/rotki-api', () => {
       expect(capturedUrl).toContain('page_size=10');
     });
 
-    it('joins array query values with commas (not URL-encoded)', async () => {
+    it('should join array query values with commas (not URL-encoded)', async () => {
       let capturedUrl: string = '';
 
       server.use(
@@ -575,7 +575,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('headStatus', () => {
-    it('returns status code for HEAD request', async () => {
+    it('should return status code for HEAD request', async () => {
       server.use(
         http.head(`${backendUrl}/api/1/resource`, () =>
           new HttpResponse(null, { status: HTTPStatus.OK })),
@@ -586,7 +586,7 @@ describe('modules/api/rotki-api', () => {
       expect(status).toBe(HTTPStatus.OK);
     });
 
-    it('transforms query parameters for HEAD request', async () => {
+    it('should transform query parameters for HEAD request', async () => {
       let capturedUrl: string = '';
 
       server.use(
@@ -601,7 +601,7 @@ describe('modules/api/rotki-api', () => {
       expect(capturedUrl).toContain('resource_id=123');
     });
 
-    it('handles 401 unauthorized in HEAD request by calling auth failure and throwing', async () => {
+    it('should handle 401 unauthorized in HEAD request by calling auth failure and throwing', async () => {
       server.use(
         http.head(`${backendUrl}/api/1/resource`, () =>
           new HttpResponse(null, { status: HTTPStatus.UNAUTHORIZED })),
@@ -617,7 +617,7 @@ describe('modules/api/rotki-api', () => {
       expect(window.location.href).toBe('/#/');
     });
 
-    it('throws error for invalid status in HEAD request', async () => {
+    it('should throw error for invalid status in HEAD request', async () => {
       server.use(
         http.head(`${backendUrl}/api/1/resource`, () =>
           new HttpResponse(null, { status: HTTPStatus.INTERNAL_SERVER_ERROR })),
@@ -628,7 +628,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('fetchBlob', () => {
-    it('returns blob for successful request', async () => {
+    it('should return blob for successful request', async () => {
       const blobContent = 'test file content';
 
       server.use(
@@ -648,7 +648,7 @@ describe('modules/api/rotki-api', () => {
       expect(text).toBe(blobContent);
     });
 
-    it('parses JSON error from blob response', async () => {
+    it('should parse JSON error from blob response', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/download`, () =>
           HttpResponse.json(
@@ -665,7 +665,7 @@ describe('modules/api/rotki-api', () => {
       await expect(api.fetchBlob('download')).rejects.toThrow('Download failed');
     });
 
-    it('throws TypeError for invalid JSON in error blob', async () => {
+    it('should throw TypeError for invalid JSON in error blob', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/download`, () =>
           new HttpResponse('not json', {
@@ -679,7 +679,7 @@ describe('modules/api/rotki-api', () => {
       await expect(api.fetchBlob('download')).rejects.toThrow(TypeError);
     });
 
-    it('handles 401 unauthorized in blob request by calling auth failure and throwing', async () => {
+    it('should handle 401 unauthorized in blob request by calling auth failure and throwing', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/download`, () =>
           new HttpResponse('test', {
@@ -700,7 +700,7 @@ describe('modules/api/rotki-api', () => {
       expect(window.location.href).toBe('/#/');
     });
 
-    it('transforms body in blob request', async () => {
+    it('should transform body in blob request', async () => {
       let capturedBody: unknown;
 
       server.use(
@@ -725,7 +725,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('cancel', () => {
-    it('allows new requests after cancel', async () => {
+    it('should allow new requests after cancel', async () => {
       api.cancel();
 
       server.use(
@@ -743,7 +743,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('response transformation - camelCase', () => {
-    it('transforms snake_case response keys to camelCase', async () => {
+    it('should transform snake_case response keys to camelCase', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/user`, () =>
           HttpResponse.json({
@@ -784,7 +784,7 @@ describe('modules/api/rotki-api', () => {
       });
     });
 
-    it('transforms nested arrays correctly', async () => {
+    it('should transform nested arrays correctly', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/items`, () =>
           HttpResponse.json({
@@ -806,7 +806,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('error response with falsy result and message', () => {
-    it('throws error when result is false with a message', async () => {
+    it('should throw error when result is false with a message', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -818,7 +818,7 @@ describe('modules/api/rotki-api', () => {
       await expect(api.get('test')).rejects.toThrow('Operation failed');
     });
 
-    it('throws error when result is empty string with a message', async () => {
+    it('should throw error when result is empty string with a message', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -832,7 +832,7 @@ describe('modules/api/rotki-api', () => {
   });
 
   describe('fetch - retry option', () => {
-    it('does not retry by default', async () => {
+    it('should not retry by default', async () => {
       let callCount = 0;
 
       server.use(
@@ -850,7 +850,7 @@ describe('modules/api/rotki-api', () => {
       expect(callCount).toBe(1);
     });
 
-    it('accepts retry option with boolean true', async () => {
+    it('should accept retry option with boolean true', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -865,7 +865,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toEqual({ success: true });
     });
 
-    it('accepts retry option with custom configuration', async () => {
+    it('should accept retry option with custom configuration', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () =>
           HttpResponse.json({
@@ -882,7 +882,7 @@ describe('modules/api/rotki-api', () => {
       expect(result).toEqual({ success: true });
     });
 
-    it('throws error when request fails without retry', async () => {
+    it('should throw error when request fails without retry', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/test`, () => HttpResponse.error()),
       );

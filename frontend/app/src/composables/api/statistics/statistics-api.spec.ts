@@ -1,6 +1,6 @@
 import type { HistoricalAssetPricePayload } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useStatisticsApi } from './statistics-api';
 
@@ -12,7 +12,7 @@ describe('composables/api/statistics/statistics-api', () => {
   });
 
   describe('queryNetValueData', () => {
-    it('fetches net value data with include_nfts param', async () => {
+    it('should fetch net value data with include_nfts param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       const mockNetValue = {
@@ -38,7 +38,7 @@ describe('composables/api/statistics/statistics-api', () => {
       expect(result.times).toEqual([1700000000, 1700100000]);
     });
 
-    it('fetches net value data without NFTs', async () => {
+    it('should fetch net value data without NFTs', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -63,8 +63,8 @@ describe('composables/api/statistics/statistics-api', () => {
   });
 
   describe('queryTimedBalancesData', () => {
-    it('sends POST request with snake_case payload for asset', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with snake_case payload for asset', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       // TimedBalances is an array of TimedBalance objects
       const mockBalances = [
@@ -73,7 +73,7 @@ describe('composables/api/statistics/statistics-api', () => {
 
       server.use(
         http.post(`${backendUrl}/api/1/statistics/balance`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: mockBalances,
             message: '',
@@ -92,12 +92,12 @@ describe('composables/api/statistics/statistics-api', () => {
       expect(result).toHaveLength(1);
     });
 
-    it('sends POST request with collection_id when provided', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with collection_id when provided', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/statistics/balance`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: [],
             message: '',
@@ -119,8 +119,8 @@ describe('composables/api/statistics/statistics-api', () => {
   });
 
   describe('queryTimedHistoricalBalancesData', () => {
-    it('sends POST request to historical asset balances endpoint', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request to historical asset balances endpoint', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       // TimedAssetHistoricalBalances has times and values arrays
@@ -132,7 +132,7 @@ describe('composables/api/statistics/statistics-api', () => {
       server.use(
         http.post(`${backendUrl}/api/1/balances/historical/asset`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: mockHistoricalBalances,
             message: '',
@@ -151,12 +151,12 @@ describe('composables/api/statistics/statistics-api', () => {
       });
     });
 
-    it('uses collection_id instead of asset when provided', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should use collection_id instead of asset when provided', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/balances/historical/asset`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               times: [],
@@ -180,7 +180,7 @@ describe('composables/api/statistics/statistics-api', () => {
   });
 
   describe('queryLatestLocationValueDistribution', () => {
-    it('fetches location distribution with correct param', async () => {
+    it('should fetch location distribution with correct param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       // LocationData is an array of LocationDataItem objects
@@ -210,7 +210,7 @@ describe('composables/api/statistics/statistics-api', () => {
   });
 
   describe('queryLatestAssetValueDistribution', () => {
-    it('fetches asset distribution with correct param', async () => {
+    it('should fetch asset distribution with correct param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       // TimedAssetBalances is an array of TimedAssetBalance objects
@@ -243,7 +243,7 @@ describe('composables/api/statistics/statistics-api', () => {
   });
 
   describe('queryStatisticsRenderer', () => {
-    it('fetches statistics renderer string', async () => {
+    it('should fetch statistics renderer string', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/statistics/renderer`, () =>
           HttpResponse.json({
@@ -258,7 +258,7 @@ describe('composables/api/statistics/statistics-api', () => {
       expect(result).toBe('echarts');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/statistics/renderer`, () =>
           HttpResponse.json({
@@ -276,12 +276,12 @@ describe('composables/api/statistics/statistics-api', () => {
   });
 
   describe('queryHistoricalAssetPrices', () => {
-    it('sends POST request with snake_case payload and async_query', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with snake_case payload and async_query', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/balances/historical/asset/prices`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 123,

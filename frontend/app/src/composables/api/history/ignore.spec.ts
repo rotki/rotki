@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
 
@@ -11,12 +11,12 @@ describe('composables/api/history/ignore', () => {
   });
 
   describe('ignoreActions', () => {
-    it('sends PUT request with correct payload to ignore actions', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should send PUT request with correct payload to ignore actions', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/actions/ignored`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -37,12 +37,12 @@ describe('composables/api/history/ignore', () => {
       });
     });
 
-    it('handles single item in data array', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should handle single item in data array', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/actions/ignored`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -65,12 +65,12 @@ describe('composables/api/history/ignore', () => {
   });
 
   describe('unignoreActions', () => {
-    it('sends DELETE request with correct payload to unignore actions', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should send DELETE request with correct payload to unignore actions', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/actions/ignored`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -91,12 +91,12 @@ describe('composables/api/history/ignore', () => {
       });
     });
 
-    it('handles single item in data array', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should handle single item in data array', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/actions/ignored`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',

@@ -6,7 +6,7 @@ import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test
 import dayjs from 'dayjs';
 import flushPromises from 'flush-promises';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
@@ -37,9 +37,9 @@ vi.mock('@/composables/api/assets/prices', () => ({
 }));
 
 describe('forms/AssetMovementEventForm.vue', () => {
-  let addHistoryEventMock: ReturnType<typeof vi.fn>;
-  let editHistoryEventMock: ReturnType<typeof vi.fn>;
-  let addHistoricalPriceMock: ReturnType<typeof vi.fn>;
+  let addHistoryEventMock: ReturnType<typeof vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>>;
+  let editHistoryEventMock: ReturnType<typeof vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>>;
+  let addHistoricalPriceMock: ReturnType<typeof vi.fn<ReturnType<typeof useAssetPricesApi>['addHistoricalPrice']>>;
   let wrapper: VueWrapper<InstanceType<typeof AssetMovementEventForm>>;
   let pinia: Pinia;
 
@@ -101,27 +101,40 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    addHistoryEventMock = vi.fn();
-    editHistoryEventMock = vi.fn();
-    addHistoricalPriceMock = vi.fn();
+    addHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>();
+    editHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>();
+    addHistoricalPriceMock = vi.fn<ReturnType<typeof useAssetPricesApi>['addHistoricalPrice']>();
 
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(usePriceTaskManager().getHistoricPrice).mockResolvedValue(One);
 
-    (useLocations as Mock).mockReturnValue({
+    vi.mocked(useLocations).mockReturnValue({
+      exchangeName: vi.fn<ReturnType<typeof useLocations>['exchangeName']>(),
+      getLocationData: vi.fn<ReturnType<typeof useLocations>['getLocationData']>(),
+      locationData: vi.fn<ReturnType<typeof useLocations>['locationData']>(),
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'kraken',
         name: 'Kraken',
       }]),
     });
 
-    (useHistoryEvents as Mock).mockReturnValue({
+    vi.mocked(useHistoryEvents).mockReturnValue({
       addHistoryEvent: addHistoryEventMock,
+      deleteHistoryEvent: vi.fn<ReturnType<typeof useHistoryEvents>['deleteHistoryEvent']>(),
       editHistoryEvent: editHistoryEventMock,
+      fetchHistoryEvents: vi.fn<ReturnType<typeof useHistoryEvents>['fetchHistoryEvents']>(),
+      getEarliestEventTimestamp: vi.fn<ReturnType<typeof useHistoryEvents>['getEarliestEventTimestamp']>(),
     });
 
-    (useAssetPricesApi as Mock).mockReturnValue({
+    vi.mocked(useAssetPricesApi).mockReturnValue({
       addHistoricalPrice: addHistoricalPriceMock,
+      addLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['addLatestPrice']>(),
+      deleteHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteHistoricalPrice']>(),
+      deleteLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteLatestPrice']>(),
+      editHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['editHistoricalPrice']>(),
+      fetchHistoricalPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchHistoricalPrices']>(),
+      fetchLatestPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchLatestPrices']>(),
+      fetchNftsPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchNftsPrices']>(),
     });
   });
 
@@ -149,13 +162,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     expect(wrapper.find<HTMLInputElement>('[data-cy=locationLabel] .input-value').element.value).toBe('');
   });
 
-  it.each([{
-    fee: null,
-    feeAsset: null,
-  }, {
-    fee: '0.00001',
-    feeAsset: 'BTC',
-  }])('should call addHistoryEvent when adding a new event with fee $feeAsset', async ({ fee, feeAsset }) => {
+  it('should call addHistoryEvent when adding a new event without fee', async () => {
     wrapper = createWrapper();
 
     const now = dayjs();
@@ -169,12 +176,6 @@ describe('forms/AssetMovementEventForm.vue', () => {
     await wrapper.find('[data-cy=amount] input').setValue('2.5');
     await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue('Test deposit transaction');
     await wrapper.find('[data-cy=unique-id] input').setValue('1234567890');
-
-    if (fee && feeAsset) {
-      await wrapper.find('[data-cy=has-fee] input').setValue(true);
-      await wrapper.find('[data-cy=fee-amount] input').setValue(fee.toString());
-      await wrapper.find('[data-cy=fee-asset] input').setValue(feeAsset.toString());
-    }
 
     await vi.advanceTimersToNextTimerAsync();
 
@@ -190,15 +191,60 @@ describe('forms/AssetMovementEventForm.vue', () => {
       blockchain: '',
       entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
       eventSubtype: 'receive',
-      fee,
-      feeAsset,
+      fee: null,
+      feeAsset: null,
       groupIdentifier: 'TEST123',
       location: 'kraken',
       locationLabel: 'Kraken 1',
       timestamp: nowInMs,
       transactionId: '',
       uniqueId: '1234567890',
-      userNotes: fee ? ['Test deposit transaction', ''] : ['Test deposit transaction'],
+      userNotes: ['Test deposit transaction'],
+    });
+  });
+
+  it('should call addHistoryEvent when adding a new event with fee BTC', async () => {
+    wrapper = createWrapper();
+
+    const now = dayjs();
+    const nowInMs = now.valueOf();
+    await wrapper.find('[data-cy=datetime] input').setValue(dayjs(nowInMs).format('DD/MM/YYYY HH:mm:ss.SSS'));
+    await wrapper.find('[data-cy=groupIdentifier] input').setValue('TEST123');
+    await wrapper.find('[data-cy=eventSubtype] input').setValue('receive');
+    await wrapper.find('[data-cy=locationLabel] input').setValue('Kraken 1');
+    await wrapper.find('[data-cy=location] input').setValue('kraken');
+    await wrapper.find('[data-cy=asset] input').setValue('BTC');
+    await wrapper.find('[data-cy=amount] input').setValue('2.5');
+    await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue('Test deposit transaction');
+    await wrapper.find('[data-cy=unique-id] input').setValue('1234567890');
+
+    await wrapper.find('[data-cy=has-fee] input').setValue(true);
+    await wrapper.find('[data-cy=fee-amount] input').setValue('0.00001');
+    await wrapper.find('[data-cy=fee-asset] input').setValue('BTC');
+
+    await vi.advanceTimersToNextTimerAsync();
+
+    const saveMethod = wrapper.vm.save;
+
+    addHistoryEventMock.mockResolvedValueOnce({ success: true });
+
+    const saveResult = await saveMethod();
+    expect(saveResult).toBe(true);
+    expect(addHistoryEventMock).toHaveBeenCalledWith({
+      amount: bigNumberify('2.5'),
+      asset: 'BTC',
+      blockchain: '',
+      entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
+      eventSubtype: 'receive',
+      fee: '0.00001',
+      feeAsset: 'BTC',
+      groupIdentifier: 'TEST123',
+      location: 'kraken',
+      locationLabel: 'Kraken 1',
+      timestamp: nowInMs,
+      transactionId: '',
+      uniqueId: '1234567890',
+      userNotes: ['Test deposit transaction', ''],
     });
   });
 
@@ -213,7 +259,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
     expect(wrapper.find('[data-cy=asset] .details').exists()).toBe(true);
   });
 
-  it('it should update the fields when all editing an event', async () => {
+  it('should update the fields when all editing an event', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { eventsInGroup: [event], type: 'edit-group' } });
@@ -239,7 +285,7 @@ describe('forms/AssetMovementEventForm.vue', () => {
 
     // click save without changing anything
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    addHistoricalPriceMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce(true);
 
     await saveMethod();
     await nextTick();

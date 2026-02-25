@@ -11,7 +11,7 @@ describe('composables/api/history/index', () => {
   });
 
   describe('getProgress', () => {
-    it('fetches report progress', async () => {
+    it('should fetch report progress', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/status`, () =>
           HttpResponse.json({
@@ -30,7 +30,7 @@ describe('composables/api/history/index', () => {
       expect(result.totalProgress).toBe('100%');
     });
 
-    it('handles in-progress state', async () => {
+    it('should handle in-progress state', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/status`, () =>
           HttpResponse.json({
@@ -49,7 +49,7 @@ describe('composables/api/history/index', () => {
       expect(result.totalProgress).toBe('45%');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/status`, () =>
           HttpResponse.json({
@@ -67,7 +67,7 @@ describe('composables/api/history/index', () => {
   });
 
   describe('fetchAssociatedLocations', () => {
-    it('fetches associated locations', async () => {
+    it('should fetch associated locations', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/associated`, () =>
           HttpResponse.json({
@@ -82,7 +82,7 @@ describe('composables/api/history/index', () => {
       expect(result).toEqual(['binance', 'kraken', 'blockchain']);
     });
 
-    it('returns empty array when no locations', async () => {
+    it('should return empty array when no locations', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/associated`, () =>
           HttpResponse.json({
@@ -97,7 +97,7 @@ describe('composables/api/history/index', () => {
       expect(result).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/associated`, () =>
           HttpResponse.json({
@@ -115,7 +115,7 @@ describe('composables/api/history/index', () => {
   });
 
   describe('fetchAllLocations', () => {
-    it('fetches all locations with exchange details', async () => {
+    it('should fetch all locations with exchange details', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/all`, () =>
           HttpResponse.json({
@@ -151,7 +151,7 @@ describe('composables/api/history/index', () => {
       expect(result.locations.blockchain.isExchange).toBe(false);
     });
 
-    it('handles empty locations', async () => {
+    it('should handle empty locations', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/all`, () =>
           HttpResponse.json({
@@ -168,7 +168,7 @@ describe('composables/api/history/index', () => {
       expect(result.locations).toEqual({});
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/all`, () =>
           HttpResponse.json({
@@ -186,7 +186,7 @@ describe('composables/api/history/index', () => {
   });
 
   describe('fetchLocationLabels', () => {
-    it('fetches location labels and filters empty labels', async () => {
+    it('should fetch location labels and filters empty labels', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/labels`, () =>
           HttpResponse.json({
@@ -210,7 +210,7 @@ describe('composables/api/history/index', () => {
       expect(result[1].locationLabel).toBe('Main Kraken');
     });
 
-    it('returns empty array when no labels', async () => {
+    it('should return empty array when no labels', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/labels`, () =>
           HttpResponse.json({
@@ -225,7 +225,7 @@ describe('composables/api/history/index', () => {
       expect(result).toEqual([]);
     });
 
-    it('filters out all items with empty locationLabel', async () => {
+    it('should filter out all items with empty locationLabel', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/labels`, () =>
           HttpResponse.json({
@@ -243,7 +243,7 @@ describe('composables/api/history/index', () => {
       expect(result).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/locations/labels`, () =>
           HttpResponse.json({

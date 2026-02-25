@@ -31,7 +31,7 @@ vi.mock('@/modules/balances/blockchain/use-blockchain-account-data', async () =>
 
 describe('composables/filters/blockchain-account', () => {
   describe('useBlockchainAccountFilter', () => {
-    it('account matcher has strictMatching enabled', () => {
+    it('should have strictMatching enabled for account matcher', () => {
       const t = vi.fn().mockImplementation((key: string) => key);
       const { matchers } = useBlockchainAccountFilter(t, 'evm');
 
@@ -40,7 +40,7 @@ describe('composables/filters/blockchain-account', () => {
       expect('string' in accountMatcher! && accountMatcher.strictMatching).toBe(true);
     });
 
-    it('chain matcher does not have strictMatching enabled', () => {
+    it('should not have strictMatching enabled for chain matcher', () => {
       const t = vi.fn().mockImplementation((key: string) => key);
       const { matchers } = useBlockchainAccountFilter(t, 'evm');
 
@@ -51,11 +51,11 @@ describe('composables/filters/blockchain-account', () => {
   });
 
   describe('getAccountFilterParams', () => {
-    it('returns empty object for undefined value', () => {
+    it('should return empty object for undefined value', () => {
       expect(getAccountFilterParams(undefined)).toEqual({});
     });
 
-    it('extracts address and label from "label (address)" format', () => {
+    it('should extract address and label from "label (address)" format', () => {
       const address = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
       const label = 'vitalik.eth';
       const input = `${label} (${address})`;
@@ -66,7 +66,7 @@ describe('composables/filters/blockchain-account', () => {
       });
     });
 
-    it('handles label with special characters in "label (address)" format', () => {
+    it('should handle label with special characters in "label (address)" format', () => {
       const address = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
       const label = 'My Account #1 - Main';
       const input = `${label} (${address})`;
@@ -77,7 +77,7 @@ describe('composables/filters/blockchain-account', () => {
       });
     });
 
-    it('handles label with spaces in "label (address)" format', () => {
+    it('should handle label with spaces in "label (address)" format', () => {
       const address = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
       const label = 'spaced label';
       const input = `${label} (${address})`;
@@ -88,7 +88,7 @@ describe('composables/filters/blockchain-account', () => {
       });
     });
 
-    it('returns same value for both address and label when plain string', () => {
+    it('should return same value for both address and label when plain string', () => {
       const plainAddress = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
 
       expect(getAccountFilterParams(plainAddress)).toEqual({
@@ -97,7 +97,7 @@ describe('composables/filters/blockchain-account', () => {
       });
     });
 
-    it('returns same value for both address and label when plain label string', () => {
+    it('should return same value for both address and label when plain label string', () => {
       const plainLabel = 'my-account-label';
 
       expect(getAccountFilterParams(plainLabel)).toEqual({
@@ -106,11 +106,11 @@ describe('composables/filters/blockchain-account', () => {
       });
     });
 
-    it('handles empty string', () => {
+    it('should handle empty string', () => {
       expect(getAccountFilterParams('')).toEqual({});
     });
 
-    it('handles nested parentheses in label', () => {
+    it('should handle nested parentheses in label', () => {
       const address = '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045';
       const label = 'Account (Main)';
       const input = `${label} (${address})`;

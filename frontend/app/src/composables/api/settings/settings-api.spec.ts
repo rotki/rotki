@@ -94,7 +94,7 @@ describe('composables/api/settings/settings-api', () => {
   });
 
   describe('getSettings', () => {
-    it('sends GET request and transforms response from snake_case to camelCase', async () => {
+    it('should send GET request and transforms response from snake_case to camelCase', async () => {
       let capturedRequest: CapturedRequest | null = null;
 
       server.use(
@@ -122,7 +122,7 @@ describe('composables/api/settings/settings-api', () => {
       expect(result.accounting.includeCrypto2crypto).toBe(true);
     });
 
-    it('throws error when result is null', async () => {
+    it('should throw error when result is null', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/settings`, () =>
           HttpResponse.json({
@@ -138,7 +138,7 @@ describe('composables/api/settings/settings-api', () => {
   });
 
   describe('setSettings', () => {
-    it('sends PUT request with snake_case payload', async () => {
+    it('should send PUT request with snake_case payload', async () => {
       let capturedRequest: CapturedRequest | null = null;
       let capturedBody: unknown = null;
 
@@ -170,7 +170,7 @@ describe('composables/api/settings/settings-api', () => {
       });
     });
 
-    it('transforms response from snake_case to camelCase', async () => {
+    it('should transform response from snake_case to camelCase', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/settings`, () =>
           HttpResponse.json(createSettingsResponse({
@@ -186,7 +186,7 @@ describe('composables/api/settings/settings-api', () => {
       expect(result.general.uiFloatingPrecision).toBe(4);
     });
 
-    it('throws ApiValidationError on 400 response', async () => {
+    it('should throw ApiValidationError on 400 response', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/settings`, () =>
           HttpResponse.json({
@@ -202,7 +202,7 @@ describe('composables/api/settings/settings-api', () => {
         .toThrow(ApiValidationError);
     });
 
-    it('throws ApiValidationError with parsed validation errors', async () => {
+    it('should throw ApiValidationError with parsed validation errors', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/settings`, () =>
           HttpResponse.json({
@@ -219,13 +219,14 @@ describe('composables/api/settings/settings-api', () => {
       }
       catch (error) {
         expect(error).toBeInstanceOf(ApiValidationError);
-        const validationError = error as ApiValidationError;
+        if (!(error instanceof ApiValidationError))
+          throw new Error('Expected ApiValidationError');
         // Errors should be transformed to camelCase
-        expect(validationError.errors).toHaveProperty('uiFloatingPrecision');
+        expect(error.errors).toHaveProperty('uiFloatingPrecision');
       }
     });
 
-    it('throws generic Error on non-400 error response', async () => {
+    it('should throw generic Error on non-400 error response', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/settings`, () =>
           HttpResponse.json({
@@ -243,7 +244,7 @@ describe('composables/api/settings/settings-api', () => {
   });
 
   describe('getRawSettings', () => {
-    it('returns raw settings without UserSettingsModel transformation', async () => {
+    it('should return raw settings without UserSettingsModel transformation', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/settings`, () =>
           HttpResponse.json(createSettingsResponse())),
@@ -261,7 +262,7 @@ describe('composables/api/settings/settings-api', () => {
   });
 
   describe('backendSettings', () => {
-    it('sends GET request to configuration endpoint', async () => {
+    it('should send GET request to configuration endpoint', async () => {
       let capturedUrl: string | null = null;
 
       server.use(
@@ -279,7 +280,7 @@ describe('composables/api/settings/settings-api', () => {
       expect(result.loglevel.isDefault).toBe(true);
     });
 
-    it('transforms response correctly', async () => {
+    it('should transform response correctly', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/settings/configuration`, () =>
           HttpResponse.json(createBackendConfigResponse())),
@@ -297,7 +298,7 @@ describe('composables/api/settings/settings-api', () => {
   });
 
   describe('updateBackendConfiguration', () => {
-    it('sends PUT request with uppercase loglevel', async () => {
+    it('should send PUT request with uppercase loglevel', async () => {
       let capturedBody: unknown = null;
 
       server.use(
@@ -316,7 +317,7 @@ describe('composables/api/settings/settings-api', () => {
       });
     });
 
-    it('returns parsed BackendConfiguration', async () => {
+    it('should return parsed BackendConfiguration', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/settings/configuration`, () =>
           HttpResponse.json({

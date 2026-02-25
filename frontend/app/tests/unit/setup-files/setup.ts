@@ -1,9 +1,9 @@
 import type { DatabaseInfo } from '@/types/backup';
 import { mockT } from '@test/i18n';
-import { RuiAlertStub } from '@test/specs/stubs/RuiAlert';
-import { RuiAutoCompleteStub } from '@test/specs/stubs/RuiAutoComplete';
-import { RuiIconStub } from '@test/specs/stubs/RuiIcon';
-import { RuiTooltipStub } from '@test/specs/stubs/RuiTooltip';
+import { RuiAlertStub } from '@test/stubs/RuiAlert';
+import { RuiAutoCompleteStub } from '@test/stubs/RuiAutoComplete';
+import { RuiIconStub } from '@test/stubs/RuiIcon';
+import { RuiTooltipStub } from '@test/stubs/RuiTooltip';
 import { config } from '@vue/test-utils';
 import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { server } from './server';

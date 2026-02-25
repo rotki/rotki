@@ -28,7 +28,7 @@ describe('composables/use-filter-matchers', () => {
   }
 
   describe('usedKeys', () => {
-    it('returns keys from selection', () => {
+    it('should return keys from selection', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([]);
       const selection = ref<Suggestion[]>([
         createSuggestion('type', 'value1'),
@@ -41,7 +41,7 @@ describe('composables/use-filter-matchers', () => {
       expect(get(usedKeys)).toEqual(['type', 'status']);
     });
 
-    it('returns empty array for empty selection', () => {
+    it('should return empty array for empty selection', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([]);
       const selection = ref<Suggestion[]>([]);
       const search = ref<string>('');
@@ -53,7 +53,7 @@ describe('composables/use-filter-matchers', () => {
   });
 
   describe('filteredMatchers', () => {
-    it('returns all matchers when search is empty', () => {
+    it('should return all matchers when search is empty', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([
         createStringMatcher('type'),
         createStringMatcher('status'),
@@ -66,7 +66,7 @@ describe('composables/use-filter-matchers', () => {
       expect(get(filteredMatchers)).toHaveLength(2);
     });
 
-    it('excludes used non-multiple matchers', () => {
+    it('should exclude used non-multiple matchers', () => {
       const nonMultipleMatcher: StringSuggestionMatcher<string, string> = {
         description: 'filter by single',
         key: 'single',
@@ -91,7 +91,7 @@ describe('composables/use-filter-matchers', () => {
       expect(get(filteredMatchers)[0].key).toBe('type');
     });
 
-    it('includes used multiple matchers', () => {
+    it('should include used multiple matchers', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([
         createStringMatcher('type'),
       ]);
@@ -105,7 +105,7 @@ describe('composables/use-filter-matchers', () => {
       expect(get(filteredMatchers)).toHaveLength(1);
     });
 
-    it('filters by key when search matches', () => {
+    it('should filter by key when search matches', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([
         createStringMatcher('type'),
         createStringMatcher('status'),
@@ -119,7 +119,7 @@ describe('composables/use-filter-matchers', () => {
       expect(get(filteredMatchers)[0].key).toBe('type');
     });
 
-    it('filters by description when search matches', () => {
+    it('should filter by description when search matches', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([
         createStringMatcher('foo'),
         createStringMatcher('bar'),

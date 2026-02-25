@@ -1,7 +1,7 @@
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 import { bigNumberify } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BalanceType } from '@/types/balances';
 import { useManualBalancesApi } from './manual';
@@ -14,7 +14,7 @@ describe('composables/api/balances/manual', () => {
   });
 
   describe('queryManualBalances', () => {
-    it('fetches manual balances with async_query param', async () => {
+    it('should fetch manual balances with async_query param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -37,7 +37,7 @@ describe('composables/api/balances/manual', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('includes value_threshold when provided', async () => {
+    it('should include value_threshold when provided', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -60,7 +60,7 @@ describe('composables/api/balances/manual', () => {
       expect(capturedParams!.get('value_threshold')).toBe('1000');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/balances/manual`, () =>
           HttpResponse.json({
@@ -78,12 +78,12 @@ describe('composables/api/balances/manual', () => {
   });
 
   describe('addManualBalances', () => {
-    it('sends PUT request with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/balances/manual`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 789,
@@ -123,12 +123,12 @@ describe('composables/api/balances/manual', () => {
       expect(result.taskId).toBe(789);
     });
 
-    it('filters out null tags due to nonEmptyProperties', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should filter out null tags due to nonEmptyProperties', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/balances/manual`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 100,
@@ -167,7 +167,7 @@ describe('composables/api/balances/manual', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/balances/manual`, () =>
           HttpResponse.json({
@@ -185,12 +185,12 @@ describe('composables/api/balances/manual', () => {
   });
 
   describe('editManualBalances', () => {
-    it('sends PATCH request with snake_case payload including identifier', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request with snake_case payload including identifier', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/balances/manual`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 200,
@@ -232,7 +232,7 @@ describe('composables/api/balances/manual', () => {
       expect(result.taskId).toBe(200);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/balances/manual`, () =>
           HttpResponse.json({
@@ -250,12 +250,12 @@ describe('composables/api/balances/manual', () => {
   });
 
   describe('deleteManualBalances', () => {
-    it('sends DELETE request with ids in body', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send DELETE request with ids in body', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/balances/manual`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               balances: [
@@ -288,7 +288,7 @@ describe('composables/api/balances/manual', () => {
       expect(result.balances[0].label).toBe('Remaining Balance');
     });
 
-    it('returns empty balances array after deleting all', async () => {
+    it('should return empty balances array after deleting all', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/balances/manual`, () =>
           HttpResponse.json({
@@ -305,7 +305,7 @@ describe('composables/api/balances/manual', () => {
       expect(result.balances).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/balances/manual`, () =>
           HttpResponse.json({

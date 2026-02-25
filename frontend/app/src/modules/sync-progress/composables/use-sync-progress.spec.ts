@@ -26,7 +26,7 @@ describe('useSyncProgress', () => {
   ): UnifiedTransactionStatusData => ({
     address,
     chain,
-    period: [0, 500] as [number, number],
+    period: [0, 500],
     status,
     subtype: 'evm',
   });

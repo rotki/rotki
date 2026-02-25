@@ -3,7 +3,7 @@ import { type AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, type ComputedRef, ref } from 'vue';
+import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { defaultGeneralSettings } from '@/data/factories';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useCurrencies } from '@/types/currencies';
@@ -61,8 +61,8 @@ vi.mock('@/composables/utils/useNumberScrambler', () => ({
 
 vi.mock('@/modules/prices/use-price-utils', () => ({
   usePriceUtils: (): Pick<ReturnType<typeof usePriceUtils>, 'useExchangeRate'> => ({
-    useExchangeRate: (currency: any): any => computed(() => {
-      const curr = get(currency);
+    useExchangeRate: (currency: MaybeRefOrGetter<string>): ComputedRef<BigNumber> => computed<BigNumber>(() => {
+      const curr = toValue(currency);
       return getExchangeRate(curr);
     }),
   }),
@@ -151,20 +151,15 @@ describe('useStatisticsStore', () => {
     it('should correctly handle when main currency appears in liabilities', async () => {
       // Update the mock for this specific test
       const module = await import('@/composables/balances/use-aggregated-balances');
+      // @ts-expect-error partial mock - only balances and liabilities are used by the store
       vi.mocked(module.useAggregatedBalances).mockImplementationOnce(() => ({
-        assetPriceInfo: vi.fn() as any,
-        assets: ref<string[]>([]) as any,
         balances: (): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => [
           createBalanceWithPrice('2', 'ETH', '2000'),
         ]),
-        balancesByLocation: ref<Record<string, BigNumber>>({}) as any,
         liabilities: (): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => [
           createBalanceWithPrice('5000', 'JPY', '0.01'),
           createBalanceWithPrice('1000', 'USD', '1'),
         ]),
-        useBlockchainBalances: vi.fn() as any,
-        useExchangeBalances: vi.fn() as any,
-        useLocationBreakdown: vi.fn() as any,
       }));
 
       // Set the currency to JPY before creating the store

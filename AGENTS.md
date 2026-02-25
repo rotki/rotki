@@ -113,7 +113,7 @@ cargo run -- --database ../data/global.db --port 4343
     - `composables/` - Vue composition API utilities
     - `store/` - Pinia state management
   - `electron/` - Electron main process code
-  - `tests/` - Test suites
+  - `tests/` - E2E test suites and unit test utilities (fixtures, mocks, setup)
 
 ### Key Architectural Patterns
 1. **API Communication**: Frontend communicates with backend via REST API (port 4242) and WebSockets (port 4333)
@@ -360,7 +360,9 @@ async function fetchData() {
   src/composables/accounts/use-account-import-export.ts
   src/composables/accounts/use-account-import-export.spec.ts
   ```
-- Component tests should follow existing patterns in `frontend/app/tests/` and `*.spec.ts`
+- **All unit tests are co-located** next to the source file they test (not in a separate `tests/` directory)
+- Test descriptions must follow the `it('should ...'` pattern
+- Component tests should follow existing patterns in co-located `*.spec.ts` files
 
 ### Contribution guide
 
@@ -633,8 +635,10 @@ When editing backend Python and tests, follow these preferences unless explicitl
 
 ### Frontend Testing
 - Vitest for unit tests with Vue Test Utils
-- Playwright for E2E testing
-- Component tests should follow existing patterns in `frontend/app/tests/` and `*.spec.ts`
+- **Unit tests are co-located**: `.spec.ts` files live next to the source file they test in `frontend/app/src/`
+- Test utilities (fixtures, mocks, setup) remain in `frontend/app/tests/unit/`
+- Playwright for E2E testing (tests in `frontend/app/tests/e2e-pw/`)
+- Test descriptions must follow the `it('should ...'` pattern
 
 ## Packaging
 ```bash

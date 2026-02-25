@@ -1,12 +1,13 @@
+import type { UseHistoryEventsSelectionModeReturn } from './use-selection-mode';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   type AssetMovementEvent,
   type EvmHistoryEvent,
   HistoryEventAccountingRuleStatus,
   type HistoryEventEntry,
 } from '@/types/history/events/schemas';
-
 import { useHistoryMatchedMovementItem } from './use-history-matched-movement-item';
 
 vi.mock('@/composables/info/chains', () => ({
@@ -23,7 +24,7 @@ vi.mock('@/composables/assets/retrieval', () => ({
 
 vi.mock('@/utils/history/events', () => ({
   isEventMissingAccountingRule: vi.fn((event: HistoryEventEntry) =>
-    (event as any).eventAccountingRuleStatus === HistoryEventAccountingRuleStatus.NOT_PROCESSED),
+    event.eventAccountingRuleStatus === HistoryEventAccountingRuleStatus.NOT_PROCESSED),
 }));
 
 type MockEventOverrides = Partial<EvmHistoryEvent | AssetMovementEvent> & {
@@ -60,13 +61,12 @@ function createMockEvent(
     };
   }
 
-  const assetMovementEvent: AssetMovementEvent & { eventAccountingRuleStatus: HistoryEventAccountingRuleStatus } = {
+  return {
     ...baseEvent,
+    ...overrides,
     entryType: HistoryEventEntryType.ASSET_MOVEMENT_EVENT,
-    extraData: null as AssetMovementEvent['extraData'],
-    ...overrides as Partial<AssetMovementEvent>,
-  };
-  return assetMovementEvent as HistoryEventEntry;
+    extraData: null,
+  } satisfies AssetMovementEvent;
 }
 
 function createMatchedMovementEvents(): HistoryEventEntry[] {
@@ -284,20 +284,37 @@ describe('useHistoryMatchedMovementItem', () => {
       selectedEventIds: number[];
     }
 
-    function createMockSelection(overrides: Partial<MockSelectionOptions> = {}): {
-      isSelectionMode: Ref<boolean>;
-      isSelectAllMatching: Ref<boolean>;
-      isEventSelected: (id: number) => boolean;
-      actions: { toggleEvent: ReturnType<typeof vi.fn>; toggleSwap: ReturnType<typeof vi.fn> };
-    } {
+    function createMockSelection(overrides: Partial<MockSelectionOptions> = {}): UseHistoryEventsSelectionModeReturn {
       const selectedIds = new Set(overrides.selectedEventIds ?? []);
+      const isSelectionMode = ref<boolean>(overrides.isSelectionMode ?? false);
+      const isSelectAllMatching = ref<boolean>(overrides.isSelectAllMatching ?? false);
+      const selectedEvents = ref<Set<number>>(selectedIds);
       return {
-        isSelectionMode: ref(overrides.isSelectionMode ?? false),
-        isSelectAllMatching: ref(overrides.isSelectAllMatching ?? false),
+        isSelectionMode: readonly(isSelectionMode),
+        isSelectAllMatching: readonly(isSelectAllMatching),
         isEventSelected: (id: number): boolean => selectedIds.has(id),
+        getSelectedIds: vi.fn((): number[] => Array.from(selectedIds)),
+        setAvailableIds: vi.fn(),
+        setTotalMatchingCount: vi.fn(),
+        selectedEvents,
+        state: computed(() => ({
+          isActive: get(isSelectionMode),
+          isAllSelected: false,
+          isPartiallySelected: false,
+          selectedCount: selectedIds.size,
+          selectedIds,
+          hasAvailableEvents: false,
+          selectAllMatching: get(isSelectAllMatching),
+          totalMatchingCount: 0,
+        })),
         actions: {
+          clear: vi.fn(),
+          exit: vi.fn(),
+          toggle: vi.fn(),
+          toggleAll: vi.fn(),
           toggleEvent: vi.fn(),
           toggleSwap: vi.fn(),
+          toggleSelectAllMatching: vi.fn(),
         },
       };
     }
@@ -305,7 +322,7 @@ describe('useHistoryMatchedMovementItem', () => {
     it('should return true for showCheckbox when selection mode active', () => {
       const events = ref(createMatchedMovementEvents());
       const selection = createMockSelection({ isSelectionMode: true });
-      const { showCheckbox } = useHistoryMatchedMovementItem({ events, selection: selection as any });
+      const { showCheckbox } = useHistoryMatchedMovementItem({ events, selection });
 
       expect(get(showCheckbox)).toBe(true);
     });
@@ -313,7 +330,7 @@ describe('useHistoryMatchedMovementItem', () => {
     it('should return true for isSelected when all events selected', () => {
       const events = ref(createMatchedMovementEvents());
       const selection = createMockSelection({ selectedEventIds: [1, 2] });
-      const { isSelected } = useHistoryMatchedMovementItem({ events, selection: selection as any });
+      const { isSelected } = useHistoryMatchedMovementItem({ events, selection });
 
       expect(get(isSelected)).toBe(true);
     });
@@ -321,7 +338,7 @@ describe('useHistoryMatchedMovementItem', () => {
     it('should return false for isSelected when not all events selected', () => {
       const events = ref(createMatchedMovementEvents());
       const selection = createMockSelection({ selectedEventIds: [1] });
-      const { isSelected } = useHistoryMatchedMovementItem({ events, selection: selection as any });
+      const { isSelected } = useHistoryMatchedMovementItem({ events, selection });
 
       expect(get(isSelected)).toBe(false);
     });
@@ -329,7 +346,7 @@ describe('useHistoryMatchedMovementItem', () => {
     it('should call toggleSwap with all event IDs when toggled', () => {
       const events = ref(createMatchedMovementEvents());
       const selection = createMockSelection();
-      const { toggleSelected } = useHistoryMatchedMovementItem({ events, selection: selection as any });
+      const { toggleSelected } = useHistoryMatchedMovementItem({ events, selection });
 
       toggleSelected();
 

@@ -1,7 +1,7 @@
 import type { BlockchainRpcNode } from '@/types/settings/rpc';
 import { Blockchain } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 
@@ -13,7 +13,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
   });
 
   describe('fetchEvmNodes', () => {
-    it('fetches EVM nodes for default ETH chain', async () => {
+    it('should fetch EVM nodes for default ETH chain', async () => {
       const mockNodes: BlockchainRpcNode[] = [
         {
           identifier: 1,
@@ -51,7 +51,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
       expect(result[1]).toEqual(mockNodes[1]);
     });
 
-    it('fetches EVM nodes for specified chain', async () => {
+    it('should fetch EVM nodes for specified chain', async () => {
       const mockNodes: BlockchainRpcNode[] = [
         {
           identifier: 1,
@@ -81,12 +81,12 @@ describe('composables/api/settings/evm-nodes-api', () => {
   });
 
   describe('addEvmNode', () => {
-    it('adds a new EVM node with correct snake_case payload', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should add a new EVM node with correct snake_case payload', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -117,12 +117,12 @@ describe('composables/api/settings/evm-nodes-api', () => {
       });
     });
 
-    it('strips isArchive from the payload', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should strip isArchive from the payload', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -148,12 +148,12 @@ describe('composables/api/settings/evm-nodes-api', () => {
   });
 
   describe('editEvmNode', () => {
-    it('edits an existing EVM node with correct snake_case payload', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should edit an existing EVM node with correct snake_case payload', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -186,12 +186,12 @@ describe('composables/api/settings/evm-nodes-api', () => {
       });
     });
 
-    it('strips isArchive from the payload', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should strip isArchive from the payload', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -218,12 +218,12 @@ describe('composables/api/settings/evm-nodes-api', () => {
   });
 
   describe('deleteEvmNode', () => {
-    it('deletes an EVM node by identifier', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should delete an EVM node by identifier', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -242,12 +242,12 @@ describe('composables/api/settings/evm-nodes-api', () => {
   });
 
   describe('reConnectNode', () => {
-    it('reconnects a specific node by identifier', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should reconnect a specific node by identifier', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -264,12 +264,12 @@ describe('composables/api/settings/evm-nodes-api', () => {
       });
     });
 
-    it('reconnects all nodes when no identifier provided', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should reconnect all nodes when no identifier provided', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/ETH/nodes`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -286,7 +286,7 @@ describe('composables/api/settings/evm-nodes-api', () => {
   });
 
   describe('dynamic chain parameter', () => {
-    it('uses correct URL when chain ref changes', async () => {
+    it('should use correct URL when chain ref changes', async () => {
       const chainRef = ref(Blockchain.ETH);
       let requestedUrl = '';
 

@@ -18,7 +18,7 @@ describe('composables/use-matcher-utils', () => {
   }
 
   describe('validKeys', () => {
-    it('returns all matcher keys', () => {
+    it('should return all matcher keys', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([
         createStringMatcher('type'),
         createStringMatcher('status'),
@@ -29,7 +29,7 @@ describe('composables/use-matcher-utils', () => {
       expect(get(validKeys)).toEqual(['type', 'status']);
     });
 
-    it('returns empty array for no matchers', () => {
+    it('should return empty array for no matchers', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([]);
 
       const { validKeys } = useMatcherUtils(matchers);
@@ -39,7 +39,7 @@ describe('composables/use-matcher-utils', () => {
   });
 
   describe('matcherForKey', () => {
-    it('finds matcher by key', () => {
+    it('should find matcher by key', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([
         createStringMatcher('type'),
         createStringMatcher('status'),
@@ -50,7 +50,7 @@ describe('composables/use-matcher-utils', () => {
       expect(matcherForKey('type')?.key).toBe('type');
     });
 
-    it('returns undefined for non-existent key', () => {
+    it('should return undefined for non-existent key', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([
         createStringMatcher('type'),
       ]);
@@ -60,7 +60,7 @@ describe('composables/use-matcher-utils', () => {
       expect(matcherForKey('nonexistent')).toBeUndefined();
     });
 
-    it('returns undefined for undefined key', () => {
+    it('should return undefined for undefined key', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([
         createStringMatcher('type'),
       ]);
@@ -72,7 +72,7 @@ describe('composables/use-matcher-utils', () => {
   });
 
   describe('matcherForKeyValue', () => {
-    it('finds matcher by keyValue', () => {
+    it('should find matcher by keyValue', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([
         createStringMatcher('type', 'typeValue'),
         createStringMatcher('status'),
@@ -83,7 +83,7 @@ describe('composables/use-matcher-utils', () => {
       expect(matcherForKeyValue('typeValue')?.key).toBe('type');
     });
 
-    it('returns undefined for non-existent keyValue', () => {
+    it('should return undefined for non-existent keyValue', () => {
       const matchers = ref<SearchMatcher<any, any>[]>([
         createStringMatcher('type'),
       ]);

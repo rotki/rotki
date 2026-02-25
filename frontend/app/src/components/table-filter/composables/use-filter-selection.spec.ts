@@ -57,7 +57,7 @@ describe('composables/use-filter-selection', () => {
   }
 
   describe('getDisplayValue', () => {
-    it('returns string value directly', () => {
+    it('should return string value directly', () => {
       const setup = createTestSetup();
       const { getDisplayValue } = useFilterSelection(
         setup.search,
@@ -72,7 +72,7 @@ describe('composables/use-filter-selection', () => {
   });
 
   describe('getSuggestionText', () => {
-    it('formats suggestion with equals operator', () => {
+    it('should format suggestion with equals operator', () => {
       const setup = createTestSetup();
       const { getSuggestionText } = useFilterSelection(
         setup.search,
@@ -89,7 +89,7 @@ describe('composables/use-filter-selection', () => {
       expect(result.endSelection).toBe(10);
     });
 
-    it('formats suggestion with not-equals operator when excluded', () => {
+    it('should format suggestion with not-equals operator when excluded', () => {
       const setup = createTestSetup();
       const { getSuggestionText } = useFilterSelection(
         setup.search,
@@ -108,7 +108,7 @@ describe('composables/use-filter-selection', () => {
   });
 
   describe('isSuggestionBeingEdited', () => {
-    it('returns false when no suggestion is being edited', () => {
+    it('should return false when no suggestion is being edited', () => {
       const setup = createTestSetup();
       const { isSuggestionBeingEdited } = useFilterSelection(
         setup.search,
@@ -121,7 +121,7 @@ describe('composables/use-filter-selection', () => {
       expect(isSuggestionBeingEdited(suggestion)).toBe(false);
     });
 
-    it('returns true when the same suggestion is being edited', () => {
+    it('should return true when the same suggestion is being edited', () => {
       const setup = createTestSetup();
       const { isSuggestionBeingEdited, clickItem } = useFilterSelection(
         setup.search,
@@ -138,7 +138,7 @@ describe('composables/use-filter-selection', () => {
   });
 
   describe('clickItem', () => {
-    it('sets suggestionBeingEdited and search for string values', () => {
+    it('should set suggestionBeingEdited and search for string values', () => {
       const setup = createTestSetup();
       const { suggestionBeingEdited, clickItem } = useFilterSelection(
         setup.search,
@@ -154,7 +154,7 @@ describe('composables/use-filter-selection', () => {
       expect(get(setup.search)).toBe('type=');
     });
 
-    it('sets search with != for excluded items', () => {
+    it('should set search with != for excluded items', () => {
       const setup = createTestSetup();
       const { clickItem } = useFilterSelection(
         setup.search,
@@ -169,7 +169,7 @@ describe('composables/use-filter-selection', () => {
       expect(get(setup.search)).toBe('type!=');
     });
 
-    it('does not set editing state for boolean values', () => {
+    it('should not set editing state for boolean values', () => {
       const setup = createTestSetup();
       const { suggestionBeingEdited, clickItem } = useFilterSelection(
         setup.search,
@@ -192,7 +192,7 @@ describe('composables/use-filter-selection', () => {
   });
 
   describe('cancelEditSuggestion', () => {
-    it('clears suggestionBeingEdited and search', () => {
+    it('should clear suggestionBeingEdited and search', () => {
       const setup = createTestSetup();
       const { suggestionBeingEdited, clickItem, cancelEditSuggestion } = useFilterSelection(
         setup.search,
@@ -209,7 +209,7 @@ describe('composables/use-filter-selection', () => {
       expect(get(setup.search)).toBe('');
     });
 
-    it('preserves search when skipClearSearch is true', () => {
+    it('should preserve search when skipClearSearch is true', () => {
       const setup = createTestSetup();
       const { clickItem, cancelEditSuggestion } = useFilterSelection(
         setup.search,
@@ -227,7 +227,7 @@ describe('composables/use-filter-selection', () => {
   });
 
   describe('updateEditSuggestionSearch', () => {
-    it('updates search with edited value', () => {
+    it('should update search with edited value', () => {
       const setup = createTestSetup();
       const { clickItem, updateEditSuggestionSearch } = useFilterSelection(
         setup.search,
@@ -243,7 +243,7 @@ describe('composables/use-filter-selection', () => {
       expect(get(setup.search)).toBe('type=new value');
     });
 
-    it('does nothing when not editing', () => {
+    it('should do nothing when not editing', () => {
       const setup = createTestSetup();
       const { updateEditSuggestionSearch } = useFilterSelection(
         setup.search,
@@ -259,7 +259,7 @@ describe('composables/use-filter-selection', () => {
   });
 
   describe('updateMatches', () => {
-    it('emits update:matches with transformed values', () => {
+    it('should emit update:matches with transformed values', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { updateMatches } = useFilterSelection(
         setup.search,
@@ -274,7 +274,7 @@ describe('composables/use-filter-selection', () => {
       expect(setup.emit).toHaveBeenCalledWith('update:matches', { type: ['value1'] });
     });
 
-    it('handles excluded values with ! prefix', () => {
+    it('should handle excluded values with ! prefix', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { updateMatches } = useFilterSelection(
         setup.search,
@@ -289,7 +289,7 @@ describe('composables/use-filter-selection', () => {
       expect(setup.emit).toHaveBeenCalledWith('update:matches', { type: ['!value1'] });
     });
 
-    it('filters out invalid suggestions', () => {
+    it('should filter out invalid suggestions', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { updateMatches } = useFilterSelection(
         setup.search,
@@ -307,7 +307,7 @@ describe('composables/use-filter-selection', () => {
   });
 
   describe('applyFilter', () => {
-    it('adds new filter to selection', () => {
+    it('should add new filter to selection', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { applyFilter, selection } = useFilterSelection(
         setup.search,
@@ -323,7 +323,7 @@ describe('composables/use-filter-selection', () => {
       expect(get(selection)[0]).toStrictEqual(filter);
     });
 
-    it('replaces non-multiple matcher values', () => {
+    it('should replace non-multiple matcher values', () => {
       const setup = createTestSetup([createStringMatcher('single', 'single', false)]);
       const { applyFilter, selection } = useFilterSelection(
         setup.search,
@@ -342,7 +342,7 @@ describe('composables/use-filter-selection', () => {
       expect(get(selection)[0].value).toBe('value2');
     });
 
-    it('clears search after applying', () => {
+    it('should clear search after applying', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       set(setup.search, 'type=value');
 
@@ -361,7 +361,7 @@ describe('composables/use-filter-selection', () => {
   });
 
   describe('restoreSelection', () => {
-    it('restores selection from matches object', () => {
+    it('should restore selection from matches object', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { restoreSelection, selection } = useFilterSelection(
         setup.search,
@@ -377,7 +377,7 @@ describe('composables/use-filter-selection', () => {
       expect(get(selection)[1].value).toBe('value2');
     });
 
-    it('restores excluded values with ! prefix', () => {
+    it('should restore excluded values with ! prefix', () => {
       const setup = createTestSetup([createStringMatcher('type')]);
       const { restoreSelection, selection } = useFilterSelection(
         setup.search,
@@ -393,7 +393,7 @@ describe('composables/use-filter-selection', () => {
       expect(get(selection)[0].exclude).toBe(true);
     });
 
-    it('handles single values', () => {
+    it('should handle single values', () => {
       const setup = createTestSetup([createStringMatcher('single', 'single', false)]);
       const { restoreSelection, selection } = useFilterSelection(
         setup.search,

@@ -14,7 +14,7 @@ describe('composables/api/task', () => {
   });
 
   describe('queryTasks', () => {
-    it('fetches list of pending and completed tasks', async () => {
+    it('should fetch list of pending and completed tasks', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks`, () =>
           HttpResponse.json({
@@ -33,7 +33,7 @@ describe('composables/api/task', () => {
       expect(result.completed).toEqual([4, 5]);
     });
 
-    it('handles empty task lists', async () => {
+    it('should handle empty task lists', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks`, () =>
           HttpResponse.json({
@@ -52,7 +52,7 @@ describe('composables/api/task', () => {
       expect(result.completed).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks`, () =>
           HttpResponse.json({
@@ -70,7 +70,7 @@ describe('composables/api/task', () => {
   });
 
   describe('queryTaskResult', () => {
-    it('fetches completed task result', async () => {
+    it('should fetch completed task result', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks/123`, () =>
           HttpResponse.json({
@@ -92,7 +92,7 @@ describe('composables/api/task', () => {
       expect(result.message).toBe('');
     });
 
-    it('throws TaskNotFoundError on 404', async () => {
+    it('should throw TaskNotFoundError on 404', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks/999`, () =>
           HttpResponse.json(
@@ -111,7 +111,7 @@ describe('composables/api/task', () => {
         .toThrow(TaskNotFoundError);
     });
 
-    it('throws IncompleteUpgradeError on statusCode 300 with empty result', async () => {
+    it('should throw IncompleteUpgradeError on statusCode 300 with empty result', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks/123`, () =>
           HttpResponse.json({
@@ -134,7 +134,7 @@ describe('composables/api/task', () => {
         .toThrow(IncompleteUpgradeError);
     });
 
-    it('throws SyncConflictError on statusCode 300 with conflict data', async () => {
+    it('should throw SyncConflictError on statusCode 300 with conflict data', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks/123`, () =>
           HttpResponse.json({
@@ -160,7 +160,7 @@ describe('composables/api/task', () => {
         .toThrow(SyncConflictError);
     });
 
-    it('throws ApiValidationError on statusCode 400', async () => {
+    it('should throw ApiValidationError on statusCode 400', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks/123`, () =>
           HttpResponse.json({
@@ -183,7 +183,7 @@ describe('composables/api/task', () => {
         .toThrow(ApiValidationError);
     });
 
-    it('throws error on statusCode 502', async () => {
+    it('should throw error on statusCode 502', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks/123`, () =>
           HttpResponse.json({
@@ -206,7 +206,7 @@ describe('composables/api/task', () => {
         .toThrow('Backend unavailable');
     });
 
-    it('throws error when no outcome', async () => {
+    it('should throw error when no outcome', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/tasks/123`, () =>
           HttpResponse.json({
@@ -227,7 +227,7 @@ describe('composables/api/task', () => {
   });
 
   describe('cancelAsyncTask', () => {
-    it('cancels a task successfully', async () => {
+    it('should cancel a task successfully', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/tasks/123`, () =>
           HttpResponse.json({
@@ -242,7 +242,7 @@ describe('composables/api/task', () => {
       expect(result).toBe(true);
     });
 
-    it('throws TaskNotFoundError on 404', async () => {
+    it('should throw TaskNotFoundError on 404', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/tasks/999`, () =>
           HttpResponse.json(
@@ -261,7 +261,7 @@ describe('composables/api/task', () => {
         .toThrow(TaskNotFoundError);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/tasks/123`, () =>
           HttpResponse.json({

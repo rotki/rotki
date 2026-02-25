@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useGoogleCalendarApi } from './google-calendar';
 
@@ -11,7 +11,7 @@ describe('composables/api/settings/google-calendar', () => {
   });
 
   describe('getStatus', () => {
-    it('returns authenticated status with user email', async () => {
+    it('should return authenticated status with user email', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/calendar/google`, () =>
           HttpResponse.json({
@@ -30,7 +30,7 @@ describe('composables/api/settings/google-calendar', () => {
       expect(result.userEmail).toBe('user@example.com');
     });
 
-    it('returns unauthenticated status', async () => {
+    it('should return unauthenticated status', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/calendar/google`, () =>
           HttpResponse.json({
@@ -48,7 +48,7 @@ describe('composables/api/settings/google-calendar', () => {
       expect(result.userEmail).toBeUndefined();
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/calendar/google`, () =>
           HttpResponse.json({
@@ -66,12 +66,12 @@ describe('composables/api/settings/google-calendar', () => {
   });
 
   describe('completeOAuth', () => {
-    it('sends PUT request with snake_case tokens', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with snake_case tokens', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/calendar/google`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               success: true,
@@ -95,7 +95,7 @@ describe('composables/api/settings/google-calendar', () => {
       expect(result.userEmail).toBe('authenticated@example.com');
     });
 
-    it('returns failure result on auth error', async () => {
+    it('should return failure result on auth error', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/calendar/google`, () =>
           HttpResponse.json({
@@ -116,7 +116,7 @@ describe('composables/api/settings/google-calendar', () => {
   });
 
   describe('syncCalendar', () => {
-    it('sends POST request and returns sync results', async () => {
+    it('should send POST request and returns sync results', async () => {
       let requestMethod = '';
 
       server.use(
@@ -146,7 +146,7 @@ describe('composables/api/settings/google-calendar', () => {
       expect(result.eventsUpdated).toBe(10);
     });
 
-    it('throws error on sync failure', async () => {
+    it('should throw error on sync failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/calendar/google`, () =>
           HttpResponse.json({
@@ -164,7 +164,7 @@ describe('composables/api/settings/google-calendar', () => {
   });
 
   describe('disconnect', () => {
-    it('sends DELETE request and returns success', async () => {
+    it('should send DELETE request and returns success', async () => {
       let requestMethod = '';
 
       server.use(
@@ -186,7 +186,7 @@ describe('composables/api/settings/google-calendar', () => {
       expect(result.success).toBe(true);
     });
 
-    it('throws error on disconnect failure', async () => {
+    it('should throw error on disconnect failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/calendar/google`, () =>
           HttpResponse.json({

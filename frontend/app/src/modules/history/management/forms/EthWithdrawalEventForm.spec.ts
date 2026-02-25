@@ -1,10 +1,10 @@
 import type { AssetMap } from '@/types/asset';
 import type { EthWithdrawalEvent } from '@/types/history/events/schemas';
-import { bigNumberify, HistoryEventEntryType, One } from '@rotki/common';
+import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
@@ -33,9 +33,9 @@ vi.mock('@/composables/api/assets/prices', () => ({
 
 describe('forms/EthWithdrawalEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof EthWithdrawalEventForm>>;
-  let addHistoryEventMock: ReturnType<typeof vi.fn>;
-  let editHistoryEventMock: ReturnType<typeof vi.fn>;
-  let addHistoricalPriceMock: ReturnType<typeof vi.fn>;
+  let addHistoryEventMock: ReturnType<typeof vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>>;
+  let editHistoryEventMock: ReturnType<typeof vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>>;
+  let addHistoricalPriceMock: ReturnType<typeof vi.fn<ReturnType<typeof useAssetPricesApi>['addHistoricalPrice']>>;
   let pinia: Pinia;
 
   const asset = {
@@ -75,21 +75,34 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    addHistoryEventMock = vi.fn();
-    editHistoryEventMock = vi.fn();
-    addHistoricalPriceMock = vi.fn();
+    addHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>();
+    editHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>();
+    addHistoricalPriceMock = vi.fn<ReturnType<typeof useAssetPricesApi>['addHistoricalPrice']>();
     const assetMapping = vi.fn().mockResolvedValue(mapping);
-    (useBalancePricesStore as unknown as Mock).mockReturnValue({
-      getHistoricPrice: vi.fn().mockResolvedValue(One),
+    // @ts-expect-error partial store mock for test
+    vi.mocked(useBalancePricesStore).mockReturnValue({});
+    vi.mocked(useAssetInfoApi).mockReturnValue({
+      assetMapping,
+      assetSearch: vi.fn<ReturnType<typeof useAssetInfoApi>['assetSearch']>(),
+      erc20details: vi.fn<ReturnType<typeof useAssetInfoApi>['erc20details']>(),
     });
-    (useAssetInfoApi as Mock).mockReturnValue({ assetMapping });
-    (useHistoryEvents as Mock).mockReturnValue({
+    vi.mocked(useHistoryEvents).mockReturnValue({
       addHistoryEvent: addHistoryEventMock,
+      deleteHistoryEvent: vi.fn<ReturnType<typeof useHistoryEvents>['deleteHistoryEvent']>(),
       editHistoryEvent: editHistoryEventMock,
+      fetchHistoryEvents: vi.fn<ReturnType<typeof useHistoryEvents>['fetchHistoryEvents']>(),
+      getEarliestEventTimestamp: vi.fn<ReturnType<typeof useHistoryEvents>['getEarliestEventTimestamp']>(),
     });
 
-    (useAssetPricesApi as Mock).mockReturnValue({
+    vi.mocked(useAssetPricesApi).mockReturnValue({
       addHistoricalPrice: addHistoricalPriceMock,
+      addLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['addLatestPrice']>(),
+      deleteHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteHistoricalPrice']>(),
+      deleteLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteLatestPrice']>(),
+      editHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['editHistoricalPrice']>(),
+      fetchHistoricalPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchHistoricalPrices']>(),
+      fetchLatestPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchLatestPrices']>(),
+      fetchNftsPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchNftsPrices']>(),
     });
   });
 
@@ -138,7 +151,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
     expect(isExitedCheckbox.element.checked).toBeFalsy();
   });
 
-  it('it should update the fields when editing an event', async () => {
+  it('should update the fields when editing an event', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { event, nextSequenceId: '1', type: 'edit' } });
@@ -203,7 +216,7 @@ describe('forms/EthWithdrawalEventForm.vue', () => {
 
     // click save without changing anything
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    addHistoricalPriceMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce(true);
 
     await saveMethod();
     await nextTick();

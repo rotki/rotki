@@ -1,6 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useEth2Api } from './eth2';
 
@@ -12,12 +12,12 @@ describe('composables/api/staking/eth2', () => {
   });
 
   describe('fetchStakingPerformance', () => {
-    it('fetches staking performance with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should fetch staking performance with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/eth2/stake/performance`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries_found: 10,
@@ -65,12 +65,12 @@ describe('composables/api/staking/eth2', () => {
       expect(result.validators['12345'].apr?.toString()).toBe('5.2');
     });
 
-    it('handles optional payload fields', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle optional payload fields', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/eth2/stake/performance`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries_found: 5,
@@ -101,7 +101,7 @@ describe('composables/api/staking/eth2', () => {
       });
     });
 
-    it('handles empty validators response', async () => {
+    it('should handle empty validators response', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/eth2/stake/performance`, () =>
           HttpResponse.json({
@@ -125,7 +125,7 @@ describe('composables/api/staking/eth2', () => {
       expect(result.validators).toEqual({});
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/eth2/stake/performance`, () =>
           HttpResponse.json({
@@ -143,12 +143,12 @@ describe('composables/api/staking/eth2', () => {
   });
 
   describe('refreshStakingPerformance', () => {
-    it('sends async request with ignore_cache true', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send async request with ignore_cache true', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/eth2/stake/performance`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 123 },
             message: '',
@@ -171,12 +171,12 @@ describe('composables/api/staking/eth2', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('includes all payload fields in refresh request', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should include all payload fields in refresh request', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/eth2/stake/performance`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 456 },
             message: '',
@@ -206,7 +206,7 @@ describe('composables/api/staking/eth2', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/eth2/stake/performance`, () =>
           HttpResponse.json({
