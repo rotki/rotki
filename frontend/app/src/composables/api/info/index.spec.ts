@@ -11,7 +11,7 @@ describe('composables/api/info/index', () => {
   });
 
   describe('info', () => {
-    it('fetches backend info without update check by default', async () => {
+    it('should fetch backend info without update check by default', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       const mockInfo = {
@@ -51,7 +51,7 @@ describe('composables/api/info/index', () => {
       expect(result.version.ourVersion).toBe('1.35.0');
     });
 
-    it('fetches backend info with update check when requested', async () => {
+    it('should fetch backend info with update check when requested', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       const mockInfo = {
@@ -90,7 +90,7 @@ describe('composables/api/info/index', () => {
       expect(result.version.latestVersion).toBe('1.35.0');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/info`, () =>
           HttpResponse.json({
@@ -108,7 +108,7 @@ describe('composables/api/info/index', () => {
   });
 
   describe('ping', () => {
-    it('sends ping request and returns success', async () => {
+    it('should send ping request and returns success', async () => {
       let requestMethod = '';
 
       server.use(
@@ -128,7 +128,7 @@ describe('composables/api/info/index', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/ping`, () =>
           HttpResponse.json({

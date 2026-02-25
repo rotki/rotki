@@ -37,7 +37,9 @@ describe('isSingleVisualCharacter', () => {
 
   it('should return false for empty or invalid values', () => {
     expect(isSingleVisualCharacter('')).toBe(false);
-    expect(isSingleVisualCharacter(null as any)).toBe(false);
-    expect(isSingleVisualCharacter(undefined as any)).toBe(false);
+    // @ts-expect-error testing invalid input
+    expect(isSingleVisualCharacter(null)).toBe(false);
+    // @ts-expect-error testing invalid input
+    expect(isSingleVisualCharacter(undefined)).toBe(false);
   });
 });

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { camelCaseTransformer, noRootCamelCaseTransformer, snakeCaseTransformer } from '@/modules/api/transformers';
 
 describe('transformers', () => {
-  it('transform json to camelCase', () => {
+  it('should transform json to camelCase', () => {
     const json = '{"amount":"10","test_label":"label","data":[{"amount":"2","usd_value":"10"}]}';
     const parsed = JSON.parse(json);
     expect(camelCaseTransformer(parsed)).toMatchObject({
@@ -13,7 +13,7 @@ describe('transformers', () => {
     });
   });
 
-  it('transform object to snake_case', () => {
+  it('should transform object to snake_case', () => {
     const object = {
       data: [{ usdValue: bigNumberify(10) }, { usdValue: bigNumberify(11) }],
       label: 'test',
@@ -24,7 +24,7 @@ describe('transformers', () => {
     );
   });
 
-  it('transform capital to snake_case', () => {
+  it('should transform capital to snake_case', () => {
     const object = {
       BTC: 2,
       ETH: 1,
@@ -33,7 +33,7 @@ describe('transformers', () => {
     expect(snakeCaseTransformer(object)).toMatchObject(JSON.parse('{"ETH":1,"BTC":2}'));
   });
 
-  it('skips nested transformation for specified keys', () => {
+  it('should skip nested transformation for specified keys', () => {
     const object = {
       asyncQuery: true,
       upToVersion: 5,
@@ -55,7 +55,7 @@ describe('transformers', () => {
     });
   });
 
-  it('skips deeply nested content for specified keys', () => {
+  it('should skip deeply nested content for specified keys', () => {
     const object = {
       conflictData: {
         levelOne: {
@@ -81,7 +81,7 @@ describe('transformers', () => {
     });
   });
 
-  it('transformer no root', () => {
+  it('should handle transformer with no root', () => {
     const json = '{"_amount_": { "a_cbc": "1", "a_abc": "2"}}';
     const parsed = JSON.parse(json);
     const transformed = noRootCamelCaseTransformer(parsed);

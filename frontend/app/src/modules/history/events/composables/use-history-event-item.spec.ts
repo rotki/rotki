@@ -1,3 +1,4 @@
+import type { UseHistoryEventsSelectionModeReturn } from './use-selection-mode';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -182,20 +183,37 @@ describe('useHistoryEventItem', () => {
       selectedEventIds: number[];
     }
 
-    function createMockSelection(overrides: Partial<MockSelectionOptions> = {}): {
-      isSelectionMode: Ref<boolean>;
-      isSelectAllMatching: Ref<boolean>;
-      isEventSelected: (id: number) => boolean;
-      actions: { toggleEvent: ReturnType<typeof vi.fn>; toggleSwap: ReturnType<typeof vi.fn> };
-    } {
+    function createMockSelection(overrides: Partial<MockSelectionOptions> = {}): UseHistoryEventsSelectionModeReturn {
       const selectedIds = new Set(overrides.selectedEventIds ?? []);
+      const isSelectionMode = ref<boolean>(overrides.isSelectionMode ?? false);
+      const isSelectAllMatching = ref<boolean>(overrides.isSelectAllMatching ?? false);
+      const selectedEvents = ref<Set<number>>(selectedIds);
       return {
-        isSelectionMode: ref(overrides.isSelectionMode ?? false),
-        isSelectAllMatching: ref(overrides.isSelectAllMatching ?? false),
+        isSelectionMode: readonly(isSelectionMode),
+        isSelectAllMatching: readonly(isSelectAllMatching),
         isEventSelected: (id: number): boolean => selectedIds.has(id),
+        getSelectedIds: vi.fn((): number[] => Array.from(selectedIds)),
+        setAvailableIds: vi.fn(),
+        setTotalMatchingCount: vi.fn(),
+        selectedEvents,
+        state: computed(() => ({
+          isActive: get(isSelectionMode),
+          isAllSelected: false,
+          isPartiallySelected: false,
+          selectedCount: selectedIds.size,
+          selectedIds,
+          hasAvailableEvents: false,
+          selectAllMatching: get(isSelectAllMatching),
+          totalMatchingCount: 0,
+        })),
         actions: {
+          clear: vi.fn(),
+          exit: vi.fn(),
+          toggle: vi.fn(),
+          toggleAll: vi.fn(),
           toggleEvent: vi.fn(),
           toggleSwap: vi.fn(),
+          toggleSelectAllMatching: vi.fn(),
         },
       };
     }
@@ -203,7 +221,7 @@ describe('useHistoryEventItem', () => {
     it('should return true for showCheckbox when selection mode is active', () => {
       const event = ref(createMockEvent());
       const selection = createMockSelection({ isSelectionMode: true });
-      const { showCheckbox } = useHistoryEventItem({ event, selection: selection as any });
+      const { showCheckbox } = useHistoryEventItem({ event, selection });
 
       expect(get(showCheckbox)).toBe(true);
     });
@@ -211,7 +229,7 @@ describe('useHistoryEventItem', () => {
     it('should return true for isCheckboxDisabled when selectAllMatching is active', () => {
       const event = ref(createMockEvent());
       const selection = createMockSelection({ isSelectAllMatching: true });
-      const { isCheckboxDisabled } = useHistoryEventItem({ event, selection: selection as any });
+      const { isCheckboxDisabled } = useHistoryEventItem({ event, selection });
 
       expect(get(isCheckboxDisabled)).toBe(true);
     });
@@ -219,7 +237,7 @@ describe('useHistoryEventItem', () => {
     it('should return true for isSelected when event is in selection', () => {
       const event = ref(createMockEvent({ identifier: 123 }));
       const selection = createMockSelection({ selectedEventIds: [123] });
-      const { isSelected } = useHistoryEventItem({ event, selection: selection as any });
+      const { isSelected } = useHistoryEventItem({ event, selection });
 
       expect(get(isSelected)).toBe(true);
     });
@@ -227,7 +245,7 @@ describe('useHistoryEventItem', () => {
     it('should return false for isSelected when event is not in selection', () => {
       const event = ref(createMockEvent({ identifier: 123 }));
       const selection = createMockSelection({ selectedEventIds: [456] });
-      const { isSelected } = useHistoryEventItem({ event, selection: selection as any });
+      const { isSelected } = useHistoryEventItem({ event, selection });
 
       expect(get(isSelected)).toBe(false);
     });
@@ -235,7 +253,7 @@ describe('useHistoryEventItem', () => {
     it('should call toggleEvent when toggleSelected is called', () => {
       const event = ref(createMockEvent({ identifier: 123 }));
       const selection = createMockSelection();
-      const { toggleSelected } = useHistoryEventItem({ event, selection: selection as any });
+      const { toggleSelected } = useHistoryEventItem({ event, selection });
 
       toggleSelected();
 

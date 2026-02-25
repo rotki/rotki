@@ -45,35 +45,35 @@ describe('useSettingsSearch', () => {
       makeEntry(['Interface', 'Language'], ['locale']),
     ];
 
-    it('returns all entries when keyword is empty', () => {
+    it('should return all entries when keyword is empty', () => {
       expect(filterEntries(entries, '')).toEqual([]);
     });
 
-    it('matches a single word against texts', () => {
+    it('should match a single word against texts', () => {
       const results: SettingsSearchEntry[] = filterEntries(entries, 'date');
       expect(results).toHaveLength(1);
       expect(results[0].texts).toEqual(['General', 'Date Format']);
     });
 
-    it('matches against keywords', () => {
+    it('should match against keywords', () => {
       const results: SettingsSearchEntry[] = filterEntries(entries, 'locale');
       expect(results).toHaveLength(1);
       expect(results[0].texts).toEqual(['Interface', 'Language']);
     });
 
-    it('matches case-insensitively', () => {
+    it('should match case-insensitively', () => {
       const results: SettingsSearchEntry[] = filterEntries(entries, 'PURGE');
       expect(results).toHaveLength(1);
       expect(results[0].texts).toEqual(['Database', 'Purge Data']);
     });
 
-    it('ignores special characters in keyword', () => {
+    it('should ignore special characters in keyword', () => {
       const results: SettingsSearchEntry[] = filterEntries(entries, 'date-format');
       expect(results).toHaveLength(1);
       expect(results[0].texts).toEqual(['General', 'Date Format']);
     });
 
-    it('returns multiple matches sorted by score', () => {
+    it('should return multiple matches sorted by score', () => {
       const results: SettingsSearchEntry[] = filterEntries(entries, 'general');
       expect(results).toHaveLength(3);
       results.forEach((r: SettingsSearchEntry) => {
@@ -81,7 +81,7 @@ describe('useSettingsSearch', () => {
       });
     });
 
-    it('scores prefix matches higher', () => {
+    it('should score prefix matches higher', () => {
       const testEntries: SettingsSearchEntry[] = [
         makeEntry(['Something with balance in middle']),
         makeEntry(['Balance Save Frequency']),
@@ -92,31 +92,31 @@ describe('useSettingsSearch', () => {
       expect(results[0].texts).toEqual(['Balance Save Frequency']);
     });
 
-    it('handles multi-word search and ranks higher matches first', () => {
+    it('should handle multi-word search and ranks higher matches first', () => {
       const results: SettingsSearchEntry[] = filterEntries(entries, 'general date');
       // "General > Date Format" matches both words (2 points), other General entries match only one (1 point)
       expect(results.length).toBeGreaterThanOrEqual(1);
       expect(results[0].texts).toEqual(['General', 'Date Format']);
     });
 
-    it('returns empty array when nothing matches', () => {
+    it('should return empty array when nothing matches', () => {
       const results: SettingsSearchEntry[] = filterEntries(entries, 'nonexistent');
       expect(results).toHaveLength(0);
     });
 
-    it('matches partial words', () => {
+    it('should match partial words', () => {
       const results: SettingsSearchEntry[] = filterEntries(entries, 'freq');
       expect(results).toHaveLength(1);
       expect(results[0].texts).toEqual(['General', 'Balance Save Frequency']);
     });
 
-    it('matches keywords alongside texts', () => {
+    it('should match keywords alongside texts', () => {
       const results: SettingsSearchEntry[] = filterEntries(entries, 'save');
       expect(results).toHaveLength(1);
       expect(results[0].texts).toEqual(['General', 'Balance Save Frequency']);
     });
 
-    it('handles whitespace-only keyword', () => {
+    it('should handle whitespace-only keyword', () => {
       const results: SettingsSearchEntry[] = filterEntries(entries, '   ');
       expect(results).toHaveLength(0);
     });

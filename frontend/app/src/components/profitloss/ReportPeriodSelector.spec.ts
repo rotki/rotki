@@ -1,4 +1,4 @@
-import type { PeriodChangedEvent, SelectionChangedEvent } from '@/types/reports';
+import type { PeriodChangedEvent } from '@/types/reports';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
@@ -72,7 +72,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await yearButtons[1].trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const selectionEvents = wrapper.emitted('update:selection') as SelectionChangedEvent[][];
+      const selectionEvents = wrapper.emitted('update:selection')!;
       expect(selectionEvents).toBeTruthy();
       expect(selectionEvents.at(-1)![0]).toMatchObject({
         quarter: Quarter.ALL,
@@ -88,7 +88,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await yearButtons[1].trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const periodEvents = wrapper.emitted('update:period') as PeriodChangedEvent[][];
+      const periodEvents = wrapper.emitted<PeriodChangedEvent[]>('update:period')!;
       expect(periodEvents).toBeTruthy();
 
       const lastPeriodEvent = periodEvents.at(-1)![0];
@@ -141,14 +141,14 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await allTimeButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const selectionEvents = wrapper.emitted('update:selection') as SelectionChangedEvent[][];
+      const selectionEvents = wrapper.emitted('update:selection')!;
       expect(selectionEvents).toBeTruthy();
       expect(selectionEvents.at(-1)![0]).toMatchObject({
         quarter: Quarter.ALL,
         year: 'all-time',
       });
 
-      const periodEvents = wrapper.emitted('update:period') as PeriodChangedEvent[][];
+      const periodEvents = wrapper.emitted<PeriodChangedEvent[]>('update:period')!;
       expect(periodEvents).toBeTruthy();
       const lastPeriodEvent = periodEvents.at(-1)![0];
       expect(lastPeriodEvent.start).toBe(0);
@@ -166,7 +166,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await customButton.trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const selectionEvents = wrapper.emitted('update:selection') as SelectionChangedEvent[][];
+      const selectionEvents = wrapper.emitted('update:selection')!;
       expect(selectionEvents).toBeTruthy();
       expect(selectionEvents.at(-1)![0]).toMatchObject({
         year: 'custom',
@@ -228,7 +228,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await quarterButtons[1].trigger('click');
       await vi.advanceTimersToNextTimerAsync();
 
-      const selectionEvents = wrapper.emitted('update:selection') as SelectionChangedEvent[][];
+      const selectionEvents = wrapper.emitted('update:selection')!;
       expect(selectionEvents).toBeTruthy();
       expect(selectionEvents.at(-1)![0]).toMatchObject({
         quarter: Quarter.Q1,
@@ -248,7 +248,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
 
       await vi.advanceTimersToNextTimerAsync();
 
-      const periodEvents = wrapper.emitted('update:period') as PeriodChangedEvent[][];
+      const periodEvents = wrapper.emitted('update:period')!;
       expect(periodEvents).toBeTruthy();
       expect(periodEvents.length).toBeGreaterThan(0);
 
@@ -269,7 +269,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await wrapper.setProps({ year: 'custom' });
       await vi.advanceTimersToNextTimerAsync();
 
-      const periodEvents = wrapper.emitted('update:period') as (PeriodChangedEvent | null)[][];
+      const periodEvents = wrapper.emitted('update:period')!;
       const lastEvent = periodEvents.at(-1)![0];
       expect(lastEvent).toBeNull();
     });

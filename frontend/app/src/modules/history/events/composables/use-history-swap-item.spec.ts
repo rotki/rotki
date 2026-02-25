@@ -1,6 +1,11 @@
+import type { UseHistoryEventsSelectionModeReturn } from './use-selection-mode';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type EvmHistoryEvent, HistoryEventAccountingRuleStatus, type HistoryEventEntry } from '@/types/history/events/schemas';
+import {
+  type EvmHistoryEvent,
+  HistoryEventAccountingRuleStatus,
+  type HistoryEventEntry,
+} from '@/types/history/events/schemas';
 import { useHistorySwapItem } from './use-history-swap-item';
 
 const mockIsAssetIgnored = vi.fn<(asset: string) => boolean>().mockReturnValue(false);
@@ -32,7 +37,7 @@ vi.mock('@/utils/history/events', () => ({
 
 // Create EvmHistoryEvent which has counterparty property
 function createMockEvent(overrides: Partial<EvmHistoryEvent & { eventAccountingRuleStatus: HistoryEventAccountingRuleStatus }> = {}): HistoryEventEntry {
-  const event: EvmHistoryEvent & { eventAccountingRuleStatus: HistoryEventAccountingRuleStatus } = {
+  return {
     identifier: 1,
     entryType: HistoryEventEntryType.EVM_EVENT,
     asset: 'ETH',
@@ -51,7 +56,6 @@ function createMockEvent(overrides: Partial<EvmHistoryEvent & { eventAccountingR
     eventAccountingRuleStatus: HistoryEventAccountingRuleStatus.HAS_RULE,
     ...overrides,
   };
-  return event as HistoryEventEntry;
 }
 
 function createSwapEvents(): HistoryEventEntry[] {
@@ -251,20 +255,37 @@ describe('useHistorySwapItem', () => {
       selectedEventIds: number[];
     }
 
-    function createMockSelection(overrides: Partial<MockSelectionOptions> = {}): {
-      isSelectionMode: Ref<boolean>;
-      isSelectAllMatching: Ref<boolean>;
-      isEventSelected: (id: number) => boolean;
-      actions: { toggleEvent: ReturnType<typeof vi.fn>; toggleSwap: ReturnType<typeof vi.fn> };
-    } {
+    function createMockSelection(overrides: Partial<MockSelectionOptions> = {}): UseHistoryEventsSelectionModeReturn {
       const selectedIds = new Set(overrides.selectedEventIds ?? []);
+      const isSelectionMode = ref<boolean>(overrides.isSelectionMode ?? false);
+      const isSelectAllMatching = ref<boolean>(overrides.isSelectAllMatching ?? false);
+      const selectedEvents = ref<Set<number>>(selectedIds);
       return {
-        isSelectionMode: ref(overrides.isSelectionMode ?? false),
-        isSelectAllMatching: ref(overrides.isSelectAllMatching ?? false),
+        isSelectionMode: readonly(isSelectionMode),
+        isSelectAllMatching: readonly(isSelectAllMatching),
         isEventSelected: (id: number): boolean => selectedIds.has(id),
+        getSelectedIds: vi.fn((): number[] => Array.from(selectedIds)),
+        setAvailableIds: vi.fn(),
+        setTotalMatchingCount: vi.fn(),
+        selectedEvents,
+        state: computed(() => ({
+          isActive: get(isSelectionMode),
+          isAllSelected: false,
+          isPartiallySelected: false,
+          selectedCount: selectedIds.size,
+          selectedIds,
+          hasAvailableEvents: false,
+          selectAllMatching: get(isSelectAllMatching),
+          totalMatchingCount: 0,
+        })),
         actions: {
+          clear: vi.fn(),
+          exit: vi.fn(),
+          toggle: vi.fn(),
+          toggleAll: vi.fn(),
           toggleEvent: vi.fn(),
           toggleSwap: vi.fn(),
+          toggleSelectAllMatching: vi.fn(),
         },
       };
     }
@@ -272,7 +293,7 @@ describe('useHistorySwapItem', () => {
     it('should return true for showCheckbox when selection mode active', () => {
       const events = ref(createSwapEvents());
       const selection = createMockSelection({ isSelectionMode: true });
-      const { showCheckbox } = useHistorySwapItem({ events, selection: selection as any });
+      const { showCheckbox } = useHistorySwapItem({ events, selection });
 
       expect(get(showCheckbox)).toBe(true);
     });
@@ -280,7 +301,7 @@ describe('useHistorySwapItem', () => {
     it('should return true for isSelected when all events are selected', () => {
       const events = ref(createSwapEvents());
       const selection = createMockSelection({ selectedEventIds: [1, 2] });
-      const { isSelected } = useHistorySwapItem({ events, selection: selection as any });
+      const { isSelected } = useHistorySwapItem({ events, selection });
 
       expect(get(isSelected)).toBe(true);
     });
@@ -288,7 +309,7 @@ describe('useHistorySwapItem', () => {
     it('should return false for isSelected when not all events selected', () => {
       const events = ref(createSwapEvents());
       const selection = createMockSelection({ selectedEventIds: [1] });
-      const { isSelected } = useHistorySwapItem({ events, selection: selection as any });
+      const { isSelected } = useHistorySwapItem({ events, selection });
 
       expect(get(isSelected)).toBe(false);
     });
@@ -296,7 +317,7 @@ describe('useHistorySwapItem', () => {
     it('should call toggleSwap with all event IDs when toggled', () => {
       const events = ref(createSwapEvents());
       const selection = createMockSelection();
-      const { toggleSelected } = useHistorySwapItem({ events, selection: selection as any });
+      const { toggleSelected } = useHistorySwapItem({ events, selection });
 
       toggleSelected();
 

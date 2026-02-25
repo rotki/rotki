@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePremiumCredentialsApi } from './premium-credentials';
 
@@ -11,14 +11,14 @@ describe('composables/api/session/premium-credentials', () => {
   });
 
   describe('setPremiumCredentials', () => {
-    it('sets premium credentials', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should set premium credentials', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUsername: string | null = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/users/:username`, async ({ request, params }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
-          capturedUsername = params.username as string;
+          capturedBody = await request.json();
+          capturedUsername = String(params.username);
           return HttpResponse.json({
             result: true,
             message: '',
@@ -37,7 +37,7 @@ describe('composables/api/session/premium-credentials', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on invalid credentials', async () => {
+    it('should throw error on invalid credentials', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/users/:username`, () =>
           HttpResponse.json({
@@ -55,7 +55,7 @@ describe('composables/api/session/premium-credentials', () => {
   });
 
   describe('deletePremiumCredentials', () => {
-    it('deletes premium credentials', async () => {
+    it('should delete premium credentials', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/premium`, () =>
           HttpResponse.json({
@@ -70,7 +70,7 @@ describe('composables/api/session/premium-credentials', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/premium`, () =>
           HttpResponse.json({
@@ -88,7 +88,7 @@ describe('composables/api/session/premium-credentials', () => {
   });
 
   describe('getPremiumCapabilities', () => {
-    it('gets premium capabilities', async () => {
+    it('should get premium capabilities', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/premium/capabilities`, () =>
           HttpResponse.json({
@@ -109,7 +109,7 @@ describe('composables/api/session/premium-credentials', () => {
       expect(result.graphsView).toBe(false);
     });
 
-    it('returns defaults when no premium', async () => {
+    it('should return defaults when no premium', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/premium/capabilities`, () =>
           HttpResponse.json({
@@ -126,7 +126,7 @@ describe('composables/api/session/premium-credentials', () => {
       expect(result.graphsView).toBe(false);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/premium/capabilities`, () =>
           HttpResponse.json({

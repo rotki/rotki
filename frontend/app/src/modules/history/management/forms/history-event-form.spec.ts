@@ -59,8 +59,8 @@ describe('component/HistoryEventForm.vue', () => {
     expect.assertions(2);
 
     wrapper = await createWrapper();
-    const entryTypeInput = wrapper.find('[data-cy=entry-type] input');
-    const entryTypeElement = entryTypeInput.element as HTMLInputElement;
+    const entryTypeInput = wrapper.find<HTMLInputElement>('[data-cy=entry-type] input');
+    const entryTypeElement = entryTypeInput.element;
 
     expect(entryTypeElement.value).toBe(HistoryEventEntryType.HISTORY_EVENT);
     expect(wrapper.find('[data-cy=history-event-form]').exists()).toBeTruthy();

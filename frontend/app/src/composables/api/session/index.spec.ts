@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSessionApi } from './index';
 
@@ -11,7 +11,7 @@ describe('composables/api/session/index', () => {
   });
 
   describe('consumeMessages', () => {
-    it('fetches and returns messages', async () => {
+    it('should fetch and returns messages', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/messages`, () =>
           HttpResponse.json({
@@ -30,7 +30,7 @@ describe('composables/api/session/index', () => {
       expect(result.warnings).toEqual(['Warning 1']);
     });
 
-    it('handles empty messages', async () => {
+    it('should handle empty messages', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/messages`, () =>
           HttpResponse.json({
@@ -49,7 +49,7 @@ describe('composables/api/session/index', () => {
       expect(result.warnings).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/messages`, () =>
           HttpResponse.json({
@@ -67,7 +67,7 @@ describe('composables/api/session/index', () => {
   });
 
   describe('fetchPeriodicData', () => {
-    it('fetches and parses periodic data', async () => {
+    it('should fetch and parses periodic data', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/periodic`, () =>
           HttpResponse.json({
@@ -96,7 +96,7 @@ describe('composables/api/session/index', () => {
       expect(result.lastDataUploadTs).toBe(1700100000);
     });
 
-    it('handles empty connected nodes', async () => {
+    it('should handle empty connected nodes', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/periodic`, () =>
           HttpResponse.json({
@@ -116,7 +116,7 @@ describe('composables/api/session/index', () => {
       expect(result.lastBalanceSave).toBe(0);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/periodic`, () =>
           HttpResponse.json({
@@ -134,12 +134,12 @@ describe('composables/api/session/index', () => {
   });
 
   describe('refreshGeneralCacheTask', () => {
-    it('sends POST request with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/protocols/data/refresh`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 123 },
             message: '',
@@ -157,12 +157,12 @@ describe('composables/api/session/index', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('handles different cache protocols', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle different cache protocols', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/protocols/data/refresh`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 456 },
             message: '',
@@ -173,10 +173,10 @@ describe('composables/api/session/index', () => {
       const { refreshGeneralCacheTask } = useSessionApi();
       await refreshGeneralCacheTask('aave');
 
-      expect(capturedBody!.cache_protocol).toBe('aave');
+      expect(capturedBody).toHaveProperty('cache_protocol', 'aave');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/protocols/data/refresh`, () =>
           HttpResponse.json({
@@ -194,7 +194,7 @@ describe('composables/api/session/index', () => {
   });
 
   describe('getRefreshableGeneralCaches', () => {
-    it('fetches list of refreshable caches', async () => {
+    it('should fetch list of refreshable caches', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/protocols/data/refresh`, () =>
           HttpResponse.json({
@@ -209,7 +209,7 @@ describe('composables/api/session/index', () => {
       expect(result).toEqual(['uniswap', 'aave', 'compound', 'makerdao']);
     });
 
-    it('handles empty cache list', async () => {
+    it('should handle empty cache list', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/protocols/data/refresh`, () =>
           HttpResponse.json({
@@ -224,7 +224,7 @@ describe('composables/api/session/index', () => {
       expect(result).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/protocols/data/refresh`, () =>
           HttpResponse.json({

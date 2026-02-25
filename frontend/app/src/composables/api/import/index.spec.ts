@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useImportDataApi } from './index';
 
@@ -11,12 +11,12 @@ describe('composables/api/import/index', () => {
   });
 
   describe('importDataFrom', () => {
-    it('sends PUT request with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/import`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 123 },
             message: '',
@@ -36,12 +36,12 @@ describe('composables/api/import/index', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('handles null timestamp format', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle null timestamp format', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/import`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 456 },
             message: '',
@@ -60,12 +60,12 @@ describe('composables/api/import/index', () => {
       });
     });
 
-    it('handles different import sources', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle different import sources', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/import`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 789 },
             message: '',
@@ -76,11 +76,11 @@ describe('composables/api/import/index', () => {
       const { importDataFrom } = useImportDataApi();
       await importDataFrom('cryptocom', '/data/crypto.csv', '%d/%m/%Y');
 
-      expect(capturedBody!.source).toBe('cryptocom');
-      expect(capturedBody!.timestamp_format).toBe('%d/%m/%Y');
+      expect(capturedBody).toHaveProperty('source', 'cryptocom');
+      expect(capturedBody).toHaveProperty('timestamp_format', '%d/%m/%Y');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/import`, () =>
           HttpResponse.json({
@@ -98,7 +98,7 @@ describe('composables/api/import/index', () => {
   });
 
   describe('importFile', () => {
-    it('sends POST request with FormData', async () => {
+    it('should send POST request with FormData', async () => {
       let capturedContentType = '';
       let capturedFormData: FormData | null = null;
 
@@ -125,7 +125,7 @@ describe('composables/api/import/index', () => {
       expect(result.taskId).toBe(101);
     });
 
-    it('handles file upload with additional fields', async () => {
+    it('should handle file upload with additional fields', async () => {
       let capturedFormData: FormData | null = null;
 
       server.use(
@@ -150,7 +150,7 @@ describe('composables/api/import/index', () => {
       expect(capturedFormData!.get('timestamp_format')).toBe('%Y-%m-%d %H:%M:%S');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/import`, () =>
           HttpResponse.json({

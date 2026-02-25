@@ -12,7 +12,7 @@ describe('composables/api/balances/nft', () => {
   });
 
   describe('fetchNfBalancesTask', () => {
-    it('fetches NFT balances as async task', async () => {
+    it('should fetch NFT balances as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -41,7 +41,7 @@ describe('composables/api/balances/nft', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('includes optional filters in snake_case', async () => {
+    it('should include optional filters in snake_case', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -73,7 +73,7 @@ describe('composables/api/balances/nft', () => {
       expect(capturedParams!.get('ignored_assets_handling')).toBe('exclude');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/nfts/balances`, () =>
           HttpResponse.json({
@@ -91,7 +91,7 @@ describe('composables/api/balances/nft', () => {
   });
 
   describe('fetchNfBalances', () => {
-    it('fetches NFT balances synchronously and parses response', async () => {
+    it('should fetch NFT balances synchronously and parses response', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -134,7 +134,7 @@ describe('composables/api/balances/nft', () => {
       expect(result.entriesFound).toBe(1);
     });
 
-    it('handles nullable fields', async () => {
+    it('should handle nullable fields', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/nfts/balances`, () =>
           HttpResponse.json({
@@ -168,7 +168,7 @@ describe('composables/api/balances/nft', () => {
       expect(result.entries[0].imageUrl).toBeNull();
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/nfts/balances`, () =>
           HttpResponse.json({

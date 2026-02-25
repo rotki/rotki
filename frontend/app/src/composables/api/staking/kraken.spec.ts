@@ -1,6 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useKrakenApi } from './kraken';
 
@@ -12,12 +12,12 @@ describe('composables/api/staking/kraken', () => {
   });
 
   describe('refreshKrakenStaking', () => {
-    it('sends async POST request with empty pagination', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send async POST request with empty pagination', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/staking/kraken`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 123 },
             message: '',
@@ -38,7 +38,7 @@ describe('composables/api/staking/kraken', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/staking/kraken`, () =>
           HttpResponse.json({
@@ -56,12 +56,12 @@ describe('composables/api/staking/kraken', () => {
   });
 
   describe('fetchKrakenStakingEvents', () => {
-    it('fetches staking events with only_cache true', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should fetch staking events with only_cache true', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/staking/kraken`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               assets: ['ETH', 'DOT'],
@@ -103,12 +103,12 @@ describe('composables/api/staking/kraken', () => {
       expect(result.totalValue.toString()).toBe('3500');
     });
 
-    it('handles pagination with filters', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle pagination with filters', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/staking/kraken`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               assets: ['ETH'],
@@ -151,7 +151,7 @@ describe('composables/api/staking/kraken', () => {
       });
     });
 
-    it('handles empty results', async () => {
+    it('should handle empty results', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/staking/kraken`, () =>
           HttpResponse.json({
@@ -180,7 +180,7 @@ describe('composables/api/staking/kraken', () => {
       expect(result.received).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/staking/kraken`, () =>
           HttpResponse.json({

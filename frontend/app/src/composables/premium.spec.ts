@@ -17,7 +17,7 @@ function mockPremiumCapabilities<T = PremiumCapabilities>(capabilities: T, statu
     }, { status }));
 }
 
-describe('composables/premium', () => {
+describe('usePremiumHelper', () => {
   let pinia: Pinia;
 
   beforeEach(() => {
@@ -25,317 +25,322 @@ describe('composables/premium', () => {
     setActivePinia(pinia);
   });
 
-  describe('usePremiumHelper', () => {
-    describe('isFeatureAllowed', () => {
-      it('should return false when user is not premium', () => {
-        const { isFeatureAllowed } = usePremiumHelper();
+  describe('isFeatureAllowed', () => {
+    it('should return false when user is not premium', () => {
+      const { isFeatureAllowed } = usePremiumHelper();
 
-        const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
-        const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
-        const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
+      const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
+      const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
+      const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
 
-        expect(get(ethStakingAllowed)).toBe(false);
-        expect(get(graphsAllowed)).toBe(false);
-        expect(get(eventAnalysisAllowed)).toBe(false);
+      expect(get(ethStakingAllowed)).toBe(false);
+      expect(get(graphsAllowed)).toBe(false);
+      expect(get(eventAnalysisAllowed)).toBe(false);
+    });
+
+    it('should return false when user is premium but capabilities are not loaded', () => {
+      const store = usePremiumStore();
+      const { premium } = storeToRefs(store);
+      set(premium, true);
+
+      const { isFeatureAllowed } = usePremiumHelper();
+
+      const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
+      const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
+      const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
+
+      expect(get(ethStakingAllowed)).toBe(false);
+      expect(get(graphsAllowed)).toBe(false);
+      expect(get(eventAnalysisAllowed)).toBe(false);
+    });
+
+    it('should return correct value when user is premium and capabilities are loaded', () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, true);
+      set(capabilities, {
+        ethStakingView: true,
+        eventAnalysisView: true,
+        graphsView: false,
       });
 
-      it('should return false when user is premium but capabilities are not loaded', () => {
-        const store = usePremiumStore();
-        const { premium } = storeToRefs(store);
-        set(premium, true);
+      const { isFeatureAllowed } = usePremiumHelper();
 
-        const { isFeatureAllowed } = usePremiumHelper();
+      const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
+      const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
+      const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
 
-        const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
-        const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
-        const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
+      expect(get(ethStakingAllowed)).toBe(true);
+      expect(get(graphsAllowed)).toBe(false);
+      expect(get(eventAnalysisAllowed)).toBe(true);
+    });
 
-        expect(get(ethStakingAllowed)).toBe(false);
-        expect(get(graphsAllowed)).toBe(false);
-        expect(get(eventAnalysisAllowed)).toBe(false);
+    it('should return false for missing capability in response (schema defaults)', () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, true);
+      // Simulate a response missing some capabilities (zod will use defaults)
+      set(capabilities, {
+        ethStakingView: true,
+        eventAnalysisView: false,
+        graphsView: false,
       });
 
-      it('should return correct value when user is premium and capabilities are loaded', () => {
-        const store = usePremiumStore();
-        const { capabilities, premium } = storeToRefs(store);
-        set(premium, true);
-        set(capabilities, {
-          ethStakingView: true,
-          eventAnalysisView: true,
-          graphsView: false,
-        });
+      const { isFeatureAllowed } = usePremiumHelper();
 
-        const { isFeatureAllowed } = usePremiumHelper();
+      const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
+      const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
+      const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
 
-        const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
-        const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
-        const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
+      expect(get(ethStakingAllowed)).toBe(true);
+      expect(get(graphsAllowed)).toBe(false);
+      expect(get(eventAnalysisAllowed)).toBe(false);
+    });
 
-        expect(get(ethStakingAllowed)).toBe(true);
-        expect(get(graphsAllowed)).toBe(false);
-        expect(get(eventAnalysisAllowed)).toBe(true);
+    it('should reactively update when capabilities change', async () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, true);
+      set(capabilities, {
+        ethStakingView: false,
+        eventAnalysisView: false,
+        graphsView: false,
       });
 
-      it('should return false for missing capability in response (schema defaults)', () => {
-        const store = usePremiumStore();
-        const { capabilities, premium } = storeToRefs(store);
-        set(premium, true);
-        // Simulate a response missing some capabilities (zod will use defaults)
-        set(capabilities, {
-          ethStakingView: true,
-          eventAnalysisView: false,
-          graphsView: false,
-        });
+      const { isFeatureAllowed } = usePremiumHelper();
+      const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
 
-        const { isFeatureAllowed } = usePremiumHelper();
+      expect(get(ethStakingAllowed)).toBe(false);
 
-        const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
-        const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
-        const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
-
-        expect(get(ethStakingAllowed)).toBe(true);
-        expect(get(graphsAllowed)).toBe(false);
-        expect(get(eventAnalysisAllowed)).toBe(false);
+      // Update capabilities
+      set(capabilities, {
+        ethStakingView: true,
+        eventAnalysisView: false,
+        graphsView: false,
       });
 
-      it('should reactively update when capabilities change', async () => {
-        const store = usePremiumStore();
-        const { capabilities, premium } = storeToRefs(store);
-        set(premium, true);
-        set(capabilities, {
-          ethStakingView: false,
-          eventAnalysisView: false,
-          graphsView: false,
-        });
+      await nextTick();
+      expect(get(ethStakingAllowed)).toBe(true);
+    });
 
-        const { isFeatureAllowed } = usePremiumHelper();
-        const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
-
-        expect(get(ethStakingAllowed)).toBe(false);
-
-        // Update capabilities
-        set(capabilities, {
-          ethStakingView: true,
-          eventAnalysisView: false,
-          graphsView: false,
-        });
-
-        await nextTick();
-        expect(get(ethStakingAllowed)).toBe(true);
+    it('should reactively update when premium status changes', async () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, true);
+      set(capabilities, {
+        ethStakingView: true,
+        eventAnalysisView: true,
+        graphsView: true,
       });
 
-      it('should reactively update when premium status changes', async () => {
-        const store = usePremiumStore();
-        const { capabilities, premium } = storeToRefs(store);
-        set(premium, true);
-        set(capabilities, {
-          ethStakingView: true,
-          eventAnalysisView: true,
-          graphsView: true,
-        });
+      const { isFeatureAllowed } = usePremiumHelper();
+      const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
 
-        const { isFeatureAllowed } = usePremiumHelper();
-        const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
+      expect(get(ethStakingAllowed)).toBe(true);
 
-        expect(get(ethStakingAllowed)).toBe(true);
+      // User loses premium status
+      set(premium, false);
 
-        // User loses premium status
-        set(premium, false);
+      await nextTick();
+      expect(get(ethStakingAllowed)).toBe(false);
+    });
+  });
+});
 
-        await nextTick();
-        expect(get(ethStakingAllowed)).toBe(false);
-      });
+describe('usePremiumStore - API Integration', () => {
+  let pinia: Pinia;
+
+  beforeEach(() => {
+    pinia = createPinia();
+    setActivePinia(pinia);
+  });
+
+  it('should fetch and parse capabilities when premium status becomes true', async () => {
+    const mockCapabilities: PremiumCapabilities = {
+      [PremiumFeature.ETH_STAKING_VIEW]: true,
+      [PremiumFeature.EVENT_ANALYSIS_VIEW]: false,
+      [PremiumFeature.GRAPHS_VIEW]: true,
+    };
+
+    server.use(mockPremiumCapabilities(mockCapabilities));
+
+    const store = usePremiumStore();
+    const { capabilities, premium } = storeToRefs(store);
+
+    // Trigger the watcher by setting premium to true
+    set(premium, true);
+
+    await vi.waitFor(() => {
+      expect(get(capabilities)).toEqual(mockCapabilities);
     });
   });
 
-  describe('usePremiumStore - API Integration', () => {
-    it('should fetch and parse capabilities when premium status becomes true', async () => {
-      const mockCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ETH_STAKING_VIEW]: true,
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: false,
-        [PremiumFeature.GRAPHS_VIEW]: true,
-      };
+  it('should handle API response with missing capabilities (defaults to false)', async () => {
+    // Simulate backend response missing some capabilities - zod will apply defaults
+    const partialCapabilities: Partial<PremiumCapabilities> = {
+      [PremiumFeature.ETH_STAKING_VIEW]: true,
+      // Missing EVENT_ANALYSIS_VIEW and GRAPHS_VIEW - should default to false
+    };
 
-      server.use(mockPremiumCapabilities(mockCapabilities));
+    server.use(mockPremiumCapabilities<Partial<PremiumCapabilities>>(partialCapabilities));
 
-      const store = usePremiumStore();
-      const { capabilities, premium } = storeToRefs(store);
+    const store = usePremiumStore();
+    const { capabilities, premium } = storeToRefs(store);
 
-      // Trigger the watcher by setting premium to true
-      set(premium, true);
+    set(premium, true);
 
-      await vi.waitFor(() => {
-        expect(get(capabilities)).toEqual(mockCapabilities);
-      });
+    await vi.waitFor(() => {
+      const caps = get(capabilities);
+      expect(caps?.[PremiumFeature.ETH_STAKING_VIEW]).toBe(true);
+      expect(caps?.[PremiumFeature.EVENT_ANALYSIS_VIEW]).toBe(false);
+      expect(caps?.[PremiumFeature.GRAPHS_VIEW]).toBe(false);
+    });
+  });
+
+  it('should handle all capabilities set to false', async () => {
+    const allFalseCapabilities: PremiumCapabilities = {
+      [PremiumFeature.ETH_STAKING_VIEW]: false,
+      [PremiumFeature.EVENT_ANALYSIS_VIEW]: false,
+      [PremiumFeature.GRAPHS_VIEW]: false,
+    };
+
+    server.use(mockPremiumCapabilities(allFalseCapabilities));
+
+    const store = usePremiumStore();
+    const { capabilities, premium } = storeToRefs(store);
+
+    set(premium, true);
+
+    await vi.waitFor(() => {
+      expect(get(capabilities)).toEqual(allFalseCapabilities);
     });
 
-    it('should handle API response with missing capabilities (defaults to false)', async () => {
-      // Simulate backend response missing some capabilities - zod will apply defaults
-      const partialCapabilities: Partial<PremiumCapabilities> = {
-        [PremiumFeature.ETH_STAKING_VIEW]: true,
-        // Missing EVENT_ANALYSIS_VIEW and GRAPHS_VIEW - should default to false
-      };
+    const { isFeatureAllowed } = usePremiumHelper();
+    const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
+    const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
+    const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
 
-      server.use(mockPremiumCapabilities<Partial<PremiumCapabilities>>(partialCapabilities));
+    expect(get(ethStakingAllowed)).toBe(false);
+    expect(get(graphsAllowed)).toBe(false);
+    expect(get(eventAnalysisAllowed)).toBe(false);
+  });
 
-      const store = usePremiumStore();
-      const { capabilities, premium } = storeToRefs(store);
+  it('should handle API error gracefully', async () => {
+    const apiCallSpy = vi.fn(() => HttpResponse.json({ message: 'Internal server error' }, { status: 500 }));
 
-      set(premium, true);
+    server.use(
+      http.get(`${backendUrl}/api/1/premium/capabilities`, apiCallSpy),
+    );
 
-      await vi.waitFor(() => {
-        const caps = get(capabilities);
-        expect(caps?.[PremiumFeature.ETH_STAKING_VIEW]).toBe(true);
-        expect(caps?.[PremiumFeature.EVENT_ANALYSIS_VIEW]).toBe(false);
-        expect(caps?.[PremiumFeature.GRAPHS_VIEW]).toBe(false);
-      });
+    const store = usePremiumStore();
+    const { capabilities, premium } = storeToRefs(store);
+
+    set(premium, true);
+
+    // Wait for API call to be attempted
+    await vi.waitFor(() => {
+      expect(apiCallSpy).toHaveBeenCalled();
     });
 
-    it('should handle all capabilities set to false', async () => {
-      const allFalseCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ETH_STAKING_VIEW]: false,
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: false,
-        [PremiumFeature.GRAPHS_VIEW]: false,
-      };
+    // Capabilities should remain undefined on error
+    expect(get(capabilities)).toBeUndefined();
+  });
 
-      server.use(mockPremiumCapabilities(allFalseCapabilities));
+  it('should clear capabilities when premium status becomes false', async () => {
+    const mockCapabilities: PremiumCapabilities = {
+      [PremiumFeature.ETH_STAKING_VIEW]: true,
+      [PremiumFeature.EVENT_ANALYSIS_VIEW]: true,
+      [PremiumFeature.GRAPHS_VIEW]: true,
+    };
 
-      const store = usePremiumStore();
-      const { capabilities, premium } = storeToRefs(store);
+    server.use(mockPremiumCapabilities(mockCapabilities));
 
-      set(premium, true);
+    const store = usePremiumStore();
+    const { capabilities, premium } = storeToRefs(store);
 
-      await vi.waitFor(() => {
-        expect(get(capabilities)).toEqual(allFalseCapabilities);
-      });
-
-      const { isFeatureAllowed } = usePremiumHelper();
-      const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
-      const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
-      const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
-
-      expect(get(ethStakingAllowed)).toBe(false);
-      expect(get(graphsAllowed)).toBe(false);
-      expect(get(eventAnalysisAllowed)).toBe(false);
+    // First set premium to true
+    set(premium, true);
+    await vi.waitFor(() => {
+      expect(get(capabilities)).toEqual(mockCapabilities);
     });
 
-    it('should handle API error gracefully', async () => {
-      const apiCallSpy = vi.fn(() => HttpResponse.json({ message: 'Internal server error' }, { status: 500 }));
+    // Then set it to false
+    set(premium, false);
+    await nextTick();
 
-      server.use(
-        http.get(`${backendUrl}/api/1/premium/capabilities`, apiCallSpy),
-      );
+    expect(get(capabilities)).toBeUndefined();
+  });
 
-      const store = usePremiumStore();
-      const { capabilities, premium } = storeToRefs(store);
+  it('should not fetch capabilities if premium was already true', async () => {
+    const mockCapabilities: PremiumCapabilities = {
+      [PremiumFeature.ETH_STAKING_VIEW]: true,
+      [PremiumFeature.EVENT_ANALYSIS_VIEW]: true,
+      [PremiumFeature.GRAPHS_VIEW]: true,
+    };
 
-      set(premium, true);
+    const apiCallSpy = vi.fn(() => HttpResponse.json<ActionResult<PremiumCapabilities>>({
+      message: '',
+      result: mockCapabilities,
+    }, { status: 200 }));
 
-      // Wait for API call to be attempted
-      await vi.waitFor(() => {
-        expect(apiCallSpy).toHaveBeenCalled();
-      });
+    server.use(
+      http.get(`${backendUrl}/api/1/premium/capabilities`, apiCallSpy),
+    );
 
-      // Capabilities should remain undefined on error
-      expect(get(capabilities)).toBeUndefined();
-    });
+    const store = usePremiumStore();
+    const { capabilities, premium } = storeToRefs(store);
 
-    it('should clear capabilities when premium status becomes false', async () => {
-      const mockCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ETH_STAKING_VIEW]: true,
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: true,
-        [PremiumFeature.GRAPHS_VIEW]: true,
-      };
+    // Set premium to true initially
+    set(premium, true);
 
-      server.use(mockPremiumCapabilities(mockCapabilities));
-
-      const store = usePremiumStore();
-      const { capabilities, premium } = storeToRefs(store);
-
-      // First set premium to true
-      set(premium, true);
-      await vi.waitFor(() => {
-        expect(get(capabilities)).toEqual(mockCapabilities);
-      });
-
-      // Then set it to false
-      set(premium, false);
-      await nextTick();
-
-      expect(get(capabilities)).toBeUndefined();
-    });
-
-    it('should not fetch capabilities if premium was already true', async () => {
-      const mockCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ETH_STAKING_VIEW]: true,
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: true,
-        [PremiumFeature.GRAPHS_VIEW]: true,
-      };
-
-      const apiCallSpy = vi.fn(() => HttpResponse.json<ActionResult<PremiumCapabilities>>({
-        message: '',
-        result: mockCapabilities,
-      }, { status: 200 }));
-
-      server.use(
-        http.get(`${backendUrl}/api/1/premium/capabilities`, apiCallSpy),
-      );
-
-      const store = usePremiumStore();
-      const { capabilities, premium } = storeToRefs(store);
-
-      // Set premium to true initially
-      set(premium, true);
-
-      // Wait for first API call
-      await vi.waitFor(() => {
-        expect(apiCallSpy).toHaveBeenCalledTimes(1);
-      });
-
-      // Set premium to true again (no change from true to true)
-      set(premium, true);
-      await nextTick();
-
-      // Wait to ensure no additional API call is made
-      await vi.waitFor(() => {
-        expect(get(capabilities)).toEqual(mockCapabilities);
-      });
-
-      // Should not call API again since premium was already true
+    // Wait for first API call
+    await vi.waitFor(() => {
       expect(apiCallSpy).toHaveBeenCalledTimes(1);
     });
 
-    it('should integrate with isFeatureAllowed after API call', async () => {
-      const mockCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ETH_STAKING_VIEW]: true,
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: false,
-        [PremiumFeature.GRAPHS_VIEW]: true,
-      };
+    // Set premium to true again (no change from true to true)
+    set(premium, true);
+    await nextTick();
 
-      server.use(mockPremiumCapabilities(mockCapabilities));
+    // Wait to ensure no additional API call is made
+    await vi.waitFor(() => {
+      expect(get(capabilities)).toEqual(mockCapabilities);
+    });
 
-      const store = usePremiumStore();
-      const { premium } = storeToRefs(store);
-      const { isFeatureAllowed } = usePremiumHelper();
+    // Should not call API again since premium was already true
+    expect(apiCallSpy).toHaveBeenCalledTimes(1);
+  });
 
-      const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
-      const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
-      const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
+  it('should integrate with isFeatureAllowed after API call', async () => {
+    const mockCapabilities: PremiumCapabilities = {
+      [PremiumFeature.ETH_STAKING_VIEW]: true,
+      [PremiumFeature.EVENT_ANALYSIS_VIEW]: false,
+      [PremiumFeature.GRAPHS_VIEW]: true,
+    };
 
-      // Initially all should be false
-      expect(get(ethStakingAllowed)).toBe(false);
-      expect(get(graphsAllowed)).toBe(false);
+    server.use(mockPremiumCapabilities(mockCapabilities));
+
+    const store = usePremiumStore();
+    const { premium } = storeToRefs(store);
+    const { isFeatureAllowed } = usePremiumHelper();
+
+    const ethStakingAllowed = isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW);
+    const graphsAllowed = isFeatureAllowed(PremiumFeature.GRAPHS_VIEW);
+    const eventAnalysisAllowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
+
+    // Initially all should be false
+    expect(get(ethStakingAllowed)).toBe(false);
+    expect(get(graphsAllowed)).toBe(false);
+    expect(get(eventAnalysisAllowed)).toBe(false);
+
+    // Activate premium
+    set(premium, true);
+
+    // Wait for capabilities to be fetched and set
+    await vi.waitFor(() => {
+      expect(get(ethStakingAllowed)).toBe(true);
+      expect(get(graphsAllowed)).toBe(true);
       expect(get(eventAnalysisAllowed)).toBe(false);
-
-      // Activate premium
-      set(premium, true);
-
-      // Wait for capabilities to be fetched and set
-      await vi.waitFor(() => {
-        expect(get(ethStakingAllowed)).toBe(true);
-        expect(get(graphsAllowed)).toBe(true);
-        expect(get(eventAnalysisAllowed)).toBe(false);
-      });
     });
   });
 });

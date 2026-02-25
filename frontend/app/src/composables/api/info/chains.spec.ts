@@ -11,7 +11,7 @@ describe('composables/api/info/chains', () => {
   });
 
   describe('fetchSupportedChains', () => {
-    it('fetches supported chains and parses response', async () => {
+    it('should fetch supported chains and parses response', async () => {
       const mockChains = [
         {
           id: 'ETH',
@@ -58,7 +58,7 @@ describe('composables/api/info/chains', () => {
       expect(result[2].type).toBe('substrate');
     });
 
-    it('returns empty array when no chains', async () => {
+    it('should return empty array when no chains', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/supported`, () =>
           HttpResponse.json({
@@ -73,7 +73,7 @@ describe('composables/api/info/chains', () => {
       expect(result).toEqual([]);
     });
 
-    it('handles evmlike chain type', async () => {
+    it('should handle evmlike chain type', async () => {
       const mockChains = [
         {
           id: 'ZKSYNC_LITE',
@@ -101,7 +101,7 @@ describe('composables/api/info/chains', () => {
       expect(result[0].type).toBe('evmlike');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/supported`, () =>
           HttpResponse.json({
@@ -119,7 +119,7 @@ describe('composables/api/info/chains', () => {
   });
 
   describe('fetchAllEvmChains', () => {
-    it('fetches all EVM chains and parses response', async () => {
+    it('should fetch all EVM chains and parses response', async () => {
       const mockEvmChains = [
         { id: 1, name: 'ethereum', label: 'Ethereum Mainnet' },
         { id: 10, name: 'optimism', label: 'Optimism' },
@@ -145,7 +145,7 @@ describe('composables/api/info/chains', () => {
       expect(result[3]).toEqual({ id: 42161, name: 'arbitrum_one', label: 'Arbitrum One' });
     });
 
-    it('returns empty array when no EVM chains', async () => {
+    it('should return empty array when no EVM chains', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/evm/all`, () =>
           HttpResponse.json({
@@ -160,7 +160,7 @@ describe('composables/api/info/chains', () => {
       expect(result).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/evm/all`, () =>
           HttpResponse.json({

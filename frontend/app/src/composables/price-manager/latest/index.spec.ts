@@ -60,7 +60,7 @@ describe('useLatestPrices', () => {
   }
 
   describe('items', () => {
-    it('computes usdPrice in current currency without double conversion', async () => {
+    it('should compute usdPrice in current currency without double conversion', async () => {
       setupPrices('EUR', { EUR: 0.85 }, { ETH: 2000 });
 
       const { useAssetPricesApi } = await import('@/composables/api/assets/prices');
@@ -71,7 +71,7 @@ describe('useLatestPrices', () => {
       ];
       vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
 
-      const { items, getLatestPrices } = useLatestPrices(t as ReturnType<typeof useI18n>['t']);
+      const { items, getLatestPrices } = useLatestPrices(t);
       await getLatestPrices();
 
       const result = get(items);
@@ -80,7 +80,7 @@ describe('useLatestPrices', () => {
       expect(result[0].usdPrice.toNumber()).toBe(1700);
     });
 
-    it('computes usdPrice correctly when main currency is USD', async () => {
+    it('should compute usdPrice correctly when main currency is USD', async () => {
       setupPrices('USD', {}, { ETH: 2000 });
 
       const { useAssetPricesApi } = await import('@/composables/api/assets/prices');
@@ -91,7 +91,7 @@ describe('useLatestPrices', () => {
       ];
       vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
 
-      const { items, getLatestPrices } = useLatestPrices(t as ReturnType<typeof useI18n>['t']);
+      const { items, getLatestPrices } = useLatestPrices(t);
       await getLatestPrices();
 
       const result = get(items);
@@ -100,7 +100,7 @@ describe('useLatestPrices', () => {
       expect(result[0].usdPrice.toNumber()).toBe(2000);
     });
 
-    it('filters items when filter is provided', async () => {
+    it('should filter items when filter is provided', async () => {
       setupPrices('USD', {}, { ETH: 2000, BTC: 50000 });
 
       const { useAssetPricesApi } = await import('@/composables/api/assets/prices');
@@ -113,7 +113,7 @@ describe('useLatestPrices', () => {
       vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
 
       const filter = ref<string | undefined>('ETH');
-      const { items, getLatestPrices } = useLatestPrices(t as ReturnType<typeof useI18n>['t'], filter);
+      const { items, getLatestPrices } = useLatestPrices(t, filter);
       await getLatestPrices();
 
       const result = get(items);
@@ -121,7 +121,7 @@ describe('useLatestPrices', () => {
       expect(result[0].fromAsset).toBe('ETH');
     });
 
-    it('returns all items when filter is undefined', async () => {
+    it('should return all items when filter is undefined', async () => {
       setupPrices('USD', {}, { ETH: 2000, BTC: 50000 });
 
       const { useAssetPricesApi } = await import('@/composables/api/assets/prices');
@@ -133,7 +133,7 @@ describe('useLatestPrices', () => {
       ];
       vi.mocked(fetchLatestPrices).mockResolvedValue(manualPrices);
 
-      const { items, getLatestPrices } = useLatestPrices(t as ReturnType<typeof useI18n>['t']);
+      const { items, getLatestPrices } = useLatestPrices(t);
       await getLatestPrices();
 
       expect(get(items)).toHaveLength(2);

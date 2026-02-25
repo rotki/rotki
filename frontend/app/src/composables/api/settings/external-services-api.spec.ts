@@ -1,6 +1,6 @@
 import type { ExternalServiceKey } from '@/types/user';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useExternalServicesApi } from './external-services-api';
 
@@ -12,7 +12,7 @@ describe('composables/api/settings/external-services-api', () => {
   });
 
   describe('queryExternalServices', () => {
-    it('queries external services', async () => {
+    it('should query external services', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/external_services`, () =>
           HttpResponse.json({
@@ -31,7 +31,7 @@ describe('composables/api/settings/external-services-api', () => {
       expect(result.coingecko?.apiKey).toBe('coingecko-key-456');
     });
 
-    it('returns empty object when no services configured', async () => {
+    it('should return empty object when no services configured', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/external_services`, () =>
           HttpResponse.json({
@@ -47,7 +47,7 @@ describe('composables/api/settings/external-services-api', () => {
       expect(result.coingecko).toBeUndefined();
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/external_services`, () =>
           HttpResponse.json({
@@ -65,12 +65,12 @@ describe('composables/api/settings/external-services-api', () => {
   });
 
   describe('setExternalServices', () => {
-    it('sets external services', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should set external services', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/external_services`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               etherscan: { api_key: 'new-etherscan-key' },
@@ -92,12 +92,12 @@ describe('composables/api/settings/external-services-api', () => {
       expect(result.etherscan?.apiKey).toBe('new-etherscan-key');
     });
 
-    it('sets multiple external services', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should set multiple external services', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/external_services`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               etherscan: { api_key: 'etherscan-key' },
@@ -125,7 +125,7 @@ describe('composables/api/settings/external-services-api', () => {
       expect(result.coingecko?.apiKey).toBe('coingecko-key');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/external_services`, () =>
           HttpResponse.json({
@@ -143,12 +143,12 @@ describe('composables/api/settings/external-services-api', () => {
   });
 
   describe('deleteExternalServices', () => {
-    it('deletes an external service', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should delete an external service', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/external_services`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               coingecko: { api_key: 'coingecko-key' },
@@ -168,7 +168,7 @@ describe('composables/api/settings/external-services-api', () => {
       expect(result.coingecko?.apiKey).toBe('coingecko-key');
     });
 
-    it('returns empty when last service deleted', async () => {
+    it('should return empty when last service deleted', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/external_services`, () =>
           HttpResponse.json({
@@ -183,7 +183,7 @@ describe('composables/api/settings/external-services-api', () => {
       expect(result).toEqual({});
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/external_services`, () =>
           HttpResponse.json({

@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetCexMappingApi } from './cex-mapping';
 
@@ -11,12 +11,12 @@ describe('composables/api/assets/cex-mapping', () => {
   });
 
   describe('fetchAllCexMapping', () => {
-    it('sends POST request with snake_case payload and omits orderByAttributes and ascending', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with snake_case payload and omits orderByAttributes and ascending', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries: [
@@ -58,12 +58,12 @@ describe('composables/api/assets/cex-mapping', () => {
       expect(result.data[0].asset).toBe('BTC');
     });
 
-    it('handles ref payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle ref payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries: [],
@@ -90,7 +90,7 @@ describe('composables/api/assets/cex-mapping', () => {
       });
     });
 
-    it('returns collection with pagination info', async () => {
+    it('should return collection with pagination info', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/locationmappings`, () =>
           HttpResponse.json({
@@ -118,12 +118,12 @@ describe('composables/api/assets/cex-mapping', () => {
   });
 
   describe('addCexMapping', () => {
-    it('sends PUT request with entries array containing snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with entries array containing snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -150,12 +150,12 @@ describe('composables/api/assets/cex-mapping', () => {
       });
     });
 
-    it('handles null location', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle null location', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -181,7 +181,7 @@ describe('composables/api/assets/cex-mapping', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/assets/locationmappings`, () =>
           HttpResponse.json({
@@ -203,12 +203,12 @@ describe('composables/api/assets/cex-mapping', () => {
   });
 
   describe('editCexMapping', () => {
-    it('sends PATCH request with entries array containing snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request with entries array containing snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -235,7 +235,7 @@ describe('composables/api/assets/cex-mapping', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/assets/locationmappings`, () =>
           HttpResponse.json({
@@ -257,12 +257,12 @@ describe('composables/api/assets/cex-mapping', () => {
   });
 
   describe('deleteCexMapping', () => {
-    it('sends DELETE request with entries array containing snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send DELETE request with entries array containing snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -287,12 +287,12 @@ describe('composables/api/assets/cex-mapping', () => {
       });
     });
 
-    it('handles null location in delete payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle null location in delete payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/assets/locationmappings`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -316,7 +316,7 @@ describe('composables/api/assets/cex-mapping', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/assets/locationmappings`, () =>
           HttpResponse.json({

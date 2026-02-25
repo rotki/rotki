@@ -1,6 +1,6 @@
 import type { QueriedAddressPayload } from '@/types/session';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Module } from '@/types/modules';
 
@@ -19,7 +19,7 @@ describe('composables/api/session/queried-addresses', () => {
   }
 
   describe('queriedAddresses', () => {
-    it('gets queried addresses', async () => {
+    it('should get queried addresses', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/queried_addresses`, () =>
           HttpResponse.json({
@@ -38,7 +38,7 @@ describe('composables/api/session/queried-addresses', () => {
       expect(result.uniswap).toEqual(['0x789']);
     });
 
-    it('returns empty object when no addresses are configured', async () => {
+    it('should return empty object when no addresses are configured', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/queried_addresses`, () =>
           HttpResponse.json({
@@ -53,7 +53,7 @@ describe('composables/api/session/queried-addresses', () => {
       expect(result).toEqual({});
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/queried_addresses`, () =>
           HttpResponse.json({
@@ -71,12 +71,12 @@ describe('composables/api/session/queried-addresses', () => {
   });
 
   describe('addQueriedAddress', () => {
-    it('adds a queried address', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should add a queried address', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/queried_addresses`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               makerdao_dsr: ['0x123', '0x456', '0x789'],
@@ -100,7 +100,7 @@ describe('composables/api/session/queried-addresses', () => {
       expect(result.makerdaoDsr).toEqual(['0x123', '0x456', '0x789']);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/queried_addresses`, () =>
           HttpResponse.json({
@@ -122,12 +122,12 @@ describe('composables/api/session/queried-addresses', () => {
   });
 
   describe('deleteQueriedAddress', () => {
-    it('deletes a queried address', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should delete a queried address', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/queried_addresses`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               makerdao_dsr: ['0x123'],
@@ -151,7 +151,7 @@ describe('composables/api/session/queried-addresses', () => {
       expect(result.makerdaoDsr).toEqual(['0x123']);
     });
 
-    it('returns empty array when last address is deleted', async () => {
+    it('should return empty array when last address is deleted', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/queried_addresses`, () =>
           HttpResponse.json({
@@ -172,7 +172,7 @@ describe('composables/api/session/queried-addresses', () => {
       expect(result.makerdaoDsr).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/queried_addresses`, () =>
           HttpResponse.json({

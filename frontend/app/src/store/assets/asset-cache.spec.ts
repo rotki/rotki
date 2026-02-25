@@ -144,7 +144,7 @@ describe('store::assets/cache', () => {
     vi.advanceTimersByTime(600_000);
     await flushPromises();
 
-    vi.mocked(assetMapping).mockImplementation(async (): Promise<AssetMap> => Promise.reject(new Error('Network error')));
+    vi.mocked(assetMapping).mockRejectedValue(new Error('Network error'));
 
     for (let i = 0; i < 50; i++) {
       store.retrieve(`AST-${i}`);

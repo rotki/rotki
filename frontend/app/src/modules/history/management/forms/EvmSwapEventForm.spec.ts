@@ -4,22 +4,17 @@ import type { AddEvmSwapEventPayload, EditEvmSwapEventPayload, EvmSwapEvent } fr
 import type { TradeLocationData } from '@/types/history/trade/location';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useLocations } from '@/composables/locations';
 import EvmSwapEventForm from '@/modules/history/management/forms/EvmSwapEventForm.vue';
-import { useMessageStore } from '@/store/message';
 import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/composables/history/events', () => ({
   useHistoryEvents: vi.fn(),
-}));
-
-vi.mock('@/store/message', () => ({
-  useMessageStore: vi.fn(),
 }));
 
 vi.mock('@/composables/locations', () => ({
@@ -35,10 +30,9 @@ vi.mock('@/composables/api/blockchain/addresses-names', () => ({
 }));
 
 describe('forms/EvmSwapEventForm', () => {
-  let addHistoryEventMock: ReturnType<typeof vi.fn>;
-  let editHistoryEventMock: ReturnType<typeof vi.fn>;
-  let setMessageMock: ReturnType<typeof vi.fn>;
-  let fetchAddressBookMock: ReturnType<typeof vi.fn>;
+  let addHistoryEventMock: ReturnType<typeof vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>>;
+  let editHistoryEventMock: ReturnType<typeof vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>>;
+  let fetchAddressBookMock: ReturnType<typeof vi.fn<ReturnType<typeof useAddressesNamesApi>['fetchAddressBook']>>;
   let wrapper: VueWrapper<InstanceType<typeof EvmSwapEventForm>>;
   let pinia: Pinia;
 
@@ -120,36 +114,50 @@ describe('forms/EvmSwapEventForm', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    addHistoryEventMock = vi.fn();
-    editHistoryEventMock = vi.fn();
-    setMessageMock = vi.fn();
-    fetchAddressBookMock = vi.fn().mockResolvedValue({
-      result: [],
-      success: true,
+    addHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>();
+    editHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>();
+    fetchAddressBookMock = vi.fn<ReturnType<typeof useAddressesNamesApi>['fetchAddressBook']>().mockResolvedValue({
+      data: [],
+      found: 0,
+      limit: -1,
+      total: 0,
     });
 
-    (useLocations as Mock).mockReturnValue({
+    vi.mocked(useLocations).mockReturnValue({
+      exchangeName: vi.fn<ReturnType<typeof useLocations>['exchangeName']>(),
+      getLocationData: vi.fn<ReturnType<typeof useLocations>['getLocationData']>(),
+      locationData: vi.fn<ReturnType<typeof useLocations>['locationData']>(),
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'ethereum',
         name: 'Ethereum',
       }]),
     });
 
-    (useHistoryEvents as Mock).mockReturnValue({
+    vi.mocked(useHistoryEvents).mockReturnValue({
       addHistoryEvent: addHistoryEventMock,
+      deleteHistoryEvent: vi.fn<ReturnType<typeof useHistoryEvents>['deleteHistoryEvent']>(),
       editHistoryEvent: editHistoryEventMock,
+      fetchHistoryEvents: vi.fn<ReturnType<typeof useHistoryEvents>['fetchHistoryEvents']>(),
+      getEarliestEventTimestamp: vi.fn<ReturnType<typeof useHistoryEvents>['getEarliestEventTimestamp']>(),
     });
 
-    (useMessageStore as unknown as Mock).mockReturnValue({
-      setMessage: setMessageMock,
+    vi.mocked(useAssetInfoApi).mockReturnValue({
+      assetMapping: vi.fn<ReturnType<typeof useAssetInfoApi>['assetMapping']>(),
+      assetSearch: vi.fn<ReturnType<typeof useAssetInfoApi>['assetSearch']>(),
+      erc20details: vi.fn<ReturnType<typeof useAssetInfoApi>['erc20details']>(),
     });
 
-    (useAssetInfoApi as Mock).mockReturnValue({
-      assetSearch: vi.fn(),
-    });
-
-    (useAddressesNamesApi as Mock).mockReturnValue({
+    vi.mocked(useAddressesNamesApi).mockReturnValue({
+      addAddressBook: vi.fn<ReturnType<typeof useAddressesNamesApi>['addAddressBook']>(),
+      clearEnsAvatarCache: vi.fn<ReturnType<typeof useAddressesNamesApi>['clearEnsAvatarCache']>(),
+      deleteAddressBook: vi.fn<ReturnType<typeof useAddressesNamesApi>['deleteAddressBook']>(),
+      ensAvatarUrl: vi.fn<ReturnType<typeof useAddressesNamesApi>['ensAvatarUrl']>(),
       fetchAddressBook: fetchAddressBookMock,
+      getAddressesNames: vi.fn<ReturnType<typeof useAddressesNamesApi>['getAddressesNames']>(),
+      getEnsNames: vi.fn<ReturnType<typeof useAddressesNamesApi>['getEnsNames']>(),
+      getEnsNamesTask: vi.fn<ReturnType<typeof useAddressesNamesApi>['getEnsNamesTask']>(),
+      resolveEnsNames: vi.fn<ReturnType<typeof useAddressesNamesApi>['resolveEnsNames']>(),
+      updateAddressBook: vi.fn<ReturnType<typeof useAddressesNamesApi>['updateAddressBook']>(),
     });
   });
 
@@ -183,7 +191,7 @@ describe('forms/EvmSwapEventForm', () => {
     expect(wrapper.find('[data-cy=receive-asset]').exists()).toBe(true);
 
     expect(wrapper.find('[data-cy=has-fee]').exists()).toBe(true);
-    expect((wrapper.find('[data-cy=has-fee]').element as HTMLInputElement).checked).toBeUndefined();
+    expect(wrapper.find<HTMLInputElement>('[data-cy=has-fee]').element.checked).toBeUndefined();
     expect(wrapper.find('[data-cy=fee-amount]').exists()).toBe(true);
     expect(wrapper.find('[data-cy=fee-asset]').exists()).toBe(true);
 
@@ -283,7 +291,7 @@ describe('forms/EvmSwapEventForm', () => {
     expect(wrapper.find('[data-cy=receive-asset] .details').exists()).toBe(true);
   });
 
-  it('calls editHistoryEvent when editing an event', async () => {
+  it('should call editHistoryEvent when editing an event', async () => {
     wrapper = createWrapper({
       props: {
         data,
@@ -295,7 +303,7 @@ describe('forms/EvmSwapEventForm', () => {
     const saveMethod = wrapper.vm.save;
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    addHistoryEventMock.mockResolvedValueOnce({ success: false });
+    addHistoryEventMock.mockResolvedValueOnce({ message: '', success: false });
 
     let saveResult = await saveMethod();
     expect(saveResult).toBe(true);
@@ -313,7 +321,7 @@ describe('forms/EvmSwapEventForm', () => {
     await vi.advanceTimersToNextTimerAsync();
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    addHistoryEventMock.mockResolvedValueOnce({ success: false });
+    addHistoryEventMock.mockResolvedValueOnce({ message: '', success: false });
 
     saveResult = await saveMethod();
     expect(saveResult).toBe(true);
@@ -376,7 +384,7 @@ describe('forms/EvmSwapEventForm', () => {
     const saveMethod = wrapper.vm.save;
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    addHistoryEventMock.mockResolvedValueOnce({ success: false });
+    addHistoryEventMock.mockResolvedValueOnce({ message: '', success: false });
 
     await wrapper.find('[data-cy=spend-add]').trigger('click');
     await wrapper.find('[data-cy=receive-add]').trigger('click');
@@ -448,7 +456,7 @@ describe('forms/EvmSwapEventForm', () => {
     const saveMethod = wrapper.vm.save;
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    addHistoryEventMock.mockResolvedValueOnce({ success: false });
+    addHistoryEventMock.mockResolvedValueOnce({ message: '', success: false });
 
     await wrapper.find('[data-cy=has-fee] input').setValue(false);
 

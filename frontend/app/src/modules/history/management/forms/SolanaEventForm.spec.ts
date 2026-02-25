@@ -5,7 +5,7 @@ import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
 import { createPinia, type Pinia, setActivePinia } from 'pinia';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
@@ -29,9 +29,7 @@ vi.mock('@/composables/locations', () => ({
 }));
 
 vi.mock('@/composables/api/assets/prices', () => ({
-  useAssetPricesApi: vi.fn().mockReturnValue({
-    addHistoricalPrice: vi.fn(),
-  }),
+  useAssetPricesApi: vi.fn(),
 }));
 
 vi.mock('@/composables/history/events/mapping/counterparty', () => ({
@@ -40,9 +38,9 @@ vi.mock('@/composables/history/events/mapping/counterparty', () => ({
 
 describe('forms/SolanaEventForm.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof SolanaEventForm>>;
-  let addHistoryEventMock: ReturnType<typeof vi.fn>;
-  let editHistoryEventMock: ReturnType<typeof vi.fn>;
-  let addHistoricalPriceMock: ReturnType<typeof vi.fn>;
+  let addHistoryEventMock: ReturnType<typeof vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>>;
+  let editHistoryEventMock: ReturnType<typeof vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>>;
+  let addHistoricalPriceMock: ReturnType<typeof vi.fn<ReturnType<typeof useAssetPricesApi>['addHistoricalPrice']>>;
   let pinia: Pinia;
 
   const asset = {
@@ -83,28 +81,45 @@ describe('forms/SolanaEventForm.vue', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    addHistoryEventMock = vi.fn();
-    editHistoryEventMock = vi.fn();
-    addHistoricalPriceMock = vi.fn();
+    addHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>();
+    editHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>();
+    addHistoricalPriceMock = vi.fn<ReturnType<typeof useAssetPricesApi>['addHistoricalPrice']>();
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
-    (useLocations as Mock).mockReturnValue({
+    vi.mocked(useLocations).mockReturnValue({
+      exchangeName: vi.fn<ReturnType<typeof useLocations>['exchangeName']>(),
+      getLocationData: vi.fn<ReturnType<typeof useLocations>['getLocationData']>(),
+      locationData: vi.fn<ReturnType<typeof useLocations>['locationData']>(),
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'solana',
         name: 'Solana',
       }]),
     });
-    (useHistoryEvents as Mock).mockReturnValue({
+    vi.mocked(useHistoryEvents).mockReturnValue({
       addHistoryEvent: addHistoryEventMock,
+      deleteHistoryEvent: vi.fn<ReturnType<typeof useHistoryEvents>['deleteHistoryEvent']>(),
       editHistoryEvent: editHistoryEventMock,
+      fetchHistoryEvents: vi.fn<ReturnType<typeof useHistoryEvents>['fetchHistoryEvents']>(),
+      getEarliestEventTimestamp: vi.fn<ReturnType<typeof useHistoryEvents>['getEarliestEventTimestamp']>(),
     });
-    (useAssetPricesApi as Mock).mockReturnValue({
+    vi.mocked(useAssetPricesApi).mockReturnValue({
       addHistoricalPrice: addHistoricalPriceMock,
+      addLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['addLatestPrice']>(),
+      deleteHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteHistoricalPrice']>(),
+      deleteLatestPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['deleteLatestPrice']>(),
+      editHistoricalPrice: vi.fn<ReturnType<typeof useAssetPricesApi>['editHistoricalPrice']>(),
+      fetchHistoricalPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchHistoricalPrices']>(),
+      fetchLatestPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchLatestPrices']>(),
+      fetchNftsPrices: vi.fn<ReturnType<typeof useAssetPricesApi>['fetchNftsPrices']>(),
     });
-    (useHistoryEventCounterpartyMappings as Mock).mockReturnValue({
-      counterparties: computed(() => [
-        { identifier: 'test-counterparty', label: 'Test Counterparty' },
-        { identifier: 'uniswap', label: 'Uniswap' },
+    vi.mocked(useHistoryEventCounterpartyMappings).mockReturnValue({
+      counterparties: computed<string[]>(() => [
+        'test-counterparty',
+        'uniswap',
       ]),
+      fetchCounterparties: vi.fn<ReturnType<typeof useHistoryEventCounterpartyMappings>['fetchCounterparties']>(),
+      getBaseCounterpartyData: vi.fn<ReturnType<typeof useHistoryEventCounterpartyMappings>['getBaseCounterpartyData']>(),
+      getCounterpartyData: vi.fn<ReturnType<typeof useHistoryEventCounterpartyMappings>['getCounterpartyData']>(),
+      getEventCounterpartyData: vi.fn<ReturnType<typeof useHistoryEventCounterpartyMappings>['getEventCounterpartyData']>(),
     });
   });
 
@@ -157,7 +172,7 @@ describe('forms/SolanaEventForm.vue', () => {
     expect(noteTextArea.element.value).toBe('');
   });
 
-  it('it should update the fields when editing an event', async () => {
+  it('should update the fields when editing an event', async () => {
     wrapper = createWrapper();
     await vi.advanceTimersToNextTimerAsync();
     await wrapper.setProps({ data: { event: group, nextSequenceId: '10', type: 'edit' } });
@@ -239,13 +254,8 @@ describe('forms/SolanaEventForm.vue', () => {
     await wrapper.find('[data-cy=notes] textarea:not([aria-hidden="true"])').setValue(group.userNotes);
     await wrapper.find('[data-cy=datetime] input').setValue(dayjs(group.timestamp).format('DD/MM/YYYY HH:mm:ss.SSS'));
 
-    if (group.counterparty) {
-      await wrapper.find('[data-cy=counterparty] input').setValue(group.counterparty);
-    }
-
-    if (group.eventSubtype) {
-      await wrapper.find('[data-cy=eventSubtype] input').setValue(group.eventSubtype);
-    }
+    // group.counterparty is null, so no counterparty field to set
+    // group.eventSubtype is '', so no eventSubtype field to set
 
     const saveMethod = wrapper.vm.save;
 
@@ -289,7 +299,7 @@ describe('forms/SolanaEventForm.vue', () => {
 
     // click save without changing anything
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    addHistoricalPriceMock.mockResolvedValueOnce({ success: true });
+    addHistoricalPriceMock.mockResolvedValueOnce(true);
 
     await saveMethod();
     await nextTick();

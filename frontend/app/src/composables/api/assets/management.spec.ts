@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetManagementApi } from './management';
 
@@ -11,12 +11,12 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('queryAllAssets', () => {
-    it('queries all assets with pagination', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should query all assets with pagination', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/all`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries: [
@@ -61,12 +61,12 @@ describe('composables/api/assets/management', () => {
       expect(result.total).toBe(50);
     });
 
-    it('converts solana chain to asset type', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should convert solana chain to asset type', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/all`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries: [],
@@ -90,7 +90,7 @@ describe('composables/api/assets/management', () => {
       expect(capturedBody).toHaveProperty('asset_type', 'solana token');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/all`, () =>
           HttpResponse.json({
@@ -108,12 +108,12 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('queryAllCustomAssets', () => {
-    it('queries custom assets', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should query custom assets', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/custom`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries: [
@@ -147,7 +147,7 @@ describe('composables/api/assets/management', () => {
       expect(result.data[0].name).toBe('Custom Asset');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/custom`, () =>
           HttpResponse.json({
@@ -165,7 +165,7 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('queryOwnedAssets', () => {
-    it('returns list of owned asset identifiers', async () => {
+    it('should return list of owned asset identifiers', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/assets`, () =>
           HttpResponse.json({
@@ -180,7 +180,7 @@ describe('composables/api/assets/management', () => {
       expect(result).toEqual(['ETH', 'BTC', 'USDT']);
     });
 
-    it('handles empty owned assets', async () => {
+    it('should handle empty owned assets', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/assets`, () =>
           HttpResponse.json({
@@ -195,7 +195,7 @@ describe('composables/api/assets/management', () => {
       expect(result).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/assets`, () =>
           HttpResponse.json({
@@ -213,7 +213,7 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('getAssetTypes', () => {
-    it('returns list of asset types', async () => {
+    it('should return list of asset types', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/assets/types`, () =>
           HttpResponse.json({
@@ -228,7 +228,7 @@ describe('composables/api/assets/management', () => {
       expect(result).toEqual(['own chain', 'evm token', 'fiat']);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/assets/types`, () =>
           HttpResponse.json({
@@ -246,12 +246,12 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('addAsset', () => {
-    it('adds new asset', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should add new asset', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/all`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { identifier: 'NEW_TOKEN' },
             message: '',
@@ -274,7 +274,7 @@ describe('composables/api/assets/management', () => {
       expect(result.identifier).toBe('NEW_TOKEN');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/assets/all`, () =>
           HttpResponse.json({
@@ -292,12 +292,12 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('editAsset', () => {
-    it('edits existing asset', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should edit existing asset', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/assets/all`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -322,7 +322,7 @@ describe('composables/api/assets/management', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/assets/all`, () =>
           HttpResponse.json({
@@ -340,12 +340,12 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('deleteAsset', () => {
-    it('deletes asset by identifier', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should delete asset by identifier', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/assets/all`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -360,7 +360,7 @@ describe('composables/api/assets/management', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/assets/all`, () =>
           HttpResponse.json({
@@ -378,7 +378,7 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('getCustomAssetTypes', () => {
-    it('returns list of custom asset types', async () => {
+    it('should return list of custom asset types', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/assets/custom/types`, () =>
           HttpResponse.json({
@@ -393,7 +393,7 @@ describe('composables/api/assets/management', () => {
       expect(result).toEqual(['stocks', 'bonds', 'real estate']);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/assets/custom/types`, () =>
           HttpResponse.json({
@@ -411,12 +411,12 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('addCustomAsset', () => {
-    it('adds new custom asset', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should add new custom asset', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/custom`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: 'custom-new-id',
             message: '',
@@ -439,7 +439,7 @@ describe('composables/api/assets/management', () => {
       expect(result).toBe('custom-new-id');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/assets/custom`, () =>
           HttpResponse.json({
@@ -457,12 +457,12 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('editCustomAsset', () => {
-    it('edits custom asset', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should edit custom asset', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/assets/custom`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -487,7 +487,7 @@ describe('composables/api/assets/management', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/assets/custom`, () =>
           HttpResponse.json({
@@ -505,12 +505,12 @@ describe('composables/api/assets/management', () => {
   });
 
   describe('deleteCustomAsset', () => {
-    it('deletes custom asset', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should delete custom asset', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/assets/custom`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -525,7 +525,7 @@ describe('composables/api/assets/management', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/assets/custom`, () =>
           HttpResponse.json({

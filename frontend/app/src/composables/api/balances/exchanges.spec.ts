@@ -1,7 +1,7 @@
 import type { ExchangeFormData, ExchangeSavingsRequestPayload } from '@/types/exchanges';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useExchangeApi } from './exchanges';
 
@@ -13,12 +13,12 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('queryRemoveExchange', () => {
-    it('sends DELETE request with exchange data', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send DELETE request with exchange data', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/exchanges`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -36,7 +36,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/exchanges`, () =>
           HttpResponse.json({
@@ -54,7 +54,7 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('queryExchangeBalances', () => {
-    it('fetches exchange balances with async_query param', async () => {
+    it('should fetch exchange balances with async_query param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -77,7 +77,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('includes ignore_cache and value_threshold when provided', async () => {
+    it('should include ignore_cache and value_threshold when provided', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -101,7 +101,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(capturedParams!.get('value_threshold')).toBe('1000');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/exchanges/balances/binance`, () =>
           HttpResponse.json({
@@ -119,14 +119,14 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('callSetupExchange', () => {
-    it('sends PUT request for add mode with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request for add mode with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
       let requestMethod = '';
 
       server.use(
         http.put(`${backendUrl}/api/1/exchanges`, async ({ request }) => {
           requestMethod = request.method;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -156,14 +156,14 @@ describe('composables/api/balances/exchanges', () => {
       expect(result).toBe(true);
     });
 
-    it('sends PATCH request for edit mode with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request for edit mode with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
       let requestMethod = '';
 
       server.use(
         http.patch(`${backendUrl}/api/1/exchanges`, async ({ request }) => {
           requestMethod = request.method;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -195,7 +195,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/exchanges`, () =>
           HttpResponse.json({
@@ -220,7 +220,7 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('getExchanges', () => {
-    it('fetches list of exchanges', async () => {
+    it('should fetch list of exchanges', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/exchanges`, () =>
           HttpResponse.json({
@@ -240,7 +240,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(result[1].location).toBe('kraken');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/exchanges`, () =>
           HttpResponse.json({
@@ -258,7 +258,7 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('queryBinanceMarkets', () => {
-    it('fetches binance markets with location param', async () => {
+    it('should fetch binance markets with location param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -281,7 +281,7 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('queryBinanceUserMarkets', () => {
-    it('fetches user-specific binance markets', async () => {
+    it('should fetch user-specific binance markets', async () => {
       let capturedParams: URLSearchParams | null = null;
       let capturedUrl = '';
 
@@ -307,7 +307,7 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('deleteExchangeData', () => {
-    it('deletes all exchange data when no name specified', async () => {
+    it('should delete all exchange data when no name specified', async () => {
       let capturedUrl = '';
 
       server.use(
@@ -328,7 +328,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(result).toBe(true);
     });
 
-    it('deletes specific exchange data', async () => {
+    it('should delete specific exchange data', async () => {
       let capturedUrl = '';
 
       server.use(
@@ -348,7 +348,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(result).toBe(true);
     });
 
-    it('deletes exchange data for a specific category', async () => {
+    it('should delete exchange data for a specific category', async () => {
       let capturedUrl = '';
       let capturedParams: URLSearchParams | null = null;
 
@@ -371,7 +371,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/exchanges/data`, () =>
           HttpResponse.json({
@@ -389,12 +389,12 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('getExchangeSavingsTask', () => {
-    it('sends POST request with snake_case payload and async_query true', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with snake_case payload and async_query true', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/exchanges/binance/savings`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 789,
@@ -426,12 +426,12 @@ describe('composables/api/balances/exchanges', () => {
   });
 
   describe('getExchangeSavings', () => {
-    it('sends POST request with async_query false and returns parsed response', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with async_query false and returns parsed response', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/exchanges/kraken/savings`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries: [
@@ -474,7 +474,7 @@ describe('composables/api/balances/exchanges', () => {
       expect(result.totalValue.toString()).toBe('3000');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/exchanges/binance/savings`, () =>
           HttpResponse.json({

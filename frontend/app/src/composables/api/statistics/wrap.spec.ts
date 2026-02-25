@@ -1,6 +1,6 @@
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useWrapStatisticsApi } from './wrap';
 
@@ -12,12 +12,12 @@ describe('composables/api/statistics/wrap', () => {
   });
 
   describe('fetchWrapStatistics', () => {
-    it('fetches wrap statistics with timestamp params', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should fetch wrap statistics with timestamp params', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/statistics/events`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               eth_on_gas: '1.5',
@@ -78,7 +78,7 @@ describe('composables/api/statistics/wrap', () => {
       expect(result.transactionsPerProtocol[0].protocol).toBe('uniswap');
     });
 
-    it('handles empty statistics', async () => {
+    it('should handle empty statistics', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/statistics/events`, () =>
           HttpResponse.json({
@@ -113,7 +113,7 @@ describe('composables/api/statistics/wrap', () => {
       expect(result.transactionsPerProtocol).toEqual([]);
     });
 
-    it('throws error on null result', async () => {
+    it('should throw error on null result', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/statistics/events`, () =>
           HttpResponse.json({
@@ -132,7 +132,7 @@ describe('composables/api/statistics/wrap', () => {
         .toThrow('Failed to fetch wrap statistics');
     });
 
-    it('throws error on invalid response format', async () => {
+    it('should throw error on invalid response format', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/statistics/events`, () =>
           HttpResponse.json({

@@ -1,6 +1,6 @@
 import type { FetchBlockchainBalancePayload } from '@/types/blockchain/balances';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Module } from '@/types/modules';
 import { useBlockchainBalancesApi } from './blockchain';
@@ -13,7 +13,7 @@ describe('composables/api/balances/blockchain', () => {
   });
 
   describe('queryLoopringBalances', () => {
-    it('fetches loopring balances with async_query param', async () => {
+    it('should fetch loopring balances with async_query param', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -36,7 +36,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/eth/modules/loopring/balances`, () =>
           HttpResponse.json({
@@ -54,7 +54,7 @@ describe('composables/api/balances/blockchain', () => {
   });
 
   describe('queryBlockchainBalances', () => {
-    it('fetches all blockchain balances without specific blockchain', async () => {
+    it('should fetch all blockchain balances without specific blockchain', async () => {
       let capturedUrl = '';
       let capturedParams: URLSearchParams | null = null;
 
@@ -81,7 +81,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(result.taskId).toBe(456);
     });
 
-    it('fetches specific blockchain balances', async () => {
+    it('should fetch specific blockchain balances', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -108,7 +108,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(result.taskId).toBe(789);
     });
 
-    it('includes addresses and ignore_cache params', async () => {
+    it('should include addresses and ignore_cache params', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -137,7 +137,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(capturedParams!.get('ignore_cache')).toBe('true');
     });
 
-    it('includes value_threshold when provided', async () => {
+    it('should include value_threshold when provided', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -160,7 +160,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(capturedParams!.get('value_threshold')).toBe('1000');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/balances/blockchains`, () =>
           HttpResponse.json({
@@ -179,7 +179,7 @@ describe('composables/api/balances/blockchain', () => {
   });
 
   describe('queryXpubBalances', () => {
-    it('fetches xpub balances for specific blockchain', async () => {
+    it('should fetch xpub balances for specific blockchain', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -209,7 +209,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(result.taskId).toBe(300);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/btc/xpub`, () =>
           HttpResponse.json({
@@ -227,12 +227,12 @@ describe('composables/api/balances/blockchain', () => {
   });
 
   describe('fetchDetectedTokens', () => {
-    it('fetches detected tokens with only_cache param', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should fetch detected tokens with only_cache param', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/eth/tokens/detect`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               '0x1234': {
@@ -255,12 +255,12 @@ describe('composables/api/balances/blockchain', () => {
       expect(result['0x1234'].tokens).toEqual(['0xtoken1', '0xtoken2']);
     });
 
-    it('handles null addresses', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle null addresses', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/eth/tokens/detect`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {},
             message: '',
@@ -277,7 +277,7 @@ describe('composables/api/balances/blockchain', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/eth/tokens/detect`, () =>
           HttpResponse.json({
@@ -295,12 +295,12 @@ describe('composables/api/balances/blockchain', () => {
   });
 
   describe('fetchDetectedTokensTask', () => {
-    it('fetches detected tokens as async task', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should fetch detected tokens as async task', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/eth/tokens/detect`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 400,
@@ -322,7 +322,7 @@ describe('composables/api/balances/blockchain', () => {
   });
 
   describe('deleteModuleData', () => {
-    it('deletes all module data when no module specified', async () => {
+    it('should delete all module data when no module specified', async () => {
       let capturedUrl = '';
 
       server.use(
@@ -342,7 +342,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(result).toBe(true);
     });
 
-    it('deletes specific module data', async () => {
+    it('should delete specific module data', async () => {
       let capturedUrl = '';
 
       server.use(
@@ -362,7 +362,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(result).toBe(true);
     });
 
-    it('handles null module parameter', async () => {
+    it('should handle null module parameter', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/eth/modules/data`, () =>
           HttpResponse.json({
@@ -377,7 +377,7 @@ describe('composables/api/balances/blockchain', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/eth/modules/data`, () =>
           HttpResponse.json({

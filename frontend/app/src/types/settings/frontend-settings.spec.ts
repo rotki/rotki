@@ -6,7 +6,7 @@ vi.hoisted(() => {
   vi.setSystemTime(new Date(2026, 0, 1));
 });
 
-describe('parseFrontendSettings', () => {
+describe('frontendSettings', () => {
   afterAll(() => {
     vi.useRealTimers();
   });

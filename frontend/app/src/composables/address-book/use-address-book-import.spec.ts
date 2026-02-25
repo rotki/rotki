@@ -31,7 +31,7 @@ describe('useAddressBookImport', () => {
     vi.clearAllMocks();
   });
 
-  it('handles rows with no location (defaults to private)', async () => {
+  it('should handle rows with no location (defaults to private)', async () => {
     const { importAddressBook } = useAddressBookImport();
     const mockFile = createMockCSV([
       'address,blockchain,name',
@@ -57,7 +57,7 @@ describe('useAddressBookImport', () => {
     ], true);
   });
 
-  it('throws an error when rows are missing address or name', async () => {
+  it('should throw an error when rows are missing address or name', async () => {
     const { importAddressBook } = useAddressBookImport();
 
     const mockFile = createMockCSV([
@@ -78,7 +78,7 @@ describe('useAddressBookImport', () => {
     });
   });
 
-  it('throws an error if headers are missing', async () => {
+  it('should throw an error if headers are missing', async () => {
     const { importAddressBook } = useAddressBookImport();
 
     const mockFile = createMockCSV(['missing headers']); // Invalid CSV
@@ -106,7 +106,7 @@ describe('useAddressBookImport', () => {
     });
   });
 
-  it('handles rows with location specified', async () => {
+  it('should handle rows with location specified', async () => {
     const { importAddressBook } = useAddressBookImport();
 
     const mockFile = createMockCSV([
@@ -127,7 +127,7 @@ describe('useAddressBookImport', () => {
     ], true);
   });
 
-  it('ignores invalid location values', async () => {
+  it('should ignore invalid location values', async () => {
     const { importAddressBook } = useAddressBookImport();
 
     const mockFile = createMockCSV([

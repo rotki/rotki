@@ -58,7 +58,7 @@ describe('useCsvImportExport', () => {
 
       const { generateCSV } = useCsvImportExport();
 
-      expect(generateCSV(data)).toEqual(`address,chain,label,tags\n0x123,eth,me,tag1;tag2`);
+      expect(generateCSV(data)).toBe(`address,chain,label,tags\n0x123,eth,me,tag1;tag2`);
     });
 
     it('should use serializers if they exist', () => {
@@ -75,7 +75,7 @@ describe('useCsvImportExport', () => {
         serializers: {
           tags: (tags: string[]): string => tags.join(';'),
         },
-      })).toEqual(`address,chain,label,tags\n0x123,eth,me,tag1;tag2`);
+      })).toBe(`address,chain,label,tags\n0x123,eth,me,tag1;tag2`);
     });
 
     it('should add a space in a header on camelCase', () => {
@@ -93,7 +93,7 @@ describe('useCsvImportExport', () => {
         serializers: {
           tags: (tags: string[]): string => tags.join(';'),
         },
-      })).toEqual(`address,chain,label,ownership percentage,tags\n0x123,eth,me,100,tag1;tag2`);
+      })).toBe(`address,chain,label,ownership percentage,tags\n0x123,eth,me,100,tag1;tag2`);
     });
   });
 });

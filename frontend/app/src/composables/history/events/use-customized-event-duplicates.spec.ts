@@ -43,23 +43,34 @@ vi.mock('@/store/message', () => ({
   }),
 }));
 
+const OMIT = Symbol('omit');
+
 function createMockEventRow(overrides: {
   groupIdentifier?: string;
   location?: string;
-  locationLabel?: string | null;
+  locationLabel?: string | null | undefined;
   timestamp?: number;
-  txRef?: string;
+  txRef?: string | null | typeof OMIT;
 } = {}): HistoryEventEntryWithMeta {
-  return {
-    entry: {
-      location: overrides.location ?? 'ethereum',
-      locationLabel: overrides.locationLabel ?? '0xAddress',
-      timestamp: overrides.timestamp ?? 1700000000,
-      groupIdentifier: overrides.groupIdentifier ?? 'group-1',
-      txRef: overrides.txRef ?? '0xTxHash',
-    },
-    eventAccountingRuleStatus: 'has_rule',
-  } as unknown as HistoryEventEntryWithMeta;
+  const entry: Record<string, unknown> = {
+    location: overrides.location ?? 'ethereum',
+    locationLabel: 'locationLabel' in overrides ? overrides.locationLabel : '0xAddress',
+    timestamp: overrides.timestamp ?? 1700000000,
+    groupIdentifier: overrides.groupIdentifier ?? 'group-1',
+  };
+
+  if (overrides.txRef === OMIT) {
+    // explicitly omit txRef key
+  }
+  else if ('txRef' in overrides) {
+    entry.txRef = overrides.txRef;
+  }
+  else {
+    entry.txRef = '0xTxHash';
+  }
+
+  // @ts-expect-error partial mock - only fields used by the composable are included
+  return { entry, eventAccountingRuleStatus: 'has_rule' };
 }
 
 function createMockDuplicatesResponse(autoFix: string[] = [], manualReview: string[] = [], ignored: string[] = []): CustomizedEventDuplicates {
@@ -71,7 +82,9 @@ function createMockDuplicatesResponse(autoFix: string[] = [], manualReview: stri
 }
 
 async function extractAndCallConfirmCallback(): Promise<void> {
-  const callback = spies.showConfirm.mock.calls[0][1] as () => Promise<void>;
+  const callArgs = spies.showConfirm.mock.calls[0];
+  expect(callArgs[1]).toEqual(expect.any(Function));
+  const callback: () => Promise<void> = callArgs[1];
   await callback();
 }
 
@@ -307,10 +320,8 @@ describe('use-customized-event-duplicates', () => {
     it('should handle events without locationLabel', async () => {
       const mockRow = createMockEventRow({
         groupIdentifier: 'g-1',
-        locationLabel: null,
+        locationLabel: undefined,
       });
-      // Override to remove locationLabel
-      (mockRow.entry as any).locationLabel = undefined;
 
       spies.fetchHistoryEvents.mockResolvedValue({
         entries: [mockRow],
@@ -329,9 +340,7 @@ describe('use-customized-event-duplicates', () => {
     });
 
     it('should handle events without txRef', async () => {
-      const mockRow = createMockEventRow({ groupIdentifier: 'g-1' });
-      // Remove txRef to test the fallback
-      delete (mockRow.entry as any).txRef;
+      const mockRow = createMockEventRow({ groupIdentifier: 'g-1', txRef: OMIT });
 
       spies.fetchHistoryEvents.mockResolvedValue({
         entries: [mockRow],
@@ -350,8 +359,7 @@ describe('use-customized-event-duplicates', () => {
     });
 
     it('should handle events with null txRef', async () => {
-      const mockRow = createMockEventRow({ groupIdentifier: 'g-1' });
-      (mockRow.entry as any).txRef = null;
+      const mockRow = createMockEventRow({ groupIdentifier: 'g-1', txRef: null });
 
       spies.fetchHistoryEvents.mockResolvedValue({
         entries: [mockRow],
@@ -372,7 +380,7 @@ describe('use-customized-event-duplicates', () => {
     it('should handle array-style event rows', async () => {
       const mockEntry = createMockEventRow({ groupIdentifier: 'g-1', txRef: '0xArrayTx' });
       // Wrap in array to test getEventEntry array branch
-      const arrayRow = [mockEntry] as unknown as HistoryEventCollectionRow;
+      const arrayRow: HistoryEventCollectionRow = [mockEntry];
 
       spies.fetchHistoryEvents.mockResolvedValue({
         entries: [arrayRow],
@@ -694,7 +702,7 @@ describe('use-customized-event-duplicates', () => {
       });
     });
 
-    it('callback should call fixDuplicates with group identifiers', async () => {
+    it('should call fixDuplicates with group identifiers', async () => {
       spies.fixCustomizedEventDuplicates.mockResolvedValue({
         removedEventIdentifiers: [1],
         autoFixGroupIds: [],
@@ -707,7 +715,7 @@ describe('use-customized-event-duplicates', () => {
       expect(spies.fixCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1', 'g-2']);
     });
 
-    it('callback should call onSuccess when fix succeeds', async () => {
+    it('should call onSuccess when fix succeeds', async () => {
       spies.fixCustomizedEventDuplicates.mockResolvedValue({
         removedEventIdentifiers: [1],
         autoFixGroupIds: [],
@@ -721,7 +729,7 @@ describe('use-customized-event-duplicates', () => {
       expect(onSuccess).toHaveBeenCalledOnce();
     });
 
-    it('callback should not call onSuccess when fix fails', async () => {
+    it('should not call onSuccess when fix fails', async () => {
       spies.fixCustomizedEventDuplicates.mockRejectedValue(new Error('Fix failed'));
 
       const onSuccess = vi.fn();
@@ -744,7 +752,7 @@ describe('use-customized-event-duplicates', () => {
       expect(singleMessage.message).not.toBe(bulkMessage.message);
     });
 
-    it('callback should work without onSuccess', async () => {
+    it('should work without onSuccess', async () => {
       spies.fixCustomizedEventDuplicates.mockResolvedValue({
         removedEventIdentifiers: [1],
         autoFixGroupIds: [],
@@ -783,7 +791,7 @@ describe('use-customized-event-duplicates', () => {
       });
     });
 
-    it('callback should call ignoreDuplicates with group identifiers', async () => {
+    it('should call ignoreDuplicates with group identifiers', async () => {
       spies.ignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
@@ -793,7 +801,7 @@ describe('use-customized-event-duplicates', () => {
       expect(spies.ignoreCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
     });
 
-    it('callback should call onSuccess when ignore succeeds', async () => {
+    it('should call onSuccess when ignore succeeds', async () => {
       spies.ignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
@@ -804,7 +812,7 @@ describe('use-customized-event-duplicates', () => {
       expect(onSuccess).toHaveBeenCalledOnce();
     });
 
-    it('callback should not call onSuccess when ignore fails', async () => {
+    it('should not call onSuccess when ignore fails', async () => {
       spies.ignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Ignore failed'));
 
       const onSuccess = vi.fn();
@@ -827,7 +835,7 @@ describe('use-customized-event-duplicates', () => {
       expect(singleMessage.message).not.toBe(bulkMessage.message);
     });
 
-    it('callback should work without onSuccess', async () => {
+    it('should work without onSuccess', async () => {
       spies.ignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
@@ -863,7 +871,7 @@ describe('use-customized-event-duplicates', () => {
       });
     });
 
-    it('callback should call unignoreDuplicates with group identifiers', async () => {
+    it('should call unignoreDuplicates with group identifiers', async () => {
       spies.unignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
@@ -873,7 +881,7 @@ describe('use-customized-event-duplicates', () => {
       expect(spies.unignoreCustomizedEventDuplicates).toHaveBeenCalledWith(['g-1']);
     });
 
-    it('callback should call onSuccess when unignore succeeds', async () => {
+    it('should call onSuccess when unignore succeeds', async () => {
       spies.unignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 
@@ -884,7 +892,7 @@ describe('use-customized-event-duplicates', () => {
       expect(onSuccess).toHaveBeenCalledOnce();
     });
 
-    it('callback should not call onSuccess when unignore fails', async () => {
+    it('should not call onSuccess when unignore fails', async () => {
       spies.unignoreCustomizedEventDuplicates.mockRejectedValue(new Error('Unignore failed'));
 
       const onSuccess = vi.fn();
@@ -907,7 +915,7 @@ describe('use-customized-event-duplicates', () => {
       expect(singleMessage.message).not.toBe(bulkMessage.message);
     });
 
-    it('callback should work without onSuccess', async () => {
+    it('should work without onSuccess', async () => {
       spies.unignoreCustomizedEventDuplicates.mockResolvedValue(['g-1']);
       spies.getCustomizedEventDuplicates.mockResolvedValue(createMockDuplicatesResponse());
 

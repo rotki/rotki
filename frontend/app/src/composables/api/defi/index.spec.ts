@@ -11,7 +11,7 @@ describe('composables/api/defi/index', () => {
   });
 
   describe('fetchAirdrops', () => {
-    it('fetches airdrops as async task', async () => {
+    it('should fetch airdrops as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -34,7 +34,7 @@ describe('composables/api/defi/index', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/eth/airdrops`, () =>
           HttpResponse.json({
@@ -52,7 +52,7 @@ describe('composables/api/defi/index', () => {
   });
 
   describe('fetchAirdropsMetadata', () => {
-    it('fetches airdrops metadata', async () => {
+    it('should fetch airdrops metadata', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/airdrops/metadata`, () =>
           HttpResponse.json({
@@ -84,7 +84,7 @@ describe('composables/api/defi/index', () => {
       expect(result[1].iconUrl).toBeUndefined();
     });
 
-    it('handles empty metadata', async () => {
+    it('should handle empty metadata', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/airdrops/metadata`, () =>
           HttpResponse.json({
@@ -99,7 +99,7 @@ describe('composables/api/defi/index', () => {
       expect(result).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/airdrops/metadata`, () =>
           HttpResponse.json({
@@ -117,7 +117,7 @@ describe('composables/api/defi/index', () => {
   });
 
   describe('fetchDefiMetadata', () => {
-    it('fetches defi metadata', async () => {
+    it('should fetch defi metadata', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/defi/metadata`, () =>
           HttpResponse.json({
@@ -154,7 +154,7 @@ describe('composables/api/defi/index', () => {
       expect(result[2].identifier).toBe('yearn');
     });
 
-    it('handles empty metadata', async () => {
+    it('should handle empty metadata', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/defi/metadata`, () =>
           HttpResponse.json({
@@ -169,7 +169,7 @@ describe('composables/api/defi/index', () => {
       expect(result).toEqual([]);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/defi/metadata`, () =>
           HttpResponse.json({

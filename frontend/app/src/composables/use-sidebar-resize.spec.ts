@@ -9,20 +9,19 @@ interface MockTarget {
   releasePointerCapture: ReturnType<typeof vi.fn>;
 }
 
-function createPointerEvent(overrides: Partial<PointerEvent> = {}): { event: PointerEvent; mockTarget: MockTarget } {
+function createPointerEvent(overrides: { clientX?: number } = {}): { event: PointerEvent; mockTarget: MockTarget } {
   const mockTarget: MockTarget = {
     setPointerCapture: vi.fn(),
     releasePointerCapture: vi.fn(),
   };
-  const event = {
-    preventDefault: vi.fn(),
-    pointerId: 1,
-    clientX: 0,
-    target: mockTarget,
-    ...overrides,
-  };
-  // Single unavoidable cast: we can't fully implement every PointerEvent property
-  return { event: event as PointerEvent, mockTarget };
+  const event = new PointerEvent('pointermove', {
+    clientX: overrides.clientX ?? 0,
+  });
+  // Override target and pointerId via spies since PointerEvent constructor doesn't support them
+  Object.defineProperty(event, 'target', { value: mockTarget });
+  Object.defineProperty(event, 'pointerId', { value: 1 });
+  vi.spyOn(event, 'preventDefault');
+  return { event, mockTarget };
 }
 
 describe('composables::use-sidebar-resize', () => {

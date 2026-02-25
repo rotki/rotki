@@ -1,7 +1,7 @@
 import type { Ref } from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { Collection } from '@/types/collection';
-import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
+import { assert, bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RequestCancelledError } from '@/modules/api/request-queue/errors';
 import { HistoryEventAccountingRuleStatus, type HistoryEventEntry, type HistoryEventRow } from '@/types/history/events/schemas';
@@ -863,8 +863,10 @@ describe('use-history-events-data', () => {
       const mapped = get(result.completeEventsMapped);
       // Should have one entry which is an array (subgroup) containing both swap events
       expect(mapped.group1).toHaveLength(1);
-      expect(Array.isArray(mapped.group1[0])).toBe(true);
-      expect((mapped.group1[0] as HistoryEventEntry[]).length).toBe(2);
+      const subgroup = mapped.group1[0];
+      expect(Array.isArray(subgroup)).toBe(true);
+      assert(Array.isArray(subgroup), 'Expected subgroup to be an array');
+      expect(subgroup).toHaveLength(2);
     });
 
     it('should not wrap a single swap event into a subgroup', async () => {
@@ -964,7 +966,8 @@ describe('use-history-events-data', () => {
 
       // The displayed subgroup has 1 event (swapSpend), complete has 2
       const displayed = get(result.displayedEventsMapped);
-      const displayedSubgroup = displayed.group1[0] as HistoryEventEntry[];
+      const displayedSubgroup = displayed.group1[0];
+      assert(Array.isArray(displayedSubgroup), 'Expected displayedSubgroup to be an array');
       expect(result.isSubgroupIncomplete(displayedSubgroup)).toBe(true);
     });
 
@@ -992,7 +995,8 @@ describe('use-history-events-data', () => {
 
       // No ignored assets, so displayed matches complete
       const displayed = get(result.displayedEventsMapped);
-      const displayedSubgroup = displayed.group1[0] as HistoryEventEntry[];
+      const displayedSubgroup = displayed.group1[0];
+      assert(Array.isArray(displayedSubgroup), 'Expected displayedSubgroup to be an array');
       expect(result.isSubgroupIncomplete(displayedSubgroup)).toBe(false);
     });
 

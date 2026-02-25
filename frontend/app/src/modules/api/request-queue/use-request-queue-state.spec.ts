@@ -46,13 +46,13 @@ describe('useRequestQueueState', () => {
   });
 
   describe('isLoading', () => {
-    it('returns false when no requests are active or queued', () => {
+    it('should return false when no requests are active or queued', () => {
       const { isLoading } = useRequestQueueState();
 
       expect(get(isLoading)).toBe(false);
     });
 
-    it('returns true when requests are active', () => {
+    it('should return true when requests are active', () => {
       mockQueueState.active = 3;
 
       const { isLoading } = useRequestQueueState();
@@ -60,7 +60,7 @@ describe('useRequestQueueState', () => {
       expect(get(isLoading)).toBe(true);
     });
 
-    it('returns true when requests are queued', () => {
+    it('should return true when requests are queued', () => {
       mockQueueState.queued = 5;
 
       const { isLoading } = useRequestQueueState();
@@ -68,7 +68,7 @@ describe('useRequestQueueState', () => {
       expect(get(isLoading)).toBe(true);
     });
 
-    it('returns true when both active and queued', () => {
+    it('should return true when both active and queued', () => {
       mockQueueState.active = 2;
       mockQueueState.queued = 3;
 
@@ -79,13 +79,13 @@ describe('useRequestQueueState', () => {
   });
 
   describe('loadingMessage', () => {
-    it('returns empty string when no requests', () => {
+    it('should return empty string when no requests', () => {
       const { loadingMessage } = useRequestQueueState();
 
       expect(get(loadingMessage)).toBe('');
     });
 
-    it('shows only active count when no queued requests', () => {
+    it('should show only active count when no queued requests', () => {
       mockQueueState.active = 3;
 
       const { loadingMessage } = useRequestQueueState();
@@ -93,7 +93,7 @@ describe('useRequestQueueState', () => {
       expect(get(loadingMessage)).toBe('Loading (3 active)');
     });
 
-    it('shows only queued count when no active requests', () => {
+    it('should show only queued count when no active requests', () => {
       mockQueueState.queued = 5;
 
       const { loadingMessage } = useRequestQueueState();
@@ -101,7 +101,7 @@ describe('useRequestQueueState', () => {
       expect(get(loadingMessage)).toBe('Loading (5 queued)');
     });
 
-    it('shows both active and queued counts', () => {
+    it('should show both active and queued counts', () => {
       mockQueueState.active = 2;
       mockQueueState.queued = 8;
 
@@ -112,13 +112,13 @@ describe('useRequestQueueState', () => {
   });
 
   describe('totalPending', () => {
-    it('returns 0 when no requests', () => {
+    it('should return 0 when no requests', () => {
       const { totalPending } = useRequestQueueState();
 
       expect(get(totalPending)).toBe(0);
     });
 
-    it('returns sum of active and queued', () => {
+    it('should return sum of active and queued', () => {
       mockQueueState.active = 3;
       mockQueueState.queued = 7;
 
@@ -129,7 +129,7 @@ describe('useRequestQueueState', () => {
   });
 
   describe('state', () => {
-    it('returns the reactive queue state', () => {
+    it('should return the reactive queue state', () => {
       mockQueueState.active = 5;
       mockQueueState.queued = 10;
       mockQueueState.highPriorityQueued = 2;
@@ -145,7 +145,7 @@ describe('useRequestQueueState', () => {
       expect(state.requestsThisSecond).toBe(15);
     });
 
-    it('reflects state changes reactively', () => {
+    it('should reflect state changes reactively', () => {
       const { state, isLoading, totalPending } = useRequestQueueState();
 
       expect(get(isLoading)).toBe(false);

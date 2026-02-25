@@ -47,7 +47,8 @@ function createMockMovement(overrides: {
 } = {}): UnmatchedAssetMovement {
   return {
     groupIdentifier: overrides.groupIdentifier ?? 'group1',
-    events: { entry: { identifier: overrides.identifier ?? 1 } } as unknown as UnmatchedAssetMovement['events'],
+    // @ts-expect-error partial mock for testing - only identifier is needed
+    events: { entry: { identifier: overrides.identifier ?? 1 } },
     asset: overrides.asset ?? 'ETH',
     isFiat: overrides.isFiat ?? false,
   };
@@ -69,7 +70,9 @@ function setupWithoutCallback(): ReturnType<typeof useAssetMovementActions> {
 }
 
 async function extractAndCallConfirmCallback(): Promise<void> {
-  const callback = spies.showConfirm.mock.calls[0][1] as () => Promise<void>;
+  const callback: unknown = spies.showConfirm.mock.calls[0][1];
+  if (typeof callback !== 'function')
+    throw new Error('Expected callback function');
   await callback();
 }
 
@@ -269,7 +272,7 @@ describe('use-asset-movement-actions', () => {
       });
     });
 
-    it('callback should call matchAssetMovements for each selected movement', async () => {
+    it('should call matchAssetMovements for each selected movement', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 10 }),
         createMockMovement({ groupIdentifier: 'g2', identifier: 20 }),
@@ -286,7 +289,7 @@ describe('use-asset-movement-actions', () => {
       expect(spies.matchAssetMovements).toHaveBeenCalledWith(30);
     });
 
-    it('callback should refresh and clear selectedUnmatched', async () => {
+    it('should refresh and clear selectedUnmatched', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
       ]);
@@ -300,7 +303,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.selectedUnmatched)).toEqual([]);
     });
 
-    it('callback should reset ignoreLoading on error', async () => {
+    it('should reset ignoreLoading on error', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
       ]);
@@ -314,7 +317,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
-    it('callback should still refresh and clear selection when no movements match', async () => {
+    it('should still refresh and clear selection when no movements match', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
       ]);
@@ -329,7 +332,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.selectedUnmatched)).toEqual([]);
     });
 
-    it('callback should set ignoreLoading during batch operation', async () => {
+    it('should set ignoreLoading during batch operation', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
         createMockMovement({ groupIdentifier: 'g2', identifier: 2 }),
@@ -371,7 +374,7 @@ describe('use-asset-movement-actions', () => {
       });
     });
 
-    it('callback should call unlinkAssetMovement for each selected ignored movement', async () => {
+    it('should call unlinkAssetMovement for each selected ignored movement', async () => {
       set(ignoredMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 10 }),
         createMockMovement({ groupIdentifier: 'g2', identifier: 20 }),
@@ -388,7 +391,7 @@ describe('use-asset-movement-actions', () => {
       expect(spies.unlinkAssetMovement).toHaveBeenCalledWith(30);
     });
 
-    it('callback should refresh and clear selectedIgnored', async () => {
+    it('should refresh and clear selectedIgnored', async () => {
       set(ignoredMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
       ]);
@@ -402,7 +405,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.selectedIgnored)).toEqual([]);
     });
 
-    it('callback should reset ignoreLoading on error', async () => {
+    it('should reset ignoreLoading on error', async () => {
       set(ignoredMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
       ]);
@@ -416,7 +419,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
-    it('callback should still refresh and clear selection when no movements match', async () => {
+    it('should still refresh and clear selection when no movements match', async () => {
       set(ignoredMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
       ]);
@@ -431,7 +434,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.selectedIgnored)).toEqual([]);
     });
 
-    it('callback should set ignoreLoading during batch operation', async () => {
+    it('should set ignoreLoading during batch operation', async () => {
       set(ignoredMovementsRef, [
         createMockMovement({ groupIdentifier: 'g1', identifier: 1 }),
         createMockMovement({ groupIdentifier: 'g2', identifier: 2 }),
@@ -474,7 +477,7 @@ describe('use-asset-movement-actions', () => {
       });
     });
 
-    it('callback should call matchAssetMovements for each fiat movement', async () => {
+    it('should call matchAssetMovements for each fiat movement', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ isFiat: true, identifier: 10 }),
         createMockMovement({ isFiat: false, identifier: 20 }),
@@ -490,7 +493,7 @@ describe('use-asset-movement-actions', () => {
       expect(spies.matchAssetMovements).toHaveBeenCalledWith(30);
     });
 
-    it('callback should refresh and clear selectedUnmatched', async () => {
+    it('should refresh and clear selectedUnmatched', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ isFiat: true, identifier: 1 }),
       ]);
@@ -504,7 +507,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.selectedUnmatched)).toEqual([]);
     });
 
-    it('callback should reset ignoreLoading on error', async () => {
+    it('should reset ignoreLoading on error', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ isFiat: true, identifier: 1 }),
       ]);
@@ -517,7 +520,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.ignoreLoading)).toBe(false);
     });
 
-    it('callback should still refresh and clear selection when no fiat movements exist', async () => {
+    it('should still refresh and clear selection when no fiat movements exist', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ isFiat: false, identifier: 1 }),
       ]);
@@ -532,7 +535,7 @@ describe('use-asset-movement-actions', () => {
       expect(get(composable.selectedUnmatched)).toEqual([]);
     });
 
-    it('callback should set ignoreLoading during batch operation', async () => {
+    it('should set ignoreLoading during batch operation', async () => {
       set(unmatchedMovementsRef, [
         createMockMovement({ isFiat: true, identifier: 1 }),
         createMockMovement({ isFiat: true, identifier: 2 }),

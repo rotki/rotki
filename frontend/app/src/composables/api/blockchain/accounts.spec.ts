@@ -1,7 +1,7 @@
 import type { Eth2Validator } from '@/types/balances';
 import { Blockchain, type Eth2ValidatorEntry, type EthValidatorFilter } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AccountPayload, type DeleteXpubParams, type XpubAccountPayload, XpubKeyType } from '@/types/blockchain/accounts';
 import { useBlockchainAccountsApi } from './accounts';
@@ -14,14 +14,14 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('addBlockchainAccount', () => {
-    it('adds accounts with PUT request to accounts endpoint', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should add accounts with PUT request to accounts endpoint', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/:chain/accounts`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 123 },
             message: '',
@@ -45,14 +45,14 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('adds xpub with PUT request to xpub endpoint', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should add xpub with PUT request to xpub endpoint', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/:chain/xpub`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 456 },
             message: '',
@@ -84,7 +84,7 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result.taskId).toBe(456);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/:chain/accounts`, () =>
           HttpResponse.json({
@@ -102,12 +102,12 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('addEvmAccount', () => {
-    it('adds EVM account with PUT request', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should add EVM account with PUT request', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/evm/accounts`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 789 },
             message: '',
@@ -135,12 +135,12 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result.taskId).toBe(789);
     });
 
-    it('handles account without label', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle account without label', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/evm/accounts`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 101 },
             message: '',
@@ -167,12 +167,12 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('detectEvmAccounts', () => {
-    it('sends POST request to detect EVM accounts', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request to detect EVM accounts', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/evm/accounts`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 111 },
             message: '',
@@ -191,14 +191,14 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('removeBlockchainAccount', () => {
-    it('sends DELETE request with accounts in body', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send DELETE request with accounts in body', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/:chain/accounts`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 222 },
             message: '',
@@ -217,7 +217,7 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result.taskId).toBe(222);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/:chain/accounts`, () =>
           HttpResponse.json({
@@ -235,14 +235,14 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('removeAgnosticBlockchainAccount', () => {
-    it('sends DELETE request to chain type endpoint', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send DELETE request to chain type endpoint', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/type/:chainType/accounts`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 333 },
             message: '',
@@ -263,12 +263,12 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('editBlockchainAccount', () => {
-    it('sends PATCH request with account data', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request with account data', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/blockchains/:chain/accounts`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: [
               {
@@ -303,7 +303,7 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result[0].label).toBe('Updated Label');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/blockchains/:chain/accounts`, () =>
           HttpResponse.json({
@@ -321,14 +321,14 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('editAgnosticBlockchainAccount', () => {
-    it('sends PATCH request to chain type endpoint', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request to chain type endpoint', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.patch(`${backendUrl}/api/1/blockchains/type/:chainType/accounts`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -358,14 +358,14 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('editBtcAccount', () => {
-    it('sends PATCH request for regular BTC account', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request for regular BTC account', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.patch(`${backendUrl}/api/1/blockchains/:chain/accounts`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               standalone: [
@@ -404,14 +404,14 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result.standalone[0].label).toBe('BTC Account');
     });
 
-    it('sends PATCH request for xpub account to xpub endpoint', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request for xpub account to xpub endpoint', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.patch(`${backendUrl}/api/1/blockchains/:chain/xpub`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               standalone: [],
@@ -454,7 +454,7 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('queryAccounts', () => {
-    it('fetches accounts for blockchain', async () => {
+    it('should fetch accounts for blockchain', async () => {
       let capturedUrl = '';
 
       server.use(
@@ -482,7 +482,7 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result[0].label).toBe('My ETH Account');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/:chain/accounts`, () =>
           HttpResponse.json({
@@ -500,7 +500,7 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('queryBtcAccounts', () => {
-    it('fetches BTC accounts with standalone and xpubs', async () => {
+    it('should fetch BTC accounts with standalone and xpubs', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/:chain/accounts`, () =>
           HttpResponse.json({
@@ -544,14 +544,14 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('deleteXpub', () => {
-    it('sends DELETE request with xpub data in body', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send DELETE request with xpub data in body', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedUrl = '';
 
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/:chain/xpub`, async ({ request }) => {
           capturedUrl = request.url;
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 444 },
             message: '',
@@ -576,12 +576,12 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result.taskId).toBe(444);
     });
 
-    it('handles xpub without derivation path', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle xpub without derivation path', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/:chain/xpub`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 555 },
             message: '',
@@ -598,7 +598,7 @@ describe('composables/api/blockchain/accounts', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/:chain/xpub`, () =>
           HttpResponse.json({
@@ -616,7 +616,7 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('getEth2Validators', () => {
-    it('fetches validators without payload', async () => {
+    it('should fetch validators without payload', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -637,7 +637,7 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result.taskId).toBe(1);
     });
 
-    it('fetches validators with filter payload in snake_case', async () => {
+    it('should fetch validators with filter payload in snake_case', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -663,7 +663,7 @@ describe('composables/api/blockchain/accounts', () => {
       expect(capturedParams!.get('status')).toBe('active');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/eth2/validators`, () =>
           HttpResponse.json({
@@ -681,12 +681,12 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('addEth2Validator', () => {
-    it('sends PUT request with validator data in snake_case', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with validator data in snake_case', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/eth2/validators`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 666 },
             message: '',
@@ -711,12 +711,12 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result.taskId).toBe(666);
     });
 
-    it('handles validator with only public key', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should handle validator with only public key', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/eth2/validators`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 777 },
             message: '',
@@ -733,7 +733,7 @@ describe('composables/api/blockchain/accounts', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/eth2/validators`, () =>
           HttpResponse.json({
@@ -751,12 +751,12 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('editEth2Validator', () => {
-    it('sends PATCH request with validator data in snake_case', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request with validator data in snake_case', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/blockchains/eth2/validators`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -777,7 +777,7 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/blockchains/eth2/validators`, () =>
           HttpResponse.json({
@@ -795,12 +795,12 @@ describe('composables/api/blockchain/accounts', () => {
   });
 
   describe('deleteEth2Validators', () => {
-    it('sends DELETE request with validator indices in body', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send DELETE request with validator indices in body', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/eth2/validators`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -821,7 +821,7 @@ describe('composables/api/blockchain/accounts', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/eth2/validators`, () =>
           HttpResponse.json({

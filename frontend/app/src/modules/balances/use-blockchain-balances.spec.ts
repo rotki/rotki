@@ -135,7 +135,7 @@ describe('useBlockchainBalances', () => {
   });
 
   describe('fetchBlockchainBalances', () => {
-    it('all supported blockchains', async () => {
+    it('should fetch all supported blockchains', async () => {
       const { updateAccounts } = useBlockchainAccountsStore();
       // won't call if no account
       await blockchainBalances.fetchBlockchainBalances();
@@ -161,7 +161,32 @@ describe('useBlockchainBalances', () => {
       }, undefined);
     });
 
-    describe('particular blockchain', () => {
+    it('should fetch particular blockchain - default', () => {
+      const call = async (periodic = true): Promise<void> => {
+        await blockchainBalances.fetchBlockchainBalances(
+          {
+            blockchain: Blockchain.ETH,
+            ignoreCache: true,
+          },
+          periodic,
+        );
+      };
+
+      const assert = (times = 1): void => {
+        expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(times);
+        expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
+          addresses: undefined,
+          blockchain: Blockchain.ETH,
+          ignoreCache: true,
+          isXpub: false,
+        }, undefined);
+      };
+
+      startPromise(call());
+      assert();
+    });
+
+    it('should ignore periodic balance refresh, when there are other task running', async () => {
       const call = async (periodic = true): Promise<void> => {
         await blockchainBalances.fetchBlockchainBalances(
           {
@@ -185,58 +210,72 @@ describe('useBlockchainBalances', () => {
       const { isLoading } = useStatusStore();
       const loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH);
 
-      it('default', () => {
-        startPromise(call());
-        assert();
-      });
+      startPromise(call());
+      assert(1);
 
-      it('ignore periodic balance refresh, when there are other task running', async () => {
-        startPromise(call());
-        assert(1);
+      startPromise(call());
+      assert(1);
 
-        startPromise(call());
-        assert(1);
-
-        await until(loading).toBe(false);
-        assert(1);
-      });
-
-      it('queue manual balance refresh, after other task is done', async () => {
-        startPromise(call());
-        assert(1);
-
-        startPromise(call(false));
-        assert(1);
-
-        await until(loading).toBe(false);
-        assert(2);
-      });
+      await until(loading).toBe(false);
+      assert(1);
     });
 
-    describe('xpub accounts', () => {
-      it('should fetch balances with isXpub flag set to true', async () => {
-        const { updateAccounts } = useBlockchainAccountsStore();
+    it('should queue manual balance refresh, after other task is done', async () => {
+      const call = async (periodic = true): Promise<void> => {
+        await blockchainBalances.fetchBlockchainBalances(
+          {
+            blockchain: Blockchain.ETH,
+            ignoreCache: true,
+          },
+          periodic,
+        );
+      };
 
-        // Add a BTC account first
-        updateAccounts(Blockchain.BTC, [
-          createAccount(
-            { address: 'xpub6CUGRUonZSQ4TWtTMmzXdrXDtypWKiKrhko4egpiMZbpiaQL2jkwSB1icqYh2cfDfVxdx4df189oLKnC5fSwqPfgyP3hooxujYzAu3fDVmz', label: null, tags: null },
-            { chain: Blockchain.BTC, nativeAsset: 'BTC' },
-          ),
-        ]);
-
-        await blockchainBalances.fetchBlockchainBalances({
-          blockchain: Blockchain.BTC,
-          ignoreCache: true,
-          isXpub: true,
-        });
-
-        expect(api.queryXpubBalances).toHaveBeenCalledWith({
+      const assert = (times = 1): void => {
+        expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(times);
+        expect(api.queryBlockchainBalances).toHaveBeenCalledWith({
           addresses: undefined,
-          blockchain: Blockchain.BTC,
+          blockchain: Blockchain.ETH,
           ignoreCache: true,
-          isXpub: true,
-        });
+          isXpub: false,
+        }, undefined);
+      };
+
+      const { isLoading } = useStatusStore();
+      const loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH);
+
+      startPromise(call());
+      assert(1);
+
+      startPromise(call(false));
+      assert(1);
+
+      await until(loading).toBe(false);
+      assert(2);
+    });
+
+    it('should fetch balances with isXpub flag set to true', async () => {
+      const { updateAccounts } = useBlockchainAccountsStore();
+
+      // Add a BTC account first
+      updateAccounts(Blockchain.BTC, [
+        createAccount(
+          { address: 'xpub6CUGRUonZSQ4TWtTMmzXdrXDtypWKiKrhko4egpiMZbpiaQL2jkwSB1icqYh2cfDfVxdx4df189oLKnC5fSwqPfgyP3hooxujYzAu3fDVmz', label: null, tags: null },
+          { chain: Blockchain.BTC, nativeAsset: 'BTC' },
+        ),
+      ]);
+
+      await blockchainBalances.fetchBlockchainBalances({
+        blockchain: Blockchain.BTC,
+        ignoreCache: true,
+        isXpub: true,
+      });
+
+      expect(api.queryXpubBalances).toHaveBeenCalledWith({
+        addresses: undefined,
+        blockchain: Blockchain.BTC,
+        ignoreCache: true,
+        isXpub: true,
       });
     });
   });

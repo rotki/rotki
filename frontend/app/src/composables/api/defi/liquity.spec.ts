@@ -11,7 +11,7 @@ describe('composables/api/defi/liquity', () => {
   });
 
   describe('fetchLiquityBalances', () => {
-    it('fetches liquity balances as async task', async () => {
+    it('should fetch liquity balances as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -34,7 +34,7 @@ describe('composables/api/defi/liquity', () => {
       expect(result.taskId).toBe(1);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/eth/modules/liquity/balances`, () =>
           HttpResponse.json({
@@ -52,7 +52,7 @@ describe('composables/api/defi/liquity', () => {
   });
 
   describe('fetchLiquityStaking', () => {
-    it('fetches liquity staking as async task', async () => {
+    it('should fetch liquity staking as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -75,7 +75,7 @@ describe('composables/api/defi/liquity', () => {
       expect(result.taskId).toBe(2);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/eth/modules/liquity/staking`, () =>
           HttpResponse.json({
@@ -93,7 +93,7 @@ describe('composables/api/defi/liquity', () => {
   });
 
   describe('fetchLiquityStakingPools', () => {
-    it('fetches liquity staking pools as async task', async () => {
+    it('should fetch liquity staking pools as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -116,7 +116,7 @@ describe('composables/api/defi/liquity', () => {
       expect(result.taskId).toBe(3);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/eth/modules/liquity/pool`, () =>
           HttpResponse.json({
@@ -134,7 +134,7 @@ describe('composables/api/defi/liquity', () => {
   });
 
   describe('fetchLiquityStatistics', () => {
-    it('fetches liquity statistics as async task', async () => {
+    it('should fetch liquity statistics as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -157,7 +157,7 @@ describe('composables/api/defi/liquity', () => {
       expect(result.taskId).toBe(4);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/blockchains/eth/modules/liquity/stats`, () =>
           HttpResponse.json({

@@ -67,9 +67,7 @@ describe('use-virtual-rows', () => {
 
       expect(eventRows).toHaveLength(2);
       expect(eventRows[0].type).toBe('event-row');
-      if (eventRows[0].type === 'event-row') {
-        expect(eventRows[0].data.identifier).toBe(1);
-      }
+      expect(eventRows[0]).toHaveProperty('data.identifier', 1);
     });
 
     it('should create placeholder rows when events are not loaded', () => {
@@ -128,9 +126,8 @@ describe('use-virtual-rows', () => {
       const swapRows = rows.filter(r => r.type === 'swap-row');
 
       expect(swapRows).toHaveLength(1);
-      if (swapRows[0].type === 'swap-row') {
-        expect(swapRows[0].events).toHaveLength(2);
-      }
+      expect(swapRows[0].type).toBe('swap-row');
+      expect(swapRows[0]).toHaveProperty('events.length', 2);
     });
 
     it('should create load-more row when there are hidden events', () => {
@@ -149,10 +146,9 @@ describe('use-virtual-rows', () => {
       const loadMoreRows = rows.filter(r => r.type === 'load-more');
 
       expect(loadMoreRows).toHaveLength(1);
-      if (loadMoreRows[0].type === 'load-more') {
-        expect(loadMoreRows[0].hiddenCount).toBe(4); // 10 - 6 (initial limit)
-        expect(loadMoreRows[0].totalCount).toBe(10);
-      }
+      expect(loadMoreRows[0].type).toBe('load-more');
+      expect(loadMoreRows[0]).toHaveProperty('hiddenCount', 4); // 10 - 6 (initial limit)
+      expect(loadMoreRows[0]).toHaveProperty('totalCount', 10);
     });
 
     it('should not create load-more row when all events are visible', () => {
@@ -521,9 +517,8 @@ describe('use-virtual-rows', () => {
 
       expect(movementRows).toHaveLength(1);
       expect(swapRows).toHaveLength(0); // Should NOT be a swap row
-      if (movementRows[0].type === 'matched-movement-row') {
-        expect(movementRows[0].events).toHaveLength(2);
-      }
+      expect(movementRows[0].type).toBe('matched-movement-row');
+      expect(movementRows[0]).toHaveProperty('events.length', 2);
     });
 
     it('should expand matched-movement-row into individual event rows', async () => {

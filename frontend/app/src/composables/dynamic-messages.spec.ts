@@ -56,7 +56,7 @@ describe('useDynamicMessages', () => {
     sessionStorage.clear();
   });
 
-  it('show valid period dashboard message', async () => {
+  it('should show valid period dashboard message', async () => {
     const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
 
     server.use(
@@ -71,7 +71,7 @@ describe('useDynamicMessages', () => {
     expect(get(activeDashboardMessages)[0]).toMatchObject(camelCaseTransformer(testDash));
   });
 
-  it('do not show invalid period dashboard message', async () => {
+  it('should not show invalid period dashboard message', async () => {
     const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
 
     server.use(
@@ -86,7 +86,7 @@ describe('useDynamicMessages', () => {
     expect(get(activeDashboardMessages)[0]).toBeUndefined();
   });
 
-  it('show valid period welcome message', async () => {
+  it('should show valid period welcome message', async () => {
     const { welcomeMessage, fetchMessages } = useDynamicMessages();
 
     server.use(
@@ -296,7 +296,7 @@ describe('useDynamicMessages', () => {
 });
 
 describe('serializer', () => {
-  it('serializes and deserializes correctly', () => {
+  it('should serialize and deserializes correctly', () => {
     const data = { key: 'value', number: 42 };
 
     const serialized = serializer.write(data);
@@ -306,7 +306,7 @@ describe('serializer', () => {
     expect(deserialized).toEqual(data);
   });
 
-  it('handles null/empty values', () => {
+  it('should handle null/empty values', () => {
     expect(serializer.read(null)).toBeNull();
     expect(serializer.read('')).toBeNull();
     expect(serializer.read(undefined)).toBeNull();

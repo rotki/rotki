@@ -1,4 +1,4 @@
-import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
 import type { AssetProtocolBalances } from '@/types/blockchain/balances';
 import {
   aggregateSourceBalances,
@@ -76,7 +76,7 @@ export function summarizeAssetProtocols(
   filterConfig: AssetFilterConfig,
   pricingConfig: PricingConfig,
   collectionConfig: CollectionConfig,
-): AssetBalanceWithPrice[] {
+): AssetBalanceWithPriceAndChains[] {
   const aggregatedBalances = aggregateSourceBalances(
     sourceConfig.sources,
     sourceConfig.associatedAssets,

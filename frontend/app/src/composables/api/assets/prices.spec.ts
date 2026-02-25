@@ -1,7 +1,7 @@
 import type { HistoricalPriceDeletePayload, HistoricalPriceFormPayload, ManualPriceFormPayload, ManualPricePayload } from '@/types/prices';
 import { BigNumber } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetPricesApi } from './prices';
 
@@ -13,7 +13,7 @@ describe('composables/api/assets/prices', () => {
   });
 
   describe('fetchHistoricalPrices', () => {
-    it('fetches historical prices without payload', async () => {
+    it('should fetch historical prices without payload', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -45,7 +45,7 @@ describe('composables/api/assets/prices', () => {
       expect(result[0].price.toString()).toBe('2000');
     });
 
-    it('fetches historical prices with payload in snake_case', async () => {
+    it('should fetch historical prices with payload in snake_case', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -70,7 +70,7 @@ describe('composables/api/assets/prices', () => {
       expect(capturedParams!.get('to_asset')).toBe('EUR');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/assets/prices/historical`, () =>
           HttpResponse.json({
@@ -88,12 +88,12 @@ describe('composables/api/assets/prices', () => {
   });
 
   describe('addHistoricalPrice', () => {
-    it('sends PUT request with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/prices/historical`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -119,7 +119,7 @@ describe('composables/api/assets/prices', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/assets/prices/historical`, () =>
           HttpResponse.json({
@@ -142,12 +142,12 @@ describe('composables/api/assets/prices', () => {
   });
 
   describe('editHistoricalPrice', () => {
-    it('sends PATCH request with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PATCH request with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/assets/prices/historical`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -175,12 +175,12 @@ describe('composables/api/assets/prices', () => {
   });
 
   describe('deleteHistoricalPrice', () => {
-    it('sends DELETE request with snake_case payload in body', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send DELETE request with snake_case payload in body', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/assets/prices/historical`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -204,7 +204,7 @@ describe('composables/api/assets/prices', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/assets/prices/historical`, () =>
           HttpResponse.json({
@@ -226,7 +226,7 @@ describe('composables/api/assets/prices', () => {
   });
 
   describe('fetchLatestPrices', () => {
-    it('sends POST request without payload', async () => {
+    it('should send POST request without payload', async () => {
       let capturedBody: unknown = null;
 
       server.use(
@@ -254,12 +254,12 @@ describe('composables/api/assets/prices', () => {
       expect(result[0].fromAsset).toBe('ETH');
     });
 
-    it('sends POST request with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send POST request with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/latest/all`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: [],
             message: '',
@@ -278,7 +278,7 @@ describe('composables/api/assets/prices', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/prices/latest/all`, () =>
           HttpResponse.json({
@@ -296,12 +296,12 @@ describe('composables/api/assets/prices', () => {
   });
 
   describe('addLatestPrice', () => {
-    it('sends PUT request with snake_case payload', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with snake_case payload', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/prices/latest`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -325,7 +325,7 @@ describe('composables/api/assets/prices', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/assets/prices/latest`, () =>
           HttpResponse.json({
@@ -347,12 +347,12 @@ describe('composables/api/assets/prices', () => {
   });
 
   describe('deleteLatestPrice', () => {
-    it('sends DELETE request with asset in body', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send DELETE request with asset in body', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/assets/prices/latest`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -369,7 +369,7 @@ describe('composables/api/assets/prices', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/assets/prices/latest`, () =>
           HttpResponse.json({
@@ -387,7 +387,7 @@ describe('composables/api/assets/prices', () => {
   });
 
   describe('fetchNftsPrices', () => {
-    it('sends POST request and parses response', async () => {
+    it('should send POST request and parses response', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/nfts/prices`, () =>
           HttpResponse.json({
@@ -413,7 +413,7 @@ describe('composables/api/assets/prices', () => {
       expect(result[0].priceAsset).toBe('ETH');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/nfts/prices`, () =>
           HttpResponse.json({

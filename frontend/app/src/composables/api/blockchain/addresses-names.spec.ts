@@ -1,6 +1,6 @@
 import type { AddressBookEntry, AddressBookLocation, AddressBookSimplePayload } from '@/types/eth-names';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressesNamesApi } from './addresses-names';
 
@@ -12,12 +12,12 @@ describe('composables/api/blockchain/addresses-names', () => {
   });
 
   describe('getEnsNamesTask', () => {
-    it('gets ENS names as async task', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should get ENS names as async task', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/names/ens/reverse`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 123 },
             message: '',
@@ -36,7 +36,7 @@ describe('composables/api/blockchain/addresses-names', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/names/ens/reverse`, () =>
           HttpResponse.json({
@@ -54,12 +54,12 @@ describe('composables/api/blockchain/addresses-names', () => {
   });
 
   describe('getEnsNames', () => {
-    it('gets ENS names synchronously', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should get ENS names synchronously', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/names/ens/reverse`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               '0x123': 'vitalik.eth',
@@ -84,12 +84,12 @@ describe('composables/api/blockchain/addresses-names', () => {
   });
 
   describe('resolveEnsNames', () => {
-    it('resolves ENS name to address', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should resolve ENS name to address', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/names/ens/resolve`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: '0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045',
             message: '',
@@ -104,7 +104,7 @@ describe('composables/api/blockchain/addresses-names', () => {
       expect(result).toBe('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045');
     });
 
-    it('returns empty string when name not found', async () => {
+    it('should return empty string when name not found', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/names/ens/resolve`, () =>
           HttpResponse.json({
@@ -121,14 +121,14 @@ describe('composables/api/blockchain/addresses-names', () => {
   });
 
   describe('fetchAddressBook', () => {
-    it('fetches address book entries', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should fetch address book entries', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedLocation: string | null = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/names/addressbook/:location`, async ({ request, params }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
-          capturedLocation = params.location as string;
+          capturedBody = await request.json();
+          capturedLocation = String(params.location);
           return HttpResponse.json({
             result: {
               entries: [
@@ -162,12 +162,12 @@ describe('composables/api/blockchain/addresses-names', () => {
       expect(result.total).toBe(2);
     });
 
-    it('supports filtering by addresses', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should support filtering by addresses', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/names/addressbook/:location`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries: [
@@ -194,7 +194,7 @@ describe('composables/api/blockchain/addresses-names', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/names/addressbook/:location`, () =>
           HttpResponse.json({
@@ -212,14 +212,14 @@ describe('composables/api/blockchain/addresses-names', () => {
   });
 
   describe('addAddressBook', () => {
-    it('adds address book entries', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should add address book entries', async () => {
+      let capturedBody: DefaultBodyType = null;
       let capturedLocation: string | null = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/names/addressbook/:location`, async ({ request, params }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
-          capturedLocation = params.location as string;
+          capturedBody = await request.json();
+          capturedLocation = String(params.location);
           return HttpResponse.json({
             result: true,
             message: '',
@@ -241,12 +241,12 @@ describe('composables/api/blockchain/addresses-names', () => {
       expect(result).toBe(true);
     });
 
-    it('supports update_existing flag', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should support update_existing flag', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/names/addressbook/:location`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -265,7 +265,7 @@ describe('composables/api/blockchain/addresses-names', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/names/addressbook/:location`, () =>
           HttpResponse.json({
@@ -283,12 +283,12 @@ describe('composables/api/blockchain/addresses-names', () => {
   });
 
   describe('updateAddressBook', () => {
-    it('updates address book entries', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should update address book entries', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/names/addressbook/:location`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -308,7 +308,7 @@ describe('composables/api/blockchain/addresses-names', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/names/addressbook/:location`, () =>
           HttpResponse.json({
@@ -326,12 +326,12 @@ describe('composables/api/blockchain/addresses-names', () => {
   });
 
   describe('deleteAddressBook', () => {
-    it('deletes address book entries', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should delete address book entries', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/names/addressbook/:location`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -351,7 +351,7 @@ describe('composables/api/blockchain/addresses-names', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/names/addressbook/:location`, () =>
           HttpResponse.json({
@@ -369,12 +369,12 @@ describe('composables/api/blockchain/addresses-names', () => {
   });
 
   describe('getAddressesNames', () => {
-    it('gets names for addresses', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should get names for addresses', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/names`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: [
               { address: '0x123', blockchain: 'eth', name: 'Alice' },
@@ -402,7 +402,7 @@ describe('composables/api/blockchain/addresses-names', () => {
       expect(result[0].name).toBe('Alice');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/names`, () =>
           HttpResponse.json({
@@ -420,14 +420,14 @@ describe('composables/api/blockchain/addresses-names', () => {
   });
 
   describe('ensAvatarUrl', () => {
-    it('generates avatar URL without timestamp', () => {
+    it('should generate avatar URL without timestamp', () => {
       const { ensAvatarUrl } = useAddressesNamesApi();
       const url = ensAvatarUrl('vitalik.eth');
 
       expect(url).toBe(`${backendUrl}/api/1/avatars/ens/vitalik.eth`);
     });
 
-    it('generates avatar URL with timestamp', () => {
+    it('should generate avatar URL with timestamp', () => {
       const { ensAvatarUrl } = useAddressesNamesApi();
       const url = ensAvatarUrl('vitalik.eth', 1700000000);
 
@@ -436,12 +436,12 @@ describe('composables/api/blockchain/addresses-names', () => {
   });
 
   describe('clearEnsAvatarCache', () => {
-    it('clears specific ENS avatar cache', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should clear specific ENS avatar cache', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/cache/avatars/clear`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -458,12 +458,12 @@ describe('composables/api/blockchain/addresses-names', () => {
       expect(result).toBe(true);
     });
 
-    it('clears all ENS avatar cache when null', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should clear all ENS avatar cache when null', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/cache/avatars/clear`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -480,7 +480,7 @@ describe('composables/api/blockchain/addresses-names', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/cache/avatars/clear`, () =>
           HttpResponse.json({

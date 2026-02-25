@@ -16,7 +16,8 @@ function createOldUserDb(username: string): OldUserDB {
   db.version(1).stores({
     missingMappings: '++id, [identifier], name, [location], &[identifier+location], details',
   });
-  return db as OldUserDB;
+  // @ts-expect-error Dexie adds table properties dynamically after version().stores()
+  return db;
 }
 
 describe('useDatabase', () => {

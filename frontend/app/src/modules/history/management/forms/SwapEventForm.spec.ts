@@ -5,21 +5,16 @@ import type { TradeLocationData } from '@/types/history/trade/location';
 import { bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test-utils';
 import dayjs from 'dayjs';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { nextTick } from 'vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useLocations } from '@/composables/locations';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
-import { useMessageStore } from '@/store/message';
 import { setupDayjs } from '@/utils/date';
 
 vi.mock('@/composables/history/events', () => ({
   useHistoryEvents: vi.fn(),
-}));
-
-vi.mock('@/store/message', () => ({
-  useMessageStore: vi.fn(),
 }));
 
 vi.mock('@/composables/locations', () => ({
@@ -31,9 +26,8 @@ vi.mock('@/composables/api/assets/info', () => ({
 }));
 
 describe('forms/SwapEventForm', () => {
-  let addHistoryEventMock: ReturnType<typeof vi.fn>;
-  let editHistoryEventMock: ReturnType<typeof vi.fn>;
-  let setMessageMock: ReturnType<typeof vi.fn>;
+  let addHistoryEventMock: ReturnType<typeof vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>>;
+  let editHistoryEventMock: ReturnType<typeof vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>>;
   let wrapper: VueWrapper<InstanceType<typeof SwapEventForm>>;
   let pinia: Pinia;
 
@@ -95,28 +89,30 @@ describe('forms/SwapEventForm', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    addHistoryEventMock = vi.fn();
-    editHistoryEventMock = vi.fn();
-    setMessageMock = vi.fn();
-
-    (useLocations as Mock).mockReturnValue({
+    addHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>();
+    editHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>();
+    vi.mocked(useLocations).mockReturnValue({
+      exchangeName: vi.fn<ReturnType<typeof useLocations>['exchangeName']>(),
+      getLocationData: vi.fn<ReturnType<typeof useLocations>['getLocationData']>(),
+      locationData: vi.fn<ReturnType<typeof useLocations>['locationData']>(),
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'kraken',
         name: 'Kraken',
       }]),
     });
 
-    (useHistoryEvents as Mock).mockReturnValue({
+    vi.mocked(useHistoryEvents).mockReturnValue({
       addHistoryEvent: addHistoryEventMock,
+      deleteHistoryEvent: vi.fn<ReturnType<typeof useHistoryEvents>['deleteHistoryEvent']>(),
       editHistoryEvent: editHistoryEventMock,
+      fetchHistoryEvents: vi.fn<ReturnType<typeof useHistoryEvents>['fetchHistoryEvents']>(),
+      getEarliestEventTimestamp: vi.fn<ReturnType<typeof useHistoryEvents>['getEarliestEventTimestamp']>(),
     });
 
-    (useMessageStore as unknown as Mock).mockReturnValue({
-      setMessage: setMessageMock,
-    });
-
-    (useAssetInfoApi as Mock).mockReturnValue({
-      assetSearch: vi.fn(),
+    vi.mocked(useAssetInfoApi).mockReturnValue({
+      assetMapping: vi.fn<ReturnType<typeof useAssetInfoApi>['assetMapping']>(),
+      assetSearch: vi.fn<ReturnType<typeof useAssetInfoApi>['assetSearch']>(),
+      erc20details: vi.fn<ReturnType<typeof useAssetInfoApi>['erc20details']>(),
     });
   });
 
@@ -151,7 +147,7 @@ describe('forms/SwapEventForm', () => {
     expect(wrapper.find('[data-cy=unique-id]').exists()).toBe(true);
 
     expect(wrapper.find('[data-cy=has-fee]').exists()).toBe(true);
-    expect((wrapper.find('[data-cy=has-fee]').element as HTMLInputElement).checked).toBeUndefined();
+    expect(wrapper.find<HTMLInputElement>('[data-cy=has-fee]').element.checked).toBeUndefined();
     expect(wrapper.find('[data-cy=fee-add]').exists()).toBe(true);
     expect(wrapper.find('[data-cy=advanced-accordion]').exists()).toBe(true);
 
@@ -232,7 +228,7 @@ describe('forms/SwapEventForm', () => {
     expect(wrapper.find('[data-cy=fee-notes-1]').exists()).toBe(true);
   });
 
-  it('calls editHistoryEvent when editing an event', async () => {
+  it('should call editHistoryEvent when editing an event', async () => {
     wrapper = createWrapper({
       props: {
         data,
@@ -256,7 +252,7 @@ describe('forms/SwapEventForm', () => {
     const saveMethod = wrapper.vm.save;
 
     editHistoryEventMock.mockResolvedValueOnce({ success: true });
-    addHistoryEventMock.mockResolvedValueOnce({ success: false });
+    addHistoryEventMock.mockResolvedValueOnce({ message: '', success: false });
 
     const saveResult = await saveMethod();
     expect(saveResult).toBe(true);
@@ -357,7 +353,7 @@ describe('forms/SwapEventForm', () => {
 
     // Verify fee entries are loaded
     const feeAmountInputs = wrapper.findAll('[data-cy=fee-amount] input');
-    expect(feeAmountInputs.length).toBe(2);
+    expect(feeAmountInputs).toHaveLength(2);
 
     // Edit the fee notes
     const feeNotes1 = wrapper.find('[data-cy=fee-notes-1] textarea:not([aria-hidden="true"])');

@@ -49,14 +49,13 @@ describe('summarizeAssetProtocols with chains', () => {
     const addressProtocol = result[0].perProtocol!.find(p => p.protocol === 'address')!;
     expect(addressProtocol).toBeDefined();
     // Assert that address protocol has chains property
-    const addressWithChains = addressProtocol as typeof addressProtocol & { chains: Record<string, { amount: any; value: any }> };
-    expect(addressWithChains.chains).toBeDefined();
-    expect(addressWithChains.chains.eth).toBeDefined();
-    expect(addressWithChains.chains.eth.amount.toString()).toBe('1');
-    expect(addressWithChains.chains.eth.value.toString()).toBe('100');
-    expect(addressWithChains.chains.polygon).toBeDefined();
-    expect(addressWithChains.chains.polygon.amount.toString()).toBe('2');
-    expect(addressWithChains.chains.polygon.value.toString()).toBe('200');
+    expect(addressProtocol.chains).toBeDefined();
+    expect(addressProtocol.chains!.eth).toBeDefined();
+    expect(addressProtocol.chains!.eth.amount.toString()).toBe('1');
+    expect(addressProtocol.chains!.eth.value.toString()).toBe('100');
+    expect(addressProtocol.chains!.polygon).toBeDefined();
+    expect(addressProtocol.chains!.polygon.amount.toString()).toBe('2');
+    expect(addressProtocol.chains!.polygon.value.toString()).toBe('200');
   });
 
   it('should not have chains property for non-address protocols', () => {
@@ -96,8 +95,7 @@ describe('summarizeAssetProtocols with chains', () => {
     expect(uniswapProtocol).toBeDefined();
 
     // Assert that non-address protocol doesn't have chains
-    const uniswapWithChains = uniswapProtocol as typeof uniswapProtocol & { chains?: any };
-    expect(uniswapWithChains.chains).toBeUndefined();
+    expect(uniswapProtocol.chains).toBeUndefined();
   });
 
   it('should aggregate chains data when grouping collections', () => {
@@ -159,11 +157,10 @@ describe('summarizeAssetProtocols with chains', () => {
     const addressProtocol = result[0].perProtocol!.find(p => p.protocol === 'address')!;
     expect(addressProtocol).toBeDefined();
     // Assert that address protocol has chains property
-    const addressWithChains = addressProtocol as typeof addressProtocol & { chains: Record<string, { amount: any; value: any }> };
-    expect(addressWithChains.chains).toBeDefined();
-    expect(addressWithChains.chains.eth).toBeDefined();
-    expect(addressWithChains.chains.eth.amount.toString()).toBe('1');
-    expect(addressWithChains.chains.polygon).toBeDefined();
-    expect(addressWithChains.chains.polygon.amount.toString()).toBe('2');
+    expect(addressProtocol.chains).toBeDefined();
+    expect(addressProtocol.chains!.eth).toBeDefined();
+    expect(addressProtocol.chains!.eth.amount.toString()).toBe('1');
+    expect(addressProtocol.chains!.polygon).toBeDefined();
+    expect(addressProtocol.chains!.polygon.amount.toString()).toBe('2');
   });
 });

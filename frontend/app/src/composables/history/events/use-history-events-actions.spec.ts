@@ -2,6 +2,7 @@ import type { Ref } from 'vue';
 import type { RepullingTransactionResult } from '@/composables/history/events/tx';
 import type { HistoryEventAction } from '@/composables/history/events/types';
 import type { Collection } from '@/types/collection';
+import type { Exchange } from '@/types/exchanges';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
 import { type Blockchain, Severity } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
@@ -166,8 +167,8 @@ describe('useHistoryEventsActions', () => {
       const options = createOptions();
       const { dialogHandlers } = useHistoryEventsActions(options);
 
-      const exchanges = [{ location: 'kraken', name: 'My Kraken' }];
-      await dialogHandlers.onRepullExchangeEvents?.(exchanges as any);
+      const exchanges: Exchange[] = [{ location: 'kraken', name: 'My Kraken' }];
+      await dialogHandlers.onRepullExchangeEvents?.(exchanges);
 
       expect(mockRefreshTransactions).toHaveBeenCalledWith({
         disableEvmEvents: true,

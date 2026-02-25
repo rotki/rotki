@@ -1,10 +1,36 @@
+import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import type { TransactionRequestPayload } from '@/types/history/events';
-import { BigNumber } from '@rotki/common';
+import { BigNumber, bigNumberify, HistoryEventEntryType } from '@rotki/common';
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
+import { type NewOnlineHistoryEventPayload, OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { useHistoryEventsApi } from './index';
+
+function createNewEventPayload(overrides?: Partial<NewOnlineHistoryEventPayload>): NewOnlineHistoryEventPayload {
+  return {
+    amount: bigNumberify(0),
+    asset: 'ETH',
+    entryType: HistoryEventEntryType.HISTORY_EVENT,
+    eventSubtype: 'none',
+    eventType: 'informational',
+    groupIdentifier: 'test-123',
+    location: 'ethereum',
+    locationLabel: '0x123',
+    sequenceIndex: 0,
+    timestamp: 1700000000,
+    ...overrides,
+  };
+}
+
+function createFetchPayload(overrides?: Partial<HistoryEventRequestPayload>): HistoryEventRequestPayload {
+  return {
+    aggregateByGroupIds: false,
+    limit: 50,
+    offset: 0,
+    ...overrides,
+  };
+}
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 
@@ -14,12 +40,12 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('fetchTransactionsTask', () => {
-    it('fetches transactions as async task', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should fetch transactions as async task', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/transactions`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 123 },
             message: '',
@@ -40,7 +66,7 @@ describe('composables/api/history/events/index', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/transactions`, () =>
           HttpResponse.json({
@@ -58,12 +84,12 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('deleteTransactions', () => {
-    it('deletes transactions for a chain', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should delete transactions for a chain', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/transactions`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -78,12 +104,12 @@ describe('composables/api/history/events/index', () => {
       expect(result).toBe(true);
     });
 
-    it('deletes specific transaction by tx_ref', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should delete specific transaction by tx_ref', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/transactions`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -98,7 +124,7 @@ describe('composables/api/history/events/index', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/transactions`, () =>
           HttpResponse.json({
@@ -116,12 +142,12 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('decodeTransactions', () => {
-    it('decodes transactions for a chain', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should decode transactions for a chain', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/transactions/decode`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 456 },
             message: '',
@@ -139,12 +165,12 @@ describe('composables/api/history/events/index', () => {
       expect(result.taskId).toBe(456);
     });
 
-    it('supports ignore_cache flag', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should support ignore_cache flag', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/blockchains/transactions/decode`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 789 },
             message: '',
@@ -164,12 +190,12 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('addHistoryEvent', () => {
-    it('adds a history event', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should add a history event', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/history/events`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { identifier: 12345 },
             message: '',
@@ -178,23 +204,21 @@ describe('composables/api/history/events/index', () => {
       );
 
       const { addHistoryEvent } = useHistoryEventsApi();
-      const result = await addHistoryEvent({
-        eventIdentifier: 'test-123',
+      const result = await addHistoryEvent(createNewEventPayload({
         sequenceIndex: 0,
         timestamp: 1700000000,
         locationLabel: '0x123',
-        notes: 'Test event',
-      } as any);
+      }));
 
       expect(capturedBody).toMatchObject({
-        event_identifier: 'test-123',
         sequence_index: 0,
         timestamp: 1700000000,
+        location_label: '0x123',
       });
       expect(result.identifier).toBe(12345);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/history/events`, () =>
           HttpResponse.json({
@@ -205,19 +229,19 @@ describe('composables/api/history/events/index', () => {
 
       const { addHistoryEvent } = useHistoryEventsApi();
 
-      await expect(addHistoryEvent({} as any))
+      await expect(addHistoryEvent(createNewEventPayload()))
         .rejects
         .toThrow('Invalid event data');
     });
   });
 
   describe('editHistoryEvent', () => {
-    it('edits a history event', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should edit a history event', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/history/events`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -227,18 +251,18 @@ describe('composables/api/history/events/index', () => {
 
       const { editHistoryEvent } = useHistoryEventsApi();
       const result = await editHistoryEvent({
+        ...createNewEventPayload({ userNotes: 'Updated notes' }),
         identifier: 12345,
-        notes: 'Updated notes',
-      } as any);
+      });
 
       expect(capturedBody).toMatchObject({
         identifier: 12345,
-        notes: 'Updated notes',
+        user_notes: 'Updated notes',
       });
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/history/events`, () =>
           HttpResponse.json({
@@ -249,19 +273,19 @@ describe('composables/api/history/events/index', () => {
 
       const { editHistoryEvent } = useHistoryEventsApi();
 
-      await expect(editHistoryEvent({ identifier: 999 } as any))
+      await expect(editHistoryEvent({ ...createNewEventPayload(), identifier: 999 }))
         .rejects
         .toThrow('Event not found');
     });
   });
 
   describe('deleteHistoryEvent', () => {
-    it('deletes history events', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should delete history events', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/history/events`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -279,12 +303,12 @@ describe('composables/api/history/events/index', () => {
       expect(result).toBe(true);
     });
 
-    it('supports force delete', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should support force delete', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/history/events`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -301,7 +325,7 @@ describe('composables/api/history/events/index', () => {
       });
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/history/events`, () =>
           HttpResponse.json({
@@ -319,7 +343,7 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('getEventDetails', () => {
-    it('gets event details', async () => {
+    it('should get event details', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/events/details`, ({ request }) => {
           const url = new URL(request.url);
@@ -345,12 +369,12 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('addTransactionHash', () => {
-    it('adds transaction hash', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should add transaction hash', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/transactions`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -373,7 +397,7 @@ describe('composables/api/history/events/index', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/blockchains/transactions`, () =>
           HttpResponse.json({
@@ -391,7 +415,7 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('getTransactionTypeMappings', () => {
-    it('gets transaction type mappings', async () => {
+    it('should get transaction type mappings', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/events/type_mappings`, () =>
           HttpResponse.json({
@@ -412,7 +436,7 @@ describe('composables/api/history/events/index', () => {
       expect(result).toHaveProperty('entryTypeMappings');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/events/type_mappings`, () =>
           HttpResponse.json({
@@ -430,7 +454,7 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('getHistoryEventCounterpartiesData', () => {
-    it('gets counterparties data', async () => {
+    it('should get counterparties data', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/events/counterparties`, () =>
           HttpResponse.json({
@@ -449,7 +473,7 @@ describe('composables/api/history/events/index', () => {
       expect(result[0].identifier).toBe('uniswap');
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/events/counterparties`, () =>
           HttpResponse.json({
@@ -467,12 +491,12 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('fetchHistoryEvents', () => {
-    it('fetches history events', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should fetch history events', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/history/events`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               entries: [],
@@ -486,10 +510,7 @@ describe('composables/api/history/events/index', () => {
       );
 
       const { fetchHistoryEvents } = useHistoryEventsApi();
-      const result = await fetchHistoryEvents({
-        limit: 50,
-        offset: 0,
-      } as any);
+      const result = await fetchHistoryEvents(createFetchPayload());
 
       expect(capturedBody).toMatchObject({
         limit: 50,
@@ -498,7 +519,7 @@ describe('composables/api/history/events/index', () => {
       expect(result.entriesFound).toBe(0);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/history/events`, () =>
           HttpResponse.json({
@@ -509,19 +530,19 @@ describe('composables/api/history/events/index', () => {
 
       const { fetchHistoryEvents } = useHistoryEventsApi();
 
-      await expect(fetchHistoryEvents({} as any))
+      await expect(fetchHistoryEvents(createFetchPayload()))
         .rejects
         .toThrow('Failed to fetch events');
     });
   });
 
   describe('queryOnlineHistoryEvents', () => {
-    it('queries online history events', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should query online history events', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/history/events/query`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 999 },
             message: '',
@@ -544,12 +565,12 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('queryExchangeEvents', () => {
-    it('queries exchange events', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should query exchange events', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/history/events/query/exchange`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 888 },
             message: '',
@@ -573,12 +594,12 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('deleteStakeEvents', () => {
-    it('deletes stake events', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should delete stake events', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/eth2/stake/events`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -593,7 +614,7 @@ describe('composables/api/history/events/index', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/blockchains/eth2/stake/events`, () =>
           HttpResponse.json({
@@ -611,7 +632,7 @@ describe('composables/api/history/events/index', () => {
   });
 
   describe('getTransactionStatusSummary', () => {
-    it('gets transaction status summary', async () => {
+    it('should get transaction status summary', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/status/summary`, () =>
           HttpResponse.json({
@@ -636,7 +657,7 @@ describe('composables/api/history/events/index', () => {
       expect(result.undecodedTxCount).toBe(10);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/history/status/summary`, () =>
           HttpResponse.json({

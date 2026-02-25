@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSkippedHistoryEventsApi } from '@/composables/api/history/events/skipped';
 
@@ -11,7 +11,7 @@ describe('composables/api/history/events/skipped', () => {
   });
 
   describe('getSkippedEventsSummary', () => {
-    it('fetches skipped events summary', async () => {
+    it('should fetch skipped events summary', async () => {
       const mockSummary = {
         locations: {
           binance: 5,
@@ -35,7 +35,7 @@ describe('composables/api/history/events/skipped', () => {
       expect(result).toEqual(mockSummary);
     });
 
-    it('handles empty locations', async () => {
+    it('should handle empty locations', async () => {
       const mockSummary = {
         locations: {},
         total: 0,
@@ -57,7 +57,7 @@ describe('composables/api/history/events/skipped', () => {
   });
 
   describe('reProcessSkippedEvents', () => {
-    it('sends POST request to reprocess skipped events', async () => {
+    it('should send POST request to reprocess skipped events', async () => {
       let requestMethod = '';
 
       server.use(
@@ -83,7 +83,7 @@ describe('composables/api/history/events/skipped', () => {
       });
     });
 
-    it('handles case when all events are processed', async () => {
+    it('should handle case when all events are processed', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/history/skipped_external_events`, () =>
           HttpResponse.json({
@@ -103,12 +103,12 @@ describe('composables/api/history/events/skipped', () => {
   });
 
   describe('exportSkippedEventsCSV', () => {
-    it('sends PUT request with directory_path in snake_case', async () => {
-      let requestBody: Record<string, unknown> | null = null;
+    it('should send PUT request with directory_path in snake_case', async () => {
+      let requestBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/history/skipped_external_events`, async ({ request }) => {
-          requestBody = await request.json() as Record<string, unknown>;
+          requestBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -127,7 +127,7 @@ describe('composables/api/history/events/skipped', () => {
   });
 
   describe('downloadSkippedEventsCSV', () => {
-    it('sends PATCH request to download CSV and returns success', async () => {
+    it('should send PATCH request to download CSV and returns success', async () => {
       let requestMethod = '';
       const csvContent = 'event_id,location,reason\n1,binance,invalid_format';
 
@@ -151,7 +151,7 @@ describe('composables/api/history/events/skipped', () => {
       expect(result.success).toBe(true);
     });
 
-    it('returns error message on non-200 response', async () => {
+    it('should return error message on non-200 response', async () => {
       // With ofetch, MSW properly intercepts blob responses and we can test
       // the real error handling behavior where Flask returns JSON error
       server.use(
@@ -169,8 +169,7 @@ describe('composables/api/history/events/skipped', () => {
       const result = await downloadSkippedEventsCSV();
 
       expect(result.success).toBe(false);
-      if (!result.success)
-        expect(result.message).toBe('No skipped events to export');
+      expect(result).toHaveProperty('message', 'No skipped events to export');
     });
   });
 });

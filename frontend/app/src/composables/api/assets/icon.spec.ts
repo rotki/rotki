@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetIconApi } from './icon';
 
@@ -12,21 +12,21 @@ describe('composables/api/assets/icon', () => {
   });
 
   describe('assetImageUrl', () => {
-    it('returns icon URL for identifier', () => {
+    it('should return icon URL for identifier', () => {
       const { assetImageUrl } = useAssetIconApi();
       const url = assetImageUrl('ETH');
 
       expect(url).toContain('/assets/icon?asset_id=ETH');
     });
 
-    it('encodes identifier with special characters', () => {
+    it('should encode identifier with special characters', () => {
       const { assetImageUrl } = useAssetIconApi();
       const url = assetImageUrl('eip155:1/erc20:0x1234');
 
       expect(url).toContain('asset_id=eip155%3A1%2Ferc20%3A0x1234');
     });
 
-    it('appends random string when provided', () => {
+    it('should append random string when provided', () => {
       const { assetImageUrl } = useAssetIconApi();
       const url = assetImageUrl('ETH', '12345');
 
@@ -34,7 +34,7 @@ describe('composables/api/assets/icon', () => {
       expect(url).toContain('&t=12345');
     });
 
-    it('appends numeric random value', () => {
+    it('should append numeric random value', () => {
       const { assetImageUrl } = useAssetIconApi();
       const url = assetImageUrl('BTC', 67890);
 
@@ -43,7 +43,7 @@ describe('composables/api/assets/icon', () => {
   });
 
   describe('checkAsset', () => {
-    it('returns 200 for existing asset', async () => {
+    it('should return 200 for existing asset', async () => {
       server.use(
         http.head(`${colibriUrl}/assets/icon`, () =>
           new HttpResponse(null, { status: 200 })),
@@ -55,7 +55,7 @@ describe('composables/api/assets/icon', () => {
       expect(status).toBe(200);
     });
 
-    it('returns 404 for non-existing asset', async () => {
+    it('should return 404 for non-existing asset', async () => {
       server.use(
         http.head(`${colibriUrl}/assets/icon`, () =>
           new HttpResponse(null, { status: 404 })),
@@ -67,7 +67,7 @@ describe('composables/api/assets/icon', () => {
       expect(status).toBe(404);
     });
 
-    it('returns 202 for pending asset', async () => {
+    it('should return 202 for pending asset', async () => {
       server.use(
         http.head(`${colibriUrl}/assets/icon`, () =>
           new HttpResponse(null, { status: 202 })),
@@ -81,7 +81,7 @@ describe('composables/api/assets/icon', () => {
   });
 
   describe('uploadIcon', () => {
-    it('uploads icon file successfully', async () => {
+    it('should upload icon file successfully', async () => {
       let capturedFormData: FormData | null = null;
 
       server.use(
@@ -103,7 +103,7 @@ describe('composables/api/assets/icon', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on upload failure', async () => {
+    it('should throw error on upload failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/icon/modify`, () =>
           HttpResponse.json({
@@ -122,12 +122,12 @@ describe('composables/api/assets/icon', () => {
   });
 
   describe('setIcon', () => {
-    it('sets icon from file path', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should set icon from file path', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/icon/modify`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -145,7 +145,7 @@ describe('composables/api/assets/icon', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/assets/icon/modify`, () =>
           HttpResponse.json({
@@ -163,12 +163,12 @@ describe('composables/api/assets/icon', () => {
   });
 
   describe('refreshIcon', () => {
-    it('refreshes icon for asset', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should refresh icon for asset', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.patch(`${backendUrl}/api/1/assets/icon/modify`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -183,7 +183,7 @@ describe('composables/api/assets/icon', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.patch(`${backendUrl}/api/1/assets/icon/modify`, () =>
           HttpResponse.json({
@@ -201,12 +201,12 @@ describe('composables/api/assets/icon', () => {
   });
 
   describe('clearIconCache', () => {
-    it('clears cache for specific assets', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should clear cache for specific assets', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/cache/icons/clear`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -221,12 +221,12 @@ describe('composables/api/assets/icon', () => {
       expect(result).toBe(true);
     });
 
-    it('clears all cache when assets is null', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should clear all cache when assets is null', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/cache/icons/clear`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -241,7 +241,7 @@ describe('composables/api/assets/icon', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/cache/icons/clear`, () =>
           HttpResponse.json({

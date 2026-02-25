@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useSyncApi } from './sync';
 
@@ -11,12 +11,12 @@ describe('composables/api/session/sync', () => {
   });
 
   describe('forceSync', () => {
-    it('sends PUT request with upload action in snake_case', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with upload action in snake_case', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/premium/sync`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 456,
@@ -36,12 +36,12 @@ describe('composables/api/session/sync', () => {
       expect(result.taskId).toBe(456);
     });
 
-    it('sends PUT request with download action in snake_case', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should send PUT request with download action in snake_case', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/premium/sync`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: {
               task_id: 789,
@@ -61,7 +61,7 @@ describe('composables/api/session/sync', () => {
       expect(result.taskId).toBe(789);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/premium/sync`, () =>
           HttpResponse.json({

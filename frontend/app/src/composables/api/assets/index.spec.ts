@@ -1,5 +1,5 @@
 import { server } from '@test/setup-files/server';
-import { http, HttpResponse } from 'msw';
+import { type DefaultBodyType, http, HttpResponse } from 'msw';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from './index';
 
@@ -11,7 +11,7 @@ describe('composables/api/assets/index', () => {
   });
 
   describe('checkForAssetUpdate', () => {
-    it('checks for asset updates as async task', async () => {
+    it('should check for asset updates as async task', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -32,7 +32,7 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(123);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/assets/updates`, () =>
           HttpResponse.json({
@@ -50,12 +50,12 @@ describe('composables/api/assets/index', () => {
   });
 
   describe('performUpdate', () => {
-    it('performs asset update with version', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should perform asset update with version', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/updates`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 456 },
             message: '',
@@ -73,12 +73,12 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(456);
     });
 
-    it('performs update with conflict resolution', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should perform update with conflict resolution', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/updates`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 789 },
             message: '',
@@ -98,12 +98,12 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(789);
     });
 
-    it('preserves asset identifier keys in conflicts without snake_case transformation', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should preserve asset identifier keys in conflicts without snake_case transformation', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.post(`${backendUrl}/api/1/assets/updates`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 999 },
             message: '',
@@ -130,7 +130,7 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(999);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/updates`, () =>
           HttpResponse.json({
@@ -148,12 +148,12 @@ describe('composables/api/assets/index', () => {
   });
 
   describe('mergeAssets', () => {
-    it('merges two assets successfully', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should merge two assets successfully', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/replace`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: true,
             message: '',
@@ -171,7 +171,7 @@ describe('composables/api/assets/index', () => {
       expect(result).toBe(true);
     });
 
-    it('throws error on merge failure', async () => {
+    it('should throw error on merge failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/assets/replace`, () =>
           HttpResponse.json({
@@ -189,12 +189,12 @@ describe('composables/api/assets/index', () => {
   });
 
   describe('restoreAssetsDatabase', () => {
-    it('restores database with soft reset', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should restore database with soft reset', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/assets/updates`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 101 },
             message: '',
@@ -213,12 +213,12 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(101);
     });
 
-    it('restores database with hard reset and ignore warnings', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should restore database with hard reset and ignore warnings', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.delete(`${backendUrl}/api/1/assets/updates`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 102 },
             message: '',
@@ -237,7 +237,7 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(102);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.delete(`${backendUrl}/api/1/assets/updates`, () =>
           HttpResponse.json({
@@ -255,7 +255,7 @@ describe('composables/api/assets/index', () => {
   });
 
   describe('importCustom', () => {
-    it('imports custom assets from file upload', async () => {
+    it('should import custom assets from file upload', async () => {
       let capturedFormData: FormData | null = null;
 
       server.use(
@@ -277,12 +277,12 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(201);
     });
 
-    it('imports custom assets from file path', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should import custom assets from file path', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/user`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 202 },
             message: '',
@@ -301,7 +301,7 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(202);
     });
 
-    it('throws error on import failure', async () => {
+    it('should throw error on import failure', async () => {
       server.use(
         http.post(`${backendUrl}/api/1/assets/user`, () =>
           HttpResponse.json({
@@ -320,12 +320,12 @@ describe('composables/api/assets/index', () => {
   });
 
   describe('exportCustom', () => {
-    it('exports custom assets as async task without directory', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should export custom assets as async task without directory', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/user`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 301 },
             message: '',
@@ -342,12 +342,12 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(301);
     });
 
-    it('exports custom assets as async task with directory', async () => {
-      let capturedBody: Record<string, unknown> | null = null;
+    it('should export custom assets as async task with directory', async () => {
+      let capturedBody: DefaultBodyType = null;
 
       server.use(
         http.put(`${backendUrl}/api/1/assets/user`, async ({ request }) => {
-          capturedBody = await request.json() as Record<string, unknown>;
+          capturedBody = await request.json();
           return HttpResponse.json({
             result: { task_id: 302 },
             message: '',
@@ -365,7 +365,7 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(302);
     });
 
-    it('throws error on export failure', async () => {
+    it('should throw error on export failure', async () => {
       server.use(
         http.put(`${backendUrl}/api/1/assets/user`, () =>
           HttpResponse.json({
@@ -383,7 +383,7 @@ describe('composables/api/assets/index', () => {
   });
 
   describe('fetchNfts', () => {
-    it('fetches NFTs without ignoring cache', async () => {
+    it('should fetch NFTs without ignoring cache', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -405,7 +405,7 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(301);
     });
 
-    it('fetches NFTs with ignore cache', async () => {
+    it('should fetch NFTs with ignore cache', async () => {
       let capturedParams: URLSearchParams | null = null;
 
       server.use(
@@ -427,7 +427,7 @@ describe('composables/api/assets/index', () => {
       expect(result.taskId).toBe(302);
     });
 
-    it('throws error on failure', async () => {
+    it('should throw error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/nfts`, () =>
           HttpResponse.json({
