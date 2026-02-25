@@ -23,13 +23,13 @@ describe('useConfirmStore', () => {
     const { show } = store;
     const { visible, confirmation } = storeToRefs(store);
 
-    expect(get(visible)).toBeFalsy();
+    expect(get(visible)).toBe(false);
     expect(get(confirmation).title).toBe('');
     expect(get(confirmation).message).toBe('');
 
     show(confirmationMessage, () => {});
 
-    expect(get(visible)).toBeTruthy();
+    expect(get(visible)).toBe(true);
     expect(get(confirmation).title).toBe(title);
     expect(get(confirmation).message).toBe(message);
   });
@@ -42,17 +42,17 @@ describe('useConfirmStore', () => {
     const { show, confirm } = store;
     const { visible, confirmation } = storeToRefs(store);
 
-    expect(get(visible)).toBeFalsy();
+    expect(get(visible)).toBe(false);
 
     const onConfirm = vi.fn();
     show(confirmationMessage, onConfirm);
 
-    expect(get(visible)).toBeTruthy();
+    expect(get(visible)).toBe(true);
 
     // should call confirm callback
     await confirm();
 
-    expect(get(visible)).toBeFalsy();
+    expect(get(visible)).toBe(false);
     expect(onConfirm).toBeCalledTimes(1);
 
     vi.runAllTimers();
@@ -73,17 +73,17 @@ describe('useConfirmStore', () => {
     const { show, dismiss } = store;
     const { visible, confirmation } = storeToRefs(store);
 
-    expect(get(visible)).toBeFalsy();
+    expect(get(visible)).toBe(false);
 
     const onDismiss = vi.fn();
     show(confirmationMessage, () => {}, onDismiss);
 
-    expect(get(visible)).toBeTruthy();
+    expect(get(visible)).toBe(true);
 
     // should call dismiss callback
     await dismiss();
 
-    expect(get(visible)).toBeFalsy();
+    expect(get(visible)).toBe(false);
     expect(onDismiss).toBeCalledTimes(1);
 
     vi.runAllTimers();

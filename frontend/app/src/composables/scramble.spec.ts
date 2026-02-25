@@ -43,7 +43,7 @@ describe('useScramble', () => {
       const result = scrambleAddress(address);
 
       expect(result).not.toEqual(address);
-      expect(isValidEthAddress(result)).toBeTruthy();
+      expect(isValidEthAddress(result)).toBe(true);
     });
 
     it('should scramble identifier', () => {
@@ -52,7 +52,7 @@ describe('useScramble', () => {
       const result = scrambleIdentifier(identifier);
 
       expect(result).not.toEqual(identifier);
-      expect(consistOfNumbers(result)).toBeTruthy();
+      expect(consistOfNumbers(result)).toBe(true);
     });
 
     it('should scramble integer', () => {

@@ -305,7 +305,7 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       await rowActions.vm.$emit('edit-click');
 
       const editEvents = wrapper.emitted('edit');
-      expect(editEvents).toBeTruthy();
+      expect(editEvents).toBeDefined();
       expect(editEvents).toHaveLength(1);
       expect(editEvents![0]).toEqual(['evm', row]);
     });
@@ -327,7 +327,7 @@ describe('modules/accounts/table/components/table/AccountActions', () => {
       await rowActions.vm.$emit('delete-click');
 
       const deleteEvents = wrapper.emitted('delete');
-      expect(deleteEvents).toBeTruthy();
+      expect(deleteEvents).toBeDefined();
       expect(deleteEvents).toHaveLength(1);
       expect(deleteEvents![0]).toEqual([row]);
     });

@@ -121,7 +121,7 @@ describe('forms/EthBlockEventForm.vue', () => {
     expect(blockNumberInput.element.value).toBe('');
     expect(validatorIndexInput.element.value).toBe('');
     expect(feeRecipientInput.element.value).toBe('');
-    expect(mevRewardCheckbox.element.checked).toBeFalsy();
+    expect(mevRewardCheckbox.element.checked).toBe(false);
   });
 
   it('should update the relevant fields when adding an event to a group', async () => {
@@ -139,7 +139,7 @@ describe('forms/EthBlockEventForm.vue', () => {
     expect(validatorIndexInput.element.value).toBe(event.validatorIndex.toString());
     expect(feeRecipientInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe('0');
-    expect(isMevCheckbox.element.checked).toBeFalsy();
+    expect(isMevCheckbox.element.checked).toBe(false);
   });
 
   it('should update the fields when editing an event', async () => {
@@ -157,7 +157,7 @@ describe('forms/EthBlockEventForm.vue', () => {
     expect(validatorIndexInput.element.value).toBe(event.validatorIndex.toString());
     expect(feeRecipientInput.element.value).toBe(event.locationLabel);
     expect(amountInput.element.value).toBe(event.amount.toString());
-    expect(isMevCheckbox.element.checked).toBeTruthy();
+    expect(isMevCheckbox.element.checked).toBe(true);
   });
 
   it('should call addHistoryEvent when adding a new block event on save', async () => {

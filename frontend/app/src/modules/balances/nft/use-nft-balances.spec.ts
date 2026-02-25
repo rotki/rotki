@@ -3,6 +3,7 @@ import type * as Vue from 'vue';
 import type { Collection } from '@/types/collection';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
 import type { LocationQuery } from '@/types/route';
+import { startPromise } from '@shared/utils';
 import flushPromises from 'flush-promises';
 import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
@@ -82,7 +83,7 @@ describe('useNftBalances', () => {
 
       set(userAction, true);
       await nextTick();
-      fetchData().catch((): void => {});
+      startPromise(fetchData());
       expect(get(isLoading)).toBe(true);
       await flushPromises();
       expect(get(state).total).toBe(30);

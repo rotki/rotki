@@ -2,6 +2,9 @@ import { NotificationCategory, NotificationGroup, type NotificationPayload, Prio
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useNotificationsStore } from '@/store/notifications';
 
+/** Matches NOTIFICATION_COOLDOWN_MS in store/notifications/index.ts */
+const NOTIFICATION_COOLDOWN_MS = 60_000;
+
 describe('useNotificationsStore', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
@@ -76,7 +79,7 @@ describe('useNotificationsStore', () => {
       },
     ]);
 
-    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
 
     notify({
       title: 'notification-title-1',
@@ -110,7 +113,7 @@ describe('useNotificationsStore', () => {
     });
 
     displayed([1]);
-    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
     expect(get(data)[0].display).toBe(false);
     await nextTick();
     const sessionKey = sessionStorage.getItem('rotki.notification.last_display') ?? '{}';
@@ -166,7 +169,7 @@ describe('useNotificationsStore', () => {
       message: 'notification-message-1',
     });
 
-    vi.advanceTimersByTime(60_000);
+    vi.advanceTimersByTime(NOTIFICATION_COOLDOWN_MS);
 
     // add low priority notification (mostly legacy)
     notify({

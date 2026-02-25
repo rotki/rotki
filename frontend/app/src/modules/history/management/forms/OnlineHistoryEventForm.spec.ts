@@ -222,7 +222,7 @@ describe('forms/OnlineHistoryEventForm.vue', () => {
     expect(spans).toHaveLength(keysFromGlobalMappings.length);
 
     for (let i = 0; i < keysFromGlobalMappings.length; i++)
-      expect(keysFromGlobalMappings.includes(spans.at(i)!.text())).toBeTruthy();
+      expect(keysFromGlobalMappings).toContain(spans.at(i)!.text());
   });
 
   it('should add a new online event', async () => {

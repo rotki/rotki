@@ -29,12 +29,12 @@ describe('asset-balances', () => {
     await wrapper.setProps({ loading: true });
     await nextTick();
 
-    expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBeTruthy();
+    expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBe(true);
 
     await wrapper.setProps({ loading: false });
     await nextTick();
 
-    expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBeFalsy();
+    expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBe(false);
     expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');
   });
 });

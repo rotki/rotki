@@ -53,8 +53,8 @@ describe('filter-dropdown', () => {
 
     expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(matchers.length);
     expect(
-      wrapper.find('[data-cy=suggestions] > button:nth-child(2)').classes().includes('highlightedMatcher'),
-    ).toBeTruthy();
+      wrapper.find('[data-cy=suggestions] > button:nth-child(2)').classes(),
+    ).toContain('highlightedMatcher');
   });
 
   it('should show unsupported filter message', () => {

@@ -46,7 +46,7 @@ describe('composables/filters/blockchain-account', () => {
 
       const chainMatcher = get(matchers).find(m => m.key === 'chain');
       expect(chainMatcher).toBeDefined();
-      expect('string' in chainMatcher! && chainMatcher.strictMatching).toBeFalsy();
+      expect(chainMatcher!).not.toHaveProperty('strictMatching');
     });
   });
 

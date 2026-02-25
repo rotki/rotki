@@ -254,7 +254,7 @@ describe('external-services', () => {
       await flushPromises();
 
       expect(mock).toHaveBeenCalledWith('etherscan');
-      expect(confirmStore.visible).toBeFalsy();
+      expect(confirmStore.visible).toBe(false);
     });
 
     it('should fail deleting cryptocompare key', async () => {
@@ -277,7 +277,7 @@ describe('external-services', () => {
       await flushPromises();
 
       expect(mock).toHaveBeenCalledWith('cryptocompare');
-      expect(confirmStore.visible).toBeFalsy();
+      expect(confirmStore.visible).toBe(false);
 
       const message = wrapper
         .find('[data-cy=bottom-dialog] [data-cy=cryptocompare] [data-cy=service-key__content] .details')

@@ -94,7 +94,7 @@ describe('selection-chip', () => {
 
       const chip = wrapper.findComponent({ name: 'RuiChip' });
       await chip.trigger('click');
-      expect(wrapper.emitted('click-item')).toBeTruthy();
+      expect(wrapper.emitted('click-item')).toBeDefined();
       expect(wrapper.emitted('click-item')?.[0]).toEqual([item]);
     });
 
@@ -189,7 +189,7 @@ describe('selection-chip', () => {
       const overflowBadge = wrapper.find('.bg-rui-primary');
       await overflowBadge.trigger('click');
 
-      expect(wrapper.emitted('toggle-group-menu')).toBeTruthy();
+      expect(wrapper.emitted('toggle-group-menu')).toBeDefined();
       expect(wrapper.emitted('toggle-group-menu')?.[0]).toEqual([item.key]);
     });
 
@@ -209,7 +209,7 @@ describe('selection-chip', () => {
       const removeButton = wrapper.findComponent({ name: 'RuiButton' });
       await removeButton.trigger('click');
 
-      expect(wrapper.emitted('remove-all-items')).toBeTruthy();
+      expect(wrapper.emitted('remove-all-items')).toBeDefined();
       expect(wrapper.emitted('remove-all-items')?.[0]).toEqual([item.key]);
     });
 
@@ -320,7 +320,7 @@ describe('selection-chip', () => {
       const suggestedItem = wrapper.findComponent({ name: 'SuggestedItem' });
       await suggestedItem.vm.$emit('cancel-edit', true);
 
-      expect(wrapper.emitted('cancel-edit')).toBeTruthy();
+      expect(wrapper.emitted('cancel-edit')).toBeDefined();
       expect(wrapper.emitted('cancel-edit')?.[0]).toEqual([true]);
     });
 
@@ -340,7 +340,7 @@ describe('selection-chip', () => {
       const suggestedItem = wrapper.findComponent({ name: 'SuggestedItem' });
       await suggestedItem.vm.$emit('update:search', 'new-value');
 
-      expect(wrapper.emitted('update:search')).toBeTruthy();
+      expect(wrapper.emitted('update:search')).toBeDefined();
       expect(wrapper.emitted('update:search')?.[0]).toEqual(['new-value']);
     });
   });

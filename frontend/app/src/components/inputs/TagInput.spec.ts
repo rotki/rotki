@@ -109,7 +109,7 @@ describe('tag-input', () => {
     expect(wrapper.emitted('update:modelValue')![1]).toEqual([emitted]);
     await vi.advanceTimersToNextTimerAsync();
 
-    expect(wrapper.find('[role=menu-content]').exists()).toBeTruthy();
-    expect(wrapper.find('[role=menu-content] button:nth-child(2)').exists()).toBeFalsy();
+    expect(wrapper.find('[role=menu-content]').exists()).toBe(true);
+    expect(wrapper.find('[role=menu-content] button:nth-child(2)').exists()).toBe(false);
   });
 });

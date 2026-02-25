@@ -73,7 +73,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await vi.advanceTimersToNextTimerAsync();
 
       const selectionEvents = wrapper.emitted('update:selection')!;
-      expect(selectionEvents).toBeTruthy();
+      expect(selectionEvents).toBeDefined();
       expect(selectionEvents.at(-1)![0]).toMatchObject({
         quarter: Quarter.ALL,
         year: previousYear,
@@ -89,7 +89,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await vi.advanceTimersToNextTimerAsync();
 
       const periodEvents = wrapper.emitted<PeriodChangedEvent[]>('update:period')!;
-      expect(periodEvents).toBeTruthy();
+      expect(periodEvents).toBeDefined();
 
       const lastPeriodEvent = periodEvents.at(-1)![0];
       expect(lastPeriodEvent).not.toBeNull();
@@ -142,14 +142,14 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await vi.advanceTimersToNextTimerAsync();
 
       const selectionEvents = wrapper.emitted('update:selection')!;
-      expect(selectionEvents).toBeTruthy();
+      expect(selectionEvents).toBeDefined();
       expect(selectionEvents.at(-1)![0]).toMatchObject({
         quarter: Quarter.ALL,
         year: 'all-time',
       });
 
       const periodEvents = wrapper.emitted<PeriodChangedEvent[]>('update:period')!;
-      expect(periodEvents).toBeTruthy();
+      expect(periodEvents).toBeDefined();
       const lastPeriodEvent = periodEvents.at(-1)![0];
       expect(lastPeriodEvent.start).toBe(0);
       expect(lastPeriodEvent.end).toBeLessThanOrEqual(dayjs().unix());
@@ -167,7 +167,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await vi.advanceTimersToNextTimerAsync();
 
       const selectionEvents = wrapper.emitted('update:selection')!;
-      expect(selectionEvents).toBeTruthy();
+      expect(selectionEvents).toBeDefined();
       expect(selectionEvents.at(-1)![0]).toMatchObject({
         year: 'custom',
       });
@@ -229,7 +229,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await vi.advanceTimersToNextTimerAsync();
 
       const selectionEvents = wrapper.emitted('update:selection')!;
-      expect(selectionEvents).toBeTruthy();
+      expect(selectionEvents).toBeDefined();
       expect(selectionEvents.at(-1)![0]).toMatchObject({
         quarter: Quarter.Q1,
         year: currentYear,
@@ -249,7 +249,7 @@ describe('components/profitloss/ReportPeriodSelector.vue', () => {
       await vi.advanceTimersToNextTimerAsync();
 
       const periodEvents = wrapper.emitted('update:period')!;
-      expect(periodEvents).toBeTruthy();
+      expect(periodEvents).toBeDefined();
       expect(periodEvents.length).toBeGreaterThan(0);
 
       const firstPeriodEvent = periodEvents[0][0];

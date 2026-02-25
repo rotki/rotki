@@ -35,7 +35,7 @@ describe('useQueriedAddressesStore', () => {
     await store.fetchQueriedAddresses();
     expect(api.queriedAddresses).toHaveBeenCalledTimes(1);
     expect(store.queriedAddresses).toMatchObject({});
-    expect(messageStore.message?.description).toBeTruthy();
+    expect(messageStore.message?.description).toBeDefined();
   });
 
   it('should add queried address', async () => {
@@ -65,7 +65,7 @@ describe('useQueriedAddressesStore', () => {
     await store.addQueriedAddress(payload);
     expect(api.addQueriedAddress).toHaveBeenCalledWith(payload);
     expect(store.queriedAddresses).toMatchObject({});
-    expect(messageStore.message?.description).toBeTruthy();
+    expect(messageStore.message?.description).toBeDefined();
   });
 
   it('should delete queried address', async () => {
@@ -103,6 +103,6 @@ describe('useQueriedAddressesStore', () => {
     await store.deleteQueriedAddress(payload);
     expect(api.deleteQueriedAddress).toHaveBeenCalledWith(payload);
     expect(store.queriedAddresses).toMatchObject(originalState);
-    expect(messageStore.message?.description).toBeTruthy();
+    expect(messageStore.message?.description).toBeDefined();
   });
 });

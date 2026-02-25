@@ -28,7 +28,7 @@ describe('get-premium-button', () => {
   it('should show get premium button', () => {
     wrapper = createWrapper();
 
-    expect(wrapper.find('[data-cy=get-premium-button]').exists()).toBeTruthy();
+    expect(wrapper.find('[data-cy=get-premium-button]').exists()).toBe(true);
   });
 
   it('should not show get premium button', () => {
@@ -38,6 +38,6 @@ describe('get-premium-button', () => {
 
     wrapper = createWrapper();
 
-    expect(wrapper.find('[data-cy=get-premium-button]').exists()).toBeFalsy();
+    expect(wrapper.find('[data-cy=get-premium-button]').exists()).toBe(false);
   });
 });

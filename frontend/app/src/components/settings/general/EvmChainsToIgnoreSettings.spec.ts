@@ -59,10 +59,10 @@ describe('evm-chains-to-ignore-settings', () => {
 
   it('should display no warning by default', () => {
     const input = wrapper.find('.input-value');
-    expect(input.exists()).toBeTruthy();
+    expect(input.exists()).toBe(true);
     expect(input.text()).toBe('');
-    expect(wrapper.find('.selections').exists()).toBeTruthy();
-    expect(wrapper.find('.details').exists()).toBeFalsy();
+    expect(wrapper.find('.selections').exists()).toBe(true);
+    expect(wrapper.find('.details').exists()).toBe(false);
   });
 
   it('should display success if correct chain values are passed', async () => {
@@ -75,7 +75,7 @@ describe('evm-chains-to-ignore-settings', () => {
     await vi.advanceTimersByTimeAsync(2000);
     await flushPromises();
 
-    expect(wrapper.find('.details').exists()).toBeTruthy();
+    expect(wrapper.find('.details').exists()).toBe(true);
     expect(wrapper.find('.details').text()).toContain('settings.saved');
 
     expect(inputEl.value).toMatch(chains.toString());

@@ -6,7 +6,7 @@ describe('transformers', () => {
   it('should transform json to camelCase', () => {
     const json = '{"amount":"10","test_label":"label","data":[{"amount":"2","usd_value":"10"}]}';
     const parsed = JSON.parse(json);
-    expect(camelCaseTransformer(parsed)).toMatchObject({
+    expect(camelCaseTransformer(parsed)).toEqual({
       amount: '10',
       data: [{ amount: '2', usdValue: '10' }],
       testLabel: 'label',
@@ -30,7 +30,7 @@ describe('transformers', () => {
       ETH: 1,
     };
 
-    expect(snakeCaseTransformer(object)).toMatchObject(JSON.parse('{"ETH":1,"BTC":2}'));
+    expect(snakeCaseTransformer(object)).toEqual(JSON.parse('{"ETH":1,"BTC":2}'));
   });
 
   it('should skip nested transformation for specified keys', () => {
@@ -85,7 +85,7 @@ describe('transformers', () => {
     const json = '{"_amount_": { "a_cbc": "1", "a_abc": "2"}}';
     const parsed = JSON.parse(json);
     const transformed = noRootCamelCaseTransformer(parsed);
-    expect(transformed).toMatchObject({
+    expect(transformed).toEqual({
       _amount_: {
         aAbc: '2',
         aCbc: '1',
