@@ -35,4 +35,5 @@ class WooFiDecoder(WooFiCommonDecoder):
                 withdraw_manager=string_to_evm_address('0x2500AD59b46fF4B96f8e1EaC3fE1f78eAF955777'),
             )],
             woo_token_address=string_to_evm_address('0x871f2F2ff935FD1eD867842FF2a7bfD051A5E527'),
+            stake_v2_address=string_to_evm_address('0xba91ffD8a2B9F68231eCA6aF51623B3433A89b13'),
         )
