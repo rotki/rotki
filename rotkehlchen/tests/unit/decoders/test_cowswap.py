@@ -778,6 +778,41 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts):
     assert events == expected_events
 
 
+# @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0xECCf11f03CEfe8A68bb01CAF66e76CEeFeaAEe5e']])
+def test_swap_gnosis_monerium(gnosis_inquirer, gnosis_accounts):
+    """The annoying problem with monerium's multiple versions messing with the decoder matching"""
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0x4f34125588875b708faae04c0711473171982b48f7c0f2de8ca33bc5dcc974a3')))  # noqa: E501
+    expected_events = [
+        EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1708225690000)),
+            location=Location.GNOSIS,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),
+            amount=FVal(send_amount := '15'),
+            location_label=(user_address := gnosis_accounts[0]),
+            notes=f'Swap {send_amount} EURe in a cowswap market order',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
+            amount=FVal(receive_amount := '0.056204042821142175'),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} GNO as the result of a cowswap market order',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf393fb8C4BbF7e37f583D0593AD1d1b2443E205c']])
 def test_ethereum_claim_airdrop(ethereum_inquirer, ethereum_accounts):
