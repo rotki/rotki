@@ -110,7 +110,7 @@ export function useTradableAsset(address: MaybeRef<string | undefined>): UseTrad
         return 1;
 
       // If both are native or both are not native, sort by fiat value
-      return sortDesc(a.fiatValue, b.fiatValue);
+      return sortDesc(a.fiatValue ?? Zero, b.fiatValue ?? Zero);
     });
   };
 
