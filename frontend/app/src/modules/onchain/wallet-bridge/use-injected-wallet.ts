@@ -6,7 +6,6 @@ import { BrowserProvider, getAddress } from 'ethers';
 import { useInterop } from '@/composables/electron-interop';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
-import { supportedNetworks } from '../wallet-connect/use-wallet-connect';
 import { useUnifiedProviders } from '../wallet-providers/use-unified-providers';
 import { useWalletProxy } from './use-wallet-proxy';
 
@@ -255,6 +254,7 @@ function _useInjectedWallet(): UseInjectedWalletReturn {
       catch (error: unknown) {
         // If the chain doesn't exist, try to add it
         if (error instanceof Object && 'code' in error && error.code === 4902) {
+          const { supportedNetworks } = await import('../wallet-connect/use-wallet-connect');
           const network = supportedNetworks.find(item => BigInt(item.id) === chainId);
           if (network) {
             await injectedProvider.request({

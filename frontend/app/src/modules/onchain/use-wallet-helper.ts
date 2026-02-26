@@ -3,7 +3,7 @@ import type { RecentTransaction } from '@/modules/onchain/types';
 import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { EIP155 } from './wallet-connect/use-wallet-connect';
+import { EIP155 } from './wallet-constants';
 
 interface UseWalletHelperReturn {
   getEvmChainNameFromChainId: (chainId: number | bigint) => string;

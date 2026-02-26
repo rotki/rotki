@@ -75,7 +75,7 @@ watchImmediate([asset, chain, allOwnedAssets], ([currentAsset, chain, _]) => {
   }
 });
 
-watchImmediate([address, chain], ([_, currentChain]) => {
+watchImmediate([() => address, chain], ([_, currentChain]) => {
   const owned = get(allOwnedAssets);
   if (currentChain) {
     const filteredByChain = owned.filter(item => item.chain === currentChain);

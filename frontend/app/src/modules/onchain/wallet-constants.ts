@@ -1,5 +1,4 @@
 import type { GasFeeEstimation } from '@/modules/onchain/types';
-import { formatUnits } from 'ethers';
 
 /**
  * Wallet mode constants
@@ -10,6 +9,10 @@ export const WALLET_MODES = {
 } as const;
 
 export type WalletMode = typeof WALLET_MODES[keyof typeof WALLET_MODES];
+
+export const EIP155 = 'eip155';
+
+export const SUPPORTED_WALLET_CHAIN_IDS = [1, 8453, 42161, 10, 56, 100, 137, 534352] as const;
 
 /**
  * Transaction constants
@@ -53,6 +56,20 @@ const GAS_PRICE_BUFFER_PERCENTAGE = 10n;
  */
 
 /**
+ * Format wei (18 decimals) to a decimal string using pure bigint arithmetic.
+ * Replaces ethers `formatUnits` to avoid importing ethers in this constants file.
+ */
+function formatWei(value: bigint): string {
+  const DIVISOR = 10n ** 18n;
+  const integerPart = value / DIVISOR;
+  const remainder = value % DIVISOR;
+  if (remainder === 0n)
+    return integerPart.toString();
+  const fractionalPart = remainder.toString().padStart(18, '0').replace(/0+$/, '');
+  return `${integerPart}.${fractionalPart}`;
+}
+
+/**
  * Calculate gas fee estimation based on fee data and balance
  */
 export function calculateGasFee(gasPrice: bigint, balance: bigint): GasFeeEstimation {
@@ -67,8 +84,8 @@ export function calculateGasFee(gasPrice: bigint, balance: bigint): GasFeeEstima
     const diff = gasCost + buffer;
 
     const maxSendable = balance - diff;
-    gasFee = formatUnits(diff);
-    maxAmount = formatUnits(maxSendable, 18);
+    gasFee = formatWei(diff);
+    maxAmount = formatWei(maxSendable);
   }
 
   return {
