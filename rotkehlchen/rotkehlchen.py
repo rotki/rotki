@@ -49,6 +49,8 @@ from rotkehlchen.chain.scroll.manager import ScrollManager
 from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.solana.manager import SolanaManager
 from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
+from rotkehlchen.chain.starknet.manager import StarknetManager
+from rotkehlchen.chain.starknet.node_inquirer import StarknetInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
@@ -509,6 +511,12 @@ class Rotkehlchen:
                     helius=Helius(database=self.data.db),
                 ),
                 premium=self.premium,
+            ),
+            starknet_manager=StarknetManager(
+                node_inquirer=StarknetInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                ),
             ),
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,

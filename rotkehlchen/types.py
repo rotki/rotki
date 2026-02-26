@@ -177,16 +177,20 @@ Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
 T_SolanaAddress = str
 SolanaAddress = NewType('SolanaAddress', T_SolanaAddress)
 
-BlockchainAddress = BTCAddress | ChecksumEvmAddress | SubstrateAddress | SolanaAddress
+T_StarknetAddress = str
+StarknetAddress = NewType('StarknetAddress', T_StarknetAddress)
+
+BlockchainAddress = BTCAddress | ChecksumEvmAddress | SubstrateAddress | SolanaAddress | StarknetAddress
 AnyBlockchainAddress = TypeVar(
     'AnyBlockchainAddress',
     BTCAddress,
     ChecksumEvmAddress,
     SubstrateAddress,
     SolanaAddress,
+    StarknetAddress,
 )
-ListOfBlockchainAddresses = list[BTCAddress] | list[ChecksumEvmAddress] | list[SubstrateAddress] | list[SolanaAddress]  # noqa: E501
-TuplesOfBlockchainAddresses = tuple[BTCAddress, ...] | tuple[ChecksumEvmAddress, ...] | tuple[SubstrateAddress, ...] | tuple[SolanaAddress, ...]  # noqa: E501
+ListOfBlockchainAddresses = list[BTCAddress] | list[ChecksumEvmAddress] | list[SubstrateAddress] | list[SolanaAddress] | list[StarknetAddress]  # noqa: E501
+TuplesOfBlockchainAddresses = tuple[BTCAddress, ...] | tuple[ChecksumEvmAddress, ...] | tuple[SubstrateAddress, ...] | tuple[SolanaAddress, ...] | tuple[StarknetAddress, ...]  # noqa: E501
 
 
 T_Price = FVal
@@ -415,6 +419,7 @@ class ChainType(SerializableEnumNameMixin):
     BITCOIN = auto()
     ETH2 = auto()
     SOLANA = auto()
+    STARKNET = auto()
 
     def type_to_blockchains(self) -> Sequence['SupportedBlockchain']:
         """Return the set of valid blockchains for the chain type"""
@@ -429,6 +434,9 @@ class ChainType(SerializableEnumNameMixin):
 
         if self == ChainType.SOLANA:
             return [SupportedBlockchain.SOLANA]
+
+        if self == ChainType.STARKNET:
+            return [SupportedBlockchain.STARKNET]
 
         raise InputError(f'Invalid chain type {self} when removing accounts')
 
@@ -453,6 +461,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     BINANCE_SC = 'BINANCE_SC'
     ZKSYNC_LITE = 'ZKSYNC_LITE'
     SOLANA = 'SOLANA'
+    STARKNET = 'STARKNET'
 
     def __str__(self) -> str:
         return SUPPORTED_BLOCKCHAIN_NAMES_MAPPING.get(self, super().__str__())
@@ -498,6 +507,8 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return 'BNB'
         if self == SupportedBlockchain.SOLANA:
             return 'SOL'
+        if self == SupportedBlockchain.STARKNET:
+            return 'STRK'
 
         return self.value
 
@@ -508,6 +519,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         ChainType.SUBSTRATE,
         ChainType.ETH2,
         ChainType.SOLANA,
+        ChainType.STARKNET,
     ]:
         """Chain type to return to the API supported chains endpoint"""
         if self.is_evm():
@@ -520,6 +532,8 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return ChainType.BITCOIN
         if self == SupportedBlockchain.SOLANA:
             return ChainType.SOLANA
+        if self == SupportedBlockchain.STARKNET:
+            return ChainType.STARKNET
         # else
         return ChainType.ETH2  # the outlier
 
@@ -528,6 +542,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         ChainType.BITCOIN,
         ChainType.SUBSTRATE,
         ChainType.SOLANA,
+        ChainType.STARKNET,
     ]:
         match (chain_type := self.get_chain_type()):
             case ChainType.EVM | ChainType.EVMLIKE | ChainType.ETH2:
@@ -604,6 +619,7 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.ZKSYNC_LITE: 'zksync_lite.svg',
     SupportedBlockchain.BINANCE_SC: 'binance_sc.svg',
     SupportedBlockchain.SOLANA: 'solana.svg',
+    SupportedBlockchain.STARKNET: 'starknet.svg',
 }
 
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
@@ -730,7 +746,7 @@ NON_EVM_CHAINS = set(SupportedBlockchain) - set(SUPPORTED_BLOCKCHAIN_TO_CHAINID.
 CHAINS_WITH_NODES_TYPE = CHAINS_WITH_TRANSACTION_DECODERS_TYPE
 CHAINS_WITH_NODES: tuple[CHAINS_WITH_NODES_TYPE, ...] = CHAINS_WITH_TRANSACTION_DECODERS
 
-CHAINS_WITH_CHAIN_MANAGER = SUPPORTED_EVM_CHAINS_TYPE | SUPPORTED_EVMLIKE_CHAINS_TYPE | SUPPORTED_BITCOIN_CHAINS_TYPE | SUPPORTED_SUBSTRATE_CHAINS_TYPE | Literal[SupportedBlockchain.SOLANA]  # noqa: E501
+CHAINS_WITH_CHAIN_MANAGER = SUPPORTED_EVM_CHAINS_TYPE | SUPPORTED_EVMLIKE_CHAINS_TYPE | SUPPORTED_BITCOIN_CHAINS_TYPE | SUPPORTED_SUBSTRATE_CHAINS_TYPE | Literal[SupportedBlockchain.SOLANA, SupportedBlockchain.STARKNET]  # noqa: E501
 
 
 class Location(DBCharEnumMixIn):
@@ -791,6 +807,7 @@ class Location(DBCharEnumMixIn):
     BINANCE_SC = 54  # on-chain Binance Smart Chain events
     SOLANA = 55
     AVALANCHE = 56  # on-chain Avalanche events
+    STARKNET = 57  # on-chain Starknet events
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
@@ -869,8 +886,6 @@ class Location(DBCharEnumMixIn):
                 return Location.BITCOIN_CASH
             case SupportedBlockchain.SOLANA:
                 return Location.SOLANA
-            case _:  # should never happen
-                raise AssertionError(f'Got in Location.from_chain for {chain}')
 
     def is_evm(self) -> bool:
         return self in EVM_LOCATIONS

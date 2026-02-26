@@ -47,6 +47,7 @@ from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAcc
 from rotkehlchen.chain.evm.decoding.ens.utils import is_valid_ens_name
 from rotkehlchen.chain.evm.types import EvmIndexer, SerializableChainIndexerOrder
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
+from rotkehlchen.chain.starknet.validation import is_valid_starknet_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress, SubstratePublicKey
 from rotkehlchen.chain.substrate.utils import (
     get_substrate_address_from_public_key,
@@ -348,6 +349,7 @@ class RequiredAddressOptionalChainSchema(Schema):
                 value=account.address,
             )) or
             (account.chain == SupportedBlockchain.SOLANA and not is_valid_solana_address(address=account.address)) or  # noqa: E501
+            (account.chain == SupportedBlockchain.STARKNET and not is_valid_starknet_address(address=account.address)) or  # noqa: E501
             (not is_valid_bitcoin_address(chain=account.chain, value=account.address))
         )):
             raise ValidationError(
