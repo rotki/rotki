@@ -526,10 +526,25 @@ Querying premium capabilities
 
    By doing a ``GET`` at this endpoint you can query the capabilities available for your premium account. The currently returned attributes are:
 
-   - `graphs_view`: Boolean. Enables the graphs displayed for each asset containing historical balances and values.
-   - `eth_staking_view`: Boolean. Enables the Ethereum staking view.
-   - `event_analysis_view`: Boolean. Enables the statistics view and the historical analytics based on events.
-   - `asset_movement_matching`: Boolean. Enables automatic matching of exchange asset movements with onchain events when triggering the matching task.
+   - `graphs_view`: Object with:
+     - `enabled` (Boolean): Enables the graphs displayed for each asset containing historical balances and values.
+     - `minimum_tier` (String): The minimum tier required to unlock this capability.
+   - `eth_staking_view`: Object with:
+     - `enabled` (Boolean): Enables the Ethereum staking view.
+     - `minimum_tier` (String): The minimum tier required to unlock this capability.
+   - `event_analysis_view`: Object with:
+     - `enabled` (Boolean): Enables the statistics view and the historical analytics based on events.
+     - `minimum_tier` (String): The minimum tier required to unlock this capability.
+   - `asset_movement_matching`: Object with:
+     - `enabled` (Boolean): Enables automatic matching of exchange asset movements with onchain events when triggering the matching task.
+     - `minimum_tier` (String): The minimum tier required to unlock this capability.
+   - `current_tier`: String. Current user premium tier name.
+   - `limit_of_devices`: Integer. Maximum number of connected devices.
+   - `history_events_limit`: Integer. Maximum number of history events.
+   - `pnl_events_limit`: Integer. Maximum number of PnL events.
+   - `reports_lookup_limit`: Integer. Maximum number of report lookups.
+   - `max_backup_size_mb`: Integer. Maximum encrypted backup size in MB.
+   - `eth_staked_limit`: Integer. Maximum ETH staking tracked by tier.
 
    **Example Request**:
 
@@ -547,10 +562,29 @@ Querying premium capabilities
 
       {
           "result": {
-            "graphs_view": true,
-            "eth_staking_view": false,
-            "event_analysis_view": true,
-            "asset_movement_matching": true
+            "current_tier": "Advanced",
+            "limit_of_devices": 4,
+            "history_events_limit": 100000,
+            "pnl_events_limit": 100000,
+            "reports_lookup_limit": 300,
+            "max_backup_size_mb": 600,
+            "eth_staked_limit": 384,
+            "graphs_view": {
+              "enabled": true,
+              "minimum_tier": "Basic"
+            },
+            "eth_staking_view": {
+              "enabled": false,
+              "minimum_tier": "Basic"
+            },
+            "event_analysis_view": {
+              "enabled": true,
+              "minimum_tier": "Basic"
+            },
+            "asset_movement_matching": {
+              "enabled": true,
+              "minimum_tier": "Basic"
+            }
           },
           "message": ""
       }

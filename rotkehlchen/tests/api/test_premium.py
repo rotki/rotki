@@ -302,12 +302,25 @@ def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
     with patch.object(
         rotki.premium,
         'fetch_limits',
-        return_value=(capabilities := {
+        return_value={
+            'current_tier': 'Advanced',
+            'limit_of_devices': 4,
+            'pnl_events_limit': 100000,
+            'max_backup_size_mb': 600,
+            'history_events_limit': 100000,
+            'reports_lookup_limit': 300,
+            'eth_staked_limit': 384,
             'eth_staking_view': True,
             'graphs_view': True,
             'event_analysis_view': False,
             'asset_movement_matching': True,
-        }),
+            'unlocks': {
+                'eth_staking_view': 'Basic',
+                'graphs_view': 'Basic',
+                'event_analysis_view': 'Basic',
+                'asset_movement_matching': 'Basic',
+            },
+        },
     ):
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
@@ -315,4 +328,28 @@ def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
         ))
         result = assert_proper_sync_response_with_result(response)
 
-        assert result == capabilities
+        assert result == {
+            'current_tier': 'Advanced',
+            'limit_of_devices': 4,
+            'pnl_events_limit': 100000,
+            'max_backup_size_mb': 600,
+            'history_events_limit': 100000,
+            'reports_lookup_limit': 300,
+            'eth_staked_limit': 384,
+            'eth_staking_view': {
+                'enabled': True,
+                'minimum_tier': 'Basic',
+            },
+            'graphs_view': {
+                'enabled': True,
+                'minimum_tier': 'Basic',
+            },
+            'event_analysis_view': {
+                'enabled': False,
+                'minimum_tier': 'Basic',
+            },
+            'asset_movement_matching': {
+                'enabled': True,
+                'minimum_tier': 'Basic',
+            },
+        }

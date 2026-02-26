@@ -73,6 +73,8 @@ class RemoteMetadata(NamedTuple):
 
 class UserLimits(TypedDict):
     """User limits for rotki premium subscription."""
+    # User's current subscription tier name
+    current_tier: str
     # Maximum number of devices that can be registered with the premium account
     limit_of_devices: int
     # Maximum number of profit and loss events that can be processed
@@ -90,6 +92,28 @@ class UserLimits(TypedDict):
     graphs_view: bool
     event_analysis_view: bool
     asset_movement_matching: bool
+    # minimum tier required to unlock each capability
+    unlocks: dict[str, str]
+
+
+class PremiumFeatureCapability(TypedDict):
+    enabled: bool
+    minimum_tier: str
+
+
+class PremiumCapabilities(TypedDict):
+    """Capabilities and limits shown to premium clients."""
+    current_tier: str
+    limit_of_devices: int
+    pnl_events_limit: int
+    max_backup_size_mb: int
+    history_events_limit: int
+    reports_lookup_limit: int
+    eth_staked_limit: int
+    eth_staking_view: PremiumFeatureCapability
+    graphs_view: PremiumFeatureCapability
+    event_analysis_view: PremiumFeatureCapability
+    asset_movement_matching: PremiumFeatureCapability
 
 
 # keys that will be returned as part of the capabilities
@@ -103,6 +127,21 @@ PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this
     'graphs_view',
     'event_analysis_view',
     'asset_movement_matching',
+)
+PREMIUM_LIMITS_KEYS: Final[tuple[Literal[
+    'limit_of_devices',
+    'pnl_events_limit',
+    'max_backup_size_mb',
+    'history_events_limit',
+    'reports_lookup_limit',
+    'eth_staked_limit',
+], ...]] = (
+    'limit_of_devices',
+    'pnl_events_limit',
+    'max_backup_size_mb',
+    'history_events_limit',
+    'reports_lookup_limit',
+    'eth_staked_limit',
 )
 
 
@@ -918,12 +957,34 @@ class Premium:
         log.debug(f'Fetched user limits from server: {self._cached_limits}')
         return self._cached_limits
 
-    def get_capabilities(self) -> dict[str, bool]:
+    def get_capabilities(self) -> PremiumCapabilities:
         limits = self.fetch_limits()
-        return {
-            feature_label: limits.get(feature_label, False)  # default to False in case we deprecate the key  # noqa: E501
-            for feature_label in PREMIUM_CAPABILITIES_KEYS
-        }
+        unlocks = limits.get('unlocks', {})
+        return PremiumCapabilities(
+            current_tier=limits.get('current_tier', 'Free'),
+            limit_of_devices=limits.get('limit_of_devices', 0),
+            pnl_events_limit=limits.get('pnl_events_limit', 0),
+            max_backup_size_mb=limits.get('max_backup_size_mb', 0),
+            history_events_limit=limits.get('history_events_limit', 0),
+            reports_lookup_limit=limits.get('reports_lookup_limit', 0),
+            eth_staked_limit=limits.get('eth_staked_limit', 0),
+            eth_staking_view=PremiumFeatureCapability(
+                enabled=limits.get('eth_staking_view', False),
+                minimum_tier=unlocks.get('eth_staking_view', 'Free'),
+            ),
+            graphs_view=PremiumFeatureCapability(
+                enabled=limits.get('graphs_view', False),
+                minimum_tier=unlocks.get('graphs_view', 'Free'),
+            ),
+            event_analysis_view=PremiumFeatureCapability(
+                enabled=limits.get('event_analysis_view', False),
+                minimum_tier=unlocks.get('event_analysis_view', 'Free'),
+            ),
+            asset_movement_matching=PremiumFeatureCapability(
+                enabled=limits.get('asset_movement_matching', False),
+                minimum_tier=unlocks.get('asset_movement_matching', 'Free'),
+            ),
+        )
 
     def watcher_query(
             self,
