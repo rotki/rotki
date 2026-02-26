@@ -20,6 +20,12 @@ export const GnosisPaySessionKeyExpiredData = z.object({
 
 export type GnosisPaySessionKeyExpiredData = z.infer<typeof GnosisPaySessionKeyExpiredData>;
 
+export const NoAvailableIndexersData = z.object({
+  chain: z.string(),
+});
+
+export type NoAvailableIndexersData = z.infer<typeof NoAvailableIndexersData>;
+
 export const MissingApiKey = z.object({
   service: z.string(),
   location: z.string().optional(),

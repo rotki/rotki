@@ -30,6 +30,7 @@ export const SocketMessageType = {
   MONERIUM_SESSIONKEY_EXPIRED: 'monerium_sessionkey_expired',
   NEGATIVE_BALANCE_DETECTED: 'negative_balance_detected',
   NEW_TOKEN_DETECTED: 'new_token_detected',
+  NO_AVAILABLE_INDEXERS: 'no_available_indexers',
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   PROGRESS_UPDATES: 'progress_updates',
   REFRESH_BALANCES: 'refresh_balances',
