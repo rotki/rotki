@@ -215,6 +215,7 @@ from rotkehlchen.assets.asset import (
 )
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.balances.types import HistoricalBalancesParams
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
@@ -234,7 +235,6 @@ from rotkehlchen.db.filtering import (
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
-    HistoricalBalancesFilterQuery,
     HistoryBaseEntryFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
@@ -3548,10 +3548,10 @@ class TimestampHistoricalBalanceResource(BaseMethodView):
     def post(
             self,
             async_query: bool,
-            filter_query: HistoricalBalancesFilterQuery,
+            filter_params: HistoricalBalancesParams,
     ) -> Response:
         return self.rest_api.get_historical_balance(
-            filter_query=filter_query,
+            filter_params=filter_params,
             async_query=async_query,
         )
 
