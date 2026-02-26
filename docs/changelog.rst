@@ -8,6 +8,7 @@ Changelog
 * :bug:`-` Registering a new device is now more reliable when rotki runs in container environments.
 * :bug:`-` Depositing native token + wrapped native token in Aaave v3 in the same transaction will now be properly decoded.
 * :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
+* :bug:`-` ZKSynclite batch withdrawal on the ethereum side should now be properly decoded.
 
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.
