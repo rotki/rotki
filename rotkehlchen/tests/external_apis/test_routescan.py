@@ -80,15 +80,15 @@ def test_routescan_rate_limits(routescan: Routescan) -> None:
             routescan.get_blocknumber_by_time(chain_id=ChainID.ETHEREUM, ts=Timestamp(1700000000))
 
 
-@pytest.mark.parametrize('action', ['txlist', None])
+@pytest.mark.parametrize('use_get_transactions', [True, False])
 def test_routescan_account_queries_use_explicit_pagination(
         routescan: Routescan,
-        action: str | None,
+        use_get_transactions: bool,
 ) -> None:
     """RouteScan account endpoints should always include explicit page and offset."""
     with patch.object(EtherscanLikeApi, '_query', return_value=[]) as query_mock:
         account = string_to_evm_address('0x56a1A34F0d33788ebA53e2706854A37A5F275536')
-        if action is None:
+        if use_get_transactions is False:
             list(routescan.get_token_transaction_hashes(
                 chain_id=ChainID.ETHEREUM,
                 account=account,
@@ -97,7 +97,7 @@ def test_routescan_account_queries_use_explicit_pagination(
             list(routescan.get_transactions(
                 chain_id=ChainID.ETHEREUM,
                 account=account,
-                action='txlist',
+                internal=False,
             ))
 
     query_options = query_mock.call_args.kwargs['options']
@@ -107,11 +107,9 @@ def test_routescan_account_queries_use_explicit_pagination(
 
 def test_routescan_internal_by_txhash_uses_lower_offset(routescan: Routescan) -> None:
     with patch.object(EtherscanLikeApi, '_query', return_value=[]) as query_mock:
-        list(routescan.get_transactions(
+        list(routescan.get_internal_transactions_by_parent_hash(
             chain_id=ChainID.ETHEREUM,
-            account=None,
-            action='txlistinternal',
-            period_or_hash=deserialize_evm_tx_hash(
+            tx_hash=deserialize_evm_tx_hash(
                 '0x2cb9dcf83b3fd1bbbec4cd5f8d0b688bfc3f6aadd99081f28eaccafcd26c4243',
             ),
         ))

@@ -115,6 +115,7 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: 'DBHandler'
             ethereum_manager.node_inquirer.etherscan,
             ethereum_manager.node_inquirer.blockscout,
             ethereum_manager.node_inquirer.routescan,
+            ethereum_manager.node_inquirer.sqd,
         ):
             stack.enter_context(patch.object(
                 target=indexer,
@@ -267,7 +268,7 @@ def test_query_single_parent_hash_replaces_existing_internal_transactions(
 
     with patch.object(
         ethereum_manager.node_inquirer,
-        'get_transactions',
+        'get_internal_transactions_by_parent_hash',
         return_value=iter([[EvmInternalTransaction(
             parent_tx_hash=parent_tx.tx_hash,
             chain_id=ChainID.ETHEREUM,
@@ -380,16 +381,18 @@ def test_indexers_fall_back_properly(
             (optimism_manager.node_inquirer.etherscan, 'etherscan'),
             (optimism_manager.node_inquirer.blockscout, 'blockscout'),
             (optimism_manager.node_inquirer.routescan, 'routescan'),
+            (optimism_manager.node_inquirer.sqd, 'sqd'),
         ):
-            stack.enter_context(patch.object(
-                target=indexer,
-                attribute='get_blocknumber_by_time',
-                wraps=indexer.get_blocknumber_by_time,
-            ) if name == tested_indexer else patch.object(
-                target=indexer,
-                attribute='get_blocknumber_by_time',
-                side_effect=RemoteError('FAIL'),
-            ))
+            if name != 'sqd':  # sqd does not support block number via timestamp
+                stack.enter_context(patch.object(
+                    target=indexer,
+                    attribute='get_blocknumber_by_time',
+                    wraps=indexer.get_blocknumber_by_time,  # type: ignore[union-attr]  # cannot be sqd.
+                ) if name == tested_indexer else patch.object(
+                    target=indexer,
+                    attribute='get_blocknumber_by_time',
+                    side_effect=RemoteError('FAIL'),
+                ))
             txs_mock = stack.enter_context(patch.object(
                 target=indexer,
                 attribute='get_transactions',
@@ -424,10 +427,10 @@ def test_indexers_fall_back_properly(
             end_ts=Timestamp(1729117000),
         )  # Query a small range that returns only two txs
 
-    # Check the txlist and txlistinternal actions were called for all used indexers
+    # Check that internal=True & internal=False were called for all used indexers
     assert all(txs_mock.call_count == 2 for txs_mock in txs_mocks)
     assert all(
-        {x.kwargs['action'] for x in txs_mock.call_args_list} == {'txlist', 'txlistinternal'}
+        {x.kwargs['internal'] for x in txs_mock.call_args_list} == {False, True}
         for txs_mock in txs_mocks
     )
     # Check that the tx hashes query only happened once for all used indexers
@@ -471,23 +474,23 @@ def test_all_indexers_get_same_tx_results(
         ethereum_inquirer.blockscout,
         ethereum_inquirer.routescan,
     ):
-        for action, result_list in (
-            ('txlist', txlist_results),
-            ('txlistinternal', txlistinteral_results),
+        for internal, result_list in (
+            (False, txlist_results),
+            (True, txlistinteral_results),
         ):
             # get_transactions returns an iterator of lists. Consume the iterator, check that
             # only one list was returned, and append that list to the result_list.
-            assert len(result := list(indexer.get_transactions(  # type: ignore[call-overload]  # mypy doesn't understand that action will be a valid literal
+            assert len(result := list(indexer.get_transactions(
                 chain_id=ethereum_inquirer.chain_id,
                 account=ethereum_accounts[0],
-                action=action,
-                period_or_hash=TimestampOrBlockRange(
+                internal=internal,
+                period=TimestampOrBlockRange(
                     range_type='timestamps',
                     from_value=Timestamp(1720000000),
                     to_value=Timestamp(1735000000),
                 ),
             ))) == 1
-            result_list.append(result[0])
+            result_list.append(result[0])  # type: ignore[arg-type]  # mypy can't narrow the union from the bool loop variable
 
     # Check that there are 6 txs and 1 internal tx for the requested range and that the results
     # from each indexer all match. trace_id is excluded since it varies between indexers.

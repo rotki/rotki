@@ -25,6 +25,7 @@ const labels: { [keys in PrioritizedListId]: string } = {
   [EvmIndexer.BLOCKSCOUT]: '',
   [EvmIndexer.ETHERSCAN]: '',
   [EvmIndexer.ROUTESCAN]: '',
+  [EvmIndexer.SQD]: '',
   [PriceOracle.ALCHEMY]: '',
   [PriceOracle.BLOCKCHAIN]: '',
   [PriceOracle.COINGECKO]: '',

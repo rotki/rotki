@@ -25,10 +25,12 @@ class DummyEvmNodeInquirer(EvmNodeInquirer):
         self.etherscan = cast('Any', DummyIndexer('Etherscan'))
         self.blockscout = cast('Any', DummyIndexer('Blockscout'))
         self.routescan = cast('Any', DummyIndexer('Routescan'))
+        self.sqd = cast('Any', DummyIndexer('SQD'))
         self.available_indexers = {
             EvmIndexer.ETHERSCAN: self.etherscan,
             EvmIndexer.BLOCKSCOUT: self.blockscout,
             EvmIndexer.ROUTESCAN: self.routescan,
+            EvmIndexer.SQD: self.sqd,
         }
 
     def _get_archive_check_data(self):

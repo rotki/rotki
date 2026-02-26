@@ -24,6 +24,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
     from rotkehlchen.externalapis.routescan import Routescan
+    from rotkehlchen.externalapis.sqd import Sqd
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -38,6 +39,7 @@ class ScrollInquirer(EvmNodeInquirer):
             etherscan: 'Etherscan',
             blockscout: 'Blockscout',
             routescan: 'Routescan',
+            sqd: 'Sqd',
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.SCROLL]](chain_id=ChainID.SCROLL)
@@ -47,6 +49,7 @@ class ScrollInquirer(EvmNodeInquirer):
             etherscan=etherscan,
             blockscout=blockscout,
             routescan=routescan,
+            sqd=sqd,
             blockchain=SupportedBlockchain.SCROLL,
             contracts=contracts,
             rpc_timeout=rpc_timeout,

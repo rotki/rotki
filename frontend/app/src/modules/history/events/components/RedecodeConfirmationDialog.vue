@@ -12,6 +12,7 @@ import {
   ETHERSCAN_PRIO_LIST_ITEM,
   type PrioritizedListId,
   ROUTESCAN_PRIO_LIST_ITEM,
+  SQD_PRIO_LIST_ITEM,
 } from '@/types/settings/prioritized-list-id';
 
 const show = defineModel<boolean>('show', { required: true });
@@ -37,6 +38,7 @@ const availableIndexers = new PrioritizedListData<PrioritizedListId>([
   ETHERSCAN_PRIO_LIST_ITEM,
   BLOCKSCOUT_PRIO_LIST_ITEM,
   ROUTESCAN_PRIO_LIST_ITEM,
+  SQD_PRIO_LIST_ITEM,
 ]);
 
 const isEvmEvent = computed<boolean>(() => {
@@ -75,7 +77,7 @@ function getInitialIndexerOrder(): PrioritizedListId[] {
   }
 
   // Use all indexers if no setting is configured
-  return [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN];
+  return [EvmIndexer.ETHERSCAN, EvmIndexer.BLOCKSCOUT, EvmIndexer.ROUTESCAN, EvmIndexer.SQD];
 }
 
 function resetState(): void {

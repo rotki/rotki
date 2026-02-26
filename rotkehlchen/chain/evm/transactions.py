@@ -262,8 +262,8 @@ class EvmTransactions(ABC):  # noqa: B024
         queried_from_ts = Timestamp(period.from_value)
         for new_transactions in self.evm_inquirer.get_transactions(
                 account=address,
-                action='txlist',
-                period_or_hash=period_as_blocks,
+                internal=False,
+                period=period_as_blocks,
         ):
             # add new transactions to the DB
             if len(new_transactions) == 0:
@@ -415,26 +415,28 @@ class EvmTransactions(ABC):  # noqa: B024
         If update_ranges is True, updates the database tracking for this query range.
         Otherwise, data is fetched without updating the query range.
         """
-        query_period_or_hash: TimestampOrBlockRange | EVMTxHash
         if isinstance(period_or_hash, TimestampOrBlockRange):
             is_parent_hash_query = False
-            query_period_or_hash = self.evm_inquirer.maybe_timestamp_to_block_range(
+            period_as_blocks = self.evm_inquirer.maybe_timestamp_to_block_range(
                 period=period_or_hash,
             )
             queried_from_ts = Timestamp(period_or_hash.from_value) if period_or_hash.range_type == 'timestamps' else None  # noqa: E501
+            tx_iterator = self.evm_inquirer.get_transactions(
+                account=address,
+                internal=True,
+                period=period_as_blocks,
+            )
         else:
             is_parent_hash_query = True
-            query_period_or_hash = period_or_hash
             queried_from_ts = None
+            tx_iterator = self.evm_inquirer.get_internal_transactions_by_parent_hash(
+                tx_hash=period_or_hash,
+            )
 
         parent_tx_timestamps: dict[EVMTxHash, Timestamp] = {}
         parent_hash_internal_txs: list[EvmInternalTransaction] = []
         queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
-        for new_internal_txs in self.evm_inquirer.get_transactions(
-                account=address,
-                period_or_hash=query_period_or_hash,
-                action='txlistinternal',
-        ):
+        for new_internal_txs in tx_iterator:
             if len(new_internal_txs) == 0:
                 continue
 
@@ -510,8 +512,8 @@ class EvmTransactions(ABC):  # noqa: B024
                     queried_from_ts = queried_to_ts
 
         if is_parent_hash_query:
-            assert not isinstance(query_period_or_hash, TimestampOrBlockRange)
-            parent_tx_hash = query_period_or_hash
+            assert not isinstance(period_or_hash, TimestampOrBlockRange)
+            parent_tx_hash = period_or_hash
             with self.database.user_write() as write_cursor:
                 self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash(
                     write_cursor=write_cursor,

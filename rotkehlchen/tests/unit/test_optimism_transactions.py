@@ -160,8 +160,8 @@ def test_l1_fee_fetched_during_indexer_tx_query(
 
     for tx_batch in optimism_transactions.evm_inquirer.get_transactions(
         account=address,
-        action='txlist',
-        period_or_hash=TimestampOrBlockRange(
+        internal=False,
+        period=TimestampOrBlockRange(
             range_type='blocks',
             from_value=106757395,
             to_value=106757395,
