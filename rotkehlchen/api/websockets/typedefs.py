@@ -34,6 +34,7 @@ class WSMessageType(StrEnum):
     BINANCE_PAIRS_MISSING = auto()
     UNMATCHED_ASSET_MOVEMENTS = auto()
     NEGATIVE_BALANCE_DETECTED = auto()
+    NO_AVAILABLE_INDEXERS = auto()
 
 
 class ProgressUpdateSubType(StrEnum):

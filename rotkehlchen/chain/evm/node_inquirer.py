@@ -17,6 +17,7 @@ from web3.datastructures import MutableAttributeDict
 from web3.exceptions import InvalidAddress, TransactionNotFound, Web3Exception
 from web3.types import BlockIdentifier, FilterParams
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.assets.utils import CHAIN_TO_WRAPPED_TOKEN, token_normalized_value_decimals
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT, SAFE_BASIC_ABI
@@ -257,6 +258,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         self._known_accounts_cache: LRUCacheWithRemove[ChecksumEvmAddress, bool] = LRUCacheWithRemove(maxsize=50)  # noqa: E501
         # tracks the request length that failed to proactively use smaller chunks per node type
         self._multicall_failed_length: dict[Literal['nodes', 'indexers'], int] = {}
+        self._no_indexer_notified: bool = False
         LockableQueryMixIn.__init__(self)
         EVMRPCMixin.__init__(self)
         # Log the available nodes so we have extra information when debugging connection errors.
@@ -1624,6 +1626,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         - RequestTooLargeError to allow callers to retry with smaller chunks
         """
         if len(ordered_indexers := self._get_indexers_in_order()) == 0:
+            if not self._no_indexer_notified:
+                self._no_indexer_notified = True
+                self.database.msg_aggregator.add_message(
+                    message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
+                    data={'chain': self.blockchain.value},
+                )
             raise NoAvailableIndexers(f'No indexers are available for {self.chain_name}')
 
         errors: list[tuple[str, Exception]] = []

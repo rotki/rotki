@@ -4206,6 +4206,11 @@
       "message": "New token with identifier {identifier} was detected from event processing and queries.|{count} new tokens were detected from event processing and queries.",
       "title": "New Token Detected|New Tokens Detected"
     },
+    "no_available_indexers": {
+      "action": "Configure indexers",
+      "message": "No indexers are available for {chain}. Transaction queries for this chain were skipped. You can configure indexer settings to resolve this.",
+      "title": "No indexers available"
+    },
     "premium": {
       "active": {
         "message": "Your premium subscription is detected.",
