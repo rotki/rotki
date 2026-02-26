@@ -303,6 +303,13 @@ def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
         rotki.premium,
         'fetch_limits',
         return_value=(capabilities := {
+            'current_tier': 'Advanced',
+            'limit_of_devices': 4,
+            'pnl_events_limit': 100000,
+            'max_backup_size_mb': 600,
+            'history_events_limit': 100000,
+            'reports_lookup_limit': 300,
+            'eth_staked_limit': 384,
             'eth_staking_view': True,
             'graphs_view': True,
             'event_analysis_view': False,

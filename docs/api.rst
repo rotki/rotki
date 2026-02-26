@@ -529,6 +529,13 @@ Querying premium capabilities
    - `graphs_view`: Boolean. Enables the graphs displayed for each asset containing historical balances and values.
    - `eth_staking_view`: Boolean. Enables the Ethereum staking view.
    - `event_analysis_view`: Boolean. Enables the statistics view and the historical analytics based on events.
+   - `current_tier`: String. Current user premium tier name.
+   - `limit_of_devices`: Integer. Maximum number of connected devices.
+   - `history_events_limit`: Integer. Maximum number of history events.
+   - `pnl_events_limit`: Integer. Maximum number of PnL events.
+   - `reports_lookup_limit`: Integer. Maximum number of report lookups.
+   - `max_backup_size_mb`: Integer. Maximum encrypted backup size in MB.
+   - `eth_staked_limit`: Integer. Maximum ETH staking tracked by tier.
 
    **Example Request**:
 
@@ -546,6 +553,13 @@ Querying premium capabilities
 
       {
           "result": {
+            "current_tier": "Advanced",
+            "limit_of_devices": 4,
+            "history_events_limit": 100000,
+            "pnl_events_limit": 100000,
+            "reports_lookup_limit": 300,
+            "max_backup_size_mb": 600,
+            "eth_staked_limit": 384,
             "graphs_view": true,
             "eth_staking_view": false,
             "event_analysis_view": true

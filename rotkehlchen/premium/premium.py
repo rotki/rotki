@@ -72,6 +72,8 @@ class RemoteMetadata(NamedTuple):
 
 class UserLimits(TypedDict):
     """User limits for rotki premium subscription."""
+    # User's current subscription tier name
+    current_tier: str
     # Maximum number of devices that can be registered with the premium account
     limit_of_devices: int
     # Maximum number of profit and loss events that can be processed
@@ -90,6 +92,20 @@ class UserLimits(TypedDict):
     event_analysis_view: bool
 
 
+class PremiumCapabilities(TypedDict):
+    """Capabilities and limits shown to premium clients."""
+    current_tier: str
+    limit_of_devices: int
+    pnl_events_limit: int
+    max_backup_size_mb: int
+    history_events_limit: int
+    reports_lookup_limit: int
+    eth_staked_limit: int
+    eth_staking_view: bool
+    graphs_view: bool
+    event_analysis_view: bool
+
+
 # keys that will be returned as part of the capabilities
 PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this due to https://github.com/python/mypy/issues/19961  # noqa: E501
     'eth_staking_view',
@@ -99,6 +115,21 @@ PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this
     'eth_staking_view',
     'graphs_view',
     'event_analysis_view',
+)
+PREMIUM_LIMITS_KEYS: Final[tuple[Literal[
+    'limit_of_devices',
+    'pnl_events_limit',
+    'max_backup_size_mb',
+    'history_events_limit',
+    'reports_lookup_limit',
+    'eth_staked_limit',
+], ...]] = (
+    'limit_of_devices',
+    'pnl_events_limit',
+    'max_backup_size_mb',
+    'history_events_limit',
+    'reports_lookup_limit',
+    'eth_staked_limit',
 )
 
 
@@ -914,12 +945,19 @@ class Premium:
         log.debug(f'Fetched user limits from server: {self._cached_limits}')
         return self._cached_limits
 
-    def get_capabilities(self) -> dict[str, bool]:
+    def get_capabilities(self) -> PremiumCapabilities:
         limits = self.fetch_limits()
-        return {
-            feature_label: limits.get(feature_label, False)  # default to False in case we deprecate the key  # noqa: E501
-            for feature_label in PREMIUM_CAPABILITIES_KEYS
-        }
+        return PremiumCapabilities(
+            current_tier=limits.get('current_tier', 'Free'),
+            **{
+                limit_label: limits.get(limit_label, 0)
+                for limit_label in PREMIUM_LIMITS_KEYS
+            },
+            **{
+                feature_label: limits.get(feature_label, False)
+                for feature_label in PREMIUM_CAPABILITIES_KEYS
+            },
+        )
 
     def watcher_query(
             self,

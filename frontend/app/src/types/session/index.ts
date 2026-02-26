@@ -60,9 +60,17 @@ export enum PremiumFeature {
   GRAPHS_VIEW = 'graphsView',
 }
 
-export const PremiumCapabilities = z.record(
-  z.enum(PremiumFeature),
-  z.boolean().default(false),
-);
+export const PremiumCapabilities = z.object({
+  currentTier: z.string().optional(),
+  ethStakedLimit: z.number().optional(),
+  ethStakingView: z.boolean().default(false),
+  eventAnalysisView: z.boolean().default(false),
+  graphsView: z.boolean().default(false),
+  historyEventsLimit: z.number().optional(),
+  limitOfDevices: z.number().optional(),
+  maxBackupSizeMb: z.number().optional(),
+  pnlEventsLimit: z.number().optional(),
+  reportsLookupLimit: z.number().optional(),
+}).passthrough();
 
 export type PremiumCapabilities = z.infer<typeof PremiumCapabilities>;
