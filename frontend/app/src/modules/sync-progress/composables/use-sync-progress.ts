@@ -24,6 +24,11 @@ interface UseSyncProgressReturn {
   overallProgress: ComputedRef<number>;
   isActive: ComputedRef<boolean>;
   canDismiss: ComputedRef<boolean>;
+  hasCancelled: ComputedRef<boolean>;
+  hasCancelledChains: ComputedRef<boolean>;
+  hasCancelledLocations: ComputedRef<boolean>;
+  hasCancelledDecoding: ComputedRef<boolean>;
+  hasCancelledProtocolCache: ComputedRef<boolean>;
   totalChains: ComputedRef<number>;
   completedChains: ComputedRef<number>;
   totalLocations: ComputedRef<number>;
@@ -37,6 +42,9 @@ function mapLocationStatus(data: HistoryEventsQueryData): LocationProgress {
   let status: LocationProgress['status'];
 
   switch (data.status) {
+    case HistoryEventsQueryStatus.CANCELLED:
+      status = LocationStatus.CANCELLED;
+      break;
     case HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED:
       status = LocationStatus.COMPLETE;
       break;
@@ -76,20 +84,24 @@ export function useSyncProgress(): UseSyncProgressReturn {
   const { queryStatus: txQueryStatus } = toRefs(txStore);
   const { queryStatus: eventsQueryStatus } = toRefs(eventsStore);
   // Use decodingSyncStatus for sync progress - it's not reset by fetchUndecodedTransactionsBreakdown
-  const { decodingSyncStatus: rawDecodingStatus, protocolCacheStatus: rawProtocolCacheStatus } = toRefs(historyStore);
+  const {
+    decodingSyncStatus: rawDecodingStatus,
+    protocolCacheStatus: rawProtocolCacheStatus,
+  } = toRefs(historyStore);
 
   const chains = useChainProgress(txQueryStatus);
 
   const locations = computed<LocationProgress[]>(() => {
     const statusMap = get(eventsQueryStatus);
     return Object.values(statusMap)
-      .map(mapLocationStatus)
+      .map(data => mapLocationStatus(data))
       .sort((a, b) => {
-        // Sort by: querying first, then pending, then complete
+        // Sort by: querying first, then pending, then cancelled, then complete
         const priority: Record<LocationProgress['status'], number> = {
           [LocationStatus.QUERYING]: 0,
           [LocationStatus.PENDING]: 1,
-          [LocationStatus.COMPLETE]: 2,
+          [LocationStatus.CANCELLED]: 2,
+          [LocationStatus.COMPLETE]: 3,
         };
         return priority[a.status] - priority[b.status];
       });
@@ -97,6 +109,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
 
   const decoding = computed<DecodingProgress[]>(() =>
     get(rawDecodingStatus).map(item => ({
+      cancelled: item.cancelled ?? false,
       chain: item.chain,
       processed: item.processed,
       progress: item.total > 0 ? Math.round((item.processed / item.total) * 100) : 0,
@@ -106,6 +119,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
 
   const protocolCache = computed<ProtocolCacheProgress[]>(() =>
     get(rawProtocolCacheStatus).map(item => ({
+      cancelled: item.cancelled ?? false,
       chain: item.chain,
       processed: item.processed,
       progress: item.total > 0 ? Math.round((item.processed / item.total) * 100) : 0,
@@ -116,12 +130,12 @@ export function useSyncProgress(): UseSyncProgressReturn {
 
   const totalChains = computed<number>(() => get(chains).length);
   const completedChains = computed<number>(() =>
-    get(chains).filter(c => c.completed === c.total && c.total > 0).length,
+    get(chains).filter(c => (c.completed + c.cancelled) === c.total && c.total > 0).length,
   );
 
   const totalLocations = computed<number>(() => get(locations).length);
   const completedLocations = computed<number>(() =>
-    get(locations).filter(l => l.status === LocationStatus.COMPLETE).length,
+    get(locations).filter(l => l.status === LocationStatus.COMPLETE || l.status === LocationStatus.CANCELLED).length,
   );
 
   const totalAccounts = computed<number>(() =>
@@ -134,7 +148,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
   });
 
   const completedAccounts = computed<number>(() =>
-    get(chains).reduce((sum, c) => sum + c.completed, 0),
+    get(chains).reduce((sum, c) => sum + c.completed + c.cancelled, 0),
   );
 
   const hasTxActivity = computed<boolean>(() => get(totalAccounts) > 0);
@@ -171,7 +185,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
     if (hasDecoding) {
       const decodingItems = get(decoding);
       const avgDecodingProgress = decodingItems.length > 0
-        ? decodingItems.reduce((sum, d) => sum + d.progress, 0) / decodingItems.length / 100
+        ? decodingItems.reduce((sum, d) => sum + (d.cancelled ? 100 : d.progress), 0) / decodingItems.length / 100
         : 0;
       weightedProgress += avgDecodingProgress * PROGRESS_WEIGHTS.decoding;
       totalWeight += PROGRESS_WEIGHTS.decoding;
@@ -197,7 +211,7 @@ export function useSyncProgress(): UseSyncProgressReturn {
 
     const allChainsDone = chainsTotal === 0 || chainsCompleted === chainsTotal;
     const allLocationsDone = locationsTotal === 0 || locationsCompleted === locationsTotal;
-    const allDecodingDone = decodingItems.every(d => d.processed >= d.total);
+    const allDecodingDone = decodingItems.every(d => d.processed >= d.total || d.cancelled);
 
     if (allChainsDone && allLocationsDone && allDecodingDone)
       return SyncPhase.COMPLETE;
@@ -206,6 +220,15 @@ export function useSyncProgress(): UseSyncProgressReturn {
   });
 
   const canDismiss = computed<boolean>(() => get(phase) === SyncPhase.COMPLETE);
+
+  const hasCancelledChains = computed<boolean>(() => get(chains).some(c => c.cancelled > 0));
+  const hasCancelledLocations = computed<boolean>(() => get(locations).some(l => l.status === LocationStatus.CANCELLED));
+  const hasCancelledDecoding = computed<boolean>(() => get(decoding).some(d => d.cancelled));
+  const hasCancelledProtocolCache = computed<boolean>(() => get(protocolCache).some(p => p.cancelled));
+
+  const hasCancelled = computed<boolean>(() =>
+    get(hasCancelledChains) || get(hasCancelledLocations) || get(hasCancelledDecoding) || get(hasCancelledProtocolCache),
+  );
 
   const state = computed<SyncProgressState>(() => ({
     canDismiss: get(canDismiss),
@@ -231,6 +254,11 @@ export function useSyncProgress(): UseSyncProgressReturn {
     completedChains,
     completedLocations,
     decoding,
+    hasCancelled,
+    hasCancelledChains,
+    hasCancelledDecoding,
+    hasCancelledLocations,
+    hasCancelledProtocolCache,
     isActive,
     locations,
     overallProgress,

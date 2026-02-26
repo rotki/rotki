@@ -16,10 +16,13 @@ const { t } = useI18n({ useScope: 'global' });
 const isComplete = computed<boolean>(() => props.address.status === AddressStatus.COMPLETE);
 const isQuerying = computed<boolean>(() => props.address.status === AddressStatus.QUERYING);
 const isDecoding = computed<boolean>(() => props.address.status === AddressStatus.DECODING);
+const isCancelled = computed<boolean>(() => props.address.status === AddressStatus.CANCELLED);
 
 const statusIcon = computed<string>(() => {
   if (get(isComplete))
     return 'lu-check';
+  if (get(isCancelled))
+    return 'lu-circle-alert';
   if (get(isQuerying) || get(isDecoding))
     return 'lu-loader-circle';
   return 'lu-circle';
@@ -28,6 +31,8 @@ const statusIcon = computed<string>(() => {
 const statusColor = computed<string>(() => {
   if (get(isComplete))
     return 'text-rui-success';
+  if (get(isCancelled))
+    return 'text-rui-warning';
   if (get(isQuerying) || get(isDecoding))
     return 'text-rui-primary';
   return 'text-rui-text-disabled';
@@ -36,6 +41,9 @@ const statusColor = computed<string>(() => {
 const statusText = computed<string>(() => {
   if (get(isComplete))
     return t('sync_progress.status.complete');
+
+  if (get(isCancelled))
+    return t('sync_progress.status.cancelled');
 
   if (get(isDecoding))
     return t('sync_progress.status.decoding');

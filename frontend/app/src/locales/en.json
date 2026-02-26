@@ -2150,6 +2150,7 @@
         "querying_chain_balances_with_progress": "({current}/{total}) Querying {chain} balances... "
       },
       "event_status": {
+        "cancelled": "Cancelled",
         "default": "Processing",
         "querying_events_finished": "Finished querying",
         "querying_events_started": "Querying events",
@@ -2170,6 +2171,7 @@
         "detecting_with_details": "({current}/{total}) Detecting tokens for"
       },
       "transaction_status": {
+        "cancelled": "Cancelled",
         "decoding_transactions_finished": "Finished decoding",
         "decoding_transactions_started": "Starting decoding",
         "default": "Processing",
@@ -5146,6 +5148,7 @@
     "protocol_cache_progress": "{processed}/{total} pools",
     "show_more": "Show {count} more...",
     "status": {
+      "cancelled": "Cancelled",
       "complete": "Complete",
       "decoding": "Decoding",
       "pending": "Pending",

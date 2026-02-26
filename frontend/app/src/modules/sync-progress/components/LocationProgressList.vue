@@ -11,16 +11,21 @@ const { t } = useI18n({ useScope: 'global' });
 const showCompleted = ref<boolean>(false);
 
 const inProgressLocations = computed<LocationProgress[]>(() =>
-  props.locations.filter(l => l.status !== LocationStatus.COMPLETE),
+  props.locations.filter(l => l.status !== LocationStatus.COMPLETE && l.status !== LocationStatus.CANCELLED),
 );
 
 const completedLocations = computed<LocationProgress[]>(() =>
-  props.locations.filter(l => l.status === LocationStatus.COMPLETE),
+  props.locations.filter(l => l.status === LocationStatus.COMPLETE || l.status === LocationStatus.CANCELLED),
 );
 
 const hasInProgress = computed<boolean>(() => get(inProgressLocations).length > 0);
 const completedCount = computed<number>(() => get(completedLocations).length);
 const hasCompleted = computed<boolean>(() => !!get(completedCount));
+const hasCancelledLocations = computed<boolean>(() => get(completedLocations).some(l => l.status === LocationStatus.CANCELLED));
+
+const completedIconColor = computed<string>(() =>
+  get(hasCancelledLocations) ? 'text-rui-warning' : 'text-rui-success',
+);
 
 function toggleCompleted(): void {
   set(showCompleted, !get(showCompleted));
@@ -47,7 +52,7 @@ function toggleCompleted(): void {
       >
         <RuiIcon
           name="lu-circle-check"
-          class="text-rui-success"
+          :class="completedIconColor"
           size="16"
         />
         <span>{{ t('sync_progress.completed_locations', { count: completedCount }, completedCount) }}</span>
@@ -67,7 +72,7 @@ function toggleCompleted(): void {
         >
           <RuiIcon
             name="lu-circle-check"
-            class="text-rui-success"
+            :class="completedIconColor"
             size="16"
           />
           <span>{{ t('sync_progress.completed_locations', { count: completedCount }, completedCount) }}</span>

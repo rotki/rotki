@@ -11,17 +11,25 @@ import { logger } from '@/utils/logging';
 
 const HISTORY_EVENTS_MODIFIED_DEBOUNCE_MS = 15000;
 
+export interface DecodingStatusEntry extends EvmUnDecodedTransactionsData {
+  cancelled?: boolean;
+}
+
+export interface ProtocolCacheStatusEntry extends ProtocolCacheUpdatesData {
+  cancelled?: boolean;
+}
+
 export const useHistoryStore = defineStore('history', () => {
   const associatedLocations = ref<string[]>([]);
   const locationLabels = ref<LocationLabel[]>([]);
   const undecodedTransactionsStatus = ref<Record<string, EvmUnDecodedTransactionsData>>({});
-  const protocolCacheUpdateStatus = ref<Record<string, ProtocolCacheUpdatesData>>({});
+  const protocolCacheUpdateStatus = ref<Record<string, ProtocolCacheStatusEntry>>({});
   const transactionStatusSummary = ref<TransactionStatus>();
   const eventsModificationCounter = ref<number>(0);
 
   // Separate state for sync progress indicator - only updated by websocket messages,
   // not reset by fetchUndecodedTransactionsBreakdown
-  const decodingSyncProgress = ref<Record<string, EvmUnDecodedTransactionsData>>({});
+  const decodingSyncProgress = ref<Record<string, DecodingStatusEntry>>({});
 
   const receivingProtocolCacheStatus = ref<boolean>(false);
 
@@ -33,11 +41,11 @@ export const useHistoryStore = defineStore('history', () => {
   );
 
   // Computed for sync progress indicator - uses the separate sync progress state
-  const decodingSyncStatus = computed<EvmUnDecodedTransactionsData[]>(() =>
+  const decodingSyncStatus = computed<DecodingStatusEntry[]>(() =>
     Object.values(get(decodingSyncProgress)).filter(status => status.total > 0),
   );
 
-  const protocolCacheStatus = computed<ProtocolCacheUpdatesData[]>(() =>
+  const protocolCacheStatus = computed<ProtocolCacheStatusEntry[]>(() =>
     Object.values(get(protocolCacheUpdateStatus)).filter(status => status.total > 0),
   );
 
@@ -48,8 +56,13 @@ export const useHistoryStore = defineStore('history', () => {
       [data.chain]: data,
     });
     // Also update sync progress state (used by sync progress indicator)
+    // Guard: don't overwrite cancelled entries
+    const currentSync = get(decodingSyncProgress);
+    if (currentSync[data.chain]?.cancelled) {
+      return;
+    }
     set(decodingSyncProgress, {
-      ...get(decodingSyncProgress),
+      ...currentSync,
       [data.chain]: data,
     });
   };
@@ -63,12 +76,17 @@ export const useHistoryStore = defineStore('history', () => {
     // Also update sync progress, but only if:
     // 1. The chain doesn't exist in sync progress yet (initialization), OR
     // 2. The new data has equal or higher processed count (progress update, not reset)
+    // 3. The chain is not cancelled
     const currentSyncProgress = get(decodingSyncProgress);
     const updatedSyncProgress = { ...currentSyncProgress };
     let hasChanges = false;
 
     for (const [chain, status] of Object.entries(data)) {
       const existing = currentSyncProgress[chain];
+      // Skip cancelled entries
+      if (existing?.cancelled)
+        continue;
+
       // Initialize if not exists, or update if not a reset (processed going backwards)
       if (!existing || status.processed >= existing.processed) {
         updatedSyncProgress[chain] = status;
@@ -86,8 +104,13 @@ export const useHistoryStore = defineStore('history', () => {
   const setProtocolCacheStatus = (data: ProtocolCacheUpdatesData): void => {
     set(receivingProtocolCacheStatus, true);
     const old = get(protocolCacheUpdateStatus);
-    const filtered: Record<string, ProtocolCacheUpdatesData> = {};
     const currentKey = `${data.chain}#${data.protocol}`;
+
+    // Guard: don't overwrite cancelled entries
+    if (old[currentKey]?.cancelled)
+      return;
+
+    const filtered: Record<string, ProtocolCacheStatusEntry> = {};
     for (const key in old) {
       if (key !== currentKey) {
         filtered[key] = {
@@ -100,6 +123,26 @@ export const useHistoryStore = defineStore('history', () => {
       [currentKey]: data,
       ...filtered,
     });
+  };
+
+  const markDecodingCancelled = (chain: string): void => {
+    const current = get(decodingSyncProgress);
+    const existing = current[chain];
+    if (existing) {
+      set(decodingSyncProgress, {
+        ...current,
+        [chain]: { ...existing, cancelled: true },
+      });
+    }
+  };
+
+  const markAllProtocolCacheCancelled = (): void => {
+    const current = get(protocolCacheUpdateStatus);
+    const updated: Record<string, ProtocolCacheStatusEntry> = {};
+    for (const [key, entry] of Object.entries(current)) {
+      updated[key] = { ...entry, cancelled: true };
+    }
+    set(protocolCacheUpdateStatus, updated);
   };
 
   const resetUndecodedTransactionsStatus = (): void => {
@@ -163,7 +206,7 @@ export const useHistoryStore = defineStore('history', () => {
   };
 
   watch(refreshProtocolCacheTaskRunning, (curr, prev) => {
-    if (!curr && prev) {
+    if (!curr && prev && !Object.values(get(protocolCacheUpdateStatus)).some(entry => entry.cancelled)) {
       resetProtocolCacheUpdatesStatus();
     }
   });
@@ -199,6 +242,8 @@ export const useHistoryStore = defineStore('history', () => {
     fetchTransactionStatusSummary,
     getUndecodedTransactionStatus,
     locationLabels,
+    markAllProtocolCacheCancelled,
+    markDecodingCancelled,
     protocolCacheStatus,
     receivingProtocolCacheStatus,
     resetDecodingSyncProgress,

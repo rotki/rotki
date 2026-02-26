@@ -22,10 +22,11 @@ const expanded = ref<boolean>(false);
 const showAll = ref<boolean>(false);
 
 const isComplete = computed<boolean>(() =>
-  props.chain.completed === props.chain.total && props.chain.total > 0,
+  (props.chain.completed + props.chain.cancelled) === props.chain.total && props.chain.total > 0,
 );
 
 const hasActivity = computed<boolean>(() => props.chain.inProgress > 0);
+const hasCancelled = computed<boolean>(() => props.chain.cancelled > 0);
 
 const sortedAddresses = computed(() =>
   [...props.chain.addresses].sort((a, b) => {
@@ -33,7 +34,8 @@ const sortedAddresses = computed(() =>
       [AddressStatus.QUERYING]: 0,
       [AddressStatus.DECODING]: 1,
       [AddressStatus.PENDING]: 2,
-      [AddressStatus.COMPLETE]: 3,
+      [AddressStatus.CANCELLED]: 3,
+      [AddressStatus.COMPLETE]: 4,
     };
     return priority[a.status] - priority[b.status];
   }),
@@ -53,7 +55,7 @@ const hasMore = computed<boolean>(() => get(remainingCount) > 0 && !get(showAll)
 
 const statusBorderColor = computed<string>(() => {
   if (get(isComplete))
-    return 'border-l-rui-success';
+    return get(hasCancelled) ? 'border-l-rui-warning' : 'border-l-rui-success';
   if (get(hasActivity))
     return 'border-l-rui-primary';
   return 'border-l-rui-grey-400 dark:border-l-rui-grey-600';
@@ -122,7 +124,7 @@ function showMore(): void {
       <RuiIcon
         v-if="isComplete"
         name="lu-check"
-        class="text-rui-success"
+        :class="hasCancelled ? 'text-rui-warning' : 'text-rui-success'"
         :size="compact ? 14 : 18"
       />
       <RuiIcon

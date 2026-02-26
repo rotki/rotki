@@ -1,4 +1,5 @@
 export const AddressStatus = {
+  CANCELLED: 'cancelled',
   COMPLETE: 'complete',
   DECODING: 'decoding',
   PENDING: 'pending',
@@ -40,12 +41,14 @@ export interface ChainProgress {
   addresses: AddressProgress[];
   total: number;
   completed: number;
+  cancelled: number;
   inProgress: number;
   pending: number;
   progress: number;
 }
 
 export const LocationStatus = {
+  CANCELLED: 'cancelled',
   COMPLETE: 'complete',
   PENDING: 'pending',
   QUERYING: 'querying',
@@ -65,6 +68,7 @@ export interface DecodingProgress {
   total: number;
   processed: number;
   progress: number;
+  cancelled: boolean;
 }
 
 export interface ProtocolCacheProgress {
@@ -73,6 +77,7 @@ export interface ProtocolCacheProgress {
   total: number;
   processed: number;
   progress: number;
+  cancelled: boolean;
 }
 
 export const SyncPhase = {

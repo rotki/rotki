@@ -34,6 +34,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
   const { awaitTask, isTaskRunning } = useTaskStore();
   const {
+    markDecodingCancelled,
     resetUndecodedTransactionsStatus,
     getUndecodedTransactionStatus,
     updateUndecodedTransactionsStatus,
@@ -133,7 +134,10 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       clearDependedSection();
     }
     catch (error) {
-      if (!isTaskCancelled(error)) {
+      if (isTaskCancelled(error)) {
+        markDecodingCancelled(chain);
+      }
+      else {
         logger.error(error);
         notify({
           display: true,

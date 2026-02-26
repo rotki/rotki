@@ -36,7 +36,7 @@ describe('modules/sync-progress/components/LocationProgressList', () => {
             },
           },
           RuiIcon: {
-            template: '<span data-testid="icon">{{ name }}</span>',
+            template: '<span data-testid="icon" :class="[$attrs.class]">{{ name }}</span>',
             props: ['name', 'size'],
           },
         },
@@ -149,6 +149,46 @@ describe('modules/sync-progress/components/LocationProgressList', () => {
       expect(inProgressItem?.attributes('data-compact')).toBe('false');
       // Completed items are rendered in compact mode
       expect(completedItem?.attributes('data-compact')).toBe('true');
+    });
+  });
+
+  describe('cancelled locations', () => {
+    it('should treat cancelled locations as completed', () => {
+      const locations = [
+        createLocationProgress('kraken', 'Kraken', LocationStatus.QUERYING),
+        createLocationProgress('binance', 'Binance', LocationStatus.CANCELLED),
+      ];
+      wrapper = createWrapper(locations);
+
+      // binance is cancelled so it should be in the completed section
+      expect(wrapper.text()).toContain('sync_progress.completed_locations');
+      const items = wrapper.findAll('[data-testid="location-item"]');
+      expect(items).toHaveLength(1);
+      expect(items[0].attributes('data-location')).toBe('kraken');
+    });
+
+    it('should show warning color when completed section has cancelled locations', () => {
+      const locations = [
+        createLocationProgress('binance', 'Binance', LocationStatus.CANCELLED),
+      ];
+      wrapper = createWrapper(locations);
+
+      const icons = wrapper.findAll('[data-testid="icon"]');
+      const checkIcon = icons.find(icon => icon.text() === 'lu-circle-check');
+      expect(checkIcon).toBeDefined();
+      expect(checkIcon?.classes()).toContain('text-rui-warning');
+    });
+
+    it('should show success color when completed section has no cancelled locations', () => {
+      const locations = [
+        createLocationProgress('binance', 'Binance', LocationStatus.COMPLETE),
+      ];
+      wrapper = createWrapper(locations);
+
+      const icons = wrapper.findAll('[data-testid="icon"]');
+      const checkIcon = icons.find(icon => icon.text() === 'lu-circle-check');
+      expect(checkIcon).toBeDefined();
+      expect(checkIcon?.classes()).toContain('text-rui-success');
     });
   });
 

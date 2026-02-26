@@ -16,8 +16,10 @@ describe('modules/sync-progress/components/ProtocolCacheProgressItem', () => {
     total: number,
     chain = 'eth',
     protocol = 'uniswap_v3',
+    cancelled = false,
   ): ProtocolCacheProgress {
     return {
+      cancelled,
       chain,
       processed,
       progress: total > 0 ? Math.round((processed / total) * 100) : 0,
@@ -89,6 +91,14 @@ describe('modules/sync-progress/components/ProtocolCacheProgressItem', () => {
       expect(wrapper.text()).toContain('sync_progress.status.refreshing');
       expect(wrapper.find('[data-testid="icon"]').text()).toBe('lu-loader-circle');
     });
+
+    it('should display cancelled status when cancelled', () => {
+      const item = createProtocolCacheProgress(50, 100, 'eth', 'uniswap_v3', true);
+      wrapper = createWrapper(item);
+
+      expect(wrapper.text()).toContain('sync_progress.status.cancelled');
+      expect(wrapper.find('[data-testid="icon"]').text()).toBe('lu-check');
+    });
   });
 
   describe('icon styling', () => {
@@ -115,6 +125,15 @@ describe('modules/sync-progress/components/ProtocolCacheProgressItem', () => {
 
       const icon = wrapper.find('[data-testid="icon"]');
       expect(icon.classes()).toContain('text-rui-text-disabled');
+    });
+
+    it('should apply warning color for cancelled status', () => {
+      const item = createProtocolCacheProgress(50, 100, 'eth', 'uniswap_v3', true);
+      wrapper = createWrapper(item);
+
+      const icon = wrapper.find('[data-testid="icon"]');
+      expect(icon.classes()).toContain('text-rui-warning');
+      expect(icon.classes()).not.toContain('animate-spin');
     });
   });
 
@@ -200,6 +219,13 @@ describe('modules/sync-progress/components/ProtocolCacheProgressItem', () => {
 
       expect(wrapper.classes()).not.toContain('animate-pulse');
     });
+
+    it('should not animate for cancelled protocol cache', () => {
+      const item = createProtocolCacheProgress(50, 100, 'eth', 'uniswap_v3', true);
+      wrapper = createWrapper(item);
+
+      expect(wrapper.classes()).not.toContain('animate-pulse');
+    });
   });
 
   describe('border styling', () => {
@@ -215,6 +241,13 @@ describe('modules/sync-progress/components/ProtocolCacheProgressItem', () => {
       wrapper = createWrapper(item);
 
       expect(wrapper.classes()).toContain('border-l-rui-primary');
+    });
+
+    it('should apply warning border for cancelled status', () => {
+      const item = createProtocolCacheProgress(50, 100, 'eth', 'uniswap_v3', true);
+      wrapper = createWrapper(item);
+
+      expect(wrapper.classes()).toContain('border-l-rui-warning');
     });
   });
 });

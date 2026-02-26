@@ -33,7 +33,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
   const { fetchTransactionsTask } = useHistoryEventsApi();
 
   const { awaitTask } = useTaskStore();
-  const { removeQueryStatus, setEvmlikeStatus } = useTxQueryStatusStore();
+  const { isAddressCancelled, markAddressCancelled, removeQueryStatus, setEvmlikeStatus } = useTxQueryStatusStore();
   const { getChainName } = useSupportedChains();
   const { decodeTransactionsTask } = useHistoryTransactionDecoding();
   const { getTransactionTypeFromChain } = useHistoryTransactionAccounts();
@@ -81,7 +81,10 @@ export function useTransactionSync(): UseTransactionSyncReturn {
         logger.debug(error);
         removeQueryStatus(account);
       }
-      else if (!isTaskCancelled(error)) {
+      else if (isTaskCancelled(error)) {
+        markAddressCancelled(account);
+      }
+      else {
         notify({
           display: true,
           message: t('actions.transactions.error.description', {
@@ -94,7 +97,8 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       }
     }
     finally {
-      // Mark evmlike as finished when the task completes
+      // Mark evmlike as finished when the task completes (but not when cancelled)
+      // setEvmlikeStatus already guards against overwriting cancelled entries
       if (isEvmlike && trackProgress)
         setEvmlikeStatus(account, 'finished');
     }
@@ -115,6 +119,14 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       async item => syncTransactionTask(item, type, trackProgress),
       2,
     );
+
+    // Skip decoding if all accounts for this chain were cancelled
+    const allCancelled = accounts.every(acc => isAddressCancelled(acc));
+
+    if (allCancelled) {
+      logger.debug(`skipping decoding for ${chain} — all accounts were cancelled`);
+      return;
+    }
 
     if (TransactionChainTypeNeedDecoding.includes(type)) {
       logger.debug(`queued ${chain} transactions for decoding`);

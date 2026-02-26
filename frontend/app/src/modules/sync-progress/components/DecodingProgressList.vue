@@ -11,11 +11,19 @@ const { t } = useI18n({ useScope: 'global' });
 const showCompleted = ref<boolean>(false);
 
 const inProgressDecoding = computed<DecodingProgress[]>(() =>
-  props.decoding.filter(d => d.processed < d.total),
+  props.decoding.filter(d => d.processed < d.total && !d.cancelled),
 );
 
 const completedDecoding = computed<DecodingProgress[]>(() =>
-  props.decoding.filter(d => d.processed >= d.total),
+  props.decoding.filter(d => d.processed >= d.total || d.cancelled),
+);
+
+const hasCancelledItems = computed<boolean>(() =>
+  get(completedDecoding).some(d => d.cancelled),
+);
+
+const completedIconColor = computed<string>(() =>
+  get(hasCancelledItems) ? 'text-rui-warning' : 'text-rui-success',
 );
 
 const hasInProgress = computed<boolean>(() => get(inProgressDecoding).length > 0);
@@ -47,7 +55,7 @@ function toggleCompleted(): void {
       >
         <RuiIcon
           name="lu-circle-check"
-          class="text-rui-success"
+          :class="completedIconColor"
           size="16"
         />
         <span>{{ t('sync_progress.completed_decoding', { count: completedCount }, completedCount) }}</span>
@@ -67,7 +75,7 @@ function toggleCompleted(): void {
         >
           <RuiIcon
             name="lu-circle-check"
-            class="text-rui-success"
+            :class="completedIconColor"
             size="16"
           />
           <span>{{ t('sync_progress.completed_decoding', { count: completedCount }, completedCount) }}</span>

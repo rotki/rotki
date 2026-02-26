@@ -34,6 +34,7 @@ export const MigratedAddresses = z.array(EvmChainLikeAddress);
 export type MigratedAddresses = z.infer<typeof MigratedAddresses>;
 
 export const HistoryEventsQueryStatus = {
+  CANCELLED: 'cancelled',
   QUERYING_EVENTS_FINISHED: 'querying_events_finished',
   QUERYING_EVENTS_STARTED: 'querying_events_started',
   QUERYING_EVENTS_STATUS_UPDATE: 'querying_events_status_update',
@@ -53,6 +54,7 @@ export type HistoryEventsQueryData = z.infer<typeof HistoryEventsQueryData>;
 
 export const TransactionsQueryStatus = {
   ACCOUNT_CHANGE: 'account_change',
+  CANCELLED: 'cancelled',
   DECODING_TRANSACTIONS_FINISHED: 'decoding_transactions_finished',
   DECODING_TRANSACTIONS_STARTED: 'decoding_transactions_started',
   QUERYING_EVM_TOKENS_TRANSACTIONS: 'querying_evm_tokens_transactions',

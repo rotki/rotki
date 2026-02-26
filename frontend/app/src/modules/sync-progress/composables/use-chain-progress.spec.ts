@@ -129,6 +129,17 @@ describe('useChainProgress', () => {
 
       expect(chains[0].addresses[0].status).toBe(AddressStatus.COMPLETE);
     });
+
+    it('should map CANCELLED to CANCELLED status', () => {
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: createEvmStatusData('0x123', 'eth', TransactionsQueryStatus.CANCELLED),
+      });
+
+      const result = useChainProgress(queryStatus);
+      const chains = get(result);
+
+      expect(chains[0].addresses[0].status).toBe(AddressStatus.CANCELLED);
+    });
   });
 
   describe('chain grouping', () => {
@@ -374,6 +385,54 @@ describe('useChainProgress', () => {
       const chains = get(result);
 
       expect(chains[0].addresses[0].subtype).toBe('evm');
+    });
+  });
+
+  describe('cancelled status', () => {
+    it('should map CANCELLED status entries to CANCELLED address status', () => {
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: { ...createEvmStatusData('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS), status: TransactionsQueryStatus.CANCELLED },
+        key2: createEvmStatusData('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+      });
+
+      const result = useChainProgress(queryStatus);
+      const chains = get(result);
+
+      const ethChain = chains.find(c => c.chain === 'eth');
+      const cancelledAddress = ethChain?.addresses.find(a => a.address === '0x111');
+      const activeAddress = ethChain?.addresses.find(a => a.address === '0x222');
+
+      expect(cancelledAddress?.status).toBe(AddressStatus.CANCELLED);
+      expect(activeAddress?.status).toBe(AddressStatus.QUERYING);
+    });
+
+    it('should count cancelled in chain progress', () => {
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: { ...createEvmStatusData('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS), status: TransactionsQueryStatus.CANCELLED },
+        key2: createEvmStatusData('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+        key3: createEvmStatusData('0x333', 'eth', TransactionsQueryStatus.ACCOUNT_CHANGE),
+      });
+
+      const result = useChainProgress(queryStatus);
+      const chains = get(result);
+
+      const ethChain = chains.find(c => c.chain === 'eth');
+      expect(ethChain?.cancelled).toBe(1);
+      expect(ethChain?.completed).toBe(1);
+      expect(ethChain?.pending).toBe(1);
+    });
+
+    it('should treat cancelled as done for progress calculation', () => {
+      const queryStatus = ref<Record<string, TxQueryStatusData>>({
+        key1: { ...createEvmStatusData('0x111', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS), status: TransactionsQueryStatus.CANCELLED },
+        key2: createEvmStatusData('0x222', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+      });
+
+      const result = useChainProgress(queryStatus);
+      const chains = get(result);
+
+      const ethChain = chains.find(c => c.chain === 'eth');
+      expect(ethChain?.progress).toBe(100);
     });
   });
 

@@ -15,6 +15,9 @@ const {
   mockCompletedChains,
   mockCompletedLocations,
   mockDecoding,
+  mockHasCancelled,
+  mockHasCancelledDecoding,
+  mockHasCancelledProtocolCache,
   mockOverallProgress,
   mockPhase,
   mockProtocolCache,
@@ -26,6 +29,9 @@ const {
     mockCompletedChains: ref<number>(0),
     mockCompletedLocations: ref<number>(0),
     mockDecoding: ref<DecodingProgress[]>([]),
+    mockHasCancelled: ref<boolean>(false),
+    mockHasCancelledDecoding: ref<boolean>(false),
+    mockHasCancelledProtocolCache: ref<boolean>(false),
     mockOverallProgress: ref<number>(0),
     mockPhase: ref<SyncPhase>('idle'),
     mockProtocolCache: ref<ProtocolCacheProgress[]>([]),
@@ -39,6 +45,9 @@ vi.mock('../composables/use-sync-progress', () => ({
     completedChains: mockCompletedChains,
     completedLocations: mockCompletedLocations,
     decoding: mockDecoding,
+    hasCancelled: mockHasCancelled,
+    hasCancelledDecoding: mockHasCancelledDecoding,
+    hasCancelledProtocolCache: mockHasCancelledProtocolCache,
     overallProgress: mockOverallProgress,
     phase: mockPhase,
     protocolCache: mockProtocolCache,
@@ -85,6 +94,9 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
     set(mockCompletedLocations, 0);
     set(mockDecoding, []);
     set(mockProtocolCache, []);
+    set(mockHasCancelled, false);
+    set(mockHasCancelledDecoding, false);
+    set(mockHasCancelledProtocolCache, false);
   }
 
   beforeEach(() => {
@@ -128,6 +140,28 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
 
       const icons = wrapper.findAll('[data-testid="icon"]');
       expect(icons.some(icon => icon.text() === 'lu-circle-check')).toBe(true);
+    });
+
+    it('should show warning color when complete with cancelled items', () => {
+      set(mockPhase, SyncPhase.COMPLETE);
+      set(mockHasCancelled, true);
+      wrapper = createWrapper();
+
+      const icons = wrapper.findAll('[data-testid="icon"]');
+      const checkIcon = icons.find(icon => icon.text() === 'lu-circle-check');
+      expect(checkIcon).toBeDefined();
+      expect(checkIcon?.classes()).toContain('text-rui-warning');
+    });
+
+    it('should show success icon when complete without cancelled items', () => {
+      set(mockPhase, SyncPhase.COMPLETE);
+      set(mockHasCancelled, false);
+      wrapper = createWrapper();
+
+      const icons = wrapper.findAll('[data-testid="icon"]');
+      const checkIcon = icons.find(icon => icon.text() === 'lu-circle-check');
+      expect(checkIcon).toBeDefined();
+      expect(checkIcon?.classes()).toContain('text-rui-success');
     });
 
     it('should animate loader when syncing and progress < 100', () => {
@@ -191,12 +225,24 @@ describe('modules/sync-progress/components/SyncProgressHeader', () => {
     it('should show decoding counts when there is decoding', () => {
       set(mockPhase, SyncPhase.SYNCING);
       set(mockDecoding, [
-        { chain: 'eth', processed: 100, progress: 100, total: 100 },
-        { chain: 'optimism', processed: 50, progress: 50, total: 100 },
+        { cancelled: false, chain: 'eth', processed: 100, progress: 100, total: 100 },
+        { cancelled: false, chain: 'optimism', processed: 50, progress: 50, total: 100 },
       ]);
       wrapper = createWrapper();
 
       expect(wrapper.text()).toContain('1/2');
+      expect(wrapper.text()).toContain('sync_progress.decoding_label');
+    });
+
+    it('should count cancelled decoding as completed', () => {
+      set(mockPhase, SyncPhase.SYNCING);
+      set(mockDecoding, [
+        { cancelled: true, chain: 'eth', processed: 50, progress: 50, total: 100 },
+        { cancelled: false, chain: 'optimism', processed: 100, progress: 100, total: 100 },
+      ]);
+      wrapper = createWrapper();
+
+      expect(wrapper.text()).toContain('2/2');
       expect(wrapper.text()).toContain('sync_progress.decoding_label');
     });
   });

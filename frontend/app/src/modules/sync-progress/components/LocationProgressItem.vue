@@ -14,9 +14,10 @@ const { t } = useI18n({ useScope: 'global' });
 
 const isComplete = computed<boolean>(() => props.location.status === LocationStatus.COMPLETE);
 const isQuerying = computed<boolean>(() => props.location.status === LocationStatus.QUERYING);
+const isCancelled = computed<boolean>(() => props.location.status === LocationStatus.CANCELLED);
 
 const statusIcon = computed<string>(() => {
-  if (get(isComplete))
+  if (get(isComplete) || get(isCancelled))
     return 'lu-check';
   if (get(isQuerying))
     return 'lu-loader-circle';
@@ -26,6 +27,8 @@ const statusIcon = computed<string>(() => {
 const statusColor = computed<string>(() => {
   if (get(isComplete))
     return 'text-rui-success';
+  if (get(isCancelled))
+    return 'text-rui-warning';
   if (get(isQuerying))
     return 'text-rui-primary';
   return 'text-rui-text-disabled';
@@ -34,6 +37,9 @@ const statusColor = computed<string>(() => {
 const statusText = computed<string>(() => {
   if (get(isComplete))
     return t('sync_progress.status.complete');
+
+  if (get(isCancelled))
+    return t('sync_progress.status.cancelled');
 
   if (get(isQuerying)) {
     if (props.location.eventType) {
@@ -52,6 +58,8 @@ const statusText = computed<string>(() => {
 const statusBorderColor = computed<string>(() => {
   if (get(isComplete))
     return 'border-l-rui-success';
+  if (get(isCancelled))
+    return 'border-l-rui-warning';
   if (get(isQuerying))
     return 'border-l-rui-primary';
   return 'border-l-rui-grey-400 dark:border-l-rui-grey-600';
