@@ -3,8 +3,7 @@ import type { ActionDataEntry } from '@/types/action';
 import { isValidEthAddress, toHumanReadable } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useNotificationsStore } from '@/store/notifications';
-import { getErrorMessage } from '@/utils/error-handling';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 interface Counterparty {
@@ -17,7 +16,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
 
   const dataEntries = ref<ActionDataEntry[]>([]);
 
-  const { notify } = useNotificationsStore();
+  const { notify } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const fetchCounterparties = async (): Promise<void> => {

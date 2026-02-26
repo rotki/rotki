@@ -12,11 +12,10 @@ import { useBlockchains } from '@/composables/blockchain';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useMessageStore } from '@/store/message';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { getAccountAddress, getChain } from '@/utils/blockchain/accounts/utils';
-import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 import { getKeyType, guessPrefix } from '@/utils/xpub';
 
@@ -161,7 +160,7 @@ export function useAccountManage(): UseAccountManageReturn {
   const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchains();
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount, editAgnosticAccount } = useBlockchainAccounts();
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
 
   function handleErrors(error: unknown, props: Record<string, any> = {}): void {
     logger.error(error);
@@ -171,11 +170,7 @@ export function useAccountManage(): UseAccountManageReturn {
       errors = error.getValidationErrors(props);
 
     if (typeof errors === 'string') {
-      setMessage({
-        description: t('account_form.error.description', { error: errors }),
-        success: false,
-        title: t('account_form.error.title'),
-      });
+      showErrorMessage(t('account_form.error.title'), t('account_form.error.description', { error: errors }));
     }
     else {
       set(errorMessages, errors);
@@ -296,11 +291,7 @@ export function useAccountManage(): UseAccountManageReturn {
         });
       }
 
-      setMessage({
-        description,
-        success: false,
-        title,
-      });
+      showErrorMessage(title, description);
     }
     else {
       set(errorMessages, result.message);

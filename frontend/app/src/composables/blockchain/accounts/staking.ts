@@ -7,14 +7,13 @@ import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts'
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
-import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface UseEthStakingReturn {
@@ -40,7 +39,7 @@ export function useEthStaking(): UseEthStakingReturn {
 
   const premium = usePremium();
   const { awaitTask } = useTaskStore();
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
 
@@ -127,13 +126,9 @@ export function useEthStaking(): UseEthStakingReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      setMessage({
-        description: t('actions.delete_eth2_validator.error.description', {
-          message: getErrorMessage(error),
-        }),
-        success: false,
-        title: t('actions.delete_eth2_validator.error.title'),
-      });
+      showErrorMessage(t('actions.delete_eth2_validator.error.title'), t('actions.delete_eth2_validator.error.description', {
+        message: getErrorMessage(error),
+      }));
       return false;
     }
   };

@@ -3,8 +3,8 @@ import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { NonFungibleBalance } from '@/types/nfbalances';
 import { startPromise } from '@shared/utils';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useMessageStore } from '@/store/message';
 import { uniqueStrings } from '@/utils/data';
 
 interface UseNftAssetIgnoringReturn {
@@ -19,7 +19,7 @@ export function useNftAssetIgnoring(
   ignoredAssetsHandling: Ref<IgnoredAssetsHandlingType>,
 ): UseNftAssetIgnoringReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const { ignoreAsset, ignoreAssetWithConfirmation, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
 
   const selected = ref<string[]>([]);
@@ -55,11 +55,7 @@ export function useNftAssetIgnoring(
 
     if (ids.length === 0) {
       const choice = ignored ? 1 : 2;
-      setMessage({
-        description: t('ignore.no_items.description', choice),
-        success: false,
-        title: t('ignore.no_items.title', choice),
-      });
+      showErrorMessage(t('ignore.no_items.title', choice), t('ignore.no_items.description', choice));
       return;
     }
 

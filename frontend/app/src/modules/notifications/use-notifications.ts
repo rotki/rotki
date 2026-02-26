@@ -1,4 +1,4 @@
-import { Severity } from '@rotki/common';
+import { type Notification, type NotificationData, Severity } from '@rotki/common';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
 
@@ -9,24 +9,48 @@ interface ToastOptions {
 }
 
 interface UseNotificationsReturn {
+  /**
+   * Send a raw notification with full control over all fields (action, group, category, priority, etc.).
+   * Use this for advanced patterns that the convenience methods don't cover.
+   */
+  notify: (notification: Notification) => void;
+  /** Show an error toast notification (displayed by default). */
   notifyError: (title: string, message: string, options?: ToastOptions) => void;
+  /** Show a warning toast notification (displayed by default). */
   notifyWarning: (title: string, message: string, options?: ToastOptions) => void;
+  /** Show an info toast notification (displayed by default). */
   notifyInfo: (title: string, message: string, options?: ToastOptions) => void;
-  showSuccessMessage: (title: string, description: string) => void;
-  showErrorMessage: (title: string, description: string) => void;
+  /** Remove the first notification matching the predicate. */
+  removeMatching: (predicate: (n: NotificationData) => boolean) => void;
+  /**
+   * Show a success message dialog.
+   * When called with two args: `showSuccessMessage(title, description)`.
+   * When called with one arg: `showSuccessMessage(description)` — title is auto-generated.
+   */
+  showSuccessMessage: (title: string, description?: string) => void;
+  /**
+   * Show an error message dialog.
+   * When called with two args: `showErrorMessage(title, description)`.
+   * When called with one arg: `showErrorMessage(description)` — title is auto-generated.
+   */
+  showErrorMessage: (title: string, description?: string) => void;
 }
 
 export function useNotifications(): UseNotificationsReturn {
-  const { notify } = useNotificationsStore();
+  const { notify: storeNotify, removeMatching: storeRemoveMatching } = useNotificationsStore();
   const { setMessage } = useMessageStore();
 
   function toast(severity: Severity, title: string, message: string, options?: ToastOptions): void {
-    notify({
+    storeNotify({
       display: options?.display ?? true,
       message,
       severity,
       title,
     });
+  }
+
+  function notify(notification: Notification): void {
+    storeNotify(notification);
   }
 
   function notifyError(title: string, message: string, options?: ToastOptions): void {
@@ -41,13 +65,17 @@ export function useNotifications(): UseNotificationsReturn {
     toast(Severity.INFO, title, message, options);
   }
 
-  function showSuccessMessage(title: string, description: string): void {
-    setMessage({ description, success: true, title });
+  function removeMatching(predicate: (n: NotificationData) => boolean): void {
+    storeRemoveMatching(predicate);
   }
 
-  function showErrorMessage(title: string, description: string): void {
-    setMessage({ description, success: false, title });
+  function showSuccessMessage(title: string, description?: string): void {
+    setMessage({ description: description ?? title, success: true, ...(description ? { title } : {}) });
   }
 
-  return { notifyError, notifyInfo, notifyWarning, showErrorMessage, showSuccessMessage };
+  function showErrorMessage(title: string, description?: string): void {
+    setMessage({ description: description ?? title, success: false, ...(description ? { title } : {}) });
+  }
+
+  return { notify, notifyError, notifyInfo, notifyWarning, removeMatching, showErrorMessage, showSuccessMessage };
 }

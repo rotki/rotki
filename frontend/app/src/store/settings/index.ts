@@ -3,18 +3,17 @@ import type { KrakenAccountType } from '@/types/exchanges';
 import type { Module } from '@/types/modules';
 import type { SettingsUpdate } from '@/types/user';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
-import { useMessageStore } from '@/store/message';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { usePremiumStore } from '@/store/session/premium';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { ApiValidationError } from '@/types/api/errors';
 import { uniqueStrings } from '@/utils/data';
-import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 export const useSettingsStore = defineStore('settings', () => {
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { addQueriedAddress } = useQueriedAddressesStore();
   const generalStore = useGeneralSettingsStore();
   const accountingStore = useAccountingSettingsStore();
@@ -29,17 +28,10 @@ export const useSettingsStore = defineStore('settings', () => {
         krakenAccountType,
       });
       generalStore.update(general);
-      setMessage({
-        description: t('actions.session.kraken_account.success.message'),
-        success: true,
-        title: t('actions.session.kraken_account.success.title'),
-      });
+      showSuccessMessage(t('actions.session.kraken_account.success.title'), t('actions.session.kraken_account.success.message'));
     }
     catch (error: unknown) {
-      setMessage({
-        description: getErrorMessage(error),
-        title: t('actions.session.kraken_account.error.title'),
-      });
+      showErrorMessage(t('actions.session.kraken_account.error.title'), getErrorMessage(error));
     }
   };
 

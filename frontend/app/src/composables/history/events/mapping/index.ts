@@ -10,10 +10,9 @@ import { startPromise } from '@shared/utils';
 import { cloneDeep } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useRefMap } from '@/composables/utils/useRefMap';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useLocationStore } from '@/store/locations';
-import { useNotificationsStore } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
-import { getErrorMessage } from '@/utils/error-handling';
 
 type Event = MaybeRefOrGetter<{
   eventType: string;
@@ -38,7 +37,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const { allExchanges } = storeToRefs(useLocationStore());
 
   const { getTransactionTypeMappings } = useHistoryEventsApi();
-  const { notify } = useNotificationsStore();
+  const { notify } = useNotifications();
 
   const historyEventTypeGlobalMapping = useRefMap(historyEventTypeData, ({ globalMappings }) => globalMappings);
 

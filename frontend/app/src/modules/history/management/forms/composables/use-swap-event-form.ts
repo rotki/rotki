@@ -3,7 +3,7 @@ import type SwapSubEventList from '@/modules/history/management/forms/swap/SwapS
 import type { ValidationErrors } from '@/types/api/errors';
 import type { SwapSubEventModel } from '@/types/history/events/schemas';
 import { useHistoryEvents } from '@/composables/history/events';
-import { useMessageStore } from '@/store/message';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 
 export interface SwapEventFormListRefs {
   spendListRef: Readonly<ShallowRef<InstanceType<typeof SwapSubEventList> | null>>;
@@ -28,7 +28,7 @@ interface UseSwapEventFormReturn {
  */
 export function useSwapEventForm(): UseSwapEventFormReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const { addHistoryEvent, editHistoryEvent } = useHistoryEvents();
 
   function emptySubEvent(): SwapSubEventModel {
@@ -39,11 +39,8 @@ export function useSwapEventForm(): UseSwapEventFormReturn {
   }
 
   function handleValidationErrors(message: ValidationErrors | string): void {
-    if (typeof message === 'string') {
-      setMessage({
-        description: message,
-      });
-    }
+    if (typeof message === 'string')
+      showErrorMessage(message);
   }
 
   async function submitAllPrices(listRefs: SwapEventFormListRefs): Promise<boolean> {

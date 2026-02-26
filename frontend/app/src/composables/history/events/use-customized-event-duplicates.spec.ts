@@ -12,7 +12,8 @@ const { spies } = vi.hoisted(() => ({
     unignoreCustomizedEventDuplicates: vi.fn<(groupIdentifiers: string[]) => Promise<string[]>>(),
     fetchHistoryEvents: vi.fn<() => Promise<CollectionResponse<HistoryEventCollectionRow>>>(),
     showConfirm: vi.fn(),
-    setMessage: vi.fn(),
+    showSuccessMessage: vi.fn(),
+    showErrorMessage: vi.fn(),
   },
 }));
 
@@ -37,9 +38,11 @@ vi.mock('@/store/confirm', () => ({
   }),
 }));
 
-vi.mock('@/store/message', () => ({
-  useMessageStore: (): object => ({
-    setMessage: spies.setMessage,
+vi.mock('@/modules/notifications/use-notifications', () => ({
+  getErrorMessage: (e: unknown): string => e instanceof Error ? e.message : String(e),
+  useNotifications: (): object => ({
+    showSuccessMessage: spies.showSuccessMessage,
+    showErrorMessage: spies.showErrorMessage,
   }),
 }));
 
@@ -165,11 +168,8 @@ describe('use-customized-event-duplicates', () => {
 
       await composable.fetchCustomizedEventDuplicates();
 
-      expect(spies.setMessage).toHaveBeenCalledOnce();
-      expect(spies.setMessage).toHaveBeenCalledWith(expect.objectContaining({
-        title: expect.any(String),
-        description: expect.any(String),
-      }));
+      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
+      expect(spies.showErrorMessage).toHaveBeenCalledWith(expect.any(String), expect.any(String));
     });
 
     it('should preserve existing state on error', async () => {
@@ -468,9 +468,7 @@ describe('use-customized-event-duplicates', () => {
 
       await composable.fixDuplicates(['g-1']);
 
-      expect(spies.setMessage).toHaveBeenCalledWith(expect.objectContaining({
-        success: true,
-      }));
+      expect(spies.showSuccessMessage).toHaveBeenCalledWith(expect.any(String), expect.any(String));
     });
 
     it('should not show success message when no events are removed', async () => {
@@ -482,7 +480,7 @@ describe('use-customized-event-duplicates', () => {
 
       await composable.fixDuplicates(['g-1']);
 
-      expect(spies.setMessage).not.toHaveBeenCalled();
+      expect(spies.showSuccessMessage).not.toHaveBeenCalled();
     });
 
     it('should refresh list after fixing', async () => {
@@ -529,10 +527,7 @@ describe('use-customized-event-duplicates', () => {
       const result = await composable.fixDuplicates(['g-1']);
 
       expect(result).toEqual({ message: 'Fix failed', success: false });
-      expect(spies.setMessage).toHaveBeenCalledWith(expect.objectContaining({
-        title: expect.any(String),
-        description: expect.any(String),
-      }));
+      expect(spies.showErrorMessage).toHaveBeenCalledWith(expect.any(String), expect.any(String));
     });
 
     it('should reset fixLoading on error', async () => {
@@ -605,7 +600,7 @@ describe('use-customized-event-duplicates', () => {
       const result = await composable.ignoreDuplicates(['g-1']);
 
       expect(result).toEqual({ message: 'Ignore failed', success: false });
-      expect(spies.setMessage).toHaveBeenCalledOnce();
+      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
     });
 
     it('should reset ignoreLoading on error', async () => {
@@ -665,7 +660,7 @@ describe('use-customized-event-duplicates', () => {
       const result = await composable.unignoreDuplicates(['g-1']);
 
       expect(result).toEqual({ message: 'Unignore failed', success: false });
-      expect(spies.setMessage).toHaveBeenCalledOnce();
+      expect(spies.showErrorMessage).toHaveBeenCalledOnce();
     });
 
     it('should reset ignoreLoading on error', async () => {

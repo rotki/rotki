@@ -7,15 +7,14 @@ import { useAggregatedBalances } from '@/composables/balances/use-aggregated-bal
 import { usePremium } from '@/composables/premium';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useNotificationsStore } from '@/store/notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 import { millisecondsToSeconds } from '@/utils/date';
-import { getErrorMessage } from '@/utils/error-handling';
 
 function defaultNetValue(): NetValue {
   return {
@@ -39,8 +38,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { t } = useI18n({ useScope: 'global' });
 
   const { nftsInNetValue, scrambleData, scrambleMultiplier: scrambleMultiplierRef, shouldShowAmount, valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
-  const notificationsStore = useNotificationsStore();
-  const { notify } = notificationsStore;
+  const { notifyError } = useNotifications();
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { timeframe } = storeToRefs(useSessionSettingsStore());
@@ -189,13 +187,9 @@ export const useStatisticsStore = defineStore('statistics', () => {
       set(netValue, await api.queryNetValueData(get(nftsInNetValue)));
     }
     catch (error: unknown) {
-      notify({
-        display: false,
-        message: t('actions.statistics.net_value.error.message', {
-          message: getErrorMessage(error),
-        }),
-        title: t('actions.statistics.net_value.error.title'),
-      });
+      notifyError(t('actions.statistics.net_value.error.title'), t('actions.statistics.net_value.error.message', {
+        message: getErrorMessage(error),
+      }), { display: false });
     }
   };
 

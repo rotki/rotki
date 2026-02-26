@@ -1,11 +1,11 @@
 import type { MessageHandler } from '../interfaces';
 import type { UnmatchedAssetMovementsData } from '@/modules/messaging/types';
 import { type Notification, NotificationCategory, NotificationGroup, Priority, Severity } from '@rotki/common';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { Routes } from '@/router/routes';
-import { useNotificationsStore } from '@/store/notifications';
 
 export function createUnmatchedAssetMovementsHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): MessageHandler<UnmatchedAssetMovementsData> {
-  const { removeMatching } = useNotificationsStore();
+  const { removeMatching } = useNotifications();
 
   return {
     async handle(data: UnmatchedAssetMovementsData): Promise<Notification | null> {

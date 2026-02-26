@@ -3,8 +3,7 @@ import type { Tag, Tags } from '@/types/tags';
 import { invertColor, randomColor } from '@rotki/common';
 import { useTagsApi } from '@/composables/api/tags';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { logger } from '@/utils/logging';
 
 export const useTagStore = defineStore('session/tags', () => {
@@ -13,7 +12,7 @@ export const useTagStore = defineStore('session/tags', () => {
   const tags = computed(() => Object.values(get(allTags)));
 
   const { removeTag, renameTag } = useBlockchainAccountsStore();
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { queryAddTag, queryDeleteTag, queryEditTag, queryTags } = useTagsApi();
 
@@ -24,10 +23,7 @@ export const useTagStore = defineStore('session/tags', () => {
     }
     catch (error: unknown) {
       const message = getErrorMessage(error);
-      setMessage({
-        description: message,
-        title: t('actions.session.tag_add.error.title'),
-      });
+      showErrorMessage(t('actions.session.tag_add.error.title'), message);
       return {
         message,
         success: false,
@@ -44,10 +40,7 @@ export const useTagStore = defineStore('session/tags', () => {
     }
     catch (error: unknown) {
       const message = getErrorMessage(error);
-      setMessage({
-        description: message,
-        title: t('actions.session.tag_edit.error.title'),
-      });
+      showErrorMessage(t('actions.session.tag_edit.error.title'), message);
       return {
         message,
         success: false,
@@ -61,10 +54,7 @@ export const useTagStore = defineStore('session/tags', () => {
       removeTag(name);
     }
     catch (error: unknown) {
-      setMessage({
-        description: getErrorMessage(error),
-        title: t('actions.session.tag_delete.error.title'),
-      });
+      showErrorMessage(t('actions.session.tag_delete.error.title'), getErrorMessage(error));
     }
   };
 
