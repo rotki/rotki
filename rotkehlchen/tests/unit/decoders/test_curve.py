@@ -2583,6 +2583,77 @@ def test_monerium_eure_v2(gnosis_inquirer, gnosis_accounts, load_global_caches):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('gnosis_accounts', [['0xc8D375386EC576a02eca0fe5d47800b768895B7B']])
+def test_deposit_wxdai_and_eure_zap_with_intermediate_provider(
+        gnosis_inquirer,
+        gnosis_accounts,
+        load_global_caches,
+) -> None:
+    """Regression test for deposits where AddLiquidity is emitted with an intermediate provider."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x05fcbbf7949ed36cf265c0fc25207869e509f8c8691af2ecfb099b6a85ba8e01')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1711670225000)),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal('0.003267966'),
+            location_label=(user_address := gnosis_accounts[0]),
+            notes='Burn 0.003267966 XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=3006,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),
+            amount=FVal('1.029409850972877421'),
+            location_label=user_address,
+            notes='Deposit 1.029409850972877421 EURe in curve pool 0x056C6C5e684CeC248635eD86033378Cc444459B0',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=(zap_address := string_to_evm_address('0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6')),  # noqa: E501
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=3007,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xE91D153E0b41518A2Ce8Dd3D7944Fa863463a97d'),
+            amount=FVal('1'),
+            location_label=user_address,
+            notes='Deposit 1 WXDAI in curve pool 0x056C6C5e684CeC248635eD86033378Cc444459B0',
+            counterparty=CPT_CURVE,
+            address=zap_address,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=3008,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:100/erc20:0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a'),
+            amount=FVal('1.00821844186401932'),
+            location_label=user_address,
+            notes='Receive 1.00821844186401932 crvEUReUSD after depositing in a curve pool',
+            counterparty=CPT_CURVE,
+            address=zap_address,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 def test_deposit_order(gnosis_inquirer, gnosis_accounts, load_global_caches):
     """Ensure that multiple deposits when depositing and staking keep the correct order.
