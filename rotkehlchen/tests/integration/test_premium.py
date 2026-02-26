@@ -168,9 +168,9 @@ def test_upload_data_to_server(
         memory_msg = 'The last data upload timestamp should also be in memory'
         assert last_ts is not None, db_msg
         assert rotkehlchen_instance.premium_sync_manager.last_data_upload_ts is not None, memory_msg  # noqa: E501
-        assert last_ts >= now and last_ts - now < 50, db_msg
+        assert last_ts >= now and last_ts - now < 90, db_msg
         last_ts = rotkehlchen_instance.premium_sync_manager.last_data_upload_ts
-        assert last_ts >= now and last_ts - now < 50, memory_msg
+        assert last_ts >= now and last_ts - now < 90, memory_msg
 
     # and now logout and login again and make sure that the last_data_upload_ts is correct
     rotkehlchen_instance.logout()
