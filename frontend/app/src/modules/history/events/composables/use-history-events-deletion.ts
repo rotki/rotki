@@ -7,9 +7,8 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
 import { buildDeletionConfirmationMessage, DELETION_STRATEGY_TYPE, type DeletionStrategy } from './use-deletion-strategies';
 import { analyzeSelectedEvents, type TransactionGroup } from './use-event-analysis';
 
@@ -27,7 +26,7 @@ export function useHistoryEventsDeletion(
 ): UseHistoryEventsDeletionReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { show: showConfirm } = useConfirmStore();
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { deleteHistoryEvent: deleteHistoryEventApi, deleteTransactions } = useHistoryEventsApi();
   const { deleteHistoryEvent } = useHistoryEvents();
   const { getChain } = useSupportedChains();
@@ -123,11 +122,10 @@ export function useHistoryEventsDeletion(
       ? message || t('transactions.events.delete.error.message')
       : message || t('transactions.events.ignore.error.message');
 
-    setMessage({
-      description: success ? successMessage : errorMessage,
-      success,
-      title: success ? title : errorTitle,
-    });
+    if (success)
+      showSuccessMessage(title, successMessage);
+    else
+      showErrorMessage(errorTitle, errorMessage);
   }
 
   async function deleteByFilter(totalCount: number): Promise<void> {

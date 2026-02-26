@@ -16,13 +16,12 @@ import {
 import { type AssetSearchParams, useAssetInfoApi } from '@/composables/api/assets/info';
 import { getAssociatedAssetIdentifier, processAssetInfo, useAssetAssociationMap } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
 import { isAbortError, isTaskCancelled } from '@/utils';
-import { getErrorMessage } from '@/utils/error-handling';
 
 export interface AssetResolutionOptions {
   associate?: boolean;
@@ -65,7 +64,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
   const { queueIdentifier, retrieve } = useAssetCacheStore();
-  const { notify } = useNotificationsStore();
+  const { notify, notifyError } = useNotifications();
   const { awaitTask } = useTaskStore();
 
   const { getChain } = useSupportedChains();
@@ -203,13 +202,9 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     }
     catch (error: unknown) {
       if (!isTaskCancelled(error)) {
-        notify({
-          display: true,
-          message: t('actions.assets.erc20.error.description', {
-            message: getErrorMessage(error),
-          }),
-          title: t('actions.assets.erc20.error.title', payload),
-        });
+        notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.description', {
+          message: getErrorMessage(error),
+        }));
       }
       return {};
     }

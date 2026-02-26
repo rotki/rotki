@@ -4,9 +4,9 @@ import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
-import { useMessageStore } from '@/store/message';
 import { uniqueStrings } from '@/utils/data';
 
 interface IgnoredFilter {
@@ -34,7 +34,7 @@ export function useManagedAssetOperations(
 ): UseManagedAssetOperationsReturn {
   const { t } = useI18n({ useScope: 'global' });
 
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const { ignoreAsset, ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
   const { isAssetWhitelisted, unWhitelistAsset, useIsAssetWhitelisted, whitelistAsset } = useWhitelistedAssetsStore();
   const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
@@ -112,11 +112,7 @@ export function useManagedAssetOperations(
 
     if (ids.length === 0) {
       const choice = ignored ? 1 : 2;
-      setMessage({
-        description: t('ignore.no_items.description', choice),
-        success: false,
-        title: t('ignore.no_items.title', choice),
-      });
+      showErrorMessage(t('ignore.no_items.title', choice), t('ignore.no_items.description', choice));
       return;
     }
 
@@ -135,11 +131,7 @@ export function useManagedAssetOperations(
     const ids = get(selected).filter(uniqueStrings);
 
     if (ids.length === 0) {
-      setMessage({
-        description: t('ignore.spam.no_items.description'),
-        success: false,
-        title: t('ignore.spam.no_items.title'),
-      });
+      showErrorMessage(t('ignore.spam.no_items.title'), t('ignore.spam.no_items.description'));
       return;
     }
 

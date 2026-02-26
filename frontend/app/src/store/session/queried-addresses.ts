@@ -1,12 +1,11 @@
 import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
 import { useQueriedAddressApi } from '@/composables/api/session/queried-addresses';
-import { useMessageStore } from '@/store/message';
-import { getErrorMessage } from '@/utils/error-handling';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 
 export const useQueriedAddressesStore = defineStore('session/queried-addresses', () => {
   const queriedAddresses = ref<QueriedAddresses>({});
 
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const api = useQueriedAddressApi();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -15,11 +14,9 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
       set(queriedAddresses, await api.addQueriedAddress(payload));
     }
     catch (error: unknown) {
-      setMessage({
-        description: t('actions.session.add_queriable_address.error.message', {
-          message: getErrorMessage(error),
-        }),
-      });
+      showErrorMessage(t('actions.session.add_queriable_address.error.message', {
+        message: getErrorMessage(error),
+      }));
     }
   }
 
@@ -28,11 +25,9 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
       set(queriedAddresses, await api.deleteQueriedAddress(payload));
     }
     catch (error: unknown) {
-      setMessage({
-        description: t('actions.session.delete_queriable_address.error.message', {
-          message: getErrorMessage(error),
-        }),
-      });
+      showErrorMessage(t('actions.session.delete_queriable_address.error.message', {
+        message: getErrorMessage(error),
+      }));
     }
   }
 
@@ -41,11 +36,9 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
       set(queriedAddresses, await api.queriedAddresses());
     }
     catch (error: unknown) {
-      setMessage({
-        description: t('actions.session.fetch_queriable_address.error.message', {
-          message: getErrorMessage(error),
-        }),
-      });
+      showErrorMessage(t('actions.session.fetch_queriable_address.error.message', {
+        message: getErrorMessage(error),
+      }));
     }
   }
 

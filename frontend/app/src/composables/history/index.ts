@@ -5,9 +5,8 @@ import type {
 } from '@/types/history/ignored';
 import type { EntryMeta } from '@/types/history/meta';
 import { useHistoryIgnoringApi } from '@/composables/api/history/ignore';
-import { useMessageStore } from '@/store/message';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { uniqueStrings } from '@/utils/data';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface CommonIgnoreAction<T extends EntryMeta> {
   toData: (t: T) => string;
@@ -24,7 +23,7 @@ export function useIgnore<T extends EntryMeta>(
   selected: Ref<T[]>,
   refresh: () => any,
 ): UseIgnoreReturn<T> {
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const api = useHistoryIgnoringApi();
 
@@ -54,11 +53,7 @@ export function useIgnore<T extends EntryMeta>(
           error: getErrorMessage(error),
         }).toString();
       }
-      setMessage({
-        description,
-        success: false,
-        title,
-      });
+      showErrorMessage(title, description);
       return { message: 'failed', success: false };
     }
 
@@ -85,11 +80,7 @@ export function useIgnore<T extends EntryMeta>(
 
     if (data.length === 0) {
       const choice = ignored ? 1 : 2;
-      setMessage({
-        description: t('ignore.no_items.description', choice),
-        success: false,
-        title: t('ignore.no_items.title', choice),
-      });
+      showErrorMessage(t('ignore.no_items.title', choice), t('ignore.no_items.description', choice));
       return;
     }
 

@@ -2,10 +2,10 @@ import type { ShallowRef } from 'vue';
 import type HistoryEventAssetPriceForm from '@/modules/history/management/forms/HistoryEventAssetPriceForm.vue';
 import type { EditHistoryEventPayload, NewHistoryEventPayload } from '@/types/history/events/schemas';
 import { useHistoryEvents } from '@/composables/history/events/index';
-import { useMessageStore } from '@/store/message';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 
 export const useHistoryEventsForm = createSharedComposable(() => {
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const { addHistoryEvent, editHistoryEvent } = useHistoryEvents();
 
   const saveHistoryEventHandler = async (
@@ -38,9 +38,7 @@ export const useHistoryEventsForm = createSharedComposable(() => {
 
     if (result.message) {
       if (typeof result.message === 'string') {
-        setMessage({
-          description: result.message,
-        });
+        showErrorMessage(result.message);
       }
       else {
         set(errorMessages, result.message);

@@ -5,8 +5,7 @@ import { Priority, Severity } from '@rotki/common';
 import { useReportsApi } from '@/composables/api/reports';
 import { useInterop } from '@/composables/electron-interop';
 import { displayDateFormatter } from '@/data/date-formatter';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useReportsStore } from '@/store/reports';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -14,7 +13,6 @@ import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { downloadFileByTextContent } from '@/utils/download';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseReportsPageActionsOptions {
   getPath: (file: File) => string | undefined;
@@ -38,9 +36,8 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
   const reportsStore = useReportsStore();
   const { exportReportData, fetchReports, generateReport } = reportsStore;
   const { pinned } = storeToRefs(useAreaVisibilityStore());
-  const { notify } = useNotificationsStore();
+  const { notify, showErrorMessage, showSuccessMessage } = useNotifications();
   const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
-  const { setMessage } = useMessageStore();
   const { appSession, openDirectory } = useInterop();
   const { importReportData, uploadReportData } = useReportsApi();
 
@@ -92,24 +89,17 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
       const result = await exportReportData(payload);
 
       if (appSession) {
-        setMessage({
-          description: result
-            ? t('profit_loss_reports.debug.export_message.success')
-            : t('profit_loss_reports.debug.export_message.failure'),
-          success: !!result,
-          title: t('profit_loss_reports.debug.export_message.title'),
-        });
+        if (result)
+          showSuccessMessage(t('profit_loss_reports.debug.export_message.title'), t('profit_loss_reports.debug.export_message.success'));
+        else
+          showErrorMessage(t('profit_loss_reports.debug.export_message.title'), t('profit_loss_reports.debug.export_message.failure'));
       }
       else {
         downloadFileByTextContent(JSON.stringify(result, null, 2), 'pnl_debug.json', 'application/json');
       }
     }
     catch (error: unknown) {
-      setMessage({
-        description: getErrorMessage(error),
-        success: false,
-        title: t('profit_loss_reports.debug.export_message.title'),
-      });
+      showErrorMessage(t('profit_loss_reports.debug.export_message.title'), getErrorMessage(error));
     }
   }
 
@@ -148,19 +138,10 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
     }
 
     if (!success) {
-      setMessage({
-        description: t('profit_loss_reports.debug.import_message.failure', {
-          message,
-        }),
-        title: t('profit_loss_reports.debug.import_message.title'),
-      });
+      showErrorMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.failure', { message }));
     }
     else {
-      setMessage({
-        description: t('profit_loss_reports.debug.import_message.success'),
-        success: true,
-        title: t('profit_loss_reports.debug.import_message.title'),
-      });
+      showSuccessMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.success'));
       await fetchReports();
     }
 

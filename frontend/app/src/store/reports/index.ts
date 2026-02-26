@@ -10,19 +10,17 @@ import type {
   Reports,
 } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
-import { Blockchain, type Message } from '@rotki/common';
+import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryApi } from '@/composables/api/history';
 import { useReportsApi } from '@/composables/api/reports';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
 import { useTaskStore } from '@/store/tasks';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { mapCollectionResponse } from '@/utils/collection';
-import { getErrorMessage } from '@/utils/error-handling';
 import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';
 import { isTransactionEvent } from '@/utils/report';
@@ -73,8 +71,7 @@ export const useReportsStore = defineStore('reports', () => {
     missingPrices: [],
   });
 
-  const { setMessage } = useMessageStore();
-  const { notify } = useNotificationsStore();
+  const { notifyError, showErrorMessage, showSuccessMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
   const { fetchEnsNames } = useAddressesNamesStore();
@@ -106,25 +103,16 @@ export const useReportsStore = defineStore('reports', () => {
   };
 
   const createCsv = async (reportId: number, path: string): Promise<void> => {
-    let message: Message;
     try {
       const success = await exportReportCSV(reportId, path);
-      message = {
-        description: success
-          ? t('actions.reports.csv_export.message.success')
-          : t('actions.reports.csv_export.message.failure'),
-        success,
-        title: t('actions.reports.csv_export.title'),
-      };
+      if (success)
+        showSuccessMessage(t('actions.reports.csv_export.title'), t('actions.reports.csv_export.message.success'));
+      else
+        showErrorMessage(t('actions.reports.csv_export.title'), t('actions.reports.csv_export.message.failure'));
     }
     catch (error: unknown) {
-      message = {
-        description: getErrorMessage(error),
-        success: false,
-        title: t('actions.reports.csv_export.title'),
-      };
+      showErrorMessage(t('actions.reports.csv_export.title'), getErrorMessage(error));
     }
-    setMessage(message);
   };
 
   const fetchReports = async (): Promise<void> => {
@@ -133,10 +121,7 @@ export const useReportsStore = defineStore('reports', () => {
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({
-        message: t('actions.reports.fetch.error.description'),
-        title: t('actions.reports.fetch.error.title'),
-      });
+      notifyError(t('actions.reports.fetch.error.title'), t('actions.reports.fetch.error.description'));
     }
   };
 
@@ -147,10 +132,7 @@ export const useReportsStore = defineStore('reports', () => {
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({
-        message: t('actions.reports.delete.error.description'),
-        title: t('actions.reports.delete.error.title'),
-      });
+      notifyError(t('actions.reports.delete.error.title'), t('actions.reports.delete.error.description'));
     }
   };
 
@@ -185,10 +167,7 @@ export const useReportsStore = defineStore('reports', () => {
     }
     catch (error: unknown) {
       logger.error(error);
-      notify({
-        message: t('actions.report_events.fetch.error.description', { error }),
-        title: t('actions.report_events.fetch.error.title'),
-      });
+      notifyError(t('actions.report_events.fetch.error.title'), t('actions.report_events.fetch.error.description', { error }));
       return defaultReportEvents();
     }
   };

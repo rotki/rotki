@@ -17,10 +17,10 @@ import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/d
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { Routes } from '@/router/routes';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
-import { useNotificationsStore } from '@/store/notifications';
 import {
   isEthBlockEvent,
   isEvmEvent,
@@ -83,7 +83,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   const { show } = useConfirmStore();
-  const { notify } = useNotificationsStore();
+  const { notify } = useNotifications();
   const {
     fetchAssociatedLocations,
     fetchLocationLabels,

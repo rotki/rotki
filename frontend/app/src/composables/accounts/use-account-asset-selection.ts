@@ -1,8 +1,8 @@
 import type { Ref } from 'vue';
 import { get } from '@vueuse/core';
 import { useSpamAsset } from '@/composables/assets/spam';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useMessageStore } from '@/store/message';
 
 interface UseAccountAssetSelectionReturn {
   handleIgnoreSelected: (ignored: boolean) => Promise<void>;
@@ -22,7 +22,7 @@ export function useAccountAssetSelection(
 
   const { ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
   const { markAssetsAsSpam } = useSpamAsset();
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
 
   function toggleSelectionMode(): void {
     set(selectionMode, !get(selectionMode));
@@ -35,11 +35,7 @@ export function useAccountAssetSelection(
 
     if (ids.length === 0) {
       const choice = ignored ? 1 : 2;
-      setMessage({
-        description: t('ignore.no_items.description', choice),
-        success: false,
-        title: t('ignore.no_items.title', choice),
-      });
+      showErrorMessage(t('ignore.no_items.title', choice), t('ignore.no_items.description', choice));
       return;
     }
 
@@ -60,11 +56,7 @@ export function useAccountAssetSelection(
     const ids = get(selectedAssets);
 
     if (ids.length === 0) {
-      setMessage({
-        description: t('ignore.spam.no_items.description'),
-        success: false,
-        title: t('ignore.spam.no_items.title'),
-      });
+      showErrorMessage(t('ignore.spam.no_items.title'), t('ignore.spam.no_items.description'));
       return;
     }
 

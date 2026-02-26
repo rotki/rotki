@@ -4,10 +4,9 @@ import type { Collection } from '@/types/collection';
 import type { HistoryEventCollectionRow, HistoryEventEntry, HistoryEventEntryWithMeta } from '@/types/history/events/schemas';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { type CustomizedEventDuplicates, useCustomizedEventDuplicatesApi } from '@/composables/api/history/events/customized-event-duplicates';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
 import { arrayify } from '@/utils/array';
-import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 export interface DuplicateRow {
@@ -67,7 +66,7 @@ function mapToDuplicateRow(groupId: string, events: HistoryEventCollectionRow): 
 export const useCustomizedEventDuplicates = createSharedComposable((): UseCustomizedEventDuplicatesReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const { show: showConfirm } = useConfirmStore();
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage, showSuccessMessage } = useNotifications();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
   const { fixCustomizedEventDuplicates, getCustomizedEventDuplicates, ignoreCustomizedEventDuplicates, unignoreCustomizedEventDuplicates } = useCustomizedEventDuplicatesApi();
@@ -99,10 +98,7 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     }
     catch (error: unknown) {
       logger.error('Failed to fetch customized event duplicates:', error);
-      setMessage({
-        description: t('actions.customized_event_duplicates.fetch_error.description', { error: getErrorMessage(error) }),
-        title: t('actions.customized_event_duplicates.fetch_error.title'),
-      });
+      showErrorMessage(t('actions.customized_event_duplicates.fetch_error.title'), t('actions.customized_event_duplicates.fetch_error.description', { error: getErrorMessage(error) }));
     }
     finally {
       set(loading, false);
@@ -171,13 +167,9 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
       const result = await fixCustomizedEventDuplicates(groupIdentifiers);
 
       if (result.removedEventIdentifiers.length > 0) {
-        setMessage({
-          description: t('actions.customized_event_duplicates.fix_success.description', {
-            count: result.removedEventIdentifiers.length,
-          }),
-          success: true,
-          title: t('actions.customized_event_duplicates.fix_success.title'),
-        });
+        showSuccessMessage(t('actions.customized_event_duplicates.fix_success.title'), t('actions.customized_event_duplicates.fix_success.description', {
+          count: result.removedEventIdentifiers.length,
+        }));
       }
 
       // Refresh the list after fixing
@@ -188,10 +180,7 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     catch (error: unknown) {
       const message = getErrorMessage(error);
       logger.error('Failed to fix customized event duplicates:', error);
-      setMessage({
-        description: t('actions.customized_event_duplicates.fix_error.description', { error: message }),
-        title: t('actions.customized_event_duplicates.fix_error.title'),
-      });
+      showErrorMessage(t('actions.customized_event_duplicates.fix_error.title'), t('actions.customized_event_duplicates.fix_error.description', { error: message }));
       return { message, success: false };
     }
     finally {
@@ -209,10 +198,7 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     catch (error: unknown) {
       const message = getErrorMessage(error);
       logger.error('Failed to ignore customized event duplicates:', error);
-      setMessage({
-        description: t('actions.customized_event_duplicates.mark_non_duplicated_error.description', { error: message }),
-        title: t('actions.customized_event_duplicates.mark_non_duplicated_error.title'),
-      });
+      showErrorMessage(t('actions.customized_event_duplicates.mark_non_duplicated_error.title'), t('actions.customized_event_duplicates.mark_non_duplicated_error.description', { error: message }));
       return { message, success: false };
     }
     finally {
@@ -230,10 +216,7 @@ export const useCustomizedEventDuplicates = createSharedComposable((): UseCustom
     catch (error: unknown) {
       const message = getErrorMessage(error);
       logger.error('Failed to unignore customized event duplicates:', error);
-      setMessage({
-        description: t('actions.customized_event_duplicates.unignore_error.description', { error: message }),
-        title: t('actions.customized_event_duplicates.unignore_error.title'),
-      });
+      showErrorMessage(t('actions.customized_event_duplicates.unignore_error.title'), t('actions.customized_event_duplicates.unignore_error.description', { error: message }));
       return { message, success: false };
     }
     finally {

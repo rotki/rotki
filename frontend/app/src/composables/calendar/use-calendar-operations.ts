@@ -3,10 +3,9 @@ import type { Ref } from 'vue';
 import type { CalendarEvent } from '@/types/history/calendar';
 import { omit } from 'es-toolkit';
 import { useCalendarApi } from '@/composables/history/calendar';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useConfirmStore } from '@/store/confirm';
-import { useMessageStore } from '@/store/message';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseCalendarOperationsReturn {
   add: (selectedDate?: Dayjs) => void;
@@ -24,7 +23,7 @@ export function useCalendarOperations(
   const { t } = useI18n({ useScope: 'global' });
   const { deleteCalendarEvent } = useCalendarApi();
   const { show } = useConfirmStore();
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const { autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
 
   const modelValue = ref<CalendarEvent>();
@@ -66,11 +65,7 @@ export function useCalendarOperations(
         set(modelValue, null);
       }
       catch (error: unknown) {
-        setMessage({
-          description: t('calendar.delete_error.message', { message: getErrorMessage(error) }),
-          success: false,
-          title: t('calendar.delete_event'),
-        });
+        showErrorMessage(t('calendar.delete_event'), t('calendar.delete_error.message', { message: getErrorMessage(error) }));
       }
     }
   }

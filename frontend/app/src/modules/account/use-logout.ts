@@ -5,10 +5,9 @@ import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { api } from '@/modules/api';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
-import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface UseLogoutReturn {
@@ -19,7 +18,7 @@ interface UseLogoutReturn {
 export function useLogout(): UseLogoutReturn {
   const { navigateToUserLogin } = useAppNavigation();
   const { logged, username } = storeToRefs(useSessionAuthStore());
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const { notifyUserLogout, resetTray } = useInterop();
   const { loggedUsers: getLoggedUsers, logout: callLogout } = useUsersApi();
   const { disconnect: disconnectWallet } = useWalletStore();
@@ -48,10 +47,7 @@ export function useLogout(): UseLogoutReturn {
     }
     catch (error: unknown) {
       logger.error(error);
-      setMessage({
-        description: getErrorMessage(error),
-        title: 'Logout failed',
-      });
+      showErrorMessage('Logout failed', getErrorMessage(error));
     }
 
     if (navigate)
@@ -73,10 +69,7 @@ export function useLogout(): UseLogoutReturn {
     }
     catch (error: unknown) {
       const message = getErrorMessage(error);
-      setMessage({
-        description: message,
-        title: 'Remote session logout failure',
-      });
+      showErrorMessage('Remote session logout failure', message);
       return { message, success: false };
     }
   };

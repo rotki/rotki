@@ -2,11 +2,11 @@ import type { MaybePromise } from '@rotki/common';
 import type { BrowserProvider } from 'ethers';
 import type { Ref } from 'vue';
 import type { TaskMeta } from '@/types/task';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useInjectedWallet } from '@/modules/onchain/wallet-bridge/use-injected-wallet';
 import { useWalletConnect } from '@/modules/onchain/wallet-connect/use-wallet-connect';
 import { isUserRejectedError, WALLET_MODES } from '@/modules/onchain/wallet-constants';
-import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
@@ -43,7 +43,7 @@ export function useGnosisPaySigning(options: UseGnosisPaySigningOptions): UseGno
   } = options;
 
   const { t } = useI18n({ useScope: 'global' });
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage } = useNotifications();
   const { awaitTask } = useTaskStore();
   const { fetchNonce, verifySiweSignature } = useGnosisPaySiweApi();
 
@@ -133,11 +133,7 @@ Issued At: ${issuedAt}`;
           setError(GnosisPayError.SIGNATURE_REJECTED);
         }
         else {
-          setMessage({
-            description: String(error),
-            success: false,
-            title: t('external_services.gnosispay.siwe.failed'),
-          });
+          showErrorMessage(t('external_services.gnosispay.siwe.failed'), String(error));
         }
         logger.error('Sign-in with Ethereum failed:', error);
       }

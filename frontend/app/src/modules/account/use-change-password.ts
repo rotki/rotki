@@ -2,9 +2,8 @@ import type { ActionStatus } from '@/types/action';
 import type { ChangePasswordPayload } from '@/types/session';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useInterop } from '@/composables/electron-interop';
-import { useMessageStore } from '@/store/message';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface UseChangePasswordReturn {
@@ -13,7 +12,7 @@ interface UseChangePasswordReturn {
 
 export function useChangePassword(): UseChangePasswordReturn {
   const { username } = storeToRefs(useSessionAuthStore());
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { changeUserPassword, colibriLogin, colibriLogout } = useUsersApi();
   const { clearPassword, isPackaged } = useInterop();
   const { t } = useI18n({ useScope: 'global' });
@@ -21,10 +20,7 @@ export function useChangePassword(): UseChangePasswordReturn {
   const changePassword = async ({ currentPassword, newPassword }: ChangePasswordPayload): Promise<ActionStatus> => {
     try {
       const success = await changeUserPassword(get(username), currentPassword, newPassword);
-      setMessage({
-        description: t('actions.session.password_change.success'),
-        success: true,
-      });
+      showSuccessMessage(t('actions.session.password_change.success'));
 
       if (success) {
         try {
@@ -48,11 +44,7 @@ export function useChangePassword(): UseChangePasswordReturn {
     }
     catch (error: unknown) {
       const message = getErrorMessage(error);
-      setMessage({
-        description: t('actions.session.password_change.error', {
-          message,
-        }),
-      });
+      showErrorMessage(t('actions.session.password_change.error', { message }));
       return {
         message,
         success: false,

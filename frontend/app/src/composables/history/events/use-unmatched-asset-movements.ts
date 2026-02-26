@@ -5,12 +5,11 @@ import type { TaskMeta } from '@/types/task';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useHistoryStore } from '@/store/history';
-import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
 import { arrayify } from '@/utils/array';
-import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface RawUnmatchedAssetMovement {
@@ -51,7 +50,7 @@ const triggerAutoMatchLoading = ref<boolean>(false);
 
 export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatchedAssetMovementsReturn => {
   const { t } = useI18n({ useScope: 'global' });
-  const { setMessage } = useMessageStore();
+  const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { assetInfo } = useAssetInfoRetrieval();
   const { awaitTask, useIsTaskRunning } = useTaskStore();
 
@@ -127,10 +126,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     }
     catch (error: unknown) {
       logger.error('Failed to fetch unmatched asset movements:', error);
-      setMessage({
-        description: t('actions.asset_movement_matching.fetch_error.description', { error: getErrorMessage(error) }),
-        title: t('actions.asset_movement_matching.fetch_error.title'),
-      });
+      showErrorMessage(t('actions.asset_movement_matching.fetch_error.title'), t('actions.asset_movement_matching.fetch_error.description', { error: getErrorMessage(error) }));
     }
     finally {
       set(loadingRef, false);
@@ -145,11 +141,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
       const success = await matchAssetMovementsApi(assetMovementId, matchedEventIds);
 
       if (success) {
-        setMessage({
-          description: t('actions.asset_movement_matching.success.description'),
-          title: t('actions.asset_movement_matching.success.title'),
-          success: true,
-        });
+        showSuccessMessage(t('actions.asset_movement_matching.success.title'), t('actions.asset_movement_matching.success.description'));
         signalEventsModified();
       }
 
@@ -158,10 +150,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     catch (error: unknown) {
       const message = getErrorMessage(error);
       logger.error('Failed to match asset movement:', error);
-      setMessage({
-        description: t('actions.asset_movement_matching.error.description', { error: message }),
-        title: t('actions.asset_movement_matching.error.title'),
-      });
+      showErrorMessage(t('actions.asset_movement_matching.error.title'), t('actions.asset_movement_matching.error.description', { error: message }));
       return { message, success: false };
     }
   };
@@ -195,10 +184,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     }
     catch (error: unknown) {
       logger.error('Failed to trigger auto match:', error);
-      setMessage({
-        description: t('asset_movement_matching.auto_match.error', { error: getErrorMessage(error) }),
-        title: t('asset_movement_matching.auto_match.error_title'),
-      });
+      showErrorMessage(t('asset_movement_matching.auto_match.error_title'), t('asset_movement_matching.auto_match.error', { error: getErrorMessage(error) }));
     }
     finally {
       set(triggerAutoMatchLoading, false);

@@ -7,7 +7,7 @@ import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useBlockchains } from '@/composables/blockchain';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
 
 function setupMigrationSessionCache(identifier: string): Ref<MigratedAddresses> {
@@ -23,7 +23,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
   const loggedUserIdentifier = useLoggedUserIdentifier();
 
   const { t } = useI18n({ useScope: 'global' });
-  const { notify } = useNotificationsStore();
+  const { notify } = useNotifications();
 
   const handleMigratedAccounts = (): void => {
     const txEvmChainsVal = get(evmAndEvmLikeTxChainsInfo);
