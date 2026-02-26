@@ -17,11 +17,11 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 def decode_transfer_direction(
-        from_address: AnyBlockchainAddress,
+        from_address: AnyBlockchainAddress | None,
         to_address: AnyBlockchainAddress | None,
         tracked_accounts: Sequence[AnyBlockchainAddress],
         maybe_get_exchange_fn: Callable[[AnyBlockchainAddress], str | None],
-) -> tuple[HistoryEventType, HistoryEventSubType, str | None, AnyBlockchainAddress, str, str] | None:  # noqa: E501
+) -> tuple[HistoryEventType, HistoryEventSubType, str | None, AnyBlockchainAddress | None, str, str] | None:  # noqa: E501
     """Determine how to classify a transfer event depending on if the addresses are tracked,
     if they are exchange addresses, etc.
 
@@ -29,13 +29,13 @@ def decode_transfer_direction(
     address is the address on the opposite side of the event. counterparty is the exchange name
     if it is a deposit / withdrawal to / from an exchange.
     """
-    tracked_from = from_address in tracked_accounts
+    tracked_from = from_address in tracked_accounts if from_address is not None else False
     tracked_to = to_address in tracked_accounts if to_address is not None else False
     if not tracked_from and not tracked_to:
         return None
 
-    from_exchange = maybe_get_exchange_fn(from_address)
-    to_exchange = maybe_get_exchange_fn(to_address) if to_address else None
+    from_exchange = maybe_get_exchange_fn(from_address) if from_address is not None else None
+    to_exchange = maybe_get_exchange_fn(to_address) if to_address is not None else None
 
     counterparty: str | None = None
     event_subtype = HistoryEventSubType.NONE
@@ -67,7 +67,7 @@ def decode_transfer_direction(
             verb = 'Receive'
 
         address = from_address
-        location_label = to_address  # type: ignore  # to_address can't be None here
+        location_label = to_address
 
     return event_type, event_subtype, location_label, address, counterparty, verb  # type: ignore
 

@@ -511,14 +511,18 @@ class BitcoinCommonManager(ChainManagerWithTransactions[BTCAddress]):
                 event_list = spend_events
                 from_to = 'to'
 
+            suffix, counterparty_addresses = (
+                (f' {from_to} {self.get_display_address(address)}', [address])
+                if address is not None else ('', None)
+            )
             event_list.append(self.create_event(
                 tx=tx,
                 event_type=event_type,
                 event_subtype=event_subtype,
                 amount=amount,
-                notes=f'{verb} {amount} {self.asset.identifier} {from_to} {self.get_display_address(address)}',  # noqa: E501
+                notes=f'{verb} {amount} {self.asset.identifier}{suffix}',
                 location_label=location_label,
-                counterparty_addresses=[address],
+                counterparty_addresses=counterparty_addresses,
             ))
 
         return spend_events + receive_events  # keep all spend events first

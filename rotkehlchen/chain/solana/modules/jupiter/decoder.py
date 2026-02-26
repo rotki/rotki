@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.assets.utils import get_or_create_solana_token, token_normalized_value
+from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.solana.decoding.constants import ANCHOR_EVENT_DISCRIMINATOR
@@ -21,7 +21,10 @@ from .constants import (
     CPT_JUPITER,
     FILL_DISCRIMINATOR,
     JUPITER_AGGREGATOR_PROGRAM_V6,
+    JUPITER_LEND_EARN_PROGRAM,
     JUPITER_RFQ_ORDER_ENGINE_PROGRAM,
+    LEND_DEPOSIT_DISCRIMINATOR,
+    LEND_WITHDRAW_DISCRIMINATOR,
     ROUTE_DISCRIMINATORS_TO_MINT_IDX,
     SWAP_EVENT_DISCRIMINATOR,
     SWAPS_EVENT_DISCRIMINATOR,
@@ -190,18 +193,14 @@ class JupiterDecoder(SolanaDecoderInterface):
             return DEFAULT_SOLANA_DECODING_OUTPUT
 
         input_amount = token_normalized_value(
-            token=(input_token := get_or_create_solana_token(
-                userdb=self.node_inquirer.database,
+            token=(input_token := self.base.get_or_create_solana_token(
                 address=context.instruction.accounts[6],
-                solana_inquirer=self.node_inquirer,
             )),
             token_amount=int.from_bytes(context.instruction.data[8:16], byteorder='little'),
         )
         output_amount = token_normalized_value(
-            token=(output_token := get_or_create_solana_token(
-                userdb=self.node_inquirer.database,
+            token=(output_token := self.base.get_or_create_solana_token(
                 address=context.instruction.accounts[8],
-                solana_inquirer=self.node_inquirer,
             )),
             token_amount=int.from_bytes(context.instruction.data[16:24], byteorder='little'),
         )
@@ -243,10 +242,85 @@ class JupiterDecoder(SolanaDecoderInterface):
         )
         return SolanaDecodingOutput(process_swaps=True)
 
+    def decode_earn_deposit_withdraw(
+            self,
+            context: SolanaDecoderContext,
+            is_deposit: bool,
+    ) -> SolanaDecodingOutput:
+        if len(context.instruction.accounts) < 12:
+            log.error(
+                'Encountered Jupiter earn deposit instruction with insufficient number of '
+                f'accounts. Expected at least 12, only got: {len(context.instruction.accounts)}',
+            )
+            return DEFAULT_SOLANA_DECODING_OUTPUT
+
+        if is_deposit:
+            mint_address = context.instruction.accounts[3]
+            liquidity_address = context.instruction.accounts[11]
+            expected_underlying_event_type = HistoryEventType.SPEND
+            new_underlying_event_type = HistoryEventType.DEPOSIT
+            new_underlying_event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+            expected_vault_event_type = HistoryEventType.RECEIVE
+            new_vault_event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+            underlying_notes = 'Deposit {amount} {asset} to Jupiter vault'
+            vault_notes = 'Receive {amount} {asset} after a deposit in Jupiter'
+        else:
+            mint_address = context.instruction.accounts[5]
+            liquidity_address = context.instruction.accounts[12]
+            expected_underlying_event_type = HistoryEventType.RECEIVE
+            new_underlying_event_type = HistoryEventType.WITHDRAWAL
+            new_underlying_event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+            expected_vault_event_type = HistoryEventType.SPEND
+            new_vault_event_subtype = HistoryEventSubType.RETURN_WRAPPED
+            underlying_notes = 'Withdraw {amount} {asset} from Jupiter vault'
+            vault_notes = 'Return {amount} {asset} to Jupiter'
+
+        underlying_token = self.base.get_or_create_solana_token(address=mint_address)
+        vault_token = self.base.get_or_create_solana_token(
+            address=context.instruction.accounts[6],
+        )
+        for event in context.decoded_events:
+            if (
+                event.event_type == expected_underlying_event_type and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == underlying_token and
+                event.address == liquidity_address
+            ):
+                event.event_type = new_underlying_event_type
+                event.event_subtype = new_underlying_event_subtype
+                event.counterparty = CPT_JUPITER
+                event.notes = underlying_notes.format(
+                    amount=event.amount,
+                    asset=event.asset.resolve_to_asset_with_symbol().symbol,
+                )
+            elif (
+                event.event_type == expected_vault_event_type and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == vault_token and
+                event.address is None
+            ):
+                event.event_subtype = new_vault_event_subtype
+                event.counterparty = CPT_JUPITER
+                event.notes = vault_notes.format(
+                    amount=event.amount,
+                    asset=event.asset.resolve_to_asset_with_symbol().symbol,
+                )
+
+        return DEFAULT_SOLANA_DECODING_OUTPUT
+
+    def decode_lend_earn_events(self, context: SolanaDecoderContext) -> SolanaDecodingOutput:
+        if match_discriminator(context.instruction.data, LEND_DEPOSIT_DISCRIMINATOR):
+            return self.decode_earn_deposit_withdraw(context, is_deposit=True)
+        if match_discriminator(context.instruction.data, LEND_WITHDRAW_DISCRIMINATOR):
+            return self.decode_earn_deposit_withdraw(context, is_deposit=False)
+
+        return DEFAULT_SOLANA_DECODING_OUTPUT
+
     def addresses_to_decoders(self) -> dict[SolanaAddress, tuple[Any, ...]]:
         return {
             JUPITER_AGGREGATOR_PROGRAM_V6: (self.decode_v6_swap,),
             JUPITER_RFQ_ORDER_ENGINE_PROGRAM: (self.decode_rfq_swap,),
+            JUPITER_LEND_EARN_PROGRAM: (self.decode_lend_earn_events,),
         }
 
     @staticmethod
