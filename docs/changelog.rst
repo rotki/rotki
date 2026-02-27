@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Historic event values will no longer incorrectly fallback to the current price when the historic price is not available.
+* :bug:`-` Curve deposits with add liquidity + stake will now be properly decoded.
 * :bug:`-` Curve deposits via intermediate pools will now be properly decoded.
 * :bug:`-` cowswap swaps using both versions of the monerium tokens will now be properly decoded.
 * :bug:`11708` Users can now mark Solana tokens as spam in addition to EVM tokens.
