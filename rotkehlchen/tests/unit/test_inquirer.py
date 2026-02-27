@@ -43,6 +43,7 @@ from rotkehlchen.chain.evm.decoding.uniswap.constants import (
     CPT_UNISWAP_V4,
 )
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
+from rotkehlchen.chain.evm.decoding.woo_fi.constants import CPT_WOO_FI
 from rotkehlchen.chain.evm.node_inquirer import _query_web3_get_logs, construct_event_filter_params
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
@@ -66,6 +67,7 @@ from rotkehlchen.constants.assets import (
     A_EUR,
     A_KFEE,
     A_LINK,
+    A_OP,
     A_USD,
     A_USDC,
     A_USDT,
@@ -114,6 +116,8 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -1635,6 +1639,62 @@ def test_find_uniswap_v4_position_price(database: 'DBHandler', inquirer_defi: 'I
         name='Uniswap V4 Positions #61912',
         protocol=CPT_UNISWAP_V4,
     )).is_close(FVal('122.70417'), max_diff='1e-5')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_xwoo_price(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        database: 'DBHandler',
+        inquirer_defi: 'Inquirer',
+) -> None:
+    """Test that we get the correct price for WOOFi's xWOO token"""
+    xwoo_token = get_or_create_evm_token(
+        userdb=database,
+        evm_inquirer=arbitrum_one_inquirer,
+        evm_address=string_to_evm_address('0x9321785D257b3f0eF7Ff75436a87141C683DC99d'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        token_kind=TokenKind.ERC20,
+        protocol=CPT_WOO_FI,
+        underlying_tokens=[UnderlyingToken(
+            address=get_or_create_evm_token(
+                userdb=database,
+                evm_inquirer=arbitrum_one_inquirer,
+                evm_address=string_to_evm_address('0xcAFcD85D8ca7Ad1e1C6F82F651fA15E33AEfD07b'),
+                chain_id=ChainID.ARBITRUM_ONE,
+                token_kind=TokenKind.ERC20,
+            ).evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    assert inquirer_defi.find_usd_price(xwoo_token).is_close('0.018658', max_diff='1e-6')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_woo_fi_supercharger_vault_token_price(
+        optimism_inquirer: 'OptimismInquirer',
+        database: 'DBHandler',
+        inquirer_defi: 'Inquirer',
+) -> None:
+    """Test that we get the correct price for a WOOFi supercharger vault token."""
+    vault_token = get_or_create_evm_token(
+        userdb=database,
+        evm_inquirer=optimism_inquirer,
+        evm_address=string_to_evm_address('0xcA7184eA1cb4cF04d49Bf219c49a39231299dA26'),  # weOP
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC20,
+        protocol=CPT_WOO_FI,
+        underlying_tokens=[UnderlyingToken(
+            address=A_OP.resolve_to_evm_token().evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    assert inquirer_defi.find_usd_price(vault_token).is_close('0.142405', max_diff='1e-6')
 
 
 @pytest.mark.vcr

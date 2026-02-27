@@ -594,6 +594,7 @@ def test_stake_supercharger_vault_tokens(
         notes=f'Stake {stake_amount} weWMATIC in WOOFi',
         counterparty=CPT_WOO_FI,
         address=WOO_REWARD_MASTER_CHEF,
+        extra_data={'woo_fi_pool_id': 4},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,
@@ -645,6 +646,7 @@ def test_unstake_supercharger_vault_tokens(
         notes=f'Unstake {unstake_amount} weUSDC from WOOFi',
         counterparty=CPT_WOO_FI,
         address=WOO_REWARD_MASTER_CHEF,
+        extra_data={'woo_fi_pool_id': 3},
     ), EvmEvent(
         tx_ref=tx_hash,
         sequence_index=2,

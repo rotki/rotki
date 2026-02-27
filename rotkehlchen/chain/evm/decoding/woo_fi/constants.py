@@ -36,6 +36,26 @@ WOO_REWARD_MASTER_CHEF_ABI: Final[ABI] = [{
     ],
     'stateMutability': 'view',
     'type': 'function',
+}, {
+    'inputs': [{'name': '', 'type': 'uint256'}, {'name': '', 'type': 'address'}],
+    'name': 'userInfo',
+    'outputs': [{'name': 'amount', 'type': 'uint256'}, {'name': 'rewardDebt', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}]
+WOO_STAKE_V1_OR_VAULT_ABI: Final[ABI] = [{
+    'inputs': [],
+    'name': 'getPricePerFullShare',
+    'outputs': [{'name': '', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}]
+WOO_STAKE_V2_ABI: Final[ABI] = [{
+    'inputs': [{'name': '', 'type': 'address'}],
+    'name': 'balances',
+    'outputs': [{'name': '', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
 }]
 
 # For WOOFi cross-chain swaps, the only way to tell what chain it is from/to is by the LayerZero
