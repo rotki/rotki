@@ -98,7 +98,7 @@ class UserLimits(TypedDict):
 
 class PremiumFeatureCapability(TypedDict):
     enabled: bool
-    minimum_tier: str
+    minimum_tier: str | None
 
 
 class PremiumCapabilities(TypedDict):
@@ -114,6 +114,10 @@ class PremiumCapabilities(TypedDict):
     graphs_view: PremiumFeatureCapability
     event_analysis_view: PremiumFeatureCapability
     asset_movement_matching: PremiumFeatureCapability
+
+
+class CapabilityUnlocks(TypedDict):
+    unlocks: dict[str, str]
 
 
 # keys that will be returned as part of the capabilities
@@ -224,6 +228,68 @@ def _process_dict_response(
         raise RemoteError(result_dict['error'])
 
     return result_dict
+
+
+def _get_rotki_base_url() -> str:
+    rotki_base_url = 'rotki.com'
+    if is_production() is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':
+        rotki_base_url = 'staging.rotki.com'
+
+    return rotki_base_url
+
+
+def fetch_capability_unlocks() -> dict[str, str]:
+    """Fetch capability unlock tiers from the public nest endpoint."""
+    try:
+        response = requests.get(
+            f'https://{_get_rotki_base_url()}/nest/1/limits/unlocks',
+            timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+        )
+    except requests.exceptions.RequestException as e:
+        msg = f'Could not connect to rotki server due to {e!s}'
+        log.error(msg)
+        raise RemoteError(msg) from e
+
+    result = _process_dict_response(
+        response=response,
+        status_codes=(HTTPStatus.OK,),
+    )
+    if not isinstance(unlocks := result.get('unlocks'), dict):
+        msg = 'Problem connecting to rotki server. limits/unlocks response missing unlocks key'
+        log.error(f'{msg}. Response was {result}')
+        raise RemoteError(msg)
+
+    return cast('dict[str, str]', unlocks)
+
+
+def get_free_capabilities() -> PremiumCapabilities:
+    """Get capabilities payload for free users."""
+    unlocks = fetch_capability_unlocks()
+    return PremiumCapabilities(
+        current_tier='Free',
+        limit_of_devices=0,
+        pnl_events_limit=FREE_PNL_EVENTS_LIMIT,
+        max_backup_size_mb=0,
+        history_events_limit=FREE_HISTORY_EVENTS_LIMIT,
+        reports_lookup_limit=FREE_REPORTS_LOOKUP_LIMIT,
+        eth_staked_limit=UserLimitType.ETH_STAKED.get_free_limit(),
+        eth_staking_view=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get('eth_staking_view'),
+        ),
+        graphs_view=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get('graphs_view'),
+        ),
+        event_analysis_view=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get('event_analysis_view'),
+        ),
+        asset_movement_matching=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get('asset_movement_matching'),
+        ),
+    )
 
 
 def get_kubernetes_pod_name() -> str | None:
@@ -423,10 +489,8 @@ class Premium:
         self.status = SubscriptionStatus.UNKNOWN
         self.session = create_session()
         self.apiversion = '1'
-        rotki_base_url = 'rotki.com'
         self.is_production = is_production()
-        if self.is_production is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':
-            rotki_base_url = 'staging.rotki.com'
+        rotki_base_url = _get_rotki_base_url()
 
         self.rotki_api = f'https://{rotki_base_url}/api/{self.apiversion}/'
         self.rotki_web = f'https://{rotki_base_url}/webapi/{self.apiversion}/'
@@ -970,19 +1034,19 @@ class Premium:
             eth_staked_limit=limits.get('eth_staked_limit', 0),
             eth_staking_view=PremiumFeatureCapability(
                 enabled=limits.get('eth_staking_view', False),
-                minimum_tier=unlocks.get('eth_staking_view', 'Free'),
+                minimum_tier=unlocks.get('eth_staking_view'),
             ),
             graphs_view=PremiumFeatureCapability(
                 enabled=limits.get('graphs_view', False),
-                minimum_tier=unlocks.get('graphs_view', 'Free'),
+                minimum_tier=unlocks.get('graphs_view'),
             ),
             event_analysis_view=PremiumFeatureCapability(
                 enabled=limits.get('event_analysis_view', False),
-                minimum_tier=unlocks.get('event_analysis_view', 'Free'),
+                minimum_tier=unlocks.get('event_analysis_view'),
             ),
             asset_movement_matching=PremiumFeatureCapability(
                 enabled=limits.get('asset_movement_matching', False),
-                minimum_tier=unlocks.get('asset_movement_matching', 'Free'),
+                minimum_tier=unlocks.get('asset_movement_matching'),
             ),
         )
 

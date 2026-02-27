@@ -437,7 +437,7 @@ Querying premium devices
    :resjson string current_device_id: Identifier of the current device making the request
    :statuscode 200: Devices successfully queried
    :statuscode 401: User is not logged in
-   :statuscode 403: Logged in user does not have premium.
+   :statuscode 403: Logged in user does not have permission.
    :statuscode 409: The external premium service could not be reached or returned unexpected response.
 
 Editing premium devices
@@ -524,7 +524,7 @@ Querying premium capabilities
 
 .. http:get:: /api/(version)/premium/capabilities
 
-   By doing a ``GET`` at this endpoint you can query the capabilities available for your premium account. The currently returned attributes are:
+   By doing a ``GET`` at this endpoint you can query the capabilities available for your logged-in account. The currently returned attributes are:
 
    - `graphs_view`: Object with:
      - `enabled` (Boolean): Enables the graphs displayed for each asset containing historical balances and values.
@@ -538,7 +538,8 @@ Querying premium capabilities
    - `asset_movement_matching`: Object with:
      - `enabled` (Boolean): Enables automatic matching of exchange asset movements with onchain events when triggering the matching task.
      - `minimum_tier` (String): The minimum tier required to unlock this capability.
-   - `current_tier`: String. Current user premium tier name.
+   - `minimum_tier` can be `null` if the key is not present in the unlocks response from the server.
+   - `current_tier`: String. Current user tier name (for example `Free`, `lite`, `Basic`, `Advanced`).
    - `limit_of_devices`: Integer. Maximum number of connected devices.
    - `history_events_limit`: Integer. Maximum number of history events.
    - `pnl_events_limit`: Integer. Maximum number of PnL events.
@@ -592,7 +593,6 @@ Querying premium capabilities
    :resjson object result: Object containing capabilities and their enabled/disabled status
    :statuscode 200: capabilities successfully queried
    :statuscode 401: User is not logged in
-   :statuscode 403: Logged in user does not have premium.
    :statuscode 409: The external premium service could not be reached or returned unexpected response.
 
 Modify user password

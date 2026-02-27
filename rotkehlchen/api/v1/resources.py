@@ -3733,7 +3733,7 @@ class PremiumDevicesResource(BaseMethodView):
 
 class PremiumCapabilitiesResource(BaseMethodView):
 
-    @require_premium_user(active_check=False)
+    @require_loggedin_user()
     def get(self) -> Response:
         return self.rest_api.get_premium_capabilities()
 

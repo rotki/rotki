@@ -149,6 +149,7 @@ from rotkehlchen.premium.premium import (
     ASSET_MOVEMENT_MATCHING_CAPABILITY,
     PremiumCredentials,
     UserLimitType,
+    get_free_capabilities,
     get_user_limit,
     has_premium_capability,
 )
@@ -3526,10 +3527,13 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(result))
 
     def get_premium_capabilities(self) -> Response:
-        """Get capabilities for the premium account."""
-        assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501
+        """Get capabilities for the logged-in account."""
         try:
-            capabilities = self.rotkehlchen.premium.get_capabilities()
+            capabilities = (
+                self.rotkehlchen.premium.get_capabilities()
+                if self.rotkehlchen.premium is not None
+                else get_free_capabilities()
+            )
         except (PremiumAuthenticationError, RemoteError) as e:
             return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
 
