@@ -146,9 +146,12 @@ from rotkehlchen.history.skipped import (
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import (
+    ASSET_MOVEMENT_MATCHING_CAPABILITY,
     PremiumCredentials,
     UserLimitType,
+    get_free_capabilities,
     get_user_limit,
+    has_premium_capability,
 )
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
@@ -3176,7 +3179,19 @@ class RestAPI:
         if task == TaskName.HISTORICAL_BALANCE_PROCESSING:
             return wrap_in_fail_result('Historical balance processing is temporarily disabled.')
         else:  # task == TaskName.ASSET_MOVEMENT_MATCHING
-            process_asset_movements(database=self.rotkehlchen.data.db)
+            if has_premium_capability(
+                    premium=self.rotkehlchen.premium,
+                    capability_name=ASSET_MOVEMENT_MATCHING_CAPABILITY,
+            ) is False:
+                return wrap_in_fail_result(
+                    message='Asset movement matching is not available for your current premium tier.',  # noqa: E501
+                    status_code=HTTPStatus.FORBIDDEN,
+                )
+
+            process_asset_movements(
+                database=self.rotkehlchen.data.db,
+                should_auto_match=True,
+            )
 
         return OK_RESULT
 
@@ -3512,10 +3527,13 @@ class RestAPI:
         return api_response(_wrap_in_ok_result(result))
 
     def get_premium_capabilities(self) -> Response:
-        """Get capabilities for the premium account."""
-        assert self.rotkehlchen.premium is not None, 'Should not be None since we use @require_premium_user() decorator'  # noqa: E501
+        """Get capabilities for the logged-in account."""
         try:
-            capabilities = self.rotkehlchen.premium.get_capabilities()
+            capabilities = (
+                self.rotkehlchen.premium.get_capabilities()
+                if self.rotkehlchen.premium is not None
+                else get_free_capabilities()
+            )
         except (PremiumAuthenticationError, RemoteError) as e:
             return api_response(wrap_in_fail_result(message=str(e)), HTTPStatus.CONFLICT)
 

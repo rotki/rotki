@@ -194,9 +194,12 @@ def process_eth2_events(
         )
 
 
-def process_asset_movements(database: 'DBHandler') -> None:
+def process_asset_movements(
+        database: 'DBHandler',
+        should_auto_match: bool = True,
+) -> None:
     with database.match_asset_movements_lock:
-        match_asset_movements(database)
+        match_asset_movements(database=database, should_auto_match=should_auto_match)
 
 
 def _load_customized_event_candidates(
@@ -765,7 +768,10 @@ def _process_movement_candidate_set(
     return
 
 
-def match_asset_movements(database: 'DBHandler') -> None:
+def match_asset_movements(
+        database: 'DBHandler',
+        should_auto_match: bool = True,
+) -> None:
     """Analyze asset movements and find corresponding onchain events, then update those onchain
     events with proper event_type, counterparty, etc and cache the matched identifiers.
     """
@@ -773,6 +779,14 @@ def match_asset_movements(database: 'DBHandler') -> None:
     started_at = perf_counter()
     events_db = DBHistoryEvents(database=database)
     asset_movements, fee_events = get_unmatched_asset_movements(database)
+    if should_auto_match is False:
+        if (unmatched_count := len(asset_movements)) > 0:
+            log.debug(f'Asset movement auto matching disabled. {unmatched_count} movements pending')  # noqa: E501
+            database.msg_aggregator.add_message(
+                message_type=WSMessageType.UNMATCHED_ASSET_MOVEMENTS,
+                data={'count': unmatched_count},
+            )
+        return
     settings = CachedSettings().get_settings()
     asset_movements_by_asset: dict[Asset, list[AssetMovement]] = defaultdict(list)
     for movement in asset_movements:
