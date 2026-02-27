@@ -89,9 +89,9 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
 
     def decode_direction(
             self,
-            from_address: A,
+            from_address: A | None,
             to_address: A | None,
-    ) -> tuple[HistoryEventType, HistoryEventSubType, str | None, A, str, str] | None:
+    ) -> tuple[HistoryEventType, HistoryEventSubType, str | None, A | None, str, str] | None:
         """Decode the direction of a transfer"""
         return decode_transfer_direction(  # type: ignore[type-var, return-value]
             from_address=from_address,

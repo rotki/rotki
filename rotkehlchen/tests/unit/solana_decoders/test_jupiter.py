@@ -578,3 +578,93 @@ def test_arbitrage_swap(
         counterparty=CPT_JUPITER,
         address=SolanaAddress('GtpsrTHYnfFVm3qkPJtyKVwQLpXT7p2MRy9bp5hYeJnQ'),
     )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [['7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY']])
+def test_earn_deposit(
+        solana_inquirer: 'SolanaInquirer',
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    signature = deserialize_tx_signature('2Cxrz8NWZvN7r13GbahJPHVjL21Japmp7ThvpA2AzCjwznA72Vbb2mkD4crGVnXEajJDVHJpkC1WueGMaKJToTks')  # noqa: E501
+    events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
+    assert events == [SolanaEvent(
+        tx_ref=signature,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1766016085000)),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_SOL,
+        amount=FVal(fee_amount := '0.000005'),
+        location_label=(user_address := solana_accounts[0]),
+        notes=f'Spend {fee_amount} SOL as transaction fee',
+        counterparty=CPT_GAS,
+    ), SolanaEvent(
+        tx_ref=signature,
+        sequence_index=1,
+        timestamp=timestamp,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v'),
+        amount=FVal(deposit_amount := '500'),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} USDC to Jupiter vault',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('7s1da8DduuBFqGra5bJBjpnvL5E9mGzCuMk1Qkh4or2Z'),
+    ), SolanaEvent(
+        tx_ref=signature,
+        sequence_index=2,
+        timestamp=timestamp,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('solana/token:9BEcn9aPEmhSPbPQeFGjidRiEKki46fVQDyPpSQXPA2D'),
+        amount=FVal(receive_amount := '487.817578'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} jlUSDC after a deposit in Jupiter',
+        counterparty=CPT_JUPITER,
+    )]
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('solana_accounts', [['5P8QZdPo2pipnpPQ6njUqjLH9kRnRgweDJptdDTu9iZT']])
+def test_earn_withdraw(
+        solana_inquirer: 'SolanaInquirer',
+        solana_accounts: list[SolanaAddress],
+) -> None:
+    signature = deserialize_tx_signature('4Tnpv3ZgMcUTcYdq6tPkR1y9kHqMtXtscR5S22A5hb7diKxUH81fit2FRQZ2iaYfocMj7PJP5XysnwXmTDSt84pG')  # noqa: E501
+    events = get_decoded_events_of_solana_tx(solana_inquirer=solana_inquirer, signature=signature)
+    assert events == [SolanaEvent(
+        tx_ref=signature,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1772123306000)),
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_SOL,
+        amount=FVal(fee_amount := '0.000005'),
+        location_label=(user_address := solana_accounts[0]),
+        notes=f'Spend {fee_amount} SOL as transaction fee',
+        counterparty=CPT_GAS,
+    ), SolanaEvent(
+        tx_ref=signature,
+        sequence_index=1,
+        timestamp=timestamp,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=Asset('solana/token:9fvHrYNw1A8Evpcj7X2yy4k4fT7nNHcA9L6UsamNHAif'),
+        amount=FVal(return_amount := '2166476.510395'),
+        location_label=user_address,
+        notes=f'Return {return_amount} jlUSDG to Jupiter',
+        counterparty=CPT_JUPITER,
+    ), SolanaEvent(
+        tx_ref=signature,
+        sequence_index=2,
+        timestamp=timestamp,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=Asset('solana/token:2u1tszSeqZ3qBWF3uNGPFc8TzMk2tdiwknnRMWGWjGWH'),
+        amount=FVal(withdraw_amount := '2252307.824539'),
+        location_label=user_address,
+        notes=f'Withdraw {withdraw_amount} USDG from Jupiter vault',
+        counterparty=CPT_JUPITER,
+        address=SolanaAddress('7s1da8DduuBFqGra5bJBjpnvL5E9mGzCuMk1Qkh4or2Z'),
+    )]

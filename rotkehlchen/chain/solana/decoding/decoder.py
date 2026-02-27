@@ -41,7 +41,9 @@ from rotkehlchen.utils.misc import bytes_to_solana_address
 
 from .constants import (
     NATIVE_TRANSFER_DISCRIMINATOR,
+    SPL_TOKEN_BURN_DISCRIMINATOR,
     SPL_TOKEN_INITIALIZE_ACCOUNT_DISCRIMINATOR,
+    SPL_TOKEN_MINT_TO_DISCRIMINATOR,
     SPL_TOKEN_PROGRAM,
     SPL_TOKEN_TRANSFER_CHECKED_DISCRIMINATORS,
     SPL_TOKEN_TRANSFER_DISCRIMINATOR,
@@ -227,17 +229,25 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
     def _identify_token_transfer(
             instruction: SolanaInstruction,
             transaction_signature: Signature,
-    ) -> tuple[SolanaAddress, SolanaAddress] | None:
-        """Identify token transfer instruction and extract their token account addresses."""
+    ) -> tuple[SolanaAddress | None, SolanaAddress | None] | None:
+        """Identify token transfer instruction and extract their token account addresses.
+        Returns a tuple containing the source and destination token account addresses. In the case
+        of a mint or burn one of the addresses will be None.
+        """
         if not (
             instruction.program_id in (SPL_TOKEN_PROGRAM, TOKEN_2022_PROGRAM) and
-            instruction.data[:1] in (SPL_TOKEN_TRANSFER_DISCRIMINATOR, *SPL_TOKEN_TRANSFER_CHECKED_DISCRIMINATORS) and  # noqa: E501
+            (discriminator := instruction.data[:1]) in (
+                SPL_TOKEN_TRANSFER_DISCRIMINATOR,
+                SPL_TOKEN_MINT_TO_DISCRIMINATOR,
+                SPL_TOKEN_BURN_DISCRIMINATOR,
+                *SPL_TOKEN_TRANSFER_CHECKED_DISCRIMINATORS,
+            ) and
             len(instruction.data) > 0
         ):
             return None
 
         minimum_accounts, to_token_account_idx = 3, 1
-        if instruction.data[:1] in SPL_TOKEN_TRANSFER_CHECKED_DISCRIMINATORS:
+        if discriminator in SPL_TOKEN_TRANSFER_CHECKED_DISCRIMINATORS:
             minimum_accounts, to_token_account_idx = 4, 2
 
         if len(instruction.accounts) < minimum_accounts:
@@ -247,7 +257,13 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             )
             return None
 
-        return instruction.accounts[0], instruction.accounts[to_token_account_idx]
+        return (
+            None if discriminator == SPL_TOKEN_MINT_TO_DISCRIMINATOR
+            else instruction.accounts[0]
+        ), (
+            None if discriminator == SPL_TOKEN_BURN_DISCRIMINATOR
+            else instruction.accounts[to_token_account_idx]
+        )
 
     def _fetch_token_accounts_owners(
             self,
@@ -307,7 +323,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             self,
             transaction: SolanaTransaction,
             instruction: SolanaInstruction,
-            token_accounts: tuple[SolanaAddress, SolanaAddress],
+            token_accounts: tuple[SolanaAddress | None, SolanaAddress | None],
             token_accounts_with_owners: dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]],
     ) -> SolanaEvent | None:
         """Decode transfer-like spl token instructions (spl-token and token-2022).
@@ -315,6 +331,8 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             - Transfer
             - TransferChecked
             - TransferCheckedWithFee
+            - MintTo
+            - Burn
 
         Both token programs share identical instruction layout, so we can safely extract
         fields from known offsets. The instruction program and type are verified in
@@ -329,17 +347,30 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             return None
 
         try:
-            owners: list[SolanaAddress] = []
+            owners: list[SolanaAddress | None] = []
+            actual_token_account_for_mint = None
             for token_address in token_accounts:
+                if token_address is None:
+                    owners.append(None)
+                    continue
+
                 if (account_data := token_accounts_with_owners.get(token_address)) is None:
                     log.error(f'Failed to find owner data for SPL token account {token_address} in transaction {transaction.signature}')  # noqa: E501
                     return None
 
                 owners.append(account_data[0])
+                actual_token_account_for_mint = token_address
+
+            if actual_token_account_for_mint is None:
+                log.error(
+                    'Encountered a token transfer with no actual from/to token account in '
+                    f'transaction {transaction.signature}. Should not happen.',
+                )
+                return None
 
             # mint_address is guaranteed to exist since we checked
             # all token_accounts exist in token_accounts_with_owners above
-            mint_address = token_accounts_with_owners[token_accounts[0]][1]
+            mint_address = token_accounts_with_owners[actual_token_account_for_mint][1]
         except (DeserializationError, RemoteError) as e:
             log.error(
                 f'Failed to fetch SPL token account owners for ({token_accounts}) in '
@@ -432,8 +463,8 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             self,
             amount: FVal,
             asset: 'Asset',
-            from_address: 'SolanaAddress',
-            to_address: 'SolanaAddress',
+            from_address: 'SolanaAddress | None',
+            to_address: 'SolanaAddress | None',
             transaction: SolanaTransaction,
             instruction: SolanaInstruction,
     ) -> SolanaEvent | None:
@@ -445,7 +476,12 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
         event_type, event_subtype, location_label, address, counterparty, verb = direction_result
         counterparty_or_address = counterparty or address
-        preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
+        if counterparty_or_address is not None:
+            preposition = 'to' if event_type in OUTGOING_EVENT_TYPES else 'from'
+            suffix = f' {preposition} {counterparty_or_address}'
+        else:
+            suffix = ''
+
         return self.base.make_event_from_instruction(
             instruction=instruction,
             tx_ref=transaction.signature,
@@ -455,7 +491,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             asset=asset,
             amount=amount,
             location_label=location_label,
-            notes=f'{verb} {amount} {asset.resolve_to_asset_with_symbol().symbol} {preposition} {counterparty_or_address}',  # noqa: E501
+            notes=f'{verb} {amount} {asset.resolve_to_asset_with_symbol().symbol}{suffix}',
             counterparty=counterparty,
             address=address,
         )
@@ -475,7 +511,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
         token_accounts_with_owners: dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]] = {}
         transfers_and_token_accounts = []
-        token_account_list: list[SolanaAddress] = []
+        token_account_list: list[SolanaAddress | None] = []
         # Decode basic transfer instructions so that the more complex decoding that runs later
         # can simply modify the already decoded transfer events.
         undecoded_instructions = []
@@ -503,7 +539,10 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
         try:
             token_accounts_with_owners.update(self._fetch_token_accounts_owners(
-                token_accounts=[x for x in token_account_list if x not in token_accounts_with_owners],  # noqa: E501
+                token_accounts=[
+                    x for x in token_account_list
+                    if x is not None and x not in token_accounts_with_owners
+                ],
             ))
         except (DeserializationError, RemoteError) as e:
             log.error(f'Failed to fetch token account owners for transaction {transaction.signature} due to {e}')  # noqa: E501
