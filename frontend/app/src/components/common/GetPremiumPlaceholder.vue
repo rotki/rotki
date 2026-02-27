@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
+import { usePremium } from '@/composables/premium';
 import { Routes } from '@/router/routes';
+import { usePremiumStore } from '@/store/session/premium';
 
 defineProps<{
   title: string;
   description?: string;
+  minimumTier?: string;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const premium = usePremium();
+const { capabilities } = storeToRefs(usePremiumStore());
+const currentTier = computed<string>(() => get(capabilities)?.currentTier ?? '');
 </script>
 
 <template>
@@ -25,7 +32,30 @@ const { t } = useI18n({ useScope: 'global' });
         {{ title }}
       </div>
       <div class="text-rui-text-secondary">
-        {{ description || t('premium_settings.chart_limit.description') }}
+        <i18n-t
+          v-if="minimumTier && premium"
+          scope="global"
+          keypath="premium_placeholder.premium_description"
+        >
+          <template #tier>
+            <strong>{{ minimumTier }}</strong>
+          </template>
+          <template #currentTier>
+            <strong>{{ currentTier }}</strong>
+          </template>
+        </i18n-t>
+        <i18n-t
+          v-else-if="minimumTier"
+          scope="global"
+          keypath="premium_placeholder.free_description"
+        >
+          <template #tier>
+            <strong>{{ minimumTier }}</strong>
+          </template>
+        </i18n-t>
+        <template v-else>
+          {{ description || t('premium_settings.chart_limit.description') }}
+        </template>
       </div>
     </div>
     <div class="flex items-center gap-2 flex-wrap">

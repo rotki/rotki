@@ -2504,7 +2504,7 @@
     }
   },
   "eth2_page": {
-    "no_premium": "The ETH staking statistic page is not included in the FREE version",
+    "no_premium": "The ETH staking view is not available",
     "setting": {},
     "toggle": {
       "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
@@ -4622,6 +4622,11 @@
   "premium_lock": {
     "tooltip": "Feature is only supported with a premium subscription"
   },
+  "premium_placeholder": {
+    "free_description": "This feature requires a minimum of {tier} tier.",
+    "premium_description": "This feature requires a minimum of {tier} tier. Your current tier is {currentTier}.",
+    "upgrade_plan": "Upgrade plan"
+  },
   "premium_settings": {
     "actions": {
       "delete": "Delete Key",
@@ -4633,8 +4638,8 @@
     },
     "chart_limit": {
       "description": "Experience the full potential of rotki with a Premium subscription.",
-      "statistic": "The statistics view is not included in the FREE version",
-      "title": "The graph is not included in the FREE version"
+      "statistic": "The statistics view is not available",
+      "title": "Graphs are not available"
     },
     "delete_confirmation": {
       "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
@@ -5839,7 +5844,7 @@
   "wrapped": {
     "exchange_activity": "Trades by exchange",
     "filter_by_date": "Filter by date",
-    "free_limit": "The events analysis view is not included in the FREE version",
+    "free_limit": "The events analysis view is not available",
     "gas_spent": "ETH spent on gas per address",
     "gas_spent_total": "Total ETH spent on gas",
     "get_data": "Get data",

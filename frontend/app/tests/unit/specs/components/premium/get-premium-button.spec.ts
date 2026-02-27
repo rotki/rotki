@@ -25,19 +25,23 @@ describe('getPremiumButton.vue', () => {
       },
     });
 
-  it('should show get premium button', () => {
+  it('should show get premium button for free users', () => {
     wrapper = createWrapper();
 
-    expect(wrapper.find('[data-cy=get-premium-button]').exists()).toBeTruthy();
+    const button = wrapper.find('[data-cy=get-premium-button]');
+    expect(button.exists()).toBeTruthy();
+    expect(button.text()).toContain('premium_settings.get');
   });
 
-  it('should not show get premium button', () => {
+  it('should show upgrade plan button for premium users', () => {
     store = usePremiumStore();
     const { premium } = storeToRefs(store);
     set(premium, true);
 
     wrapper = createWrapper();
 
-    expect(wrapper.find('[data-cy=get-premium-button]').exists()).toBeFalsy();
+    const button = wrapper.find('[data-cy=get-premium-button]');
+    expect(button.exists()).toBeTruthy();
+    expect(button.text()).toContain('premium_placeholder.upgrade_plan');
   });
 });

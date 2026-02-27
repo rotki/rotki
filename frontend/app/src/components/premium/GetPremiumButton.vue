@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { usePremium } from '@/composables/premium';
 
@@ -17,10 +18,7 @@ const { isLgAndDown } = useBreakpoint();
 </script>
 
 <template>
-  <div
-    v-if="!premium"
-    class="mr-2"
-  >
+  <div class="mr-2">
     <RuiTooltip
       :popper="{ placement: 'bottom' }"
       :disabled="!(isLgAndDown && hideOnSmallScreen)"
@@ -29,7 +27,8 @@ const { isLgAndDown } = useBreakpoint();
       <template #activator>
         <ExternalLink
           custom
-          premium
+          :premium="!premium"
+          :url="premium ? externalLinks.manageSubscriptions : undefined"
         >
           <RuiButton
             :class="{ '[&_span]:!hidden lg:[&_span]:!block': hideOnSmallScreen }"
@@ -41,11 +40,11 @@ const { isLgAndDown } = useBreakpoint();
             <template #prepend>
               <RuiIcon name="lu-crown" />
             </template>
-            {{ t('premium_settings.get') }}
+            {{ premium ? t('premium_placeholder.upgrade_plan') : t('premium_settings.get') }}
           </RuiButton>
         </ExternalLink>
       </template>
-      <span>{{ t('premium_settings.get') }}</span>
+      <span>{{ premium ? t('premium_placeholder.upgrade_plan') : t('premium_settings.get') }}</span>
     </RuiTooltip>
   </div>
 </template>

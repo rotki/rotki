@@ -5,11 +5,10 @@ import type { TaskMeta } from '@/types/task';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { usePremiumHelper } from '@/composables/premium';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useHistoryStore } from '@/store/history';
 import { useMessageStore } from '@/store/message';
 import { useTaskStore } from '@/store/tasks';
-import { PremiumFeature } from '@/types/session';
 import { TaskType } from '@/types/task-type';
 import { arrayify } from '@/utils/array';
 import { logger } from '@/utils/logging';
@@ -65,9 +64,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     triggerAssetMovementMatching,
   } = useAssetMovementMatchingApi();
   const { signalEventsModified } = useHistoryStore();
-  const { getFeatureMinimumTier, isFeatureAllowed } = usePremiumHelper();
-  const isAssetMovementMatchingAllowed = isFeatureAllowed(PremiumFeature.ASSET_MOVEMENT_MATCHING);
-  const assetMovementMatchingMinimumTier = getFeatureMinimumTier(PremiumFeature.ASSET_MOVEMENT_MATCHING);
+  const { allowed: isAssetMovementMatchingAllowed, minimumTier: assetMovementMatchingMinimumTier } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
   const isTaskRunning = useIsTaskRunning(TaskType.MATCH_ASSET_MOVEMENTS);
   const autoMatchLoading = logicOr(triggerAutoMatchLoading, isTaskRunning);

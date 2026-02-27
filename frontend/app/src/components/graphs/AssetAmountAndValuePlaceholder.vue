@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { getPublicPlaceholderImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
+
+const { minimumTier } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
 </script>
 
 <template>
@@ -21,6 +24,7 @@ const { t } = useI18n({ useScope: 'global' });
 
       <GetPremiumPlaceholder
         :title="t('premium_settings.chart_limit.title')"
+        :minimum-tier="minimumTier"
         class="absolute z-1 pt-20 top-0 left-1/2 transform -translate-x-1/2 flex flex-col items-center justify-center text-center"
       />
     </div>

@@ -8,9 +8,8 @@ import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass } from '@/composables/history/events/use-pinned-column-class';
-import { usePremium } from '@/composables/premium';
 import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
-import { usePremiumStore } from '@/store/session/premium';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { getEventEntryFromCollection } from '@/utils/history/events';
 
 interface UnmatchedMovementRow {
@@ -46,9 +45,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const premium = usePremium();
-const { capabilities } = storeToRefs(usePremiumStore());
-const currentTier = computed<string>(() => get(capabilities)?.currentTier ?? '');
+const { currentTier, premium } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
 const { isPinned } = toRefs(props);
 
