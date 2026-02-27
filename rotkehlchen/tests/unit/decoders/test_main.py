@@ -46,6 +46,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
     """Make sure that all decoders we have created for ethereum are detected and initialized"""
     assert set(ethereum_transaction_decoder.decoders.keys()) == {
         'Aave',
+        'Aavegho',
         'Aavev1',
         'Aavev2',
         'Aavev3',
@@ -176,6 +177,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         '1inch',
         'gitcoin',
         'golem',
+        'gho',
         'polygon',
         'kraken',
         'makerdao migration',

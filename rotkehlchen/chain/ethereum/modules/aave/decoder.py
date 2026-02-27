@@ -20,8 +20,8 @@ from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
-    REDEEM_AAVE,
     REDEEM_AAVE_OLD,
+    REDEEM_TOPIC,
     REWARDS_CLAIMED,
     STAKED_AAVE,
     STK_AAVE_ADDR,
@@ -38,7 +38,7 @@ class AaveDecoder(EvmDecoderInterface):
         """Decode aave staking unstaking events"""
         if context.tx_log.topics[0] in (STAKED_AAVE, STAKED_TOPIC):
             method = self._decode_stake
-        elif context.tx_log.topics[0] in (REDEEM_AAVE, REDEEM_AAVE_OLD):
+        elif context.tx_log.topics[0] in (REDEEM_TOPIC, REDEEM_AAVE_OLD):
             method = self._decode_unstake
         elif context.tx_log.topics[0] == REWARDS_CLAIMED:
             method = self._decode_rewards_claim

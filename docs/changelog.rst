@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Transactions involving stkGHO will now be decoded properly.
 * :feature:`8145` WOOFi swaps, staking, and vault transactions will now be properly decoded on all supported EVM chains with associated balances properly detected.
 * :feature:`11693` Bitcoin wallet addition is now simplified with single-field auto-detection of xpub type from the key prefix.
 * :feature:`11639` Users can now search for settings across all settings pages and navigate directly to a specific setting.
