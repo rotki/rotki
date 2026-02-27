@@ -11,7 +11,7 @@ from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.types import SPAM_PROTOCOL
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.assets.asset import EvmToken, SolanaToken
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 
@@ -51,7 +51,7 @@ def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int
 
 def set_token_spam_protocol(
         write_cursor: 'DBCursor',
-        token: 'EvmToken',
+        token: 'EvmToken | SolanaToken',
         is_spam: bool,
 ) -> None:
     """
@@ -59,7 +59,7 @@ def set_token_spam_protocol(
     argument and clean the resolver cache. It overwrites the protocol field of the provided token
     """
     write_cursor.execute(
-        'UPDATE evm_tokens SET protocol=? WHERE identifier=?',
+        f'UPDATE {token.db_table} SET protocol=? WHERE identifier=?',
         (SPAM_PROTOCOL if is_spam is True else None, token.identifier),
     )
     object.__setattr__(token, 'protocol', None)

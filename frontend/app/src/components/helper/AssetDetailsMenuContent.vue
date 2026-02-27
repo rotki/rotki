@@ -10,12 +10,14 @@ import { isSpammableAssetType } from '@/types/asset';
 
 const { asset, hideActions, isCollectionParent, iconOnly } = defineProps<{
   asset: NftAsset;
-  hideActions: boolean;
-  isCollectionParent: boolean;
+  hideActions?: boolean;
+  isCollectionParent?: boolean;
   iconOnly: boolean;
 }>();
 
 const emit = defineEmits<{
+  hideActions: false;
+  isCollectionParent: false;
   refresh: [];
 }>();
 

@@ -10612,24 +10612,24 @@ False positive in spam assets
   :statuscode 500: Internal rotki error.
 
 
-Toggle spam status in evm tokens
+Toggle spam status of tokens
 ==================================
 
-.. http:post:: /api/(version)/assets/evm/spam/
+.. http:post:: /api/(version)/assets/spam/
 
-   Doing a POST on this endpoint will mark the provided token as a spam token. It will move the token to the list of ignored assets and remove it from the list of whitelisted tokens. Any protocol value that the token might have will be overwritten.
+   Doing a POST on this endpoint will mark the provided tokens as spam. It will move each token to the list of ignored assets and remove it from the list of whitelisted tokens. Any protocol value that the token might have will be overwritten. Supports both EVM and Solana tokens.
 
   **Example Request**
 
   .. http:example:: curl wget httpie python-requests
 
-      PATH /api/1/assets/evm/spam HTTP/1.1
+      PATH /api/1/assets/spam HTTP/1.1
       Host: localhost:5042
 
-      {"tokens": "eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"}
+      {"tokens": ["eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"]}
 
 
-  :reqjsonarr list[string] token: The identifiers of the EVM tokens that will be marked as spam
+  :reqjsonarr list[string] tokens: The identifiers of the tokens that will be marked as spam. Accepts EVM token and Solana token identifiers.
 
   **Example Response**:
 
@@ -10644,25 +10644,25 @@ Toggle spam status in evm tokens
       }
 
   :resjson bool result: Boolean denoting success or failure.
-  :statuscode 200: Asset marked as spam successfully.
+  :statuscode 200: Assets marked as spam successfully.
   :statuscode 401: No user is currently logged in.
   :statuscode 500: Internal rotki error.
 
-.. http:delete:: /api/(version)/assets/evm/spam/
+.. http:delete:: /api/(version)/assets/spam/
 
-   Doing a DELETE on this endpoint will remove the spam protocol from the token setting it to null. It will also remove the token from the list of ignored assets.
+   Doing a DELETE on this endpoint will remove the spam protocol from the token setting it to null. It will also remove the token from the list of ignored assets. Supports both EVM and Solana tokens.
 
   **Example Request**
 
   .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/assets/evm/spam HTTP/1.1
+      DELETE /api/1/assets/spam HTTP/1.1
       Host: localhost:5042
 
       {"token": "eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"}
 
 
-  :reqjsonarr string token: The identifier of the evm token that will be updated removing the protocol value of spam.
+  :reqjsonarr string token: The identifier of the token that will be updated removing the protocol value of spam. Accepts EVM token and Solana token identifiers.
 
   **Example Response**:
 

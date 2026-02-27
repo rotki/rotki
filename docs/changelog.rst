@@ -6,13 +6,20 @@ Changelog
 * :feature:`11693` Bitcoin wallet addition is now simplified with single-field auto-detection of xpub type from the key prefix.
 * :feature:`11639` Users can now search for settings across all settings pages and navigate directly to a specific setting.
 * :feature:`11621` users can now selectively purge exchange history by event category.
-* :feature:`-` rotki can now resolved non .eth ENS names
+* :feature:`-` rotki can now resolve non .eth ENS names
 * :feature:`-` Balancer v3 Gauge reward claims should now be properly decoded.
 * :feature:`-` Sky PSM direct swaps should now be properly decoded.
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
 * :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
 * :feature:`10712` bitcoin events can now be filtered by address.
 * :feature:`10542` StakeDAO v2 votemarket events will now be properly decoded.
+* :bug:`-` Curve deposits via intermediate pools will now be properly decoded.
+* :bug:`-` cowswap swaps using both versions of the monerium tokens will now be properly decoded.
+* :bug:`11708` Users can now mark Solana tokens as spam in addition to EVM tokens.
+* :bug:`11709` History events page will now properly refresh after marking an asset as spam or ignoring it from the context menu.
+* :bug:`-` Registering a new device is now more reliable when rotki runs in container environments.
+* :bug:`-` Depositing native token + wrapped native token in Aaave v3 in the same transaction will now be properly decoded.
+* :bug:`-` ZKSynclite batch withdrawal on the ethereum side should now be properly decoded.
 
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.

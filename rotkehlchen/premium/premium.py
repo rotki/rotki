@@ -6,10 +6,12 @@ import logging
 import os
 import platform
 import re
+import secrets
 import time
 from base64 import b64decode, b64encode
 from binascii import Error as BinasciiError
 from collections.abc import Sequence
+from contextlib import suppress
 from enum import Enum
 from http import HTTPStatus
 from json import JSONDecodeError
@@ -52,6 +54,9 @@ log = RotkehlchenLogsAdapter(logger)
 DOCKER_PLATFORM_KEY: Final = 'docker'
 DOCKER_SHORT_ID_HASH_LENGTH: Final = 12
 KUBERNETES_PLATFORM_KEY: Final = 'kubernetes'
+CONTAINER_FALLBACK_ID_FILE: Final = Path('/opt/rotki/.container-id')
+DOCKER_ENTRYPOINT_PATH: Final = '/opt/rotki/entrypoint.py'
+UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX: Final = 'unknown-container'
 
 
 class RemoteMetadata(NamedTuple):
@@ -203,6 +208,43 @@ def get_podman_container_id(mountinfo: str) -> str | None:
     return None
 
 
+def is_running_in_rotki_docker_image() -> bool:
+    """Return whether rotki appears to run in the official docker image."""
+    try:
+        init_cmdline = Path('/proc/1/cmdline').read_bytes().decode('utf-8', errors='ignore')
+    except OSError:
+        init_cmdline = ''
+
+    if DOCKER_ENTRYPOINT_PATH in init_cmdline:
+        return True
+
+    try:
+        parent_cmdline = Path(f'/proc/{os.getppid()}/cmdline').read_bytes().decode('utf-8', errors='ignore')  # noqa: E501
+    except OSError:
+        return False
+
+    return DOCKER_ENTRYPOINT_PATH in parent_cmdline
+
+
+def get_or_create_fallback_container_id() -> str | None:
+    """Get a persistent container-local identifier or create one if needed."""
+    try:
+        with open(CONTAINER_FALLBACK_ID_FILE, mode='x', encoding='utf-8') as write_file:
+            fallback_id = f'{UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX}-{secrets.token_hex(4)}'
+            write_file.write(fallback_id)
+            return fallback_id
+    except FileExistsError:
+        with suppress(OSError):
+            return CONTAINER_FALLBACK_ID_FILE.read_text(encoding='utf-8').strip() or None
+    except OSError as e:
+        log.error(
+            f'Failed to persist fallback container identifier at {CONTAINER_FALLBACK_ID_FILE} due to {e}',  # noqa: E501
+        )
+        return None
+
+    return None
+
+
 def extended_get_machine_id(username: str) -> str:
     """Wrapper around machineid.hashed_id that checks the hostname in the case of
     kubernetes being detected in the environment.
@@ -234,18 +276,26 @@ def check_docker_container() -> tuple[str, str] | None:
     if (pod_name := get_kubernetes_pod_name()) is not None:
         return (pod_name, KUBERNETES_PLATFORM_KEY)
 
+    mountinfo = ''
     try:
         mountinfo = Path('/proc/self/mountinfo').read_text(encoding='utf-8')
     except OSError as e:
         log.error(f'Failed to read /proc/self/mountinfo due to {e}')
-        return None
 
-    if (podman_container_id := get_podman_container_id(mountinfo)) is not None:
-        return (podman_container_id[:DOCKER_SHORT_ID_HASH_LENGTH], DOCKER_PLATFORM_KEY)
+    if mountinfo != '':
+        if (podman_container_id := get_podman_container_id(mountinfo)) is not None:
+            return (podman_container_id[:DOCKER_SHORT_ID_HASH_LENGTH], DOCKER_PLATFORM_KEY)
 
-    if 'docker' in mountinfo:
-        match = re.search(r'docker/containers/([a-f0-9]+)/hostname', mountinfo)
-        return (match.group(1)[:DOCKER_SHORT_ID_HASH_LENGTH], DOCKER_PLATFORM_KEY) if match else None  # noqa: E501
+        if 'docker' in mountinfo:
+            match = re.search(r'docker/containers/([a-f0-9]+)/hostname', mountinfo)
+            if match is not None:
+                return (match.group(1)[:DOCKER_SHORT_ID_HASH_LENGTH], DOCKER_PLATFORM_KEY)
+
+    if (
+        is_running_in_rotki_docker_image() and
+        (fallback_container_id := get_or_create_fallback_container_id()) is not None
+    ):
+        return (fallback_container_id, DOCKER_PLATFORM_KEY)
 
     return None
 

@@ -168,6 +168,7 @@ def _download_rules_file(version: int, rules_file: Path) -> None:
             json.dump(payload, tmp)
             tmp.write('\n')
             tmp_file = tmp.name
+
         try:
             os.replace(tmp_file, rules_file)
         except PermissionError:
@@ -196,9 +197,12 @@ def fixture_download_rules(last_accounting_rules_version) -> list[tuple[int, Pat
     for i in range(1, last_accounting_rules_version + 1):
         rules_file = Path(base_dir / f'v{i}.json')
         rules_file.parent.mkdir(exist_ok=True, parents=True)
-        try:
-            _read_rules_from_file(rules_file)
-        except (OSError, json.JSONDecodeError, KeyError, TypeError):
+        if rules_file.exists():
+            try:
+                _read_rules_from_file(rules_file)
+            except (OSError, json.JSONDecodeError, KeyError, TypeError):
+                _download_rules_file(version=i, rules_file=rules_file)
+        else:
             _download_rules_file(version=i, rules_file=rules_file)
 
         result.append((i, rules_file))

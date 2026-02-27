@@ -172,3 +172,49 @@ def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
         ),
     ]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_zksync_lite_batched_withdrawal(ethereum_inquirer, ethereum_accounts):
+    """Test decoding of a single withdrawal from a batched zksync lite transaction."""
+    tx_hash = deserialize_evm_tx_hash('0x4fe316860f922fe8a9cdc61dc1f786ec663ebedfd4eaf101d7719f3989c2522e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=TimestampMS(1708436735000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_ETH,
+        amount=FVal('6.626770825'),
+        location_label=ethereum_accounts[0],
+        notes='Withdraw 6.626770825 ETH from zksync',
+        counterparty=CPT_ZKSYNC,
+        address=ZKSYNC_BRIDGE,
+    )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xfC27723b63464f195b8492814A2791555DA7c8B8']])
+def test_zksync_lite_batched_withdrawal_token(ethereum_inquirer, ethereum_accounts):
+    """Test decoding of a token withdrawal from a batched zksync lite transaction."""
+    tx_hash = deserialize_evm_tx_hash('0x4fe316860f922fe8a9cdc61dc1f786ec663ebedfd4eaf101d7719f3989c2522e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    expected_events = [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=55,
+        timestamp=TimestampMS(1708436735000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.BRIDGE,
+        asset=A_USDC,
+        amount=FVal('2'),
+        location_label=ethereum_accounts[0],
+        notes='Withdraw 2 USDC from zksync',
+        counterparty=CPT_ZKSYNC,
+        address=ZKSYNC_BRIDGE,
+    )]
+    assert expected_events == events
