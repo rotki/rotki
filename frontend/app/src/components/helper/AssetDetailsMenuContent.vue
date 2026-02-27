@@ -16,8 +16,6 @@ const { asset, hideActions, isCollectionParent, iconOnly } = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  hideActions: false;
-  isCollectionParent: false;
   refresh: [];
 }>();
 
