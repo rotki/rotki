@@ -4,7 +4,7 @@ import shutil
 import sys
 from collections import defaultdict
 from collections.abc import Generator
-from contextlib import ExitStack
+from contextlib import ExitStack, suppress
 from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
@@ -169,14 +169,13 @@ def _download_rules_file(version: int, rules_file: Path) -> None:
             tmp.write('\n')
             tmp_file = tmp.name
 
-        try:
-            os.replace(tmp_file, rules_file)
-        except PermissionError:
+        with suppress(PermissionError):
             # On Windows os.replace() raises PermissionError when another
             # xdist worker has the target file open. Since all workers
-            # download identical content, just verify the file is valid.
+            # download identical content and we validated our payload
+            # above, the on-disk file is guaranteed to be valid.
             # See https://bugs.python.org/issue46003
-            _read_rules_from_file(rules_file)
+            os.replace(tmp_file, rules_file)
     finally:
         if tmp_file is not None and Path(tmp_file).exists():
             Path(tmp_file).unlink()
@@ -197,12 +196,9 @@ def fixture_download_rules(last_accounting_rules_version) -> list[tuple[int, Pat
     for i in range(1, last_accounting_rules_version + 1):
         rules_file = Path(base_dir / f'v{i}.json')
         rules_file.parent.mkdir(exist_ok=True, parents=True)
-        if rules_file.exists():
-            try:
-                _read_rules_from_file(rules_file)
-            except (OSError, json.JSONDecodeError, KeyError, TypeError):
-                _download_rules_file(version=i, rules_file=rules_file)
-        else:
+        try:
+            _read_rules_from_file(rules_file)
+        except (OSError, json.JSONDecodeError, KeyError, TypeError):
             _download_rules_file(version=i, rules_file=rules_file)
 
         result.append((i, rules_file))
