@@ -20,9 +20,11 @@ const { t } = useI18n({ useScope: 'global' });
 </script>
 
 <template>
-  <div class="flex flex-row gap-3">
+  <div
+    v-if="showSelectionToggle"
+    class="flex flex-row gap-3"
+  >
     <RuiTooltip
-      v-if="showSelectionToggle"
       :popper="{ placement: 'top' }"
       :open-delay="400"
     >
@@ -44,7 +46,7 @@ const { t } = useI18n({ useScope: 'global' });
       <span>{{ selectionMode ? t('account_balances.exit_selection_mode') : t('account_balances.enter_selection_mode') }}</span>
     </RuiTooltip>
 
-    <template v-if="showSelectionToggle && selectionMode">
+    <template v-if="selectionMode">
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
