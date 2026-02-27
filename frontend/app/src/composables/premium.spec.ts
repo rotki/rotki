@@ -3,11 +3,16 @@ import { server } from '@test/setup-files/server';
 import { http, HttpResponse } from 'msw';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
-import { type PremiumCapabilities, PremiumFeature } from '@/types/session';
+import { type PremiumCapabilities, PremiumFeature, type PremiumFeatureCapability } from '@/types/session';
 import { usePremiumHelper } from './premium';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
+
+function cap(enabled: boolean, minimumTier = 'Free'): PremiumFeatureCapability {
+  return { enabled, minimumTier };
+}
 
 function mockPremiumCapabilities<T = PremiumCapabilities>(capabilities: T, status: number = 200): ReturnType<typeof http.get> {
   return http.get(`${backendUrl}/api/1/premium/capabilities`, () =>
@@ -26,6 +31,11 @@ describe('composables/premium', () => {
   });
 
   describe('usePremiumHelper', () => {
+    beforeEach(() => {
+      const { logged } = storeToRefs(useSessionAuthStore());
+      set(logged, true);
+    });
+
     describe('isFeatureAllowed', () => {
       it('should return false when user is not premium', () => {
         const { isFeatureAllowed } = usePremiumHelper();
@@ -60,9 +70,10 @@ describe('composables/premium', () => {
         const { capabilities, premium } = storeToRefs(store);
         set(premium, true);
         set(capabilities, {
-          ethStakingView: true,
-          eventAnalysisView: true,
-          graphsView: false,
+          assetMovementMatching: cap(false),
+          ethStakingView: cap(true),
+          eventAnalysisView: cap(true),
+          graphsView: cap(false),
         });
 
         const { isFeatureAllowed } = usePremiumHelper();
@@ -82,9 +93,10 @@ describe('composables/premium', () => {
         set(premium, true);
         // Simulate a response missing some capabilities (zod will use defaults)
         set(capabilities, {
-          ethStakingView: true,
-          eventAnalysisView: false,
-          graphsView: false,
+          assetMovementMatching: cap(false),
+          ethStakingView: cap(true),
+          eventAnalysisView: cap(false),
+          graphsView: cap(false),
         });
 
         const { isFeatureAllowed } = usePremiumHelper();
@@ -103,9 +115,10 @@ describe('composables/premium', () => {
         const { capabilities, premium } = storeToRefs(store);
         set(premium, true);
         set(capabilities, {
-          ethStakingView: false,
-          eventAnalysisView: false,
-          graphsView: false,
+          assetMovementMatching: cap(false),
+          ethStakingView: cap(false),
+          eventAnalysisView: cap(false),
+          graphsView: cap(false),
         });
 
         const { isFeatureAllowed } = usePremiumHelper();
@@ -115,9 +128,10 @@ describe('composables/premium', () => {
 
         // Update capabilities
         set(capabilities, {
-          ethStakingView: true,
-          eventAnalysisView: false,
-          graphsView: false,
+          assetMovementMatching: cap(false),
+          ethStakingView: cap(true),
+          eventAnalysisView: cap(false),
+          graphsView: cap(false),
         });
 
         await nextTick();
@@ -129,9 +143,10 @@ describe('composables/premium', () => {
         const { capabilities, premium } = storeToRefs(store);
         set(premium, true);
         set(capabilities, {
-          ethStakingView: true,
-          eventAnalysisView: true,
-          graphsView: true,
+          assetMovementMatching: cap(true),
+          ethStakingView: cap(true),
+          eventAnalysisView: cap(true),
+          graphsView: cap(true),
         });
 
         const { isFeatureAllowed } = usePremiumHelper();
@@ -146,14 +161,45 @@ describe('composables/premium', () => {
         expect(get(ethStakingAllowed)).toBe(false);
       });
     });
+
+    describe('getFeatureMinimumTier', () => {
+      it('should return the minimum tier for a feature', () => {
+        const store = usePremiumStore();
+        const { capabilities, premium } = storeToRefs(store);
+        set(premium, true);
+        set(capabilities, {
+          assetMovementMatching: cap(false, 'Advanced'),
+          ethStakingView: cap(true, 'Lite'),
+          eventAnalysisView: cap(false, 'Advanced'),
+          graphsView: cap(true, 'Basic'),
+        });
+
+        const { getFeatureMinimumTier } = usePremiumHelper();
+
+        expect(get(getFeatureMinimumTier(PremiumFeature.ASSET_MOVEMENT_MATCHING))).toBe('Advanced');
+        expect(get(getFeatureMinimumTier(PremiumFeature.ETH_STAKING_VIEW))).toBe('Lite');
+        expect(get(getFeatureMinimumTier(PremiumFeature.GRAPHS_VIEW))).toBe('Basic');
+      });
+
+      it('should return empty string when capabilities are not loaded', () => {
+        const { getFeatureMinimumTier } = usePremiumHelper();
+        expect(get(getFeatureMinimumTier(PremiumFeature.ASSET_MOVEMENT_MATCHING))).toBe('');
+      });
+    });
   });
 
   describe('usePremiumStore - API Integration', () => {
+    beforeEach(() => {
+      const { logged } = storeToRefs(useSessionAuthStore());
+      set(logged, true);
+    });
+
     it('should fetch and parse capabilities when premium status becomes true', async () => {
       const mockCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ETH_STAKING_VIEW]: true,
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: false,
-        [PremiumFeature.GRAPHS_VIEW]: true,
+        [PremiumFeature.ASSET_MOVEMENT_MATCHING]: cap(false, 'Advanced'),
+        [PremiumFeature.ETH_STAKING_VIEW]: cap(true),
+        [PremiumFeature.EVENT_ANALYSIS_VIEW]: cap(false),
+        [PremiumFeature.GRAPHS_VIEW]: cap(true),
       };
 
       server.use(mockPremiumCapabilities(mockCapabilities));
@@ -169,33 +215,35 @@ describe('composables/premium', () => {
       });
     });
 
-    it('should handle API response with missing capabilities (defaults to false)', async () => {
-      // Simulate backend response missing some capabilities - zod will apply defaults
+    it('should handle API response with missing capabilities', async () => {
+      // Simulate backend response missing some capabilities
       const partialCapabilities: Partial<PremiumCapabilities> = {
-        [PremiumFeature.ETH_STAKING_VIEW]: true,
-        // Missing EVENT_ANALYSIS_VIEW and GRAPHS_VIEW - should default to false
+        [PremiumFeature.ETH_STAKING_VIEW]: cap(true),
+        // Missing EVENT_ANALYSIS_VIEW and GRAPHS_VIEW
       };
 
       server.use(mockPremiumCapabilities<Partial<PremiumCapabilities>>(partialCapabilities));
 
       const store = usePremiumStore();
-      const { capabilities, premium } = storeToRefs(store);
+      const { premium } = storeToRefs(store);
 
       set(premium, true);
 
+      const { isFeatureAllowed } = usePremiumHelper();
+
       await vi.waitFor(() => {
-        const caps = get(capabilities);
-        expect(caps?.[PremiumFeature.ETH_STAKING_VIEW]).toBe(true);
-        expect(caps?.[PremiumFeature.EVENT_ANALYSIS_VIEW]).toBe(false);
-        expect(caps?.[PremiumFeature.GRAPHS_VIEW]).toBe(false);
+        expect(get(isFeatureAllowed(PremiumFeature.ETH_STAKING_VIEW))).toBe(true);
+        expect(get(isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW))).toBe(false);
+        expect(get(isFeatureAllowed(PremiumFeature.GRAPHS_VIEW))).toBe(false);
       });
     });
 
     it('should handle all capabilities set to false', async () => {
       const allFalseCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ETH_STAKING_VIEW]: false,
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: false,
-        [PremiumFeature.GRAPHS_VIEW]: false,
+        [PremiumFeature.ASSET_MOVEMENT_MATCHING]: cap(false),
+        [PremiumFeature.ETH_STAKING_VIEW]: cap(false),
+        [PremiumFeature.EVENT_ANALYSIS_VIEW]: cap(false),
+        [PremiumFeature.GRAPHS_VIEW]: cap(false),
       };
 
       server.use(mockPremiumCapabilities(allFalseCapabilities));
@@ -240,11 +288,12 @@ describe('composables/premium', () => {
       expect(get(capabilities)).toBeUndefined();
     });
 
-    it('should clear capabilities when premium status becomes false', async () => {
+    it('should refetch capabilities when premium status becomes false', async () => {
       const mockCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ETH_STAKING_VIEW]: true,
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: true,
-        [PremiumFeature.GRAPHS_VIEW]: true,
+        [PremiumFeature.ASSET_MOVEMENT_MATCHING]: cap(true),
+        [PremiumFeature.ETH_STAKING_VIEW]: cap(true),
+        [PremiumFeature.EVENT_ANALYSIS_VIEW]: cap(true),
+        [PremiumFeature.GRAPHS_VIEW]: cap(true),
       };
 
       server.use(mockPremiumCapabilities(mockCapabilities));
@@ -258,18 +307,19 @@ describe('composables/premium', () => {
         expect(get(capabilities)).toEqual(mockCapabilities);
       });
 
-      // Then set it to false
+      // Set it to false - capabilities should be refetched, not cleared
       set(premium, false);
-      await nextTick();
-
-      expect(get(capabilities)).toBeUndefined();
+      await vi.waitFor(() => {
+        expect(get(capabilities)).toEqual(mockCapabilities);
+      });
     });
 
     it('should not fetch capabilities if premium was already true', async () => {
       const mockCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ETH_STAKING_VIEW]: true,
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: true,
-        [PremiumFeature.GRAPHS_VIEW]: true,
+        [PremiumFeature.ASSET_MOVEMENT_MATCHING]: cap(true),
+        [PremiumFeature.ETH_STAKING_VIEW]: cap(true),
+        [PremiumFeature.EVENT_ANALYSIS_VIEW]: cap(true),
+        [PremiumFeature.GRAPHS_VIEW]: cap(true),
       };
 
       const apiCallSpy = vi.fn(() => HttpResponse.json<ActionResult<PremiumCapabilities>>({
@@ -287,29 +337,27 @@ describe('composables/premium', () => {
       // Set premium to true initially
       set(premium, true);
 
-      // Wait for first API call
+      // Wait for capabilities to be fetched (includes initial watchImmediate call + set to true)
       await vi.waitFor(() => {
-        expect(apiCallSpy).toHaveBeenCalledTimes(1);
+        expect(get(capabilities)).toEqual(mockCapabilities);
       });
+
+      const callCount = apiCallSpy.mock.calls.length;
 
       // Set premium to true again (no change from true to true)
       set(premium, true);
       await nextTick();
 
-      // Wait to ensure no additional API call is made
-      await vi.waitFor(() => {
-        expect(get(capabilities)).toEqual(mockCapabilities);
-      });
-
-      // Should not call API again since premium was already true
-      expect(apiCallSpy).toHaveBeenCalledTimes(1);
+      // Should not call API again since premium value didn't change
+      expect(apiCallSpy).toHaveBeenCalledTimes(callCount);
     });
 
     it('should integrate with isFeatureAllowed after API call', async () => {
       const mockCapabilities: PremiumCapabilities = {
-        [PremiumFeature.ETH_STAKING_VIEW]: true,
-        [PremiumFeature.EVENT_ANALYSIS_VIEW]: false,
-        [PremiumFeature.GRAPHS_VIEW]: true,
+        [PremiumFeature.ASSET_MOVEMENT_MATCHING]: cap(false),
+        [PremiumFeature.ETH_STAKING_VIEW]: cap(true),
+        [PremiumFeature.EVENT_ANALYSIS_VIEW]: cap(false),
+        [PremiumFeature.GRAPHS_VIEW]: cap(true),
       };
 
       server.use(mockPremiumCapabilities(mockCapabilities));

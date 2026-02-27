@@ -11,6 +11,7 @@ export function usePremium(): Ref<boolean> {
 interface UsePremiumHelperReturn {
   showGetPremiumButton: () => void;
   isFeatureAllowed: (feature: PremiumFeature) => ComputedRef<boolean>;
+  getFeatureMinimumTier: (feature: PremiumFeature) => ComputedRef<string>;
 }
 
 export function usePremiumHelper(): UsePremiumHelperReturn {
@@ -28,10 +29,16 @@ export function usePremiumHelper(): UsePremiumHelperReturn {
       return false;
 
     const caps = get(capabilities);
-    return caps?.[feature] ?? false;
+    return caps?.[feature]?.enabled ?? false;
+  });
+
+  const getFeatureMinimumTier = (feature: PremiumFeature): ComputedRef<string> => computed<string>(() => {
+    const caps = get(capabilities);
+    return caps?.[feature]?.minimumTier ?? '';
   });
 
   return {
+    getFeatureMinimumTier,
     isFeatureAllowed,
     showGetPremiumButton,
   };

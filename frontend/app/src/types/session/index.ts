@@ -58,11 +58,28 @@ export enum PremiumFeature {
   ETH_STAKING_VIEW = 'ethStakingView',
   EVENT_ANALYSIS_VIEW = 'eventAnalysisView',
   GRAPHS_VIEW = 'graphsView',
+  ASSET_MOVEMENT_MATCHING = 'assetMovementMatching',
 }
 
-export const PremiumCapabilities = z.record(
-  z.enum(PremiumFeature),
-  z.boolean().default(false),
-);
+export const PremiumFeatureCapability = z.object({
+  enabled: z.boolean().default(false),
+  minimumTier: z.string().default('Free'),
+});
+
+export type PremiumFeatureCapability = z.infer<typeof PremiumFeatureCapability>;
+
+export const PremiumCapabilities = z.object({
+  assetMovementMatching: PremiumFeatureCapability.optional(),
+  currentTier: z.string().optional(),
+  ethStakedLimit: z.number().optional(),
+  ethStakingView: PremiumFeatureCapability.optional(),
+  eventAnalysisView: PremiumFeatureCapability.optional(),
+  graphsView: PremiumFeatureCapability.optional(),
+  historyEventsLimit: z.number().optional(),
+  limitOfDevices: z.number().optional(),
+  maxBackupSizeMb: z.number().optional(),
+  pnlEventsLimit: z.number().optional(),
+  reportsLookupLimit: z.number().optional(),
+});
 
 export type PremiumCapabilities = z.infer<typeof PremiumCapabilities>;

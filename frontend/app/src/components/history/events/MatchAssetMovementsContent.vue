@@ -23,6 +23,8 @@ const activeTab = ref<number>(0);
 
 const {
   autoMatchLoading,
+  autoMatchMinimumTier,
+  isAutoMatchAllowed,
   ignoredLoading,
   ignoredMovements,
   loading,
@@ -83,7 +85,7 @@ onBeforeMount(async () => {
   <RuiTabItems
     v-model="activeTab"
     class="my-4"
-    :class="isPinned ? 'px-4' : 'px-2'"
+    :class="{ 'px-4': isPinned }"
   >
     <RuiTabItem>
       <UnmatchedMovementsList
@@ -93,6 +95,8 @@ onBeforeMount(async () => {
         :ignore-loading="ignoreLoading"
         :is-pinned="isPinned"
         :loading="loading"
+        :match-disabled="!isAutoMatchAllowed"
+        :match-minimum-tier="autoMatchMinimumTier"
         @ignore="ignoreMovement($event)"
         @pin="emit('pin')"
         @select="emit('select', $event)"
@@ -167,7 +171,7 @@ onBeforeMount(async () => {
       <RuiButtonGroup
         color="primary"
         :class="isPinned ? '!pl-2' : 'pl-3' "
-        :disabled="autoMatchLoading"
+        :disabled="!isAutoMatchAllowed || autoMatchLoading"
       >
         <RuiTooltip
           :open-delay="400"
@@ -180,7 +184,7 @@ onBeforeMount(async () => {
               class="!rounded-r-none"
               :size="buttonSize"
               :class="isPinned ? 'h-[30px] !px-3' : 'h-9'"
-              :disabled="unmatchedMovements.length === 0 || autoMatchLoading"
+              :disabled="!isAutoMatchAllowed || unmatchedMovements.length === 0 || autoMatchLoading"
               :loading="autoMatchLoading"
               @click="triggerAssetMovementAutoMatching()"
             >
