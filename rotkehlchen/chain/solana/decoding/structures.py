@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from typing import Final
 
 from rotkehlchen.chain.decoding.structures import CommonDecodingOutput
-from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
+from rotkehlchen.chain.solana.types import SolanaAddress, SolanaInstruction, SolanaTransaction
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 
 
@@ -12,6 +12,7 @@ class SolanaDecoderContext:
     instruction: SolanaInstruction
     transaction: SolanaTransaction
     decoded_events: list[SolanaEvent]
+    ata_data: dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -20,6 +21,7 @@ class SolanaEventDecoderContext:
     event: SolanaEvent
     transaction: SolanaTransaction
     decoded_events: list[SolanaEvent]
+    ata_data: dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)

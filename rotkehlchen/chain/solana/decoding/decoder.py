@@ -499,7 +499,12 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
     def _decode_basic_events(
             self,
             transaction: SolanaTransaction,
-    ) -> tuple[list[SolanaEvent], list[SolanaEvent], list[SolanaInstruction]]:
+    ) -> tuple[
+        list[SolanaEvent],
+        list[SolanaEvent],
+        list[SolanaInstruction],
+        dict[SolanaAddress, tuple[SolanaAddress, SolanaAddress]],
+    ]:
         """Decode the basic events (fee, transfers, etc.) for the given transaction.
         Returns a tuple containing the list of decoded events, the list of transfer events,
         and the list of instructions that have not been decoded yet.
@@ -528,7 +533,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             )) is not None:
                 token_account_list.extend(token_accounts)
                 transfers_and_token_accounts.append((instruction, token_accounts))
-            if (account_initialization_result := self._maybe_get_token_account_initialization(
+            elif (account_initialization_result := self._maybe_get_token_account_initialization(
                 transaction=transaction,
                 instruction=instruction,
             )) is not None:
@@ -548,7 +553,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             log.error(f'Failed to fetch token account owners for transaction {transaction.signature} due to {e}')  # noqa: E501
             # Add all token transfer instructions to undecoded since we can't process them
             undecoded_instructions.extend(instruction for instruction, _ in transfers_and_token_accounts)  # noqa: E501
-            return events, transfer_events, undecoded_instructions
+            return events, transfer_events, undecoded_instructions, token_accounts_with_owners
 
         for instruction, token_accounts in transfers_and_token_accounts:
             if (transfer_event := self._maybe_decode_token_transfer(
@@ -562,7 +567,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
             undecoded_instructions.append(instruction)
 
-        return events, transfer_events, undecoded_instructions
+        return events, transfer_events, undecoded_instructions, token_accounts_with_owners
 
     def _decode_transaction(
             self,
@@ -593,18 +598,18 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
 
         self.base.reset_sequence_counter(tx_data=transaction)
         self.base.event_instructions.clear()
-        events, transfer_events, undecoded_instructions = self._decode_basic_events(
+        events, transfer_events, undecoded_instructions, ata_data = self._decode_basic_events(
             transaction=transaction,
         )
         refresh_balances, reload_decoders, process_swaps = False, set(), False
         for item_list, get_mapping, create_context in ((
             transfer_events,
             lambda event: self.rules.transfer_address_mappings.get(event.address),
-            lambda event: SolanaEventDecoderContext(event=event, transaction=transaction, decoded_events=events),  # noqa: E501
+            lambda event: SolanaEventDecoderContext(event=event, transaction=transaction, decoded_events=events, ata_data=ata_data),  # noqa: E501
         ), (
             undecoded_instructions,
             lambda instruction: self.rules.program_id_mappings.get(instruction.program_id),
-            lambda instruction: SolanaDecoderContext(instruction=instruction, transaction=transaction, decoded_events=events),  # noqa: E501
+            lambda instruction: SolanaDecoderContext(instruction=instruction, transaction=transaction, decoded_events=events, ata_data=ata_data),  # noqa: E501
         )):
             for item in item_list:
                 if (mapping_result := get_mapping(item)) is None:  # type: ignore[no-untyped-call]
