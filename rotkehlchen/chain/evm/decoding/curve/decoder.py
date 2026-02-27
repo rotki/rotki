@@ -458,6 +458,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             user_or_contract_address: ChecksumEvmAddress,
     ) -> EvmDecodingOutput:
         """Decode information related to depositing assets in curve pools"""
+        is_direct_pool_interaction = transaction.to_address == tx_log.address
         display_pool_address = tx_log.address
         if (
             user_or_contract_address in self.curve_deposit_contracts and
@@ -498,7 +499,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user_or_contract_address and
-                tx_log.address in self.pools
+                (tx_log.address in self.pools or is_direct_pool_interaction)
             ):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
@@ -520,7 +521,8 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 if (
                     (
                         tx_log.address in self.pools or
-                        user_or_contract_address in self.curve_deposit_contracts
+                        user_or_contract_address in self.curve_deposit_contracts or
+                        is_direct_pool_interaction
                     ) and
                     is_deposit_and_stake is False and
                     (
@@ -543,6 +545,25 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                         token_amounts = [
                             int.from_bytes(tx_log.data[offset + i * 32:offset + (i + 1) * 32])
                             for i in range(token_amounts_len)
+                        ]
+                    elif tx_log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE:
+                        # For some historical pools this topic is used without a zap call.
+                        # If the pool is unknown to cache, infer token count from spend events.
+                        token_count = len(self.pools.get(tx_log.address, []))
+                        if token_count == 0:
+                            token_count = len([
+                                maybe_spend
+                                for maybe_spend in decoded_events
+                                if (
+                                    maybe_spend.event_type == HistoryEventType.SPEND and
+                                    maybe_spend.event_subtype == HistoryEventSubType.NONE and
+                                    maybe_spend.location_label == user_or_contract_address and
+                                    maybe_spend.address == tx_log.address
+                                )
+                            ])
+                        token_amounts = [
+                            int.from_bytes(tx_log.data[i:i + 32]) for i in
+                            range(0, token_count * 32, 32)
                         ]
                     else:  # Token amounts are in a fixed size array
                         token_count = ADD_LIQUIDITY_TOKEN_COUNTS.get(tx_log.topics[0], 0)
