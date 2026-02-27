@@ -1,8 +1,13 @@
 import { z } from 'zod/v4';
-import { AssetBalance, Balance } from '../balances';
+import { AssetEntry, Balance } from '../balances';
 import { NumericString } from '../numbers';
 
 const TimedEntry = z.object({ time: z.number().positive() });
+
+const AssetDistribution = z.object({
+  ...TimedEntry.shape,
+  usdValue: NumericString,
+});
 
 const TimedBalance = z.object({
   ...Balance.shape,
@@ -21,8 +26,7 @@ export type OwnedAssets = z.infer<typeof OwnedAssets>;
 
 const LocationDataItem = z.object({
   location: z.string().min(1),
-  time: z.number().positive(),
-  usdValue: NumericString,
+  ...AssetDistribution.shape,
 });
 
 export const LocationData = z.array(LocationDataItem);
@@ -30,8 +34,8 @@ export const LocationData = z.array(LocationDataItem);
 export type LocationData = z.infer<typeof LocationData>;
 
 const TimedAssetBalance = z.object({
-  ...AssetBalance.shape,
-  ...TimedEntry.shape,
+  ...AssetEntry.shape,
+  ...AssetDistribution.shape,
 });
 
 export const TimedAssetBalances = z.array(TimedAssetBalance);
