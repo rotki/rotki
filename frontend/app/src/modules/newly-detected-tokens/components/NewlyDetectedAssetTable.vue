@@ -9,6 +9,7 @@ import { useSpamAsset } from '@/composables/assets/spam';
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
@@ -45,7 +46,8 @@ const tokenKindFilter = ref<NewDetectedTokenKind>();
 const { cache } = storeToRefs(useAssetCacheStore());
 
 const { getAllIdentifiers, getData, isReady, removeNewDetectedTokens } = useNewlyDetectedTokens();
-const { getChain } = useSupportedChains();
+const { getChain, isSolanaChains } = useSupportedChains();
+const { addresses } = useAccountAddresses();
 const { markAssetsAsSpam } = useSpamAsset();
 const { getAssetPrice } = usePriceUtils();
 
@@ -134,11 +136,22 @@ const allSelected = computed<boolean>(() => {
   return selectionLength > 0 && totalFiltered === selectionLength;
 });
 
-const tokenKindOptions = computed<{ title: string; value: NewDetectedTokenKind | undefined }[]>(() => [
-  { title: t('asset_table.newly_detected.all_types'), value: undefined },
-  { title: 'EVM', value: NewDetectedTokenKind.EVM },
-  { title: 'Solana', value: NewDetectedTokenKind.SOLANA },
-]);
+const hasSolanaAccounts = computed<boolean>(() =>
+  Object.entries(get(addresses)).some(([chain, addrs]) => isSolanaChains(chain) && addrs.length > 0),
+);
+
+const tokenKindOptions = computed<{ title: string; value: NewDetectedTokenKind | undefined }[]>(() => {
+  const options: { title: string; value: NewDetectedTokenKind | undefined }[] = [
+    { title: 'EVM', value: NewDetectedTokenKind.EVM },
+  ];
+
+  if (get(hasSolanaAccounts)) {
+    options.unshift({ title: t('asset_table.newly_detected.all_types'), value: undefined });
+    options.push({ title: 'Solana', value: NewDetectedTokenKind.SOLANA });
+  }
+
+  return options;
+});
 
 async function toggleSelection(): Promise<void> {
   const selectedLength = get(selected).length;
@@ -180,6 +193,11 @@ watch(isReady, (ready) => {
     fetchData();
 });
 
+watchImmediate(hasSolanaAccounts, (hasSolana) => {
+  if (!hasSolana)
+    set(tokenKindFilter, NewDetectedTokenKind.EVM);
+});
+
 watch(tokenKindFilter, () => {
   set(selected, []);
 });
@@ -209,7 +227,8 @@ onMounted(async () => {
                     color="primary"
                     hide-details
                     size="sm"
-                    class="ms-4 mt-1 text-body-2"
+                    class="ml-2 mt-1 text-body-2"
+                    :disabled="state.found === 0"
                     :model-value="allSelected"
                     @update:model-value="toggleSelection()"
                   >
