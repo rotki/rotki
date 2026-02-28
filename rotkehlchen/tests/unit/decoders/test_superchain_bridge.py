@@ -5,7 +5,11 @@ from rotkehlchen.chain.base.constants import CPT_BASE
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.superchain_bridge.op.decoder import OPTIMISM_PORTAL_ADDRESS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    SerializableChainIndexerOrder,
+    string_to_evm_address,
+)
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.constants.assets import A_ETH, A_OPTIMISM_ETH
@@ -15,7 +19,21 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
+
+BLOCKSCOUT_FIRST_OPTIMISM_ORDER = [{
+    'evm_indexers_order': SerializableChainIndexerOrder(
+        order={
+            ChainID.OPTIMISM: [EvmIndexer.BLOCKSCOUT, EvmIndexer.ETHERSCAN, EvmIndexer.ROUTESCAN],
+        },
+    ),
+}]
 
 
 @pytest.mark.vcr
@@ -152,12 +170,7 @@ def test_receive_erc20_on_optimism(optimism_inquirer, optimism_accounts):
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('optimism_accounts', [['0xfc399B17D1Ddf01a518DcaeE557ef776bf288f63']])
 def test_receive_eth_on_optimism(optimism_inquirer, optimism_accounts):
-    """Data is taken from
-    https://optimistic.etherscan.io/tx/0x6a93d5aaa075c9c044d2591370cd5b9e83259370ddd618267c4757715da000c2
-    """
-    tx_hash = deserialize_evm_tx_hash('0x6a93d5aaa075c9c044d2591370cd5b9e83259370ddd618267c4757715da000c2')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    user_address = optimism_accounts[0]
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0x6a93d5aaa075c9c044d2591370cd5b9e83259370ddd618267c4757715da000c2')))  # noqa: E501
     assert events == [
         EvmEvent(
             tx_ref=tx_hash,
@@ -167,11 +180,35 @@ def test_receive_eth_on_optimism(optimism_inquirer, optimism_accounts):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_OPTIMISM_ETH,
-            amount=FVal('0.009'),
-            location_label=user_address,
-            notes='Bridge 0.009 ETH from Ethereum to Optimism via Optimism bridge',
+            amount=FVal(amount_str := '0.009'),
+            location_label=optimism_accounts[0],
+            notes=f'Bridge {amount_str} ETH from Ethereum to Optimism via Optimism bridge',
             counterparty=CPT_OPTIMISM,
             address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', BLOCKSCOUT_FIRST_OPTIMISM_ORDER)
+@pytest.mark.parametrize('optimism_accounts', [['0x654A855e48F6943966788B81dc739117C5Bff6A1']])
+def test_receive_eth_on_optimism_only_once(optimism_inquirer, optimism_accounts):
+    """Regression test for duplicate bridge decoding on native ETH deposits."""
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0x05b30df1b010f6d8e800dc4389c1210f56fc63a510d8a8021ba6674874500c03')))  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1709252049000),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=A_ETH,
+            amount=FVal(amount_str := '0.01'),
+            location_label=optimism_accounts[0],
+            notes=f'Bridge {amount_str} ETH from Ethereum to Optimism via Optimism bridge',
+            counterparty=CPT_OPTIMISM,
+            address=string_to_evm_address('0x4200000000000000000000000000000000000010'),
         ),
     ]
 
