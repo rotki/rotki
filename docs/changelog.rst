@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Depositing via Pendle v3 router should be now properly decoded by rotki.
 * :bug:`-` Bridging ETH from mainnet to Optimism will no longer duplicate the event under some weird circumstances.
 * :bug:`-` Historic event values will no longer incorrectly fallback to the current price when the historic price is not available.
 * :bug:`-` Curve deposits with add liquidity + stake will now be properly decoded.
