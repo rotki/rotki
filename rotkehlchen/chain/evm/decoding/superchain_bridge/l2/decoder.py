@@ -104,27 +104,36 @@ class SuperchainL2SideBridgeCommonDecoder(EvmDecoderInterface, ABC):
             to_address=from_address,
         )
 
-        # Find the corresponding transfer event and update it
-        for event in context.decoded_events:
-            if (
-                event.event_type == expected_event_type and
-                event.location_label == expected_location_label and
-                event.address in (ZERO_ADDRESS, *self.bride_addresses) and
-                event.asset in valid_assets and
-                event.amount == amount
-            ):
-                bridge_match_transfer(
-                    event=event,
-                    from_address=from_address,
-                    to_address=to_address,
-                    from_chain=from_chain,
-                    to_chain=to_chain,
-                    amount=amount,
-                    asset=asset,
-                    expected_event_type=expected_event_type,
-                    new_event_type=new_event_type,
-                    counterparty=self.counterparty,
-                )
+        # Find one corresponding transfer event and update it. For chains that support
+        # multiple native asset representations (e.g. Optimism ETH and OP-ETH), prefer
+        # the first entry from valid_assets and avoid decoding the same bridge twice.
+        matched_event = None
+        for expected_asset in valid_assets:
+            if (matched_event := next((
+                    event for event in context.decoded_events
+                    if (
+                        event.event_type == expected_event_type and
+                        event.location_label == expected_location_label and
+                        event.address in (ZERO_ADDRESS, *self.bride_addresses) and
+                        event.asset == expected_asset and
+                        event.amount == amount
+                    )
+            ), None)) is not None:
+                break
+
+        if matched_event is not None:
+            bridge_match_transfer(
+                event=matched_event,
+                from_address=from_address,
+                to_address=to_address,
+                from_chain=from_chain,
+                to_chain=to_chain,
+                amount=amount,
+                asset=asset,
+                expected_event_type=expected_event_type,
+                new_event_type=new_event_type,
+                counterparty=self.counterparty,
+            )
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
