@@ -199,28 +199,19 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         """Decodes events that swap eth or tokens in a (velo/aero)drome v1 or v2 pool"""
         spend_event, receive_event = None, None
         for event in context.decoded_events:
-            crypto_asset = event.asset.resolve_to_crypto_asset()
             if (
                     ((event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE) or  # noqa: E501
                     (event.event_type == HistoryEventType.TRADE and event.event_subtype == HistoryEventSubType.SPEND))  # noqa: E501
                     and event.address in self.protocol_addresses
             ):
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.SPEND
-                event.counterparty = self.counterparty
-                event.notes = f'Swap {event.amount} {crypto_asset.symbol} in {self.counterparty}'
                 spend_event = event
             elif ((
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE
-            ) or ((
+            ) or (
                 event.event_type == HistoryEventType.TRADE and
                 event.event_subtype == HistoryEventSubType.RECEIVE
-            ) and event.address in self.protocol_addresses)):
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.RECEIVE
-                event.counterparty = self.counterparty
-                event.notes = f'Receive {event.amount} {crypto_asset.symbol} as the result of a swap in {self.counterparty}'  # noqa: E501
+            )) and event.address in self.protocol_addresses:
                 receive_event = event
 
         if spend_event is None or receive_event is None:
@@ -231,6 +222,16 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 f'Spend event: {spend_event}, receive event: {receive_event}.',
             )
             return DEFAULT_EVM_DECODING_OUTPUT
+
+        for event, subtype in ((spend_event, HistoryEventSubType.SPEND), (receive_event, HistoryEventSubType.RECEIVE)):  # noqa: E501
+            crypto_asset = event.asset.resolve_to_crypto_asset()
+            event.event_type = HistoryEventType.TRADE
+            event.event_subtype = subtype
+            event.counterparty = self.counterparty
+            if subtype == HistoryEventSubType.SPEND:
+                event.notes = f'Swap {event.amount} {crypto_asset.symbol} in {self.counterparty}'
+            else:
+                event.notes = f'Receive {event.amount} {crypto_asset.symbol} as the result of a swap in {self.counterparty}'  # noqa: E501
 
         maybe_reshuffle_events(
             ordered_events=[spend_event, receive_event],
