@@ -1226,3 +1226,56 @@ def test_redeem_due_rewards_and_interests(ethereum_inquirer, ethereum_accounts, 
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x743D7B30661d65B41960Bf6b5d1bB93CF7972A73']])
+def test_redeem_due_rewards_multiple_tokens(ethereum_inquirer, ethereum_accounts, pendle_cache):
+    tx_hash = deserialize_evm_tx_hash('0xd6307558bb3252cb0b6bd9af91eaf97fcc1423181cd44db7bc187d29440322c1')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+    )
+    user_address, timestamp, gas_amount, sy_weeth_amount, pendle_amount = ethereum_accounts[0], TimestampMS(1713128123000), '0.002537430445956456', '0.010279749482167444', '1.305613281699848198'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=645,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xAC0047886a985071476a1186bE89222659970d65'),
+            amount=FVal(sy_weeth_amount),
+            location_label=user_address,
+            notes=f'Claim {sy_weeth_amount} SY-weETH reward from Pendle',
+            counterparty=CPT_PENDLE,
+            address=string_to_evm_address('0xfb35Fd0095dD1096b1Ca49AD44d8C5812A201677'),
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=650,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827'),
+            amount=FVal(pendle_amount),
+            location_label=user_address,
+            notes=f'Claim {pendle_amount} PENDLE reward from Pendle',
+            counterparty=CPT_PENDLE,
+            address=string_to_evm_address('0xF32e58F92e60f4b0A37A69b95d642A471365EAe8'),
+        ),
+    ]
+    assert events == expected_events

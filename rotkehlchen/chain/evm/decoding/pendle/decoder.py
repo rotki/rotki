@@ -1,5 +1,5 @@
 import logging
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
@@ -55,6 +55,9 @@ from .utils import query_pendle_markets
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
+    from rotkehlchen.types import EvmTransaction
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -526,26 +529,102 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         if context.tx_log.topics[0] != REDEEM_REWARDS_TOPIC:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        raw_rewards_amount = int.from_bytes(context.tx_log.data[64:])
-        for event in context.decoded_events:
-            if (
-                    event.address in self.pools and
-                    event.event_type == HistoryEventType.RECEIVE and
-                    event.event_subtype == HistoryEventSubType.NONE and
-                    asset_raw_value(
-                        asset=(crypto_asset := event.asset.resolve_to_crypto_asset()),
-                        amount=event.amount,
-                    ) == raw_rewards_amount
-            ):
-                event.counterparty = CPT_PENDLE
-                event.event_type = HistoryEventType.RECEIVE
-                event.event_subtype = HistoryEventSubType.REWARD
-                event.notes = f'Claim {event.amount} {crypto_asset.symbol} reward from Pendle'
-                break
-        else:
-            log.error(f'Could not find the pendle claim transfer for transaction {context.transaction}')  # noqa: E501
+        matched_transfer_events = [
+            event for event in context.decoded_events if (
+                event.address == context.tx_log.address and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE
+            )
+        ]
+        raw_rewards_amounts: list[int] = []
+        rewards_data_offset = int.from_bytes(context.tx_log.data[:32])
+        if rewards_data_offset + 32 <= len(context.tx_log.data):
+            rewards_length = int.from_bytes(
+                context.tx_log.data[rewards_data_offset:rewards_data_offset + 32],
+            )
+            raw_rewards_amounts = [
+                int.from_bytes(context.tx_log.data[start:start + 32])
+                for idx in range(rewards_length)
+                if (start := rewards_data_offset + 32 + idx * 32) + 32 <= len(context.tx_log.data)
+            ]
+
+        matched_event_indices: set[int] = set()
+        unmatched_amounts = raw_rewards_amounts.copy()
+        for raw_reward_amount in raw_rewards_amounts:
+            for idx, event in enumerate(context.decoded_events):
+                if idx in matched_event_indices:
+                    continue
+
+                if (
+                        event.address == context.tx_log.address and
+                        event.event_type == HistoryEventType.RECEIVE and
+                        event.event_subtype == HistoryEventSubType.NONE and
+                        asset_raw_value(
+                            asset=(crypto_asset := event.asset.resolve_to_crypto_asset()),
+                            amount=event.amount,
+                        ) == raw_reward_amount
+                ):
+                    event.counterparty = CPT_PENDLE
+                    event.event_type = HistoryEventType.RECEIVE
+                    event.event_subtype = HistoryEventSubType.REWARD
+                    event.notes = f'Claim {event.amount} {crypto_asset.symbol} reward from Pendle'
+                    matched_event_indices.add(idx)
+                    unmatched_amounts.remove(raw_reward_amount)
+                    break
+
+        pending_transforms = len(unmatched_amounts)
+        if len(raw_rewards_amounts) == 0 and len(matched_transfer_events) == 0:
+            pending_transforms = 1
+
+        for _ in range(pending_transforms):
+            context.action_items.append(ActionItem(
+                action='transform',
+                from_event_type=HistoryEventType.RECEIVE,
+                from_event_subtype=HistoryEventSubType.NONE,
+                location_label=context.transaction.from_address,
+                to_event_type=HistoryEventType.RECEIVE,
+                to_event_subtype=HistoryEventSubType.REWARD,
+                to_notes='Claim {amount} {symbol} reward from Pendle',
+                to_counterparty=CPT_PENDLE,
+                to_address=context.tx_log.address,
+            ))
+
+        # Some pendle markets emit empty reward arrays while still transferring rewards.
+        # In that case, classify plain receives from the emitting pool as rewards.
+        if len(raw_rewards_amounts) == 0 and len(matched_transfer_events) != 0:
+            for event in context.decoded_events:
+                if (
+                        event.address == context.tx_log.address and
+                        event.event_type == HistoryEventType.RECEIVE and
+                        event.event_subtype == HistoryEventSubType.NONE
+                ):
+                    crypto_asset = event.asset.resolve_to_crypto_asset()
+                    event.counterparty = CPT_PENDLE
+                    event.event_type = HistoryEventType.RECEIVE
+                    event.event_subtype = HistoryEventSubType.REWARD
+                    event.notes = f'Claim {event.amount} {crypto_asset.symbol} reward from Pendle'
 
         return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _decode_claim_rewards_by_topic(
+            self,
+            token: EvmToken | None,  # pylint: disable=unused-argument
+            tx_log: 'EvmTxReceiptLog',
+            transaction: 'EvmTransaction',
+            decoded_events: list['EvmEvent'],
+            action_items: list[ActionItem],
+            all_logs: list['EvmTxReceiptLog'],
+    ) -> EvmDecodingOutput:
+        if tx_log.address in self.pools:
+            return DEFAULT_EVM_DECODING_OUTPUT  # already handled via addresses_to_decoders
+
+        return self._decode_claim_rewards(DecoderContext(
+            tx_log=tx_log,
+            transaction=transaction,
+            decoded_events=decoded_events,
+            action_items=action_items,
+            all_logs=all_logs,
+        ))
 
     def _decode_redeem_interests(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode a Pendle redeem interests transaction."""
@@ -630,6 +709,12 @@ class PendleCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             PENDLE_SWAP_ADDRESS: (self._decode_pendle_swap,),
         } | dict.fromkeys(self.pools, (self._decode_claim_rewards,))
         | dict.fromkeys(self.sy_tokens, (self._decode_redeem_interests,)))
+
+    def decoding_rules(self) -> list[Callable]:
+        # Some old/expired pendle markets are missing from our cached pool mappings
+        # (api does not return them)
+        # Keep reward decoding resilient by also checking RedeemRewards by topic.
+        return [self._decode_claim_rewards_by_topic]
 
     @staticmethod
     def counterparties() -> tuple['CounterpartyDetails', ...]:
