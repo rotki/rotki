@@ -63,7 +63,7 @@ export enum PremiumFeature {
 
 export const PremiumFeatureCapability = z.object({
   enabled: z.boolean().default(false),
-  minimumTier: z.string().default('Free'),
+  minimumTier: z.string().nullable().default(null),
 });
 
 export type PremiumFeatureCapability = z.infer<typeof PremiumFeatureCapability>;

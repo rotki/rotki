@@ -82,10 +82,10 @@ describe('modules/premium/use-feature-access', () => {
       expect(get(graphsAccess.minimumTier)).toBe('Advanced');
     });
 
-    it('should return empty minimumTier when capabilities are not loaded', () => {
+    it('should return null minimumTier when capabilities are not loaded', () => {
       const { minimumTier } = useFeatureAccess(PremiumFeature.ETH_STAKING_VIEW);
 
-      expect(get(minimumTier)).toBe('');
+      expect(get(minimumTier)).toBeNull();
     });
 
     it('should return correct currentTier from capabilities', () => {

@@ -30,7 +30,7 @@ const props = defineProps<{
   ignoreLoading?: boolean;
   isPinned?: boolean;
   matchDisabled?: boolean;
-  matchMinimumTier?: string;
+  matchMinimumTier?: string | null;
   showRestore?: boolean;
   loading?: boolean;
 }>();

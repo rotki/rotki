@@ -8,11 +8,13 @@ export function usePremium(): Ref<boolean> {
 }
 
 interface UsePremiumHelperReturn {
+  currentTier: Readonly<Ref<string>>;
+  premium: Readonly<Ref<boolean>>;
   showGetPremiumButton: () => void;
 }
 
 export function usePremiumHelper(): UsePremiumHelperReturn {
-  const premium: Ref<boolean> = usePremium();
+  const { capabilities, premium } = storeToRefs(usePremiumStore());
 
   const { premiumUserLoggedIn } = useInterop();
 
@@ -20,7 +22,11 @@ export function usePremiumHelper(): UsePremiumHelperReturn {
     premiumUserLoggedIn(get(premium));
   };
 
+  const currentTier = computed<string>(() => get(capabilities)?.currentTier ?? '');
+
   return {
+    currentTier: readonly(currentTier),
+    premium: readonly(premium),
     showGetPremiumButton,
   };
 }

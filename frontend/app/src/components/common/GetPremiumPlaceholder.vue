@@ -1,20 +1,17 @@
 <script setup lang="ts">
 import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
-import { usePremium } from '@/composables/premium';
+import { usePremiumHelper } from '@/composables/premium';
 import { Routes } from '@/router/routes';
-import { usePremiumStore } from '@/store/session/premium';
 
 defineProps<{
   title: string;
   description?: string;
-  minimumTier?: string;
+  minimumTier?: string | null;
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const premium = usePremium();
-const { capabilities } = storeToRefs(usePremiumStore());
-const currentTier = computed<string>(() => get(capabilities)?.currentTier ?? '');
+const { currentTier, premium } = usePremiumHelper();
 </script>
 
 <template>
