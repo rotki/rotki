@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, TypeVar, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken, Nft
 from rotkehlchen.assets.utils import (
-    get_or_create_evm_token,
     token_normalized_value,
     token_normalized_value_decimals,
 )
@@ -330,77 +329,6 @@ class EvmTokens(ABC):  # noqa: B024
 
         return addresses_info
 
-    def _get_detected_tokens_goldrush(
-            self,
-            addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, list[Asset]]:
-        """Use GoldRush balance endpoint to discover tokens held by each address.
-
-        Only called when a GoldRush instance is configured on the node inquirer.
-        Contract addresses from GoldRush are checksummed before use.
-
-        Returns a dict mapping address to list of detected EvmToken assets.
-        """
-        goldrush = getattr(self.evm_inquirer, 'goldrush', None)
-        if goldrush is None:
-            return {}
-
-        chain_id = self.evm_inquirer.chain_id
-        result: dict[ChecksumEvmAddress, list[Asset]] = {}
-
-        for address in addresses:
-            try:
-                items = goldrush.get_token_balances(chain_id=chain_id, address=address)
-            except RemoteError as e:
-                log.error(
-                    f'GoldRush token detection failed for {address} on '
-                    f'{self.evm_inquirer.chain_name}: {e!s}',
-                )
-                continue
-
-            detected: list[Asset] = []
-            for item in items:
-                if item.get('type') == 'nft':
-                    continue
-
-                raw_address = item.get('contract_address')
-                if not raw_address:
-                    continue
-
-                try:
-                    checksummed = deserialize_evm_address(raw_address)
-                except DeserializationError:
-                    log.warning(
-                        f'GoldRush returned invalid contract address {raw_address!r} for '
-                        f'{address} on {self.evm_inquirer.chain_name}. Skipping.',
-                    )
-                    continue
-
-                if checksummed in self._get_token_exceptions():
-                    continue
-
-                try:
-                    token = get_or_create_evm_token(
-                        userdb=self.db,
-                        evm_address=checksummed,
-                        chain_id=chain_id,
-                        symbol=item.get('contract_ticker_symbol'),
-                        name=item.get('contract_name'),
-                        decimals=item.get('contract_decimals'),
-                        evm_inquirer=self.evm_inquirer,
-                    )
-                    detected.append(token)
-                except RemoteError as e:
-                    log.error(
-                        f'Failed to get or create EVM token {checksummed} '
-                        f'from GoldRush data: {e!s}',
-                    )
-                    continue
-
-            result[address] = detected
-
-        return result
-
     def _query_new_tokens(self, addresses: Sequence[ChecksumEvmAddress]) -> None:
         erc20_tokens, erc721_tokens = GlobalDBHandler.get_token_detection_data(
             chain_id=self.evm_inquirer.chain_id,
@@ -410,15 +338,6 @@ class EvmTokens(ABC):  # noqa: B024
             addresses=addresses,
             tokens_to_check=erc20_tokens,
         )
-        # Augment with GoldRush-discovered tokens (if API key is configured)
-        goldrush_tokens = self._get_detected_tokens_goldrush(addresses)
-        for address, tokens in goldrush_tokens.items():
-            existing = detected_erc20_tokens.setdefault(address, [])
-            existing_ids = {a.identifier for a in existing}
-            for token in tokens:
-                if token.identifier not in existing_ids:
-                    existing.append(token)
-
         all_detected_tokens = self._detect_erc721_tokens(
             addresses=addresses,
             tokens_to_check=erc721_tokens,

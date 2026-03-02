@@ -38,7 +38,6 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
-    from rotkehlchen.externalapis.goldrush import GoldRush
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -77,7 +76,6 @@ class PriceHistorian:
     _alchemy: 'Alchemy'
     _uniswapv2: 'UniswapV2Oracle'
     _uniswapv3: 'UniswapV3Oracle'
-    _goldrush: 'GoldRush'
     _oracles: Sequence[HistoricalPriceOracle] | None = None
     _oracle_instances: list[HistoricalPriceOracleInstance] | None = None
 
@@ -90,7 +88,6 @@ class PriceHistorian:
             alchemy: Optional['Alchemy'] = None,
             uniswapv2: Optional['UniswapV2Oracle'] = None,
             uniswapv3: Optional['UniswapV3Oracle'] = None,
-            goldrush: Optional['GoldRush'] = None,
     ) -> 'PriceHistorian':
         if PriceHistorian.__instance is not None:
             return PriceHistorian.__instance
@@ -111,8 +108,6 @@ class PriceHistorian:
         PriceHistorian._alchemy = alchemy
         PriceHistorian._uniswapv2 = uniswapv2
         PriceHistorian._uniswapv3 = uniswapv3
-        if goldrush is not None:
-            PriceHistorian._goldrush = goldrush
 
         return PriceHistorian.__instance
 
@@ -122,21 +117,8 @@ class PriceHistorian:
             "Oracles can't be empty or have repeated items"
         )
         instance = PriceHistorian()
-        active_oracles: list[HistoricalPriceOracle] = []
-        active_instances: list[HistoricalPriceOracleInstance] = []
-        for oracle in oracles:
-            attr = f'_{oracle!s}'
-            oracle_instance = getattr(instance, attr, None)
-            if oracle_instance is None:
-                log.debug(
-                    f'Skipping price oracle {oracle!s}: instance not available '
-                    f'(API key may not be configured)',
-                )
-                continue
-            active_oracles.append(oracle)
-            active_instances.append(oracle_instance)
-        instance._oracles = active_oracles
-        instance._oracle_instances = active_instances
+        instance._oracles = list(oracles)
+        instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in oracles]
 
     @staticmethod
     def _get_cached_price_or_query(

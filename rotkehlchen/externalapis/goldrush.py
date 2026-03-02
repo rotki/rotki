@@ -1,25 +1,18 @@
 import logging
 import time
 from collections.abc import Iterator
-from datetime import datetime
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 import gevent
 import requests
 from requests.auth import HTTPBasicAuth
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
 from rotkehlchen.chain.structures import TimestampOrBlockRange
-from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import ChainNotSupported, RemoteError
-from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
-from rotkehlchen.fval import FVal, ONE
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.types import (
@@ -31,7 +24,6 @@ from rotkehlchen.types import (
     EvmTransaction,
     EVMTxHash,
     ExternalService,
-    Price,
     Timestamp,
     deserialize_evm_tx_hash,
 )
@@ -384,143 +376,3 @@ class GoldRush(ExternalServiceWithApiKey, EtherscanLikeApi):
         """Not supported by GoldRush — raises RemoteError so _try_indexers tries next indexer."""
         raise RemoteError('GoldRush does not support L1 fee queries')
 
-    def get_token_balances(
-            self,
-            chain_id: ChainID,
-            address: ChecksumEvmAddress,
-    ) -> list[dict[str, Any]]:
-        """Get ERC-20 token balances for an address from GoldRush.
-
-        May raise:
-        - RemoteError if the API request fails
-        - ChainNotSupported if the chain is not in CHAINID_TO_GOLDRUSH_SLUG
-        """
-        slug = self._get_slug(chain_id)
-        return self._paginate(
-            path=f'/{slug}/address/{address}/balances_v2/',
-            params={'no-spam': 'true', 'nft': 'false'},
-        )
-
-    def get_nfts(
-            self,
-            chain_id: ChainID,
-            address: ChecksumEvmAddress,
-    ) -> list[dict[str, Any]]:
-        """Get NFTs held by an address from GoldRush.
-
-        May raise:
-        - RemoteError if the API request fails
-        - ChainNotSupported if the chain is not in CHAINID_TO_GOLDRUSH_SLUG
-        """
-        slug = self._get_slug(chain_id)
-        return self._paginate(
-            path=f'/{slug}/address/{address}/nfts_v2/',
-            params={'with_uncached': 'false'},
-        )
-
-    def get_historical_token_price(
-            self,
-            chain_id: ChainID,
-            contract_address: ChecksumEvmAddress,
-            from_ts: Timestamp,
-            to_ts: Timestamp,
-    ) -> list[tuple[Any, Price]]:
-        """Get daily historical USD prices for a token contract from GoldRush.
-
-        May raise:
-        - RemoteError if the API request fails
-        - ChainNotSupported if the chain is not in CHAINID_TO_GOLDRUSH_SLUG
-        """
-        slug = self._get_slug(chain_id)
-        from_date = datetime.utcfromtimestamp(from_ts).strftime('%Y-%m-%d')
-        to_date = datetime.utcfromtimestamp(to_ts).strftime('%Y-%m-%d')
-
-        items = self._paginate(
-            path=f'/pricing/historical_by_addresses_v2/{slug}/USD/{contract_address}/',
-            params={'from': from_date, 'to': to_date},
-        )
-
-        results: list[tuple[Any, Price]] = []
-        for item in items:
-            for price_entry in item.get('prices') or []:
-                try:
-                    entry_date = datetime.strptime(
-                        price_entry['date'], '%Y-%m-%dT%H:%M:%SZ',
-                    ).date()
-                    price = Price(FVal(price_entry['price']))
-                    results.append((entry_date, price))
-                except (KeyError, ValueError) as e:
-                    log.error(f'Failed to parse GoldRush price entry: {e!s}')
-                    continue
-
-        return results
-
-    def can_query_history(
-            self,
-            from_asset: Asset,
-            to_asset: Asset,  # noqa: ARG002  # used by interface
-            timestamp: Timestamp,  # noqa: ARG002  # used by interface
-            seconds: int | None = None,  # noqa: ARG002  # used by interface
-    ) -> bool:
-        """Return True only when from_asset is an EVM token and an API key is configured."""
-        if self._get_api_key() is None:
-            return False
-        return from_asset.is_evm_token()
-
-    def query_historical_price(
-            self,
-            from_asset: Asset,
-            to_asset: Asset,
-            timestamp: Timestamp,
-    ) -> Price:
-        """Query the historical price for an EVM token via GoldRush.
-
-        May raise:
-        - PriceQueryUnsupportedAsset if from_asset is not an EVM token
-        - NoPriceForGivenTimestamp if no price data is available
-        - RemoteError if the API request fails
-        """
-        try:
-            evm_token = from_asset.resolve_to_evm_token()
-        except (UnknownAsset, Exception) as e:
-            raise PriceQueryUnsupportedAsset(from_asset.identifier) from e
-
-        try:
-            chain_id = evm_token.chain_id
-            contract_address = evm_token.evm_address
-        except AttributeError as e:
-            raise PriceQueryUnsupportedAsset(from_asset.identifier) from e
-
-        query_date = datetime.utcfromtimestamp(timestamp).date()
-        price_entries = self.get_historical_token_price(
-            chain_id=chain_id,
-            contract_address=contract_address,
-            from_ts=timestamp,
-            to_ts=timestamp,
-        )
-
-        if not price_entries:
-            raise NoPriceForGivenTimestamp(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                time=timestamp,
-                rate_limited=False,
-            )
-
-        # Pick the entry closest to the requested date
-        best_entry = min(price_entries, key=lambda e: abs((e[0] - query_date).days))
-        usd_price = best_entry[1]
-
-        if usd_price == Price(FVal(0)):
-            raise NoPriceForGivenTimestamp(
-                from_asset=from_asset,
-                to_asset=to_asset,
-                time=timestamp,
-                rate_limited=False,
-            )
-
-        if to_asset == A_USD:
-            return usd_price
-
-        rate = Inquirer.find_price(from_asset=A_USD, to_asset=to_asset)
-        return Price(usd_price * (rate if rate != Price(FVal(0)) else ONE))

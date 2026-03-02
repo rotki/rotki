@@ -378,15 +378,6 @@ def test_get_transactions_internal_raises(database: 'DBHandler') -> None:
 
 # ─── unsupported chain handling ───────────────────────────────────────────────
 
-def test_get_token_balances_unsupported_chain(database: 'DBHandler') -> None:
-    """get_token_balances raises ChainNotSupported for unmapped chains."""
-    gr = make_goldrush(database)
-    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
-
-    with pytest.raises(ChainNotSupported):
-        gr.get_token_balances(chain_id=UNSUPPORTED_CHAIN, address=address)
-
-
 def test_get_transactions_unsupported_chain(database: 'DBHandler') -> None:
     """get_transactions raises ChainNotSupported for unmapped chains."""
     gr = make_goldrush(database)
@@ -400,48 +391,3 @@ def test_get_transactions_unsupported_chain(database: 'DBHandler') -> None:
         ))
 
 
-# ─── can_query_history ────────────────────────────────────────────────────────
-
-def test_can_query_history_no_api_key(database: 'DBHandler') -> None:
-    """can_query_history returns False when no API key is configured."""
-    from rotkehlchen.assets.asset import Asset
-    gr = make_goldrush(database)
-    mock_asset = MagicMock(spec=Asset)
-    mock_asset.is_evm_token.return_value = True
-
-    with patch.object(gr, '_get_api_key', return_value=None):
-        assert gr.can_query_history(
-            from_asset=mock_asset,
-            to_asset=mock_asset,
-            timestamp=1620000000,
-        ) is False
-
-
-def test_can_query_history_non_evm_token(database: 'DBHandler') -> None:
-    """can_query_history returns False for non-EVM tokens."""
-    from rotkehlchen.assets.asset import Asset
-    gr = make_goldrush(database)
-    mock_asset = MagicMock(spec=Asset)
-    mock_asset.is_evm_token.return_value = False
-
-    with patch.object(gr, '_get_api_key', return_value=ApiKey('test-key')):
-        assert gr.can_query_history(
-            from_asset=mock_asset,
-            to_asset=mock_asset,
-            timestamp=1620000000,
-        ) is False
-
-
-def test_can_query_history_evm_token_with_key(database: 'DBHandler') -> None:
-    """can_query_history returns True for EVM tokens when API key is configured."""
-    from rotkehlchen.assets.asset import Asset
-    gr = make_goldrush(database)
-    mock_asset = MagicMock(spec=Asset)
-    mock_asset.is_evm_token.return_value = True
-
-    with patch.object(gr, '_get_api_key', return_value=ApiKey('test-key')):
-        assert gr.can_query_history(
-            from_asset=mock_asset,
-            to_asset=mock_asset,
-            timestamp=1620000000,
-        ) is True
