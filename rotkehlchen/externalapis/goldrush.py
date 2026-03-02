@@ -176,7 +176,10 @@ class GoldRush(ExternalServiceWithApiKey, EtherscanLikeApi):
             path: str,
             params: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
-        """Collect all pages from a GoldRush paginated endpoint.
+        """Collect all pages from a GoldRush paginated endpoint (query-param pagination).
+
+        Used for balances, transfers, NFTs, and pricing endpoints which accept
+        `page-number` and `page-size` as query parameters.
 
         May raise:
         - RemoteError if any page request fails
@@ -189,6 +192,38 @@ class GoldRush(ExternalServiceWithApiKey, EtherscanLikeApi):
         while True:
             request_params['page-number'] = str(page_number)
             response = self._request(path=path, params=request_params)
+            data = response.get('data') or {}
+            items = data.get('items') or []
+            all_items.extend(items)
+
+            pagination = data.get('pagination') or {}
+            if not pagination.get('has_more', False):
+                break
+
+            page_number += 1
+
+        return all_items
+
+    def _paginate_v3_transactions(
+            self,
+            path: str,
+            params: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        """Collect all pages from a GoldRush transactions_v3 endpoint.
+
+        The v3 endpoint embeds the page number in the URL path
+        (`/transactions_v3/page/{page}/`) rather than as a query parameter.
+
+        May raise:
+        - RemoteError if any page request fails
+        """
+        all_items: list[dict[str, Any]] = []
+        page_number = 0
+        request_params = dict(params or {})
+        request_params['page-size'] = str(GOLDRUSH_PAGINATION_LIMIT)
+
+        while True:
+            response = self._request(path=f'{path}page/{page_number}/', params=request_params)
             data = response.get('data') or {}
             items = data.get('items') or []
             all_items.extend(items)
@@ -238,6 +273,10 @@ class GoldRush(ExternalServiceWithApiKey, EtherscanLikeApi):
         For 'txlistinternal', raises RemoteError since GoldRush has no internal tx endpoint
         (so _try_indexers falls through to the next indexer).
 
+        Supports block-range filtering via the `starting-block` and `ending-block`
+        query parameters. Timestamp ranges must be pre-converted to blocks by the
+        caller (e.g. via `maybe_timestamp_to_block_range`) before being passed here.
+
         May raise:
         - RemoteError if the action is 'txlistinternal', or if the API request fails
         - ChainNotSupported if the chain is not in CHAINID_TO_GOLDRUSH_SLUG
@@ -250,7 +289,19 @@ class GoldRush(ExternalServiceWithApiKey, EtherscanLikeApi):
             return
 
         slug = self._get_slug(chain_id)
-        items = self._paginate(path=f'/{slug}/address/{account}/transactions_v3/')
+        params: dict[str, Any] = {}
+
+        if isinstance(period_or_hash, TimestampOrBlockRange):
+            if period_or_hash.range_type == 'blocks':
+                params['starting-block'] = str(period_or_hash.from_value)
+                params['ending-block'] = str(period_or_hash.to_value)
+            # timestamp ranges should have been converted to blocks upstream;
+            # if not, we fall back to fetching all transactions
+
+        items = self._paginate_v3_transactions(
+            path=f'/{slug}/address/{account}/transactions_v3/',
+            params=params if params else None,
+        )
 
         transactions: list[EvmTransaction] = []
         for item in items:
@@ -282,12 +333,24 @@ class GoldRush(ExternalServiceWithApiKey, EtherscanLikeApi):
     ) -> Iterator[list[EVMTxHash]]:
         """Get ERC-20 transfer transaction hashes for an account from GoldRush.
 
+        Supports optional block range filtering via `starting-block` / `ending-block`
+        query parameters on the transfers_v2 endpoint.
+
         May raise:
         - RemoteError if the API request fails
         - ChainNotSupported if the chain is not in CHAINID_TO_GOLDRUSH_SLUG
         """
         slug = self._get_slug(chain_id)
-        items = self._paginate(path=f'/{slug}/address/{account}/transfers_v2/')
+        params: dict[str, Any] = {}
+        if from_block is not None:
+            params['starting-block'] = str(from_block)
+        if to_block is not None:
+            params['ending-block'] = str(to_block)
+
+        items = self._paginate(
+            path=f'/{slug}/address/{account}/transfers_v2/',
+            params=params if params else None,
+        )
 
         hashes: list[EVMTxHash] = []
         for item in items:

@@ -243,6 +243,124 @@ def test_goldrush_tx_to_etherscan_fmt_contract_creation() -> None:
     assert result['to'] == ''
 
 
+# ─── _paginate_v3_transactions ────────────────────────────────────────────────
+
+def test_paginate_v3_transactions_embeds_page_in_path(database: 'DBHandler') -> None:
+    """_paginate_v3_transactions calls the API with page number in the URL path."""
+    gr = make_goldrush(database)
+    items = [{'tx_hash': '0xabc'}]
+    page_response = _make_page_response(items=items, has_more=False, page_number=0)
+
+    with patch.object(gr, '_request', return_value=page_response) as mock_req:
+        gr._paginate_v3_transactions('/eth-mainnet/address/0x1234/transactions_v3/')
+
+    call_path = mock_req.call_args.kwargs['path']
+    assert 'page/0/' in call_path
+
+
+def test_paginate_v3_transactions_multi_page(database: 'DBHandler') -> None:
+    """_paginate_v3_transactions iterates pages via path-based pagination."""
+    gr = make_goldrush(database)
+    page0_items = [{'tx_hash': f'0x{i:04x}'} for i in range(100)]
+    page1_items = [{'tx_hash': f'0x{i:04x}'} for i in range(100, 150)]
+
+    page0_response = _make_page_response(items=page0_items, has_more=True, page_number=0)
+    page1_response = _make_page_response(items=page1_items, has_more=False, page_number=1)
+
+    call_count = 0
+
+    def mock_request(path: str, params: dict | None = None) -> dict:
+        nonlocal call_count
+        response = page0_response if call_count == 0 else page1_response
+        call_count += 1
+        return response
+
+    with patch.object(gr, '_request', side_effect=mock_request):
+        result = gr._paginate_v3_transactions(
+            '/eth-mainnet/address/0x1234/transactions_v3/',
+        )
+
+    assert len(result) == 150
+    assert call_count == 2
+
+
+# ─── get_transactions: block range filtering ──────────────────────────────────
+
+def test_get_transactions_passes_block_range(database: 'DBHandler') -> None:
+    """get_transactions passes starting-block/ending-block when given a block range."""
+    from rotkehlchen.chain.structures import TimestampOrBlockRange
+
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+    period = TimestampOrBlockRange(range_type='blocks', from_value=100, to_value=200)
+
+    with patch.object(gr, '_paginate_v3_transactions', return_value=[]) as mock_pag:
+        next(gr.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=address,
+            action='txlist',
+            period_or_hash=period,
+        ))
+
+    call_params = mock_pag.call_args.kwargs.get('params') or mock_pag.call_args.args[1] if len(mock_pag.call_args.args) > 1 else mock_pag.call_args.kwargs.get('params')
+    assert call_params is not None
+    assert call_params.get('starting-block') == '100'
+    assert call_params.get('ending-block') == '200'
+
+
+def test_get_transactions_no_filter_when_no_period(database: 'DBHandler') -> None:
+    """get_transactions passes no block params when period_or_hash is None."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+
+    with patch.object(gr, '_paginate_v3_transactions', return_value=[]) as mock_pag:
+        next(gr.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=address,
+            action='txlist',
+            period_or_hash=None,
+        ))
+
+    call_params = mock_pag.call_args.kwargs.get('params')
+    assert call_params is None
+
+
+# ─── get_token_transaction_hashes: block range filtering ──────────────────────
+
+def test_get_token_transaction_hashes_passes_block_range(database: 'DBHandler') -> None:
+    """get_token_transaction_hashes passes starting-block/ending-block params."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+
+    with patch.object(gr, '_paginate', return_value=[]) as mock_pag:
+        next(gr.get_token_transaction_hashes(
+            chain_id=ChainID.ETHEREUM,
+            account=address,
+            from_block=500,
+            to_block=1000,
+        ))
+
+    call_params = mock_pag.call_args.kwargs.get('params')
+    assert call_params is not None
+    assert call_params.get('starting-block') == '500'
+    assert call_params.get('ending-block') == '1000'
+
+
+def test_get_token_transaction_hashes_no_filter_when_no_blocks(database: 'DBHandler') -> None:
+    """get_token_transaction_hashes passes no block params when both are None."""
+    gr = make_goldrush(database)
+    address = '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c'
+
+    with patch.object(gr, '_paginate', return_value=[]) as mock_pag:
+        next(gr.get_token_transaction_hashes(
+            chain_id=ChainID.ETHEREUM,
+            account=address,
+        ))
+
+    call_params = mock_pag.call_args.kwargs.get('params')
+    assert call_params is None
+
+
 # ─── get_transactions: internal tx action raises ──────────────────────────────
 
 def test_get_transactions_internal_raises(database: 'DBHandler') -> None:

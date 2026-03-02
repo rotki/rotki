@@ -122,8 +122,21 @@ class PriceHistorian:
             "Oracles can't be empty or have repeated items"
         )
         instance = PriceHistorian()
-        instance._oracles = oracles
-        instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in oracles]
+        active_oracles: list[HistoricalPriceOracle] = []
+        active_instances: list[HistoricalPriceOracleInstance] = []
+        for oracle in oracles:
+            attr = f'_{oracle!s}'
+            oracle_instance = getattr(instance, attr, None)
+            if oracle_instance is None:
+                log.debug(
+                    f'Skipping price oracle {oracle!s}: instance not available '
+                    f'(API key may not be configured)',
+                )
+                continue
+            active_oracles.append(oracle)
+            active_instances.append(oracle_instance)
+        instance._oracles = active_oracles
+        instance._oracle_instances = active_instances
 
     @staticmethod
     def _get_cached_price_or_query(
