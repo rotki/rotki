@@ -54,6 +54,10 @@ const services = [
     name: 'defillama',
   },
   {
+    component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/GoldRushApiKey.vue')),
+    name: 'goldrush',
+  },
+  {
     component: defineAsyncComponent(() => import('@/modules/settings/api-keys/external/CoinGeckoApiKey.vue')),
     name: 'coingecko',
   },

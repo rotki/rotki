@@ -89,6 +89,7 @@ from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.etherscan import Etherscan
+from rotkehlchen.externalapis.goldrush import GoldRush
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.externalapis.routescan import Routescan
 from rotkehlchen.fval import FVal
@@ -406,6 +407,10 @@ class Rotkehlchen:
                         database=self.data.db,
                         msg_aggregator=self.msg_aggregator,
                     )),
+                    goldrush=(goldrush := GoldRush(
+                        database=self.data.db,
+                        msg_aggregator=self.msg_aggregator,
+                    )),
                 )),
                 premium=self.premium,
                 beacon_chain=self.beaconchain,
@@ -417,6 +422,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -427,6 +433,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -437,6 +444,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -447,6 +455,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -467,6 +476,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -477,6 +487,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -487,6 +498,7 @@ class Rotkehlchen:
                     etherscan=etherscan,
                     blockscout=blockscout,
                     routescan=routescan,
+                    goldrush=goldrush,
                 ),
                 premium=self.premium,
             ),
@@ -556,6 +568,7 @@ class Rotkehlchen:
             alchemy=self.alchemy,
             uniswapv2=(uniswap_v2_oracle := UniswapV2Oracle()),
             uniswapv3=(uniswap_v3_oracle := UniswapV3Oracle()),
+            goldrush=goldrush,
         )
         price_historian.set_oracles_order(settings.historical_price_oracles)
 

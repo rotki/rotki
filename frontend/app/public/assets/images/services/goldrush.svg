@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <linearGradient id="gr-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF8C00;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FFD700;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="200" height="200" rx="24" fill="url(#gr-grad)"/>
+  <text
+    x="100"
+    y="130"
+    font-family="Arial, sans-serif"
+    font-size="90"
+    font-weight="bold"
+    fill="white"
+    text-anchor="middle"
+    dominant-baseline="auto"
+  >GR</text>
+</svg>

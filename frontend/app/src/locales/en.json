@@ -2810,6 +2810,11 @@
       },
       "title": "Gnosis Pay"
     },
+    "goldrush": {
+      "description": "GoldRush provides unified blockchain data across 100+ chains. Used for transaction history, token detection, and historical prices.",
+      "hint": "Enter your GoldRush API key",
+      "title": "GoldRush (Covalent)"
+    },
     "google_calendar": {
       "access_token": "Access Token",
       "auth_failed": "Failed to start authentication flow",

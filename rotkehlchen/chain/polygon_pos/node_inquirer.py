@@ -23,6 +23,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.externalapis.blockscout import Blockscout
     from rotkehlchen.externalapis.etherscan import Etherscan
+    from rotkehlchen.externalapis.goldrush import GoldRush
     from rotkehlchen.externalapis.routescan import Routescan
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,7 @@ class PolygonPOSInquirer(EvmNodeInquirer):
             etherscan: 'Etherscan',
             blockscout: 'Blockscout',
             routescan: 'Routescan',
+            goldrush: 'GoldRush | None' = None,
             rpc_timeout: int = DEFAULT_RPC_TIMEOUT,
     ) -> None:
         contracts = EvmContracts[Literal[ChainID.POLYGON_POS]](chain_id=ChainID.POLYGON_POS)
@@ -47,6 +49,7 @@ class PolygonPOSInquirer(EvmNodeInquirer):
             etherscan=etherscan,
             blockscout=blockscout,
             routescan=routescan,
+            goldrush=goldrush,
             blockchain=SupportedBlockchain.POLYGON_POS,
             contracts=contracts,
             rpc_timeout=rpc_timeout,
