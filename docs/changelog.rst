@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11766` Value distribution graphs will now work correctly by fixing the schema types to match the backend response.
 * :bug:`-` Beefy Finance harvest call rewards will now be properly decoded as part of the beefy side of a transaction.
 * :bug:`-` Depositing via Pendle v3 router should be now properly decoded by rotki.
 * :bug:`-` Bridging ETH from mainnet to Optimism will no longer duplicate the event under some weird circumstances.
