@@ -203,20 +203,20 @@ def is_solana_token_nft(
     """Determine if a solana token is an NFT using the provided mint info and metadata.
 
     Uses the following heuristics to determine if the token is an NFT:
-    - the token_standard field in the metadata if present (only in Metaplex metadata)
     - if the decimals are not zero then it is not an NFT
     - if the decimals are zero and supply is one then it is an NFT
+    - the token_standard field in the metadata if present (only in Metaplex metadata)
     - if decimals are zero but supply is greater than one, check if the offchain metadata
       looks like a semi-fungible NFT.
 
     Returns a boolean indicating if the token is an NFT.
     """
-    if metadata.token_standard is not None:
-        return metadata.token_standard != TokenStandard.FUNGIBLE  # all other standards are NFTs
     if mint_info.decimals != 0:  # decimals > 0 is always a normal fungible token
         return False
     if mint_info.supply == 1:  # decimals = 0 and supply = 1 is always an NFT
         return True
+    if metadata.token_standard is not None:
+        return metadata.token_standard != TokenStandard.FUNGIBLE  # all other standards are NFTs
 
     # decimals == 0 and supply > 1 - could be either a semi-fungible (classed as NFT) or
     # simply a normal fungible token with zero decimals (rare but possible)
