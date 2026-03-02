@@ -367,9 +367,9 @@ class EvmTransactions(ABC):  # noqa: B024
             )
 
     @overload
-    def _query_and_save_internal_transactions_for_range_or_parent_hash(
+    def _query_and_save_internal_transactions_for_range(
             self,
-            period_or_hash: TimestampOrBlockRange | EVMTxHash,
+            period: TimestampOrBlockRange,
             address: ChecksumEvmAddress | None = None,
             location_string: str | None = None,
             update_ranges: bool = True,
@@ -378,9 +378,9 @@ class EvmTransactions(ABC):  # noqa: B024
         ...
 
     @overload
-    def _query_and_save_internal_transactions_for_range_or_parent_hash(
+    def _query_and_save_internal_transactions_for_range(
             self,
-            period_or_hash: TimestampOrBlockRange | EVMTxHash,
+            period: TimestampOrBlockRange,
             address: ChecksumEvmAddress | None = None,
             location_string: str | None = None,
             update_ranges: bool = True,
@@ -389,9 +389,9 @@ class EvmTransactions(ABC):  # noqa: B024
         ...
 
     @overload
-    def _query_and_save_internal_transactions_for_range_or_parent_hash(
+    def _query_and_save_internal_transactions_for_range(
             self,
-            period_or_hash: TimestampOrBlockRange | EVMTxHash,
+            period: TimestampOrBlockRange,
             address: ChecksumEvmAddress | None = None,
             location_string: str | None = None,
             update_ranges: bool = True,
@@ -399,132 +399,273 @@ class EvmTransactions(ABC):  # noqa: B024
     ) -> list[EVMTxHash] | None:
         ...
 
-    def _query_and_save_internal_transactions_for_range_or_parent_hash(
+    def _query_and_save_internal_transactions_for_range(
             self,
-            period_or_hash: TimestampOrBlockRange | EVMTxHash,
+            period: TimestampOrBlockRange,
             address: ChecksumEvmAddress | None = None,
             location_string: str | None = None,
             update_ranges: bool = True,
             return_queried_hashes: bool = False,
     ) -> list[EVMTxHash] | None:
-        """Helper function to abstract internal tx querying for different range types
-        or for a specific parent transaction hash.
-
-        If address is None, then etherscan query will return all internal transactions.
-
-        If update_ranges is True, updates the database tracking for this query range.
-        Otherwise, data is fetched without updating the query range.
-        """
-        query_period_or_hash: TimestampOrBlockRange | EVMTxHash
-        if isinstance(period_or_hash, TimestampOrBlockRange):
-            is_parent_hash_query = False
-            query_period_or_hash = self.evm_inquirer.maybe_timestamp_to_block_range(
-                period=period_or_hash,
-            )
-            queried_from_ts = Timestamp(period_or_hash.from_value) if period_or_hash.range_type == 'timestamps' else None  # noqa: E501
+        """Query internal txs for a time/block range and persist them incrementally."""
+        queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
+        parent_tx_timestamps: dict[EVMTxHash, Timestamp] = {}
+        if period.range_type == 'timestamps':
+            assert location_string, 'should always be given for timestamps'
+            queried_from_ts = Timestamp(period.from_value)
         else:
-            is_parent_hash_query = True
-            query_period_or_hash = period_or_hash
             queried_from_ts = None
 
-        parent_tx_timestamps: dict[EVMTxHash, Timestamp] = {}
-        parent_hash_internal_txs: list[EvmInternalTransaction] = []
+        for new_internal_txs in self.evm_inquirer.get_transactions(
+                account=address,
+                period_or_hash=self.evm_inquirer.maybe_timestamp_to_block_range(period=period),
+                action='txlistinternal',
+        ):
+            if len(internal_txs_with_timestamps := self._process_internal_transactions_batch(
+                new_internal_txs=new_internal_txs,
+                address=address,
+                parent_tx_timestamps=parent_tx_timestamps,
+                queried_hashes=queried_hashes,
+            )) == 0:
+                continue
+
+            with self.database.conn.write_ctx() as write_cursor:
+                self.dbevmtx.add_evm_internal_transactions(
+                    write_cursor=write_cursor,
+                    transactions=[entry[0] for entry in internal_txs_with_timestamps],
+                    relevant_address=None,
+                )
+
+            if queried_from_ts is None:
+                continue
+
+            for _, timestamp in internal_txs_with_timestamps:
+                queried_to_ts = Timestamp(max(queried_from_ts, timestamp))
+                log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
+                if update_ranges:  # update last queried time for address
+                    assert location_string is not None, 'should always be given for timestamps'
+                    with self.database.conn.write_ctx() as write_cursor:
+                        self.dbranges.update_used_query_range(
+                            write_cursor=write_cursor,
+                            location_string=location_string,
+                            queried_ranges=[(queried_from_ts, queried_to_ts)],
+                        )
+
+                self.msg_aggregator.add_message(
+                    message_type=WSMessageType.TRANSACTION_STATUS,
+                    data={
+                        'address': address,
+                        'chain': self.evm_inquirer.blockchain.value,
+                        'subtype': str(TransactionStatusSubType.EVM),
+                        'period': [period.from_value, timestamp],
+                        'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),
+                    },
+                )
+                queried_from_ts = queried_to_ts
+
+        return queried_hashes
+
+    @overload
+    def _query_and_save_internal_transactions_for_parent_hash(
+            self,
+            parent_tx_hash: EVMTxHash,
+            address: ChecksumEvmAddress | None = None,
+            return_queried_hashes: Literal[True] = True,
+    ) -> list[EVMTxHash]:
+        ...
+
+    @overload
+    def _query_and_save_internal_transactions_for_parent_hash(
+            self,
+            parent_tx_hash: EVMTxHash,
+            address: ChecksumEvmAddress | None = None,
+            return_queried_hashes: Literal[False] = False,
+    ) -> None:
+        ...
+
+    @overload
+    def _query_and_save_internal_transactions_for_parent_hash(
+            self,
+            parent_tx_hash: EVMTxHash,
+            address: ChecksumEvmAddress | None = None,
+            return_queried_hashes: bool = False,
+    ) -> list[EVMTxHash] | None:
+        ...
+
+    def _query_and_save_internal_transactions_for_parent_hash(
+            self,
+            parent_tx_hash: EVMTxHash,
+            address: ChecksumEvmAddress | None = None,
+            return_queried_hashes: bool = False,
+    ) -> list[EVMTxHash] | None:
+        """Query internal txs for a parent hash and atomically replace DB internals."""
+        parent_hash_internal_txs, queried_hashes = (
+            self._query_internal_transactions_for_parent_hash(
+                parent_tx_hash=parent_tx_hash,
+                address=address,
+                return_queried_hashes=return_queried_hashes,
+            )
+        )
+        with self.database.user_write() as write_cursor:
+            self._replace_internal_transactions_for_parent_hash(
+                write_cursor=write_cursor,
+                parent_tx_hash=parent_tx_hash,
+                transactions=parent_hash_internal_txs,
+            )
+        return queried_hashes
+
+    def _query_internal_transactions(
+            self,
+            query_period_or_hash: TimestampOrBlockRange | EVMTxHash,
+            address: ChecksumEvmAddress | None,
+            return_queried_hashes: bool,
+            known_parent_timestamps: dict[EVMTxHash, Timestamp] | None = None,
+    ) -> tuple[list[tuple[EvmInternalTransaction, Timestamp]], list[EVMTxHash] | None]:
+        """Query internal transactions and normalize parent-transaction state.
+
+        This helper is shared by both range and parent-hash flows and has no
+        side effects on internal-transactions persistence.
+        For each non-zero-value internal transaction it ensures the parent
+        transaction exists in the DB via `get_or_create_transaction`.
+        """
+        internal_txs_with_timestamps: list[tuple[EvmInternalTransaction, Timestamp]] = []
+        parent_tx_timestamps: dict[EVMTxHash, Timestamp] = (
+            known_parent_timestamps.copy() if known_parent_timestamps is not None else {}
+        )
         queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
         for new_internal_txs in self.evm_inquirer.get_transactions(
                 account=address,
                 period_or_hash=query_period_or_hash,
                 action='txlistinternal',
         ):
-            if len(new_internal_txs) == 0:
-                continue
+            internal_txs_with_timestamps.extend(self._process_internal_transactions_batch(
+                new_internal_txs=new_internal_txs,
+                address=address,
+                parent_tx_timestamps=parent_tx_timestamps,
+                queried_hashes=queried_hashes,
+            ))
 
-            existing_hashes: set[EVMTxHash] = set()
-            if queried_hashes is not None:
-                parent_hashes = [
-                    internal_tx.parent_tx_hash
-                    for internal_tx in new_internal_txs
-                    if internal_tx.value != 0
-                ]
-                if len(parent_hashes) != 0:
-                    with self.database.conn.read_ctx() as cursor:
-                        existing_hashes = self._get_existing_evm_tx_hashes(
-                            cursor=cursor,
-                            tx_hashes=parent_hashes,
-                        )
+        return internal_txs_with_timestamps, queried_hashes
 
-            for internal_tx in new_internal_txs:
-                if internal_tx.value == 0:
-                    continue  # Only reason we need internal is for ether transfer. Ignore 0
+    def _process_internal_transactions_batch(
+            self,
+            new_internal_txs: list[EvmInternalTransaction],
+            address: ChecksumEvmAddress | None,
+            parent_tx_timestamps: dict[EVMTxHash, Timestamp],
+            queried_hashes: list[EVMTxHash] | None,
+    ) -> list[tuple[EvmInternalTransaction, Timestamp]]:
+        """Normalize a fetched internal-tx batch and return txs with parent timestamps."""
+        if len(new_internal_txs) == 0:
+            return []
 
-                # make sure internal transaction parent transactions are in the DB.
-                # new_internal_txs potentially contains internal txs of different parents.
-                if internal_tx.parent_tx_hash not in parent_tx_timestamps:
-                    with self.database.conn.read_ctx() as cursor:
-                        tx, _ = self.get_or_create_transaction(
-                            cursor=cursor,
-                            tx_hash=internal_tx.parent_tx_hash,
-                            relevant_address=address,
-                        )
-                    if queried_hashes is not None and tx.tx_hash not in existing_hashes:
-                        queried_hashes.append(tx.tx_hash)
-                        existing_hashes.add(tx.tx_hash)
-
-                    timestamp = tx.timestamp
-                    parent_tx_timestamps[internal_tx.parent_tx_hash] = timestamp
-                else:
-                    timestamp = parent_tx_timestamps[internal_tx.parent_tx_hash]
-
-                if is_parent_hash_query:
-                    parent_hash_internal_txs.append(internal_tx)
-                else:
-                    with self.database.conn.write_ctx() as write_cursor:
-                        self.dbevmtx.add_evm_internal_transactions(
-                            write_cursor=write_cursor,
-                            transactions=[internal_tx],
-                            relevant_address=None,  # no need to re-associate address
-                        )
-
-                if queried_from_ts is not None:
-                    assert location_string, 'should always be given for timestamps'
-                    assert isinstance(period_or_hash, TimestampOrBlockRange), 'timestamp ranges only'  # noqa: E501
-                    queried_to_ts = Timestamp(max(queried_from_ts, timestamp))
-                    log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
-                    if update_ranges:  # update last queried time for address
-                        with self.database.conn.write_ctx() as write_cursor:
-                            self.dbranges.update_used_query_range(
-                                write_cursor=write_cursor,
-                                location_string=location_string,
-                                queried_ranges=[(queried_from_ts, queried_to_ts)],
-                            )
-
-                    self.msg_aggregator.add_message(
-                        message_type=WSMessageType.TRANSACTION_STATUS,
-                        data={
-                            'address': address,
-                            'chain': self.evm_inquirer.blockchain.value,
-                            'subtype': str(TransactionStatusSubType.EVM),
-                            'period': [period_or_hash.from_value, timestamp],
-                            'status': str(TransactionStatusStep.QUERYING_INTERNAL_TRANSACTIONS),
-                        },
-                    )
-                    queried_from_ts = queried_to_ts
-
-        if is_parent_hash_query:
-            assert not isinstance(query_period_or_hash, TimestampOrBlockRange)
-            parent_tx_hash = query_period_or_hash
-            with self.database.user_write() as write_cursor:
-                self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash(
-                    write_cursor=write_cursor,
-                    parent_tx_hash=parent_tx_hash,
-                    chain_id=self.evm_inquirer.chain_id,
+        existing_hashes: set[EVMTxHash] = set()
+        if queried_hashes is not None and len(parent_hashes := [
+            internal_tx.parent_tx_hash
+            for internal_tx in new_internal_txs
+            if internal_tx.value != 0
+        ]) != 0:
+            with self.database.conn.read_ctx() as cursor:
+                existing_hashes = self._get_existing_evm_tx_hashes(
+                    cursor=cursor,
+                    tx_hashes=parent_hashes,
                 )
-                if len(parent_hash_internal_txs) != 0:
-                    self.dbevmtx.add_evm_internal_transactions(
-                        write_cursor=write_cursor,
-                        transactions=parent_hash_internal_txs,
-                        relevant_address=None,
+
+        internal_txs_with_timestamps: list[tuple[EvmInternalTransaction, Timestamp]] = []
+        for internal_tx in new_internal_txs:
+            if internal_tx.value == 0:
+                continue  # Only reason we need internal is for ether transfer. Ignore 0
+
+            # make sure internal transaction parent transactions are in the DB.
+            # new_internal_txs potentially contains internal txs of different parents.
+            if internal_tx.parent_tx_hash not in parent_tx_timestamps:
+                with self.database.conn.read_ctx() as cursor:
+                    tx, _ = self.get_or_create_transaction(
+                        cursor=cursor,
+                        tx_hash=internal_tx.parent_tx_hash,
+                        relevant_address=address,
                     )
-        return queried_hashes
+                if queried_hashes is not None and tx.tx_hash not in existing_hashes:
+                    queried_hashes.append(tx.tx_hash)
+                    existing_hashes.add(tx.tx_hash)
+
+                timestamp = tx.timestamp
+                parent_tx_timestamps[internal_tx.parent_tx_hash] = timestamp
+            else:
+                timestamp = parent_tx_timestamps[internal_tx.parent_tx_hash]
+
+            internal_txs_with_timestamps.append((internal_tx, timestamp))
+
+        return internal_txs_with_timestamps
+
+    @overload
+    def _query_internal_transactions_for_parent_hash(
+            self,
+            parent_tx_hash: EVMTxHash,
+            address: ChecksumEvmAddress | None = None,
+            return_queried_hashes: Literal[True] = True,
+            known_parent_timestamps: dict[EVMTxHash, Timestamp] | None = None,
+    ) -> tuple[list[EvmInternalTransaction], list[EVMTxHash]]:
+        ...
+
+    @overload
+    def _query_internal_transactions_for_parent_hash(
+            self,
+            parent_tx_hash: EVMTxHash,
+            address: ChecksumEvmAddress | None = None,
+            return_queried_hashes: Literal[False] = False,
+            known_parent_timestamps: dict[EVMTxHash, Timestamp] | None = None,
+    ) -> tuple[list[EvmInternalTransaction], None]:
+        ...
+
+    @overload
+    def _query_internal_transactions_for_parent_hash(
+            self,
+            parent_tx_hash: EVMTxHash,
+            address: ChecksumEvmAddress | None = None,
+            return_queried_hashes: bool = False,
+            known_parent_timestamps: dict[EVMTxHash, Timestamp] | None = None,
+    ) -> tuple[list[EvmInternalTransaction], list[EVMTxHash] | None]:
+        ...
+
+    def _query_internal_transactions_for_parent_hash(
+            self,
+            parent_tx_hash: EVMTxHash,
+            address: ChecksumEvmAddress | None = None,
+            return_queried_hashes: bool = False,
+            known_parent_timestamps: dict[EVMTxHash, Timestamp] | None = None,
+    ) -> tuple[list[EvmInternalTransaction], list[EVMTxHash] | None]:
+        """Fetch internal txs for a parent hash without replacing DB internals.
+
+        This method only performs querying/deserialization and parent-tx
+        normalization. The caller decides when/how to persist using
+        `_replace_internal_transactions_for_parent_hash`.
+        """
+        internal_txs_with_timestamps, queried_hashes = self._query_internal_transactions(
+            query_period_or_hash=parent_tx_hash,
+            address=address,
+            return_queried_hashes=return_queried_hashes,
+            known_parent_timestamps=known_parent_timestamps,
+        )
+        return [entry[0] for entry in internal_txs_with_timestamps], queried_hashes
+
+    def _replace_internal_transactions_for_parent_hash(
+            self,
+            write_cursor: 'DBCursor',
+            parent_tx_hash: EVMTxHash,
+            transactions: list[EvmInternalTransaction],
+    ) -> None:
+        """Atomically replace all internal tx rows for a single parent tx hash."""
+        self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash(
+            write_cursor=write_cursor,
+            parent_tx_hash=parent_tx_hash,
+            chain_id=self.evm_inquirer.chain_id,
+        )
+        if len(transactions) != 0:
+            self.dbevmtx.add_evm_internal_transactions(
+                write_cursor=write_cursor,
+                transactions=transactions,
+                relevant_address=None,
+            )
 
     def _get_internal_transactions_for_ranges(
             self,
@@ -547,9 +688,9 @@ class EvmTransactions(ABC):  # noqa: B024
         for query_start_ts, query_end_ts in ranges_to_query:
             log.debug(f'Querying {self.evm_inquirer.chain_name} internal transactions for {address} -> {query_start_ts} - {query_end_ts}')  # noqa: E501
             try:
-                self._query_and_save_internal_transactions_for_range_or_parent_hash(
+                self._query_and_save_internal_transactions_for_range(
                     address=address,
-                    period_or_hash=TimestampOrBlockRange(
+                    period=TimestampOrBlockRange(
                         range_type='timestamps',
                         from_value=query_start_ts,
                         to_value=query_end_ts,
@@ -936,8 +1077,8 @@ class EvmTransactions(ABC):  # noqa: B024
             )
 
         # else query again and save the DB cache to avoid querying it again
-        self._query_and_save_internal_transactions_for_range_or_parent_hash(
-            period_or_hash=tx_hash,
+        self._query_and_save_internal_transactions_for_parent_hash(
+            parent_tx_hash=tx_hash,
         )
         with self.database.user_write() as write_cursor:
             self.database.set_dynamic_cache(
@@ -1052,9 +1193,9 @@ class EvmTransactions(ABC):  # noqa: B024
                 transaction, tx_receipt = self.get_or_create_transaction(cursor=cursor, tx_hash=tx_hash, relevant_address=None)  # noqa: E501
 
             if transaction.to_address is not None:  # internal transactions only through contracts  # noqa: E501
-                self._query_and_save_internal_transactions_for_range_or_parent_hash(
+                self._query_and_save_internal_transactions_for_parent_hash(
                     address=None,  # get all internal transactions for the parent hash
-                    period_or_hash=tx_hash,
+                    parent_tx_hash=tx_hash,
                 )
         return tx_receipt
 
@@ -1227,9 +1368,9 @@ class EvmTransactions(ABC):  # noqa: B024
             update_ranges=False,
             return_queried_hashes=return_queried_hashes,
         )
-        internal_hashes = self._query_and_save_internal_transactions_for_range_or_parent_hash(
+        internal_hashes = self._query_and_save_internal_transactions_for_range(
             address=address,
-            period_or_hash=period,
+            period=period,
             location_string=location_string,
             update_ranges=False,
             return_queried_hashes=return_queried_hashes,
