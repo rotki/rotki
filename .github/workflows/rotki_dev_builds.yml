@@ -331,6 +331,9 @@ jobs:
     needs:
       - build-docker
     environment: docker
+    env:
+      REGCTL: v0.11.2
+      REGCTL_SUM: 'e1d68886548b9fae0ed5744932a67ef34dbf16dd7e2445604a7fe84fb53c7aeb77844b498908914c183b58c3501ac2b6a015d7981acf152e8a0b4c8fbaa207e8'
     steps:
       - name: Download digests
         uses: actions/download-artifact@v4
@@ -348,6 +351,25 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Cache regctl
+        uses: actions/cache@v4
+        with:
+          path: regctl-linux-amd64
+          key: ${{ runner.os }}-regctl-${{ env.REGCTL }}
+
+      - name: Setup regctl
+        run: |
+          if [[ ! -f "regctl-linux-amd64" ]]; then
+            echo "downloading regctl ${REGCTL}"
+            curl -LO --fail-with-body "https://github.com/regclient/regclient/releases/download/${REGCTL}/regctl-linux-amd64"
+          fi
+          chmod u+x regctl-linux-amd64
+          echo "${REGCTL_SUM} regctl-linux-amd64" > regctl-linux-amd64.sha512
+          if [[ ! $(sha512sum -c regctl-linux-amd64.sha512) ]]; then
+            echo checksum failed
+            exit 1
+          fi
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -357,6 +379,21 @@ jobs:
           tags: |
             type=schedule,pattern=nightly
             type=edge,branch=build
+
+      - name: Get previous image digests
+        id: old_digests
+        continue-on-error: true
+        env:
+          REPOSITORY: ${{ github.repository }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          OLD_INDEX=$(./regctl-linux-amd64 manifest digest "${REPOSITORY}:${VERSION}" 2>/dev/null || echo "")
+          echo "index=${OLD_INDEX}" >> "$GITHUB_OUTPUT"
+          if [[ -n "${OLD_INDEX}" ]]; then
+            CHILDREN=$(./regctl-linux-amd64 manifest get "${REPOSITORY}:${VERSION}" --format raw-body \
+              | jq -r '.manifests[].digest' 2>/dev/null | tr '\n' ' ')
+            echo "children=${CHILDREN}" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Create manifest list and push
         working-directory: ${{ runner.temp }}/digests
@@ -372,6 +409,20 @@ jobs:
           VERSION: ${{ steps.meta.outputs.version }}
         run: |
           docker buildx imagetools inspect "${REPOSITORY}:${VERSION}"
+
+      - name: Delete previous image
+        if: steps.old_digests.outputs.index != ''
+        env:
+          REPOSITORY: ${{ github.repository }}
+          OLD_INDEX: ${{ steps.old_digests.outputs.index }}
+          CHILDREN: ${{ steps.old_digests.outputs.children }}
+        run: |
+          for digest in ${CHILDREN}; do
+            echo "Deleting child manifest ${digest}"
+            ./regctl-linux-amd64 manifest delete "${REPOSITORY}@${digest}" --ignore-missing
+          done
+          echo "Deleting index ${OLD_INDEX}"
+          ./regctl-linux-amd64 manifest delete "${REPOSITORY}@${OLD_INDEX}" --ignore-missing
 
   notify:
     name: 'Success check'

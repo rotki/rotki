@@ -15,8 +15,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: docker
     env:
-      REGCTL: v0.8.0
-      REGCTL_SUM: 'df25ceaadf190ec73804023657673128a62d909cca12ccd7a9a727a0b6df84b846b00a89ae581bf179528d74dce6a12fb8b7f5e55e546615b75e0a5e5c56c227'
+      REGCTL: v0.11.2
+      REGCTL_SUM: 'e1d68886548b9fae0ed5744932a67ef34dbf16dd7e2445604a7fe84fb53c7aeb77844b498908914c183b58c3501ac2b6a015d7981acf152e8a0b4c8fbaa207e8'
     steps:
       - name: Login to DockerHub
         uses: docker/login-action@v3
