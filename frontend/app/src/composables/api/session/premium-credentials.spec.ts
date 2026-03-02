@@ -127,6 +127,30 @@ describe('composables/api/session/premium-credentials', () => {
       expect(result.graphsView?.enabled).toBeUndefined();
     });
 
+    it('drops invalid keys and keeps valid ones', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/premium/capabilities`, () =>
+          HttpResponse.json({
+            result: {
+              ethStakingView: { enabled: true, minimumTier: 'Lite' },
+              graphsView: 'not-an-object',
+              historyEventsLimit: 'not-a-number',
+              currentTier: 'Basic',
+            },
+            message: '',
+          })),
+      );
+
+      const { getPremiumCapabilities } = usePremiumCredentialsApi();
+      const result = await getPremiumCapabilities();
+
+      expect(result.ethStakingView?.enabled).toBe(true);
+      expect(result.ethStakingView?.minimumTier).toBe('Lite');
+      expect(result.currentTier).toBe('Basic');
+      expect(result.graphsView).toBeUndefined();
+      expect(result.historyEventsLimit).toBeUndefined();
+    });
+
     it('throws error on failure', async () => {
       server.use(
         http.get(`${backendUrl}/api/1/premium/capabilities`, () =>
