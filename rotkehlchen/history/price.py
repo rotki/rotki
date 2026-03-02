@@ -117,7 +117,7 @@ class PriceHistorian:
             "Oracles can't be empty or have repeated items"
         )
         instance = PriceHistorian()
-        instance._oracles = list(oracles)
+        instance._oracles = oracles
         instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in oracles]
 
     @staticmethod
