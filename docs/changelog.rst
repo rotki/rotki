@@ -14,6 +14,7 @@ Changelog
 * :bug:`-` Curve deposits with add liquidity + stake will now be properly decoded.
 * :bug:`-` Curve deposits via intermediate pools will now be properly decoded.
 * :bug:`-` cowswap swaps using both versions of the monerium tokens will now be properly decoded.
+* :bug:`-` Repulling EVM transactions should not duplicate ETH events under specific conditions.
 * :bug:`11777` Redecoding a single EVM transaction will no longer remove existing transaction data if indexers are temporarily unavailable.
 * :bug:`11708` Users can now mark Solana tokens as spam in addition to EVM tokens.
 * :bug:`11709` History events page will now properly refresh after marking an asset as spam or ignoring it from the context menu.
