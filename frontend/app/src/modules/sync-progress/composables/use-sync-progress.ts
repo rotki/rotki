@@ -81,13 +81,13 @@ export function useSyncProgress(): UseSyncProgressReturn {
   const eventsStore = useEventsQueryStatusStore();
   const historyStore = useHistoryStore();
 
-  const { queryStatus: txQueryStatus } = toRefs(txStore);
-  const { queryStatus: eventsQueryStatus } = toRefs(eventsStore);
+  const { queryStatus: txQueryStatus } = storeToRefs(txStore);
+  const { queryStatus: eventsQueryStatus } = storeToRefs(eventsStore);
   // Use decodingSyncStatus for sync progress - it's not reset by fetchUndecodedTransactionsBreakdown
   const {
     decodingSyncStatus: rawDecodingStatus,
     protocolCacheStatus: rawProtocolCacheStatus,
-  } = toRefs(historyStore);
+  } = storeToRefs(historyStore);
 
   const chains = useChainProgress(txQueryStatus);
 

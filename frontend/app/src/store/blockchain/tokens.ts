@@ -146,17 +146,13 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     }
   });
 
-  const { useIsTaskRunning } = useTaskStore();
+  const { isTaskRunning } = useTaskStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
 
-  const detectionStatus = computed(() => {
+  const detectionStatus = computed<Record<string, boolean>>(() => {
     const isDetecting: Record<string, boolean> = {};
     get(txEvmChains).forEach(({ id }) => {
-      isDetecting[id] = get(
-        useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-          chain: id,
-        }),
-      );
+      isDetecting[id] = isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, { chain: id });
     });
 
     return isDetecting;

@@ -11,7 +11,7 @@ import { getPublicProtocolImagePath } from '@/utils/file';
 export const useAirdropsMetadata = createSharedComposable(() => {
   const { fetchAirdropsMetadata } = useDefiApi();
 
-  const { connected } = toRefs(useMainStore());
+  const { connected } = storeToRefs(useMainStore());
   const loading = ref<boolean>(false);
 
   const metadata: Ref<ProtocolMetadata[]> = asyncComputed<ProtocolMetadata[]>(

@@ -22,7 +22,7 @@ function regenerateReport() {
 const mainDialogOpen = ref<boolean>(initialOpen);
 
 const reportsStore = useReportsStore();
-const { actionableItems } = toRefs(reportsStore);
+const { actionableItems } = storeToRefs(reportsStore);
 
 const actionableItemsLength = computed(() => {
   let total = 0;
