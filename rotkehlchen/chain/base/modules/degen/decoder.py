@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.base.modules.degen.constants import (
+    CLAIM_AIRDROP_1_CONTRACT,
     CLAIM_AIRDROP_2_CONTRACT,
     CLAIM_AIRDROP_3_CONTRACT,
     CPT_DEGEN,
@@ -18,6 +19,14 @@ class DegenDecoder(MerkleClaimDecoderInterface):
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return {
+            CLAIM_AIRDROP_1_CONTRACT: (
+                self._decode_indexed_merkle_claim,
+                CPT_DEGEN,  # counterparty
+                DEGEN_TOKEN_ID,  # token id
+                18,  # token decimals
+                'DEGEN from Degen airdrop 1',  # notes suffix
+                'degen1',
+            ),
             CLAIM_AIRDROP_2_CONTRACT: (
                 self._decode_indexed_merkle_claim,
                 CPT_DEGEN,  # counterparty
