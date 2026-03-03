@@ -2047,7 +2047,7 @@ def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_
             asset=Asset(f'eip155:100/erc20:{gauge_address}'),
             amount=FVal(withdraw_amount),
             location_label=gnosis_accounts[0],
-            notes=f'Return {withdraw_amount} crvUSDsDAI-gauge after withdrawing from {gauge_address} curve gauge',  # noqa: E501
+            notes=f'Return {withdraw_amount} crvUSDsDAI-gauge to withdraw from {gauge_address} curve gauge',  # noqa: E501
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
         ), EvmEvent(

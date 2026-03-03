@@ -105,7 +105,7 @@ class BalancerCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoder
                 from_event_subtype = HistoryEventSubType.NONE
                 to_event_type = HistoryEventType.SPEND
                 to_event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                to_notes = f'Return {amount} {gauge_asset.symbol} after withdrawing from {self.counterparty} gauge'  # noqa: E501
+                to_notes = f'Return {amount} {gauge_asset.symbol} to withdraw from {self.counterparty} gauge'  # noqa: E501
 
                 event.counterparty = self.counterparty
                 event.event_type = HistoryEventType.WITHDRAWAL

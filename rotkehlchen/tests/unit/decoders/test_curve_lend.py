@@ -829,7 +829,7 @@ def test_withdraw_from_lending_vault_gauge(
             asset=Asset('eip155:42161/erc20:0x6ba9bF35158dCB0dC9F71CFe1EED9D5c75cd3836'),
             amount=FVal(return_and_withdrawn_amount),
             location_label=user_address,
-            notes=f'Return {return_and_withdrawn_amount} cvcrvUSD-gauge after withdrawing from curve lending vault gauge',  # noqa: E501
+            notes=f'Return {return_and_withdrawn_amount} cvcrvUSD-gauge to withdraw from curve lending vault gauge',  # noqa: E501
             counterparty=CPT_CURVE,
             address=ZERO_ADDRESS,
         ), EvmEvent(
