@@ -778,7 +778,7 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts):
     assert events == expected_events
 
 
-# @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xECCf11f03CEfe8A68bb01CAF66e76CEeFeaAEe5e']])
 def test_swap_gnosis_monerium(gnosis_inquirer, gnosis_accounts):
     """The annoying problem with monerium's multiple versions messing with the decoder matching"""
@@ -793,7 +793,7 @@ def test_swap_gnosis_monerium(gnosis_inquirer, gnosis_accounts):
             asset=Asset('eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),
             amount=FVal(send_amount := '15'),
             location_label=(user_address := gnosis_accounts[0]),
-            notes=f'Swap {send_amount} EURe in a cowswap market order',
+            notes=f'Swap {send_amount} EURe in a cowswap limit order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmSwapEvent(
@@ -805,7 +805,7 @@ def test_swap_gnosis_monerium(gnosis_inquirer, gnosis_accounts):
             asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
             amount=FVal(receive_amount := '0.056204042821142175'),
             location_label=user_address,
-            notes=f'Receive {receive_amount} GNO as the result of a cowswap market order',
+            notes=f'Receive {receive_amount} GNO as the result of a cowswap limit order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
