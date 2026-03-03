@@ -2,6 +2,8 @@ import logging
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any
 
+from eth_utils import to_checksum_address
+
 from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
@@ -11,6 +13,8 @@ from rotkehlchen.assets.utils import (
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -136,7 +140,8 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         If `expected_amount` or `expected_asset` are provided, only matches receive events
         with those exact values when multiple receives occur in transactions.
         """
-        spend_events, receive_events, other_receive_events = [], [], []
+        spend_events, unmatched_receive_events = [], []
+        receive_events, other_receive_events = [], []
         is_withdrawal = False
 
         # process spend events and determine transaction type
@@ -166,13 +171,34 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE
             ):
-                if (
-                        expected_amounts_and_assets is None or
-                        (event.amount, event.asset) in expected_amounts_and_assets
-                ):
+                unmatched_receive_events.append(event)
+
+        for event in unmatched_receive_events:
+            if expected_amounts_and_assets is not None:
+                if (event.amount, event.asset) in expected_amounts_and_assets:
                     receive_events.append(event)
                 else:
                     other_receive_events.append(event)
+                continue
+
+            if is_withdrawal is True:
+                receive_events.append(event)
+                continue
+
+            if (received_asset := event.asset.resolve_to_crypto_asset()).is_evm_token() and (
+                (
+                    evm_received_asset := received_asset.resolve_to_evm_token()
+                ).evm_address in self.vaults or
+                evm_received_asset.evm_address == transaction.to_address or
+                evm_received_asset.protocol == CPT_BEEFY_FINANCE or
+                (
+                    event.address == ZERO_ADDRESS and
+                    evm_received_asset.symbol.lower().startswith(('moo', 'cow', 'rcow'))
+                )
+            ):
+                receive_events.append(event)
+            else:
+                other_receive_events.append(event)
 
         if len(spend_events) == 0 or len(receive_events) == 0:
             log.error(f'Unable to find both spend and receive events for Beefy transaction {transaction}')  # noqa: E501
@@ -194,6 +220,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         # Also decode any reward event from calling harvest() on a strategy
         # See https://docs.beefy.finance/developer-documentation/strategy-contract#chargefees
         if len(other_receive_events) > 0:
+            reward_event_indices = set()
             with self.base.database.conn.read_ctx() as cursor:
                 tx_logs = tx_receipt.logs if (tx_receipt := DBEvmTx(self.base.database).get_receipt(  # noqa: E501
                     cursor=cursor,
@@ -218,11 +245,26 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                             event.event_subtype = HistoryEventSubType.REWARD
                             event.notes = f'Receive {event.amount} {resolved_asset.symbol} as Beefy strategy harvest call reward'  # noqa: E501
                             receive_events.append(event)
+                            reward_event_indices.add(event.sequence_index)
                             break
                     else:
                         log.error(f'Failed to find beefy strategy harvest call reward event in transaction {transaction}')  # noqa: E501
 
                     break
+
+            for event in other_receive_events:
+                if (
+                    event.sequence_index in reward_event_indices or
+                    is_withdrawal is True or
+                    event.address in {None, ZERO_ADDRESS}
+                ):
+                    continue
+
+                resolved_asset = event.asset.resolve_to_crypto_asset()
+                event.counterparty = CPT_BEEFY_FINANCE
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.notes = f'Receive {event.amount} {resolved_asset.symbol} as Beefy strategy harvest call reward'  # noqa: E501
+                receive_events.append(event)
 
         maybe_reshuffle_events(
             ordered_events=spend_events + receive_events,
@@ -283,6 +325,21 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_vault_activity(self, context: DecoderContext) -> EvmDecodingOutput:
+        if (
+            context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER or
+            context.tx_log.address != context.transaction.to_address
+        ):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if len(context.tx_log.topics) < 3:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        if ZERO_ADDRESS in (bytes_to_address(context.tx_log.topics[1]), bytes_to_address(context.tx_log.topics[2])):  # noqa: E501
+            return EvmDecodingOutput(matched_counterparty=CPT_BEEFY_FINANCE)
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     def reload_data(self) -> Mapping['ChecksumEvmAddress', tuple[Any, ...]] | None:
         if should_update_protocol_cache(
             userdb=self.base.database,
@@ -303,15 +360,18 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                     log.error(f'Failed to load Beefy vault from cache: {info}')
                     continue
 
-                self.vaults[string_to_evm_address(vault[0])] = (
-                    string_to_evm_address(vault[1]),
+                self.vaults[string_to_evm_address(to_checksum_address(vault[0]))] = (
+                    string_to_evm_address(to_checksum_address(vault[1])),
                     vault[2] == '1',  # is_legacy flag
                 )
 
         return self.addresses_to_decoders()
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {self.zap_contract_address: (self._decode_zap_deposits_and_withdrawals,)}
+        return {
+            self.zap_contract_address: (self._decode_zap_deposits_and_withdrawals,),
+            **dict.fromkeys(self.vaults, (self._decode_vault_activity,)),
+        }
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return dict.fromkeys(self.vaults, CPT_BEEFY_FINANCE)

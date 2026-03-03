@@ -6,6 +6,7 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useHistoryStore } from '@/store/history';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -36,6 +37,8 @@ interface UseUnmatchedAssetMovementsReturn {
   loading: Ref<boolean>;
   ignoredLoading: Ref<boolean>;
   autoMatchLoading: ComputedRef<boolean>;
+  autoMatchMinimumTier: ComputedRef<string | null>;
+  isAutoMatchAllowed: ComputedRef<boolean>;
   fetchUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<void>;
   matchAssetMovement: (assetMovementId: number, matchedEventIds: number[]) => Promise<ActionStatus>;
   refreshUnmatchedAssetMovements: (skipIgnored?: boolean) => Promise<void>;
@@ -61,6 +64,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     triggerAssetMovementMatching,
   } = useAssetMovementMatchingApi();
   const { signalEventsModified } = useHistoryStore();
+  const { allowed: isAssetMovementMatchingAllowed, minimumTier: assetMovementMatchingMinimumTier } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
   const isTaskRunning = useIsTaskRunning(TaskType.MATCH_ASSET_MOVEMENTS);
   const autoMatchLoading = logicOr(triggerAutoMatchLoading, isTaskRunning);
@@ -163,7 +167,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   };
 
   const triggerAssetMovementAutoMatching = async (): Promise<void> => {
-    if (get(isTaskRunning))
+    if (!get(isAssetMovementMatchingAllowed) || get(isTaskRunning))
       return;
 
     set(triggerAutoMatchLoading, true);
@@ -193,7 +197,9 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
   return {
     autoMatchLoading,
+    autoMatchMinimumTier: assetMovementMatchingMinimumTier,
     fetchUnmatchedAssetMovements,
+    isAutoMatchAllowed: isAssetMovementMatchingAllowed,
     ignoredCount,
     ignoredLoading,
     ignoredMovements,

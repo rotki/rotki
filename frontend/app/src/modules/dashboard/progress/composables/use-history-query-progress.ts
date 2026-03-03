@@ -27,6 +27,7 @@ interface UseHistoryQueryProgressReturn {
 function getTransactionStatusDescription(status: TransactionsQueryStatus, t: ReturnType<typeof useI18n>['t']): string {
   const statusDescriptions: Record<TransactionsQueryStatus, string> = {
     [TransactionsQueryStatus.ACCOUNT_CHANGE]: t('dashboard.history_query_indicator.transaction_status.querying_transactions_started'),
+    [TransactionsQueryStatus.CANCELLED]: t('dashboard.history_query_indicator.transaction_status.cancelled'),
     [TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED]: t('dashboard.history_query_indicator.transaction_status.decoding_transactions_finished'),
     [TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED]: t('dashboard.history_query_indicator.transaction_status.decoding_transactions_started'),
     [TransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS]: t('dashboard.history_query_indicator.transaction_status.querying_evm_tokens_transactions'),
@@ -41,6 +42,7 @@ function getTransactionStatusDescription(status: TransactionsQueryStatus, t: Ret
 
 function getEventStatusDescription(status: HistoryEventsQueryStatus, t: ReturnType<typeof useI18n>['t']): string {
   const statusDescriptions: Record<HistoryEventsQueryStatus, string> = {
+    [HistoryEventsQueryStatus.CANCELLED]: t('dashboard.history_query_indicator.event_status.cancelled'),
     [HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED]: t('dashboard.history_query_indicator.event_status.querying_events_finished'),
     [HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED]: t('dashboard.history_query_indicator.event_status.querying_events_started'),
     [HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE]: t('dashboard.history_query_indicator.event_status.querying_events_status_update'),
@@ -60,6 +62,9 @@ interface EventProgressData {
 }
 
 function isTransactionActive(status: TxQueryStatusData): boolean {
+  if (status.status === TransactionsQueryStatus.CANCELLED)
+    return false;
+
   if (status.subtype === 'bitcoin') {
     return status.status !== TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
   }
@@ -67,6 +72,9 @@ function isTransactionActive(status: TxQueryStatusData): boolean {
 }
 
 function isTransactionFinished(status: TxQueryStatusData): boolean {
+  if (status.status === TransactionsQueryStatus.CANCELLED)
+    return true;
+
   if (status.subtype === 'bitcoin') {
     return status.status === TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
   }
@@ -109,14 +117,17 @@ function createEventProgress(
   };
 }
 
+function isEventFinished(status: HistoryEventsQueryData): boolean {
+  return status.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED
+    || status.status === HistoryEventsQueryStatus.CANCELLED;
+}
+
 function calculateProgressMetrics(
   txStatuses: TxQueryStatusData[],
   eventStatuses: HistoryEventsQueryData[],
 ): { completedSteps: number; totalItems: number; percentage: number } {
   const finishedTxItems = txStatuses.filter(isTransactionFinished).length;
-  const finishedEventItems = eventStatuses.filter(
-    status => status.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED,
-  ).length;
+  const finishedEventItems = eventStatuses.filter(isEventFinished).length;
 
   const completedSteps = finishedTxItems + finishedEventItems;
   const totalItems = txStatuses.length + eventStatuses.length;
@@ -154,9 +165,7 @@ export function useHistoryQueryProgress(): UseHistoryQueryProgressReturn {
     }
 
     // Check for active event
-    const activeEventStatus = eventStatuses.find(
-      status => status.status !== HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED,
-    );
+    const activeEventStatus = eventStatuses.find(status => !isEventFinished(status));
 
     if (activeEventStatus) {
       const { currentOperation, currentOperationData } = createEventProgress(activeEventStatus, t);

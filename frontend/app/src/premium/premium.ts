@@ -5,7 +5,7 @@ import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { app } from '@/main';
 import { logger } from '@/utils/logging';
 
-const PREMIUM_COMPONENTS_VERSION = 27;
+const PREMIUM_COMPONENTS_VERSION = 28;
 
 type PremiumLibrary = {
   install: (app: App) => void;

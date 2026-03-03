@@ -1,24 +1,33 @@
 import type { ComputedRef, Ref } from 'vue';
 
-interface UseQueryStatusStoreReturn<T> {
+interface QueryStatusStateReturn<T> {
   queryStatus: Ref<Record<string, T>>;
   isAllFinished: ComputedRef<boolean>;
+  markCancelled: (key: string, cancelledStatus: T) => void;
   removeQueryStatus: (key: string) => void;
   resetQueryStatus: () => void;
 }
 
-export function useQueryStatusStore<T>(isStatusFinished: (item: T) => boolean, createKey: (item: T) => string): UseQueryStatusStoreReturn<T> {
+export function createQueryStatusState<T>(isStatusFinished: (item: T) => boolean, createKey: (item: T) => string): QueryStatusStateReturn<T> {
   const queryStatus = ref<Record<string, T>>({});
 
   const resetQueryStatus = (): void => {
     set(queryStatus, {});
   };
 
+  const markCancelled = (key: string, cancelledStatus: T): void => {
+    const statuses = { ...get(queryStatus) };
+    if (statuses[key]) {
+      statuses[key] = cancelledStatus;
+      set(queryStatus, statuses);
+    }
+  };
+
   const isAllFinished = computed<boolean>(() => {
     const statuses = get(queryStatus);
-    const addresses = Object.keys(statuses);
+    const keys = Object.keys(statuses);
 
-    return addresses.every((address: string) => isStatusFinished(statuses[address]));
+    return keys.every((key: string) => isStatusFinished(statuses[key]));
   });
 
   const removeQueryStatus = (key: string): void => {
@@ -28,6 +37,7 @@ export function useQueryStatusStore<T>(isStatusFinished: (item: T) => boolean, c
 
   return {
     isAllFinished,
+    markCancelled,
     queryStatus,
     removeQueryStatus,
     resetQueryStatus,

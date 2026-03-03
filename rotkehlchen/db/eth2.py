@@ -806,7 +806,7 @@ class DBEth2:
         if they can be found. Optionally limit to only events for the specified block numbers.
         """
         log.debug('Entered combining of blocks with tx events')
-        query = (
+        relay_query = (
             """WITH mev_rewards AS (
                 SELECT A_H.location_label, A_S.is_exit_or_blocknumber, A_S.validator_index FROM
                 history_events A_H JOIN eth_staking_events_info A_S ON A_H.identifier = A_S.identifier
@@ -818,21 +818,53 @@ class DBEth2:
             AND mev.location_label = B_H.location_label WHERE B_H.asset = ? AND B_H.type = ?
             AND B_H.subtype = ? AND mev.validator_index IS NOT NULL"""  # noqa: E501
         )
-        bindings: list[int | str] = [
+        fallback_query = (
+            """WITH block_productions AS (
+                SELECT A_H.location_label, A_S.is_exit_or_blocknumber, A_S.validator_index FROM
+                history_events A_H JOIN eth_staking_events_info A_S ON A_H.identifier = A_S.identifier
+            WHERE A_H.subtype = ? AND NOT EXISTS (
+                SELECT 1 FROM history_events M_H
+                JOIN eth_staking_events_info M_S ON M_H.identifier = M_S.identifier
+                WHERE M_H.subtype = ? AND M_S.validator_index = A_S.validator_index
+                AND M_S.is_exit_or_blocknumber = A_S.is_exit_or_blocknumber
+            ))
+            SELECT B_H.identifier, B_T.block_number, B_H.notes, B_T.tx_hash, blocks.validator_index FROM evm_transactions B_T
+            JOIN chain_events_info B_E ON B_T.tx_hash = B_E.tx_ref
+            JOIN history_events B_H ON B_E.identifier = B_H.identifier
+            JOIN block_productions blocks ON blocks.is_exit_or_blocknumber = B_T.block_number
+            AND blocks.location_label = B_T.from_address WHERE B_H.asset = ? AND B_H.type = ?
+            AND B_H.subtype = ?"""  # noqa: E501
+        )
+        relay_bindings: list[int | str] = [
             HistoryEventSubType.MEV_REWARD.serialize(),
             A_ETH.identifier,
             HistoryEventType.RECEIVE.serialize(),
             HistoryEventSubType.NONE.serialize(),
         ]
-        queries_and_bindings = []
+        fallback_bindings: list[int | str] = [
+            HistoryEventSubType.BLOCK_PRODUCTION.serialize(),
+            HistoryEventSubType.MEV_REWARD.serialize(),
+            A_ETH.identifier,
+            HistoryEventType.RECEIVE.serialize(),
+            HistoryEventSubType.NONE.serialize(),
+        ]
+        queries_and_bindings: list[tuple[str, list[int | str]]] = []
         if block_numbers is not None and len(block_numbers) > 0:
             for chunk, placeholders in get_query_chunks(data=block_numbers):
-                queries_and_bindings.append((
-                    f'{query} AND B_T.block_number IN ({placeholders})',
-                    bindings + list(chunk),
+                queries_and_bindings.extend((
+                    (
+                        f'{relay_query} AND B_T.block_number IN ({placeholders})',
+                        relay_bindings + list(chunk),
+                    ), (
+                        f'{fallback_query} AND B_T.block_number IN ({placeholders})',
+                        fallback_bindings + list(chunk),
+                    ),
                 ))
         else:
-            queries_and_bindings = [(query, bindings)]
+            queries_and_bindings = [
+                (relay_query, relay_bindings),
+                (fallback_query, fallback_bindings),
+            ]
 
         with self.db.conn.read_ctx() as cursor:
             changes = [

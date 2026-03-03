@@ -1,15 +1,16 @@
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/messaging/types';
-import { useQueryStatusStore } from '@/store/history/query-status/index';
+import { createQueryStatusState } from '@/store/history/query-status/index';
 import { millisecondsToSeconds } from '@/utils/date';
 
 export const useEventsQueryStatusStore = defineStore('history/events-query-status', () => {
   const createKey = ({ location, name }: Pick<HistoryEventsQueryData, 'location' | 'name'>): string => location + name;
 
   const isStatusFinished = (item: HistoryEventsQueryData): boolean =>
-    item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED;
+    item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED
+    || item.status === HistoryEventsQueryStatus.CANCELLED;
 
-  const { isAllFinished, queryStatus, removeQueryStatus, resetQueryStatus }
-    = useQueryStatusStore<HistoryEventsQueryData>(isStatusFinished, createKey);
+  const { isAllFinished, markCancelled, queryStatus, removeQueryStatus, resetQueryStatus }
+    = createQueryStatusState<HistoryEventsQueryData>(isStatusFinished, createKey);
 
   const initializeQueryStatus = (data: { location: string; name: string }[]): void => {
     resetQueryStatus();
@@ -33,6 +34,10 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
     const status = { ...get(queryStatus) };
     const key = createKey(data);
 
+    // Guard: don't overwrite cancelled entries
+    if (status[key]?.status === HistoryEventsQueryStatus.CANCELLED)
+      return;
+
     status[key] = {
       ...status[key],
       ...data,
@@ -40,10 +45,19 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
     set(queryStatus, status);
   };
 
+  const markLocationCancelled = ({ location, name }: Pick<HistoryEventsQueryData, 'location' | 'name'>): void => {
+    const key = createKey({ location, name });
+    const existing = get(queryStatus)[key];
+    if (existing) {
+      markCancelled(key, { ...existing, status: HistoryEventsQueryStatus.CANCELLED });
+    }
+  };
+
   return {
     initializeQueryStatus,
     isAllFinished,
     isStatusFinished,
+    markLocationCancelled,
     queryStatus,
     removeQueryStatus,
     resetQueryStatus,

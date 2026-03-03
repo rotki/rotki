@@ -13,11 +13,14 @@ const { getChainName } = useSupportedChains();
 
 const chainName = getChainName(computed(() => item.chain));
 
+const isCancelled = computed<boolean>(() => item.cancelled);
 const isComplete = computed<boolean>(() => item.processed >= item.total);
 const isPending = computed<boolean>(() => item.processed === 0 && item.total > 0);
-const isInProgress = computed<boolean>(() => item.processed > 0 && item.processed < item.total);
+const isInProgress = computed<boolean>(() => !get(isCancelled) && item.processed > 0 && item.processed < item.total);
 
 const statusIcon = computed<string>(() => {
+  if (get(isCancelled))
+    return 'lu-check';
   if (get(isComplete))
     return 'lu-check';
   if (get(isPending))
@@ -26,6 +29,8 @@ const statusIcon = computed<string>(() => {
 });
 
 const statusColor = computed<string>(() => {
+  if (get(isCancelled))
+    return 'text-rui-warning';
   if (get(isComplete))
     return 'text-rui-success';
   if (get(isPending))
@@ -34,6 +39,8 @@ const statusColor = computed<string>(() => {
 });
 
 const statusText = computed<string>(() => {
+  if (get(isCancelled))
+    return t('sync_progress.status.cancelled');
   if (get(isComplete))
     return t('sync_progress.status.complete');
   if (get(isPending))
@@ -41,7 +48,9 @@ const statusText = computed<string>(() => {
   return t('sync_progress.status.decoding');
 });
 
-const progressColor = computed<'success' | 'secondary' | 'primary'>(() => {
+const progressColor = computed<'success' | 'warning' | 'secondary' | 'primary'>(() => {
+  if (get(isCancelled))
+    return 'warning';
   if (get(isComplete))
     return 'success';
   if (get(isPending))
@@ -50,6 +59,8 @@ const progressColor = computed<'success' | 'secondary' | 'primary'>(() => {
 });
 
 const statusBorderColor = computed<string>(() => {
+  if (get(isCancelled))
+    return 'border-l-rui-warning';
   if (get(isComplete))
     return 'border-l-rui-success';
   if (get(isInProgress))

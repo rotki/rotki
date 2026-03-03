@@ -313,6 +313,144 @@ describe('useSyncProgress', () => {
     });
   });
 
+  describe('cancellation handling', () => {
+    it('should become COMPLETE when all items are cancelled', () => {
+      setupTxStore([
+        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+      ]);
+
+      const txStore = useTxQueryStatusStore();
+      txStore.markAddressCancelled({ address: '0x123', chain: 'eth' });
+
+      setupEventsStore([
+        createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE),
+      ]);
+
+      const eventsStore = useEventsQueryStatusStore();
+      eventsStore.markLocationCancelled({ location: 'kraken', name: 'Kraken' });
+
+      const { phase } = useSyncProgress();
+      expect(get(phase)).toBe(SyncPhase.COMPLETE);
+    });
+
+    it('should count cancelled locations in completedLocations', () => {
+      setupEventsStore([
+        createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE),
+        createEventsStatus('binance', 'Binance', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED),
+      ]);
+
+      const eventsStore = useEventsQueryStatusStore();
+      eventsStore.markLocationCancelled({ location: 'kraken', name: 'Kraken' });
+
+      const { completedLocations, totalLocations } = useSyncProgress();
+      expect(get(totalLocations)).toBe(2);
+      expect(get(completedLocations)).toBe(2);
+    });
+
+    it('should count cancelled accounts in completedAccounts', () => {
+      setupTxStore([
+        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS),
+        createEvmTxStatus('0x456', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+      ]);
+
+      const txStore = useTxQueryStatusStore();
+      txStore.markAddressCancelled({ address: '0x123', chain: 'eth' });
+
+      const { completedAccounts, totalAccounts } = useSyncProgress();
+      expect(get(totalAccounts)).toBe(2);
+      expect(get(completedAccounts)).toBe(2);
+    });
+
+    it('should sort cancelled locations between pending and complete', () => {
+      setupEventsStore([
+        createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED),
+        createEventsStatus('binance', 'Binance', HistoryEventsQueryStatus.QUERYING_EVENTS_STATUS_UPDATE),
+        createEventsStatus('coinbase', 'Coinbase', HistoryEventsQueryStatus.QUERYING_EVENTS_STARTED),
+      ]);
+
+      const eventsStore = useEventsQueryStatusStore();
+      eventsStore.markLocationCancelled({ location: 'coinbase', name: 'Coinbase' });
+
+      const { locations } = useSyncProgress();
+      const locationsValue = get(locations);
+
+      expect(locationsValue[0].status).toBe(LocationStatus.QUERYING);
+      expect(locationsValue[1].status).toBe(LocationStatus.CANCELLED);
+      expect(locationsValue[2].status).toBe(LocationStatus.COMPLETE);
+    });
+  });
+
+  describe('decoding cancellation handling', () => {
+    it('should mark decoding as cancelled', () => {
+      const historyStore = useHistoryStore();
+      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      historyStore.markDecodingCancelled('eth');
+
+      const { decoding } = useSyncProgress();
+      const decodingValue = get(decoding);
+
+      expect(decodingValue).toHaveLength(1);
+      expect(decodingValue[0].cancelled).toBe(true);
+    });
+
+    it('should treat cancelled decoding as done for phase calculation', () => {
+      setupTxStore([
+        createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
+      ]);
+
+      const historyStore = useHistoryStore();
+      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      historyStore.markDecodingCancelled('eth');
+
+      const { phase } = useSyncProgress();
+      expect(get(phase)).toBe(SyncPhase.COMPLETE);
+    });
+
+    it('should include cancelled decoding in hasCancelled', () => {
+      const historyStore = useHistoryStore();
+      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      historyStore.markDecodingCancelled('eth');
+
+      const { hasCancelled, hasCancelledDecoding } = useSyncProgress();
+      expect(get(hasCancelledDecoding)).toBe(true);
+      expect(get(hasCancelled)).toBe(true);
+    });
+
+    it('should treat cancelled decoding as 100% for overall progress', () => {
+      const historyStore = useHistoryStore();
+      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      historyStore.markDecodingCancelled('eth');
+
+      const { overallProgress } = useSyncProgress();
+      // Only decoding activity, cancelled = 100%
+      expect(get(overallProgress)).toBe(100);
+    });
+  });
+
+  describe('protocol cache cancellation handling', () => {
+    it('should mark protocol cache as cancelled', () => {
+      const historyStore = useHistoryStore();
+      historyStore.setProtocolCacheStatus(createProtocolCacheStatus('eth', 'uniswap', 200, 100));
+      historyStore.markAllProtocolCacheCancelled();
+
+      const { protocolCache } = useSyncProgress();
+      const protocolCacheValue = get(protocolCache);
+
+      expect(protocolCacheValue).toHaveLength(1);
+      expect(protocolCacheValue[0].cancelled).toBe(true);
+    });
+
+    it('should include cancelled protocol cache in hasCancelled', () => {
+      const historyStore = useHistoryStore();
+      historyStore.setProtocolCacheStatus(createProtocolCacheStatus('eth', 'uniswap', 200, 100));
+      historyStore.markAllProtocolCacheCancelled();
+
+      const { hasCancelled, hasCancelledProtocolCache } = useSyncProgress();
+      expect(get(hasCancelledProtocolCache)).toBe(true);
+      expect(get(hasCancelled)).toBe(true);
+    });
+  });
+
   describe('canDismiss', () => {
     it('should be false when syncing', () => {
       setupTxStore([

@@ -108,6 +108,20 @@ describe('modules/amount-display/composables/use-asset-value', () => {
     });
   });
 
+  describe('historic price', () => {
+    it('should not fallback to current price when historic price is unavailable', () => {
+      const { price, value } = useAssetValue({
+        amount: bigNumberify(2),
+        asset: 'ETH',
+        timestamp: { ms: 1700000000000 },
+      });
+
+      // Historic price not found → should return zero, not the current price (2000)
+      expect(get(price).toNumber()).toBe(0);
+      expect(get(value).toNumber()).toBe(0);
+    });
+  });
+
   describe('loading', () => {
     it('should return false when no timestamp', () => {
       const { loading } = useAssetValue({

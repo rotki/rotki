@@ -11,11 +11,19 @@ const { t } = useI18n({ useScope: 'global' });
 const showCompleted = ref<boolean>(false);
 
 const inProgressCache = computed<ProtocolCacheProgress[]>(() =>
-  protocolCache.filter(p => p.processed < p.total),
+  protocolCache.filter(p => p.processed < p.total && !p.cancelled),
 );
 
 const completedCache = computed<ProtocolCacheProgress[]>(() =>
-  protocolCache.filter(p => p.processed >= p.total),
+  protocolCache.filter(p => p.processed >= p.total || p.cancelled),
+);
+
+const hasCancelledItems = computed<boolean>(() =>
+  get(completedCache).some(p => p.cancelled),
+);
+
+const completedIconColor = computed<string>(() =>
+  get(hasCancelledItems) ? 'text-rui-warning' : 'text-rui-success',
 );
 
 const hasInProgress = computed<boolean>(() => get(inProgressCache).length > 0);
@@ -47,7 +55,7 @@ function toggleCompleted(): void {
       >
         <RuiIcon
           name="lu-circle-check"
-          class="text-rui-success"
+          :class="completedIconColor"
           size="16"
         />
         <span>{{ t('sync_progress.completed_protocol_cache', { count: completedCount }, completedCount) }}</span>
@@ -67,7 +75,7 @@ function toggleCompleted(): void {
         >
           <RuiIcon
             name="lu-circle-check"
-            class="text-rui-success"
+            :class="completedIconColor"
             size="16"
           />
           <span>{{ t('sync_progress.completed_protocol_cache', { count: completedCount }, completedCount) }}</span>

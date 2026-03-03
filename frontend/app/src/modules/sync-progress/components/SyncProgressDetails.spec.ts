@@ -16,6 +16,8 @@ const {
   mockCompletedChains,
   mockCompletedLocations,
   mockDecoding,
+  mockHasCancelledDecoding,
+  mockHasCancelledProtocolCache,
   mockLocations,
   mockProtocolCache,
   mockTotalChains,
@@ -27,6 +29,8 @@ const {
     mockCompletedChains: ref<number>(0),
     mockCompletedLocations: ref<number>(0),
     mockDecoding: ref<DecodingProgress[]>([]),
+    mockHasCancelledDecoding: ref<boolean>(false),
+    mockHasCancelledProtocolCache: ref<boolean>(false),
     mockLocations: ref<LocationProgress[]>([]),
     mockProtocolCache: ref<ProtocolCacheProgress[]>([]),
     mockTotalChains: ref<number>(0),
@@ -40,6 +44,8 @@ vi.mock('../composables/use-sync-progress', () => ({
     completedChains: mockCompletedChains,
     completedLocations: mockCompletedLocations,
     decoding: mockDecoding,
+    hasCancelledDecoding: mockHasCancelledDecoding,
+    hasCancelledProtocolCache: mockHasCancelledProtocolCache,
     locations: mockLocations,
     protocolCache: mockProtocolCache,
     totalChains: mockTotalChains,
@@ -58,6 +64,7 @@ describe('modules/sync-progress/components/SyncProgressDetails', () => {
         status: i < completed ? AddressStatus.COMPLETE : AddressStatus.PENDING,
         subtype: AddressSubtype.EVM,
       })),
+      cancelled: 0,
       chain,
       completed,
       inProgress: 0,
@@ -71,8 +78,9 @@ describe('modules/sync-progress/components/SyncProgressDetails', () => {
     return { location, name, status };
   }
 
-  function createDecodingProgress(chain: string, processed: number, total: number): DecodingProgress {
+  function createDecodingProgress(chain: string, processed: number, total: number, cancelled = false): DecodingProgress {
     return {
+      cancelled,
       chain,
       processed,
       progress: total > 0 ? Math.round((processed / total) * 100) : 0,
@@ -119,6 +127,8 @@ describe('modules/sync-progress/components/SyncProgressDetails', () => {
     set(mockTotalChains, 0);
     set(mockCompletedLocations, 0);
     set(mockTotalLocations, 0);
+    set(mockHasCancelledDecoding, false);
+    set(mockHasCancelledProtocolCache, false);
   }
 
   beforeEach(() => {
@@ -232,6 +242,16 @@ describe('modules/sync-progress/components/SyncProgressDetails', () => {
       set(mockDecoding, [createDecodingProgress('eth', 100, 100)]);
       wrapper = createWrapper();
 
+      const icons = wrapper.findAll('[data-testid="icon"]');
+      expect(icons.some(icon => icon.text() === 'lu-check')).toBe(true);
+    });
+
+    it('should count cancelled decoding as complete', () => {
+      set(mockDecoding, [createDecodingProgress('eth', 50, 100, true)]);
+      wrapper = createWrapper();
+
+      // 1/1 should show because cancelled counts as completed
+      expect(wrapper.text()).toContain('1/1');
       const icons = wrapper.findAll('[data-testid="icon"]');
       expect(icons.some(icon => icon.text() === 'lu-check')).toBe(true);
     });

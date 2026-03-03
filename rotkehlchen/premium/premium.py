@@ -57,6 +57,7 @@ KUBERNETES_PLATFORM_KEY: Final = 'kubernetes'
 CONTAINER_FALLBACK_ID_FILE: Final = Path('/opt/rotki/.container-id')
 DOCKER_ENTRYPOINT_PATH: Final = '/opt/rotki/entrypoint.py'
 UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX: Final = 'unknown-container'
+ASSET_MOVEMENT_MATCHING_CAPABILITY: Final = 'asset_movement_matching'
 
 
 class RemoteMetadata(NamedTuple):
@@ -72,6 +73,8 @@ class RemoteMetadata(NamedTuple):
 
 class UserLimits(TypedDict):
     """User limits for rotki premium subscription."""
+    # User's current subscription tier name
+    current_tier: str
     # Maximum number of devices that can be registered with the premium account
     limit_of_devices: int
     # Maximum number of profit and loss events that can be processed
@@ -88,6 +91,33 @@ class UserLimits(TypedDict):
     eth_staking_view: bool
     graphs_view: bool
     event_analysis_view: bool
+    asset_movement_matching: bool
+    # minimum tier required to unlock each capability
+    unlocks: dict[str, str]
+
+
+class PremiumFeatureCapability(TypedDict):
+    enabled: bool
+    minimum_tier: str | None
+
+
+class PremiumCapabilities(TypedDict):
+    """Capabilities and limits shown to premium clients."""
+    current_tier: str
+    limit_of_devices: int
+    pnl_events_limit: int
+    max_backup_size_mb: int
+    history_events_limit: int
+    reports_lookup_limit: int
+    eth_staked_limit: int
+    eth_staking_view: PremiumFeatureCapability
+    graphs_view: PremiumFeatureCapability
+    event_analysis_view: PremiumFeatureCapability
+    asset_movement_matching: PremiumFeatureCapability
+
+
+class CapabilityUnlocks(TypedDict):
+    unlocks: dict[str, str]
 
 
 # keys that will be returned as part of the capabilities
@@ -95,10 +125,27 @@ PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this
     'eth_staking_view',
     'graphs_view',
     'event_analysis_view',
+    'asset_movement_matching',
 ], ...]] = (
     'eth_staking_view',
     'graphs_view',
     'event_analysis_view',
+    'asset_movement_matching',
+)
+PREMIUM_LIMITS_KEYS: Final[tuple[Literal[
+    'limit_of_devices',
+    'pnl_events_limit',
+    'max_backup_size_mb',
+    'history_events_limit',
+    'reports_lookup_limit',
+    'eth_staked_limit',
+], ...]] = (
+    'limit_of_devices',
+    'pnl_events_limit',
+    'max_backup_size_mb',
+    'history_events_limit',
+    'reports_lookup_limit',
+    'eth_staked_limit',
 )
 
 
@@ -181,6 +228,68 @@ def _process_dict_response(
         raise RemoteError(result_dict['error'])
 
     return result_dict
+
+
+def _get_rotki_base_url() -> str:
+    rotki_base_url = 'rotki.com'
+    if is_production() is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':
+        rotki_base_url = 'staging.rotki.com'
+
+    return rotki_base_url
+
+
+def fetch_capability_unlocks() -> dict[str, str]:
+    """Fetch capability unlock tiers from the public nest endpoint."""
+    try:
+        response = requests.get(
+            f'https://{_get_rotki_base_url()}/nest/1/limits/unlocks',
+            timeout=ROTKEHLCHEN_SERVER_TIMEOUT,
+        )
+    except requests.exceptions.RequestException as e:
+        msg = f'Could not connect to rotki server due to {e!s}'
+        log.error(msg)
+        raise RemoteError(msg) from e
+
+    result = _process_dict_response(
+        response=response,
+        status_codes=(HTTPStatus.OK,),
+    )
+    if not isinstance(unlocks := result.get('unlocks'), dict):
+        msg = 'Problem connecting to rotki server. limits/unlocks response missing unlocks key'
+        log.error(f'{msg}. Response was {result}')
+        raise RemoteError(msg)
+
+    return cast('dict[str, str]', unlocks)
+
+
+def get_free_capabilities() -> PremiumCapabilities:
+    """Get capabilities payload for free users."""
+    unlocks = fetch_capability_unlocks()
+    return PremiumCapabilities(
+        current_tier='Free',
+        limit_of_devices=0,
+        pnl_events_limit=FREE_PNL_EVENTS_LIMIT,
+        max_backup_size_mb=0,
+        history_events_limit=FREE_HISTORY_EVENTS_LIMIT,
+        reports_lookup_limit=FREE_REPORTS_LOOKUP_LIMIT,
+        eth_staked_limit=UserLimitType.ETH_STAKED.get_free_limit(),
+        eth_staking_view=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get('eth_staking_view'),
+        ),
+        graphs_view=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get('graphs_view'),
+        ),
+        event_analysis_view=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get('event_analysis_view'),
+        ),
+        asset_movement_matching=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get('asset_movement_matching'),
+        ),
+    )
 
 
 def get_kubernetes_pod_name() -> str | None:
@@ -380,10 +489,8 @@ class Premium:
         self.status = SubscriptionStatus.UNKNOWN
         self.session = create_session()
         self.apiversion = '1'
-        rotki_base_url = 'rotki.com'
         self.is_production = is_production()
-        if self.is_production is False and os.environ.get('ROTKI_API_ENVIRONMENT') == 'staging':
-            rotki_base_url = 'staging.rotki.com'
+        rotki_base_url = _get_rotki_base_url()
 
         self.rotki_api = f'https://{rotki_base_url}/api/{self.apiversion}/'
         self.rotki_web = f'https://{rotki_base_url}/webapi/{self.apiversion}/'
@@ -914,12 +1021,34 @@ class Premium:
         log.debug(f'Fetched user limits from server: {self._cached_limits}')
         return self._cached_limits
 
-    def get_capabilities(self) -> dict[str, bool]:
+    def get_capabilities(self) -> PremiumCapabilities:
         limits = self.fetch_limits()
-        return {
-            feature_label: limits.get(feature_label, False)  # default to False in case we deprecate the key  # noqa: E501
-            for feature_label in PREMIUM_CAPABILITIES_KEYS
-        }
+        unlocks = limits.get('unlocks', {})
+        return PremiumCapabilities(
+            current_tier=limits.get('current_tier', 'Free'),
+            limit_of_devices=limits.get('limit_of_devices', 0),
+            pnl_events_limit=limits.get('pnl_events_limit', 0),
+            max_backup_size_mb=limits.get('max_backup_size_mb', 0),
+            history_events_limit=limits.get('history_events_limit', 0),
+            reports_lookup_limit=limits.get('reports_lookup_limit', 0),
+            eth_staked_limit=limits.get('eth_staked_limit', 0),
+            eth_staking_view=PremiumFeatureCapability(
+                enabled=limits.get('eth_staking_view', False),
+                minimum_tier=unlocks.get('eth_staking_view'),
+            ),
+            graphs_view=PremiumFeatureCapability(
+                enabled=limits.get('graphs_view', False),
+                minimum_tier=unlocks.get('graphs_view'),
+            ),
+            event_analysis_view=PremiumFeatureCapability(
+                enabled=limits.get('event_analysis_view', False),
+                minimum_tier=unlocks.get('event_analysis_view'),
+            ),
+            asset_movement_matching=PremiumFeatureCapability(
+                enabled=limits.get('asset_movement_matching', False),
+                minimum_tier=unlocks.get('asset_movement_matching'),
+            ),
+        )
 
     def watcher_query(
             self,
@@ -1000,3 +1129,16 @@ def get_user_limit(premium: Premium | None, limit_type: UserLimitType) -> tuple[
 
         log.error(f'Failed to fetch limits from server: {e}. Falling back to free limits')
         return limit_type.get_free_limit(), False
+
+
+def has_premium_capability(premium: Premium | None, capability_name: str) -> bool:
+    """Helper function to check if an active premium user has a specific capability."""
+    if premium is None or premium.is_active() is False:
+        return False
+
+    try:
+        limits = premium.fetch_limits()
+        return bool(limits.get(capability_name, False))
+    except (RemoteError, PremiumAuthenticationError) as e:
+        log.error(f'Failed to fetch capabilities from server: {e}. Falling back to free tier')
+        return False

@@ -106,7 +106,10 @@ defineExpose({
 </script>
 
 <template>
-  <RuiCard data-cy="account-balances">
+  <RuiCard
+    data-cy="account-balances"
+    content-class="!pt-1"
+  >
     <template #header>
       {{ t('account_balances.data_table.group', { type: isEvm ? 'EVM' : toSentenceCase(category) }) }}
     </template>

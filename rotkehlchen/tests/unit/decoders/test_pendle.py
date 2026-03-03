@@ -234,6 +234,121 @@ def test_buy_pt(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xaf4F6710207f1BdaFFA5540afC81DDd26B76ED66']])
+def test_buy_pt_router_v3(ethereum_inquirer, ethereum_accounts):
+
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xa48a0011ce1ae1bb4efde2c708950f12832b003498ed7ee281b6ddfba36ebde5')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1710569687000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=(gas_amount := FVal('0.014646623224749372')),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_ETH,
+            amount=(out_amount := FVal('0.45')),
+            location_label=user_address,
+            notes=f'Deposit {out_amount} ETH to Pendle',
+            counterparty=CPT_PENDLE,
+            extra_data={'market': '0xDe715330043799D7a80249660d1e6b61eB3713B3'},
+            address=string_to_evm_address('0x00000000005BBB0EF59571E58418F9a4357b68A0'),
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xeEE8aED1957ca1545a0508AfB51b53cCA7e3c0d1'),
+            amount=(in_amount := FVal('0.46674637030447452')),
+            location_label=user_address,
+            notes=f'Receive {in_amount} PT-ezETH-25APR2024 from depositing into Pendle',
+            counterparty=CPT_PENDLE,
+            address=string_to_evm_address('0xDe715330043799D7a80249660d1e6b61eB3713B3'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x25eBAb74687236c711a612dA494c79EaC2a0f250']])
+def test_add_liquidity_keep_yt_router_v3(ethereum_inquirer, ethereum_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x230eec97eb9e99966c5808608ea27330baf4a71c59cc157add216fff74798f6d')),  # noqa: E501
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1709249159000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=(gas_amount := FVal('0.032913334591141556')),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=148,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:1/erc20:0xD9A442856C234a39a81a089C06451EBAa4306a72'),
+            amount=(out_amount := FVal('31.000000000000004941')),
+            location_label=user_address,
+            notes=f'Deposit {out_amount} pufETH in a Pendle pool',
+            counterparty=CPT_PENDLE,
+            address=string_to_evm_address('0x00000000005BBB0EF59571E58418F9a4357b68A0'),
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=155,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x391B570e81e354a85a496952b66ADc831715f54f'),
+            amount=(yt_amount := FVal('14.986032489718457087')),
+            location_label=user_address,
+            notes=f'Receive {yt_amount} YT-pufETH-27JUN2024 from depositing into Pendle',
+            counterparty=CPT_PENDLE,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=160,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x17BE998a578fD97687b24E83954FEc86Dc20c979'),
+            amount=(lp_amount := FVal('15.428268625827760296')),
+            location_label=user_address,
+            notes=f'Receive {lp_amount} PENDLE-LPT for depositing in a Pendle pool',
+            counterparty=CPT_PENDLE,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xFd83CCCecef02a334e6A86e7eA8D0aa0F61f1Faf']])
 def test_return_pt(ethereum_inquirer, ethereum_accounts, pendle_cache):
     tx_hash = deserialize_evm_tx_hash('0xcdd9f5254bf8d451a924f350e325eae55d4fadba52d277e47d1218ce08108c5b')  # noqa: E501
@@ -1108,6 +1223,59 @@ def test_redeem_due_rewards_and_interests(ethereum_inquirer, ethereum_accounts, 
             notes=f'Claim {reward_amount} PENDLE reward from Pendle',
             counterparty=CPT_PENDLE,
             address=string_to_evm_address('0xfd5Cf95E8b886aCE955057cA4DC69466e793FBBE'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x743D7B30661d65B41960Bf6b5d1bB93CF7972A73']])
+def test_redeem_due_rewards_multiple_tokens(ethereum_inquirer, ethereum_accounts, pendle_cache):
+    tx_hash = deserialize_evm_tx_hash('0xd6307558bb3252cb0b6bd9af91eaf97fcc1423181cd44db7bc187d29440322c1')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+    )
+    user_address, timestamp, gas_amount, sy_weeth_amount, pendle_amount = ethereum_accounts[0], TimestampMS(1713128123000), '0.002537430445956456', '0.010279749482167444', '1.305613281699848198'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_amount),
+            location_label=user_address,
+            notes=f'Burn {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=645,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0xAC0047886a985071476a1186bE89222659970d65'),
+            amount=FVal(sy_weeth_amount),
+            location_label=user_address,
+            notes=f'Claim {sy_weeth_amount} SY-weETH reward from Pendle',
+            counterparty=CPT_PENDLE,
+            address=string_to_evm_address('0xfb35Fd0095dD1096b1Ca49AD44d8C5812A201677'),
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=650,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827'),
+            amount=FVal(pendle_amount),
+            location_label=user_address,
+            notes=f'Claim {pendle_amount} PENDLE reward from Pendle',
+            counterparty=CPT_PENDLE,
+            address=string_to_evm_address('0xF32e58F92e60f4b0A37A69b95d642A471365EAe8'),
         ),
     ]
     assert events == expected_events

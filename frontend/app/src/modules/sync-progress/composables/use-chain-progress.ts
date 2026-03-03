@@ -17,6 +17,8 @@ function mapStatus(status: TransactionsQueryStatus): AddressStatus {
     case TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED:
     case TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED:
       return AddressStatus.COMPLETE;
+    case TransactionsQueryStatus.CANCELLED:
+      return AddressStatus.CANCELLED;
   }
 }
 
@@ -29,6 +31,7 @@ function mapStep(status: TransactionsQueryStatus): AddressStep | undefined {
     case TransactionsQueryStatus.QUERYING_EVM_TOKENS_TRANSACTIONS:
       return AddressStep.TOKENS;
     case TransactionsQueryStatus.ACCOUNT_CHANGE:
+    case TransactionsQueryStatus.CANCELLED:
     case TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED:
     case TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED:
     case TransactionsQueryStatus.DECODING_TRANSACTIONS_STARTED:
@@ -63,31 +66,23 @@ function toAddressProgress(data: TxQueryStatusData): AddressProgress {
     originalPeriodEnd,
     originalPeriodStart,
     period,
-    periodProgress: calculatePeriodProgress(period, originalPeriodEnd, originalPeriodStart),
+    periodProgress: data.status === TransactionsQueryStatus.CANCELLED ? undefined : calculatePeriodProgress(period, originalPeriodEnd, originalPeriodStart),
     status: mapStatus(data.status),
     step: mapStep(data.status),
     subtype: data.subtype,
   };
 }
 
-function isComplete(status: AddressStatus): boolean {
-  return status === AddressStatus.COMPLETE;
-}
-
-function isInProgress(status: AddressStatus): boolean {
-  return status === AddressStatus.QUERYING || status === AddressStatus.DECODING;
-}
-
-function isPending(status: AddressStatus): boolean {
-  return status === AddressStatus.PENDING;
+function isDone(status: AddressStatus): boolean {
+  return status === AddressStatus.COMPLETE || status === AddressStatus.CANCELLED;
 }
 
 function calculateChainProgress(addresses: AddressProgress[]): number {
   if (addresses.length === 0)
     return 0;
 
-  const completed = addresses.filter(a => isComplete(a.status)).length;
-  return Math.round((completed / addresses.length) * 100);
+  const done = addresses.filter(a => isDone(a.status)).length;
+  return Math.round((done / addresses.length) * 100);
 }
 
 export function useChainProgress(
@@ -95,24 +90,44 @@ export function useChainProgress(
 ): ComputedRef<ChainProgress[]> {
   return computed<ChainProgress[]>(() => {
     const statusMap = get(queryStatus);
-    const grouped = new Map<string, TxQueryStatusData[]>();
+    const grouped = new Map<string, { key: string; data: TxQueryStatusData }[]>();
 
-    for (const item of Object.values(statusMap)) {
+    for (const [key, item] of Object.entries(statusMap)) {
       const chain = item.chain.toLowerCase();
       if (!grouped.has(chain)) {
         grouped.set(chain, []);
       }
-      grouped.get(chain)!.push(item);
+      grouped.get(chain)!.push({ data: item, key });
     }
 
     return Array.from(grouped.entries()).map(([chain, items]): ChainProgress => {
-      const addresses = items.map(toAddressProgress);
-      const completed = addresses.filter(a => isComplete(a.status)).length;
-      const inProgress = addresses.filter(a => isInProgress(a.status)).length;
-      const pending = addresses.filter(a => isPending(a.status)).length;
+      const addresses = items.map(({ data }) => toAddressProgress(data));
+      let completed = 0;
+      let cancelledCount = 0;
+      let inProgress = 0;
+      let pending = 0;
+
+      for (const a of addresses) {
+        switch (a.status) {
+          case AddressStatus.COMPLETE:
+            completed++;
+            break;
+          case AddressStatus.CANCELLED:
+            cancelledCount++;
+            break;
+          case AddressStatus.QUERYING:
+          case AddressStatus.DECODING:
+            inProgress++;
+            break;
+          case AddressStatus.PENDING:
+            pending++;
+            break;
+        }
+      }
 
       return {
         addresses,
+        cancelled: cancelledCount,
         chain,
         completed,
         inProgress,

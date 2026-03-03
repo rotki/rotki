@@ -242,6 +242,60 @@ describe('store/history/query-status/tx-query-status', () => {
       expect(status['0x123optimism']).toBeDefined();
       expect(status['0x123optimism'].chain).toBe('optimism');
     });
+
+    it('should not overwrite cancelled entries with WS updates', () => {
+      const store = useTxQueryStatusStore();
+
+      // Set initial status
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
+      });
+
+      // Cancel the address
+      store.markAddressCancelled({ address: '0x123', chain: 'eth' });
+      expect(get(store.queryStatus)['0x123eth'].status).toBe(TransactionsQueryStatus.CANCELLED);
+
+      // Late WS update should be ignored
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED,
+        subtype: 'evm',
+      });
+
+      expect(get(store.queryStatus)['0x123eth'].status).toBe(TransactionsQueryStatus.CANCELLED);
+    });
+
+    it('should not overwrite cancelled bitcoin entries with WS updates', () => {
+      const store = useTxQueryStatusStore();
+
+      // Set initial bitcoin status
+      store.setUnifiedTxQueryStatus({
+        addresses: ['bc1abc'],
+        chain: 'BTC',
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
+        subtype: 'bitcoin',
+      });
+
+      // Cancel the address
+      store.markAddressCancelled({ address: 'bc1abc', chain: 'btc' });
+      expect(get(store.queryStatus).bc1abcbtc.status).toBe(TransactionsQueryStatus.CANCELLED);
+
+      // Late WS update should be ignored
+      store.setUnifiedTxQueryStatus({
+        addresses: ['bc1abc'],
+        chain: 'BTC',
+        status: TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED,
+        subtype: 'bitcoin',
+      });
+
+      expect(get(store.queryStatus).bc1abcbtc.status).toBe(TransactionsQueryStatus.CANCELLED);
+    });
   });
 
   describe('setEvmlikeStatus', () => {
@@ -284,6 +338,86 @@ describe('store/history/query-status/tx-query-status', () => {
 
       expect(hasPeriodsFields(finishedStatus)).toBe(true);
       expect(finishedStatus).toHaveProperty('originalPeriodEnd', 1000);
+    });
+
+    it('should not overwrite cancelled entries', () => {
+      const store = useTxQueryStatusStore();
+
+      store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'started');
+      store.markAddressCancelled({ address: '0x123', chain: 'scroll' });
+
+      // Trying to set finished should be a no-op since it's cancelled
+      store.setEvmlikeStatus({ address: '0x123', chain: 'scroll' }, 'finished');
+      expect(get(store.queryStatus)['0x123scroll'].status).toBe(TransactionsQueryStatus.CANCELLED);
+    });
+  });
+
+  describe('markAddressCancelled', () => {
+    it('should set status to CANCELLED', () => {
+      const store = useTxQueryStatusStore();
+
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
+      });
+
+      store.markAddressCancelled({ address: '0x123', chain: 'eth' });
+
+      const status = get(store.queryStatus)['0x123eth'];
+      expect(status.status).toBe(TransactionsQueryStatus.CANCELLED);
+    });
+
+    it('should preserve other fields when cancelling', () => {
+      const store = useTxQueryStatusStore();
+
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
+      });
+
+      store.markAddressCancelled({ address: '0x123', chain: 'eth' });
+
+      const status = get(store.queryStatus)['0x123eth'];
+      expect(status.address).toBe('0x123');
+      expect(status.chain).toBe('eth');
+      expect(status.subtype).toBe('evm');
+    });
+  });
+
+  describe('isAddressCancelled', () => {
+    it('should return true for cancelled addresses', () => {
+      const store = useTxQueryStatusStore();
+
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
+      });
+
+      store.markAddressCancelled({ address: '0x123', chain: 'eth' });
+      expect(store.isAddressCancelled({ address: '0x123', chain: 'eth' })).toBe(true);
+    });
+
+    it('should return false for non-cancelled addresses', () => {
+      const store = useTxQueryStatusStore();
+
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
+      });
+
+      expect(store.isAddressCancelled({ address: '0x123', chain: 'eth' })).toBe(false);
     });
   });
 
@@ -368,6 +502,22 @@ describe('store/history/query-status/tx-query-status', () => {
         status: TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED,
         subtype: 'bitcoin',
       });
+
+      expect(get(store.isAllFinished)).toBe(true);
+    });
+
+    it('should treat CANCELLED as finished', () => {
+      const store = useTxQueryStatusStore();
+
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS,
+        subtype: 'evm',
+      });
+
+      store.markAddressCancelled({ address: '0x123', chain: 'eth' });
 
       expect(get(store.isAllFinished)).toBe(true);
     });

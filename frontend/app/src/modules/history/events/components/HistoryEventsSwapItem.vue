@@ -228,14 +228,22 @@ const isCard = computed<boolean>(() => variant === 'card');
     </div>
 
     <div
-      class="relative w-56 xl:w-60 shrink-0"
+      class="flex justify-between items-center relative shrink-0 gap-1.5"
       :class="{ 'opacity-50': isSpendHidden }"
     >
       <HistoryEventAsset
         v-if="spendEvent"
+        class="w-[11rem] lg:w-[12.5rem] xl:w-[13.5rem]"
         :event="spendEvent"
         @refresh="emit('refresh')"
       />
+      <div class="shrink-0 size-6 rounded-full bg-rui-grey-200 dark:bg-rui-grey-700 flex items-center justify-center">
+        <RuiIcon
+          class="text-rui-grey-500 dark:text-rui-grey-400"
+          name="lu-arrow-right"
+          size="14"
+        />
+      </div>
       <span
         v-if="isMultiSpend"
         class="absolute -top-1 -right-1 bg-rui-primary text-white text-[10px] font-medium rounded-full size-4 flex items-center justify-center"
@@ -245,14 +253,6 @@ const isCard = computed<boolean>(() => variant === 'card');
     </div>
 
     <div class="flex items-center gap-2 flex-1 min-w-0">
-      <div class="shrink-0 size-6 rounded-full bg-rui-grey-200 dark:bg-rui-grey-700 flex items-center justify-center">
-        <RuiIcon
-          class="text-rui-grey-500 dark:text-rui-grey-400"
-          name="lu-arrow-right"
-          size="14"
-        />
-      </div>
-
       <div
         class="relative shrink-0"
         :class="{ 'opacity-50': isReceiveHidden }"
@@ -260,7 +260,7 @@ const isCard = computed<boolean>(() => variant === 'card');
         <HistoryEventAsset
           v-if="receiveEvent"
           :event="receiveEvent"
-          class="w-56 xl:w-60"
+          class="w-[12rem] lg:w-[13.5rem] xl:w-[14.5rem]"
           @refresh="emit('refresh')"
         />
         <span

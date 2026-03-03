@@ -1,6 +1,7 @@
 import os
 import random
 from contextlib import ExitStack
+from dataclasses import replace
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, _patch, patch
@@ -13,6 +14,7 @@ from requests import Response
 from rotkehlchen.accounting.types import EventAccountingRuleStatus
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
@@ -31,6 +33,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.ranges import DBQueryRanges
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -71,6 +74,7 @@ from rotkehlchen.types import (
     ApiKey,
     ChainID,
     ChecksumEvmAddress,
+    EvmInternalTransaction,
     EvmTransaction,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -306,6 +310,46 @@ def _write_transactions_to_db(
                     location_string=f'{prefix}_{address}',
                     queried_ranges=[(start_ts, end_ts)],
                 )
+
+
+def _prepare_repull_test_transaction(db: 'DBHandler') -> tuple[DBEvmTx, EvmTransaction]:
+    """Insert a tx, receipt, and one internal tx used by repull regression tests."""
+    dbevmtx = DBEvmTx(db)
+    transaction = make_ethereum_transaction(tx_hash=make_evm_tx_hash())
+    with db.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[transaction],
+            relevant_address=transaction.from_address,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=txreceipt_to_data(EvmTxReceipt(
+                tx_hash=transaction.tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                contract_address=None,
+                status=True,
+                tx_type=2,
+                logs=[],
+            )),
+        )
+        dbevmtx.add_evm_internal_transactions(
+            write_cursor=write_cursor,
+            transactions=[EvmInternalTransaction(
+                parent_tx_hash=transaction.tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                trace_id=0,
+                from_address=transaction.from_address,
+                to_address=transaction.to_address,
+                value=1,
+                gas=21000,
+                gas_used=21000,
+            )],
+            relevant_address=None,
+        )
+
+    return dbevmtx, transaction
 
 
 def remove_added_event_fields(returned_events: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -1475,6 +1519,229 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
     assert events_before_redecoding == events_after_redecoding
 
 
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_repulling_transaction_fetch_error_does_not_drop_existing_data(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Ensure a tx repull failure does not drop the existing tx/receipt/internal tx rows."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevmtx, transaction = _prepare_repull_test_transaction(rotki.data.db)
+    tx_hash = transaction.tx_hash
+
+    tx_filter = EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.ETHEREUM)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        tx_count_before = len(dbevmtx.get_transactions(cursor=cursor, filter_=tx_filter))
+        receipt_before = dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=ChainID.ETHEREUM)  # noqa: E501
+    internal_before = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    assert tx_count_before == 1
+    assert receipt_before is not None
+    assert len(internal_before) > 0
+
+    with patch.object(
+        rotki.chains_aggregator.ethereum.node_inquirer,
+        'get_transaction_by_hash',
+        side_effect=RemoteError('indexer temporarily unavailable'),
+    ):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+            json={'async_query': False, 'chain': 'eth', 'tx_refs': [str(tx_hash)]},
+        )
+    assert_error_response(
+        response=response,
+        contained_in_msg='does not correspond to a transaction',
+        status_code=HTTPStatus.CONFLICT,
+    )
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        tx_count_after = len(dbevmtx.get_transactions(cursor=cursor, filter_=tx_filter))
+        receipt_after = dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=ChainID.ETHEREUM)  # noqa: E501
+    internal_after = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+
+    assert tx_count_after == tx_count_before
+    assert receipt_after == receipt_before
+    assert internal_after == internal_before
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_repulling_transaction_internal_fetch_error_restores_previous_internal_txs(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Ensure old internal txs are restored if internal-tx repull fails."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevmtx, transaction = _prepare_repull_test_transaction(rotki.data.db)
+    tx_hash = transaction.tx_hash
+
+    internal_before = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    assert len(internal_before) > 0
+    fresh_transaction = make_ethereum_transaction(
+        tx_hash=tx_hash,
+        timestamp=Timestamp(transaction.timestamp + 1),
+    )
+
+    with (
+        patch.object(
+            rotki.chains_aggregator.ethereum.node_inquirer,
+            'get_transaction_by_hash',
+            return_value=(fresh_transaction, txreceipt_to_data(EvmTxReceipt(
+                tx_hash=tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                contract_address=None,
+                status=True,
+                tx_type=2,
+                logs=[],
+            ))),
+        ),
+        patch.object(
+            rotki.chains_aggregator.ethereum.transactions,
+            '_query_internal_transactions_for_parent_hash',
+            side_effect=RemoteError('internal indexer unavailable'),
+        ),
+    ):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+            json={'async_query': False, 'chain': 'eth', 'tx_refs': [str(tx_hash)]},
+        )
+    assert_error_response(
+        response=response,
+        contained_in_msg='internal indexer unavailable',
+        status_code=HTTPStatus.BAD_GATEWAY,
+    )
+
+    internal_after = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    assert internal_after == internal_before
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_repulling_transaction_internal_replace_failure_rolls_back_tx_data(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Ensure tx+receipt replacement is rolled back if internal replacement fails."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dbevmtx, transaction = _prepare_repull_test_transaction(rotki.data.db)
+    tx_hash = transaction.tx_hash
+
+    tx_filter = EvmTransactionsFilterQuery.make(tx_hash=tx_hash, chain_id=ChainID.ETHEREUM)
+    with rotki.data.db.conn.read_ctx() as cursor:
+        tx_before = dbevmtx.get_transactions(cursor=cursor, filter_=tx_filter)[0]
+        receipt_before = dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=ChainID.ETHEREUM)  # noqa: E501
+    internal_before = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    assert receipt_before is not None
+    fresh_transaction = make_ethereum_transaction(
+        tx_hash=tx_hash,
+        timestamp=Timestamp(transaction.timestamp + 1),
+    )
+
+    with (
+        patch.object(
+            rotki.chains_aggregator.ethereum.node_inquirer,
+            'get_transaction_by_hash',
+            return_value=(fresh_transaction, txreceipt_to_data(EvmTxReceipt(
+                tx_hash=tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                contract_address=None,
+                status=True,
+                tx_type=2,
+                logs=[],
+            ))),
+        ),
+        patch.object(
+            rotki.chains_aggregator.ethereum.transactions,
+            '_query_internal_transactions_for_parent_hash',
+            return_value=(internal_before, None),
+        ),
+        patch.object(
+            rotki.chains_aggregator.ethereum.transactions,
+            '_replace_internal_transactions_for_parent_hash',
+            side_effect=RemoteError('failed replacing internals'),
+        ),
+    ):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+            json={'async_query': False, 'chain': 'eth', 'tx_refs': [str(tx_hash)]},
+        )
+    assert_error_response(
+        response=response,
+        contained_in_msg='failed replacing internals',
+        status_code=HTTPStatus.BAD_GATEWAY,
+    )
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        tx_after = dbevmtx.get_transactions(cursor=cursor, filter_=tx_filter)[0]
+        receipt_after = dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=ChainID.ETHEREUM)  # noqa: E501
+    internal_after = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+    )
+    assert tx_after == tx_before
+    assert receipt_after == receipt_before
+    assert internal_after == internal_before
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_redecode_genesis_uses_genesis_data_path(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    """Ensure redecode handles genesis tx hash without indexer tx-by-hash query."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    genesis_tx = replace(
+        make_ethereum_transaction(tx_hash=GENESIS_HASH, timestamp=Timestamp(1)),
+        to_address=None,  # skip internal tx querying for this mocked path
+    )
+    genesis_receipt = EvmTxReceipt(
+        tx_hash=GENESIS_HASH,
+        chain_id=ChainID.ETHEREUM,
+        contract_address=None,
+        status=True,
+        tx_type=2,
+        logs=[],
+    )
+    with (
+        patch.object(
+            rotki.chains_aggregator.ethereum.transactions,
+            'ensure_genesis_tx_data_exists',
+            return_value=(genesis_tx, genesis_receipt),
+        ),
+        patch.object(
+            rotki.chains_aggregator.ethereum.node_inquirer,
+            'get_transaction_receipt',
+            return_value=txreceipt_to_data(genesis_receipt),
+        ),
+        patch.object(
+            rotki.chains_aggregator.ethereum.node_inquirer,
+            'get_transaction_by_hash',
+            side_effect=AssertionError('genesis path should not query tx by hash'),
+        ),
+        patch.object(
+            rotki.chains_aggregator.ethereum.transactions_decoder,
+            'decode_and_get_transaction_hashes',
+            return_value=[],
+        ),
+    ):
+        assert_proper_response(requests.put(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+            json={'chain': 'eth', 'tx_refs': [str(GENESIS_HASH)]},
+        ))
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1]])
@@ -1599,13 +1866,43 @@ def test_monerium_gnosis_pay_events_update(
 
     monerium_instance_mock = MagicMock()
     gnosis_pay_instance_mock = MagicMock()
+
+    def mocked_get_tx_by_hash(chain_id: ChainID, tx_hash: bytes) -> tuple[EvmTransaction, dict[str, Any]]:  # noqa: E501
+        return EvmTransaction(
+            tx_hash=deserialize_evm_tx_hash(tx_hash),
+            chain_id=chain_id,
+            timestamp=Timestamp(1),
+            block_number=1,
+            from_address=make_evm_address(),
+            to_address=None,  # skip internal tx querying for this mocked path
+            value=1,
+            gas=1,
+            gas_price=1,
+            gas_used=1,
+            input_data=b'',
+            nonce=0,
+        ), txreceipt_to_data(EvmTxReceipt(
+            tx_hash=deserialize_evm_tx_hash(tx_hash),
+            chain_id=chain_id,
+            contract_address=None,
+            status=True,
+            tx_type=2,
+            logs=[],
+        ))
+
     with (
         patch('rotkehlchen.chain.evm.decoding.monerium.decoder.init_monerium', return_value=monerium_instance_mock),  # noqa: E501
         patch('rotkehlchen.chain.gnosis.modules.gnosis_pay.decoder.init_gnosis_pay', return_value=gnosis_pay_instance_mock),  # noqa: E501
-        patch.object(rotki.chains_aggregator.gnosis.transactions, 'get_or_query_transaction_receipt', lambda **kwargs: None),  # noqa: E501
-        patch.object(rotki.chains_aggregator.arbitrum_one.transactions, 'get_or_query_transaction_receipt', lambda **kwargs: None),  # noqa: E501
-        patch.object(rotki.chains_aggregator.gnosis.transactions, 'get_or_create_transaction', lambda **kwargs: (None, None)),  # noqa: E501
-        patch.object(rotki.chains_aggregator.arbitrum_one.transactions, 'get_or_create_transaction', lambda **kwargs: (None, None)),  # noqa: E501
+        patch.object(
+            rotki.chains_aggregator.gnosis.node_inquirer,
+            'get_transaction_by_hash',
+            side_effect=lambda tx_hash: mocked_get_tx_by_hash(ChainID.GNOSIS, tx_hash),
+        ),
+        patch.object(
+            rotki.chains_aggregator.arbitrum_one.node_inquirer,
+            'get_transaction_by_hash',
+            side_effect=lambda tx_hash: mocked_get_tx_by_hash(ChainID.ARBITRUM_ONE, tx_hash),
+        ),
         patch.object(
             rotki.chains_aggregator.gnosis.transactions_decoder,
             '_get_or_decode_transaction_events',
@@ -1663,8 +1960,31 @@ def test_notify_missing_credentials_on_redecode(
             counterparty=counterparty,
         )
         with (
-            patch.object(rotki.chains_aggregator.gnosis.transactions, 'get_or_query_transaction_receipt', lambda **kwargs: None),  # noqa: E501
-            patch.object(rotki.chains_aggregator.gnosis.transactions, 'get_or_create_transaction', lambda **kwargs: (None, None)),  # noqa: E501
+            patch.object(
+                rotki.chains_aggregator.gnosis.node_inquirer,
+                'get_transaction_by_hash',
+                return_value=(EvmTransaction(
+                    tx_hash=event.tx_ref,
+                    chain_id=ChainID.GNOSIS,
+                    timestamp=Timestamp(1),
+                    block_number=1,
+                    from_address=make_evm_address(),
+                    to_address=None,  # skip internal tx querying for this mocked path
+                    value=1,
+                    gas=1,
+                    gas_price=1,
+                    gas_used=1,
+                    input_data=b'',
+                    nonce=0,
+                ), txreceipt_to_data(EvmTxReceipt(
+                    tx_hash=event.tx_ref,
+                    chain_id=ChainID.GNOSIS,
+                    contract_address=None,
+                    status=True,
+                    tx_type=2,
+                    logs=[],
+                ))),
+            ),
             patch.object(
                 target=rotki.chains_aggregator.gnosis.transactions_decoder,
                 attribute='decode_and_get_transaction_hashes',

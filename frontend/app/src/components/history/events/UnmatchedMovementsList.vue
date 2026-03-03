@@ -3,11 +3,13 @@ import type { DataTableColumn } from '@rotki/ui-library';
 import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import HistoryEventAsset from '@/components/history/events/HistoryEventAsset.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { type ColumnClassConfig, usePinnedAssetColumnClass, usePinnedColumnClass } from '@/composables/history/events/use-pinned-column-class';
 import { getAssetMovementsType } from '@/modules/history/management/forms/utils';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { getEventEntryFromCollection } from '@/utils/history/events';
 
 interface UnmatchedMovementRow {
@@ -29,11 +31,15 @@ const {
   isPinned,
   showRestore,
   loading,
+  matchDisabled,
+  matchMinimumTier,
 } = defineProps<{
   movements: UnmatchedAssetMovement[];
   highlightedGroupIdentifier?: string;
   ignoreLoading?: boolean;
   isPinned?: boolean;
+  matchDisabled?: boolean;
+  matchMinimumTier?: string | null;
   showRestore?: boolean;
   loading?: boolean;
 }>();
@@ -47,6 +53,8 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
+
+const { currentTier, premium } = useFeatureAccess(PremiumFeature.ASSET_MOVEMENT_MATCHING);
 
 const pinnedColumnClass = usePinnedColumnClass(() => isPinned);
 const pinnedAssetColumnClass = usePinnedAssetColumnClass(() => isPinned);
@@ -176,6 +184,58 @@ function getRowClass(row: UnmatchedMovementRow): string {
       class="table-inside-dialog"
       :empty="{ description: emptyDescription }"
     >
+      <template
+        v-if="matchDisabled"
+        #body.prepend
+      >
+        <tr>
+          <td :colspan="columns.length + 1">
+            <RuiAlert
+              type="warning"
+              size="sm"
+              class="whitespace-break-spaces !py-0.5 !rounded-none"
+            >
+              <i18n-t
+                v-if="premium"
+                scope="global"
+                keypath="asset_movement_matching.premium.premium_tooltip"
+              >
+                <template #tier>
+                  <strong>{{ matchMinimumTier }}</strong>
+                </template>
+                <template #currentTier>
+                  <strong>{{ currentTier }}</strong>
+                </template>
+                <template #link>
+                  <ExternalLink
+                    premium
+                    color="primary"
+                  >
+                    {{ t('asset_movement_matching.premium.link') }}
+                  </ExternalLink>
+                </template>
+              </i18n-t>
+              <i18n-t
+                v-else
+                scope="global"
+                keypath="asset_movement_matching.premium.free_tooltip"
+              >
+                <template #tier>
+                  <strong>{{ matchMinimumTier }}</strong>
+                </template>
+                <template #link>
+                  <ExternalLink
+                    premium
+                    color="primary"
+                  >
+                    {{ t('asset_movement_matching.premium.link') }}
+                  </ExternalLink>
+                </template>
+              </i18n-t>
+            </RuiAlert>
+          </td>
+        </tr>
+      </template>
       <template #item.asset="{ row }">
         <div class="flex items-center gap-2">
           <HistoryEventAsset
@@ -282,6 +342,7 @@ function getRowClass(row: UnmatchedMovementRow): string {
               size="sm"
               color="primary"
               :class="{ '!py-0.5': isPinned }"
+              :disabled="matchDisabled"
               @click="emit('select', row.original)"
             >
               {{ t('asset_movement_matching.dialog.find_match') }}

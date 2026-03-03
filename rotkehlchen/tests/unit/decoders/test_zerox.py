@@ -1745,7 +1745,7 @@ def test_farcaster_zerox_swap(base_inquirer, base_accounts):
 def test_base_settler_zerox_swap(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x304022641c44fd883a788e9fc962160a674f74835e1af4b13bc1afa882bcf17f')  # noqa: E501
     with patch(  # ignore internal transactions since not needed and atm no base indexer gives them
-        'rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_range_or_parent_hash',
+        'rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_parent_hash',
         return_value=[],
     ):
         events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)

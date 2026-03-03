@@ -3,7 +3,7 @@ import {
   TransactionsQueryStatus,
   type UnifiedTransactionStatusData,
 } from '@/modules/messaging/types';
-import { useQueryStatusStore } from '@/store/history/query-status/index';
+import { createQueryStatusState } from '@/store/history/query-status/index';
 import { millisecondsToSeconds } from '@/utils/date';
 
 type EvmlikeStatusStep = 'started' | 'finished';
@@ -94,6 +94,9 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
   const createKey = ({ address, chain }: ChainAddress): string => address + chain.toLowerCase();
 
   const isStatusFinished = (item: TxQueryStatusData): boolean => {
+    if (item.status === TransactionsQueryStatus.CANCELLED)
+      return true;
+
     if (isBitcoinTxQueryStatusData(item)) {
       return item.status === TransactionsQueryStatus.DECODING_TRANSACTIONS_FINISHED;
     }
@@ -102,10 +105,11 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
 
   const {
     isAllFinished,
+    markCancelled,
     queryStatus,
     removeQueryStatus: remove,
     resetQueryStatus,
-  } = useQueryStatusStore<TxQueryStatusData>(isStatusFinished, createKey);
+  } = createQueryStatusState<TxQueryStatusData>(isStatusFinished, createKey);
 
   const initializeQueryStatus = (data: ChainAddress[]): void => {
     resetQueryStatus();
@@ -142,6 +146,10 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
       // Convert bitcoin transactions (with addresses array) to individual entries
       for (const address of data.addresses) {
         const key = createKey({ address, chain });
+        // Guard: don't overwrite cancelled entries
+        if (statuses[key]?.status === TransactionsQueryStatus.CANCELLED)
+          continue;
+
         statuses[key] = {
           address,
           chain,
@@ -154,6 +162,11 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
       // Handle EVM/EvmLike/Solana transactions (with single address)
       const key = createKey({ address: data.address, chain });
       const existing = statuses[key];
+
+      // Guard: don't overwrite cancelled entries
+      if (existing?.status === TransactionsQueryStatus.CANCELLED) {
+        return;
+      }
 
       statuses[key] = {
         address: data.address,
@@ -177,6 +190,11 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     const status = { ...get(queryStatus) };
     const chain = account.chain.toLowerCase();
     const key = createKey({ address: account.address, chain });
+
+    // Guard: don't overwrite cancelled entries
+    if (status[key]?.status === TransactionsQueryStatus.CANCELLED)
+      return;
+
     const now = millisecondsToSeconds(Date.now());
 
     if (step === 'started') {
@@ -206,10 +224,23 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     set(queryStatus, status);
   };
 
+  const markAddressCancelled = (account: ChainAddress): void => {
+    const key = createKey(account);
+    const existing = get(queryStatus)[key];
+    if (existing) {
+      markCancelled(key, { ...existing, status: TransactionsQueryStatus.CANCELLED });
+    }
+  };
+
+  const isAddressCancelled = (account: ChainAddress): boolean =>
+    get(queryStatus)[createKey(account)]?.status === TransactionsQueryStatus.CANCELLED;
+
   return {
     initializeQueryStatus,
+    isAddressCancelled,
     isAllFinished,
     isStatusFinished,
+    markAddressCancelled,
     queryStatus,
     removeQueryStatus,
     resetQueryStatus,

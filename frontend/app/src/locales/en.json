@@ -1328,6 +1328,11 @@
       "label": "Fiat",
       "tooltip": "This is a fiat currency movement. Fiat movements typically don't have a corresponding on-chain event and can usually be safely ignored."
     },
+    "premium": {
+      "free_tooltip": "Asset movement matching requires a minimum of {tier} tier. {link} to unlock this feature.",
+      "link": "Upgrade",
+      "premium_tooltip": "Asset movement matching requires a minimum of {tier} tier. Your current tier is {currentTier}. {link} to unlock it."
+    },
     "settings": {
       "amount_tolerance": {
         "hint": "Maximum allowed percentage difference between the asset movement amount and the on-chain event amount for automatic matching. For example, 1% tolerance on a 0.1 BTC movement allows matching with events between 0.099 and 0.101 BTC.",
@@ -2157,6 +2162,7 @@
         "querying_chain_balances_with_progress": "({current}/{total}) Querying {chain} balances... "
       },
       "event_status": {
+        "cancelled": "Cancelled",
         "default": "Processing",
         "querying_events_finished": "Finished querying",
         "querying_events_started": "Querying events",
@@ -2177,6 +2183,7 @@
         "detecting_with_details": "({current}/{total}) Detecting tokens for"
       },
       "transaction_status": {
+        "cancelled": "Cancelled",
         "decoding_transactions_finished": "Finished decoding",
         "decoding_transactions_started": "Starting decoding",
         "default": "Processing",
@@ -2511,7 +2518,7 @@
     }
   },
   "eth2_page": {
-    "no_premium": "The ETH staking statistic page is not included in the FREE version",
+    "no_premium": "The ETH staking view is not available",
     "setting": {},
     "toggle": {
       "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
@@ -4628,6 +4635,11 @@
   "premium_lock": {
     "tooltip": "Feature is only supported with a premium subscription"
   },
+  "premium_placeholder": {
+    "free_description": "This feature requires a minimum of {tier} tier.",
+    "premium_description": "This feature requires a minimum of {tier} tier. Your current tier is {currentTier}.",
+    "upgrade_plan": "Upgrade plan"
+  },
   "premium_settings": {
     "actions": {
       "delete": "Delete Key",
@@ -4639,8 +4651,8 @@
     },
     "chart_limit": {
       "description": "Experience the full potential of rotki with a Premium subscription.",
-      "statistic": "The statistics view is not included in the FREE version",
-      "title": "The graph is not included in the FREE version"
+      "statistic": "The statistics view is not available",
+      "title": "Graphs are not available"
     },
     "delete_confirmation": {
       "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
@@ -5151,6 +5163,7 @@
     "protocol_cache_progress": "{processed}/{total} pools",
     "show_more": "Show {count} more...",
     "status": {
+      "cancelled": "Cancelled",
       "complete": "Complete",
       "decoding": "Decoding",
       "pending": "Pending",
@@ -5849,7 +5862,7 @@
   "wrapped": {
     "exchange_activity": "Trades by exchange",
     "filter_by_date": "Filter by date",
-    "free_limit": "The events analysis view is not included in the FREE version",
+    "free_limit": "The events analysis view is not available",
     "gas_spent": "ETH spent on gas per address",
     "gas_spent_total": "Total ETH spent on gas",
     "get_data": "Get data",

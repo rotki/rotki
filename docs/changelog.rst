@@ -14,8 +14,17 @@ Changelog
 * :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
 * :feature:`10712` bitcoin events can now be filtered by address.
 * :feature:`10542` StakeDAO v2 votemarket events will now be properly decoded.
+* :bug:`-` Claiming Pendle rewards from old pools, or claiming multiple rewards in one transaction should now be decoded properly by rotki.
+* :bug:`-` ETH staking historyMEV/proposer payout rewards are combined more reliably with block proposal even when beaconcha.in relay data is unavailable.
+* :bug:`11766` Value distribution graphs will now work correctly by fixing the schema types to match the backend response.
+* :bug:`-` Beefy Finance harvest call rewards will now be properly decoded as part of the beefy side of a transaction.
+* :bug:`-` Depositing via Pendle v3 router should be now properly decoded by rotki.
+* :bug:`-` Bridging ETH from mainnet to Optimism will no longer duplicate the event under some weird circumstances.
+* :bug:`-` Historic event values will no longer incorrectly fallback to the current price when the historic price is not available.
+* :bug:`-` Curve deposits with add liquidity + stake will now be properly decoded.
 * :bug:`-` Curve deposits via intermediate pools will now be properly decoded.
 * :bug:`-` cowswap swaps using both versions of the monerium tokens will now be properly decoded.
+* :bug:`11777` Redecoding a single EVM transaction will no longer remove existing transaction data if indexers are temporarily unavailable.
 * :bug:`11708` Users can now mark Solana tokens as spam in addition to EVM tokens.
 * :bug:`11709` History events page will now properly refresh after marking an asset as spam or ignoring it from the context menu.
 * :bug:`-` Registering a new device is now more reliable when rotki runs in container environments.

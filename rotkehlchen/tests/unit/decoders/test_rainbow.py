@@ -346,7 +346,7 @@ def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
     original_query_and_save = EvmTransactions(
         evm_inquirer=binance_sc_inquirer,
         database=binance_sc_inquirer.database,
-    )._query_and_save_internal_transactions_for_range_or_parent_hash
+    )._query_and_save_internal_transactions_for_parent_hash
 
     def mock_query_and_save_internal_txs(*args, **kwargs):
         """On the initial attempt to query, add an unrelated internal tx to ensure all needed
@@ -375,7 +375,7 @@ def test_rainbow_swap_on_binance_sc(binance_sc_inquirer, binance_sc_accounts):
             original_query_and_save(*args, **kwargs)
 
     with patch(
-        'rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_range_or_parent_hash',
+        'rotkehlchen.chain.evm.transactions.EvmTransactions._query_and_save_internal_transactions_for_parent_hash',
         side_effect=mock_query_and_save_internal_txs,
     ):
         events, _ = get_decoded_events_of_transaction(evm_inquirer=binance_sc_inquirer, tx_hash=tx_hash)  # noqa: E501

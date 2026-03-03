@@ -1,4 +1,5 @@
 import json
+from dataclasses import replace
 from http import HTTPStatus
 from typing import Any
 from unittest.mock import patch
@@ -10,6 +11,7 @@ import requests
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
+from rotkehlchen.chain.evm.structures import EvmTxReceipt
 from rotkehlchen.constants.assets import A_ETH_EURE
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.cache import DBCacheStatic
@@ -24,8 +26,10 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
+from rotkehlchen.tests.utils.ethereum import txreceipt_to_data
+from rotkehlchen.tests.utils.factories import make_ethereum_transaction
 from rotkehlchen.tests.utils.premium import MockResponse
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, Location, TimestampMS, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -261,13 +265,31 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer) -> No
         return [gnosis_event]
 
     response_txt = '[{"id":"YYYY","profile":"PP","accountId":"PP","address":"0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da","kind":"redeem","amount":"2353.57","currency":"eur","totalFee":"0","fees":[],"counterpart":{"details":{"name":"Yabir Benchakhtir","country":"ES","lastName":"Benchakhtir","firstName":"Yabir"},"identifier":{"iban":"ESXX KKKK OOOO IIII KKKK LLLL","standard":"iban"}},"memo":"Venta inversion","supportingDocumentId":"","chain":"gnosis","network":"mainnet","meta":{"state":"processed","txHashes":["0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354"],"placedBy":"ii","placedAt":"2024-04-19T13:45:00.287212Z","processedAt":"2024-04-19T13:45:00.287212Z","approvedAt":"2024-04-19T13:45:00.287212Z","confirmedAt":"2024-04-19T13:45:00.287212Z","receivedAmount":"2353.57","sentAmount":"2353.57"}}]'  # noqa: E501
+    gnosis_transaction = replace(
+        make_ethereum_transaction(tx_hash=gnosishash),
+        chain_id=ChainID.GNOSIS,
+    )
     with (
         patch(
             'rotkehlchen.externalapis.monerium.Monerium._query',
             return_value={'orders': json.loads(response_txt)},
         ),
         patch('rotkehlchen.chain.evm.decoding.decoder.EVMTransactionDecoder.decode_and_get_transaction_hashes', new=add_event),  # noqa: E501
-        patch('rotkehlchen.chain.evm.transactions.EvmTransactions.get_or_query_transaction_receipt', return_value=None),  # noqa: E501
+        patch.object(
+            rotki.chains_aggregator.gnosis.node_inquirer,
+            'get_transaction_by_hash',
+            return_value=(
+                gnosis_transaction,
+                txreceipt_to_data(EvmTxReceipt(
+                    tx_hash=gnosishash,
+                    chain_id=ChainID.GNOSIS,
+                    contract_address=None,
+                    status=True,
+                    tx_type=2,
+                    logs=[],
+                )),
+            ),
+        ),
     ):
         response = requests.put(
             api_url_for(

@@ -26,6 +26,7 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
         status: i < completed ? AddressStatus.COMPLETE : AddressStatus.PENDING,
         subtype: AddressSubtype.EVM,
       })),
+      cancelled: 0,
       chain,
       completed,
       inProgress: 0,
@@ -48,7 +49,7 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
             },
           },
           RuiIcon: {
-            template: '<span data-testid="icon">{{ name }}</span>',
+            template: '<span data-testid="icon" :class="[$attrs.class]">{{ name }}</span>',
             props: ['name', 'size'],
           },
         },
@@ -193,6 +194,43 @@ describe('modules/sync-progress/components/ChainProgressList', () => {
 
       const icons = wrapper.findAll('[data-testid="icon"]');
       expect(icons.some(icon => icon.text() === 'lu-chevron-up')).toBe(true);
+    });
+  });
+
+  describe('cancelled chains', () => {
+    it('should treat cancelled chains as completed', () => {
+      const chains = [
+        createChainProgress('eth', 1, 3),
+        { ...createChainProgress('optimism', 2, 3), cancelled: 1 },
+      ];
+      wrapper = createWrapper(chains);
+
+      // optimism has 2 completed + 1 cancelled = 3 total, so it's done
+      expect(wrapper.text()).toContain('sync_progress.completed_chains');
+    });
+
+    it('should show warning color when completed section has cancelled chains', () => {
+      const chains = [
+        { ...createChainProgress('optimism', 2, 3), cancelled: 1 },
+      ];
+      wrapper = createWrapper(chains);
+
+      const icons = wrapper.findAll('[data-testid="icon"]');
+      const checkIcon = icons.find(icon => icon.text() === 'lu-circle-check');
+      expect(checkIcon).toBeDefined();
+      expect(checkIcon?.classes()).toContain('text-rui-warning');
+    });
+
+    it('should show success color when completed section has no cancelled chains', () => {
+      const chains = [
+        createChainProgress('optimism', 3, 3),
+      ];
+      wrapper = createWrapper(chains);
+
+      const icons = wrapper.findAll('[data-testid="icon"]');
+      const checkIcon = icons.find(icon => icon.text() === 'lu-circle-check');
+      expect(checkIcon).toBeDefined();
+      expect(checkIcon?.classes()).toContain('text-rui-success');
     });
   });
 

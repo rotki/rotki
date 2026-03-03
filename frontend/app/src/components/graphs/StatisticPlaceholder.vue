@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import AppImage from '@/components/common/AppImage.vue';
 import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
-import { getPublicPlaceholderImagePath } from '@/utils/file';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
+import { getPublicPlaceholderImagePath as getFullPath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
 const { isMdAndDown } = useBreakpoint();
 
-const getFullPath = getPublicPlaceholderImagePath;
+const { minimumTier } = useFeatureAccess(PremiumFeature.GRAPHS_VIEW);
 </script>
 
 <template>
@@ -35,6 +36,7 @@ const getFullPath = getPublicPlaceholderImagePath;
     <GetPremiumPlaceholder
       class="absolute z-1 pt-40 top-0 left-1/2 transform -translate-x-1/2"
       :title="t('premium_settings.chart_limit.statistic')"
+      :minimum-tier="minimumTier"
     />
   </div>
 </template>

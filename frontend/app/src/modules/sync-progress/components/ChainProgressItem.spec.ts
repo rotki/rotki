@@ -20,6 +20,7 @@ describe('modules/sync-progress/components/ChainProgressItem', () => {
     total: number,
     inProgress = 0,
     chain = 'eth',
+    cancelled = 0,
   ): ChainProgress {
     const addresses = [];
     for (let i = 0; i < total; i++) {
@@ -29,6 +30,9 @@ describe('modules/sync-progress/components/ChainProgressItem', () => {
       }
       else if (i < completed + inProgress) {
         status = AddressStatus.QUERYING;
+      }
+      else if (i < completed + inProgress + cancelled) {
+        status = AddressStatus.CANCELLED;
       }
       else {
         status = AddressStatus.PENDING;
@@ -40,13 +44,15 @@ describe('modules/sync-progress/components/ChainProgressItem', () => {
       });
     }
 
+    const done = completed + cancelled;
     return {
       addresses,
+      cancelled,
       chain,
       completed,
       inProgress,
-      pending: total - completed - inProgress,
-      progress: total > 0 ? Math.round((completed / total) * 100) : 0,
+      pending: total - completed - inProgress - cancelled,
+      progress: total > 0 ? Math.round((done / total) * 100) : 0,
       total,
     };
   }
@@ -117,6 +123,36 @@ describe('modules/sync-progress/components/ChainProgressItem', () => {
       wrapper = createWrapper(chain);
 
       expect(wrapper.text()).toContain('2/5');
+    });
+  });
+
+  describe('cancelled status', () => {
+    it('should show warning icon when complete with cancelled addresses', () => {
+      const chain = createChainProgress(2, 3, 0, 'eth', 1);
+      wrapper = createWrapper(chain);
+
+      const icons = wrapper.findAll('[data-testid="icon"]');
+      const warningIcon = icons.find(icon => icon.text() === 'lu-check');
+      expect(warningIcon).toBeDefined();
+      expect(warningIcon?.classes()).toContain('text-rui-warning');
+    });
+
+    it('should show warning border when complete with cancelled addresses', () => {
+      const chain = createChainProgress(2, 3, 0, 'eth', 1);
+      wrapper = createWrapper(chain);
+
+      expect(wrapper.classes()).toContain('border-l-rui-warning');
+    });
+
+    it('should show success icon and border when all addresses are complete without cancellations', () => {
+      const chain = createChainProgress(3, 3, 0);
+      wrapper = createWrapper(chain);
+
+      const icons = wrapper.findAll('[data-testid="icon"]');
+      const checkIcon = icons.find(icon => icon.text() === 'lu-check');
+      expect(checkIcon).toBeDefined();
+      expect(checkIcon?.classes()).toContain('text-rui-success');
+      expect(wrapper.classes()).toContain('border-l-rui-success');
     });
   });
 

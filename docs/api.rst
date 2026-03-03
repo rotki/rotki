@@ -437,7 +437,7 @@ Querying premium devices
    :resjson string current_device_id: Identifier of the current device making the request
    :statuscode 200: Devices successfully queried
    :statuscode 401: User is not logged in
-   :statuscode 403: Logged in user does not have premium.
+   :statuscode 403: Logged in user does not have permission.
    :statuscode 409: The external premium service could not be reached or returned unexpected response.
 
 Editing premium devices
@@ -524,11 +524,28 @@ Querying premium capabilities
 
 .. http:get:: /api/(version)/premium/capabilities
 
-   By doing a ``GET`` at this endpoint you can query the capabilities available for your premium account. The currently returned attributes are:
+   By doing a ``GET`` at this endpoint you can query the capabilities available for your logged-in account. The currently returned attributes are:
 
-   - `graphs_view`: Boolean. Enables the graphs displayed for each asset containing historical balances and values.
-   - `eth_staking_view`: Boolean. Enables the Ethereum staking view.
-   - `event_analysis_view`: Boolean. Enables the statistics view and the historical analytics based on events.
+   - `graphs_view`: Object with:
+     - `enabled` (Boolean): Enables the graphs displayed for each asset containing historical balances and values.
+     - `minimum_tier` (String): The minimum tier required to unlock this capability.
+   - `eth_staking_view`: Object with:
+     - `enabled` (Boolean): Enables the Ethereum staking view.
+     - `minimum_tier` (String): The minimum tier required to unlock this capability.
+   - `event_analysis_view`: Object with:
+     - `enabled` (Boolean): Enables the statistics view and the historical analytics based on events.
+     - `minimum_tier` (String): The minimum tier required to unlock this capability.
+   - `asset_movement_matching`: Object with:
+     - `enabled` (Boolean): Enables automatic matching of exchange asset movements with onchain events when triggering the matching task.
+     - `minimum_tier` (String): The minimum tier required to unlock this capability.
+   - `minimum_tier` can be `null` if the key is not present in the unlocks response from the server.
+   - `current_tier`: String. Current user tier name (for example `Free`, `lite`, `Basic`, `Advanced`).
+   - `limit_of_devices`: Integer. Maximum number of connected devices.
+   - `history_events_limit`: Integer. Maximum number of history events.
+   - `pnl_events_limit`: Integer. Maximum number of PnL events.
+   - `reports_lookup_limit`: Integer. Maximum number of report lookups.
+   - `max_backup_size_mb`: Integer. Maximum encrypted backup size in MB.
+   - `eth_staked_limit`: Integer. Maximum ETH staking tracked by tier.
 
    **Example Request**:
 
@@ -546,9 +563,29 @@ Querying premium capabilities
 
       {
           "result": {
-            "graphs_view": true,
-            "eth_staking_view": false,
-            "event_analysis_view": true
+            "current_tier": "Advanced",
+            "limit_of_devices": 4,
+            "history_events_limit": 100000,
+            "pnl_events_limit": 100000,
+            "reports_lookup_limit": 300,
+            "max_backup_size_mb": 600,
+            "eth_staked_limit": 384,
+            "graphs_view": {
+              "enabled": true,
+              "minimum_tier": "Basic"
+            },
+            "eth_staking_view": {
+              "enabled": false,
+              "minimum_tier": "Basic"
+            },
+            "event_analysis_view": {
+              "enabled": true,
+              "minimum_tier": "Basic"
+            },
+            "asset_movement_matching": {
+              "enabled": true,
+              "minimum_tier": "Basic"
+            }
           },
           "message": ""
       }
@@ -556,7 +593,6 @@ Querying premium capabilities
    :resjson object result: Object containing capabilities and their enabled/disabled status
    :statuscode 200: capabilities successfully queried
    :statuscode 401: User is not logged in
-   :statuscode 403: Logged in user does not have premium.
    :statuscode 409: The external premium service could not be reached or returned unexpected response.
 
 Modify user password
@@ -1448,7 +1484,7 @@ Trigger an async task
 
           {"task": "historical_balance_processing"}
 
-        :reqjson str task: Name of the task to run. Valid values are ``historical_balance_processing`` and ``asset_movement_matching``.
+        :reqjson str task: Name of the task to run. Valid values are ``historical_balance_processing`` and ``asset_movement_matching``. ``asset_movement_matching`` requires the premium capability ``asset_movement_matching``.
 
       **Example Response:**
 
@@ -1466,6 +1502,7 @@ Trigger an async task
         :resjson bool result: True on success
         :statuscode 200: Task started successfully
         :statuscode 401: User is not logged in
+        :statuscode 403: Task is not available for the current premium tier
         :statuscode 500: Internal Rotki error
 
 
@@ -6405,6 +6442,9 @@ Match exchange asset movements with onchain events
 
    Matches exchange asset movement events with corresponding events, or mark the asset movement as having no corresponding event.
 
+   .. note::
+      This endpoint is only available for premium users
+
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
@@ -6437,12 +6477,14 @@ Match exchange asset movements with onchain events
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Events matched successfully
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in or failure.
+   :statuscode 401: No user is logged in
+   :statuscode 403: Logged in user does not have premium.
    :statuscode 500: Internal rotki error
 
 .. http:get:: /api/(version)/history/events/match/asset_movements
 
    Get a list of unmatched asset movements group identifiers.
+   This endpoint does not require premium.
 
    **Example Request**:
 
@@ -6478,6 +6520,9 @@ Match exchange asset movements with onchain events
 .. http:post:: /api/(version)/history/events/match/asset_movements
 
    Find possible matching events for an unmatched asset movement.
+
+   .. note::
+      This endpoint is only available for premium users
 
    **Example Request**:
 
@@ -6519,12 +6564,17 @@ Match exchange asset movements with onchain events
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Possible matches returned successfully
    :statuscode 400: Provided JSON is in some way malformed or asset movement not found
-   :statuscode 409: No user is logged in or failure
+   :statuscode 401: No user is logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Failure
    :statuscode 500: Internal rotki error
 
 .. http:delete:: /api/(version)/history/events/match/asset_movements
 
    Unlinks matched asset movements, or resets the asset movement to being simply unmatched if the asset movement is marked as having no corresponding event.
+
+   .. note::
+      This endpoint is only available for premium users
 
    **Example Request**:
 
@@ -6556,7 +6606,9 @@ Match exchange asset movements with onchain events
    :resjson str message: Error message if any errors occurred.
    :statuscode 200: Events unlinked successfully
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: No user is logged in or failure.
+   :statuscode 401: No user is logged in
+   :statuscode 403: Logged in user does not have premium.
+   :statuscode 409: Failure.
    :statuscode 500: Internal rotki error
 
 Customized history event duplicates

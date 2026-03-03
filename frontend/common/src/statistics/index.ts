@@ -1,8 +1,13 @@
 import { z } from 'zod/v4';
-import { AssetBalance, Balance } from '../balances';
+import { AssetBalance, AssetEntry, Balance } from '../balances';
 import { NumericString } from '../numbers';
 
 const TimedEntry = z.object({ time: z.number().positive() });
+
+const AssetDistribution = z.object({
+  ...TimedEntry.shape,
+  usdValue: NumericString,
+});
 
 const TimedBalance = z.object({
   ...Balance.shape,
@@ -21,20 +26,30 @@ export type OwnedAssets = z.infer<typeof OwnedAssets>;
 
 const LocationDataItem = z.object({
   location: z.string().min(1),
-  time: z.number().positive(),
-  usdValue: NumericString,
+  ...AssetDistribution.shape,
 });
 
 export const LocationData = z.array(LocationDataItem);
 
 export type LocationData = z.infer<typeof LocationData>;
 
-const TimedAssetBalance = z.object({
+/**
+ * Legacy schema (PREMIUM_COMPONENTS_VERSION <= 27): had AssetBalance (asset, amount, value) + time.
+ * This was incorrect as the API returns {asset, time, usdValue} without amount/value.
+ * Kept for backward compatibility with premium components using version 27.
+ * TODO: Remove LegacyTimedAssetBalance and the union when we bump components to v16.
+ */
+const LegacyTimedAssetBalance = z.object({
   ...AssetBalance.shape,
   ...TimedEntry.shape,
 });
 
-export const TimedAssetBalances = z.array(TimedAssetBalance);
+const TimedAssetBalance = z.object({
+  ...AssetEntry.shape,
+  ...AssetDistribution.shape,
+});
+
+export const TimedAssetBalances = z.union([z.array(TimedAssetBalance), z.array(LegacyTimedAssetBalance)]);
 
 export type TimedAssetBalances = z.infer<typeof TimedAssetBalances>;
 

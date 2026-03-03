@@ -18,6 +18,11 @@ const { t } = useI18n({ useScope: 'global' });
 const {
   phase,
   overallProgress,
+  hasCancelled,
+  hasCancelledChains,
+  hasCancelledDecoding,
+  hasCancelledLocations,
+  hasCancelledProtocolCache,
   totalChains,
   completedChains,
   totalLocations,
@@ -38,7 +43,7 @@ const statusIcon = computed<string>(() => {
 
 const statusColor = computed<string>(() => {
   if (get(isComplete))
-    return 'text-rui-success';
+    return get(hasCancelled) ? 'text-rui-warning' : 'text-rui-success';
   return 'text-rui-primary';
 });
 
@@ -49,10 +54,11 @@ const title = computed<string>(() => {
 });
 
 const decodingTotal = computed<number>(() => get(decoding).length);
-const decodingCompleted = computed<number>(() => get(decoding).filter(d => d.processed >= d.total).length);
+const decodingCompleted = computed<number>(() => get(decoding).filter(d => d.processed >= d.total || d.cancelled).length);
 
 const chainsStats = computed(() => ({
   completed: get(completedChains),
+  hasCancelled: get(hasCancelledChains),
   hasData: get(totalChains) > 0,
   isComplete: get(completedChains) === get(totalChains) && get(totalChains) > 0,
   total: get(totalChains),
@@ -60,6 +66,7 @@ const chainsStats = computed(() => ({
 
 const locationsStats = computed(() => ({
   completed: get(completedLocations),
+  hasCancelled: get(hasCancelledLocations),
   hasData: get(totalLocations) > 0,
   isComplete: get(completedLocations) === get(totalLocations) && get(totalLocations) > 0,
   total: get(totalLocations),
@@ -67,16 +74,18 @@ const locationsStats = computed(() => ({
 
 const decodingStats = computed(() => ({
   completed: get(decodingCompleted),
+  hasCancelled: get(hasCancelledDecoding),
   hasData: get(decodingTotal) > 0,
   isComplete: get(decodingCompleted) === get(decodingTotal) && get(decodingTotal) > 0,
   total: get(decodingTotal),
 }));
 
 const protocolCacheTotal = computed<number>(() => get(protocolCache).length);
-const protocolCacheCompleted = computed<number>(() => get(protocolCache).filter(p => p.processed >= p.total).length);
+const protocolCacheCompleted = computed<number>(() => get(protocolCache).filter(p => p.processed >= p.total || p.cancelled).length);
 
 const protocolCacheStats = computed(() => ({
   completed: get(protocolCacheCompleted),
+  hasCancelled: get(hasCancelledProtocolCache),
   hasData: get(protocolCacheTotal) > 0,
   isComplete: get(protocolCacheCompleted) === get(protocolCacheTotal) && get(protocolCacheTotal) > 0,
   total: get(protocolCacheTotal),
