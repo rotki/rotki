@@ -32,7 +32,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 YDAEMON_API: Final[str] = 'https://ydaemon.yearn.fi/rotki'  # contains v2 and v3 vaults
@@ -43,7 +43,14 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _maybe_reset_yearn_cache_timestamp(count: int | None) -> bool:
+def _get_cache_args(chain_id: ChainID) -> list[str]:
+    # Keep ethereum cache key backward-compatible with existing data migrations/tests.
+    # TODO: https://github.com/rotki/rotki/issues/9024
+    # Switch ethereum cache key to include chain id and migrate existing entries.
+    return [] if chain_id == ChainID.ETHEREUM else [str(chain_id.serialize_for_db())]
+
+
+def _maybe_reset_yearn_cache_timestamp(count: int | None, chain_id: ChainID) -> bool:
     """Get the number of vaults processed in the last execution of this function.
     If it was the same number of vaults this response has then we don't need to take
     action since vaults are not removed from their API response.
@@ -55,7 +62,7 @@ def _maybe_reset_yearn_cache_timestamp(count: int | None) -> bool:
     with GlobalDBHandler().conn.read_ctx() as cursor:
         yearn_api_cache: str | None = globaldb_get_unique_cache_value(
             cursor=cursor,
-            key_parts=(CacheType.YEARN_VAULTS,),
+            key_parts=(CacheType.YEARN_VAULTS, *_get_cache_args(chain_id)),
         )
     if count is None or (yearn_api_cache is not None and int(yearn_api_cache) == count):
         vaults_amount = yearn_api_cache if yearn_api_cache is not None else '0'
@@ -68,7 +75,7 @@ def _maybe_reset_yearn_cache_timestamp(count: int | None) -> bool:
             # update the timestamp of the last time these vaults were queried
             globaldb_set_unique_cache_value(
                 write_cursor=write_cursor,
-                key_parts=[CacheType.YEARN_VAULTS],
+                key_parts=[CacheType.YEARN_VAULTS, *_get_cache_args(chain_id)],
                 value=vaults_amount,
             )
         return True  # we should stop here
@@ -113,11 +120,10 @@ def _query_ydaemon(endpoint: str, params: str) -> list[dict[str, Any]] | dict[st
     return data
 
 
-def _query_yearn_vaults() -> list[dict[str, Any]]:
+def _query_yearn_vaults(chain_id: ChainID) -> list[dict[str, Any]]:
     """Query list of yearn v2 and v3 vaults from the ydaemon api.
     Returns the list of vaults.
 
-    At the moment this logic queries only ethereum vaults.
     May raise:
         - RemoteError
     """
@@ -125,7 +131,7 @@ def _query_yearn_vaults() -> list[dict[str, Any]]:
     while True:
         data = _query_ydaemon(
             endpoint='list/vaults',
-            params=f'chainIDs=1&limit={YDAEMON_PAGE_SIZE}&skip={offset}',
+            params=f'chainIDs={chain_id.value}&limit={YDAEMON_PAGE_SIZE}&skip={offset}',
         )
         all_vaults.extend(data)
         offset += YDAEMON_PAGE_SIZE
@@ -135,14 +141,14 @@ def _query_yearn_vaults() -> list[dict[str, Any]]:
     return all_vaults
 
 
-def _query_yearn_vault_count() -> int:
+def _query_yearn_vault_count(chain_id: ChainID) -> int:
     """Query count of yearn v2 and v3 vaults from the ydaemon api.
     Returns total vault count.
 
     May raise:
     - RemoteError
     """
-    data = _query_ydaemon(endpoint='count/vaults', params='chainIDs=1')
+    data = _query_ydaemon(endpoint='count/vaults', params=f'chainIDs={chain_id.value}')
     if 'numberOfVaults' not in data:
         msg = 'Unexpected format from yearn vault count response.'
         log.error(f'{msg} Expected a dict containing numberOfVaults integer, got {data}')
@@ -157,22 +163,26 @@ def _query_yearn_vault_count() -> int:
         ) from e
 
 
-def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -> None:
+def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EvmNodeInquirer') -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
 
     May raise:
     - RemoteError
     """
+    chain_id = ethereum_inquirer.chain_id
     try:
-        count = _query_yearn_vault_count()
-        if _maybe_reset_yearn_cache_timestamp(count=count):
+        count = _query_yearn_vault_count(chain_id=chain_id)
+        if _maybe_reset_yearn_cache_timestamp(count=count, chain_id=chain_id):
             return  # no new vaults
 
-        data = _query_yearn_vaults()
+        data = _query_yearn_vaults(chain_id=chain_id)
     except RemoteError as e:
-        log.error(f'Failed to query yearn vaults due to {e}. Resetting yearn cache ts')
-        _maybe_reset_yearn_cache_timestamp(count=None)  # reset timestamp to prevent repeated errors  # noqa: E501
+        log.error(
+            f'Failed to query yearn vaults on {chain_id} due to {e}. '
+            'Resetting yearn cache ts',
+        )
+        _maybe_reset_yearn_cache_timestamp(count=None, chain_id=chain_id)  # reset timestamp to prevent repeated errors  # noqa: E501
         raise
 
     if (vault_count := len(data)) != count:
@@ -205,7 +215,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             underlying_token = get_or_create_evm_token(
                 userdb=db,
                 evm_address=string_to_evm_address(vault['token']['address']),
-                chain_id=ChainID.ETHEREUM,
+                chain_id=chain_id,
                 decimals=vault['token']['decimals'],
                 name=vault['token']['name'],
                 symbol=vault['token']['symbol'],
@@ -214,7 +224,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             vault_token = get_or_create_evm_token(
                 userdb=db,
                 evm_address=string_to_evm_address(vault['address']),
-                chain_id=ChainID.ETHEREUM,
+                chain_id=chain_id,
                 protocol=vault_type,
                 decimals=vault['decimals'],
                 name=vault['name'],
@@ -231,7 +241,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                     userdb=db,
                     evm_address=staking_address,
                     evm_inquirer=ethereum_inquirer,
-                    chain_id=ChainID.ETHEREUM,
+                    chain_id=chain_id,
                     protocol=CPT_YEARN_STAKING,
                     underlying_tokens=[UnderlyingToken(
                         address=vault_token.evm_address,
@@ -257,7 +267,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             tokens_to_update_by_protocol[vault_type].append(vault_token)
 
     for protocol, tokens in tokens_to_update_by_protocol.items():
-        log.debug(f'Updating protocol for {len(tokens)} ethereum {protocol} assets')
+        log.debug(f'Updating protocol for {len(tokens)} {chain_id.name} {protocol} assets')
         GlobalDBHandler.set_tokens_protocol_if_missing(
             tokens=tokens,
             new_protocol=protocol,
@@ -270,6 +280,6 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
 
         globaldb_set_unique_cache_value(
             write_cursor=write_cursor,
-            key_parts=(CacheType.YEARN_VAULTS,),
+            key_parts=(CacheType.YEARN_VAULTS, *_get_cache_args(chain_id)),
             value=str(len(data)),
         )

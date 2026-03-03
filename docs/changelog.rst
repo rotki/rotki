@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`9024` rotki now supports yearn in all EVM chains.
 * :bug:`11782` Adding a new EVM account will no longer trigger a redundant initial balance fetch before token detection. Balances are now fetched only once after tokens are detected.
 * :feature:`-` Claiming Degen airdrop 1 will now be properly decoded by rotki.
 * :bug:`11788` Removing a sub-event from a multi-trade event group will no longer fail with a sequence index conflict error.
