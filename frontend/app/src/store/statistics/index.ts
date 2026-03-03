@@ -79,62 +79,62 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const totalNetWorth = calculateTotalValue(nftsInNetValue);
 
-  const overall = computed<Overall>(() => {
-    const currency = get(currencySymbol);
+  const scrambleEnabled = logicOr(scrambleData, logicNot(shouldShowAmount));
+
+  const balanceDelta = computed<BigNumber>(() => {
     const selectedTimeframe = get(timeframe);
     const allTimeframes = timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix());
     const startingDate = allTimeframes[selectedTimeframe].startingDate();
-
-    const startingValue: () => BigNumber = () => {
-      const data = get(getNetValue(startingDate)).data;
-      let start = data[0];
-      if (start.isZero()) {
-        for (let i = 1; i < data.length; i++) {
-          if (data[i].gt(0)) {
-            start = data[i];
-            break;
-          }
+    const data = get(getNetValue(startingDate)).data;
+    let start = data[0];
+    if (start?.isZero()) {
+      for (let i = 1; i < data.length; i++) {
+        if (data[i].gt(0)) {
+          start = data[i];
+          break;
         }
       }
-      return start;
-    };
+    }
+    return get(totalNetWorth).minus(start ?? Zero);
+  });
 
-    const starting = startingValue();
-    const totalNW = get(totalNetWorth);
-    const balanceDelta = totalNW.minus(starting);
+  const scrambledNetWorth = useNumberScrambler({
+    enabled: scrambleEnabled,
+    multiplier: scrambleMultiplier,
+    value: totalNetWorth,
+  });
 
-    // Apply scrambling to net worth for tray display
-    const scrambledNetWorth = get(useNumberScrambler({
-      enabled: logicOr(scrambleData, logicNot(shouldShowAmount)),
-      multiplier: scrambleMultiplier,
-      value: computed(() => totalNW),
-    }));
+  const scrambledBalanceDelta = useNumberScrambler({
+    enabled: scrambleEnabled,
+    multiplier: scrambleMultiplier,
+    value: balanceDelta,
+  });
 
-    const scrambledBalanceDelta = get(useNumberScrambler({
-      enabled: logicOr(scrambleData, logicNot(shouldShowAmount)),
-      multiplier: scrambleMultiplier,
-      value: computed(() => balanceDelta),
-    }));
+  const overall = computed<Overall>(() => {
+    const currency = get(currencySymbol);
+    const selectedTimeframe = get(timeframe);
+    const delta = get(balanceDelta);
 
-    const percentage = balanceDelta.div(starting).multipliedBy(100);
+    const percentage = ((): string => {
+      const starting = get(totalNetWorth).minus(delta);
+      const pct = delta.div(starting).multipliedBy(100);
+      return pct.isFinite() ? pct.toFormat(2) : '-';
+    })();
 
     let up: boolean | undefined;
-    if (balanceDelta.isGreaterThan(0))
+    if (delta.isGreaterThan(0))
       up = true;
-    else if (balanceDelta.isLessThan(0))
+    else if (delta.isLessThan(0))
       up = false;
 
     const floatPrecision = get(floatingPrecision);
     const rounding = get(valueRoundingMode);
 
-    const delta = scrambledBalanceDelta.toFormat(floatPrecision, rounding);
-    const netWorth = scrambledNetWorth.toFormat(floatPrecision, rounding);
-
     return {
       currency,
-      delta,
-      netWorth,
-      percentage: percentage.isFinite() ? percentage.toFormat(2) : '-',
+      delta: get(scrambledBalanceDelta).toFormat(floatPrecision, rounding),
+      netWorth: get(scrambledNetWorth).toFormat(floatPrecision, rounding),
+      percentage,
       period: selectedTimeframe,
       up,
     };

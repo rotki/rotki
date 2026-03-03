@@ -11,7 +11,7 @@ import { getPublicProtocolImagePath } from '@/utils/file';
 export const useDefiMetadata = createSharedComposable(() => {
   const { fetchDefiMetadata } = useDefiApi();
 
-  const { connected } = toRefs(useMainStore());
+  const { connected } = storeToRefs(useMainStore());
 
   const loading = ref<boolean>(false);
 

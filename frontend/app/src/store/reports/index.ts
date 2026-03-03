@@ -86,6 +86,7 @@ export const useReportsStore = defineStore('reports', () => {
     generateReport: generateReportCaller,
   } = useReportsApi();
 
+  const { awaitTask } = useTaskStore();
   const { getProgress } = useHistoryApi();
 
   const isLatestReport = (reportId: number): ComputedRef<boolean> => computed<boolean>(() => get(lastGeneratedReport) === reportId);
@@ -186,7 +187,6 @@ export const useReportsStore = defineStore('reports', () => {
 
     const intervalId = checkProgress();
 
-    const { awaitTask } = useTaskStore();
     try {
       const { taskId } = await generateReportCaller(period);
       const { result } = await awaitTask<number, TaskMeta>(taskId, TaskType.TRADE_HISTORY, {
@@ -235,7 +235,6 @@ export const useReportsStore = defineStore('reports', () => {
 
     const intervalId = checkProgress();
 
-    const { awaitTask } = useTaskStore();
     try {
       const { taskId } = await exportReportDataCaller(payload);
       const { result } = await awaitTask<boolean | object, TaskMeta>(taskId, TaskType.TRADE_HISTORY, {

@@ -19,7 +19,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const selection = ref<'current' | 'historical'>('current');
 
-const { events } = toRefs(useKrakenStakingStore());
+const { events } = storeToRefs(useKrakenStakingStore());
 const { assetPrice } = usePriceUtils();
 
 const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();

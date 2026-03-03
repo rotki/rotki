@@ -1,7 +1,7 @@
 import { type ActionResult, assert } from '@rotki/common';
 import { checkIfDevelopment } from '@shared/utils';
 import dayjs from 'dayjs';
-import { find, toArray } from 'es-toolkit/compat';
+import { toArray } from 'es-toolkit/compat';
 import { useTaskApi } from '@/composables/api/task';
 import { isTimeoutError } from '@/modules/api/with-retry';
 import {
@@ -97,42 +97,53 @@ export const useTaskStore = defineStore('tasks', () => {
     unlock(taskId);
   };
 
+  const tasksByType = computed<Map<TaskType, Task<TaskMeta>[]>>(() => {
+    const map = new Map<TaskType, Task<TaskMeta>[]>();
+    for (const task of Object.values(get(tasks))) {
+      const list = map.get(task.type);
+      if (list)
+        list.push(task);
+      else
+        map.set(task.type, [task]);
+    }
+    return map;
+  });
+
   const checkIfTaskIsRunning = (
-    runningTasks: TaskMap<TaskMeta>,
+    groupedTasks: Map<TaskType, Task<TaskMeta>[]>,
     type: TaskType,
     meta: Record<string, any> = {},
-  ): boolean => !!find(runningTasks, (item) => {
-    const sameType = item.type === type;
+  ): boolean => {
+    const typeTasks = groupedTasks.get(type);
+    if (!typeTasks)
+      return false;
+
     const keys = Object.keys(meta);
     if (keys.length === 0)
-      return sameType;
+      return true;
 
-    return (
-      sameType
-      && keys.every(
+    return typeTasks.some(item =>
+      keys.every(
         key =>
         // @ts-expect-error meta key has any type
           key in item.meta && item.meta[key] === meta[key],
-      )
+      ),
     );
-  });
+  };
 
   const isTaskRunning = (
     type: TaskType,
     meta: Record<string, any> = {},
-  ): boolean => checkIfTaskIsRunning(get(tasks), type, meta);
+  ): boolean => checkIfTaskIsRunning(get(tasksByType), type, meta);
 
   const useIsTaskRunning = (
     type: TaskType,
     meta: MaybeRef<Record<string, any>> = {},
-  ): ComputedRef<boolean> => computed<boolean>(() => checkIfTaskIsRunning(get(tasks), type, get(meta)));
+  ): ComputedRef<boolean> => computed<boolean>(() => checkIfTaskIsRunning(get(tasksByType), type, get(meta)));
 
   const metadata = <T extends TaskMeta>(type: TaskType): T | undefined => {
-    const task = find(Object.values(get(tasks)), item => item.type === type);
-    if (task)
-      return task.meta as T;
-
-    return undefined;
+    const typeTasks = get(tasksByType).get(type);
+    return typeTasks?.[0]?.meta as T | undefined;
   };
 
   const hasRunningTasks = computed<boolean>(() => Object.keys(get(tasks)).length > 0);
@@ -178,7 +189,7 @@ export const useTaskStore = defineStore('tasks', () => {
       if (deleted) {
         const handler = handlers[type] ?? handlers[`${type}-${id}`];
         if (!handler) {
-          remove(task.id);
+          remove(id);
         }
         else {
           lock(id);
@@ -191,7 +202,7 @@ export const useTaskStore = defineStore('tasks', () => {
     }
     catch (error_: any) {
       if (error_ instanceof TaskNotFoundError)
-        remove(task.id);
+        remove(id);
 
       return false;
     }

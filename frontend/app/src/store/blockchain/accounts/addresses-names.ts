@@ -28,8 +28,6 @@ import { logger } from '@/utils/logging';
 export const useAddressesNamesStore = defineStore('blockchains/accounts/addresses-names', () => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());
 
-  const fetchedEntries = ref<AddressBookSimplePayload[]>([]);
-  const addressesNames = ref<AddressBookEntries>([]);
   const ensNames = ref<EthNames>({});
 
   const { awaitTask } = useTaskStore();
@@ -319,14 +317,12 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
 
   return {
     addAddressBook,
-    addressesNames,
     addressInfoSelector,
     addressNameSelector,
     addressNameSourceSelector,
     deleteAddressBook,
     ensNames,
     ensNameSelector,
-    fetchedEntries,
     fetchEnsNames,
     getAddressBook,
     getAddressesWithoutNames,

@@ -11,14 +11,22 @@ import { useTaskStore } from '@/store/tasks';
 import { useWebsocketStore } from '@/store/websocket';
 import { logger } from '@/utils/logging';
 
-const PERIODIC = 'periodic';
-const TASK = 'task';
-const BALANCES = 'balances';
-const EVM_EVENTS_STATUS = 'evm_events_status';
-const PASSWORD_CONFIRMATION = 'password_confirmation';
+const MonitorKey = {
+  BALANCES: 'balances',
+  EVM_EVENTS_STATUS: 'evm_events_status',
+  PASSWORD_CONFIRMATION: 'password_confirmation',
+  PERIODIC: 'periodic',
+  TASK: 'task',
+} as const;
+
+const TASK_POLLING_MS = 4_000;
+const EVM_STATUS_POLLING_MS = 10 * 60 * 1_000;
+const PASSWORD_CHECK_MS = 60 * 60 * 1_000;
+const SECONDS_TO_MS = 1_000;
+const MINUTES_TO_MS = 60 * 1_000;
 
 export const useMonitorStore = defineStore('monitor', () => {
-  const monitors = ref<Record<string, any>>({});
+  const monitors: Record<string, NodeJS.Timeout> = {};
 
   const authStore = useSessionAuthStore();
   const { canRequestData, logged, username } = storeToRefs(authStore);
@@ -49,13 +57,11 @@ export const useMonitorStore = defineStore('monitor', () => {
   const connectWebSocket = async (restarting: boolean): Promise<void> => {
     try {
       await connect();
-      const activeMonitors = get(monitors);
-      if (!activeMonitors[PERIODIC]) {
+      if (!monitors[MonitorKey.PERIODIC]) {
         if (!restarting)
           fetch();
 
-        activeMonitors[PERIODIC] = setInterval(fetch, get(queryPeriod) * 1000);
-        set(monitors, activeMonitors);
+        monitors[MonitorKey.PERIODIC] = setInterval(fetch, get(queryPeriod) * SECONDS_TO_MS);
       }
     }
     catch (error: unknown) {
@@ -64,49 +70,39 @@ export const useMonitorStore = defineStore('monitor', () => {
   };
 
   const startTaskMonitoring = (restarting: boolean): void => {
-    const activeMonitors = get(monitors);
-
-    if (!activeMonitors[TASK]) {
+    if (!monitors[MonitorKey.TASK]) {
       if (!restarting)
         startPromise(monitor());
 
-      activeMonitors[TASK] = setInterval(() => startPromise(monitor()), 4000);
-      set(monitors, activeMonitors);
+      monitors[MonitorKey.TASK] = setInterval(() => startPromise(monitor()), TASK_POLLING_MS);
     }
   };
 
   const startBalanceRefresh = (): void => {
-    const period = get(refreshPeriod) * 60 * 1000;
-    const activeMonitors = get(monitors);
-    if (!activeMonitors[BALANCES] && period > 0) {
-      activeMonitors[BALANCES] = setInterval(() => {
+    const period = get(refreshPeriod) * MINUTES_TO_MS;
+    if (!monitors[MonitorKey.BALANCES] && period > 0) {
+      monitors[MonitorKey.BALANCES] = setInterval(() => {
         if (get(canRequestData))
           startPromise(autoRefresh());
       }, period);
-      set(monitors, activeMonitors);
     }
   };
 
   const startEvmStatusMonitoring = (): void => {
-    const activeMonitors = get(monitors);
-    const period = 10 * 60 * 1000; // fetch every 10 mins
-    if (!activeMonitors[EVM_EVENTS_STATUS]) {
+    if (!monitors[MonitorKey.EVM_EVENTS_STATUS]) {
       if (get(canRequestData))
         startPromise(fetchTransactionStatusSummary());
 
-      activeMonitors[EVM_EVENTS_STATUS] = setInterval(() => {
+      monitors[MonitorKey.EVM_EVENTS_STATUS] = setInterval(() => {
         if (get(canRequestData))
           startPromise(fetchTransactionStatusSummary());
-      }, period);
-      set(monitors, activeMonitors);
+      }, EVM_STATUS_POLLING_MS);
     }
   };
 
   const startPasswordConfirmationMonitoring = (): void => {
-    const activeMonitors = get(monitors);
-    const period = 60 * 60 * 1000; // check every 1 hour
-    if (!activeMonitors[PASSWORD_CONFIRMATION]) {
-      activeMonitors[PASSWORD_CONFIRMATION] = setInterval(() => {
+    if (!monitors[MonitorKey.PASSWORD_CONFIRMATION]) {
+      monitors[MonitorKey.PASSWORD_CONFIRMATION] = setInterval(() => {
         if (!get(logged))
           return;
 
@@ -115,8 +111,7 @@ export const useMonitorStore = defineStore('monitor', () => {
           return;
 
         startPromise(checkIfPasswordConfirmationNeeded(currentUsername));
-      }, period);
-      set(monitors, activeMonitors);
+      }, PASSWORD_CHECK_MS);
     }
   };
 
@@ -134,12 +129,10 @@ export const useMonitorStore = defineStore('monitor', () => {
 
   const stop = (): void => {
     disconnect();
-    const activeMonitors = get(monitors);
-    for (const key in activeMonitors) {
-      clearInterval(activeMonitors[key]);
-      delete activeMonitors[key];
+    for (const key in monitors) {
+      clearInterval(monitors[key]);
+      delete monitors[key];
     }
-    set(monitors, activeMonitors);
   };
 
   const restart = (): void => {
