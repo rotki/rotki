@@ -4,8 +4,12 @@ from typing import Any
 from rotkehlchen.assets.utils import token_normalized_value_decimals
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, STAKED_TOPIC
-from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE
+from rotkehlchen.chain.evm.constants import (
+    DEFAULT_TOKEN_DECIMALS,
+    REWARDS_CLAIMED_TOPIC,
+    STAKED_TOPIC,
+)
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE, CPT_AAVE_V2
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -63,27 +67,42 @@ class AaveDecoder(EvmDecoderInterface):
             amount: FVal,
             context: DecoderContext,
     ) -> EvmDecodingOutput:
+        tracked_claimant = to_address if self.base.is_tracked(to_address) else from_address
+        suffix = f' for {to_address}' if from_address != to_address and self.base.is_tracked(to_address) else ''  # noqa: E501
+        claim_event = None
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
                     event.asset == A_AAVE and
-                    event.location_label == to_address and
+                    event.location_label == tracked_claimant and
                     event.amount == amount
             ):
                 event.event_type = HistoryEventType.STAKING
                 event.event_subtype = HistoryEventSubType.REWARD
-                event.notes = f'Claim {amount} AAVE from staking'
-                if from_address != to_address:
-                    event.notes += f' for {to_address}'
+                event.notes = f'Claim {amount} AAVE from staking{suffix}'
                 event.counterparty = CPT_AAVE
                 event.address = STK_AAVE_ADDR
+                claim_event = event
                 break
 
-        else:
-            log.error(f'Aave stake receive was not found for {context.transaction.tx_hash!s}')
+        if claim_event is None:
+            # A claim can be immediately re-staked in the same transaction so there is no
+            # user-facing AAVE transfer to transform. Create the reward event from the claim log.
+            claim_event = self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.REWARD,
+                asset=A_AAVE,
+                amount=amount,
+                location_label=tracked_claimant,
+                notes=f'Claim {amount} AAVE from staking{suffix}',
+                counterparty=CPT_AAVE,
+                address=STK_AAVE_ADDR,
+            )
 
-        return DEFAULT_EVM_DECODING_OUTPUT
+        return EvmDecodingOutput(events=[claim_event] if claim_event not in context.decoded_events else None)  # noqa: E501
 
     def _decode_stake(
             self,
@@ -93,6 +112,9 @@ class AaveDecoder(EvmDecoderInterface):
             context: DecoderContext,
     ) -> EvmDecodingOutput:
         out_event, in_event = None, None
+        claim_event = None
+        suffix = f' for {to_address}' if from_address != to_address and self.base.is_tracked(from_address) else ''  # noqa: E501
+        new_events = []
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.SPEND and
@@ -119,12 +141,90 @@ class AaveDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.notes = f'Receive {event.amount} stkAAVE from staking in Aave'
                 in_event = event
+            elif (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.REWARD and
+                event.asset.identifier == STKAAVE_IDENTIFIER and
+                event.location_label == to_address and
+                event.amount == amount and
+                event.counterparty == CPT_AAVE_V2
+            ):
+                # Older flows claim stkAAVE from v2 incentives and immediately stake it.
+                # Normalize this into claim AAVE -> stake AAVE -> receive stkAAVE.
+                claim_event = self.base.make_event_from_transaction(
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
+                    event_type=HistoryEventType.STAKING,
+                    event_subtype=HistoryEventSubType.REWARD,
+                    asset=A_AAVE,
+                    amount=amount,
+                    location_label=to_address,
+                    notes=f'Claim {amount} AAVE from staking{suffix}',
+                    counterparty=CPT_AAVE,
+                    address=STK_AAVE_ADDR,
+                )
+                event.counterparty = CPT_AAVE
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.notes = f'Receive {event.amount} stkAAVE from staking in Aave'
+                in_event = event
+                new_events.append(claim_event)
+
+        if out_event is None and in_event is not None:
+            # A stake can use rewards claimed internally by the staking contract, so there may
+            # be no user-facing AAVE spend transfer to transform. Create the stake event here.
+            out_event = self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                asset=A_AAVE,
+                amount=amount,
+                location_label=to_address,
+                notes=f'Stake {amount} AAVE{suffix}',
+                counterparty=CPT_AAVE,
+                address=STK_AAVE_ADDR,
+            )
+            new_events.append(out_event)
+
+        if (
+            claim_event is None and
+            out_event is not None and
+            any(
+                len(log.topics) > 0 and log.topics[0] in {REWARDS_CLAIMED, REWARDS_CLAIMED_TOPIC}
+                for log in context.all_logs
+            ) and
+            not any(
+                event.event_type == HistoryEventType.STAKING and
+                event.event_subtype == HistoryEventSubType.REWARD and
+                event.asset == A_AAVE and
+                event.location_label == to_address and
+                event.amount == amount
+                for event in context.decoded_events
+            )
+        ):
+            claim_event = self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.STAKING,
+                event_subtype=HistoryEventSubType.REWARD,
+                asset=A_AAVE,
+                amount=amount,
+                location_label=to_address,
+                notes=f'Claim {amount} AAVE from staking{suffix}',
+                counterparty=CPT_AAVE,
+                address=STK_AAVE_ADDR,
+            )
+            new_events.append(claim_event)
 
         maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
+            ordered_events=(
+                [claim_event, out_event, in_event]
+                if claim_event is not None and claim_event not in context.decoded_events else
+                [out_event, in_event]
+            ),
             events_list=context.decoded_events,
         )
-        return DEFAULT_EVM_DECODING_OUTPUT
+        return EvmDecodingOutput(events=new_events)
 
     def _decode_unstake(
             self,
