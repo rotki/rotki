@@ -34,6 +34,7 @@ from rotkehlchen.chain.evm.constants import (
 from rotkehlchen.chain.evm.decoding.constants import (
     ERC20_OR_ERC721_TRANSFER,
     STAKED as STAKED_TOPIC_V2,
+    WITHDRAWN as WITHDRAW_TOPIC_V2,
 )
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
@@ -204,7 +205,22 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         """Decode v1 and v2 vault events that only have transfer log events."""
         from_address, to_address = bytes_to_address(context.tx_log.topics[1]), bytes_to_address(context.tx_log.topics[2])  # noqa: E501
         if not self.base.any_tracked((from_address, to_address)):
-            return DEFAULT_EVM_DECODING_OUTPUT  # can happen as other transfers of token may be hit in same transaction  # noqa: E501
+            # Withdrawals via zaps can burn shares from an untracked intermediary address.
+            # Keep decoding if a tracked account sent the same amount of vault shares to it.
+            if to_address != ZERO_ADDRESS:
+                return DEFAULT_EVM_DECODING_OUTPUT  # can happen as other transfers of token may be hit in same transaction  # noqa: E501
+
+            linked_tracked_share_transfer = any(
+                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                tx_log.address == context.tx_log.address and
+                bytes_to_address(tx_log.topics[2]) == from_address and
+                self.base.is_tracked(bytes_to_address(tx_log.topics[1])) and
+                tx_log.data == context.tx_log.data
+                for tx_log in context.all_logs
+                if tx_log != context.tx_log
+            )
+            if linked_tracked_share_transfer is False:
+                return DEFAULT_EVM_DECODING_OUTPUT
 
         counterparty = CPT_YEARN_V1 if (vault_address := context.tx_log.address) in self.vaults[CPT_YEARN_V1] else CPT_YEARN_V2  # noqa: E501
         if ZERO_ADDRESS not in (from_address, to_address):
@@ -243,15 +259,27 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 underlying_transfer_tx_log = tx_log
                 break
 
-        if underlying_transfer_tx_log is None and from_address == ZERO_ADDRESS:
+        if (
+            underlying_transfer_tx_log is None and (
+                from_address == ZERO_ADDRESS or (
+                    to_address == ZERO_ADDRESS and
+                    underlying_vault_token == self.node_inquirer.wrapped_native_token
+                )
+            )
+        ):
             for tx_log in context.all_logs:
                 if (
                     tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
                     tx_log != context.tx_log and
                     tx_log.address == underlying_vault_token.evm_address and
                     (
-                        bytes_to_address(tx_log.topics[1]) == vault_address or
-                        bytes_to_address(tx_log.topics[2]) == vault_address
+                        (
+                            from_address == ZERO_ADDRESS and
+                            bytes_to_address(tx_log.topics[2]) == vault_address
+                        ) or (
+                            to_address == ZERO_ADDRESS and
+                            bytes_to_address(tx_log.topics[1]) == vault_address
+                        )
                     )
                 ):
                     underlying_transfer_tx_log = tx_log
@@ -307,6 +335,59 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 ),
             ])
         elif to_address == ZERO_ADDRESS:  # withdraw
+            if (
+                any(
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset == underlying_vault_token and
+                    event.amount == underlying_amount
+                    for event in context.decoded_events
+                ) is False and
+                underlying_vault_token == self.node_inquirer.wrapped_native_token
+            ):
+                withdraw_asset = self.node_inquirer.native_token
+                withdraw_symbol = self.node_inquirer.native_token.symbol
+            else:
+                withdraw_asset = underlying_vault_token
+                withdraw_symbol = underlying_vault_token.symbol
+
+            if withdraw_asset == self.node_inquirer.native_token:
+                return_event, withdraw_event = None, None
+                for event in context.decoded_events:
+                    if (
+                        event.event_type == HistoryEventType.SPEND and
+                        event.event_subtype == HistoryEventSubType.NONE and
+                        event.asset == vault_token and
+                        event.amount == vault_amount
+                    ):
+                        event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                        event.counterparty = counterparty
+                        event.address = ZERO_ADDRESS
+                        event.notes = f'Return {vault_amount} {vault_token.symbol} to a {counterparty} vault'  # noqa: E501
+                        return_event = event
+                    elif (
+                        event.event_type == HistoryEventType.RECEIVE and
+                        event.event_subtype == HistoryEventSubType.NONE and
+                        event.asset == withdraw_asset and
+                        event.amount == underlying_amount
+                    ):
+                        event.event_type = HistoryEventType.WITHDRAWAL
+                        event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                        event.counterparty = counterparty
+                        event.address = vault_token.evm_address
+                        event.notes = f'Withdraw {underlying_amount} {withdraw_symbol} from {counterparty} vault {_get_vault_token_name(vault_token.evm_address)}'  # noqa: E501
+                        withdraw_event = event
+
+                if return_event is None or withdraw_event is None:
+                    log.error(f'Failed to find native withdrawal events for yearn vault {vault_address} in {context.transaction}')  # noqa: E501
+                    return DEFAULT_EVM_DECODING_OUTPUT
+
+                maybe_reshuffle_events(
+                    ordered_events=[return_event, withdraw_event],
+                    events_list=context.decoded_events,
+                )
+                return DEFAULT_EVM_DECODING_OUTPUT
+
             return EvmDecodingOutput(action_items=[
                 ActionItem(
                     action='transform',
@@ -321,11 +402,11 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                     action='transform',
                     from_event_type=HistoryEventType.RECEIVE,
                     from_event_subtype=HistoryEventSubType.NONE,
-                    asset=underlying_vault_token,
+                    asset=withdraw_asset,
                     amount=underlying_amount,
                     to_event_type=HistoryEventType.WITHDRAWAL,
                     to_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
-                    to_notes=f'Withdraw {underlying_amount} {underlying_vault_token.symbol} from {counterparty} vault {_get_vault_token_name(vault_token.evm_address)}',  # noqa: E501
+                    to_notes=f'Withdraw {underlying_amount} {withdraw_symbol} from {counterparty} vault {_get_vault_token_name(vault_token.evm_address)}',  # noqa: E501
                     to_counterparty=counterparty,
                 ),
             ])
@@ -590,7 +671,7 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
     def _decode_staking_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode yearn v2 staking events."""
-        if context.tx_log.topics[0] == WITHDRAW_TOPIC_V3:
+        if context.tx_log.topics[0] in {WITHDRAW_TOPIC_V3, WITHDRAW_TOPIC_V2}:
             return self._decode_staking_deposit_withdraw(
                 context=context,
                 expected_shares_event_type=HistoryEventType.SPEND,
@@ -602,6 +683,7 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 assets_event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
                 assets_notes_template=f'Withdraw {{amount}} {{asset}} from {YEARN_STAKING_LABEL} gauge {{gauge_name}}',  # noqa: E501
                 is_deposit=False,
+                shares_optional=context.tx_log.topics[0] == WITHDRAW_TOPIC_V2,
             )
         elif context.tx_log.topics[0] == DEPOSIT_TOPIC:
             return self._decode_staking_deposit_withdraw(
