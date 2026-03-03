@@ -98,4 +98,52 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             'during v51->v52 upgrade',
         )
 
+    @progress_step(description='Clean duplicated internal tx rows with legacy gas values.')
+    def _cleanup_legacy_internal_txs(write_cursor: 'DBCursor') -> None:
+        """Remove legacy all zero gas internal tx rows after repulls inserted corrected rows.
+
+        Legacy rows are identified as entries with gas=0 and gas_used=0 created by a previous
+        schema migration default. If a row with the same parent/from/to/value exists and has
+        non legacy gas data, the legacy row is considered a duplicate and removed.
+
+        We skip the trace id in the comparassion because it can lead to error.
+        """
+        duplicate_legacy_rows_query = """
+            SELECT legacy.rowid, legacy.parent_tx
+            FROM evm_internal_transactions AS legacy
+            WHERE legacy.gas = '0'
+              AND legacy.gas_used = '0'
+              AND EXISTS (
+                  SELECT 1
+                  FROM evm_internal_transactions AS corrected
+                  WHERE corrected.parent_tx = legacy.parent_tx
+                    AND corrected.from_address = legacy.from_address
+                    AND corrected.to_address IS legacy.to_address
+                    AND corrected.value = legacy.value
+                    AND (corrected.gas != '0' OR corrected.gas_used != '0')
+              )
+        """
+        affected_parent_hashes = [
+            f'0x{entry[0]}'
+            for entry in write_cursor.execute(
+                f"""
+                SELECT DISTINCT lower(hex(evm_transactions.tx_hash))
+                FROM ({duplicate_legacy_rows_query}) AS duplicates
+                JOIN evm_transactions
+                    ON evm_transactions.identifier = duplicates.parent_tx
+                ORDER BY evm_transactions.identifier
+                """,
+            ).fetchall()
+        ]
+        write_cursor.execute(
+            f"""
+            DELETE FROM evm_internal_transactions
+            WHERE rowid IN (SELECT rowid FROM ({duplicate_legacy_rows_query}))
+            """,
+        )
+        log.debug(
+            f'Removed {write_cursor.rowcount} duplicated internal tx rows with '
+            f'legacy gas values in v51->v52 upgrade. Parent hashes: {affected_parent_hashes}',
+        )
+
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)
