@@ -1038,7 +1038,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                     from_event_type = HistoryEventType.SPEND
                     pair_subtype = HistoryEventSubType.RETURN_WRAPPED
                     event.extra_data = None
-                    pair_note = 'Return {{amount}} {symbol} after withdrawing from {address} curve gauge'  # noqa: E501
+                    pair_note = 'Return {{amount}} {symbol} to withdraw from {address} curve gauge'
 
         # `pair_note` is formatted twice, first below with `symbol` and `address`. `amount` is left
         # due to double {}. Then later in the action item `amount` is replaced by its value.

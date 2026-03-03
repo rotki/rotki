@@ -522,7 +522,7 @@ def test_gauge_withdrawal(
         asset=Asset('eip155:8453/erc20:0x70DB188E5953f67a4B16979a2ceA26248b315401'),
         amount=FVal(return_amount := '7.452356019321253694'),
         location_label=user_address,
-        notes=f'Return {return_amount} Aave USDC-Aave GHO-gauge after withdrawing from balancer-v3 gauge',  # noqa: E501
+        notes=f'Return {return_amount} Aave USDC-Aave GHO-gauge to withdraw from balancer-v3 gauge',  # noqa: E501
         counterparty=CPT_BALANCER_V3,
         address=ZERO_ADDRESS,
     ), EvmEvent(

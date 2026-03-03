@@ -1100,7 +1100,7 @@ def test_balancer_gauge_withdrawal(
             asset=Asset('eip155:1/erc20:0xdf54d2Dd06F8Be3B0c4FfC157bE54EC9cca91F3C'),
             amount=FVal(withdrawn_amount),
             location_label=user_address,
-            notes=f'Return {withdrawn_amount} ECLP-wstETH-wETH-gauge after withdrawing from balancer-v2 gauge',  # noqa: E501
+            notes=f'Return {withdrawn_amount} ECLP-wstETH-wETH-gauge to withdraw from balancer-v2 gauge',  # noqa: E501
             counterparty=CPT_BALANCER_V2,
             address=ZERO_ADDRESS,
         ), EvmEvent(
