@@ -33,6 +33,7 @@ from rotkehlchen.types import (
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
 
@@ -1141,4 +1142,138 @@ def test_yearn_staking_deposit_zap(
         notes=f'Receive {receive_amount} yG-yvCurve-upYFI-f after deposit in a Yearn Staking gauge',  # noqa: E501
         counterparty=CPT_YEARN_STAKING,
         address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xa1ecA898ad4A4909c527c78B559fFDad005e761d']])
+def test_yearn_v2_vault_deposit_optimism(optimism_inquirer: 'OptimismInquirer', optimism_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    get_or_create_evm_token(
+        userdb=optimism_inquirer.database,
+        evm_address=(vault_address := string_to_evm_address('0x5B977577Eb8a480f63e11FC615D6753adB8652Ae')),  # noqa: E501
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC20,
+        symbol='yvWETH',
+        name='WETH yVault',
+        decimals=18,
+        protocol=CPT_YEARN_V2,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0xdc3f8c5bc84bf3e2e57e408d6605fc441d2d5773398c902ba8d8a48f624d1e18')))  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1714123975000)),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000007147891756595')),
+        location_label=(user_address := optimism_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=A_ETH,
+        amount=(deposit_amount := FVal('0.04')),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} ETH in yearn-v2 vault {vault_address}',
+        counterparty=CPT_YEARN_V2,
+        address=string_to_evm_address('0xDeAFc27aC8f977E6973d671E43cBfd2573021d9e'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=452,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:10/erc20:0x5B977577Eb8a480f63e11FC615D6753adB8652Ae'),
+        amount=(receive_amount := FVal('0.039243540093362109')),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} yvWETH after deposit in a yearn-v2 vault',
+        counterparty=CPT_YEARN_V2,
+        address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x158e02e4A130AFD22426bc3cCA06dD346f4f54Ea']])
+def test_yearn_staking_deposit_optimism(optimism_inquirer: 'OptimismInquirer', optimism_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    vault_address = get_or_create_evm_token(
+        userdb=optimism_inquirer.database,
+        evm_address=string_to_evm_address('0x5B977577Eb8a480f63e11FC615D6753adB8652Ae'),
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC20,
+        symbol='yvWETH',
+        name='WETH yVault',
+        decimals=18,
+        protocol=CPT_YEARN_V2,
+        underlying_tokens=[UnderlyingToken(
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    ).evm_address
+    gauge_address = string_to_evm_address('0xE35Fec3895Dcecc7d2a91e8ae4fF3c0d43ebfFE0')
+    get_or_create_evm_token(
+        userdb=optimism_inquirer.database,
+        evm_address=gauge_address,
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC20,
+        symbol='yG-yvWETH',
+        name='Yearn staking WETH yVault',
+        protocol=CPT_YEARN_STAKING,
+        underlying_tokens=[UnderlyingToken(
+            address=vault_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0xae3b94eee8fe5bdbb99787536f379bd6e8496ebaf238819f7ea30465d3e32195')))  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1717645191000)),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.00000752535695313')),
+        location_label=(user_address := optimism_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=13,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:10/erc20:0x5B977577Eb8a480f63e11FC615D6753adB8652Ae'),
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Revoke yvWETH spending approval of {user_address} by {gauge_address}',
+        address=gauge_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=14,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:10/erc20:0x5B977577Eb8a480f63e11FC615D6753adB8652Ae'),
+        amount=(deposit_amount := FVal('0.004967732224659097')),
+        location_label=user_address,
+        notes=f'Deposit {deposit_amount} yvWETH in Yearn Staking gauge {gauge_address}',
+        counterparty=CPT_YEARN_STAKING,
+        address=gauge_address,
     )]

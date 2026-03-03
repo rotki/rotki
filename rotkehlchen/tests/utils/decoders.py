@@ -18,6 +18,7 @@ def patch_decoder_should_update_protocol_caches(stack: ExitStack) -> None:
     for target in (
         'evm.node_inquirer',
         'ethereum.modules.yearn.decoder',
+        'evm.decoding.yearn.decoder',
         'evm.decoding.morpho.decoder',
         'evm.decoding.stakedao.decoder',
         'evm.decoding.stakedao.v2.decoder',
