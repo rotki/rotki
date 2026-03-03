@@ -517,6 +517,7 @@ class Rotkehlchen:
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                 ),
+                premium=self.premium,
             ),
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,

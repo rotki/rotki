@@ -70,6 +70,8 @@ from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
 from rotkehlchen.history.events.structures.onchain_event import OnchainEvent
 from rotkehlchen.history.events.structures.solana_event import SolanaEvent
 from rotkehlchen.history.events.structures.solana_swap import SolanaSwapEvent
+from rotkehlchen.history.events.structures.starknet_event import StarknetEvent
+from rotkehlchen.history.events.structures.starknet_swap import StarknetSwapEvent
 from rotkehlchen.history.events.structures.swap import SwapEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.price import query_price_or_use_default
@@ -752,11 +754,12 @@ class DBHistoryEvents:
         if location.is_bitcoin():
             join_or_where = 'WHERE'
         else:
-            sub_query = (
-                'SELECT signature FROM solana_transactions'
-                if location == Location.SOLANA else
-                'SELECT tx_hash FROM evm_transactions'
-            )
+            if location == Location.SOLANA:
+                sub_query = 'SELECT signature FROM solana_transactions'
+            elif location == Location.STARKNET:
+                sub_query = 'SELECT transaction_hash FROM starknet_transactions'
+            else:
+                sub_query = 'SELECT tx_hash FROM evm_transactions'
             join_or_where = (
                 'INNER JOIN chain_events_info C ON H.identifier=C.identifier '
                 f'AND C.tx_ref IN ({sub_query}) AND'
@@ -849,11 +852,31 @@ class DBHistoryEvents:
                 )
                 bindings += customized_bindings
             write_cursor.execute(query, bindings)
+        elif location == Location.STARKNET:
+            query = 'DELETE from starknet_tx_mappings WHERE tx_id IN (SELECT identifier FROM starknet_transactions) AND value=?'  # noqa: E501
+            bindings = (TX_DECODED,)
+            if (write_cursor.execute(
+                'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value IN (?, ?)',
+                (customized_bindings := (
+                    HISTORY_MAPPING_KEY_STATE,
+                    HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+                    HistoryMappingState.MATCHED.serialize_for_db(),
+                )),
+            ).fetchone()[0]) != 0:
+                query += (
+                    ' AND tx_id NOT IN ('
+                    'SELECT DISTINCT T.identifier FROM starknet_transactions T '
+                    'INNER JOIN chain_events_info C ON T.transaction_hash = C.tx_ref '
+                    'INNER JOIN history_events_mappings M ON C.identifier = M.parent_identifier '
+                    'WHERE M.name=? AND M.value IN (?, ?))'
+                )
+                bindings += customized_bindings
+            write_cursor.execute(query, bindings)
 
     def delete_events_by_tx_ref(
             self,
             write_cursor: 'DBCursor',
-            tx_refs: Sequence[EVMTxHash | BTCTxId | Signature],
+            tx_refs: Sequence['EVMTxHash | BTCTxId | Signature | str'],
             location: BLOCKCHAIN_LOCATIONS_TYPE,
             customized_handling: Literal['delete', 'preserve_events', 'preserve_transactions'] = 'preserve_events',  # noqa: E501
     ) -> None:
@@ -1446,6 +1469,11 @@ class DBHistoryEvents:
                         entry[data_start_idx:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] +
                         entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + 1],  # noqa: E501
                     )
+                elif entry_type == HistoryBaseEntryType.STARKNET_EVENT:
+                    deserialized_event = StarknetEvent.deserialize_from_db(
+                        entry[data_start_idx:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1] +
+                        entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + 1],  # noqa: E501
+                    )
                 else:
                     data = entry[data_start_idx:group_has_ignored_assets_idx]
                     deserialized_event = (
@@ -1453,6 +1481,7 @@ class DBHistoryEvents:
                         SwapEvent if entry_type == HistoryBaseEntryType.SWAP_EVENT else
                         EvmSwapEvent if entry_type == HistoryBaseEntryType.EVM_SWAP_EVENT else
                         SolanaSwapEvent if entry_type == HistoryBaseEntryType.SOLANA_SWAP_EVENT else  # noqa: E501
+                        StarknetSwapEvent if entry_type == HistoryBaseEntryType.STARKNET_SWAP_EVENT else  # noqa: E501
                         HistoryEvent
                     ).deserialize_from_db(data)
             except (DeserializationError, UnknownAsset) as e:

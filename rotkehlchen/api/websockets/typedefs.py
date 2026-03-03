@@ -61,6 +61,7 @@ class TransactionStatusSubType(StrEnum):
     EVM = auto()
     BITCOIN = auto()
     SOLANA = auto()
+    STARKNET = auto()
 
 
 class HistoryEventsStep(StrEnum):

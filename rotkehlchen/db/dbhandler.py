@@ -80,6 +80,7 @@ from rotkehlchen.db.settings import (
     serialize_db_setting,
 )
 from rotkehlchen.db.solanatx import DBSolanaTx
+from rotkehlchen.db.starknettx import DBStarknetTx
 from rotkehlchen.db.upgrade_manager import DBUpgradeManager
 from rotkehlchen.db.utils import (
     DBAssetBalance,
@@ -151,6 +152,7 @@ from rotkehlchen.types import (
     Location,
     PurgeableModuleName,
     SolanaAddress,
+    StarknetAddress,
     SupportedBlockchain,
     Timestamp,
     UserNote,
@@ -1564,6 +1566,11 @@ class DBHandler:
             for address in accounts:
                 solana_tx_db.delete_data_for_address(write_cursor, address)  # type: ignore
 
+        elif blockchain == SupportedBlockchain.STARKNET:
+            starknet_tx_db = DBStarknetTx(self)
+            for address in accounts:
+                starknet_tx_db.delete_data_for_address(write_cursor, address)  # type: ignore
+
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE object_reference = ?;',
             [(account,) for account in accounts],
@@ -2381,7 +2388,7 @@ class DBHandler:
             tuple_type: DBTupleType,
             query: str,
             entry: tuple[Any, ...],
-            relevant_address: SolanaAddress | ChecksumEvmAddress | None,
+            relevant_address: SolanaAddress | ChecksumEvmAddress | StarknetAddress | None,
     ) -> int | None:
         """Helper to write an entry of a tuple type and handle address mapping"""
         tx_id = None
@@ -2399,6 +2406,12 @@ class DBHandler:
                     (entry[4],),  # signature is the 5th element (index 4) in the entry tuple
                 ).fetchone()[0]
                 mapping_table = 'solanatx_address_mappings'
+            elif tuple_type == 'starknet_transaction':
+                tx_id = write_cursor.execute(
+                    'SELECT identifier FROM starknet_transactions WHERE transaction_hash=?',
+                    (entry[0],),
+                ).fetchone()[0]
+                mapping_table = 'starknettx_address_mappings'
             elif tuple_type == 'solana_instruction':
                 return write_cursor.lastrowid  # return the auto-generated instruction ID
             else:
