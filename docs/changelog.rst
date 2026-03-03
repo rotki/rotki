@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Claiming Degen airdrop 1 will now be properly decoded by rotki.
 * :bug:`-` Claiming Pendle rewards from old pools, or claiming multiple rewards in one transaction should now be decoded properly by rotki.
 * :bug:`-` ETH staking historyMEV/proposer payout rewards are combined more reliably with block proposal even when beaconcha.in relay data is unavailable.
 * :bug:`11766` Value distribution graphs will now work correctly by fixing the schema types to match the backend response.
