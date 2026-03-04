@@ -358,6 +358,151 @@ describe('useHistoryMatchedMovementItem', () => {
     });
   });
 
+  describe('compactNotes', () => {
+    it('should show "from exchange to address" for withdrawal events', () => {
+      const events = ref([
+        createMockEvent(HistoryEventEntryType.ASSET_MOVEMENT_EVENT, {
+          identifier: 1,
+          asset: 'ETH',
+          amount: bigNumberify('1.0'),
+          eventType: 'withdrawal',
+          eventSubtype: 'none',
+          location: 'kraken',
+          locationLabel: 'Kraken Exchange',
+        }),
+        createMockEvent(HistoryEventEntryType.EVM_EVENT, {
+          identifier: 2,
+          asset: 'ETH',
+          amount: bigNumberify('1.0'),
+          eventType: 'receive',
+          eventSubtype: 'none',
+          location: 'ethereum',
+          locationLabel: '0x8454...3000',
+        }),
+      ]);
+      const { compactNotes } = useHistoryMatchedMovementItem({ events });
+      const notes = get(compactNotes)!;
+
+      // The from_part should contain the exchange (Kraken Exchange)
+      expect(notes).toContain('Kraken Exchange');
+      // The to_part should contain the on-chain address
+      expect(notes).toContain('0x8454...3000');
+      // Verify from contains exchange and to contains address
+      expect(notes).toContain('from_part::Kraken Exchange');
+      expect(notes).toContain('to_part::0x8454...3000');
+    });
+
+    it('should show "to exchange from address" for deposit events', () => {
+      const events = ref([
+        createMockEvent(HistoryEventEntryType.ASSET_MOVEMENT_EVENT, {
+          identifier: 1,
+          asset: 'ETH',
+          amount: bigNumberify('1.0'),
+          eventType: 'deposit',
+          eventSubtype: 'receive',
+          location: 'kraken',
+          locationLabel: 'Kraken Exchange',
+        }),
+        createMockEvent(HistoryEventEntryType.EVM_EVENT, {
+          identifier: 2,
+          asset: 'ETH',
+          amount: bigNumberify('1.0'),
+          eventType: 'spend',
+          eventSubtype: 'none',
+          location: 'ethereum',
+          locationLabel: '0x8454...3000',
+        }),
+      ]);
+      const { compactNotes } = useHistoryMatchedMovementItem({ events });
+      const notes = get(compactNotes)!;
+
+      // The to_part should contain the exchange (Kraken Exchange)
+      expect(notes).toContain('to_part::Kraken Exchange');
+      // The from_part should contain the on-chain address
+      expect(notes).toContain('from_part::0x8454...3000');
+    });
+
+    it('should select correct secondary event when adjustment events are present', () => {
+      // Simulates: primary is ASSET_MOVEMENT_EVENT (kraken withdrawal),
+      // there's a SEND adjustment event (also kraken), and the actual counterpart is an EVM_EVENT (ACCOUNT DEPOSIT)
+      const events = ref([
+        createMockEvent(HistoryEventEntryType.ASSET_MOVEMENT_EVENT, {
+          identifier: 1,
+          asset: 'USDC',
+          amount: bigNumberify('100.0'),
+          eventType: 'withdrawal',
+          eventSubtype: 'none',
+          location: 'kraken',
+          locationLabel: 'Kraken Exchange',
+        }),
+        // Adjustment event (same entryType as primary, small amount)
+        createMockEvent(HistoryEventEntryType.ASSET_MOVEMENT_EVENT, {
+          identifier: 2,
+          asset: 'USDC',
+          amount: bigNumberify('0.5'),
+          eventType: 'send',
+          eventSubtype: 'none',
+          location: 'kraken',
+          locationLabel: 'Kraken Exchange',
+        }),
+        // The actual counterpart (different entryType, matching amount)
+        createMockEvent(HistoryEventEntryType.EVM_EVENT, {
+          identifier: 3,
+          asset: 'USDC',
+          amount: bigNumberify('99.5'),
+          eventType: 'receive',
+          eventSubtype: 'none',
+          location: 'ethereum',
+          locationLabel: '0x8454...3000',
+        }),
+      ]);
+      const { secondaryEvent, compactNotes } = useHistoryMatchedMovementItem({ events });
+
+      // Should pick the EVM_EVENT as secondary, not the adjustment ASSET_MOVEMENT_EVENT
+      expect(get(secondaryEvent)?.identifier).toBe(3);
+      expect(get(secondaryEvent)?.entryType).toBe(HistoryEventEntryType.EVM_EVENT);
+
+      const notes = get(compactNotes)!;
+      // Should show the on-chain address, not kraken for both
+      expect(notes).toContain('to_part::0x8454...3000');
+      expect(notes).toContain('from_part::Kraken Exchange');
+    });
+
+    it('should append fee text when fee events exist', () => {
+      const events = ref([
+        createMockEvent(HistoryEventEntryType.ASSET_MOVEMENT_EVENT, {
+          identifier: 1,
+          asset: 'ETH',
+          amount: bigNumberify('1.0'),
+          eventType: 'withdrawal',
+          eventSubtype: 'none',
+          location: 'kraken',
+          locationLabel: 'Kraken Exchange',
+        }),
+        createMockEvent(HistoryEventEntryType.EVM_EVENT, {
+          identifier: 2,
+          asset: 'ETH',
+          amount: bigNumberify('1.0'),
+          eventType: 'receive',
+          eventSubtype: 'none',
+          location: 'ethereum',
+          locationLabel: '0x8454...3000',
+        }),
+        createMockEvent(HistoryEventEntryType.ASSET_MOVEMENT_EVENT, {
+          identifier: 3,
+          asset: 'ETH',
+          amount: bigNumberify('0.001'),
+          eventSubtype: 'fee',
+          location: 'kraken',
+        }),
+      ]);
+      const { compactNotes } = useHistoryMatchedMovementItem({ events });
+      const notes = get(compactNotes)!;
+
+      expect(notes).toContain('history_events_list_swap.fee_description');
+    });
+  });
+
   describe('reactivity', () => {
     it('should update primaryEvent when events change', () => {
       const events = ref(createMatchedMovementEvents());
