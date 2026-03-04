@@ -26,6 +26,7 @@ from rotkehlchen.errors.api import (
 from rotkehlchen.premium.premium import (
     DOCKER_ENTRYPOINT_PATH,
     DOCKER_PLATFORM_KEY,
+    DOCKER_SHORT_ID_HASH_LENGTH,
     KUBERNETES_PLATFORM_KEY,
     UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX,
     Premium,
@@ -925,7 +926,30 @@ def test_check_docker_container_detects_podman():
         patch.dict(os.environ, {}, clear=True),
         patch('rotkehlchen.premium.premium.Path.read_text', return_value=mountinfo),
     ):
-        assert check_docker_container() == (podman_container_id[:12], DOCKER_PLATFORM_KEY)
+        assert check_docker_container() == (
+            podman_container_id[:DOCKER_SHORT_ID_HASH_LENGTH],
+            DOCKER_PLATFORM_KEY,
+        )
+
+
+def test_check_docker_container_detects_unraid_mountinfo() -> None:
+    """Ensures unraid mountinfo paths detect docker container ID."""
+    container_id = '2d66ed07ff76b4f5856eaeec47af0f473bea11737e017b0fd55552cbfe5c8eeb'
+    mountinfo = (
+        '89 63 0:50 /btrfs/subvolumes/e14c86c853dfe3ac7870d0859f4a40d2e93952c5283583060d9a7c951c36058b / rw,noatime - btrfs /dev/loop2 rw,discard=async,space_cache=v2,subvolid=271,subvol=/btrfs/subvolumes/e14c86c853dfe3ac7870d0859f4a40d2e93952c5283583060d9a7c951c36058b\n'  # noqa: E501
+        f'101 89 0:50 /containers/{container_id}/resolv.conf /etc/resolv.conf rw,noatime - btrfs /dev/loop2 rw,discard=async,space_cache=v2,subvolid=5,subvol=/\n'  # noqa: E501
+        f'102 89 0:50 /containers/{container_id}/hostname /etc/hostname rw,noatime - btrfs /dev/loop2 rw,discard=async,space_cache=v2,subvolid=5,subvol=/\n'  # noqa: E501
+        f'103 89 0:50 /containers/{container_id}/hosts /etc/hosts rw,noatime - btrfs /dev/loop2 rw,discard=async,space_cache=v2,subvolid=5,subvol=/'  # noqa: E501
+    )
+    with (
+        patch.dict(os.environ, {}, clear=True),
+        patch('rotkehlchen.premium.premium.Path.read_text', return_value=mountinfo),
+        patch('rotkehlchen.premium.premium.is_running_in_rotki_docker_image', return_value=False),
+    ):
+        assert check_docker_container() == (
+            container_id[:DOCKER_SHORT_ID_HASH_LENGTH],
+            DOCKER_PLATFORM_KEY,
+        )
 
 
 def test_extended_get_machine_id_uses_container_identifier():
