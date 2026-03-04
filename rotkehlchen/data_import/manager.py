@@ -10,6 +10,7 @@ from rotkehlchen.data_import.importers.bittrex import BittrexImporter
 from rotkehlchen.data_import.importers.blockfi_trades import BlockfiTradesImporter
 from rotkehlchen.data_import.importers.blockfi_transactions import BlockfiTransactionsImporter
 from rotkehlchen.data_import.importers.blockpit import BlockpitImporter
+from rotkehlchen.data_import.importers.coinledger import CoinledgerImporter
 from rotkehlchen.data_import.importers.cointracking import CointrackingImporter
 from rotkehlchen.data_import.importers.cryptocom import CryptocomImporter
 from rotkehlchen.data_import.importers.kucoin import KucoinImporter
@@ -43,6 +44,7 @@ class DataImportSource(SerializableEnumNameMixin):
     BITTREX = 15
     KUCOIN = 16
     BLOCKPIT = 17
+    COINLEDGER = 18
 
 
 class CSVDataImporter:
@@ -94,6 +96,8 @@ class CSVDataImporter:
             importer = KucoinImporter(db=self.db)
         elif source == DataImportSource.BLOCKPIT:
             importer = BlockpitImporter(db=self.db)
+        elif source == DataImportSource.COINLEDGER:
+            importer = CoinledgerImporter(db=self.db)
         else:
             raise AssertionError(f'Unknown DataImportSource value {source}')
 

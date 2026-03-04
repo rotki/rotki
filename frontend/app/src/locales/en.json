@@ -3637,6 +3637,10 @@
       "line_one": "Trades imported from Blockpit are treated as buys, for instance, selling ETH for USD will be shown as buying USD with ETH.",
       "name": "Blockpit"
     },
+    "coinledger": {
+      "line_one": "CoinLedger exports are imported row-by-row using the \"Record Type\" field (e.g. Credit, Debit, Platform Fee).",
+      "name": "CoinLedger"
+    },
     "cointracking": {
       "line_one": "Trades/deposits/withdrawals from CoinTracking do not include fees.",
       "line_three": "ETH/BTC Transactions are treated as deposits/withdrawals so they are not imported in rotki. To import ETH transactions simply input your accounts in {0} and they will be imported automatically for you.",
