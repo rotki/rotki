@@ -5,10 +5,10 @@ import { type BigNumber, Blockchain, createEvmIdentifierFromAddress, type Writea
 import { cloneDeep, isEqual } from 'es-toolkit';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { usePremium } from '@/composables/premium';
+import { useSectionStatus } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -72,14 +72,12 @@ export function usePoolBalances(): UsePoolBalancesReturn {
   const premium = usePremium();
   const { t } = useI18n({ useScope: 'global' });
 
-  const { isLoading } = useStatusStore();
   const { getSushiswapBalances, getUniswapV2Balances } = usePoolApi();
   const { getAssetField } = useAssetInfoRetrieval();
 
-  const loading = logicOr(
-    isLoading(Section.POOLS_UNISWAP_V2),
-    isLoading(Section.POOLS_SUSHISWAP),
-  );
+  const { isLoading: uniswapLoading } = useSectionStatus(Section.POOLS_UNISWAP_V2);
+  const { isLoading: sushiswapLoading } = useSectionStatus(Section.POOLS_SUSHISWAP);
+  const loading = logicOr(uniswapLoading, sushiswapLoading);
 
   const balances = computed<PoolLiquidityBalance[]>(() => {
     const uniswap = toArray(get(uniswapPoolBalances));

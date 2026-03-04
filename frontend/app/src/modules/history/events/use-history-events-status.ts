@@ -1,8 +1,8 @@
 import type { ComputedRef } from 'vue';
 import { not } from '@vueuse/math';
+import { useSectionStatus } from '@/composables/status';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -20,12 +20,10 @@ interface UseHistoryEventStatusReturn {
 
 export const useHistoryEventsStatus = createSharedComposable((): UseHistoryEventStatusReturn => {
   const { useIsTaskRunning } = useTaskStore();
-  const { isLoading: isSectionLoading } = useStatusStore();
+  const { isLoading: sectionLoading } = useSectionStatus(Section.HISTORY);
 
   const { isAllFinished: isQueryingTxsFinished } = storeToRefs(useTxQueryStatusStore());
   const { isAllFinished: isQueryingOnlineEventsFinished } = storeToRefs(useEventsQueryStatusStore());
-
-  const sectionLoading = isSectionLoading(Section.HISTORY);
   const txEventsDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);
   const ethBlockEventsDecoding = useIsTaskRunning(TaskType.ETH_BLOCK_EVENTS_DECODING);
   const anyEventsDecoding = logicOr(txEventsDecoding, ethBlockEventsDecoding);

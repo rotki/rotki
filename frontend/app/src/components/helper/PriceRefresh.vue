@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { useSectionStatus } from '@/composables/status';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
-import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 
 const emit = defineEmits<{
@@ -12,11 +12,9 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { refreshPrices } = usePriceRefresh();
-const { isLoading } = useStatusStore();
+const { isLoading: refreshing } = useSectionStatus(Section.PRICES);
 const { loadingBalances } = useBalancesLoading();
 const { assets } = useAggregatedBalances();
-
-const refreshing = isLoading(Section.PRICES);
 const disabled = computed<boolean>(() => get(refreshing) || get(loadingBalances));
 
 async function refresh() {

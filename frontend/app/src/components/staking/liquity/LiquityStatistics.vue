@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { type AssetBalance, type Balance, type BigNumber, type LiquityPoolDetailEntry, type LiquityStatisticDetails, One } from '@rotki/common';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
+import { useSectionStatus } from '@/composables/status';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { bigNumberSum } from '@/utils/calculation';
 
@@ -16,12 +16,10 @@ const selection = ref<'historical' | 'current'>('historical');
 
 const { t } = useI18n({ useScope: 'global' });
 const { assetPrice } = usePriceUtils();
-const { isLoading } = useStatusStore();
-
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
 const lusdPrice = assetPrice(LUSD_ID);
 
-const loading = isLoading(Section.DEFI_LIQUITY_STATISTICS);
+const { isLoading: loading } = useSectionStatus(Section.DEFI_LIQUITY_STATISTICS);
 
 const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() => {
   if (!statistic)

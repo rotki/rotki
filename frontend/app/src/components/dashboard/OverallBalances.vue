@@ -5,12 +5,12 @@ import SnapshotActionButton from '@/components/dashboard/SnapshotActionButton.vu
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import TimeframeSelector from '@/components/helper/TimeframeSelector.vue';
 import { usePremium } from '@/composables/premium';
+import { useSectionStatus } from '@/composables/status';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStatisticsStore } from '@/store/statistics';
-import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { isPeriodAllowed } from '@/utils/settings';
 
@@ -25,12 +25,9 @@ const { totalNetWorth } = storeToRefs(statistics);
 const frontendStore = useFrontendSettingsStore();
 const { visibleTimeframes } = storeToRefs(frontendStore);
 
-const { isLoading: isSectionLoading, shouldShowLoadingScreen } = useStatusStore();
+const { isInitialLoading, isLoading: sectionLoading } = useSectionStatus(Section.BLOCKCHAIN);
 
-const isLoading = logicOr(
-  shouldShowLoadingScreen(Section.BLOCKCHAIN),
-  isSectionLoading(Section.BLOCKCHAIN),
-);
+const isLoading = logicOr(isInitialLoading, sectionLoading);
 
 const allTimeframes = computed(() =>
   timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix()),

@@ -18,7 +18,7 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
   category: MaybeRefOrGetter<string>,
 ): UseAccountLoadingStates<T> {
   const { useIsTaskRunning } = useTaskStore();
-  const { isLoading } = useStatusStore();
+  const { getIsLoading } = useStatusStore();
   const { isSectionLoading } = useBlockchainAccountLoading(category);
 
   const accountOperation = logicOr(
@@ -31,9 +31,9 @@ export function useAccountLoadingStates<T extends BlockchainAccountBalance>(
 
   function isRowLoading(row: AccountDataRow<T>): boolean {
     if (row.type === 'account')
-      return get(isLoading(Section.BLOCKCHAIN, row.chain));
+      return getIsLoading(Section.BLOCKCHAIN, row.chain);
     else
-      return row.chains.some(chain => get(isLoading(Section.BLOCKCHAIN, chain)));
+      return row.chains.some(chain => getIsLoading(Section.BLOCKCHAIN, chain));
   }
 
   return {

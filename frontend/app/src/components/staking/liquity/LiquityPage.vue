@@ -17,7 +17,7 @@ const modules = [Module.LIQUITY];
 const { isModuleEnabled } = useModules();
 const { fetchPools, fetchStaking, fetchStatistics, setStakingQueryStatus } = useLiquityStore();
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
-const { shouldShowLoadingScreen } = useStatusStore();
+const { useShouldShowLoadingScreen } = useStatusStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const moduleEnabled = isModuleEnabled(modules[0]);
 const premium = usePremium();
@@ -52,17 +52,17 @@ watch(currencySymbol, async () => {
   }
 });
 
-watch(shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING), async (current, old) => {
+watch(useShouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING), async (current, old) => {
   if (!old && current)
     await fetchStaking();
 });
 
-watch(shouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING_POOLS), async (current, old) => {
+watch(useShouldShowLoadingScreen(Section.DEFI_LIQUITY_STAKING_POOLS), async (current, old) => {
   if (!old && current)
     await fetchPools();
 });
 
-watch(shouldShowLoadingScreen(Section.DEFI_LIQUITY_STATISTICS), async (current, old) => {
+watch(useShouldShowLoadingScreen(Section.DEFI_LIQUITY_STATISTICS), async (current, old) => {
   if (!old && current)
     await fetchStatistics();
 });
