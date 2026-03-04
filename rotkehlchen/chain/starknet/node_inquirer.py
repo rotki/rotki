@@ -15,6 +15,7 @@ from .utils import normalize_starknet_address, wei_to_strk
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.voyager import Voyager
     from rotkehlchen.greenlets.manager import GreenletManager
 
 logger = logging.getLogger(__name__)
@@ -53,9 +54,11 @@ class StarknetInquirer:
             self,
             greenlet_manager: 'GreenletManager',
             database: 'DBHandler',
+            voyager: 'Voyager',
     ) -> None:
         self.greenlet_manager = greenlet_manager
         self.database = database
+        self.voyager = voyager
         self.blockchain = SupportedBlockchain.STARKNET
         self.rpc_timeout = DEFAULT_RPC_TIMEOUT
         self.rpc_endpoint = DEFAULT_STARKNET_RPC_ENDPOINT

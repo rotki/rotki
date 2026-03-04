@@ -210,6 +210,11 @@ class StarknetTransactionDecoder(TransactionDecoder[StarknetTransaction, Starkne
 
         with self.database.conn.write_ctx() as write_cursor:
             tx_id = transaction.get_or_query_db_id(write_cursor)
+            # Ensure the Starknet location and STRK asset exist in the user DB
+            write_cursor.execute(
+                "INSERT OR IGNORE INTO location(location, seq) VALUES ('y', 57)",
+            )
+            self.database.add_asset_identifiers(write_cursor, [A_STRK.identifier])
 
         self.base.reset_sequence_counter(tx_data=transaction)
         events: list[StarknetEvent] = []

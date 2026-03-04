@@ -89,6 +89,7 @@ from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.externalapis.routescan import Routescan
+from rotkehlchen.externalapis.voyager import Voyager
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -516,6 +517,7 @@ class Rotkehlchen:
                 node_inquirer=StarknetInquirer(
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
+                    voyager=Voyager(database=self.data.db),
                 ),
                 premium=self.premium,
             ),

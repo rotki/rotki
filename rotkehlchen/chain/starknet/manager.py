@@ -38,6 +38,7 @@ class StarknetManager(ChainManagerWithTransactions[StarknetAddress]):
         self.transactions = StarknetTransactions(
             node_inquirer=self.node_inquirer,
             database=node_inquirer.database,
+            voyager=node_inquirer.voyager,
         )
         self.transactions_decoder = StarknetTransactionDecoder(
             database=node_inquirer.database,

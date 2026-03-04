@@ -8,7 +8,7 @@ from rotkehlchen.api.websockets.typedefs import (
 )
 from rotkehlchen.db.filtering import StarknetTransactionsFilterQuery
 from rotkehlchen.db.starknettx import DBStarknetTx
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import MissingAPIKey, RemoteError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import StarknetAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -19,6 +19,7 @@ from .types import StarknetTransaction
 if TYPE_CHECKING:
     from rotkehlchen.chain.starknet.node_inquirer import StarknetInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.externalapis.voyager import Voyager
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -34,9 +35,11 @@ class StarknetTransactions:
             self,
             node_inquirer: 'StarknetInquirer',
             database: 'DBHandler',
+            voyager: 'Voyager',
     ) -> None:
         self.node_inquirer = node_inquirer
         self.database = database
+        self.voyager = voyager
         self.dbtx = DBStarknetTx(database=database)
 
     def get_or_create_transaction(
@@ -101,6 +104,40 @@ class StarknetTransactions:
         )
 
         try:
+            all_txs = self.voyager.get_transactions_for_address(address)
+            log.debug(f'Voyager fetched {len(all_txs)} transactions for Starknet address {address}')  # noqa: E501
+            # Filter out existing hashes
+            with self.database.conn.read_ctx() as cursor:
+                existing = self.dbtx.get_existing_tx_hashes(
+                    cursor=cursor,
+                    tx_hashes=[tx.transaction_hash for tx in all_txs],
+                )
+            new_txs = [tx for tx in all_txs if tx.transaction_hash not in existing]
+            if new_txs:
+                with self.database.conn.write_ctx() as write_cursor:
+                    self.dbtx.add_transactions(
+                        write_cursor=write_cursor,
+                        starknet_transactions=new_txs,
+                        relevant_address=address,
+                    )
+        except (MissingAPIKey, RemoteError) as e:
+            log.debug(f'Voyager unavailable for {address}: {e}. Falling back to RPC.')
+            self._fetch_transactions_via_rpc(address=address, start_ts=start_ts, end_ts=end_ts)
+
+        self._send_tx_status_message(
+            address=address,
+            period=(start_ts, end_ts),
+            status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
+        )
+
+    def _fetch_transactions_via_rpc(
+            self,
+            address: StarknetAddress,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> None:
+        """Fallback: discover tx hashes via RPC events, then fetch full tx data via RPC."""
+        try:
             tx_hashes = self._get_tx_hashes_for_address(address)
         except RemoteError as e:
             log.error(f'Failed to query Starknet transaction hashes for {address}: {e}')
@@ -111,17 +148,10 @@ class StarknetTransactions:
             )
             return
 
-        # Filter out existing hashes
         with self.database.conn.read_ctx() as cursor:
             existing = self.dbtx.get_existing_tx_hashes(cursor=cursor, tx_hashes=tx_hashes)
 
         new_hashes = [h for h in tx_hashes if h not in existing]
-        log.debug(
-            f'Found {len(tx_hashes)} transactions for Starknet address {address}, '
-            f'{len(new_hashes)} are new',
-        )
-
-        # Fetch and store new transactions in batches
         for i in range(0, len(new_hashes), RPC_TX_BATCH_SIZE):
             batch = new_hashes[i:i + RPC_TX_BATCH_SIZE]
             txs: list[StarknetTransaction] = []
@@ -142,12 +172,6 @@ class StarknetTransactions:
                         starknet_transactions=txs,
                         relevant_address=address,
                     )
-
-        self._send_tx_status_message(
-            address=address,
-            period=(start_ts, end_ts),
-            status=TransactionStatusStep.QUERYING_TRANSACTIONS_FINISHED,
-        )
 
     def _get_tx_hashes_for_address(self, address: StarknetAddress) -> list[str]:
         """Get transaction hashes for an address using starknet_getEvents.
