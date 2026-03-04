@@ -5,6 +5,7 @@ import { type BigNumber, Blockchain, createEvmIdentifierFromAddress, type Writea
 import { cloneDeep, isEqual } from 'es-toolkit';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { usePremium } from '@/composables/premium';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
@@ -65,10 +66,12 @@ export function usePoolBalances(): UsePoolBalancesReturn {
   const ethAddresses = computed<string[]>(() => get(addresses)[Blockchain.ETH] ?? []);
 
   const { sushiswapPoolBalances, uniswapPoolBalances } = storeToRefs(usePoolBalancesStore());
+  const { recentlyAddedAddresses } = storeToRefs(useBlockchainAccountsStore());
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
   const premium = usePremium();
   const { t } = useI18n({ useScope: 'global' });
+
   const { isLoading } = useStatusStore();
   const { getSushiswapBalances, getUniswapV2Balances } = usePoolApi();
   const { assetSymbol } = useAssetInfoRetrieval();
@@ -225,9 +228,18 @@ export function usePoolBalances(): UsePoolBalancesReturn {
     await retrieveSushiswapBalances(refresh);
   }
 
-  watch(ethAddresses, async (addresses, previousAddresses) => {
-    if (!isEqual(addresses, previousAddresses))
-      await fetch(true);
+  watch(ethAddresses, async (current, previous) => {
+    if (isEqual(current, previous))
+      return;
+
+    const added = current.filter(a => !previous.includes(a));
+    const removed = previous.filter(a => !current.includes(a));
+    const recent = get(recentlyAddedAddresses);
+
+    if (removed.length === 0 && added.length > 0 && added.every(a => recent.has(a)))
+      return;
+
+    await fetch(true);
   });
 
   watch(premium, async (isActive, wasActive) => {

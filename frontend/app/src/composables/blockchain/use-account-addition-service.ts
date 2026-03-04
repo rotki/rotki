@@ -6,6 +6,7 @@ import { startPromise } from '@shared/utils';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
 import { useAccountAdditionNotifications } from '@/composables/blockchain/use-account-addition-notifications';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTagStore } from '@/store/session/tags';
@@ -82,6 +83,7 @@ interface UseAccountAdditionServiceReturn {
 export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const { addAccount, addEvmAccount } = useBlockchainAccounts();
   const { fetchDetected } = useBlockchainTokensStore();
+  const { trackAddedAddresses } = useBlockchainAccountsStore();
   const { fetchTags } = useTagStore();
   const { enableModule } = useSettingsStore();
   const { evmChains, supportedChains, supportsTransactions } = useSupportedChains();
@@ -114,6 +116,8 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     // Refresh tags first in case new system tags (like 'Contract') were created
     await fetchTags();
+
+    trackAddedAddresses(addedAccounts.map(item => item.address));
 
     const chainsSupportsTransactions = !chain || supportsTransactions(chain);
     if (chainsSupportsTransactions && onFetchAccounts) {
