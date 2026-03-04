@@ -62,7 +62,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     const namesPayload: AddressBookSimplePayload[] = [];
 
     chains.forEach((chain) => {
-      if (!get(isEvm(chain)))
+      if (!isEvm(chain))
         return;
 
       const addresses = getAddresses(chain);

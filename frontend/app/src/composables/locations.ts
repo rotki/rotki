@@ -28,8 +28,8 @@ export const useLocations = createSharedComposable(() => {
       return {
         detailPath,
         identifier: blockchainId,
-        image: get(getChainImageUrl(blockchainId)),
-        name: get(getChainName(blockchainId)),
+        image: getChainImageUrl(blockchainId),
+        name: getChainName(blockchainId),
       };
     }
 

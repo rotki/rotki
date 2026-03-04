@@ -54,7 +54,7 @@ const asset = computed<{ identifier: string; symbol: string } | undefined>(() =>
 
   let symbol = usedAsset.symbol;
   if (usedAsset.evmChain && !chip)
-    symbol += ` (${get(getChainName(usedAsset.evmChain))})`;
+    symbol += ` (${getChainName(usedAsset.evmChain)})`;
   else if (usedAsset.isCustomAsset)
     symbol = usedAsset.name;
 

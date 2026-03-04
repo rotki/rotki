@@ -10,7 +10,7 @@ const { disabled, location } = defineProps<{
 
 const locationLimited = ref<boolean>(true);
 
-const { getChainName, isEvm, isSolanaChains, matchChain } = useSupportedChains();
+const { getChainName, isDecodableChains, matchChain } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 
 const isDisabled = computed<boolean>(() => {
@@ -19,7 +19,7 @@ const isDisabled = computed<boolean>(() => {
   }
 
   const chain = matchChain(location);
-  return !chain || !(get(isEvm(chain)) || get(isSolanaChains(chain)));
+  return !chain || !isDecodableChains(chain);
 });
 
 const tooltipText = computed<string>(() => {
@@ -28,7 +28,7 @@ const tooltipText = computed<string>(() => {
   }
 
   return get(locationLimited) && location
-    ? t('toggle_location_link.limited', { location: get(getChainName(location)) })
+    ? t('toggle_location_link.limited', { location: getChainName(location) })
     : t('toggle_location_link.unlimited');
 });
 

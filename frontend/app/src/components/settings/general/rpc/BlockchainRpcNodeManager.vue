@@ -34,10 +34,10 @@ const { setMessage } = useMessageStore();
 
 const { connectedNodes, failedToConnect } = storeToRefs(usePeriodicStore());
 const { show } = useConfirmStore();
-const { getChainName } = useSupportedChains();
+const { useChainName } = useSupportedChains();
 const api = useEvmNodesApi(() => chain);
 
-const chainName = getChainName(() => chain);
+const chainName = useChainName(() => chain);
 const anyDisconnected = computed(() => get(nodes).some(node => !isNodeConnected(node) && node.active));
 
 async function loadNodes(): Promise<void> {

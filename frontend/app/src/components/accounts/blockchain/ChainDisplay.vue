@@ -18,7 +18,7 @@ const name = computed(() => {
   if (chain === 'all')
     return t('account_form.labels.all_supported_chains');
 
-  return get(getChainName(() => chain));
+  return getChainName(chain);
 });
 
 const evmChainsRepresentative = [Blockchain.ETH, Blockchain.ARBITRUM_ONE, Blockchain.BASE, Blockchain.OPTIMISM];

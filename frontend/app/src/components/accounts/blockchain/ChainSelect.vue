@@ -44,7 +44,7 @@ const filteredItems = computed<string[]>(() => {
     data = data.filter(symbol => symbol !== Blockchain.ETH2);
 
   if (evmOnly)
-    data = data.filter(symbol => get(isEvm(symbol as Blockchain)));
+    data = data.filter(symbol => isEvm(symbol as Blockchain));
 
   return data;
 });

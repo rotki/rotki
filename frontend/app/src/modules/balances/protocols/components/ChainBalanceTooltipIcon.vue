@@ -12,9 +12,9 @@ const { chainId } = defineProps<{
 }>();
 
 const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
-const { getChainName } = useSupportedChains();
+const { useChainName } = useSupportedChains();
 
-const chainName = getChainName(() => chainId);
+const chainName = useChainName(() => chainId);
 </script>
 
 <template>

@@ -13,9 +13,9 @@ interface BlockChainBalanceCardListProps {
 
 const { total } = defineProps<BlockChainBalanceCardListProps>();
 
-const { useBlockchainRedirectLink, getChainName } = useSupportedChains();
+const { useBlockchainRedirectLink, useChainName } = useSupportedChains();
 
-const name = getChainName(() => total.chain);
+const name = useChainName(() => total.chain);
 const navTarget = useBlockchainRedirectLink(() => total.chain);
 </script>
 

@@ -28,7 +28,7 @@ const submitting = ref<boolean>(false);
 const form = useTemplateRef<InstanceType<typeof BlockchainRpcNodeForm>>('form');
 const stateUpdated = ref(false);
 
-const { getChainName } = useSupportedChains();
+const { useChainName } = useSupportedChains();
 
 const chain = computed<Blockchain>(() => {
   const blockchain = get(model)?.node.blockchain;
@@ -38,10 +38,7 @@ const chain = computed<Blockchain>(() => {
   return blockchain;
 });
 
-const chainName = computed(() => {
-  const chain = get(model)?.node.blockchain;
-  return chain ? get(getChainName(get(chain))) : '';
-});
+const chainName = useChainName(() => get(model)?.node.blockchain);
 
 const dialogTitle = computed(() => {
   const state = get(model);

@@ -23,7 +23,7 @@ const supportedChains = computed(() => {
     return ({
       evmChainName: id,
       id,
-      name: get(getChainName(id)),
+      name: getChainName(id),
     });
   });
 });
