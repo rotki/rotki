@@ -5,12 +5,19 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
-    assetSymbol: vi.fn().mockImplementation((identifier) => {
-      if (isEvmIdentifier(identifier))
-        return 'USDC';
-
-      if (identifier === '0xdeadbeef')
+    getAssetField: vi.fn().mockImplementation((identifier: string | undefined, field: string) => {
+      if (!identifier)
         return '';
+
+      if (field === 'symbol') {
+        if (isEvmIdentifier(identifier))
+          return 'USDC';
+
+        if (identifier === '0xdeadbeef')
+          return '';
+
+        return identifier;
+      }
 
       return identifier;
     }),

@@ -10,11 +10,11 @@ import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { getDefaultFrontendSettings } from '@/types/settings/frontend-settings';
 
-const mockAssetInfo = vi.fn().mockImplementation(() => computed(() => ({ symbol: 'ETH' })));
+const mockUseAssetInfo = vi.fn().mockImplementation(() => computed(() => ({ symbol: 'ETH' })));
 
 vi.mock('@/composables/assets/retrieval', () => ({
-  useAssetInfoRetrieval: (): { assetInfo: typeof mockAssetInfo } => ({
-    assetInfo: mockAssetInfo,
+  useAssetInfoRetrieval: (): { useAssetInfo: typeof mockUseAssetInfo } => ({
+    useAssetInfo: mockUseAssetInfo,
   }),
 }));
 
@@ -32,7 +32,7 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
       uiFloatingPrecision: 2,
     });
 
-    mockAssetInfo.mockClear();
+    mockUseAssetInfo.mockClear();
   });
 
   afterEach(() => {
@@ -179,8 +179,8 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
         },
       });
 
-      expect(mockAssetInfo).toHaveBeenCalled();
-      const optionsArg = mockAssetInfo.mock.calls[0][1];
+      expect(mockUseAssetInfo).toHaveBeenCalled();
+      const optionsArg = mockUseAssetInfo.mock.calls[0][1];
       expect(get(optionsArg)).toEqual({ collectionParent: true });
     });
 
@@ -194,8 +194,8 @@ describe('modules/amount-display/components/AssetAmountDisplay', () => {
         },
       });
 
-      expect(mockAssetInfo).toHaveBeenCalled();
-      const optionsArg = mockAssetInfo.mock.calls[0][1];
+      expect(mockUseAssetInfo).toHaveBeenCalled();
+      const optionsArg = mockUseAssetInfo.mock.calls[0][1];
       expect(get(optionsArg)).toEqual({ collectionParent: false });
     });
   });

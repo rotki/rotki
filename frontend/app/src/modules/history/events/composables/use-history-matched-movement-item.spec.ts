@@ -17,8 +17,9 @@ vi.mock('@/composables/info/chains', () => ({
 }));
 
 vi.mock('@/composables/assets/retrieval', () => ({
+  NO_COLLECTION_RESOLVE: { collectionParent: false },
   useAssetInfoRetrieval: vi.fn(() => ({
-    getAssetSymbol: vi.fn((asset: string) => asset.toUpperCase()),
+    getAssetField: vi.fn((asset: string) => asset.toUpperCase()),
   })),
 }));
 

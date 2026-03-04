@@ -45,9 +45,9 @@ defineOptions({
 const { amount, asset = '', noCollectionParent, noScramble } = defineProps<Props>();
 
 // Composables
-const { assetInfo } = useAssetInfoRetrieval();
+const { useAssetInfo } = useAssetInfoRetrieval();
 const resolutionOptions = computed(() => ({ collectionParent: !noCollectionParent }));
-const info = assetInfo(() => asset, resolutionOptions);
+const info = useAssetInfo(() => asset, resolutionOptions);
 const { scrambledValue } = useScrambledValue({ value: () => amount, noScramble: () => noScramble });
 
 // Computed - returns empty string if no asset provided

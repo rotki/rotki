@@ -24,7 +24,7 @@ export function useSpamAsset(): UseSpamAssetReturn {
   const { fetchWhitelistedAssets } = useWhitelistedAssetsStore();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
 
-  const { getAssetSymbol } = useAssetInfoRetrieval();
+  const { getAssetField } = useAssetInfoRetrieval();
   const { manualBalancesAssets } = useManualBalanceData();
   const markAssetsAsSpam = async (tokens: string[]): Promise<ActionStatus> => {
     try {
@@ -45,7 +45,7 @@ export function useSpamAsset(): UseSpamAssetReturn {
         showErrorMessage(
           t('ignore.spam.warning.manual_balances_title'),
           t('ignore.spam.warning.manual_balances_message', {
-            assets: includedInManualBalances.map(item => getAssetSymbol(item)).join(', '),
+            assets: includedInManualBalances.map(item => getAssetField(item, 'symbol')).join(', '),
           }),
         );
       }

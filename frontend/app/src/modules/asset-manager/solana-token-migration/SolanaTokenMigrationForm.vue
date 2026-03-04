@@ -30,13 +30,13 @@ const { t } = useI18n({ useScope: 'global' });
 const address = useRefPropVModel(modelValue, 'address');
 const decimals = useRefPropVModel(modelValue, 'decimals');
 const tokenKind = useRefPropVModel(modelValue, 'tokenKind');
-const { assetInfo } = useAssetInfoRetrieval();
+const { getAssetInfo } = useAssetInfoRetrieval();
 
 const assetDetails = computed<string | undefined>(() => {
   if (!oldAsset) {
     return undefined;
   }
-  const details = get(assetInfo(oldAsset));
+  const details = getAssetInfo(oldAsset);
 
   if (!details) {
     return oldAsset;

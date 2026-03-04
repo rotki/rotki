@@ -29,10 +29,10 @@ export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefine
 
   const { useHistoricalAssetBalances: enabled } = storeToRefs(useFrontendSettingsStore());
 
-  const { assetName } = useAssetInfoRetrieval();
+  const { useAssetField } = useAssetInfoRetrieval();
   const stateForAsset = useLocalStorage<Record<string, number>>('rotki.remember-state-for-asset', {});
 
-  const name = assetName(asset);
+  const name = useAssetField(asset, 'name');
 
   const rememberStateForAsset = computed<boolean>({
     get() {

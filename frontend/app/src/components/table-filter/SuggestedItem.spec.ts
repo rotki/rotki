@@ -10,8 +10,14 @@ import { truncateAddress } from '@/utils/truncate';
 
 vi.mock('@/composables/assets/retrieval', (): Record<string, unknown> => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
-    assetInfo: vi.fn().mockImplementation((identifier: string): Record<string, unknown> => ({
+    getAssetInfo: vi.fn().mockImplementation((identifier: string | undefined): Record<string, unknown> => ({
       identifier,
+      evmChain: 'ethereum',
+      symbol: 'SYMBOL 2',
+      isCustomAsset: false,
+      name: 'Name 2',
+    })),
+    useAssetInfo: vi.fn().mockImplementation(() => ref({
       evmChain: 'ethereum',
       symbol: 'SYMBOL 2',
       isCustomAsset: false,

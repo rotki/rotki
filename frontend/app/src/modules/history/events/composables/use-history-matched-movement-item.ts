@@ -2,7 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
-import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLocations } from '@/composables/locations';
 import { isEventMissingAccountingRule } from '@/utils/history/events';
@@ -31,7 +31,7 @@ export interface UseHistoryMatchedMovementItemReturn {
   eventTypeLabel: ComputedRef<string>;
 }
 
-const ASSET_RESOLUTION_OPTIONS: AssetResolutionOptions = { collectionParent: false };
+const ASSET_RESOLUTION_OPTIONS = NO_COLLECTION_RESOLVE;
 
 export function useHistoryMatchedMovementItem(
   props: UseHistoryMatchedMovementItemProps,
@@ -39,7 +39,7 @@ export function useHistoryMatchedMovementItem(
   const { events, selection } = props;
   const { t } = useI18n({ useScope: 'global' });
   const { getChain } = useSupportedChains();
-  const { getAssetSymbol } = useAssetInfoRetrieval();
+  const { getAssetField } = useAssetInfoRetrieval();
 
   const { locationData } = useLocations();
 
@@ -114,7 +114,7 @@ export function useHistoryMatchedMovementItem(
     const secondary = get(secondaryEvent);
 
     const amount = primary.amount;
-    const asset = getAssetSymbol(primary.asset, ASSET_RESOLUTION_OPTIONS);
+    const asset = getAssetField(primary.asset, 'symbol', ASSET_RESOLUTION_OPTIONS);
     const exchangeLabel = primary.locationLabel || get(locationData(primary.location))?.name || '';
     const addressLabel = secondary?.locationLabel || (secondary && get(locationData(secondary.location))?.name) || '';
 
@@ -136,7 +136,7 @@ export function useHistoryMatchedMovementItem(
     if (fee.length === 0)
       return notes;
 
-    const feeText = fee.map(item => `${item.amount.toFixed()} ${getAssetSymbol(item.asset, ASSET_RESOLUTION_OPTIONS)}`).join('; ');
+    const feeText = fee.map(item => `${item.amount.toFixed()} ${getAssetField(item.asset, 'symbol', ASSET_RESOLUTION_OPTIONS)}`).join('; ');
     return t('history_events_list_swap.fee_description', { feeText, notes });
   });
 

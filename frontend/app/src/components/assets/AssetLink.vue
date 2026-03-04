@@ -14,8 +14,8 @@ defineSlots<{
 }>();
 
 const address = reactify(getAddressFromEvmIdentifier)(() => asset);
-const { assetInfo } = useAssetInfoRetrieval();
-const assetDetails = assetInfo(() => asset);
+const { useAssetInfo } = useAssetInfoRetrieval();
+const assetDetails = useAssetInfo(() => asset);
 const { navigateToDetails } = useAssetPageNavigation(() => asset);
 </script>
 

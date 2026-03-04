@@ -35,9 +35,9 @@ const { ignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
 const isSpamAsset = computed<boolean>(() => asset.isSpam);
 const isIgnoredAsset = useIsAssetIgnored(identifier);
 const { markAssetsAsSpam } = useSpamAsset();
-const { assetContractInfo, refetchAssetInfo } = useAssetInfoRetrieval();
+const { refetchAssetInfo, useAssetContractInfo } = useAssetInfoRetrieval();
 
-const contractInfo = assetContractInfo(identifier);
+const contractInfo = useAssetContractInfo(identifier);
 
 function actionClick(action: ConfirmType) {
   set(confirm, true);

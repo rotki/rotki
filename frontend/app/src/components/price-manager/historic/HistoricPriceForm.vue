@@ -21,15 +21,15 @@ const { editMode = false } = defineProps<{
   editMode?: boolean;
 }>();
 
-const { assetSymbol } = useAssetInfoRetrieval();
+const { useAssetField } = useAssetInfoRetrieval();
 
 const fromAsset = useRefPropVModel(modelValue, 'fromAsset');
 const toAsset = useRefPropVModel(modelValue, 'toAsset');
 const price = useRefPropVModel(modelValue, 'price');
 const timestamp = useRefPropVModel(modelValue, 'timestamp');
 
-const fromAssetSymbol = assetSymbol(fromAsset);
-const toAssetSymbol = assetSymbol(toAsset);
+const fromAssetSymbol = useAssetField(fromAsset, 'symbol');
+const toAssetSymbol = useAssetField(toAsset, 'symbol');
 
 const numericPrice = bigNumberifyFromRef(price);
 

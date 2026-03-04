@@ -18,11 +18,11 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { assetName, assetSymbol } = useAssetInfoRetrieval();
+const { useAssetField } = useAssetInfoRetrieval();
 const { getEvmChainName } = useSupportedChains();
 
-const symbol = assetSymbol(data.asset, { collectionParent: false });
-const name = assetName(data.asset, { collectionParent: false });
+const symbol = useAssetField(data.asset, 'symbol', { collectionParent: false });
+const name = useAssetField(data.asset, 'name', { collectionParent: false });
 </script>
 
 <template>

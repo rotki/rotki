@@ -1,6 +1,4 @@
-import type { ComputedRef } from 'vue';
 import type { AssetSearchParams } from '@/composables/api/assets/info';
-import type { AssetNameReturn, AssetSymbolReturn } from '@/composables/assets/retrieval';
 import {
   type AssetBalance,
   type AssetInfoWithId,
@@ -188,15 +186,15 @@ export function getSortItems<T extends AssetBalance>(getInfo: (identifier: strin
 export function assetFilterByKeyword(
   item: Nullable<AssetBalance>,
   search: string,
-  assetName: AssetNameReturn,
-  assetSymbol: AssetSymbolReturn,
+  getAssetInfo: (identifier: string | undefined) => { name?: string | null; symbol?: string | null } | null,
 ): boolean {
   const keyword = getTextToken(search);
   if (!keyword || !item)
     return true;
 
-  const name = getTextToken(get(assetName(item.asset)));
-  const symbol = getTextToken(get(assetSymbol(item.asset)));
+  const info = getAssetInfo(item.asset);
+  const name = getTextToken(info?.name ?? '');
+  const symbol = getTextToken(info?.symbol ?? '');
   return symbol.includes(keyword) || name.includes(keyword);
 }
 
@@ -226,8 +224,4 @@ export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Pro
     pending = null;
     return result;
   }, 200);
-}
-
-export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef<AssetInfoWithId | null>): (identifier: string) => AssetInfoWithId | null {
-  return (identifier: string): AssetInfoWithId | null => get(assetInfo(identifier)) || null;
 }

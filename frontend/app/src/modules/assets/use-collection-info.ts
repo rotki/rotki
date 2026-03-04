@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRef } from 'vue';
 import type { AssetMap } from '@/types/asset';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useCollectionMappingStore } from '@/modules/assets/use-collection-mapping-store';
 import { chunkArray } from '@/utils/data';
 import { logger } from '@/utils/logging';
@@ -20,9 +20,8 @@ export const useCollectionInfo = createSharedComposable((): UseCollectionInfoRet
   const queuedAssets: Set<string> = new Set();
   const pendingAssets: Set<string> = new Set();
 
-  const { assetAssociationMap } = useAssetInfoRetrieval();
   const { assetToCollection, collectionMainAsset } = storeToRefs(useCollectionMappingStore());
-
+  const resolveAssetIdentifier = useResolveAssetIdentifier();
   const { assetMapping } = useAssetInfoApi();
 
   async function getAssetMapping(identifiers: string[]): Promise<AssetMap | undefined> {
@@ -38,7 +37,7 @@ export const useCollectionInfo = createSharedComposable((): UseCollectionInfoRet
   async function retrieveCollectionId(identifiers: string[]): Promise<CollectionInfo> {
     const assetToCollection: Record<string, string | null> = {};
     const collectionMainAsset: Record<string, string | null> = {};
-    const ids = identifiers.map(id => get(assetAssociationMap)[id] ?? id);
+    const ids = identifiers.map(id => resolveAssetIdentifier(id));
     for (const chunk of chunkArray(ids, 50)) {
       const mappings = await getAssetMapping(chunk);
       if (mappings === undefined) {

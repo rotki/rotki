@@ -3,7 +3,7 @@ import type { AssetPriceInfo } from '@/types/prices';
 import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, NoPrice, Zero } from '@rotki/common';
 import { storeToRefs } from 'pinia';
 import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
 import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';
 import { getBlockchainLocationBreakdown, getExchangeByLocationBalances, useLocationBreakdown } from '@/composables/balances/location-breakdown';
@@ -35,7 +35,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { balances: blockchainBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { manualBalanceByLocation } = useManualBalanceData();
 
-  const { assetAssociationMap } = useAssetInfoRetrieval();
+  const resolveAssetIdentifier = useResolveAssetIdentifier();
   const { useCollectionId, useCollectionMainAsset } = useCollectionInfo();
 
   const balances = (
@@ -47,8 +47,6 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       const exchange = get(useBaseExchangeBalances());
       const manual = manualToAssetProtocolBalances(get(manualBalances));
       const blockchain = blockchainToAssetProtocolBalances(get(blockchainBalances));
-      const associatedAssets = get(assetAssociationMap);
-
       const allSources = {
         blockchain,
         exchanges: exchange,
@@ -62,7 +60,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
           return acc;
         }, {} as Record<'blockchain' | 'exchanges' | 'manual', typeof blockchain>);
 
-      return summarizeAssetProtocols({ associatedAssets, sources: filteredSources }, { hideIgnored, isAssetIgnored }, {
+      return summarizeAssetProtocols({ resolveIdentifier: resolveAssetIdentifier, sources: filteredSources }, { hideIgnored, isAssetIgnored }, {
         getAssetPrice,
         noPrice: NoPrice,
       }, {
@@ -79,8 +77,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
         exchanges: {},
         manual: manualToAssetProtocolBalances(get(manualLiabilities)),
       };
-      const associatedAssets = get(assetAssociationMap);
-      return summarizeAssetProtocols({ associatedAssets, sources }, { hideIgnored, isAssetIgnored }, {
+      return summarizeAssetProtocols({ resolveIdentifier: resolveAssetIdentifier, sources }, { hideIgnored, isAssetIgnored }, {
         getAssetPrice,
         noPrice: NoPrice,
       }, {
@@ -100,7 +97,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     const accountAddress = address ? toValue(address) : undefined;
     const blockchain = blockchainToAssetProtocolBalances(get(blockchainBalances), key, filter, accountAddress);
     return summarizeAssetProtocols({
-      associatedAssets: get(assetAssociationMap),
+      resolveIdentifier: resolveAssetIdentifier,
       sources: { blockchain, exchanges: {}, manual: {} },
     }, {
       hideIgnored: true,
@@ -120,7 +117,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => {
     const exchanges = get(useBaseExchangeBalances(exchange));
     return summarizeAssetProtocols({
-      associatedAssets: get(assetAssociationMap),
+      resolveIdentifier: resolveAssetIdentifier,
       sources: { blockchain: {}, exchanges, manual: {} },
     }, {
       hideIgnored: true,
@@ -176,7 +173,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   });
 
   const balancesByLocation = computed<Record<string, BigNumber>>(() => {
-    const blockchainAssets = getBlockchainLocationBreakdown(get(blockchainBalances), get(assetAssociationMap), asset => isAssetIgnored(asset));
+    const blockchainAssets = getBlockchainLocationBreakdown(get(blockchainBalances), resolveAssetIdentifier, asset => isAssetIgnored(asset));
     const blockchainTotal = bigNumberSum(Object.values(blockchainAssets).map(asset => asset.value));
     const map: Record<string, BigNumber> = {
       [TRADE_LOCATION_BLOCKCHAIN]: blockchainTotal,
@@ -209,7 +206,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     useLocationBreakdown: (location: MaybeRefOrGetter<string>) => useLocationBreakdown(
       location,
       blockchainBalances,
-      assetAssociationMap,
+      resolveAssetIdentifier,
       manualBalances,
       useBaseExchangeBalances,
       isAssetIgnored,

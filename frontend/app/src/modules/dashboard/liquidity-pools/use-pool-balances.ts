@@ -74,7 +74,7 @@ export function usePoolBalances(): UsePoolBalancesReturn {
 
   const { isLoading } = useStatusStore();
   const { getSushiswapBalances, getUniswapV2Balances } = usePoolApi();
-  const { assetSymbol } = useAssetInfoRetrieval();
+  const { getAssetField } = useAssetInfoRetrieval();
 
   const loading = logicOr(
     isLoading(Section.POOLS_UNISWAP_V2),
@@ -112,7 +112,7 @@ export function usePoolBalances(): UsePoolBalancesReturn {
   const total = computed<BigNumber>(() => bigNumberSum(get(balances).map(item => item.value)));
 
   const getPoolName = (type: PoolType, assets: string[]): string => {
-    const concatAssets = (assets: string[]): string => assets.map(asset => get(assetSymbol(asset))).join('-');
+    const concatAssets = (assets: string[]): string => assets.map(asset => getAssetField(asset, 'symbol')).join('-');
 
     const data = [{
       identifier: PoolType.UNISWAP_V2,

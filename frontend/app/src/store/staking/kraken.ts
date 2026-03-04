@@ -7,7 +7,7 @@ import type { TaskMeta } from '@/types/task';
 import { type AssetBalance, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { useKrakenApi } from '@/composables/api/staking/kraken';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useStatusUpdater } from '@/composables/status';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -48,7 +48,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
 
   const api = useKrakenApi();
 
-  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+  const resolveAssetIdentifier = useResolveAssetIdentifier();
   const { t } = useI18n({ useScope: 'global' });
 
   const events = computed<KrakenStakingEvents>(() => {
@@ -58,7 +58,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     const receivedAssets: Record<string, AssetBalance> = {};
 
     received.forEach((item: AssetBalance) => {
-      const associatedAsset: string = get(getAssociatedAssetIdentifier(item.asset));
+      const associatedAsset: string = resolveAssetIdentifier(item.asset);
 
       const receivedAsset = receivedAssets[associatedAsset];
 

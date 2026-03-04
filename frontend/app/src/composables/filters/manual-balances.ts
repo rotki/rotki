@@ -4,7 +4,7 @@ import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
 import z from 'zod/v4';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { CommaSeparatedStringSchema } from '@/types/route';
-import { assetDeserializer, assetSuggestions } from '@/utils/assets';
+import { assetSuggestions } from '@/utils/assets';
 
 enum ManualBalanceFilterKeys {
   LOCATION = 'location',
@@ -26,7 +26,7 @@ export function useManualBalanceFilter(locations: MaybeRef<string[]>): FilterSch
   const filters = ref<Filters>({});
 
   const { t } = useI18n({ useScope: 'global' });
-  const { assetInfo, assetSearch } = useAssetInfoRetrieval();
+  const { assetSearch, getAssetInfo } = useAssetInfoRetrieval();
 
   const matchers = computed<Matcher[]>(() => {
     const selectedLocation = get(filters)?.location;
@@ -52,7 +52,7 @@ export function useManualBalanceFilter(locations: MaybeRef<string[]>): FilterSch
       {
         asset: true,
         description: t('common.asset'),
-        deserializer: assetDeserializer(assetInfo),
+        deserializer: getAssetInfo,
         key: ManualBalanceFilterKeys.ASSET,
         keyValue: ManualBalanceFilterValueKeys.ASSET,
         suggestions: assetSuggestions(assetSearch, locationString),

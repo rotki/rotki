@@ -14,7 +14,7 @@ import {
   Severity,
 } from '@rotki/common';
 import { type AssetSearchParams, useAssetInfoApi } from '@/composables/api/assets/info';
-import { getAssociatedAssetIdentifier, processAssetInfo, useAssetAssociationMap } from '@/composables/assets/common';
+import { processAssetInfo, useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
@@ -28,6 +28,8 @@ export interface AssetResolutionOptions {
   collectionParent?: boolean;
 }
 
+export const NO_COLLECTION_RESOLVE: AssetResolutionOptions = { collectionParent: false } as const;
+
 interface AssetWithResolutionStatus extends AssetInfoWithId {
   resolved: boolean;
 }
@@ -38,64 +40,63 @@ interface AssetContractInfo {
   nftId?: string;
 }
 
+export type AssetStringField = 'symbol' | 'name';
+
+export type PlainAssetInfoReturn = (identifier: string | undefined, options?: AssetResolutionOptions) => AssetWithResolutionStatus | null;
+
 export type AssetInfoReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
 
-export type AssetSymbolReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<string>;
-
-export type AssetNameReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<string>;
+type PlainAssetContractInfoReturn = (identifier: string | undefined, options?: AssetResolutionOptions) => AssetContractInfo | undefined;
 
 type AssetContractInfoReturn = (identifier: MaybeRefOrGetter<string | undefined>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<AssetContractInfo | undefined>;
 
 interface UseAssetInfoRetrievalReturn {
-  assetAssociationMap: ComputedRef<Record<string, string>>;
-  assetContractInfo: AssetContractInfoReturn;
-  assetInfo: AssetInfoReturn;
-  assetName: AssetNameReturn;
   assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>;
-  assetSymbol: AssetSymbolReturn;
   fetchTokenDetails: (payload: EvmChainAddress) => Promise<ERC20Token>;
-  getAssetSymbol: (identifier: string | undefined, options?: AssetResolutionOptions) => string;
-  getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>;
+  getAssetContractInfo: PlainAssetContractInfoReturn;
+  getAssetField: (identifier: string | undefined, field: AssetStringField, options?: AssetResolutionOptions) => string;
+  getAssetInfo: PlainAssetInfoReturn;
+  getTokenAddress: (identifier: string, options?: AssetResolutionOptions) => string;
   refetchAssetInfo: (key: string) => void;
-  tokenAddress: (identifier: MaybeRefOrGetter<string>, options?: AssetResolutionOptions) => ComputedRef<string>;
+  useAssetContractInfo: AssetContractInfoReturn;
+  useAssetField: (identifier: MaybeRefOrGetter<string | undefined>, field: AssetStringField, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<string>;
+  useAssetInfo: AssetInfoReturn;
+  useTokenAddress: (identifier: MaybeRefOrGetter<string>, options?: MaybeRefOrGetter<AssetResolutionOptions>) => ComputedRef<string>;
 }
 
 export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
-  const { queueIdentifier, resolve: resolveAsset } = useAssetCacheStore();
+  const assetCacheStore = useAssetCacheStore();
+  const { queueIdentifier, resolve: resolveAsset } = assetCacheStore;
+  const { fetchedAssetCollections } = storeToRefs(assetCacheStore);
   const { notify, notifyError } = useNotifications();
   const { awaitTask } = useTaskStore();
 
   const { getChain } = useSupportedChains();
 
-  const assetAssociationMap = useAssetAssociationMap();
+  const resolveAssetIdentifier = useResolveAssetIdentifier();
 
-  const getAssociatedAssetIdentifierComputed = (identifier: string): ComputedRef<string> =>
-    computed(() => getAssociatedAssetIdentifier(identifier, get(assetAssociationMap)));
-
-  const assetInfo = (
-    identifier: MaybeRefOrGetter<string | undefined>,
-    options: MaybeRefOrGetter<AssetResolutionOptions> = {},
-  ): ComputedRef<(AssetInfoWithId & { resolved: boolean }) | null> => computed(() => {
-    const id = toValue(identifier);
-    if (!id)
+  const getAssetInfo: PlainAssetInfoReturn = (
+    identifier: string | undefined,
+    options: AssetResolutionOptions = {},
+  ): AssetWithResolutionStatus | null => {
+    if (!identifier)
       return null;
 
     const {
       associate = true,
       collectionParent = true,
-    } = toValue(options);
+    } = options;
 
-    const key = associate ? get(getAssociatedAssetIdentifierComputed(id)) : id;
+    const key = associate ? resolveAssetIdentifier(identifier) : identifier;
     const data = resolveAsset(key);
 
-    const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
     const collectionData = collectionParent && data?.collectionId
       ? get(fetchedAssetCollections)[data.collectionId]
       : null;
 
-    const processedInfo = processAssetInfo(data, id, collectionData);
+    const processedInfo = processAssetInfo(data, identifier, collectionData);
 
     if (!processedInfo) {
       return null;
@@ -106,47 +107,39 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
       identifier: key,
       resolved: !!data,
     };
-  });
-
-  const assetSymbol = (
-    identifier: MaybeRefOrGetter<string | undefined>,
-    options?: MaybeRefOrGetter<AssetResolutionOptions>,
-  ): ComputedRef<string> => computed(() => {
-    const id = toValue(identifier);
-    if (!id)
-      return '';
-
-    const symbol = get(assetInfo(id, options))?.symbol;
-    return symbol || '';
-  });
-
-  const getAssetSymbol = (identifier: string | undefined, options?: AssetResolutionOptions): string => {
-    if (!identifier)
-      return '';
-    return get(assetInfo(identifier, options))?.symbol ?? '';
   };
 
-  const assetName = (
+  const useAssetInfo: AssetInfoReturn = (
     identifier: MaybeRefOrGetter<string | undefined>,
-    options?: MaybeRefOrGetter<AssetResolutionOptions>,
-  ): ComputedRef<string> => computed(() => {
-    const id = toValue(identifier);
-    if (!id)
+    options: MaybeRefOrGetter<AssetResolutionOptions> = {},
+  ): ComputedRef<AssetWithResolutionStatus | null> =>
+    computed<AssetWithResolutionStatus | null>(() => getAssetInfo(toValue(identifier), toValue(options)));
+
+  const getAssetField = (
+    identifier: string | undefined,
+    field: AssetStringField,
+    options?: AssetResolutionOptions,
+  ): string => {
+    if (!identifier)
       return '';
+    return getAssetInfo(identifier, options)?.[field] ?? '';
+  };
 
-    const name = get(assetInfo(id, options))?.name;
-    return name || '';
-  });
-
-  const assetContractInfo = (
+  const useAssetField = (
     identifier: MaybeRefOrGetter<string | undefined>,
+    field: AssetStringField,
     options?: MaybeRefOrGetter<AssetResolutionOptions>,
-  ): ComputedRef<AssetContractInfo | undefined> => computed(() => {
-    const id = toValue(identifier);
-    if (!id)
+  ): ComputedRef<string> =>
+    computed<string>(() => getAssetField(toValue(identifier), field, toValue(options)));
+
+  const getAssetContractInfo: PlainAssetContractInfoReturn = (
+    identifier: string | undefined,
+    options?: AssetResolutionOptions,
+  ): AssetContractInfo | undefined => {
+    if (!identifier)
       return undefined;
 
-    const asset = get(assetInfo(id, options));
+    const asset = getAssetInfo(identifier, options);
 
     if (!asset)
       return undefined;
@@ -183,13 +176,24 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     }
 
     return undefined;
-  });
+  };
 
-  const tokenAddress = (
+  const useAssetContractInfo: AssetContractInfoReturn = (
+    identifier: MaybeRefOrGetter<string | undefined>,
+    options?: MaybeRefOrGetter<AssetResolutionOptions>,
+  ): ComputedRef<AssetContractInfo | undefined> =>
+    computed<AssetContractInfo | undefined>(() => getAssetContractInfo(toValue(identifier), toValue(options)));
+
+  const getTokenAddress = (
+    identifier: string,
+    options?: AssetResolutionOptions,
+  ): string => getAssetContractInfo(identifier, options)?.address || '';
+
+  const useTokenAddress = (
     identifier: MaybeRefOrGetter<string>,
     options?: MaybeRefOrGetter<AssetResolutionOptions>,
   ): ComputedRef<string> =>
-    computed(() => get(assetContractInfo(identifier, options))?.address || '');
+    computed<string>(() => getTokenAddress(toValue(identifier), toValue(options)));
 
   const fetchTokenDetails = async (payload: EvmChainAddress): Promise<ERC20Token> => {
     try {
@@ -233,16 +237,16 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   };
 
   return {
-    assetAssociationMap,
-    assetContractInfo,
-    assetInfo,
-    assetName,
     assetSearch,
-    assetSymbol,
     fetchTokenDetails,
-    getAssetSymbol,
-    getAssociatedAssetIdentifier: getAssociatedAssetIdentifierComputed,
+    getAssetContractInfo,
+    getAssetField,
+    getAssetInfo,
+    getTokenAddress,
     refetchAssetInfo: queueIdentifier,
-    tokenAddress,
+    useAssetContractInfo,
+    useAssetField,
+    useAssetInfo,
+    useTokenAddress,
   };
 }

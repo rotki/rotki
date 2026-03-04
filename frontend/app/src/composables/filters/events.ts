@@ -18,7 +18,7 @@ import { useHistoryEventCounterpartyMappings } from '@/composables/history/event
 import { useHistoryStore } from '@/store/history';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { arrayify } from '@/utils/array';
-import { assetDeserializer, assetSuggestions } from '@/utils/assets';
+import { assetSuggestions } from '@/utils/assets';
 import { uniqueStrings } from '@/utils/data';
 import { dateDeserializer, dateRangeValidator, dateSerializer, getDateInputISOFormat } from '@/utils/date';
 import {
@@ -80,7 +80,7 @@ export function useHistoryEventFilter(
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { historyEventTypeGlobalMapping, historyEventTypes } = useHistoryEventMappings();
   const { counterparties } = useHistoryEventCounterpartyMappings();
-  const { assetInfo, assetSearch } = useAssetInfoRetrieval();
+  const { assetSearch, getAssetInfo } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { t } = useI18n({ useScope: 'global' });
 
@@ -122,7 +122,7 @@ export function useHistoryEventFilter(
       {
         asset: true,
         description: t('transactions.filter.asset'),
-        deserializer: assetDeserializer(assetInfo),
+        deserializer: getAssetInfo,
         key: HistoryEventFilterKeys.ASSET,
         keyValue: HistoryEventFilterValueKeys.ASSET,
         suggestions: assetSuggestions(assetSearch, locationString),

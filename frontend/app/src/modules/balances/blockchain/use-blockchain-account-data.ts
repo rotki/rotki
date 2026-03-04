@@ -12,7 +12,7 @@ import type { Collection } from '@/types/collection';
 import { type AssetBalance, type Balance, Blockchain, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -44,11 +44,11 @@ interface UseBlockchainAccountDataReturn {
 function toAssetBalances(
   balances: Record<string, ProtocolBalances>,
   isIgnored: (asset: string) => boolean,
-  assetAssociationMap: Record<string, string>,
+  resolveIdentifier: (id: string) => string,
 ): AssetBalance[] {
   const intermediate: Record<string, Balance> = {};
   for (const [assetIdentifier, balance] of Object.entries(balances)) {
-    const identifier = assetAssociationMap?.[assetIdentifier] ?? assetIdentifier;
+    const identifier = resolveIdentifier(assetIdentifier);
     if (isIgnored(identifier))
       continue;
 
@@ -73,13 +73,12 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
   const { addressNameSelector } = useAddressesNamesStore();
   const { getChainAccountType } = useSupportedChains();
   const { isAssetIgnored } = useIgnoredAssetsStore();
-  const { assetAssociationMap } = useAssetInfoRetrieval();
+  const resolveAssetIdentifier = useResolveAssetIdentifier();
 
   const getAccountBalances = (
     balances: Balances,
     chain: string,
     address: string,
-    assetAssociationMap: Record<string, string>,
   ): AccountBalances => {
     const chainAssets = balances[chain] ?? {};
     const addressAssets = chainAssets[address];
@@ -88,8 +87,8 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
       const { assets, liabilities } = addressAssets;
 
       return {
-        assets: toAssetBalances(assets, isAssetIgnored, assetAssociationMap),
-        liabilities: !liabilities ? [] : toAssetBalances(liabilities, isAssetIgnored, assetAssociationMap),
+        assets: toAssetBalances(assets, isAssetIgnored, resolveAssetIdentifier),
+        liabilities: !liabilities ? [] : toAssetBalances(liabilities, isAssetIgnored, resolveAssetIdentifier),
       };
     }
 
@@ -102,7 +101,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
   const getAccountDetails = (
     chain: string,
     address: string,
-  ): AccountBalances => getAccountBalances(get(balances), get(chain), get(address), get(assetAssociationMap));
+  ): AccountBalances => getAccountBalances(get(balances), get(chain), get(address));
 
   const useAccountTags = (address: MaybeRefOrGetter<string>): ComputedRef<string[]> => computed<string[]>(() => {
     const accountData = get(accounts);

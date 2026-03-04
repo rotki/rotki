@@ -116,7 +116,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
 
     return summarizeAssetProtocols(
       {
-        associatedAssets: {},
+        resolveIdentifier: (id: string): string => id,
         sources: { historical: sources },
       },
       {

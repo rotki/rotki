@@ -267,7 +267,7 @@ export function convertBtcBalances(
 interface GeneratorFilters {
   chains?: string[];
   skipIdentifier?: (asset: string) => boolean;
-  assetAssociationMap?: Record<string, string>;
+  resolveIdentifier?: (id: string) => string;
 }
 
 export function* iterateAssets(
@@ -276,8 +276,8 @@ export function* iterateAssets(
   filters: GeneratorFilters = {},
 ): Generator<[string, Balance]> {
   const {
-    assetAssociationMap = {},
     chains = [],
+    resolveIdentifier = (id: string): string => id,
     skipIdentifier = (): boolean => false,
   } = filters;
   for (const chain of Object.keys(balances)) {
@@ -294,7 +294,7 @@ export function* iterateAssets(
         if (skipIdentifier(identifier))
           continue;
 
-        const assetIdentifier = assetAssociationMap[identifier] ?? identifier;
+        const assetIdentifier = resolveIdentifier(identifier);
         const balance = Object.values(protocolBalances).reduce((previousValue, currentValue) => ({
           amount: previousValue.amount.plus(currentValue.amount),
           value: previousValue.value.plus(currentValue.value),

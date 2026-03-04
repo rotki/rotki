@@ -22,7 +22,7 @@ const { identifier, isCollectionParent = false } = defineProps<{
 const { assetPriceInfo } = useAggregatedBalances();
 const { assetPrice } = usePriceUtils();
 
-const { assetName } = useAssetInfoRetrieval();
+const { getAssetField } = useAssetInfoRetrieval();
 const { refreshPrice } = usePriceRefresh();
 const { isLoading } = useStatusStore();
 
@@ -59,7 +59,7 @@ function showDeleteConfirmation() {
   show(
     {
       message: t('assets.custom_price.delete.message', {
-        asset: get(assetName(identifier)) ?? identifier,
+        asset: getAssetField(identifier, 'name') || identifier,
       }),
       title: t('assets.custom_price.delete.tooltip'),
     },

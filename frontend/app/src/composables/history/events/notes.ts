@@ -49,7 +49,7 @@ interface UseHistoryEventsNoteReturn {
 }
 
 export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
-  const { assetSymbol } = useAssetInfoRetrieval();
+  const { getAssetField } = useAssetInfoRetrieval();
   const { scrambleData, scrambleIdentifier } = useScramble();
 
   function separateByPunctuation(word: string): string[] {
@@ -199,7 +199,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     noTxRef,
     validatorIndex,
   }: FormatNoteParams): ComputedRef<NoteFormat[]> => computed<NoteFormat[]>(() => {
-    const asset = get(assetSymbol(toValue(assetId), { collectionParent: false }));
+    const asset = getAssetField(toValue(assetId), 'symbol', { collectionParent: false });
     const extraDataVal = toValue(extraData);
 
     let notesVal = toValue(notes);
@@ -229,7 +229,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       noTxRef: toValue(noTxRef),
       shouldFormatAllAmount: counterpartyVal === 'gnosis_pay',
       getCleanWord,
-      getAssetSymbol: (id: string) => get(assetSymbol(id)),
+      getAssetSymbol: (id: string) => getAssetField(id, 'symbol'),
     };
 
     for (const [index, wordItem] of processedWords.entries()) {

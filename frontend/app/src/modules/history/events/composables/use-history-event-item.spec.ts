@@ -17,7 +17,7 @@ vi.mock('@/composables/info/chains', () => ({
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn(() => ({
-    assetInfo: vi.fn(() => ref({ protocol: undefined })),
+    useAssetInfo: vi.fn(() => ref({ protocol: undefined })),
   })),
 }));
 

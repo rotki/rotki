@@ -29,14 +29,14 @@ const refreshedHistoricalPrices = ref<Record<string, BigNumber>>({});
 const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
 const tab = ref(0);
 
-const { assetName } = useAssetInfoRetrieval();
+const { useAssetField } = useAssetInfoRetrieval();
 const store = useHistoricCachePriceStore();
 const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(store);
 const { resetHistoricalPricesData } = store;
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
 
-const name = assetName(asset);
+const name = useAssetField(() => asset, 'name');
 
 const failedPrices = computed<FailedHistoricalAssetPriceResponse>(() => get(failedDailyPrices)[asset]);
 

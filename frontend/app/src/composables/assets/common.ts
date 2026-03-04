@@ -1,22 +1,16 @@
-import type { ComputedRef } from 'vue';
 import { type AssetInfo, getAddressFromEvmIdentifier, isEvmIdentifier } from '@rotki/common';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CUSTOM_ASSET } from '@/types/asset';
 
-export function useAssetAssociationMap(): ComputedRef<Record<string, string>> {
+export function useResolveAssetIdentifier(): (identifier: string) => string {
   const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
 
-  return computed<Record<string, string>>(() => {
-    const associationMap: Record<string, string> = {};
-    if (get(treatEth2AsEth))
-      associationMap.ETH2 = 'ETH';
+  return (identifier: string): string => {
+    if (get(treatEth2AsEth) && identifier === 'ETH2')
+      return 'ETH';
 
-    return associationMap;
-  });
-}
-
-export function getAssociatedAssetIdentifier(identifier: string, associationMap: Record<string, string>): string {
-  return associationMap[identifier] ?? identifier;
+    return identifier;
+  };
 }
 
 function getAssetNameFallback(id: string): string {
