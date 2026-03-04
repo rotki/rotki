@@ -4,7 +4,6 @@ import { Severity } from '@rotki/common';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useBackupApi } from '@/composables/api/backup';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
 import { getErrorMessage } from '@/utils/error-handling';
@@ -15,15 +14,16 @@ const { t } = useI18n({ useScope: 'global' });
 
 const backupInfo = ref<DatabaseInfo>();
 const selected = ref<UserDbBackupWithId[]>([]);
-const loading = ref(false);
-const saving = ref(false);
-
-const backups = useRefMap(
-  backupInfo,
-  info => info?.userdb?.backups.map((x, index) => ({ ...x, id: index + 1 })) ?? [],
-);
+const loading = ref<boolean>(false);
+const saving = ref<boolean>(false);
 
 const { notify } = useNotificationsStore();
+const { createBackup, deleteBackup, info } = useBackupApi();
+const { show } = useConfirmStore();
+
+const backups = computed<UserDbBackupWithId[]>(
+  () => get(backupInfo)?.userdb?.backups.map((x, index) => ({ ...x, id: index + 1 })) ?? [],
+);
 
 const directory = computed<string>(() => {
   const info = get(backupInfo);
@@ -38,8 +38,6 @@ const directory = computed<string>(() => {
 
   return filepath.slice(0, index + 1);
 });
-
-const { createBackup, deleteBackup, info } = useBackupApi();
 
 async function loadInfo() {
   try {
@@ -155,8 +153,6 @@ async function backup() {
     set(saving, false);
   }
 }
-
-const { show } = useConfirmStore();
 
 function showMassDeleteConfirmation() {
   show(

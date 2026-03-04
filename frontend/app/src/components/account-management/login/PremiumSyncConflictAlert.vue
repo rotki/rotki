@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import LoginActionAlert from '@/components/account-management/login/LoginActionAlert.vue';
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { useSessionAuthStore } from '@/store/session/auth';
 
 const emit = defineEmits<{ proceed: [approval: 'yes' | 'no'] }>();
@@ -10,7 +9,8 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { syncConflict } = storeToRefs(useSessionAuthStore());
 
-const lastModified = useRefMap(syncConflict, (conflict) => {
+const lastModified = computed(() => {
+  const conflict = get(syncConflict);
   if (!conflict || !conflict.payload)
     return null;
 

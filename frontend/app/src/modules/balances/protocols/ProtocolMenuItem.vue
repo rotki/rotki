@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { type ProtocolBalance, toSentenceCase, toSnakeCase } from '@rotki/common';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
@@ -11,10 +10,8 @@ const { protocolBalance, asset, loading } = defineProps<{
   loading?: boolean;
 }>();
 
-const protocol = useRefMap(() => protocolBalance, balance => balance.protocol);
-
 const { t } = useI18n({ useScope: 'global' });
-const { protocolData } = useProtocolData(protocol);
+const { protocolData } = useProtocolData(() => protocolBalance.protocol);
 
 const dot = '•';
 </script>
@@ -22,13 +19,13 @@ const dot = '•';
 <template>
   <div class="flex items-center gap-3 py-1">
     <ProtocolIcon
-      :protocol="toSnakeCase(protocol)"
+      :protocol="toSnakeCase(protocolBalance.protocol)"
       :size="20"
     />
 
     <div class="flex flex-col flex-1">
       <div class="font-medium text-sm">
-        {{ protocolData?.name ?? toSentenceCase(protocol) }}
+        {{ protocolData?.name ?? toSentenceCase(protocolBalance.protocol) }}
         <span
           v-if="protocolBalance.containsManual"
           class="font-normal text-caption text-rui-text-secondary"
