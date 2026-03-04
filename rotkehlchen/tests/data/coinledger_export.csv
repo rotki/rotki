@@ -1,0 +1,13 @@
+Timestamp (UTC),Type,Internal Id,Platform,Account Name,Platform Id,Blockchain Id,Record Type,Asset,Amount,Description
+2025-08-06T07:16:26.000,Buy,4701117735,Binance,Binance,b7f960bd8e194d3991ab50111013ce58,,Debit,EUR,-15.6,
+2025-08-12T05:30:00.000,Manual Position,4709111157,Binance,Binance,,,Credit,DOGE,10,
+2025-08-12T05:33:18.000,Withdrawal,4709111481,Binance,Binance,b1923e958f1110a8ef9fbd8b8f1592211ed7bf2256c07501a76168830a651bce,,Debit,DOGE,-55,
+2025-03-02T16:24:08.000,Deposit,4709191111,Binance,Binance,11165cb38fa8b31eb910d03d4c2afb8ebb0abc0a967485ee7b07d026722714f6,,Credit,DOGE,111.5,
+2025-03-06T00:00:00.000,Trade,111588684,Pionex,Pionex,,,Debit,USDT,-10.17704774,
+2025-03-06T00:00:00.000,Trade,4709588684,Pionex,Pionex,,,Credit,TRX,283.9,
+2025-03-06T00:00:00.000,Trade,4709588684,Pionex,Pionex,,,Platform Fee,TRX,-0.14195,
+2025-03-06T00:00:00.000,Trade,4709588685,Pionex,Pionex,,,Debit,TRX,-13,
+2025-02-14T00:33:54.000,Buy,1119173951,Revolut,Revolut,,,Debit,EUR,-1.1,
+2025-09-22T07:58:00.000,Margin Gain,4111135568,Pionex,Pionex,,,Margin Gain,USDT,111,
+2021-03-08T15:27:29.000,Transfer,1111131313,Pionex,Pionex,,,Credit,USDT,11.31276,
+2021-07-28T12:15:00.000,Airdrop,1119199883,Binance Smart Chain,Binance Smart Chain,,,Credit,COIN,99,

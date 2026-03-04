@@ -14,6 +14,12 @@ const sources = computed<ImportSource[]>(() => [
     logo: getPublicProtocolImagePath('cointracking.svg'),
   },
   {
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/CoinledgerImport.vue'))),
+    logo: getPublicProtocolImagePath('coinledger.png'),
+    key: 'coinledger',
+    label: t('import_data.coinledger.name'),
+  },
+  {
     form: markRaw(defineAsyncComponent(() => import('@/components/import/CryptoComImport.vue'))),
     key: 'cryptocom',
     label: t('import_data.cryptocom.name'),

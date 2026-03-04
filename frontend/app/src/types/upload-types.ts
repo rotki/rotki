@@ -3,6 +3,7 @@ import type { Component } from 'vue';
 
 export type ImportSourceType =
   | 'cointracking'
+  | 'coinledger'
   | 'cryptocom'
   | 'icon'
   | 'zip'
