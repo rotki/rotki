@@ -87,7 +87,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     if (isEth || !chain) {
       pending.push(fetchLoopringBalances(false));
 
-      if (isEth)
+      if (isEth && getAddresses(Blockchain.ETH2).length > 0)
         startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));
     }
 

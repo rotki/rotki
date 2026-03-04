@@ -11,12 +11,18 @@ Changelog
 * :feature:`-` Balancer v3 Gauge reward claims should now be properly decoded.
 * :feature:`-` Sky PSM direct swaps should now be properly decoded.
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
-* :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
 * :feature:`10712` bitcoin events can now be filtered by address.
 * :feature:`10542` StakeDAO v2 votemarket events will now be properly decoded.
+* :feature:`9024` rotki now supports yearn in all EVM chains.
+* :bug:`11797` Adding an ETH account on a fresh instance will no longer trigger unnecessary ETH2 and Uniswap balance queries when no validators exist and no events have been decoded.
+* :bug:`11783` Matched withdrawal from exchange to account will now correctly show the destination address instead of displaying the exchange name for both from and to labels.
+* :bug:`11782` Adding a new EVM account will no longer trigger a redundant initial balance fetch before token detection. Balances are now fetched only once after tokens are detected.
+* :feature:`-` Claiming Degen airdrop 1 will now be properly decoded by rotki.
+* :bug:`11788` Removing a sub-event from a multi-trade event group will no longer fail with a sequence index conflict error.
 * :bug:`-` Claiming Pendle rewards from old pools, or claiming multiple rewards in one transaction should now be decoded properly by rotki.
 * :bug:`-` ETH staking historyMEV/proposer payout rewards are combined more reliably with block proposal even when beaconcha.in relay data is unavailable.
 * :bug:`11766` Value distribution graphs will now work correctly by fixing the schema types to match the backend response.
+* :feature:`-` SAFE claims from GnosisDAO Safe Token distribution are now decoded properly by rotki.
 * :bug:`-` Beefy Finance harvest call rewards will now be properly decoded as part of the beefy side of a transaction.
 * :bug:`-` Depositing via Pendle v3 router should be now properly decoded by rotki.
 * :bug:`-` Bridging ETH from mainnet to Optimism will no longer duplicate the event under some weird circumstances.
@@ -24,12 +30,17 @@ Changelog
 * :bug:`-` Curve deposits with add liquidity + stake will now be properly decoded.
 * :bug:`-` Curve deposits via intermediate pools will now be properly decoded.
 * :bug:`-` cowswap swaps using both versions of the monerium tokens will now be properly decoded.
+* :bug:`-` Repulling EVM transactions should not duplicate ETH events under specific conditions.
 * :bug:`11777` Redecoding a single EVM transaction will no longer remove existing transaction data if indexers are temporarily unavailable.
 * :bug:`11708` Users can now mark Solana tokens as spam in addition to EVM tokens.
 * :bug:`11709` History events page will now properly refresh after marking an asset as spam or ignoring it from the context menu.
 * :bug:`-` Registering a new device is now more reliable when rotki runs in container environments.
+* :bug:`11714` Registering a new device is now more reliable on Unraid based Docker setups by correctly detecting container IDs.
 * :bug:`-` Depositing native token + wrapped native token in Aaave v3 in the same transaction will now be properly decoded.
+* :bug:`-` Misdecoded cowswap swaps should no longer happen due to errors querying cowswap API.
+* :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
 * :bug:`-` ZKSynclite batch withdrawal on the ethereum side should now be properly decoded.
+* :bug:`-` Claiming AAVE rewards and immediately restaking them will now be properly decoded.
 
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.

@@ -317,6 +317,19 @@ def get_podman_container_id(mountinfo: str) -> str | None:
     return None
 
 
+def get_docker_container_id(mountinfo: str) -> str | None:
+    """Gets a docker container ID from /proc/self/mountinfo.
+
+    Supports both regular docker mountinfo paths (`.../docker/containers/<id>/hostname`)
+    and Unraid-style paths (`.../containers/<id>/hostname`).
+    """
+    if (match := re.search(r'/(?:docker/)?containers/([a-f0-9]{12,64})/hostname(?:\s|$)', mountinfo)):  # noqa: E501
+        return match.group(1)
+
+    log.debug('No docker container ID found in /proc/self/mountinfo')
+    return None
+
+
 def is_running_in_rotki_docker_image() -> bool:
     """Return whether rotki appears to run in the official docker image."""
     try:
@@ -395,10 +408,8 @@ def check_docker_container() -> tuple[str, str] | None:
         if (podman_container_id := get_podman_container_id(mountinfo)) is not None:
             return (podman_container_id[:DOCKER_SHORT_ID_HASH_LENGTH], DOCKER_PLATFORM_KEY)
 
-        if 'docker' in mountinfo:
-            match = re.search(r'docker/containers/([a-f0-9]+)/hostname', mountinfo)
-            if match is not None:
-                return (match.group(1)[:DOCKER_SHORT_ID_HASH_LENGTH], DOCKER_PLATFORM_KEY)
+        if (docker_container_id := get_docker_container_id(mountinfo)) is not None:
+            return (docker_container_id[:DOCKER_SHORT_ID_HASH_LENGTH], DOCKER_PLATFORM_KEY)
 
     if (
         is_running_in_rotki_docker_image() and

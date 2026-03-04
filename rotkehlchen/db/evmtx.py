@@ -168,6 +168,21 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             (parent_tx_hash, chain_id.serialize_for_db()),
         )
 
+    def delete_evm_internal_transactions_by_parent_tx_hash_and_address(
+            self,
+            write_cursor: 'DBCursor',
+            parent_tx_hash: EVMTxHash,
+            chain_id: ChainID,
+            address: ChecksumEvmAddress,
+    ) -> None:
+        """Delete internal transactions for a parent tx hash and one involved address."""
+        write_cursor.execute(
+            'DELETE FROM evm_internal_transactions WHERE parent_tx IN ('
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?) '
+            'AND (from_address=? OR to_address=?)',
+            (parent_tx_hash, chain_id.serialize_for_db(), address, address),
+        )
+
     def get_evm_internal_transactions(
             self,
             parent_tx_hash: EVMTxHash,

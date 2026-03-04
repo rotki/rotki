@@ -34,7 +34,7 @@ export function useBlockchains(): UseBlockchainsReturn {
 
   const addEvmAccounts = async (payload: AddAccountsPayload, options?: AddAccountsOption): Promise<void> => {
     const onComplete = async (params: { addedAccounts: any[]; modulesToEnable?: any[] }): Promise<void> =>
-      accountAdditionService.completeAccountAddition(params, refreshAccounts);
+      accountAdditionService.completeAccountAddition(params, refreshAccounts, fetchAccounts);
 
     if (payload.payload.length === 1) {
       const addResult = await accountAdditionService.addSingleEvmAddress(payload.payload[0]);
@@ -72,7 +72,7 @@ export function useBlockchains(): UseBlockchainsReturn {
     }
 
     const onComplete = async (params: { addedAccounts: ChainAddress[]; chain: string; isXpub?: boolean; modulesToEnable?: any[] }): Promise<void> =>
-      accountAdditionService.completeAccountAddition(params, refreshAccounts);
+      accountAdditionService.completeAccountAddition(params, refreshAccounts, fetchAccounts);
 
     if (filteredPayload.length === 1 || isXpub) {
       const addResult = await accountAdditionService.addSingleAccount(isXpub ? payload : filteredPayload[0], chain);

@@ -431,7 +431,7 @@ class CurveLendCommonDecoder(CurveBorrowRepayCommonDecoder, ReloadableDecoderMix
                 from_event_subtype = HistoryEventSubType.NONE
                 to_event_type = HistoryEventType.SPEND
                 to_event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                to_notes = f'Return {amount} {gauge_asset.symbol} after withdrawing from curve lending vault gauge'  # noqa: E501
+                to_notes = f'Return {amount} {gauge_asset.symbol} to withdraw from curve lending vault gauge'  # noqa: E501
                 break
         else:
             log.error(f'Failed to find deposit/withdraw event for curve lending vault gauge for {context.transaction}')  # noqa: E501

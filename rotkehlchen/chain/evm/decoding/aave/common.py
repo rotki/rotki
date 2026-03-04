@@ -421,6 +421,10 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
                     event.asset == reward_token and
                     event.amount == amount
             ):
+                if event.event_subtype == HistoryEventSubType.RECEIVE_WRAPPED:
+                    # In claim+stake paths the wrapped receive is already decoded from staking.
+                    return EvmDecodingOutput(matched_counterparty=self.counterparty)
+
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = self.counterparty
                 event.notes = f'Claim {amount} {reward_token.resolve_to_asset_with_symbol().symbol}'  # noqa: E501
