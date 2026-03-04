@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import { assert } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { logger } from '@/utils/logging';
@@ -12,61 +12,83 @@ interface CacheEntry<T> {
   item: T;
 }
 
+/**
+ * A batch-fetch function that resolves multiple keys at once.
+ * Returns a factory that yields {@link CacheEntry} items via an iterator,
+ * allowing lazy consumption of potentially large result sets.
+ */
 type CacheFetch<T> = (keys: string[]) => Promise<() => IterableIterator<CacheEntry<T>>>;
 
 interface CacheOptions {
+  /** Debounce interval (ms) before a queued batch is fetched. @default 800 */
   debounceInMs?: number;
+  /** Time-to-live (ms) for cached entries before they become stale. @default 600_000 (10 min) */
   expiry?: number;
+  /** Maximum number of entries kept in the LRU cache. @default 500 */
   size?: number;
 }
 
-interface UseItemCacheReturn<T> {
-  cache: Ref<Record<string, T | null>>;
+interface ItemCacheReturn<T> {
+  /** Readonly reactive record of cached values (keyed by identifier). */
+  cache: DeepReadonly<Ref<Record<string, T | null>>>;
+  /** Map of identifiers that could not be resolved, with their expiry timestamps. */
   unknown: Map<string, number>;
+  /** Returns whether the given identifier is currently being fetched (non-reactive). */
+  getIsPending: (identifier: string) => boolean;
+  /** Reactive computed that tracks whether the given identifier is currently being fetched. */
   isPending: (identifier: MaybeRefOrGetter<string>) => ComputedRef<boolean>;
-  retrieve: (key: string) => ComputedRef<T | null>;
+  /** Synchronously returns the cached value for `key`, queueing a fetch if missing. */
+  resolve: (key: string) => T | null;
+  /** Returns a reactive computed that resolves `key`, queueing a fetch if missing. */
+  useResolve: (key: MaybeRefOrGetter<string>) => ComputedRef<T | null>;
+  /** Clears all cached data, pending state, and unknown entries. */
   reset: () => void;
+  /** Forces a re-fetch of the given key regardless of its current cache state. */
   refresh: (key: string) => void;
+  /** Removes a key from the cache and the unknown map. */
   deleteCacheKey: (key: string) => void;
+  /** Queues a key for fetching unless it is already in the unknown map and not yet expired. */
   queueIdentifier: (key: string) => void;
 }
 
-export function useItemCache<T>(
+/**
+ * Creates a debounced, LRU-bounded, reactive item cache backed by a batch-fetch function.
+ *
+ * Keys requested via {@link ItemCacheReturn.resolve resolve}, {@link ItemCacheReturn.useResolve useResolve},
+ * or {@link ItemCacheReturn.queueIdentifier queueIdentifier} are accumulated into a batch and fetched
+ * together after a debounce interval. Resolved items are stored in a size-limited LRU cache with
+ * configurable expiry. Unresolvable keys are tracked in an `unknown` map to avoid repeated lookups.
+ *
+ * Internally uses `shallowRef` + `triggerRef` for the cache and pending state, so that batch
+ * operations (processing N items) trigger only a single reactive notification per ref.
+ *
+ * @param fetch - Batch-fetch function that resolves an array of keys into cache entries.
+ * @param options - Optional configuration for debounce timing, expiry, and cache size.
+ */
+export function createItemCache<T>(
   fetch: CacheFetch<T>,
   options: CacheOptions = {},
-): UseItemCacheReturn<T> {
+): ItemCacheReturn<T> {
   const { debounceInMs = DEBOUNCE_TIME, expiry = CACHE_EXPIRY, size = CACHE_SIZE } = options;
   const recent: Map<string, number> = new Map();
   const unknown: Map<string, number> = new Map();
-  const cache = ref<Record<string, T | null>>({});
-  const pending = ref<Record<string, boolean>>({});
-  const batch = ref<string[]>([]);
+  const cache = shallowRef<Record<string, T | null>>({});
+  const pending = shallowRef<Record<string, boolean>>({});
+  const batch = new Set<string>();
 
   const deleteCacheKey = (key: string): void => {
-    const copy = { ...get(cache) };
-    delete copy[key];
-    set(cache, copy);
+    delete get(cache)[key];
+    triggerRef(cache);
 
     if (unknown.has(key))
       unknown.delete(key);
   };
 
-  const updateCacheKey = (key: string, value: T): void => {
-    set(cache, { ...get(cache), [key]: value });
-  };
-
   const setPending = (key: string): void => {
-    set(pending, { ...get(pending), [key]: true });
+    get(pending)[key] = true;
+    triggerRef(pending);
 
-    const currentBatch = get(batch);
-    if (!currentBatch.includes(key))
-      set(batch, [...currentBatch, key]);
-  };
-
-  const resetPending = (key: string): void => {
-    const copy = { ...get(pending) };
-    delete copy[key];
-    set(pending, copy);
+    batch.add(key);
   };
 
   const put = (key: string, item: T): void => {
@@ -77,25 +99,27 @@ export function useItemCache<T>(
       const removeKey = recent.keys().next().value;
       assert(removeKey, 'removeKey is null or undefined');
       recent.delete(removeKey);
-      deleteCacheKey(removeKey);
+      delete get(cache)[removeKey];
+      if (unknown.has(removeKey))
+        unknown.delete(removeKey);
     }
     recent.set(key, Date.now() + expiry);
-    updateCacheKey(key, item);
+    get(cache)[key] = item;
   };
 
   const fetchBatch = useDebounceFn(() => {
-    const currentBatch = get(batch);
-    if (currentBatch.length === 0)
+    if (batch.size === 0)
       return;
 
-    set(batch, []);
+    const currentBatch = [...batch];
+    batch.clear();
     startPromise(processBatch(currentBatch));
   }, debounceInMs);
 
   async function processBatch(keys: string[]): Promise<void> {
     try {
-      const batch = await fetch(keys);
-      for (const { item, key } of batch()) {
+      const batchResult = await fetch(keys);
+      for (const { item, key } of batchResult()) {
         if (item) {
           put(key, item);
         }
@@ -104,7 +128,9 @@ export function useItemCache<T>(
             logger.debug(`unknown key: ${key}`);
 
           recent.delete(key);
-          deleteCacheKey(key);
+          delete get(cache)[key];
+          if (unknown.has(key))
+            unknown.delete(key);
 
           unknown.set(key, Date.now() + expiry);
         }
@@ -114,8 +140,11 @@ export function useItemCache<T>(
       logger.error(error);
     }
     finally {
-      for (const key of keys) resetPending(key);
+      const pendingObj = get(pending);
+      for (const key of keys) delete pendingObj[key];
+      triggerRef(pending);
     }
+    triggerRef(cache);
   }
 
   const queueIdentifier = (key: string): void => {
@@ -130,24 +159,36 @@ export function useItemCache<T>(
     startPromise(fetchBatch());
   };
 
-  const retrieve = (key: string): ComputedRef<T | null> => {
+  /**
+   * Ensures the given key is queued for fetching if it's not already cached or pending.
+   * Refreshes the cache expiry for entries that haven't expired yet.
+   */
+  const ensureQueued = (key: string): void => {
     const cached = get(cache)[key];
     const now = Date.now();
-    let expired = false;
+    let valid = false;
     if (recent.has(key) && cached) {
-      const expiry = recent.get(key);
+      const cacheExpiry = recent.get(key);
       recent.delete(key);
 
-      if (expiry && expiry > now) {
-        expired = true;
+      if (cacheExpiry && cacheExpiry > now) {
+        valid = true;
         recent.set(key, now + expiry);
       }
     }
 
-    if (!get(pending)[key] && !expired)
+    if (!get(pending)[key] && !valid)
       queueIdentifier(key);
+  };
 
-    return computed(() => get(cache)[key] ?? null);
+  const resolve = (key: string): T | null => {
+    ensureQueued(key);
+    return get(cache)[key] ?? null;
+  };
+
+  const useResolve = (key: MaybeRefOrGetter<string>): ComputedRef<T | null> => {
+    ensureQueued(toValue(key));
+    return computed(() => get(cache)[toValue(key)] ?? null);
   };
 
   const refresh = (key: string): void => {
@@ -159,26 +200,30 @@ export function useItemCache<T>(
     queueIdentifier(key);
   };
 
+  const getIsPending = (identifier: string): boolean => get(pending)[identifier] ?? false;
+
   const isPending = (
     identifier: MaybeRefOrGetter<string>,
-  ): ComputedRef<boolean> => computed<boolean>(() => get(pending)[toValue(identifier)] ?? false);
+  ): ComputedRef<boolean> => computed<boolean>(() => getIsPending(toValue(identifier)));
 
   const reset = (): void => {
     set(pending, {});
     set(cache, {});
-    set(batch, []);
+    batch.clear();
     recent.clear();
     unknown.clear();
   };
 
   return {
-    cache,
+    cache: readonly(cache),
     deleteCacheKey,
+    getIsPending,
     isPending,
     queueIdentifier,
     refresh,
     reset,
-    retrieve,
+    resolve,
+    useResolve,
     unknown,
   };
 }

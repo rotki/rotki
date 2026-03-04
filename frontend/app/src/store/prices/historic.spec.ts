@@ -1,4 +1,4 @@
-import { type BigNumber, bigNumberify } from '@rotki/common';
+import { bigNumberify } from '@rotki/common';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePriceApi } from '@/composables/api/balances/price';
@@ -44,13 +44,12 @@ describe('useHistoricPricesStore', () => {
       result: mockPricesResponse,
       meta: { title: '' },
     });
-    const firstRetrieval: ComputedRef<BigNumber | null> = store.retrieve(key);
-    const secondRetrieval: ComputedRef<BigNumber | null> = store.retrieve(key);
+    store.resolve(key);
+    store.resolve(key);
     vi.advanceTimersByTime(2500);
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
-    expect(get(firstRetrieval)).toEqual(bigNumberify(mockPrice));
-    expect(get(secondRetrieval)).toEqual(bigNumberify(mockPrice));
+    expect(store.resolve(key)).toEqual(bigNumberify(mockPrice));
   });
 
   it('should not request failed assets twice unless they expire', async () => {
@@ -63,18 +62,17 @@ describe('useHistoricPricesStore', () => {
     });
     const { createKey } = store;
     const key = createKey(mockAsset, mockTimestamp);
-    const firstRetrieval: ComputedRef<BigNumber | null> = store.retrieve(key);
-    const secondRetrieval: ComputedRef<BigNumber | null> = store.retrieve(key);
+    store.resolve(key);
+    store.resolve(key);
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
-    expect(get(firstRetrieval)).toBeNull();
-    expect(get(secondRetrieval)).toBeNull();
+    expect(store.resolve(key)).toBeNull();
     vi.advanceTimersByTime(PAST_CACHE_EXPIRY_MS);
-    const thirdRetrieval: ComputedRef<BigNumber | null> = store.retrieve(key);
+    store.resolve(key);
     vi.advanceTimersToNextTimer();
     await flushPromises();
-    expect(get(thirdRetrieval)).toBeNull();
+    expect(store.resolve(key)).toBeNull();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledTimes(2);
   });
 
@@ -94,22 +92,22 @@ describe('useHistoricPricesStore', () => {
       meta: { title: '' },
     });
 
-    const firstRetrieval: ComputedRef<BigNumber | null> = store.retrieve(key);
+    store.resolve(key);
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
-    expect(get(firstRetrieval)).toEqual(bigNumberify(mockPrice));
+    expect(store.resolve(key)).toEqual(bigNumberify(mockPrice));
     vi.advanceTimersByTime(PAST_CACHE_EXPIRY_MS);
-    const secondRetrieval: ComputedRef<BigNumber | null> = store.retrieve(key);
+    store.resolve(key);
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledTimes(2);
-    expect(get(secondRetrieval)).toEqual(bigNumberify(mockPrice));
+    expect(store.resolve(key)).toEqual(bigNumberify(mockPrice));
   });
 
   it('should reset historical prices data', async () => {
     const { cache } = storeToRefs(store);
-    const { createKey, resetHistoricalPricesData, retrieve } = store;
+    const { createKey, resetHistoricalPricesData, resolve } = store;
     const key = createKey(mockAsset, mockTimestamp);
 
     // Under range (should be removed alongside with the targeted timestamp)
@@ -147,12 +145,12 @@ describe('useHistoricPricesStore', () => {
       meta: { title: '' },
     });
 
-    retrieve(key);
-    retrieve(key1);
-    retrieve(key2);
-    retrieve(key3);
-    retrieve(key4);
-    retrieve(otherKey);
+    resolve(key);
+    resolve(key1);
+    resolve(key2);
+    resolve(key3);
+    resolve(key4);
+    resolve(otherKey);
 
     vi.advanceTimersByTime(2500);
     await flushPromises();

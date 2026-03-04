@@ -1,4 +1,3 @@
-import type { AssetInfo } from '@rotki/common';
 import type { AssetMap } from '@/types/asset';
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -27,13 +26,12 @@ describe('store::assets/cache', () => {
       assets: { [key]: asset },
     };
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
-    const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
-    const secondRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
+    store.resolve('KEY');
+    store.resolve('KEY');
     vi.advanceTimersByTime(2500);
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
-    expect(get(firstRetrieval)).toEqual(asset);
-    expect(get(secondRetrieval)).toEqual(asset);
+    expect(store.resolve('KEY')).toEqual(asset);
   });
 
   it('should not request failed assets twice unless they expire', async () => {
@@ -41,18 +39,17 @@ describe('store::assets/cache', () => {
       assetCollections: {},
       assets: {},
     });
-    const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
-    const secondRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
+    store.resolve('KEY');
+    store.resolve('KEY');
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
-    expect(get(firstRetrieval)).toBeNull();
-    expect(get(secondRetrieval)).toBeNull();
+    expect(store.resolve('KEY')).toBeNull();
     vi.advanceTimersByTime(1000 * 60 * 11);
-    const thirdRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
+    store.resolve('KEY');
     vi.advanceTimersToNextTimer();
     await flushPromises();
-    expect(get(thirdRetrieval)).toBeNull();
+    expect(store.resolve('KEY')).toBeNull();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledTimes(2);
   });
 
@@ -68,17 +65,17 @@ describe('store::assets/cache', () => {
       assets: { [key]: asset },
     };
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
-    const firstRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
+    store.resolve('KEY');
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledOnce();
-    expect(get(firstRetrieval)).toEqual(asset);
+    expect(store.resolve('KEY')).toEqual(asset);
     vi.advanceTimersByTime(1000 * 60 * 11);
-    const secondRetrieval: ComputedRef<AssetInfo | null> = store.retrieve('KEY');
+    store.resolve('KEY');
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(useAssetInfoApi().assetMapping).toHaveBeenCalledTimes(2);
-    expect(get(secondRetrieval)).toEqual(asset);
+    expect(store.resolve('KEY')).toEqual(asset);
   });
 
   it('should stop caching assets after cache limit is reached', async () => {
@@ -94,20 +91,20 @@ describe('store::assets/cache', () => {
       return Promise.resolve(mapping);
     });
 
-    store.retrieve(`AST-0`);
+    store.resolve(`AST-0`);
     vi.advanceTimersByTime(3000);
     await flushPromises();
 
-    for (let i = 1; i < 50; i++) store.retrieve(`AST-${i}`);
+    for (let i = 1; i < 50; i++) store.resolve(`AST-${i}`);
 
     vi.advanceTimersByTime(4000);
     await flushPromises();
 
-    store.retrieve(`AST-0`);
+    store.resolve(`AST-0`);
     vi.advanceTimersByTime(4000);
     await flushPromises();
 
-    for (let i = 51; i < 505; i++) store.retrieve(`AST-${i}`);
+    for (let i = 51; i < 505; i++) store.resolve(`AST-${i}`);
 
     vi.advanceTimersByTime(4000);
     await flushPromises();
@@ -132,7 +129,7 @@ describe('store::assets/cache', () => {
     });
 
     for (let i = 0; i < 50; i++) {
-      store.retrieve(`AST-${i}`);
+      store.resolve(`AST-${i}`);
     }
 
     vi.advanceTimersByTime(4000);
@@ -147,7 +144,7 @@ describe('store::assets/cache', () => {
     vi.mocked(assetMapping).mockRejectedValue(new Error('Network error'));
 
     for (let i = 0; i < 50; i++) {
-      store.retrieve(`AST-${i}`);
+      store.resolve(`AST-${i}`);
     }
 
     vi.advanceTimersByTime(4000);

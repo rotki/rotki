@@ -35,7 +35,7 @@ describe('useAssetRetrieval', () => {
     setActivePinia(createPinia());
     assetCacheStore = useAssetCacheStore();
     vi.spyOn(assetCacheStore, 'isPending');
-    vi.spyOn(assetCacheStore, 'retrieve');
+    vi.spyOn(assetCacheStore, 'resolve');
     assetInfoRetrieval = useAssetInfoRetrieval();
     api = useAssetInfoApi();
   });
@@ -114,16 +114,14 @@ describe('useAssetRetrieval', () => {
       const identifier = 'ASSET_ID';
       const assetName = 'ASSET_NAME';
 
-      vi.mocked(assetCacheStore.retrieve).mockReturnValue(
-        computed(() => ({
-          name: assetName,
-          isCustomAsset: true,
-        })),
-      );
+      vi.mocked(assetCacheStore.resolve).mockReturnValue(({
+        name: assetName,
+        isCustomAsset: true,
+      }));
 
       const result = get(assetInfoRetrieval.assetInfo(identifier));
 
-      expect(assetCacheStore.retrieve).toHaveBeenCalledWith(identifier);
+      expect(assetCacheStore.resolve).toHaveBeenCalledWith(identifier);
 
       expect(result).toMatchObject({
         name: assetName,
@@ -139,16 +137,14 @@ describe('useAssetRetrieval', () => {
       const identifier = 'ASSET_ID';
       const assetName = 'ASSET_NAME';
 
-      vi.mocked(assetCacheStore.retrieve).mockReturnValue(
-        computed(() => ({
-          name: assetName,
-          assetType: CUSTOM_ASSET,
-        })),
-      );
+      vi.mocked(assetCacheStore.resolve).mockReturnValue(({
+        name: assetName,
+        assetType: CUSTOM_ASSET,
+      }));
 
       const result = get(assetInfoRetrieval.assetInfo(identifier));
 
-      expect(assetCacheStore.retrieve).toHaveBeenCalledWith(identifier);
+      expect(assetCacheStore.resolve).toHaveBeenCalledWith(identifier);
 
       expect(result).toMatchObject({
         name: assetName,
@@ -177,13 +173,11 @@ describe('useAssetRetrieval', () => {
         },
       });
 
-      vi.mocked(assetCacheStore.retrieve).mockReturnValue(
-        computed(() => ({
-          name: assetName,
-          symbol: assetSymbol,
-          collectionId,
-        })),
-      );
+      vi.mocked(assetCacheStore.resolve).mockReturnValue(({
+        name: assetName,
+        symbol: assetSymbol,
+        collectionId,
+      }));
 
       const result = get(assetInfoRetrieval.assetInfo(identifier));
 
@@ -213,13 +207,11 @@ describe('useAssetRetrieval', () => {
         },
       });
 
-      vi.mocked(assetCacheStore.retrieve).mockReturnValue(
-        computed(() => ({
-          name: assetName,
-          symbol: assetSymbol,
-          collectionId,
-        })),
-      );
+      vi.mocked(assetCacheStore.resolve).mockReturnValue(({
+        name: assetName,
+        symbol: assetSymbol,
+        collectionId,
+      }));
 
       const result = get(assetInfoRetrieval.assetInfo(identifier, {
         associate: true,
@@ -235,7 +227,7 @@ describe('useAssetRetrieval', () => {
     it('should use fallback for asset name and symbol', () => {
       const address = '0x12BB890508c125661E03b09EC06E404bc9289040';
       const identifier = `eip155:1/erc20:${address}`;
-      vi.mocked(assetCacheStore.retrieve).mockReturnValue(computed(() => null));
+      vi.mocked(assetCacheStore.resolve).mockReturnValue(null);
 
       const result = get(assetInfoRetrieval.assetInfo(identifier));
       const fallbackName = `EVM Token: ${address}`;
