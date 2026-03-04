@@ -1,4 +1,5 @@
 import logging
+from collections import defaultdict
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
@@ -17,6 +18,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
@@ -144,16 +146,14 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
         wrapped native asset, but we have a native asset transfer from the user.
         """
         token_amounts_spent, token_amounts_received = set(), set()
+        total_token_amounts_spent: defaultdict[Any, Any] = defaultdict(lambda: ZERO)
+        total_token_amounts_received: defaultdict[Any, Any] = defaultdict(lambda: ZERO)
         for tx_log in all_logs:
             if tx_log.topics[0] == V2_SWAP:
-                token_amounts_spent.add((
-                    (from_token := self.base.get_or_create_evm_token(bytes_to_address(tx_log.topics[2]))),  # noqa: E501
-                    asset_normalized_value(amount=int.from_bytes(tx_log.data[0:32]), asset=from_token),  # noqa: E501
-                ))
-                token_amounts_received.add((
-                    (to_token := self.base.get_or_create_evm_token(bytes_to_address(tx_log.topics[3]))),  # noqa: E501
-                    asset_normalized_value(amount=int.from_bytes(tx_log.data[32:64]), asset=to_token),  # noqa: E501
-                ))
+                token_amounts_spent.add(((from_token := self.base.get_or_create_evm_token(bytes_to_address(tx_log.topics[2]))), (from_amount := asset_normalized_value(amount=int.from_bytes(tx_log.data[0:32]), asset=from_token))))  # noqa: E501
+                token_amounts_received.add(((to_token := self.base.get_or_create_evm_token(bytes_to_address(tx_log.topics[3]))), (to_amount := asset_normalized_value(amount=int.from_bytes(tx_log.data[32:64]), asset=to_token))))  # noqa: E501
+                total_token_amounts_spent[from_token] += from_amount
+                total_token_amounts_received[to_token] += to_amount
 
         spend_event, receive_event = None, None
         for event in decoded_events:
@@ -162,12 +162,11 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
                 event.address != VAULT_ADDRESS
             ):
                 continue  # This event isn't associated with a balancer swap
+            event_token = self.node_inquirer.wrapped_native_token if event.asset == self.node_inquirer.native_token else event.asset  # noqa: E501
+            event_token_amount = (event_token, event.amount)
 
             if (
-                (event_token_amount := (
-                    self.node_inquirer.wrapped_native_token if event.asset == self.node_inquirer.native_token else event.asset,  # noqa: E501
-                    event.amount,
-                )) in token_amounts_spent and
+                event_token_amount in token_amounts_spent and
                 event.event_type == HistoryEventType.SPEND
             ):
                 event.event_type = HistoryEventType.TRADE
@@ -178,6 +177,26 @@ class Balancerv2CommonDecoder(BalancerCommonDecoder):
             elif (
                 event_token_amount in token_amounts_received and
                 event.event_type == HistoryEventType.RECEIVE
+            ):
+                event.event_type = HistoryEventType.TRADE
+                event.event_subtype = HistoryEventSubType.RECEIVE
+                event.notes = f'Receive {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} as the result of a swap via Balancer v2'  # noqa: E501
+                event.counterparty = CPT_BALANCER_V2
+                receive_event = event
+            elif (
+                event.event_type == HistoryEventType.SPEND and
+                total_token_amounts_spent.get(event_token, ZERO) == event.amount
+            ):
+                # Some batch swaps emit multiple V2_SWAP logs for the same token pair,
+                # but transfer events are netted into a single spend/receive transfer.
+                event.event_type = HistoryEventType.TRADE
+                event.event_subtype = HistoryEventSubType.SPEND
+                event.notes = f'Swap {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} via Balancer v2'  # noqa: E501
+                event.counterparty = CPT_BALANCER_V2
+                spend_event = event
+            elif (
+                event.event_type == HistoryEventType.RECEIVE and
+                total_token_amounts_received.get(event_token, ZERO) == event.amount
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
