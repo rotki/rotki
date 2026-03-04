@@ -17,6 +17,7 @@ from rotkehlchen.chain.evm.types import (
     WeightedNode,
     string_to_evm_address,
 )
+from rotkehlchen.chain.gnosis.modules.safe.constants import SAFE_CLAIM_DISTRIBUTOR
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_XDAI
 from rotkehlchen.constants.misc import ZERO
@@ -817,4 +818,36 @@ def test_safe_execute_tx_with_hash_in_topics(
         notes=f'Successfully executed safe transaction 0x9b0dd4dd2297320f153b19521311de7b9cd4e3fa40d40fe34e47dbea755ad2e4 for multisig {multisig_address}',  # noqa: E501
         counterparty=CPT_SAFE_MULTISIG,
         address=multisig_address,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x7CE490534D78F1Ee54b20F7D03A99d5e3162e02B']])
+def test_safe_gnosisdao_distribution_claim(gnosis_inquirer, gnosis_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0xef79b799e909545cd16528bf218894957a1a39857141c76794fc7d2121542649')))  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1714088530000)),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_XDAI,
+        amount=FVal(gas_amount := '0.000150849000905094'),
+        location_label=(user_address := gnosis_accounts[0]),
+        notes=f'Burn {gas_amount} XDAI for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.AIRDROP,
+        asset=Asset('eip155:100/erc20:0x4d18815D14fe5c3304e87B3FA18318baa5c23820'),
+        amount=FVal(claimed_amount := '10004.438754042829524265'),
+        location_label=user_address,
+        notes=f'Claim {claimed_amount} SAFE from GnosisDAO Safe Token Distribution',
+        counterparty=CPT_SAFE,
+        address=SAFE_CLAIM_DISTRIBUTOR,
     )]
