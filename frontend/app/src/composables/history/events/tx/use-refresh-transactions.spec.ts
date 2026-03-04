@@ -34,11 +34,13 @@ const mockExchanges: Exchange[] = [
 const mockTxQueryStatusStore = {
   initializeQueryStatus: vi.fn(),
   resetQueryStatus: vi.fn(),
+  stopSyncing: vi.fn(),
 };
 
 const mockEventsQueryStatusStore = {
   initializeQueryStatus: vi.fn(),
   resetQueryStatus: vi.fn(),
+  stopSyncing: vi.fn(),
 };
 
 const mockHistoryTransactionAccounts = {
@@ -60,6 +62,7 @@ const mockHistoryTransactionDecoding = {
 const mockHistoryStore = {
   resetDecodingSyncProgress: vi.fn(),
   resetUndecodedTransactionsStatus: vi.fn(),
+  stopDecodingSyncProgress: vi.fn(),
 };
 
 const mockTransactionSync = {

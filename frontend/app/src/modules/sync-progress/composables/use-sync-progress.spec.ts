@@ -141,6 +141,7 @@ describe('useSyncProgress', () => {
 
     it('should be true when there is decoding activity', () => {
       const historyStore = useHistoryStore();
+      historyStore.resetDecodingSyncProgress();
       historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
 
       const { isActive } = useSyncProgress();
@@ -187,6 +188,7 @@ describe('useSyncProgress', () => {
   describe('decoding progress', () => {
     it('should calculate decoding progress correctly', () => {
       const historyStore = useHistoryStore();
+      historyStore.resetDecodingSyncProgress();
       historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
 
       const { decoding } = useSyncProgress();
@@ -201,6 +203,7 @@ describe('useSyncProgress', () => {
 
     it('should filter out chains with total 0', () => {
       const historyStore = useHistoryStore();
+      historyStore.resetDecodingSyncProgress();
       historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 0, 0));
 
       const { decoding } = useSyncProgress();
@@ -256,6 +259,7 @@ describe('useSyncProgress', () => {
       ]);
 
       const historyStore = useHistoryStore();
+      historyStore.resetDecodingSyncProgress();
       historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
 
       const { overallProgress } = useSyncProgress();
@@ -383,6 +387,7 @@ describe('useSyncProgress', () => {
   describe('decoding cancellation handling', () => {
     it('should mark decoding as cancelled', () => {
       const historyStore = useHistoryStore();
+      historyStore.resetDecodingSyncProgress();
       historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
       historyStore.markDecodingCancelled('eth');
 
@@ -399,6 +404,7 @@ describe('useSyncProgress', () => {
       ]);
 
       const historyStore = useHistoryStore();
+      historyStore.resetDecodingSyncProgress();
       historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
       historyStore.markDecodingCancelled('eth');
 
@@ -408,6 +414,7 @@ describe('useSyncProgress', () => {
 
     it('should include cancelled decoding in hasCancelled', () => {
       const historyStore = useHistoryStore();
+      historyStore.resetDecodingSyncProgress();
       historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
       historyStore.markDecodingCancelled('eth');
 
@@ -418,6 +425,7 @@ describe('useSyncProgress', () => {
 
     it('should treat cancelled decoding as 100% for overall progress', () => {
       const historyStore = useHistoryStore();
+      historyStore.resetDecodingSyncProgress();
       historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
       historyStore.markDecodingCancelled('eth');
 

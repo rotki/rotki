@@ -109,10 +109,13 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     queryStatus,
     removeQueryStatus: remove,
     resetQueryStatus,
+    stopSyncing,
+    syncing,
   } = createQueryStatusState<TxQueryStatusData>(isStatusFinished, createKey);
 
   const initializeQueryStatus = (data: ChainAddress[]): void => {
     resetQueryStatus();
+    set(syncing, true);
 
     const status = { ...get(queryStatus) };
     const now = millisecondsToSeconds(Date.now());
@@ -135,6 +138,9 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
   };
 
   const setUnifiedTxQueryStatus = (data: UnifiedTransactionStatusData): void => {
+    if (!get(syncing))
+      return;
+
     if (data.status === TransactionsQueryStatus.ACCOUNT_CHANGE) {
       return;
     }
@@ -246,6 +252,8 @@ export const useTxQueryStatusStore = defineStore('history/transaction-query-stat
     resetQueryStatus,
     setEvmlikeStatus,
     setUnifiedTxQueryStatus,
+    stopSyncing,
+    syncing,
   };
 });
 

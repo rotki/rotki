@@ -25,12 +25,12 @@ interface UseRefreshTransactionsReturn {
 export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const queue = new LimitedParallelizationQueue(1);
 
-  const { initializeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
-  const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus } = useEventsQueryStatusStore();
+  const { initializeQueryStatus, resetQueryStatus, stopSyncing: stopTxSyncing } = useTxQueryStatusStore();
+  const { initializeQueryStatus: initializeExchangeEventsQueryStatus, resetQueryStatus: resetExchangesQueryStatus, stopSyncing: stopEventsSyncing } = useEventsQueryStatusStore();
   const { getAllAccounts } = useHistoryTransactionAccounts();
   const { fetchDisabled, isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const { fetchUndecodedTransactionsBreakdown, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
-  const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus } = useHistoryStore();
+  const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, stopDecodingSyncProgress } = useHistoryStore();
   const { isDecodableChains } = useSupportedChains();
 
   const { syncTransactionsByChains } = useTransactionSync();
@@ -183,6 +183,9 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       finishRefresh();
       setStatus(Status.LOADED);
       onHistoryFinished();
+      stopTxSyncing();
+      stopEventsSyncing();
+      stopDecodingSyncProgress();
     }
 
     // After refresh is complete, check if there are pending accounts or exchanges to refresh
