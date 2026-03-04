@@ -2,7 +2,7 @@ import type { Blockchain } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
-import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { isEventMissingAccountingRule } from '@/utils/history/events';
@@ -37,7 +37,7 @@ export interface UseHistorySwapItemReturn {
   compactNotes: ComputedRef<string | undefined>;
 }
 
-const ASSET_RESOLUTION_OPTIONS: AssetResolutionOptions = { collectionParent: false };
+const ASSET_RESOLUTION_OPTIONS = NO_COLLECTION_RESOLVE;
 
 export function useHistorySwapItem(
   props: UseHistorySwapItemProps,
@@ -45,7 +45,7 @@ export function useHistorySwapItem(
   const { events, selection } = props;
   const { t } = useI18n({ useScope: 'global' });
   const { getChain } = useSupportedChains();
-  const { assetInfo, getAssetSymbol } = useAssetInfoRetrieval();
+  const { getAssetField, useAssetInfo } = useAssetInfoRetrieval();
   const { isAssetIgnored } = useIgnoredAssetsStore();
 
   const primaryEvent = computed<HistoryEventEntry>(() => get(events)[0]);
@@ -99,8 +99,8 @@ export function useHistorySwapItem(
 
   const spendAsset = computed<string>(() => get(spendEvent)?.asset ?? '');
   const receiveAsset = computed<string>(() => get(receiveEvent)?.asset ?? '');
-  const spendAssetInfo = assetInfo(spendAsset, ASSET_RESOLUTION_OPTIONS);
-  const receiveAssetInfo = assetInfo(receiveAsset, ASSET_RESOLUTION_OPTIONS);
+  const spendAssetInfo = useAssetInfo(spendAsset, ASSET_RESOLUTION_OPTIONS);
+  const receiveAssetInfo = useAssetInfo(receiveAsset, ASSET_RESOLUTION_OPTIONS);
 
   const isSpendHidden = computed<boolean>(() => {
     const asset = get(spendAsset);
@@ -129,7 +129,7 @@ export function useHistorySwapItem(
     const spendNotes = spend.length === 1
       ? {
           spendAmount: spend[0].amount,
-          spendAsset: getAssetSymbol(spend[0].asset, ASSET_RESOLUTION_OPTIONS),
+          spendAsset: getAssetField(spend[0].asset, 'symbol', ASSET_RESOLUTION_OPTIONS),
         }
       : {
           spendAmount: spend.length,
@@ -139,7 +139,7 @@ export function useHistorySwapItem(
     const receiveNotes = receive.length === 1
       ? {
           receiveAmount: receive[0].amount,
-          receiveAsset: getAssetSymbol(receive[0].asset, ASSET_RESOLUTION_OPTIONS),
+          receiveAsset: getAssetField(receive[0].asset, 'symbol', ASSET_RESOLUTION_OPTIONS),
         }
       : {
           receiveAmount: receive.length,
@@ -156,7 +156,7 @@ export function useHistorySwapItem(
     if (fee.length === 0)
       return notes;
 
-    const feeText = fee.map(item => `${item.amount.toFixed()} ${getAssetSymbol(item.asset, ASSET_RESOLUTION_OPTIONS)}`).join('; ');
+    const feeText = fee.map(item => `${item.amount.toFixed()} ${getAssetField(item.asset, 'symbol', ASSET_RESOLUTION_OPTIONS)}`).join('; ');
     return t('history_events_list_swap.fee_description', { feeText, notes });
   });
 

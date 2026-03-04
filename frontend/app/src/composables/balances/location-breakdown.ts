@@ -15,11 +15,11 @@ import { aggregateTotals } from '@/utils/blockchain/accounts';
  */
 export function getBlockchainLocationBreakdown(
   balances: Balances,
-  assetAssociationMap: Record<string, string>,
+  resolveIdentifier: (id: string) => string,
   skipIdentifier: (asset: string) => boolean,
 ): AssetBalances {
   return aggregateTotals(balances, 'assets', {
-    assetAssociationMap,
+    resolveIdentifier,
     skipIdentifier,
   });
 }
@@ -44,7 +44,7 @@ export function getExchangeByLocationBalances(
 export function useLocationBreakdown(
   location: MaybeRefOrGetter<string>,
   blockchainBalances: MaybeRefOrGetter<Balances>,
-  assetAssociationMap: MaybeRefOrGetter<Record<string, string>>,
+  resolveIdentifier: (id: string) => string,
   manualBalances: MaybeRefOrGetter<ManualBalanceWithValue[]>,
   useBaseExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => MaybeRefOrGetter<AssetProtocolBalances>,
   isAssetIgnored: (identifier: string) => boolean,
@@ -55,7 +55,6 @@ export function useLocationBreakdown(
 ): ComputedRef<AssetBalanceWithPrice[]> {
   return computed<AssetBalanceWithPrice[]>(() => {
     const selectedLocation = toValue(location);
-    const associatedAssets = toValue(assetAssociationMap);
 
     const sources: Record<string, AssetProtocolBalances> = {
       blockchain: selectedLocation === TRADE_LOCATION_BLOCKCHAIN
@@ -69,7 +68,7 @@ export function useLocationBreakdown(
       ),
     };
 
-    return summarizeAssetProtocols({ associatedAssets, sources }, { hideIgnored: true, isAssetIgnored }, {
+    return summarizeAssetProtocols({ resolveIdentifier, sources }, { hideIgnored: true, isAssetIgnored }, {
       getAssetPrice,
       noPrice,
     }, {

@@ -26,7 +26,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetPrice } = usePriceUtils();
-const { assetInfo } = useAssetSelectInfo();
+const { getAssetInfo } = useAssetSelectInfo();
 const premium = usePremium();
 const { t } = useI18n({ useScope: 'global' });
 
@@ -68,7 +68,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
     value: item.userBalance.value,
   }));
 
-  return sortAssetBalances(transformed, get(sort), assetInfo);
+  return sortAssetBalances(transformed, get(sort), getAssetInfo);
 });
 </script>
 

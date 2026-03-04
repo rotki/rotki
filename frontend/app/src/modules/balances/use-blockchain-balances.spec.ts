@@ -34,14 +34,9 @@ vi.mock('@/modules/balances/use-balances-store', () => ({
   }),
 }));
 
-vi.mock('@/composables/assets/retrieval', async () => {
-  const { ref } = await import('vue');
-  return ({
-    useAssetInfoRetrieval: vi.fn().mockReturnValue({
-      getAssociatedAssetIdentifier: vi.fn().mockReturnValue(ref()),
-    }),
-  });
-});
+vi.mock('@/composables/assets/common', () => ({
+  useResolveAssetIdentifier: vi.fn(() => (asset: string): string => asset),
+}));
 
 vi.mock('@/composables/api/balances/blockchain', () => ({
   useBlockchainBalancesApi: vi.fn().mockReturnValue({

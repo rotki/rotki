@@ -16,10 +16,8 @@ vi.mock('@/composables/api/staking/kraken', () => ({
   })),
 }));
 
-vi.mock('@/composables/assets/retrieval', () => ({
-  useAssetInfoRetrieval: vi.fn(() => ({
-    getAssociatedAssetIdentifier: vi.fn((asset: string) => computed(() => asset)),
-  })),
+vi.mock('@/composables/assets/common', () => ({
+  useResolveAssetIdentifier: vi.fn(() => (asset: string): string => asset),
 }));
 
 vi.mock('@/store/notifications', () => ({

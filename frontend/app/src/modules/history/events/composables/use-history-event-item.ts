@@ -38,12 +38,12 @@ export function useHistoryEventItem(
 ): UseHistoryEventItemReturn {
   const { event, selection } = props;
   const { getChain } = useSupportedChains();
-  const { assetInfo } = useAssetInfoRetrieval();
+  const { useAssetInfo } = useAssetInfoRetrieval();
   const { useIsAssetIgnored } = useIgnoredAssetsStore();
 
   const eventAsset = computed<string>(() => toValue(event).asset);
   const isIgnoredAsset = useIsAssetIgnored(eventAsset);
-  const asset = assetInfo(eventAsset, { collectionParent: false });
+  const asset = useAssetInfo(eventAsset, { collectionParent: false });
   const isSpam = computed<boolean>(() => get(asset)?.protocol === 'spam');
   const hiddenEvent = logicOr(isIgnoredAsset, isSpam);
 

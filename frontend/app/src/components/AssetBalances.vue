@@ -64,7 +64,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 
 const debouncedSearch = refDebounced(search, 200);
 
-const { assetInfo, assetName, assetSymbol } = useAssetSelectInfo();
+const { getAssetInfo } = useAssetSelectInfo();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const statistics = useStatisticsStore();
 const { totalNetWorth } = storeToRefs(statistics);
@@ -82,8 +82,8 @@ function expand(item: AssetBalanceWithPrice) {
   set(expanded, isExpanded(item.asset) ? [] : [item]);
 }
 
-function assetFilter(item: Nullable<AssetBalance>) {
-  return assetFilterByKeyword(item, get(debouncedSearch), assetName, assetSymbol);
+function assetFilter(item: Nullable<AssetBalance>): boolean {
+  return assetFilterByKeyword(item, get(debouncedSearch), getAssetInfo);
 }
 
 const filteredBalances = computed(() => balances.filter(assetFilter));
@@ -179,7 +179,7 @@ const rowAppendLabelColspan = computed(() => {
 
 useRememberTableSorting<AssetBalanceWithPrice>(TableId.ASSET_BALANCES, sort, tableHeaders);
 
-const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get(filteredBalances)], get(sort), assetInfo));
+const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...get(filteredBalances)], get(sort), getAssetInfo));
 </script>
 
 <template>

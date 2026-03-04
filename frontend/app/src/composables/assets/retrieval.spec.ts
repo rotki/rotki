@@ -1,5 +1,4 @@
 import type { ERC20Token } from '@/types/blockchain/accounts';
-import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
@@ -38,28 +37,6 @@ describe('useAssetRetrieval', () => {
     vi.spyOn(assetCacheStore, 'resolve');
     assetInfoRetrieval = useAssetInfoRetrieval();
     api = useAssetInfoApi();
-  });
-
-  describe('getAssociatedAssetIdentifier', () => {
-    it('should treat ETH2 as ETH when enabled', () => {
-      updateGeneralSettings({
-        treatEth2AsEth: true,
-      });
-
-      const result = get(assetInfoRetrieval.getAssociatedAssetIdentifier('ETH2'));
-
-      expect(result).toBe('ETH');
-    });
-
-    it('should not treat ETH2 as ETH when disabled', () => {
-      updateGeneralSettings({
-        treatEth2AsEth: false,
-      });
-
-      const result = get(assetInfoRetrieval.getAssociatedAssetIdentifier('ETH2'));
-
-      expect(result).toBe('ETH2');
-    });
   });
 
   describe('fetchTokenDetails', () => {
@@ -102,12 +79,12 @@ describe('useAssetRetrieval', () => {
     });
   });
 
-  describe('assetInfo, assetName, and assetSymbol', () => {
+  describe('getAssetInfo and getAssetField', () => {
     it('should handle falsy identifier', () => {
       const identifier = undefined;
-      expect(get(assetInfoRetrieval.assetInfo(identifier))).toBeNull();
-      expect(get(assetInfoRetrieval.assetName(identifier))).toBe('');
-      expect(get(assetInfoRetrieval.assetName(identifier))).toBe('');
+      expect(assetInfoRetrieval.getAssetInfo(identifier)).toBeNull();
+      expect(assetInfoRetrieval.getAssetField(identifier, 'name')).toBe('');
+      expect(assetInfoRetrieval.getAssetField(identifier, 'symbol')).toBe('');
     });
 
     it('should handle custom asset', () => {
@@ -119,7 +96,7 @@ describe('useAssetRetrieval', () => {
         isCustomAsset: true,
       }));
 
-      const result = get(assetInfoRetrieval.assetInfo(identifier));
+      const result = assetInfoRetrieval.getAssetInfo(identifier);
 
       expect(assetCacheStore.resolve).toHaveBeenCalledWith(identifier);
 
@@ -129,8 +106,8 @@ describe('useAssetRetrieval', () => {
         isCustomAsset: true,
       });
 
-      expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(assetName);
-      expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(assetName);
+      expect(assetInfoRetrieval.getAssetField(identifier, 'name')).toEqual(assetName);
+      expect(assetInfoRetrieval.getAssetField(identifier, 'symbol')).toEqual(assetName);
     });
 
     it('should handle custom asset type', () => {
@@ -142,7 +119,7 @@ describe('useAssetRetrieval', () => {
         assetType: CUSTOM_ASSET,
       }));
 
-      const result = get(assetInfoRetrieval.assetInfo(identifier));
+      const result = assetInfoRetrieval.getAssetInfo(identifier);
 
       expect(assetCacheStore.resolve).toHaveBeenCalledWith(identifier);
 
@@ -152,8 +129,8 @@ describe('useAssetRetrieval', () => {
         isCustomAsset: true,
       });
 
-      expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(assetName);
-      expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(assetName);
+      expect(assetInfoRetrieval.getAssetField(identifier, 'name')).toEqual(assetName);
+      expect(assetInfoRetrieval.getAssetField(identifier, 'symbol')).toEqual(assetName);
     });
 
     it('should handle asset with collection parent when isCollectionParent is true', () => {
@@ -179,15 +156,15 @@ describe('useAssetRetrieval', () => {
         collectionId,
       }));
 
-      const result = get(assetInfoRetrieval.assetInfo(identifier));
+      const result = assetInfoRetrieval.getAssetInfo(identifier);
 
       expect(result).toMatchObject({
         name: collectionName,
         symbol: assetSymbol,
       });
 
-      expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(collectionName);
-      expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(assetSymbol);
+      expect(assetInfoRetrieval.getAssetField(identifier, 'name')).toEqual(collectionName);
+      expect(assetInfoRetrieval.getAssetField(identifier, 'symbol')).toEqual(assetSymbol);
     });
 
     it('should handle asset with collection parent when isCollectionParent is false', () => {
@@ -213,10 +190,10 @@ describe('useAssetRetrieval', () => {
         collectionId,
       }));
 
-      const result = get(assetInfoRetrieval.assetInfo(identifier, {
+      const result = assetInfoRetrieval.getAssetInfo(identifier, {
         associate: true,
         collectionParent: false,
-      }));
+      });
 
       expect(result).toMatchObject({
         name: assetName,
@@ -229,7 +206,7 @@ describe('useAssetRetrieval', () => {
       const identifier = `eip155:1/erc20:${address}`;
       vi.mocked(assetCacheStore.resolve).mockReturnValue(null);
 
-      const result = get(assetInfoRetrieval.assetInfo(identifier));
+      const result = assetInfoRetrieval.getAssetInfo(identifier);
       const fallbackName = `EVM Token: ${address}`;
 
       expect(result).toMatchObject({
@@ -237,8 +214,8 @@ describe('useAssetRetrieval', () => {
         symbol: fallbackName,
       });
 
-      expect(get(assetInfoRetrieval.assetName(identifier))).toEqual(fallbackName);
-      expect(get(assetInfoRetrieval.assetSymbol(identifier))).toEqual(fallbackName);
+      expect(assetInfoRetrieval.getAssetField(identifier, 'name')).toEqual(fallbackName);
+      expect(assetInfoRetrieval.getAssetField(identifier, 'symbol')).toEqual(fallbackName);
     });
   });
 });

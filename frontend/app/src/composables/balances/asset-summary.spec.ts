@@ -23,7 +23,7 @@ describe('summarizeAssetProtocols with chains', () => {
 
     const result = summarizeAssetProtocols(
       {
-        associatedAssets: {},
+        resolveIdentifier: (id: string): string => id,
         sources: mockSources,
       },
       {
@@ -69,7 +69,7 @@ describe('summarizeAssetProtocols with chains', () => {
 
     const result = summarizeAssetProtocols(
       {
-        associatedAssets: {},
+        resolveIdentifier: (id: string): string => id,
         sources: mockSources,
       },
       {
@@ -129,7 +129,7 @@ describe('summarizeAssetProtocols with chains', () => {
 
     const result = summarizeAssetProtocols(
       {
-        associatedAssets: {},
+        resolveIdentifier: (id: string): string => id,
         sources: mockSources,
       },
       {

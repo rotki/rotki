@@ -4,7 +4,7 @@ import { type AssetInfoWithId, Zero } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetDetailsMenuContent from '@/components/helper/AssetDetailsMenuContent.vue';
-import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useRefMap } from '@/composables/utils/useRefMap';
 import { AssetAmountDisplay, AssetValueDisplay } from '@/modules/amount-display/components';
 
@@ -18,21 +18,18 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
-const { assetSymbol, assetInfo } = useAssetInfoRetrieval();
+const { useAssetField, useAssetInfo } = useAssetInfoRetrieval();
 
 const showBalance = computed<boolean>(() => event.eventType !== 'informational');
 
 const eventAsset = useRefMap(() => event, ({ asset }) => asset);
 
-const symbol = assetSymbol(eventAsset, {
-  collectionParent: false,
-});
+const symbol = useAssetField(eventAsset, 'symbol', NO_COLLECTION_RESOLVE);
 
 const menuOpened = ref<boolean>(false);
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
 
-const ASSET_RESOLUTION_OPTIONS: AssetResolutionOptions = { collectionParent: false };
-const assetDetails = assetInfo(eventAsset, ASSET_RESOLUTION_OPTIONS);
+const assetDetails = useAssetInfo(eventAsset, NO_COLLECTION_RESOLVE);
 
 const currentAsset = computed<AssetInfoWithId>(() => ({
   ...get(assetDetails),
@@ -76,7 +73,7 @@ function openMenuHandler(event: MouseEvent): void {
           hide-menu
           optimize-for-virtual-scroll
           :asset="event.asset"
-          :resolution-options="ASSET_RESOLUTION_OPTIONS"
+          :resolution-options="NO_COLLECTION_RESOLVE"
           @refresh="emit('refresh')"
         />
         <div

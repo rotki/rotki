@@ -17,7 +17,7 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
   const { addIgnoredAssets, getIgnoredAssets, removeIgnoredAssets } = useAssetIgnoreApi();
   const { show } = useConfirmStore();
 
-  const { getAssetSymbol } = useAssetInfoRetrieval();
+  const { getAssetField } = useAssetInfoRetrieval();
   const { manualBalancesAssets } = useManualBalanceData();
 
   const fetchIgnoredAssets = async (): Promise<void> => {
@@ -54,7 +54,7 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
         showErrorMessage(
           t('ignore.warning.manual_balances_title'),
           t('ignore.warning.manual_balances_message', {
-            assets: includedInManualBalances.map(item => getAssetSymbol(item)).join(', '),
+            assets: includedInManualBalances.map(item => getAssetField(item, 'symbol')).join(', '),
           }),
         );
       }

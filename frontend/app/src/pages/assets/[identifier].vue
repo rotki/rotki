@@ -41,7 +41,7 @@ const route = useRoute();
 
 const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 
-const { assetContractInfo, assetInfo, assetName, assetSymbol, refetchAssetInfo } = useAssetInfoRetrieval();
+const { refetchAssetInfo, useAssetContractInfo, useAssetInfo } = useAssetInfoRetrieval();
 const premium = usePremium();
 const { balances } = useAggregatedBalances();
 
@@ -58,10 +58,8 @@ const assetRetrievalOption = computed<AssetResolutionOptions>(() => ({
   collectionParent: get(isCollectionParent),
 }));
 
-const name = assetName(() => identifier, assetRetrievalOption);
-const symbol = assetSymbol(() => identifier, assetRetrievalOption);
-const asset = assetInfo(() => identifier, assetRetrievalOption);
-const contractInfo = assetContractInfo(() => identifier, assetRetrievalOption);
+const asset = useAssetInfo(() => identifier, assetRetrievalOption);
+const contractInfo = useAssetContractInfo(() => identifier, assetRetrievalOption);
 
 const {
   loadingIgnore,
@@ -73,9 +71,7 @@ const {
 } = useAssetPageActions({
   asset,
   identifier: computed<string>(() => identifier),
-  name,
   refetchAssetInfo,
-  symbol,
 });
 
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset);
@@ -140,9 +136,9 @@ function goToEdit(): void {
           v-if="!isCustomAsset"
           class="flex flex-col"
         >
-          <span class="text-h5 font-medium">{{ symbol }}</span>
+          <span class="text-h5 font-medium">{{ asset?.symbol }}</span>
           <span class="text-body-2 text-rui-text-secondary">
-            {{ name }}
+            {{ asset?.name }}
           </span>
         </div>
 
@@ -150,7 +146,7 @@ function goToEdit(): void {
           v-else
           class="flex flex-col"
         >
-          <span class="text-h5 font-medium">{{ name }}</span>
+          <span class="text-h5 font-medium">{{ asset?.name }}</span>
           <span class="text-body-2 text-rui-text-secondary">
             {{ asset?.customAssetType }}
           </span>

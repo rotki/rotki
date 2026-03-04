@@ -24,7 +24,7 @@ const search = ref<string>('');
 const inputWidth = computed(() => Math.min(get(search).length + 2, 25));
 const editInput = useTemplateRef<InstanceType<typeof HTMLInputElement>>('editInput');
 
-const { assetInfo } = useAssetInfoRetrieval();
+const { getAssetInfo } = useAssetInfoRetrieval();
 const { getChainName } = useSupportedChains();
 
 const isBoolean = computed(() => {
@@ -42,7 +42,7 @@ const asset = computed<{ identifier: string; symbol: string } | undefined>(() =>
   let usedAsset, identifier;
   if (typeof value === 'string') {
     identifier = value;
-    usedAsset = get(assetInfo(value));
+    usedAsset = getAssetInfo(value);
   }
   else {
     identifier = value.identifier;

@@ -54,7 +54,7 @@ const tags = computed<string[]>({
 const amount = useBigNumberModel(rawAmount);
 const { manualLabels } = useManualBalanceData();
 const { tradeLocations } = storeToRefs(useLocationStore());
-const { assetInfo } = useAssetInfoRetrieval();
+const { getAssetInfo } = useAssetInfoRetrieval();
 
 const rules = {
   amount: {
@@ -120,7 +120,7 @@ watch(asset, (asset) => {
   if (!(asset && !('identifier' in get(modelValue)) && !get(locationTouched))) {
     return;
   }
-  const info = get(assetInfo(asset));
+  const info = getAssetInfo(asset);
   const evmChain = info?.evmChain;
   if (!evmChain) {
     return;

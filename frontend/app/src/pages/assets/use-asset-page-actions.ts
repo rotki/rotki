@@ -5,15 +5,15 @@ import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 
 interface AssetWithSpamStatus {
   isSpam?: boolean;
+  name?: string | null;
+  symbol?: string | null;
   [key: string]: unknown;
 }
 
 interface UseAssetPageActionsOptions {
   asset: ComputedRef<AssetWithSpamStatus | null>;
   identifier: Ref<string>;
-  name: ComputedRef<string | undefined>;
   refetchAssetInfo: (id: string) => void;
-  symbol: ComputedRef<string | undefined>;
 }
 
 interface UseAssetPageActionsReturn {
@@ -28,7 +28,7 @@ interface UseAssetPageActionsReturn {
 }
 
 export function useAssetPageActions(options: UseAssetPageActionsOptions): UseAssetPageActionsReturn {
-  const { asset, identifier, name, refetchAssetInfo, symbol } = options;
+  const { asset, identifier, refetchAssetInfo } = options;
 
   const { ignoreAssetWithConfirmation, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
   const { useIsAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
@@ -66,7 +66,8 @@ export function useAssetPageActions(options: UseAssetPageActionsOptions): UseAss
         await unignoreAsset(id);
       }
       else {
-        await ignoreAssetWithConfirmation(id, get(symbol) || get(name));
+        const info = get(asset);
+        await ignoreAssetWithConfirmation(id, info?.symbol || info?.name);
       }
     }
     finally {

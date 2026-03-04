@@ -21,15 +21,15 @@ export function useDashboardAssetData(
   balances: MaybeRefOrGetter<AssetBalanceWithPrice[]>,
   sort: MaybeRefOrGetter<DataTableSortData<AssetBalanceWithPrice>>,
 ): UseDashboardAssetDataReturn {
-  const search = ref<string>('');
+  const search = shallowRef<string>('');
   const debouncedSearch = refDebounced(search, 200);
 
   const { totalNetWorth } = useDashboardStores();
-  const { assetInfo, assetName, assetSymbol } = useAssetSelectInfo();
+  const { getAssetInfo } = useAssetSelectInfo();
   const { missingCustomAssets } = useManualBalanceData();
 
   function assetFilter(item: Nullable<AssetBalance>): boolean {
-    return assetFilterByKeyword(item, get(debouncedSearch), assetName, assetSymbol);
+    return assetFilterByKeyword(item, get(debouncedSearch), getAssetInfo);
   }
 
   function isAssetMissing(item: AssetBalanceWithPrice): boolean {
@@ -50,7 +50,7 @@ export function useDashboardAssetData(
 
   const sorted = computed<AssetBalanceWithPrice[]>(() => {
     const filteredBalances = toValue(balances).filter(assetFilter);
-    return sortAssetBalances(filteredBalances, toValue(sort), assetInfo);
+    return sortAssetBalances(filteredBalances, toValue(sort), getAssetInfo);
   });
 
   return {
