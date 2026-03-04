@@ -7,6 +7,7 @@ import HintMenuIcon from '@/components/HintMenuIcon.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import AutomaticSyncSetting from '@/components/status/sync/AutomaticSyncSetting.vue';
 import { useInterop } from '@/composables/electron-interop';
+import { usePremiumHelper } from '@/composables/premium';
 import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
@@ -32,6 +33,7 @@ const { deletePremium, setup } = store;
 const { show } = useConfirmStore();
 const { setMessage } = useMessageStore();
 
+const { currentTier } = usePremiumHelper();
 const { openUrl, premiumUserLoggedIn } = useInterop();
 
 const mainActionText = computed<string>(() => {
@@ -210,6 +212,22 @@ onMounted(() => {
       >
         {{ t('premium_settings.premium_active') }}
       </RuiAlert>
+
+      <div
+        v-if="premium"
+        class="flex items-center justify-between mt-4 px-2"
+      >
+        <div class="flex items-center gap-3">
+          <span class="text-rui-text-secondary text-body-2">
+            {{ t('premium_settings.current_plan_label') }} <span class="font-bold text-rui-text">{{ currentTier || '—' }}</span>
+          </span>
+        </div>
+        <ExternalLink
+          :url="externalLinks.manageSubscriptions"
+          :text="t('premium_settings.manage_or_upgrade')"
+          color="primary"
+        />
+      </div>
 
       <AutomaticSyncSetting
         class="mt-6"

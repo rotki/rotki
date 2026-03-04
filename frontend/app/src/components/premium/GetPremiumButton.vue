@@ -1,20 +1,20 @@
 <script setup lang="ts">
 import { externalLinks } from '@shared/external-links';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import { usePremium } from '@/composables/premium';
+import { usePremiumHelper } from '@/composables/premium';
 
-withDefaults(
-  defineProps<{
-    hideOnSmallScreen?: boolean;
-  }>(),
-  {
-    hideOnSmallScreen: false,
-  },
-);
+const { hideOnSmallScreen = false } = defineProps<{
+  hideOnSmallScreen?: boolean;
+}>();
 
 const { t } = useI18n({ useScope: 'global' });
-const premium = usePremium();
+const { currentTier, premium } = usePremiumHelper();
 const { isLgAndDown } = useBreakpoint();
+
+const tierLabel = computed<string>(() => {
+  const tier = get(currentTier);
+  return tier ? t('premium_placeholder.current_plan', { tier }) : t('premium_placeholder.upgrade_plan');
+});
 </script>
 
 <template>
@@ -26,9 +26,9 @@ const { isLgAndDown } = useBreakpoint();
     >
       <template #activator>
         <ExternalLink
+          v-if="!premium"
           custom
-          :premium="!premium"
-          :url="premium ? externalLinks.manageSubscriptions : undefined"
+          premium
         >
           <RuiButton
             :class="{ '[&_span]:!hidden lg:[&_span]:!block': hideOnSmallScreen }"
@@ -40,11 +40,26 @@ const { isLgAndDown } = useBreakpoint();
             <template #prepend>
               <RuiIcon name="lu-crown" />
             </template>
-            {{ premium ? t('premium_placeholder.upgrade_plan') : t('premium_settings.get') }}
+            {{ t('premium_settings.get') }}
           </RuiButton>
         </ExternalLink>
+        <ExternalLink
+          v-else
+          custom
+          :url="externalLinks.manageSubscriptions"
+        >
+          <RuiChip
+            size="sm"
+            variant="outlined"
+            color="primary"
+            data-cy="get-premium-button"
+            class="!cursor-pointer"
+          >
+            {{ tierLabel }}
+          </RuiChip>
+        </ExternalLink>
       </template>
-      <span>{{ premium ? t('premium_placeholder.upgrade_plan') : t('premium_settings.get') }}</span>
+      <span>{{ premium ? tierLabel : t('premium_settings.get') }}</span>
     </RuiTooltip>
   </div>
 </template>
