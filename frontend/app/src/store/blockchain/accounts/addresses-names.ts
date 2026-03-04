@@ -13,7 +13,7 @@ import type { TaskMeta } from '@/types/task';
 import { Blockchain, isValidBchAddress, isValidBtcAddress, isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useItemCache } from '@/composables/item-cache';
+import { createItemCache } from '@/composables/item-cache';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useTaskStore } from '@/store/tasks';
@@ -89,28 +89,24 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       result = [];
     }
 
+    const resultMap = new Map<string, AddressBookEntry>();
+    for (const entry of result) resultMap.set(createKey(entry.address, entry.blockchain ?? ''), entry);
+
     return function* (): Generator<{ key: string; item: AddressBookEntry | undefined }, void> {
       for (const entry of payload) {
         const key = createKey(entry.address, entry.blockchain);
-
-        const item = result.find(
-          res =>
-            res.address === entry.address
-            && res.blockchain === entry.blockchain,
-        );
-
-        yield { item, key };
+        yield { item: resultMap.get(key), key };
       }
     };
   };
 
   const {
-    isPending,
+    getIsPending,
     refresh,
     reset: resetAddressesNames,
-    retrieve,
+    resolve,
     unknown,
-  } = useItemCache<AddressBookEntry | undefined>(async keys => fetchAddressesNames(keys));
+  } = createItemCache<AddressBookEntry | undefined>(async keys => fetchAddressesNames(keys));
 
   const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>): ComputedRef<string[]> => computed<string[]>(() => {
     const chain = get(blockchain);
@@ -136,11 +132,11 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
 
     const key = createKey(addressVal, chain);
 
-    const cachedInfo = get(retrieve(key));
+    const cachedInfo = resolve(key);
 
     // We keep track of the pending status to refresh, but if there is already a
     // value in cache we return that instead of null until a new value is presented
-    if (get(isPending(key)) && !cachedInfo)
+    if (getIsPending(key) && !cachedInfo)
       return undefined;
 
     return cachedInfo?.[field] || undefined;

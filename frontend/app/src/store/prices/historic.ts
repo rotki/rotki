@@ -2,7 +2,7 @@ import type { StatsPriceQueryData } from '@/modules/messaging/types';
 import type { TaskMeta } from '@/types/task';
 import { type BigNumber, type CommonQueryStatusData, type FailedHistoricalAssetPriceResponse, NoPrice } from '@rotki/common';
 import { usePriceApi } from '@/composables/api/balances/price';
-import { useItemCache } from '@/composables/item-cache';
+import { createItemCache } from '@/composables/item-cache';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useTaskStore } from '@/store/tasks';
@@ -84,7 +84,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     };
   };
 
-  const { cache, deleteCacheKey, isPending, reset, retrieve, unknown } = useItemCache<BigNumber>(async keys =>
+  const { cache, deleteCacheKey, getIsPending, isPending, reset, resolve, unknown } = createItemCache<BigNumber>(async keys =>
     fetchHistoricPrices(keys),
   );
 
@@ -92,10 +92,10 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     computed(() => {
       const key = createKey(fromAsset, timestamp);
 
-      if (get(isPending(key)))
+      if (getIsPending(key))
         return NoPrice;
 
-      return get(retrieve(key)) || NoPrice;
+      return resolve(key) || NoPrice;
     });
 
   const resetHistoricalPricesData = (items: { fromAsset: string; timestamp: number }[]): void => {
@@ -175,7 +175,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     resetHistoricalPricesData,
     resetProtocolStatsPriceQueryStatus,
     resolvedFailedDailyPrices,
-    retrieve,
+    resolve,
     setHistoricalDailyPriceStatus,
     setHistoricalPriceStatus,
     setStatsPriceQueryStatus,

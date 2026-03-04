@@ -235,6 +235,61 @@ describe('useAddressesNamesStore', () => {
       expect(get(secondAddressName)).toBe('test1.eth');
     });
 
+    it('should not match API result with null blockchain against a valid chain key', async () => {
+      store.resetAddressesNames();
+
+      useFrontendSettingsStore().update({
+        ...getDefaultFrontendSettings(),
+        enableAliasNames: true,
+      });
+
+      const address = '0xAA00000000000000000000000000000000000001';
+
+      // API returns entry with null blockchain (multi-chain address)
+      vi.mocked(api.getAddressesNames).mockResolvedValue([
+        { address, blockchain: null, name: 'multi_chain_name' },
+      ]);
+
+      const addressName = store.addressNameSelector(address, Blockchain.ETH);
+
+      // Initially undefined (pending)
+      expect(get(addressName)).toBeUndefined();
+
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+
+      expect(api.getAddressesNames).toHaveBeenCalledOnce();
+
+      // null blockchain should NOT match the ETH key, so name stays undefined
+      expect(get(addressName)).toBeUndefined();
+    });
+
+    it('should match API result when blockchain matches the queried chain', async () => {
+      store.resetAddressesNames();
+
+      useFrontendSettingsStore().update({
+        ...getDefaultFrontendSettings(),
+        enableAliasNames: true,
+      });
+
+      const address = '0xBB00000000000000000000000000000000000002';
+
+      // API returns entry with matching blockchain
+      vi.mocked(api.getAddressesNames).mockResolvedValue([
+        { address, blockchain: Blockchain.ETH, name: 'eth_name' },
+      ]);
+
+      const addressName = store.addressNameSelector(address, Blockchain.ETH);
+
+      // Force computed evaluation to trigger resolve/queue before advancing timers
+      expect(get(addressName)).toBeUndefined();
+
+      vi.advanceTimersByTime(2500);
+      await flushPromises();
+
+      expect(get(addressName)).toBe('eth_name');
+    });
+
     it('should handle enableAliasNames when false', async () => {
       useFrontendSettingsStore().update({
         ...getDefaultFrontendSettings(),
