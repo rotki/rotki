@@ -35,7 +35,7 @@ def test_farcaster_pro_purchase(base_inquirer, base_accounts) -> None:
     )
     query_internal_txs = (
         'rotkehlchen.chain.evm.transactions.'
-        'EvmTransactions._query_and_save_internal_transactions_for_range_or_parent_hash'
+        'EvmTransactions._query_and_save_internal_transactions_for_parent_hash'
     )
     with patch(  # ignore internal transactions since not needed and atm no base indexer gives them
         query_internal_txs,
