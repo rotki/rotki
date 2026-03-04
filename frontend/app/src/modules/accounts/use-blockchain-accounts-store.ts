@@ -4,6 +4,7 @@ import { removeTags, renameTags } from '@/utils/tags';
 
 export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () => {
   const accounts = ref<Accounts>({});
+  const recentlyAddedAddresses = ref<Set<string>>(new Set());
 
   const updateAccounts = (chain: string, data: BlockchainAccount[]): void => {
     set(accounts, { ...get(accounts), [chain]: data });
@@ -64,12 +65,26 @@ export const useBlockchainAccountsStore = defineStore('blockchain/accounts', () 
     set(accounts, copy);
   };
 
+  const trackAddedAddresses = (addresses: string[], ttl: number = 60_000): void => {
+    const current = new Set(get(recentlyAddedAddresses));
+    addresses.forEach(a => current.add(a));
+    set(recentlyAddedAddresses, current);
+
+    setTimeout(() => {
+      const updated = new Set(get(recentlyAddedAddresses));
+      addresses.forEach(a => updated.delete(a));
+      set(recentlyAddedAddresses, updated);
+    }, ttl);
+  };
+
   return {
     accounts,
     getAccountByAddress,
     getAccounts,
+    recentlyAddedAddresses,
     removeTag,
     renameTag,
+    trackAddedAddresses,
     updateAccountData,
     updateAccounts,
   };
