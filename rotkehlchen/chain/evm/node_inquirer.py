@@ -4,7 +4,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, TypeVar, overload
 
 import requests
 from eth_abi.exceptions import DecodingError
@@ -78,7 +78,7 @@ from rotkehlchen.types import (
     TokenKind,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
-from rotkehlchen.utils.misc import from_wei, get_chunks
+from rotkehlchen.utils.misc import from_wei, get_chunks, ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
@@ -99,6 +99,7 @@ def _connect_task_prefix(chain_name: str) -> str:
 
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
 MAX_NODE_LOG_QUERY_CALLS = 500  # max queries for a node that can query logs from up to 1000/10_000 blocks  # noqa: E501
+DEFAULT_RATE_LIMIT_COOLDOWN_SECS: Final = 60
 
 
 def _query_web3_get_logs(
@@ -259,6 +260,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # tracks the request length that failed to proactively use smaller chunks per node type
         self._multicall_failed_length: dict[Literal['nodes', 'indexers'], int] = {}
         self._no_indexer_notified: bool = False
+        self.rate_limited_nodes: dict[str, Timestamp] = {}
         LockableQueryMixIn.__init__(self)
         EVMRPCMixin.__init__(self)
         # Log the available nodes so we have extra information when debugging connection errors.
@@ -475,6 +477,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         gas_limit_error_seen = False
         for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
+            if (until := self.rate_limited_nodes.get(node_info.endpoint)) is not None:
+                if until > ts_now():
+                    continue
+
+                self.rate_limited_nodes.pop(node_info.endpoint, None)
+
             if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
                 if node_info.name in self.failed_to_connect_nodes:
                     continue
@@ -533,6 +541,16 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     AttributeError,  # happened at the web3 level when response is a string instead of dict # noqa: E501
                     json.JSONDecodeError,  # happens when RPC returns empty or invalid JSON responses # noqa: E501
             ) as e:
+                if self._is_rate_limited(error=e):
+                    self.rate_limited_nodes[node_info.endpoint] = Timestamp(
+                        ts_now() + self._get_retry_after_seconds(error=e),
+                    )
+                    log.warning(
+                        f'Got rate limit response from {node_info.name} while querying '
+                        f'{method.__name__}. Will skip this endpoint temporarily.',
+                    )
+                    continue
+
                 log.warning(
                     f'Failed to query {node_info.name} with position on the query list {node_idx} '
                     f'for {method.__name__} due to {e!s}',
@@ -555,6 +573,35 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             )
 
         raise RemoteError(f'Error querying information from {self.blockchain!s}. Check logs for more information')  # noqa: E501
+
+    @staticmethod
+    def _is_rate_limited(error: Exception) -> bool:
+        if (
+            (response := getattr(error, 'response', None)) is not None and
+            response.status_code == 429
+        ):
+            return True
+
+        error_string = str(error).lower()
+        return '429' in error_string and (
+            'too many requests' in error_string or
+            'rate limit' in error_string
+        )
+
+    @staticmethod
+    def _get_retry_after_seconds(error: Exception) -> int:
+        if (response := getattr(error, 'response', None)) is None:
+            return DEFAULT_RATE_LIMIT_COOLDOWN_SECS
+
+        if (retry_after := response.headers.get('Retry-After')) is None:
+            return DEFAULT_RATE_LIMIT_COOLDOWN_SECS
+
+        try:
+            seconds = int(retry_after)
+        except ValueError:
+            return DEFAULT_RATE_LIMIT_COOLDOWN_SECS
+
+        return seconds if seconds > 0 else DEFAULT_RATE_LIMIT_COOLDOWN_SECS
 
     def _get_latest_block_number(self, web3: Web3 | None) -> int:
         if web3 is not None:

@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
+import requests
 
 from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
@@ -17,6 +18,7 @@ from rotkehlchen.chain.evm.types import (
     asset_id_is_evm_token,
     string_to_evm_address,
 )
+from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
 from rotkehlchen.tests.utils.ethereum import (
@@ -181,3 +183,59 @@ def test_query_raises_request_too_large_when_gas_limit_seen(
         ethereum_inquirer._query(method=mock_method, call_order=call_order)
 
     assert call_count == len(call_order)
+
+
+def test_query_skips_rate_limited_nodes_temporarily(
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    first_node = WeightedNode(
+        node_info=NodeName(
+            name='rate_limited',
+            endpoint='https://rate-limited.example',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        active=True,
+        weight=ONE,
+    )
+    second_node = WeightedNode(
+        node_info=NodeName(
+            name='healthy',
+            endpoint='https://healthy.example',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        active=True,
+        weight=ONE,
+    )
+    call_order = [first_node, second_node]
+    ethereum_inquirer.rate_limited_nodes.clear()
+    ethereum_inquirer.rpc_mapping[first_node.node_info] = RPCNode(
+        rpc_client=first_node.node_info.endpoint,  # type: ignore[arg-type]
+        is_pruned=False,
+        is_archive=True,
+    )
+    ethereum_inquirer.rpc_mapping[second_node.node_info] = RPCNode(
+        rpc_client=second_node.node_info.endpoint,  # type: ignore[arg-type]
+        is_pruned=False,
+        is_archive=True,
+    )
+    first_response = requests.Response()
+    first_response.status_code = 429
+    first_response.headers['Retry-After'] = '120'
+    first_error = requests.exceptions.HTTPError(response=first_response)
+    call_sequence: list[str] = []
+
+    def mock_method(web3: str) -> str:
+        call_sequence.append(web3)
+        if web3 == first_node.node_info.endpoint:
+            raise first_error
+        return 'ok'
+
+    assert ethereum_inquirer._query(method=mock_method, call_order=call_order) == 'ok'
+    assert call_sequence == [first_node.node_info.endpoint, second_node.node_info.endpoint]
+    assert first_node.node_info.endpoint in ethereum_inquirer.rate_limited_nodes
+
+    call_sequence.clear()
+    assert ethereum_inquirer._query(method=mock_method, call_order=call_order) == 'ok'
+    assert call_sequence == [second_node.node_info.endpoint]
