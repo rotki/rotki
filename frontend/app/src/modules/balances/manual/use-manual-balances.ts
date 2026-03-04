@@ -33,7 +33,7 @@ export function useManualBalances(): UseManualBalancesReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
-  const { awaitTask } = useTaskStore();
+  const { awaitTask, cancelTaskByTaskType } = useTaskStore();
   const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.MANUAL_BALANCES);
   const { addManualBalances, deleteManualBalances, editManualBalances, queryManualBalances } = useManualBalancesApi();
   const valueThreshold = useValueThreshold(BalanceSource.MANUAL);
@@ -97,6 +97,7 @@ export function useManualBalances(): UseManualBalancesReturn {
 
   const addManualBalance = async (balance: RawManualBalance): Promise<ActionStatus<ValidationErrors | string>> => {
     try {
+      await cancelTaskByTaskType(TaskType.MANUAL_BALANCES);
       const taskType = TaskType.MANUAL_BALANCES_ADD;
       const { taskId } = await addManualBalances([balance]);
       const { result } = await awaitTask<ManualBalances, TaskMeta>(taskId, taskType, {
@@ -125,6 +126,7 @@ export function useManualBalances(): UseManualBalancesReturn {
 
   const editManualBalance = async (balance: ManualBalance): Promise<ActionStatus<ValidationErrors | string>> => {
     try {
+      await cancelTaskByTaskType(TaskType.MANUAL_BALANCES);
       const taskType = TaskType.MANUAL_BALANCES_EDIT;
       const { taskId } = await editManualBalances([balance]);
       const { result } = await awaitTask<ManualBalances, TaskMeta>(taskId, taskType, {

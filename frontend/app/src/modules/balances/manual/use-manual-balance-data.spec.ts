@@ -25,6 +25,7 @@ vi.mock('@/composables/api/balances/manual', () => ({
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
     awaitTask: vi.fn().mockResolvedValue({}),
+    cancelTaskByTaskType: vi.fn().mockResolvedValue(undefined),
   }),
 }));
 
