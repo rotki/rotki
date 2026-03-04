@@ -21,78 +21,88 @@ export class AppServer {
     this.baseDirectory = baseDirectory ?? import.meta.dirname;
   }
 
-  public start(port: number, initialRoute?: string): void {
+  public async start(port: number, initialRoute?: string): Promise<void> {
     const devServerUrl = import.meta.env.VITE_DEV_SERVER_URL;
     const isDev = !!devServerUrl;
 
     if (isDev) {
-      this.startDevelopmentProxy(port, devServerUrl, initialRoute);
+      await this.startDevelopmentProxy(port, devServerUrl, initialRoute);
     }
     else {
-      this.startProductionServer(port);
+      await this.startProductionServer(port);
     }
   }
 
-  private startDevelopmentProxy(port: number, devServerUrl: string, initialRoute?: string): void {
-    const proxy = httpProxy.createProxyServer({
-      target: devServerUrl,
-      changeOrigin: true,
-    });
-
-    const server = http.createServer((req, res) => {
-      // Log incoming requests for debugging
-      this.logger.debug(`Proxy request: ${req.method} ${req.url}`);
-
-      // Proxy all requests to Vite dev server
-      proxy.web(req, res, {}, (err: Error | null) => {
-        if (err) {
-          this.logger.error('Proxy error:', err);
-          res.writeHead(HttpStatus.INTERNAL_SERVER_ERROR, { 'Content-Type': 'text/plain' });
-          res.end('Proxy error');
-        }
+  private async startDevelopmentProxy(port: number, devServerUrl: string, initialRoute?: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const proxy = httpProxy.createProxyServer({
+        target: devServerUrl,
+        changeOrigin: true,
       });
-    });
 
-    // Handle WebSocket upgrade requests (for HMR)
-    server.on('upgrade', (req, socket, head) => {
-      this.logger.debug(`WebSocket upgrade request: ${req.url}`);
-      proxy.ws(req, socket, head, {}, (err: Error | null) => {
-        if (err) {
-          this.logger.error('WebSocket proxy error:', err);
-          socket.destroy();
-        }
+      const server = http.createServer((req, res) => {
+        this.logger.debug(`Proxy request: ${req.method} ${req.url}`);
+
+        proxy.web(req, res, {}, (err: Error | null) => {
+          if (err) {
+            this.logger.error('Proxy error:', err);
+            res.writeHead(HttpStatus.INTERNAL_SERVER_ERROR, { 'Content-Type': 'text/plain' });
+            res.end('Proxy error');
+          }
+        });
       });
-    });
 
-    this.server = server;
-    server.listen(port, () => {
-      this.logger.info(`Development proxy server started at http://localhost:${port}`);
-      if (initialRoute) {
-        this.logger.info(`Initial route configured: ${initialRoute}`);
-      }
-    });
+      // Handle WebSocket upgrade requests (for HMR)
+      server.on('upgrade', (req, socket, head) => {
+        this.logger.debug(`WebSocket upgrade request: ${req.url}`);
+        proxy.ws(req, socket, head, {}, (err: Error | null) => {
+          if (err) {
+            this.logger.error('WebSocket proxy error:', err);
+            socket.destroy();
+          }
+        });
+      });
 
-    server.on('error', (error) => {
-      this.logger.error('Development proxy server error:', error);
+      server.once('error', reject);
+
+      server.listen(port, () => {
+        server.removeListener('error', reject);
+        server.on('error', (error) => {
+          this.logger.error('Development proxy server error:', error);
+        });
+
+        this.server = server;
+        this.logger.info(`Development proxy server started at http://localhost:${port}`);
+        if (initialRoute) {
+          this.logger.info(`Initial route configured: ${initialRoute}`);
+        }
+        resolve();
+      });
     });
   }
 
-  private startProductionServer(port: number): void {
-    const server = http.createServer((req, res) => {
-      this.handleProductionRequest(req, res, this.baseDirectory).catch((error) => {
-        this.logger.error('Unhandled error in production request handler:', error);
-        res.writeHead(HttpStatus.INTERNAL_SERVER_ERROR, { 'Content-Type': 'text/plain' });
-        res.end('500 Internal Server Error');
+  private async startProductionServer(port: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const server = http.createServer((req, res) => {
+        this.handleProductionRequest(req, res, this.baseDirectory).catch((error) => {
+          this.logger.error('Unhandled error in production request handler:', error);
+          res.writeHead(HttpStatus.INTERNAL_SERVER_ERROR, { 'Content-Type': 'text/plain' });
+          res.end('500 Internal Server Error');
+        });
       });
-    });
 
-    this.server = server;
-    server.listen(port, () => {
-      this.logger.info(`Production server started at http://localhost:${port}`);
-    });
+      server.once('error', reject);
 
-    server.on('error', (error) => {
-      this.logger.error('Production server error:', error);
+      server.listen(port, () => {
+        server.removeListener('error', reject);
+        server.on('error', (error) => {
+          this.logger.error('Production server error:', error);
+        });
+
+        this.server = server;
+        this.logger.info(`Production server started at http://localhost:${port}`);
+        resolve();
+      });
     });
   }
 

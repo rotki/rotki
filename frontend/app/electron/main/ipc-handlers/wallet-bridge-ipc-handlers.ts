@@ -7,6 +7,8 @@ import { ROTKI_RPC_METHODS } from '@shared/proxy/constants';
 import { wait } from '@shared/utils';
 import { shell } from 'electron';
 
+const MAX_PORT_RETRIES = 2;
+
 interface WalletBridgeIpcHandlersCallbacks {
   sendIpcMessage: (channel: string, ...args: any[]) => void;
 }
@@ -32,46 +34,51 @@ export class WalletBridgeIpcHandlers {
   }
 
   openWalletConnectBridge = async (): Promise<void> => {
-    try {
-      // Check if servers are already running
-      const httpRunning = this.appServer.isListening();
-      const wsRunning = this.walletBridgeWebSocketServer.isListening();
-      const wsConnected = this.walletBridgeWebSocketServer.isConnected();
+    // Check if servers are already running
+    const httpRunning = this.appServer.isListening();
+    const wsRunning = this.walletBridgeWebSocketServer.isListening();
+    const wsConnected = this.walletBridgeWebSocketServer.isConnected();
 
-      if (this.walletConnectBridgePort && httpRunning && wsRunning) {
-        if (wsConnected) {
-          // Everything is running and connected, reset selected provider and open the page
-          this.logger.info(`Wallet Connect Bridge already running and connected at http://localhost:${this.walletConnectBridgePort}, resetting provider selection and opening page`);
-          await this.resetSelectedProvider();
-          await shell.openExternal(`http://localhost:${this.walletConnectBridgePort}/#/wallet-bridge`);
-        }
-        else {
-          // Servers are running but client is disconnected - reopen URL to reconnect
-          this.logger.info(`Wallet Connect Bridge servers running but client disconnected, reopening URL to reconnect`);
-          await shell.openExternal(`http://localhost:${this.walletConnectBridgePort}/#/wallet-bridge`);
-        }
-        return;
+    if (this.walletConnectBridgePort && httpRunning && wsRunning) {
+      if (wsConnected) {
+        this.logger.info(`Wallet Connect Bridge already running and connected at http://localhost:${this.walletConnectBridgePort}, resetting provider selection and opening page`);
+        await this.resetSelectedProvider();
+        await shell.openExternal(`http://localhost:${this.walletConnectBridgePort}/#/wallet-bridge`);
       }
-
-      // Servers not running or not configured, start them
-      const portNumber = await selectPort(40010);
-      this.walletConnectBridgePort = portNumber; // Store the port
-
-      this.appServer.start(portNumber, '/#/wallet-bridge');
-
-      // Start WebSocket server alongside HTTP server
-      this.walletBridgeWebSocketServer.start(portNumber + 1);
-
-      // Small delay to ensure servers are ready
-      await wait(100);
-
-      // Open the Wallet Connect Bridge in Electron (same URL in dev/prod)
-      await shell.openExternal(`http://localhost:${portNumber}/#/wallet-bridge`);
+      else {
+        this.logger.info(`Wallet Connect Bridge servers running but client disconnected, reopening URL to reconnect`);
+        await shell.openExternal(`http://localhost:${this.walletConnectBridgePort}/#/wallet-bridge`);
+      }
+      return;
     }
-    catch (error: any) {
-      this.logger.error(`Error opening Wallet Connect Bridge: ${error}`);
-    }
+
+    // Servers not running or not configured, start them with retry
+    const portNumber = await this.startServersWithRetry();
+    this.walletConnectBridgePort = portNumber;
+
+    await shell.openExternal(`http://localhost:${portNumber}/#/wallet-bridge`);
   };
+
+  private async startServersWithRetry(): Promise<number> {
+    const port = await selectPort(40010);
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt <= MAX_PORT_RETRIES; attempt++) {
+      const candidatePort = port + attempt;
+      try {
+        await this.appServer.start(candidatePort, '/#/wallet-bridge');
+        await this.walletBridgeWebSocketServer.start(candidatePort + 1);
+        return candidatePort;
+      }
+      catch (error) {
+        lastError = error;
+        this.performCleanup();
+        this.logger.warn(`Failed to start wallet bridge servers on port ${candidatePort}: ${String(error)}`);
+      }
+    }
+
+    throw new Error(`Failed to start wallet bridge servers after ${MAX_PORT_RETRIES + 1} attempts: ${String(lastError)}`);
+  }
 
   handleWalletBridgeHttpListening = async (): Promise<boolean> => this.appServer.isListening();
 
