@@ -51,12 +51,21 @@ export function useHistoryMatchedMovementItem(
     return assetMovementEvent ?? get(events)[0];
   });
 
-  // Secondary event is the matching counterpart (non-fee, different from primary)
+  // Secondary event is the matching counterpart (non-fee, different from primary).
+  // Prefer events with a different entryType (e.g., EVM_EVENT vs ASSET_MOVEMENT_EVENT).
+  // Among multiple matches, pick the one with the largest amount (main counterpart, not adjustment).
   const secondaryEvent = computed<HistoryEventEntry | undefined>(() => {
-    const primaryId = get(primaryEvent).identifier;
-    return get(events).find(
-      item => item.eventSubtype !== 'fee' && item.identifier !== primaryId,
+    const primary = get(primaryEvent);
+    const candidates = get(events).filter(
+      item => item.eventSubtype !== 'fee' && item.identifier !== primary.identifier,
     );
+    if (candidates.length === 0)
+      return undefined;
+
+    const differentType = candidates.filter(item => item.entryType !== primary.entryType);
+    const pool = differentType.length > 0 ? differentType : candidates;
+
+    return pool.reduce((best, item) => (item.amount.gt(best.amount) ? item : best));
   });
 
   const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(primaryEvent)));
@@ -106,13 +115,19 @@ export function useHistoryMatchedMovementItem(
 
     const amount = primary.amount;
     const asset = getAssetSymbol(primary.asset, ASSET_RESOLUTION_OPTIONS);
-    const locationLabel = primary.locationLabel || get(locationData(primary.location))?.name || '';
-    const address = secondary?.locationLabel || (secondary && get(locationData(secondary.location))?.name) || '';
+    const exchangeLabel = primary.locationLabel || get(locationData(primary.location))?.name || '';
+    const addressLabel = secondary?.locationLabel || (secondary && get(locationData(secondary.location))?.name) || '';
 
-    const to = locationLabel ? t('asset_movement_matching.compact_notes.to_part', { locationLabel }) : '';
-    const from = address ? t('asset_movement_matching.compact_notes.from_part', { address }) : '';
+    const isDeposit = primary.eventSubtype === 'receive';
+    // For deposits: to = exchange, from = address
+    // For withdrawals: from = exchange, to = address
+    const toLabel = isDeposit ? exchangeLabel : addressLabel;
+    const fromLabel = isDeposit ? addressLabel : exchangeLabel;
 
-    const notes = primary.eventSubtype === 'receive'
+    const to = toLabel ? t('asset_movement_matching.compact_notes.to_part', { locationLabel: toLabel }) : '';
+    const from = fromLabel ? t('asset_movement_matching.compact_notes.from_part', { address: fromLabel }) : '';
+
+    const notes = isDeposit
       ? t('asset_movement_matching.compact_notes.deposit', { amount, asset, to, from })
       : t('asset_movement_matching.compact_notes.withdraw', { amount, asset, from, to });
 
