@@ -6,11 +6,11 @@ import { type StakingValidatorManage, useAccountManage } from '@/composables/acc
 import { useBlockchains } from '@/composables/blockchain/index';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useSectionStatus } from '@/composables/status';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useTagStore } from '@/store/session/tags';
-import { useStatusStore } from '@/store/status';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 import { Section } from '@/types/status';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
@@ -73,7 +73,6 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
   const { addAccounts, addEvmAccounts } = useBlockchains();
   const { attemptTagCreation } = useTagStore();
-  const { isLoading } = useStatusStore();
   const { save } = useAccountManage();
   const { notifyError, notifyInfo } = useNotifications();
   const { generateCSV, parseCSV } = useCsvImportExport();
@@ -83,7 +82,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   const { increment, setTotal, skip } = progressStore;
   const { progress } = storeToRefs(progressStore);
 
-  const blockchainLoading = isLoading(Section.BLOCKCHAIN);
+  const { isLoading: blockchainLoading } = useSectionStatus(Section.BLOCKCHAIN);
   const doneLoading = refDebounced(logicNot(blockchainLoading), 2000);
 
   const csvToAccount = (acc: CSVRow): AccountPayload => ({

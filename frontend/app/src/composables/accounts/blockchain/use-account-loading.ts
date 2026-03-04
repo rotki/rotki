@@ -18,7 +18,7 @@ interface UseBlockchainAccountLoadingReturn {
 export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> = ''): UseBlockchainAccountLoadingReturn {
   const { useIsTaskRunning } = useTaskStore();
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
-  const { isLoading } = useStatusStore();
+  const { useIsLoading } = useStatusStore();
 
   const { chainIds, isEvm } = useAccountCategoryHelper(category);
 
@@ -41,9 +41,9 @@ export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> =
 
   const isSectionLoading = computed<boolean>(() => {
     if (!toValue(category))
-      return get(isLoading(Section.BLOCKCHAIN));
+      return get(useIsLoading(Section.BLOCKCHAIN));
 
-    const chainsTask = get(chainIds).map(chain => isLoading(Section.BLOCKCHAIN, chain));
+    const chainsTask = get(chainIds).map(chain => useIsLoading(Section.BLOCKCHAIN, chain));
     return get(logicOr(...(chainsTask)));
   });
 

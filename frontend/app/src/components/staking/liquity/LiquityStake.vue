@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { LiquityStakingDetailEntry } from '@rotki/common';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
-import { useStatusStore } from '@/store/status';
+import { useSectionStatus } from '@/composables/status';
 import { Section } from '@/types/status';
 
 const { stake = null } = defineProps<{
@@ -10,8 +10,7 @@ const { stake = null } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { isLoading } = useStatusStore();
-const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
+const { isLoading: loading } = useSectionStatus(Section.DEFI_LIQUITY_STAKING);
 </script>
 
 <template>

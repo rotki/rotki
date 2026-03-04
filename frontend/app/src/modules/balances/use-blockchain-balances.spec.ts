@@ -202,8 +202,8 @@ describe('useBlockchainBalances', () => {
         }, undefined);
       };
 
-      const { isLoading } = useStatusStore();
-      const loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH);
+      const { useIsLoading } = useStatusStore();
+      const loading = useIsLoading(Section.BLOCKCHAIN, Blockchain.ETH);
 
       startPromise(call());
       assert(1);
@@ -236,8 +236,8 @@ describe('useBlockchainBalances', () => {
         }, undefined);
       };
 
-      const { isLoading } = useStatusStore();
-      const loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH);
+      const { useIsLoading } = useStatusStore();
+      const loading = useIsLoading(Section.BLOCKCHAIN, Blockchain.ETH);
 
       startPromise(call());
       assert(1);
@@ -246,6 +246,7 @@ describe('useBlockchainBalances', () => {
       assert(1);
 
       await until(loading).toBe(false);
+      await nextTick();
       assert(2);
     });
 
