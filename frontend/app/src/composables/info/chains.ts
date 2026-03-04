@@ -228,7 +228,7 @@ export const useSupportedChains = createSharedComposable(() => {
   };
 
   const getBlockchainRedirectLink = (blockchain: string): string => {
-    const chain = get(blockchain);
+    const chain = blockchain;
     if (chain === Blockchain.ETH2) {
       return '/staking/eth2';
     }
@@ -241,6 +241,10 @@ export const useSupportedChains = createSharedComposable(() => {
     }
     return `${basePath}?chain=${chain}`;
   };
+
+  function useBlockchainRedirectLink(blockchain: MaybeRefOrGetter<string>): ComputedRef<string> {
+    return computed<string>(() => getBlockchainRedirectLink(toValue(blockchain)));
+  }
 
   return {
     allEvmChains,
@@ -261,6 +265,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getChainName,
     getEvmChainName,
     getNativeAsset,
+    useBlockchainRedirectLink,
     isBtcChains,
     isDecodableChains,
     isEvm,

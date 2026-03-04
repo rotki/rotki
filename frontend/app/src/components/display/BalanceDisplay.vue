@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type Balance, Zero } from '@rotki/common';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
@@ -31,11 +30,11 @@ const {
 }>();
 
 const amount = useValueOrDefault(
-  useRefMap(() => value, value => value?.amount),
+  () => value?.amount,
   Zero,
 );
 const balanceValue = useValueOrDefault(
-  useRefMap(() => value, value => value?.value),
+  () => value?.value,
   Zero,
 );
 

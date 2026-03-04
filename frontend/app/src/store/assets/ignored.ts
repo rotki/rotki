@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRefOrGetter } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
@@ -117,10 +117,9 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
 
   const isAssetIgnored = (asset: string): boolean => get(ignoredAssets).includes(asset);
 
-  const useIsAssetIgnored = (asset: MaybeRef<string>): ComputedRef<boolean> => computed<boolean>(() => {
-    const selectedAsset = get(asset);
-    return isAssetIgnored(selectedAsset);
-  });
+  function useIsAssetIgnored(asset: MaybeRefOrGetter<string>): ComputedRef<boolean> {
+    return computed<boolean>(() => isAssetIgnored(toValue(asset)));
+  }
 
   const addIgnoredAsset = (asset: string): void => {
     const ignored = get(ignoredAssets);

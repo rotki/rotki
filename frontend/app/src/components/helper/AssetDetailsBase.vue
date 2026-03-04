@@ -7,7 +7,6 @@ import ListItem from '@/components/common/ListItem.vue';
 import AssetDetailsMenuContent from '@/components/helper/AssetDetailsMenuContent.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 
 defineOptions({
@@ -47,24 +46,13 @@ const emit = defineEmits<{
 }>();
 
 const menuOpened = ref<boolean>(false);
-
-const symbol = useRefMap(() => asset, asset => asset.symbol ?? '');
-const name = useRefMap(() => asset, asset => asset.name ?? '');
-
-const { isPending } = useAssetCacheStore();
-const identifier = useRefMap(() => asset, asset => asset.identifier);
-const loading = computed<boolean>(() => get(isPending(identifier)));
-
-const [DefineImage, ReuseImage] = createReusableTemplate();
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
 
-const { navigateToDetails } = useAssetPageNavigation(identifier, () => isCollectionParent);
+const { isPending } = useAssetCacheStore();
+const { navigateToDetails } = useAssetPageNavigation(() => asset.identifier, () => isCollectionParent);
+const loading = isPending(() => asset.identifier);
 
-watch(menuOpened, (menuOpened) => {
-  if (!menuOpened) {
-    get(menuContentRef)?.setConfirm(false);
-  }
-});
+const [DefineImage, ReuseImage] = createReusableTemplate();
 
 function openMenuHandler(event: MouseEvent) {
   event.preventDefault();
@@ -72,7 +60,7 @@ function openMenuHandler(event: MouseEvent) {
   set(menuOpened, !get(menuOpened));
 }
 
-function useContextMenu(attrs: Record<string, any>) {
+function useContextMenu(attrs: Record<string, unknown>) {
   return {
     ...omit(attrs, ['onClick']),
     onClick: () => {
@@ -83,6 +71,12 @@ function useContextMenu(attrs: Record<string, any>) {
     oncontextmenu: openMenuHandler,
   };
 }
+
+watch(menuOpened, (menuOpened) => {
+  if (!menuOpened) {
+    get(menuContentRef)?.setConfirm(false);
+  }
+});
 </script>
 
 <template>
@@ -117,8 +111,8 @@ function useContextMenu(attrs: Record<string, any>) {
     v-bind="$attrs"
     :size="dense ? 'sm' : 'md'"
     :loading="loading"
-    :title="asset.isCustomAsset ? name : symbol"
-    :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
+    :title="asset.isCustomAsset ? asset.name : asset.symbol"
+    :subtitle="asset.isCustomAsset ? asset.customAssetType : asset.name"
   >
     <template #avatar>
       <ReuseImage />
@@ -126,7 +120,7 @@ function useContextMenu(attrs: Record<string, any>) {
   </ListItem>
   <RuiMenu
     v-else
-    :key="identifier"
+    :key="asset.identifier"
     v-model="menuOpened"
     class="flex"
     menu-class="w-[16rem] max-w-[90%]"
@@ -148,8 +142,8 @@ function useContextMenu(attrs: Record<string, any>) {
           v-bind="{ ...$attrs, ...useContextMenu(attrs) }"
           :size="dense ? 'sm' : 'md'"
           :loading="loading"
-          :title="asset.isCustomAsset ? name : symbol"
-          :subtitle="asset.isCustomAsset ? asset.customAssetType : name"
+          :title="asset.isCustomAsset ? asset.name : asset.symbol"
+          :subtitle="asset.isCustomAsset ? asset.customAssetType : asset.name"
         >
           <template #avatar>
             <ReuseImage />

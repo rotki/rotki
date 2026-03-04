@@ -4,7 +4,6 @@ import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import ExplorerInput from '@/components/settings/explorers/ExplorerInput.vue';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
@@ -41,23 +40,23 @@ const userUrls = computed(() => {
 });
 
 const addressUrl = useValueOrDefault(
-  useRefMap(userUrls, setting => setting?.address),
-  useRefMap(defaultUrls, ({ address }) => address || null),
+  () => get(userUrls)?.address,
+  () => get(defaultUrls).address || null,
 );
 
 const txUrl = useValueOrDefault(
-  useRefMap(userUrls, setting => setting?.transaction),
-  useRefMap(defaultUrls, ({ transaction }) => transaction || null),
+  () => get(userUrls)?.transaction,
+  () => get(defaultUrls).transaction || null,
 );
 
 const blockUrl = useValueOrDefault(
-  useRefMap(userUrls, setting => setting?.block),
-  useRefMap(defaultUrls, ({ block }) => block || null),
+  () => get(userUrls)?.block,
+  () => get(defaultUrls).block || null,
 );
 
 const tokenUrl = useValueOrDefault(
-  useRefMap(userUrls, setting => setting?.token),
-  useRefMap(defaultUrls, ({ token }) => token || null),
+  () => get(userUrls)?.token,
+  () => get(defaultUrls).token || null,
 );
 
 function onChange() {

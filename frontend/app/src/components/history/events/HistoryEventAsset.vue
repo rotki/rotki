@@ -5,7 +5,6 @@ import { useTemplateRef } from 'vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetDetailsMenuContent from '@/components/helper/AssetDetailsMenuContent.vue';
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { AssetAmountDisplay, AssetValueDisplay } from '@/modules/amount-display/components';
 
 const { event, dense, disableOptions } = defineProps<{
@@ -18,35 +17,30 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
-const { useAssetField, useAssetInfo } = useAssetInfoRetrieval();
-
-const showBalance = computed<boolean>(() => event.eventType !== 'informational');
-
-const eventAsset = useRefMap(() => event, ({ asset }) => asset);
-
-const symbol = useAssetField(eventAsset, 'symbol', NO_COLLECTION_RESOLVE);
-
 const menuOpened = ref<boolean>(false);
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
 
-const assetDetails = useAssetInfo(eventAsset, NO_COLLECTION_RESOLVE);
+const { useAssetInfo } = useAssetInfoRetrieval();
 
+const assetDetails = useAssetInfo(() => event.asset, NO_COLLECTION_RESOLVE);
+
+const showBalance = computed<boolean>(() => event.eventType !== 'informational');
 const currentAsset = computed<AssetInfoWithId>(() => ({
   ...get(assetDetails),
-  identifier: get(eventAsset),
+  identifier: event.asset,
 }));
-
-watch(menuOpened, (menuOpened) => {
-  if (!menuOpened) {
-    get(menuContentRef)?.setConfirm(false);
-  }
-});
 
 function openMenuHandler(event: MouseEvent): void {
   event.preventDefault();
   event.stopPropagation();
   set(menuOpened, !get(menuOpened));
 }
+
+watch(menuOpened, (menuOpened) => {
+  if (!menuOpened) {
+    get(menuContentRef)?.setConfirm(false);
+  }
+});
 </script>
 
 <template>
@@ -101,7 +95,7 @@ function openMenuHandler(event: MouseEvent): void {
           v-else
           class="text-truncate text-sm"
         >
-          {{ symbol }}
+          {{ assetDetails?.symbol }}
         </div>
 
         <div

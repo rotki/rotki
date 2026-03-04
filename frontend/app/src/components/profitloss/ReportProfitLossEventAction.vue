@@ -7,7 +7,6 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useMessageStore } from '@/store/message';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
@@ -39,8 +38,6 @@ async function openEditHistoricPriceDialog() {
   set(price, historicPrice.isPositive() ? historicPrice.toFixed() : '0');
   set(fetchingPrice, false);
 }
-
-const timestamp = useRefMap(() => event, item => item.timestamp);
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -145,7 +142,7 @@ async function updatePrice() {
               outlined
             />
             <DateTimePicker
-              :model-value="timestamp"
+              :model-value="event.timestamp"
               disabled
               type="epoch"
               variant="outlined"

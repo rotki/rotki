@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { type AssetBalance, type Balance, type BigNumber, type LiquityPoolDetailEntry, type LiquityStatisticDetails, One } from '@rotki/common';
 import BalanceDisplay from '@/components/display/BalanceDisplay.vue';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useStatusStore } from '@/store/status';
@@ -12,16 +11,17 @@ const { pool = null, statistic = null } = defineProps<{
   statistic?: LiquityStatisticDetails | null;
   pool?: LiquityPoolDetailEntry | null;
 }>();
+
+const selection = ref<'historical' | 'current'>('historical');
+
+const { t } = useI18n({ useScope: 'global' });
 const { assetPrice } = usePriceUtils();
+const { isLoading } = useStatusStore();
+
 const LUSD_ID = 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0';
 const lusdPrice = assetPrice(LUSD_ID);
 
-const { t } = useI18n({ useScope: 'global' });
-
-const { isLoading } = useStatusStore();
 const loading = isLoading(Section.DEFI_LIQUITY_STATISTICS);
-
-const selection = ref<'historical' | 'current'>('historical');
 
 const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() => {
   if (!statistic)
@@ -63,31 +63,27 @@ const statisticWithAdjustedPrice = computed<LiquityStatisticDetails | null>(() =
   };
 });
 
-const totalDepositedStabilityPoolBalance = useRefMap<LiquityStatisticDetails | null, Balance | null>(
-  statisticWithAdjustedPrice,
-  (data) => {
-    if (!data)
-      return null;
+const totalDepositedStabilityPoolBalance = computed<Balance | null>(() => {
+  const data = get(statisticWithAdjustedPrice);
+  if (!data)
+    return null;
 
-    return {
-      amount: data.totalDepositedStabilityPool,
-      value: data.totalDepositedStabilityPoolValue,
-    };
-  },
-);
+  return {
+    amount: data.totalDepositedStabilityPool,
+    value: data.totalDepositedStabilityPoolValue,
+  };
+});
 
-const totalWithdrawnStabilityPoolBalance = useRefMap<LiquityStatisticDetails | null, Balance | null>(
-  statisticWithAdjustedPrice,
-  (data) => {
-    if (!data)
-      return null;
+const totalWithdrawnStabilityPoolBalance = computed<Balance | null>(() => {
+  const data = get(statisticWithAdjustedPrice);
+  if (!data)
+    return null;
 
-    return {
-      amount: data.totalWithdrawnStabilityPool,
-      value: data.totalWithdrawnStabilityPoolValue,
-    };
-  },
-);
+  return {
+    amount: data.totalWithdrawnStabilityPool,
+    value: data.totalWithdrawnStabilityPoolValue,
+  };
+});
 
 /**
  * Calculate the estimated PnL, by finding difference between these two things:

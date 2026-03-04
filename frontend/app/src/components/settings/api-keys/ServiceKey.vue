@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useRefMap } from '@/composables/utils/useRefMap';
-
 const {
   apiKey,
   hideActions = false,
@@ -36,13 +34,13 @@ const currentValue = ref<string>('');
 const editMode = ref<boolean>(false);
 const cancellable = ref<boolean>(false);
 
-const errorMessages = useRefMap(() => status, (status) => {
+const errorMessages = computed<string[]>(() => {
   if (!status || status.success)
     return [];
   return [status.message];
 });
 
-const successMessages = useRefMap(() => status, (status) => {
+const successMessages = computed<string[]>(() => {
   if (!status || !status.success)
     return [];
   return [status.message];
