@@ -64,7 +64,7 @@ export function useBlockchains(): UseBlockchainsReturn {
     const filteredPayload = isXpub ? [] : accountAdditionService.getNewAccountPayload(chain, payload.payload);
     if (filteredPayload.length === 0 && !isXpub) {
       const title = t('actions.balances.blockchain_accounts_add.task.title', {
-        blockchain: get(getChainName(chain)),
+        blockchain: getChainName(chain),
       });
       const message = t('actions.balances.blockchain_accounts_add.no_new.description');
       notifyInfo(title, message);

@@ -10,9 +10,9 @@ const { item } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { getChainName } = useSupportedChains();
+const { useChainName } = useSupportedChains();
 
-const chainName = getChainName(computed(() => item.chain));
+const chainName = useChainName(() => item.chain);
 
 const isCancelled = computed<boolean>(() => item.cancelled);
 const isComplete = computed<boolean>(() => item.processed >= item.total);

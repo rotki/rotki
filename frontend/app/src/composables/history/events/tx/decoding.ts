@@ -122,7 +122,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       const taskMeta = {
         all: false,
         chain,
-        description: t('actions.transactions_redecode_by_chain.task.description', { chain: get(getChainName(chain)) }),
+        description: t('actions.transactions_redecode_by_chain.task.description', { chain: getChainName(chain) }),
         title: t('actions.transactions_redecode_by_chain.task.title'),
       };
 
@@ -138,7 +138,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         notifyError(
           t('actions.transactions_redecode_by_chain.error.title'),
           t('actions.transactions_redecode_by_chain.error.description', {
-            chain: get(getChainName(chain)),
+            chain: getChainName(chain),
             error,
           }),
         );
@@ -194,7 +194,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
       let taskMeta = {
         description: t('actions.transactions_redecode.task.single_description', {
-          chain: get(getChainName(payload.chain)),
+          chain: getChainName(payload.chain),
           number: payload.txRefs.length,
         }),
         title: t('actions.transactions_redecode.task.title'),

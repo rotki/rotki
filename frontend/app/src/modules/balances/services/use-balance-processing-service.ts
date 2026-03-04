@@ -52,7 +52,7 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
           {
             blockchain,
             title: t('actions.balances.blockchain.task.title', {
-              chain: get(getChainName(blockchain)),
+              chain: getChainName(blockchain),
             }),
           },
           true,

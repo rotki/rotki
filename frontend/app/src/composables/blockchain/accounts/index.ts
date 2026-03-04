@@ -68,7 +68,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       {
         blockchain: chain,
         description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
-        title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: get(getChainName(chain)) }),
+        title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: getChainName(chain) }),
       },
       true,
     );

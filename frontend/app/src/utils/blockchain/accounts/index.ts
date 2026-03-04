@@ -1,4 +1,3 @@
-import type { MaybeRef } from 'vue';
 import type { AssetBalances } from '@/types/balances';
 import type {
   AddressData,
@@ -220,7 +219,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
 }
 
 export function convertBtcAccounts(
-  getNativeAsset: (chain: MaybeRef<string>) => string,
+  getNativeAsset: (chain: string) => string,
   chain: string,
   accounts: BitcoinAccounts,
 ): BlockchainAccount[] {

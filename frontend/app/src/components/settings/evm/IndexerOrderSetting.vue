@@ -83,7 +83,7 @@ const availableChainItems = computed<ChainItem[]>(() => {
     .filter(chain => !configured.includes(chain.id))
     .map(chain => ({
       id: chain.id,
-      name: get(getChainName(chain.id)),
+      name: chain.name,
     }));
 });
 
@@ -91,7 +91,7 @@ const tabs = computed<TabItem[]>(() => {
   const chainTabs: TabItem[] = get(configuredChains).map(chain => ({
     id: chain,
     isDefault: false,
-    name: get(getChainName(chain)),
+    name: getChainName(chain),
   }));
 
   return [

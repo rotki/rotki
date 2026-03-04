@@ -246,18 +246,18 @@ export function useAccountDelete(): UseAccountDeleteReturn {
 
       // A group but only has 1 chain
       if (filteredChains.length === 1)
-        return t('account_balances.confirm_delete.description_address', { address, chain: get(getChainName(filteredChains[0])) });
+        return t('account_balances.confirm_delete.description_address', { address, chain: getChainName(filteredChains[0]) });
 
       // A group that showing multiple chains, but not all
       if (allFilteredChains && allFilteredChains.length > filteredChains.length)
-        return t('account_balances.confirm_delete.description_multiple_address', { address, chains: filteredChains.map(item => get(getChainName(item))).join(', '), length: filteredChains.length });
+        return t('account_balances.confirm_delete.description_multiple_address', { address, chains: filteredChains.map(item => getChainName(item)).join(', '), length: filteredChains.length });
 
       // A group that showing all its chains
       return t('account_balances.confirm_delete.agnostic.description', { address });
     }
 
     // Single account inside the group
-    return t('account_balances.confirm_delete.description_address', { address, chain: get(getChainName(account.chain)) });
+    return t('account_balances.confirm_delete.description_address', { address, chain: getChainName(account.chain) });
   }
 
   function showConfirmation(params: ShowConfirmationParams, onComplete?: () => void): void {

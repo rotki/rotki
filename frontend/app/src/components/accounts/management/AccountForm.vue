@@ -72,7 +72,7 @@ function shouldShowEtherscanWarning(selectedChain: string): boolean {
     return get(txEvmChains).some(chain => isEtherscanTopPriority(chain.id));
   }
 
-  if (!get(isEvm(selectedChain)))
+  if (!isEvm(selectedChain))
     return false;
 
   return isEtherscanTopPriority(selectedChain);
@@ -96,7 +96,7 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
   if (!get(apiKey('etherscan')) && shouldShowEtherscanWarning(selectedChain))
     return 'etherscan';
 
-  if (get(isSolanaChains(selectedChain)) && !get(apiKey('helius')))
+  if (isSolanaChains(selectedChain) && !get(apiKey('helius')))
     return 'helius';
 
   return undefined;

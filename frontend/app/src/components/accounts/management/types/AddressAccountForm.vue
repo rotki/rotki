@@ -117,7 +117,7 @@ const addresses = computed<string[]>({
 
 const showWalletImport = computed<boolean>(() => {
   const model = get(modelValue);
-  return get(isEvm(model.chain)) || model.chain === 'all';
+  return isEvm(model.chain) || model.chain === 'all';
 });
 
 function validate(): Promise<boolean> {

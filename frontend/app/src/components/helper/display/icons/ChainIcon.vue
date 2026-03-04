@@ -10,9 +10,9 @@ interface Props {
 
 const { chain, size = '26px' } = defineProps<Props>();
 
-const { getChainImageUrl, matchChain } = useSupportedChains();
+const { matchChain, useChainImageUrl } = useSupportedChains();
 
-const src = getChainImageUrl(() => chain);
+const src = useChainImageUrl(() => chain);
 
 const OTHER_CHAINS = [
   LOOPRING_CHAIN,

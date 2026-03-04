@@ -33,7 +33,7 @@ export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']
     let message = '';
     if (data.address && data.blockchain) {
       const address = get(addressNameSelector(data.address, data.blockchain)) || data.address;
-      message += `${t('common.account')}: ${address} (${get(getChainName(data.blockchain))}) \n`;
+      message += `${t('common.account')}: ${address} (${getChainName(data.blockchain)}) \n`;
     }
 
     if (data.counterparty)

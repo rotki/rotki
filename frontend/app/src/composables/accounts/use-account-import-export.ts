@@ -68,7 +68,7 @@ function doesAccountExist(row: CSVRow, accounts: { address: string; chain: strin
 }
 
 export function useAccountImportExport(): UseAccountImportExportReturn {
-  const { isEvm, isEvmLikeChains } = useSupportedChains();
+  const { isEvmCompatible } = useSupportedChains();
   const { getAccounts } = useBlockchainAccountData();
   const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
   const { addAccounts, addEvmAccounts } = useBlockchains();
@@ -94,7 +94,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
 
   function getChainType(chains: string[]): string {
     const EVM_CHAIN_TYPE = 'evm';
-    const hasEvmSupport = (chain: string): boolean => get(isEvm(chain)) || get(isEvmLikeChains(chain));
+    const hasEvmSupport = (chain: string): boolean => isEvmCompatible(chain);
 
     if (chains.length > 1 && chains.some(hasEvmSupport)) {
       return EVM_CHAIN_TYPE;

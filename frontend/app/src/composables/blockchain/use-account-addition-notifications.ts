@@ -20,7 +20,7 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
   const { getChainName } = useSupportedChains();
 
   const getChainsText = (chains: string[], explanation?: string): string => chains.map((chain) => {
-    let text = `- ${get(getChainName(chain))}`;
+    let text = `- ${getChainName(chain)}`;
     if (explanation)
       text += ` (${explanation})`;
 
@@ -38,7 +38,7 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
   };
 
   const notifyFailedToAddAddress = (accounts: AccountPayload[], address: number, blockchain: string = 'EVM'): void => {
-    const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain: blockchain === 'EVM' ? blockchain : get(getChainName(blockchain)) });
+    const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain: blockchain === 'EVM' ? blockchain : getChainName(blockchain) });
     const message = t('actions.balances.blockchain_accounts_add.error.failed_list_description', {
       address,
       blockchain,

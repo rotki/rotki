@@ -79,7 +79,7 @@ describe('useBlockchainAccountData', () => {
       // Convert and store BTC accounts and balances
       updateAccounts(
         Blockchain.BTC,
-        convertBtcAccounts(chain => get(chain).toUpperCase(), Blockchain.BTC, accounts),
+        convertBtcAccounts(chain => chain.toUpperCase(), Blockchain.BTC, accounts),
       );
       updateBalances(Blockchain.BTC, convertBtcBalances(Blockchain.BTC, totals, btcBalances));
 
@@ -188,7 +188,7 @@ describe('useBlockchainAccountData', () => {
 
       updateAccounts(
         Blockchain.BTC,
-        convertBtcAccounts(chain => get(chain).toUpperCase(), Blockchain.BTC, accounts),
+        convertBtcAccounts(chain => chain.toUpperCase(), Blockchain.BTC, accounts),
       );
 
       const result = getBlockchainAccounts(Blockchain.BTC);

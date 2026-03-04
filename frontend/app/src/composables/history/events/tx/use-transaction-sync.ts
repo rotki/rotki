@@ -60,7 +60,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     if (isEvmlike && trackProgress)
       setEvmlikeStatus(account, 'started');
 
-    const chainName = get(getChainName(chain));
+    const chainName = getChainName(chain);
     const { taskId } = await fetchTransactionsTask(defaults);
     const taskMeta = {
       address,
