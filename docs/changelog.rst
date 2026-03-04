@@ -7,6 +7,7 @@ Changelog
 * :bug:`-` Gearbox withdrawals should now always have the correct order of events.
 * :bug:`-` Gearbox deposit through some wrapper routes will now be properly decoded.
 * :feature:`9024` rotki now supports yearn in all EVM chains.
+* :bug:`11798` Sync progress panel will no longer appear during idle periods when backend background tasks send WebSocket status messages.
 * :bug:`11797` Adding an ETH account on a fresh instance will no longer trigger unnecessary ETH2 and Uniswap balance queries when no validators exist and no events have been decoded.
 * :bug:`11783` Matched withdrawal from exchange to account will now correctly show the destination address instead of displaying the exchange name for both from and to labels.
 * :bug:`11782` Adding a new EVM account will no longer trigger a redundant initial balance fetch before token detection. Balances are now fetched only once after tokens are detected.
