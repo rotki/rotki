@@ -12,6 +12,8 @@ interface CollectionInfo {
 }
 
 interface UseCollectionInfoReturn {
+  getCollectionId: (assetId: string) => string | undefined;
+  getCollectionMainAsset: (collectionId: string) => string | undefined;
   useCollectionId: (assetId: MaybeRef<string>) => ComputedRef<string | undefined>;
   useCollectionMainAsset: (collectionId: MaybeRef<string>) => ComputedRef<string | undefined>;
 }
@@ -107,24 +109,26 @@ export const useCollectionInfo = createSharedComposable((): UseCollectionInfoRet
       .catch(error => logger.error(error));
   }
 
+  function getCollectionId(assetId: string): string | undefined {
+    getCollectionInformation(assetId);
+    return get(assetToCollection)[assetId];
+  }
+
+  function getCollectionMainAsset(collectionId: string): string | undefined {
+    return get(collectionMainAsset)[collectionId] ?? undefined;
+  }
+
   function useCollectionId(assetId: MaybeRef<string>): ComputedRef<string | undefined> {
-    return computed(() => {
-      const identifier = get(assetId);
-      getCollectionInformation(identifier);
-      const mapping = get(assetToCollection);
-      return mapping[identifier];
-    });
+    return computed<string | undefined>(() => getCollectionId(get(assetId)));
   }
 
   function useCollectionMainAsset(collectionId: MaybeRef<string>): ComputedRef<string | undefined> {
-    return computed(() => {
-      const identifier = get(collectionId);
-      const mapping = get(collectionMainAsset);
-      return mapping[identifier] ?? undefined;
-    });
+    return computed<string | undefined>(() => getCollectionMainAsset(get(collectionId)));
   }
 
   return {
+    getCollectionId,
+    getCollectionMainAsset,
     useCollectionId,
     useCollectionMainAsset,
   };

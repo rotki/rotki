@@ -41,9 +41,10 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
   });
 
   const { getAccountsByCategory } = useBlockchainAccountData();
+  const accountsByCategory = getAccountsByCategory(category);
 
   const matchers = computed<Matcher[]>(() => {
-    const accounts = get(getAccountsByCategory(category));
+    const accounts = get(accountsByCategory);
     return [
       {
         description: t('account_balances.filter.account'),

@@ -157,7 +157,7 @@ export function useHistoryEventsOperations(
 
   async function onConfirmTxAndEventDelete({ location, txRef }: LocationAndTxRef): Promise<void> {
     try {
-      const chain = get(getChain(location));
+      const chain = getChain(location);
       await deleteTransactions(chain, txRef);
       emit('refresh');
     }

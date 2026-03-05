@@ -23,7 +23,7 @@ interface UseAssetDisplayHelpersReturn {
 
 export function useAssetDisplayHelpers(
   collection: MaybeRefOrGetter<Collection<SupportedAsset>>,
-  useIsAssetWhitelisted: (identifier: string) => ComputedRef<boolean>,
+  isAssetWhitelisted: (identifier: string) => boolean,
 ): UseAssetDisplayHelpersReturn {
   const formatType = (string?: string | null): string => toSentenceCase(string ?? 'EVM token');
 
@@ -59,7 +59,7 @@ export function useAssetDisplayHelpers(
 
   const disabledRows = computed<SupportedAsset[]>(() => {
     const data = toValue(collection).data;
-    return data.filter(item => get(useIsAssetWhitelisted(item.identifier)) || isSpamAsset(item));
+    return data.filter(item => isAssetWhitelisted(item.identifier) || isSpamAsset(item));
   });
 
   return {

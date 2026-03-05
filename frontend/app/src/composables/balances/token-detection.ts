@@ -18,25 +18,24 @@ interface UseTokenDetectionReturn {
 }
 
 export function useTokenDetection(chain: MaybeRefOrGetter<string | string[]>, accountAddress: MaybeRefOrGetter<string | null> = null): UseTokenDetectionReturn {
-  const { useIsTaskRunning } = useTaskStore();
-  const { fetchDetectedTokens: fetchDetectedTokensCaller, getEthDetectedTokensInfo } = useBlockchainTokensStore();
+  const { isTaskRunning } = useTaskStore();
+  const { fetchDetectedTokens: fetchDetectedTokensCaller, findEthDetectedTokensInfo, getEthDetectedTokensInfo } = useBlockchainTokensStore();
   const { addresses } = useAccountAddresses();
   const { supportsTransactions } = useSupportedChains();
   const { queueTokenDetection } = useBalanceQueue();
 
   const chains = computed<string[]>(() => arrayify(toValue(chain)));
 
-  const isDetectingTaskRunning = (blockchain: string, address: string | null): ComputedRef<boolean> =>
-    computed(() => get(
-      useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
-        chain: blockchain,
-        ...(address ? { address } : {}),
-      }),
-    ));
+  function isDetectingTokens(blockchain: string, address: string | null): boolean {
+    return isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+      chain: blockchain,
+      ...(address ? { address } : {}),
+    });
+  }
 
   const detectingTokens = computed<boolean>(() => {
     const address = toValue(accountAddress);
-    return get(chains).some(blockchain => get(isDetectingTaskRunning(blockchain, address)));
+    return get(chains).some(blockchain => isDetectingTokens(blockchain, address));
   });
 
   const detectedTokens = computed<EthDetectedTokensInfo>(() => {
@@ -46,7 +45,7 @@ export function useTokenDetection(chain: MaybeRefOrGetter<string | string[]>, ac
     const allTokens: string[] = [];
 
     for (const blockchain of chainsValue) {
-      const info = get(getEthDetectedTokensInfo(blockchain, accountAddress));
+      const info = findEthDetectedTokensInfo(blockchain, toValue(accountAddress));
       totalTokens += info.total;
       allTokens.push(...info.tokens);
 
@@ -73,7 +72,7 @@ export function useTokenDetection(chain: MaybeRefOrGetter<string | string[]>, ac
     const chainsValue = get(chains);
 
     await Promise.all(chainsValue.map(async (blockchain) => {
-      const filteredAddresses = usedAddresses.filter(addr => !get(isDetectingTaskRunning(blockchain, addr)));
+      const filteredAddresses = usedAddresses.filter(addr => !isDetectingTokens(blockchain, addr));
       if (filteredAddresses.length > 0)
         await queueTokenDetection(blockchain, filteredAddresses, async addr => fetchDetectedTokens(blockchain, addr));
     }));

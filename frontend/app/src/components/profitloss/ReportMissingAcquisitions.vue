@@ -35,7 +35,7 @@ defineSlots<{
 }>();
 
 const router = useRouter();
-const { ignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
+const { ignoreAsset, isAssetIgnored } = useIgnoredAssetsStore();
 
 const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
   const grouped: GroupedItems = {};
@@ -133,7 +133,7 @@ const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [{
 useRememberTableSorting<MappedGroupedItems>(TableId.REPORT_MISSING_ACQUISITIONS, sort, headers);
 useRememberTableSorting<MissingAcquisition>(TableId.REPORT_MISSING_ACQUISITIONS_DETAIL, childSort, childHeaders);
 
-const isIgnored = (asset: string) => get(useIsAssetIgnored(asset));
+const isIgnored = (asset: string): boolean => isAssetIgnored(asset);
 
 const [CreateDate, ReuseDate] = createReusableTemplate<{ row: MappedGroupedItems }>();
 

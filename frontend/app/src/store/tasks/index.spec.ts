@@ -74,13 +74,15 @@ describe('useTaskStore', () => {
 
   it('should report task as not running', () => {
     store.addTask(1, TaskType.TX, getMeta());
-    expect(get(store.useIsTaskRunning(TaskType.IMPORT_CSV))).toBe(false);
+    const importRunning = store.useIsTaskRunning(TaskType.IMPORT_CSV);
+    expect(get(importRunning)).toBe(false);
   });
 
   it('should report task as running', () => {
     store.addTask(1, TaskType.TX, getMeta());
     store.addTask(2, TaskType.MANUAL_BALANCES_ADD, getMeta());
-    expect(get(store.useIsTaskRunning(TaskType.MANUAL_BALANCES_ADD))).toBe(true);
+    const manualBalancesRunning = store.useIsTaskRunning(TaskType.MANUAL_BALANCES_ADD);
+    expect(get(manualBalancesRunning)).toBe(true);
   });
 
   it('should report task as running with strict meta check', () => {
@@ -90,8 +92,10 @@ describe('useTaskStore', () => {
     });
     store.addTask(1, TaskType.TX, meta);
     store.addTask(2, TaskType.MANUAL_BALANCES_ADD, getMeta());
-    expect(get(store.useIsTaskRunning(TaskType.TX, getMeta()))).toBe(false);
-    expect(get(store.useIsTaskRunning(TaskType.TX, meta))).toBe(true);
+    const txDefaultMeta = store.useIsTaskRunning(TaskType.TX, getMeta());
+    const txSpecificMeta = store.useIsTaskRunning(TaskType.TX, meta);
+    expect(get(txDefaultMeta)).toBe(false);
+    expect(get(txSpecificMeta)).toBe(true);
   });
 
   it('should not have metadata for unknown tasks', () => {
@@ -110,7 +114,8 @@ describe('useTaskStore', () => {
       }),
     );
 
-    expect(get(store.useIsTaskRunning(TaskType.QUERY_BALANCES))).toBe(true);
+    const queryRunning = store.useIsTaskRunning(TaskType.QUERY_BALANCES);
+    expect(get(queryRunning)).toBe(true);
     expect(get(store.metadata(TaskType.QUERY_BALANCES))).toMatchObject({
       title: '',
       ignoreResult: true,
@@ -118,7 +123,7 @@ describe('useTaskStore', () => {
 
     await store.monitor();
 
-    expect(get(store.useIsTaskRunning(TaskType.QUERY_BALANCES))).toBe(false);
+    expect(get(queryRunning)).toBe(false);
   });
 
   it('should resolve an awaited task during monitoring', async () => {

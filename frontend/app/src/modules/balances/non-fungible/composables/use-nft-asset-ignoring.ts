@@ -20,7 +20,7 @@ export function useNftAssetIgnoring(
 ): UseNftAssetIgnoringReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { showErrorMessage } = useNotifications();
-  const { ignoreAsset, ignoreAssetWithConfirmation, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
+  const { ignoreAsset, ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
 
   const selected = ref<string[]>([]);
 
@@ -32,7 +32,7 @@ export function useNftAssetIgnoring(
 
   async function toggleIgnoreAsset(balance: NonFungibleBalance): Promise<void> {
     const { id, name } = balance;
-    if (get(useIsAssetIgnored(id))) {
+    if (isAssetIgnored(id)) {
       const response = await unignoreAsset(id);
       if (response.success) {
         refreshCallback();
@@ -46,7 +46,7 @@ export function useNftAssetIgnoring(
   async function massIgnore(ignored: boolean): Promise<void> {
     const ids = get(selected)
       .filter((item) => {
-        const isItemIgnored = get(useIsAssetIgnored(item));
+        const isItemIgnored = isAssetIgnored(item);
         return ignored ? !isItemIgnored : isItemIgnored;
       })
       .filter(uniqueStrings);

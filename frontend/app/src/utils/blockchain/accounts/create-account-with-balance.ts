@@ -7,8 +7,9 @@ import { deduplicateTags } from '@/utils/tags';
 export function createAccountWithBalance(
   account: BlockchainAccount,
   chainBalances: BlockchainAssetBalances,
+  isAssetIgnored: (asset: string) => boolean,
 ): BlockchainAccountWithBalance {
-  const { balance, expansion } = getAccountBalance(account, chainBalances);
+  const { balance, expansion } = getAccountBalance(account, chainBalances, isAssetIgnored);
   const address = getAccountAddress(account);
   const tags = account.tags ? deduplicateTags(account.tags) : undefined;
 

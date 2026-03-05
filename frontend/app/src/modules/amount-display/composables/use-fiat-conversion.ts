@@ -39,7 +39,7 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
 
   const { currencySymbol } = useAmountDisplaySettings();
   const { getExchangeRate } = usePriceUtils();
-  const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
+  const { createKey, getHistoricPrice, getIsPending } = useHistoricCachePriceStore();
 
   const timestampToUse = computed<number>(() => {
     const ts = normalizeTimestamp(toValue(timestamp));
@@ -58,7 +58,7 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
     }
 
     if (ts > 0) {
-      return get(isPending(createKey(fromVal, ts)));
+      return getIsPending(createKey(fromVal, ts));
     }
 
     return false;
@@ -109,7 +109,7 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
 
     // Use historic rate if timestamp is provided
     if (ts > 0) {
-      const historicRate = get(historicPriceInCurrentCurrency(fromVal, ts));
+      const historicRate = getHistoricPrice(fromVal, ts);
 
       if (historicRate.isPositive()) {
         return currentValue.multipliedBy(historicRate);

@@ -95,8 +95,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       };
     }));
 
-  const getEventType = (event: Event): ComputedRef<string | undefined> => computed(() => {
-    const { entryType, eventSubtype, eventType, isExit, location } = toValue(event);
+  function findEventType(event: { entryType?: string; eventSubtype: string; eventType: string; isExit?: boolean; location?: string | null }): string | undefined {
+    const { entryType, eventSubtype, eventType, isExit, location } = event;
 
     if (entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT) {
       const withdrawalEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]
@@ -120,7 +120,9 @@ export const useHistoryEventMappings = createSharedComposable(() => {
       return mapping.default;
 
     return mapping.exchange || mapping.default;
-  });
+  }
+
+  const getEventType = (event: Event): ComputedRef<string | undefined> => computed<string | undefined>(() => findEventType(toValue(event)));
 
   function getFallbackData(
     showFallbackLabel: boolean,
@@ -139,13 +141,13 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     };
   }
 
-  const getEventTypeData = (
-    event: Event,
+  function findEventTypeData(
+    event: { counterparty?: string | null; entryType?: string; eventSubtype: string; eventType: string; isExit?: boolean; location?: string | null },
     showFallbackLabel = true,
-  ): ComputedRef<HistoryEventCategoryDetailWithId> => computed(() => {
+  ): HistoryEventCategoryDetailWithId {
     const defaultKey = 'default';
-    const type = get(getEventType(event));
-    const { counterparty, eventSubtype, eventType } = toValue(event);
+    const type = findEventType(event);
+    const { counterparty, eventSubtype, eventType } = event;
     const counterpartyVal = counterparty || defaultKey;
     const data = type && get(transactionEventTypesData)[type];
 
@@ -162,7 +164,14 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     }
 
     return getFallbackData(showFallbackLabel, eventSubtype, eventType);
-  });
+  }
+
+  const getEventTypeData = (
+    event: Event,
+    showFallbackLabel = true,
+  ): ComputedRef<HistoryEventCategoryDetailWithId> => computed(() =>
+    findEventTypeData(toValue(event), showFallbackLabel),
+  );
 
   const getAccountingEventTypeData = (type: MaybeRefOrGetter<string>): ComputedRef<ActionDataEntry> => computed(() => {
     const typeVal = toValue(type);
@@ -211,6 +220,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
   return {
     accountingEventsTypeData,
+    findEventTypeData,
     getAccountingEventTypeData,
     getEventType,
     getEventTypeData,

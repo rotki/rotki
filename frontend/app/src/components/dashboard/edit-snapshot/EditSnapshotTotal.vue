@@ -25,7 +25,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
+const { createKey, getHistoricPrice, isPending } = useHistoricCachePriceStore();
 
 const total = ref<string>('');
 
@@ -34,7 +34,7 @@ const isCurrencyCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CU
 const rate = computed<BigNumber>(() => {
   if (get(isCurrencyCurrencyUsd))
     return One;
-  return get(historicPriceInCurrentCurrency(CURRENCY_USD, timestamp));
+  return getHistoricPrice(CURRENCY_USD, timestamp);
 });
 
 const fetchingRate = isPending(createKey(CURRENCY_USD, timestamp));

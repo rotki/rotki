@@ -25,18 +25,18 @@ const {
 } = defineProps<HistoryEventTypeFormProps>();
 
 const {
-  getEventTypeData,
+  findEventTypeData,
   historyEventSubTypesData,
   historyEventTypeGlobalMapping,
   historyEventTypesData,
 } = useHistoryEventMappings();
 
-const historyTypeCombination = computed(() => get(getEventTypeData({
+const historyTypeCombination = computed(() => findEventTypeData({
   counterparty,
   eventSubtype: get(eventSubType) ?? 'none',
   eventType: get(eventType),
   location,
-}, false)));
+}, false));
 
 const showHistoryEventTypeCombinationWarning = computed(() => {
   if (!v$.eventType.$dirty && !v$.eventSubtype.$dirty)
