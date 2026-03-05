@@ -21,16 +21,16 @@ export interface ProtocolCacheStatusEntry extends ProtocolCacheUpdatesData {
 }
 
 export const useHistoryStore = defineStore('history', () => {
-  const associatedLocations = ref<string[]>([]);
-  const locationLabels = ref<LocationLabel[]>([]);
-  const undecodedTransactionsStatus = ref<Record<string, EvmUnDecodedTransactionsData>>({});
-  const protocolCacheUpdateStatus = ref<Record<string, ProtocolCacheStatusEntry>>({});
-  const transactionStatusSummary = ref<TransactionStatus>();
+  const associatedLocations = shallowRef<string[]>([]);
+  const locationLabels = shallowRef<LocationLabel[]>([]);
+  const undecodedTransactionsStatus = shallowRef<Record<string, EvmUnDecodedTransactionsData>>({});
+  const protocolCacheUpdateStatus = shallowRef<Record<string, ProtocolCacheStatusEntry>>({});
+  const transactionStatusSummary = shallowRef<TransactionStatus>();
   const eventsModificationCounter = ref<number>(0);
 
   // Separate state for sync progress indicator - only updated by websocket messages,
   // not reset by fetchUndecodedTransactionsBreakdown
-  const decodingSyncProgress = ref<Record<string, DecodingStatusEntry>>({});
+  const decodingSyncProgress = shallowRef<Record<string, DecodingStatusEntry>>({});
 
   const receivingProtocolCacheStatus = ref<boolean>(false);
 

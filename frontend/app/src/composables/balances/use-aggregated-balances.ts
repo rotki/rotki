@@ -40,7 +40,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { manualBalanceByLocation } = useManualBalanceData();
 
   const resolveAssetIdentifier = useResolveAssetIdentifier();
-  const { useCollectionId, useCollectionMainAsset } = useCollectionInfo();
+  const { getCollectionId, getCollectionMainAsset } = useCollectionInfo();
   const baseExchangeBalances = useBaseExchangeBalances();
 
   const blockchainAssetBalances = computed<AssetProtocolBalancesWithChains>(() => blockchainToAssetProtocolBalances(get(blockchainBalances)));
@@ -60,8 +60,8 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       noPrice: NoPrice,
     }, {
       groupCollections,
-      useCollectionId,
-      useCollectionMainAsset,
+      getCollectionId,
+      getCollectionMainAsset,
     });
   }
 
@@ -76,8 +76,8 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       noPrice: NoPrice,
     }, {
       groupCollections: true,
-      useCollectionId,
-      useCollectionMainAsset,
+      getCollectionId,
+      getCollectionMainAsset,
     });
   }
 
@@ -128,8 +128,8 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       noPrice: NoPrice,
     }, {
       groupCollections: true,
-      useCollectionId,
-      useCollectionMainAsset,
+      getCollectionId,
+      getCollectionMainAsset,
     });
   });
 
@@ -146,8 +146,8 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       noPrice: NoPrice,
     }, {
       groupCollections: true,
-      useCollectionId,
-      useCollectionMainAsset,
+      getCollectionId,
+      getCollectionMainAsset,
     });
   }
 
@@ -223,8 +223,8 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       manualBalances,
       useBaseExchangeBalances,
       isAssetIgnored,
-      useCollectionId,
-      useCollectionMainAsset,
+      getCollectionId,
+      getCollectionMainAsset,
       getAssetPrice,
       NoPrice,
     ),

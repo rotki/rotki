@@ -54,9 +54,9 @@ function useError(): { error: ErrorHandler } {
 
 export const useTaskStore = defineStore('tasks', () => {
   const locked = ref<number[]>([]);
-  const tasks = ref<TaskMap<TaskMeta>>({});
-  const unknownTasks = ref<Record<number, number>>({});
-  const timeouts = ref<Record<number, number>>({});
+  const tasks = shallowRef<TaskMap<TaskMeta>>({});
+  const unknownTasks = shallowRef<Record<number, number>>({});
+  const timeouts = shallowRef<Record<number, number>>({});
   const handlers: Record<string, (result: ActionResult<any>, meta: any) => void> = {};
   let isRunning = false;
 

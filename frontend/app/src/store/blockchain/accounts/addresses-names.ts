@@ -28,7 +28,7 @@ import { logger } from '@/utils/logging';
 export const useAddressesNamesStore = defineStore('blockchains/accounts/addresses-names', () => {
   const { enableAliasNames } = storeToRefs(useFrontendSettingsStore());
 
-  const ensNames = ref<EthNames>({});
+  const ensNames = shallowRef<EthNames>({});
 
   const { awaitTask } = useTaskStore();
   const { t } = useI18n({ useScope: 'global' });

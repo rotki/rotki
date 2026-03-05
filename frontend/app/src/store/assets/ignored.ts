@@ -10,7 +10,7 @@ import { uniqueStrings } from '@/utils/data';
 import { getErrorMessage } from '@/utils/error-handling';
 
 export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
-  const ignoredAssets = ref<string[]>([]);
+  const ignoredAssets = shallowRef<string[]>([]);
   const { notifyError, showErrorMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 

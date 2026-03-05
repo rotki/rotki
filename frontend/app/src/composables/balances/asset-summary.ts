@@ -41,8 +41,8 @@ interface NoGroupCollectionConfig {
 interface GroupCollectionConfig {
   /** Whether to group collections */
   groupCollections: true;
-  useCollectionId: (asset: string) => { value: string | undefined };
-  useCollectionMainAsset: (collectionId: string) => { value: string | undefined };
+  getCollectionId: (asset: string) => string | undefined;
+  getCollectionMainAsset: (collectionId: string) => string | undefined;
 }
 
 /**
@@ -96,12 +96,12 @@ export function summarizeAssetProtocols(
       .sort((a, b) => sortDesc(a.value, b.value));
   }
 
-  const { useCollectionId, useCollectionMainAsset } = collectionConfig;
+  const { getCollectionId, getCollectionMainAsset } = collectionConfig;
 
   return processCollectionGrouping(
     aggregatedBalances,
-    useCollectionId,
-    useCollectionMainAsset,
+    getCollectionId,
+    getCollectionMainAsset,
     getAssetPrice,
     noPrice,
   );

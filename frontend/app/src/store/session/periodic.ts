@@ -5,8 +5,8 @@ import { getErrorMessage, useNotifications } from '@/modules/notifications/use-n
 export const usePeriodicStore = defineStore('session/periodic', () => {
   const lastBalanceSave = ref(0);
   const lastDataUpload = ref(0);
-  const connectedNodes = ref<Record<string, string[]>>({});
-  const failedToConnect = ref<Record<string, string[]>>({});
+  const connectedNodes = shallowRef<Record<string, string[]>>({});
+  const failedToConnect = shallowRef<Record<string, string[]>>({});
   const periodicRunning = ref(false);
 
   const { notifyError } = useNotifications();

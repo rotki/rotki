@@ -79,7 +79,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
   const { fetchHistoricalBalances, fetchOnchainHistoricalBalance, processHistoricalBalances } = useHistoricalBalancesApi();
   const { getEvmChainName } = useSupportedChains();
   const { isAssetIgnored } = useIgnoredAssetsStore();
-  const { getCollectionId, getCollectionMainAsset, useCollectionId, useCollectionMainAsset } = useCollectionInfo();
+  const { getCollectionId, getCollectionMainAsset } = useCollectionInfo();
   const { awaitTask } = useTaskStore();
   const { getHistoricPrice } = useHistoricCachePriceStore();
   const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
@@ -129,8 +129,8 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
       },
       {
         groupCollections: true,
-        useCollectionId,
-        useCollectionMainAsset,
+        getCollectionId,
+        getCollectionMainAsset,
       },
     );
   });

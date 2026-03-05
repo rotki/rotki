@@ -35,7 +35,7 @@ function notificationDefaults(): NotificationPayload {
 }
 
 export const useNotificationsStore = defineStore('notifications', () => {
-  const data = ref<NotificationData[]>([]);
+  const data = shallowRef<NotificationData[]>([]);
   const lastDisplay: Ref<Record<string, number>> = useSessionStorage('rotki.notification.last_display', {});
   const messageOverflow = ref(false);
 

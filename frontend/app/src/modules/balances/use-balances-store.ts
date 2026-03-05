@@ -9,13 +9,13 @@ import { camelCase } from 'es-toolkit';
 import { updateBlockchainAssetBalances, updateExchangeBalancesPrices, updateManualBalancePrices } from '@/utils/prices';
 
 export const useBalancesStore = defineStore('balances', () => {
-  const manualBalances = ref<ManualBalanceWithValue[]>([]);
-  const manualLiabilities = ref<ManualBalanceWithValue[]>([]);
+  const manualBalances = shallowRef<ManualBalanceWithValue[]>([]);
+  const manualLiabilities = shallowRef<ManualBalanceWithValue[]>([]);
 
-  const exchangeBalances = ref<ExchangeData>({});
+  const exchangeBalances = shallowRef<ExchangeData>({});
   const nonFungibleTotalValue = ref<BigNumber>(Zero);
 
-  const blockchainBalances = ref<Balances>({});
+  const blockchainBalances = shallowRef<Balances>({});
 
   const updatePrices = (prices: MaybeRef<AssetPrices>): void => {
     const latestPrices = get(prices);
