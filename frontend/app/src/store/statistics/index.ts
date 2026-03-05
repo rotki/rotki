@@ -42,7 +42,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { timeframe } = storeToRefs(useSessionSettingsStore());
-  const { useExchangeRate } = usePriceUtils();
+  const { getExchangeRate } = usePriceUtils();
 
   const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? 1);
 
@@ -70,7 +70,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const totalLiabilities = get(liabilities());
     const nftTotal = get(includeNft) ? get(nonFungibleTotalValue) : Zero;
     const mainCurrency = get(currencySymbol);
-    const rate = get(useExchangeRate(mainCurrency)) ?? One;
+    const rate = getExchangeRate(mainCurrency, One);
     const assetValue = calculateSum(aggregatedBalances);
     const liabilityValue = calculateSum(totalLiabilities);
     // NFT value is still in USD, so we convert it
@@ -145,7 +145,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   function getNetValue(startingDate: number): ComputedRef<NetValueChartData> {
     return computed<NetValueChartData>(() => {
       const currency = get(currencySymbol);
-      const rate = get(useExchangeRate(currency)) ?? One;
+      const rate = getExchangeRate(currency, One);
 
       const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
 

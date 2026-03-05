@@ -53,8 +53,8 @@ const sort = ref<DataTableSortData<BalanceSnapshot>>({
 const assetSearch = ref<string>('');
 const form = useTemplateRef<InstanceType<typeof EditBalancesSnapshotForm>>('form');
 
-const { useExchangeRate } = usePriceUtils();
-const fiatExchangeRate = computed<BigNumber>(() => get(useExchangeRate(get(currencySymbol))) ?? One);
+const { getExchangeRate } = usePriceUtils();
+const fiatExchangeRate = computed<BigNumber>(() => getExchangeRate(get(currencySymbol), One));
 
 const data = computed<IndexedBalanceSnapshot[]>(() =>
   get(modelValue).balancesSnapshot.map((item: BalanceSnapshot, index: number) => ({

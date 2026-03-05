@@ -20,7 +20,7 @@ const { t } = useI18n({ useScope: 'global' });
 const selection = ref<'current' | 'historical'>('current');
 
 const { events } = storeToRefs(useKrakenStakingStore());
-const { assetPrice } = usePriceUtils();
+const { getAssetPrice } = usePriceUtils();
 
 const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const krakenHistoricPriceStatus = getProtocolStatsPriceQueryStatus('kraken');
@@ -35,7 +35,7 @@ const earnedAssetsData = computed<[boolean, AssetBalance[]]>(() => {
   let loading = false;
 
   const earnedWithPrice = earned.map((item) => {
-    const price = get(assetPrice(item.asset));
+    const price = getAssetPrice(item.asset);
     if (!price) {
       loading = true;
 

@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 import { Zero } from '@rotki/common';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
@@ -13,8 +13,8 @@ import { isNft } from '@/utils/nft';
 
 interface UseLatestPricesReturn {
   items: ComputedRef<ManualPriceWithUsd[]>;
-  loading: Ref<boolean>;
-  refreshing: Ref<boolean>;
+  loading: Readonly<Ref<boolean>>;
+  refreshing: Readonly<Ref<boolean>>;
   getLatestPrices: () => Promise<void>;
   save: (data: ManualPriceFormPayload, update: boolean) => Promise<boolean>;
   refreshCurrentPrices: (additionalAssets?: string[]) => Promise<void>;
@@ -23,14 +23,14 @@ interface UseLatestPricesReturn {
 
 export function useLatestPrices(
   t: ReturnType<typeof useI18n>['t'],
-  filter?: Ref<string | undefined>,
+  filter?: MaybeRefOrGetter<string | undefined>,
 ): UseLatestPricesReturn {
   const latestPrices = ref<ManualPrice[]>([]);
-  const loading = ref(false);
-  const refreshing = ref(false);
+  const loading = shallowRef<boolean>(false);
+  const refreshing = shallowRef<boolean>(false);
 
   const { addLatestPrice, deleteLatestPrice, fetchLatestPrices } = useAssetPricesApi();
-  const { assetPrice } = usePriceUtils();
+  const { getAssetPrice } = usePriceUtils();
   const { refreshPrices } = usePriceRefresh();
   const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
   const { notifyError, showErrorMessage } = useNotifications();
@@ -52,8 +52,8 @@ export function useLatestPrices(
     return filteredItems.map((item, index) => {
       const { fromAsset, toAsset, price } = item;
       const priceInCurrency = isNft(fromAsset)
-        ? get(assetPrice(toAsset))?.multipliedBy(price)
-        : get(assetPrice(fromAsset));
+        ? getAssetPrice(toAsset)?.multipliedBy(price)
+        : getAssetPrice(fromAsset);
 
       return {
         id: index + 1,
@@ -121,9 +121,9 @@ export function useLatestPrices(
     deletePrice,
     getLatestPrices,
     items,
-    loading,
+    loading: readonly(loading),
     refreshCurrentPrices,
-    refreshing,
+    refreshing: readonly(refreshing),
     save,
   };
 }

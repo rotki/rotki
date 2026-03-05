@@ -66,8 +66,8 @@ const tableHeaders = computed<DataTableColumn<IndexedLocationDataSnapshot>[]>(()
 
 useRememberTableSorting<LocationDataSnapshot>(TableId.EDIT_LOCATION_DATA_SNAPSHOT, sort, tableHeaders);
 
-const { useExchangeRate } = usePriceUtils();
-const fiatExchangeRate = computed<BigNumber>(() => get(useExchangeRate(get(currencySymbol))) ?? One);
+const { getExchangeRate } = usePriceUtils();
+const fiatExchangeRate = computed<BigNumber>(() => getExchangeRate(get(currencySymbol), One));
 
 const data = computed<IndexedLocationDataSnapshot[]>(() =>
   get(modelValue).map((item: LocationDataSnapshot, index: number) => ({ ...item, index })).filter((item: IndexedLocationDataSnapshot) => item.location !== 'total'),

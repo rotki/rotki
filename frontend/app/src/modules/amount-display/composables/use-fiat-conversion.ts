@@ -38,7 +38,7 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
   } = options;
 
   const { currencySymbol } = useAmountDisplaySettings();
-  const { useExchangeRate } = usePriceUtils();
+  const { getExchangeRate } = usePriceUtils();
   const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
 
   const timestampToUse = computed<number>(() => {
@@ -82,8 +82,8 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
     }
 
     // Get exchange rates
-    const multiplierRate = to === CURRENCY_USD ? One : get(useExchangeRate(to));
-    const dividerRate = fromVal === CURRENCY_USD ? One : get(useExchangeRate(fromVal));
+    const multiplierRate = to === CURRENCY_USD ? One : getExchangeRate(to);
+    const dividerRate = fromVal === CURRENCY_USD ? One : getExchangeRate(fromVal);
 
     if (!multiplierRate || !dividerRate) {
       return currentValue;

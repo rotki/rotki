@@ -19,27 +19,27 @@ const { identifier, isCollectionParent = false } = defineProps<{
   isCollectionParent?: boolean;
 }>();
 
-const { assetPriceInfo } = useAggregatedBalances();
-const { assetPrice } = usePriceUtils();
-
-const { getAssetField } = useAssetInfoRetrieval();
-const { refreshPrice } = usePriceRefresh();
-const { isLoading: refreshingPrices } = useSectionStatus(Section.PRICES);
-
-const info = assetPriceInfo(() => identifier, () => isCollectionParent);
-const price = assetPrice(() => identifier);
-
-const { isManualAssetPrice } = usePriceUtils();
-const isManualPrice = isManualAssetPrice(() => identifier);
-
-const { t } = useI18n({ useScope: 'global' });
-
 const openPriceDialog = ref<boolean>(false);
 const customPrice = ref<ManualPriceFormPayload | null>(null);
 
+const { t } = useI18n({ useScope: 'global' });
+const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { deletePrice, refreshCurrentPrices, refreshing } = useLatestPrices(t);
+const { assetPriceInfo } = useAggregatedBalances();
+const { useAssetPrice, useIsManualAssetPrice } = usePriceUtils();
+const { getAssetField } = useAssetInfoRetrieval();
+const { refreshPrice } = usePriceRefresh();
+const { isLoading: refreshingPrices } = useSectionStatus(Section.PRICES);
 const { show } = useConfirmStore();
 
-const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const info = assetPriceInfo(() => identifier, () => isCollectionParent);
+const price = useAssetPrice(() => identifier);
+const isManualPrice = useIsManualAssetPrice(() => identifier);
+
+const pricesLoading = computed<boolean>(() => {
+  const infoVal = get(info);
+  return get(refreshing) || get(refreshingPrices) || !infoVal.price || infoVal.price.lt(0);
+});
 
 function setPriceForm() {
   const toAsset = get(currencySymbol);
@@ -51,24 +51,14 @@ function setPriceForm() {
   set(openPriceDialog, true);
 }
 
-const { deletePrice, refreshCurrentPrices, refreshing } = useLatestPrices(t);
-
 function showDeleteConfirmation() {
-  show(
-    {
-      message: t('assets.custom_price.delete.message', {
-        asset: getAssetField(identifier, 'name') || identifier,
-      }),
-      title: t('assets.custom_price.delete.tooltip'),
-    },
-    () => deletePrice({ fromAsset: identifier }),
-  );
+  show({
+    message: t('assets.custom_price.delete.message', {
+      asset: getAssetField(identifier, 'name') || identifier,
+    }),
+    title: t('assets.custom_price.delete.tooltip'),
+  }, () => deletePrice({ fromAsset: identifier }));
 }
-
-const pricesLoading = computed(() => {
-  const infoVal = get(info);
-  return get(refreshing) || get(refreshingPrices) || !infoVal.price || infoVal.price.lt(0);
-});
 </script>
 
 <template>

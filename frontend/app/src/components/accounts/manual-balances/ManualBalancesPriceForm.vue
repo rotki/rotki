@@ -21,7 +21,7 @@ const isCustomPrice = ref<boolean>(false);
 const fiatPriceHint = ref<BigNumber | null>();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { assetPrice } = usePriceUtils();
+const { getAssetPrice } = usePriceUtils();
 const { fetchPrices } = usePriceTaskManager();
 const { addLatestPrice } = useAssetPricesApi();
 
@@ -35,7 +35,7 @@ async function getAssetPriceInFiat(asset: string): Promise<BigNumber | null> {
   });
   set(fetchingPrice, false);
 
-  const priceInFiat = get(assetPrice(asset));
+  const priceInFiat = getAssetPrice(asset);
 
   if (priceInFiat && !priceInFiat.eq(0)) {
     return priceInFiat;
