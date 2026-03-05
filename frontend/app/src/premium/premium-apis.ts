@@ -48,7 +48,7 @@ export function assetsApi(): AssetsApi {
 export function statisticsApi(): StatisticsApi {
   const { useIsAssetIgnored } = useIgnoredAssetsStore();
 
-  const { fetchNetValue, getNetValue } = useStatisticsStore();
+  const { fetchNetValue, useNetValue } = useStatisticsStore();
   const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
   const { failedDailyPrices, historicalDailyPriceStatus } = storeToRefs(useHistoricCachePriceStore());
   const {
@@ -78,7 +78,7 @@ export function statisticsApi(): StatisticsApi {
     async locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();
     },
-    netValue: startingDate => getNetValue(startingDate),
+    netValue: startingDate => useNetValue(startingDate),
     async ownedAssets(): Promise<OwnedAssets> {
       const owned = await queryOwnedAssets();
       return owned.filter(asset => !get(useIsAssetIgnored(asset)));

@@ -37,7 +37,7 @@ const timeframeData = computed(() => {
   const all = get(allTimeframes);
   const selection = get(timeframe);
   const startingDate = all[selection].startingDate();
-  return get(getNetValue(startingDate));
+  return getNetValue(startingDate);
 });
 
 const startingValue = computed(() => {
