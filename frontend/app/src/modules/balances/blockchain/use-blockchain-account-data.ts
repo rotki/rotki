@@ -70,7 +70,7 @@ function toAssetBalances(
 export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
   const { balances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
-  const { addressNameSelector } = useAddressesNamesStore();
+  const { getAddressName } = useAddressesNamesStore();
   const { getChainAccountType } = useSupportedChains();
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const resolveAssetIdentifier = useResolveAssetIdentifier();
@@ -254,7 +254,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
           return blockchainAccounts.filter(account => account.groupId === groupId);
         },
         getLabel(account, chain) {
-          return isXpubAccount(account) ? getAccountLabel(account) : get(addressNameSelector(getAccountAddress(account), chain));
+          return isXpubAccount(account) ? getAccountLabel(account) : getAddressName(getAccountAddress(account), chain);
         },
       },
     ));
@@ -270,7 +270,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     const groupAccounts = blockchainAccounts.filter(account => account.groupId === params.groupId);
     resolve(sortAndFilterAccounts(groupAccounts, params, {
       getLabel(account, chain) {
-        return get(addressNameSelector(getAccountAddress(account), chain));
+        return getAddressName(getAccountAddress(account), chain);
       },
     }));
   });

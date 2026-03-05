@@ -15,7 +15,7 @@ const { account } = defineProps<{
   account: BlockchainAccount | BlockchainAccountBalance;
 }>();
 const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();
-const { addressNameSelector, ensNameSelector } = useAddressesNamesStore();
+const { getAddressName, getEnsName } = useAddressesNamesStore();
 const { t } = useI18n({ useScope: 'global' });
 
 const accountAddress = computed<string>(() => getAccountAddress(account));
@@ -48,7 +48,7 @@ const aliasName = computed<string>(() => {
   if (isXpubAccount(account)) {
     return labelVal;
   }
-  const name = get(addressNameSelector(get(accountAddress), chain));
+  const name = getAddressName(get(accountAddress), chain);
 
   if (!name)
     return labelVal;
@@ -60,7 +60,7 @@ const ensName = computed<string | null>(() => {
   if (get(scrambleData))
     return null;
 
-  return get(ensNameSelector(get(accountAddress)));
+  return getEnsName(get(accountAddress));
 });
 
 const address = computed<string>(() => scrambleAddress(get(accountAddress)));

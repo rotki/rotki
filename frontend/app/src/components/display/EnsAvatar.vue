@@ -15,9 +15,9 @@ const { address, avatar = false, size = '24px' } = defineProps<{
 const success = ref<boolean>(false);
 const failed = ref<boolean>(false);
 
-const { getEnsAvatarUrl } = useAddressesNamesStore();
+const { useEnsAvatarUrl } = useAddressesNamesStore();
 
-const avatarUrl = computed<string | null>(() => get(getEnsAvatarUrl(address)));
+const avatarUrl = useEnsAvatarUrl(() => address);
 
 const { getBlockie } = useBlockie();
 

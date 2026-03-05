@@ -66,7 +66,7 @@ defineSlots<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-const { addressNameSelector } = useAddressesNamesStore();
+const { getAddressName } = useAddressesNamesStore();
 
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
 
@@ -154,7 +154,7 @@ const displayedAccounts = computed<AccountWithExtra[]>(() => {
 
 function filter(item: BlockchainAccount, queryText: string) {
   const chain = item.chain === 'ALL' ? Blockchain.ETH : item.chain;
-  const text = getTextToken(get(addressNameSelector(getAccountAddress(item), chain)) ?? '');
+  const text = getTextToken(getAddressName(getAccountAddress(item), chain) ?? '');
   const address = getTextToken(getAccountAddress(item));
   const query = getTextToken(queryText);
 

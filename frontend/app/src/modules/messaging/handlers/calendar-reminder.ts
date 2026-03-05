@@ -12,7 +12,7 @@ import { useNotificationsStore } from '@/store/notifications';
 export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<CalendarEventWithReminder> {
   // Capture all functions and stores at handler creation time (in setup context)
   const { getChainName } = useSupportedChains();
-  const { addressNameSelector } = useAddressesNamesStore();
+  const { getAddressName } = useAddressesNamesStore();
   const { removeMatching } = useNotificationsStore();
   const { editCalendarReminder } = useCalendarReminderApi();
 
@@ -32,7 +32,7 @@ export function createCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']
 
     let message = '';
     if (data.address && data.blockchain) {
-      const address = get(addressNameSelector(data.address, data.blockchain)) || data.address;
+      const address = getAddressName(data.address, data.blockchain) || data.address;
       message += `${t('common.account')}: ${address} (${getChainName(data.blockchain)}) \n`;
     }
 

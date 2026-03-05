@@ -40,7 +40,7 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { detailsLoading } = storeToRefs(useStatusStore());
   const { getAccountByAddress } = useBlockchainAccountsStore();
-  const { addressNameSelector } = useAddressesNamesStore();
+  const { getAddressName } = useAddressesNamesStore();
 
   const { assetPriceInfo } = useAggregatedBalances();
   const { getChainName, matchChain } = useSupportedChains();
@@ -64,7 +64,7 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
     const locations = get(assetLocations).map(item => ({
       ...item,
       label:
-        (isBlockchain(item.location) ? get(addressNameSelector(item.address, item.location)) : null)
+        (isBlockchain(item.location) ? getAddressName(item.address, item.location) : null)
         || item.label
         || item.address,
     }));

@@ -1,4 +1,4 @@
-import type { MaybeRef } from 'vue';
+import type { MaybeRef, MaybeRefOrGetter } from 'vue';
 import type { Collection } from '@/types/collection';
 import type {
   AddressBookEntries,
@@ -61,13 +61,28 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     return get(ensNames)[get(address)] || null;
   });
 
-  const getEnsAvatarUrl = (address: MaybeRef<string>): ComputedRef<string | null> => computed<string | null>(() => {
-    const ens = get(ensNameSelector(address));
+  function getEnsName(address: string): string | null {
+    if (!get(enableAliasNames))
+      return null;
+
+    return get(ensNames)[address] || null;
+  }
+
+  const useEnsAvatarUrl = (address: MaybeRefOrGetter<string>): ComputedRef<string | null> => computed<string | null>(() => {
+    const ens = getEnsName(toValue(address));
     if (!ens)
       return null;
 
     return ensAvatarUrl(ens, get(lastRefreshedAvatar));
   });
+
+  function getEnsAvatarUrl(address: string): string | null {
+    const ens = getEnsName(address);
+    if (!ens)
+      return null;
+
+    return ensAvatarUrl(ens, get(lastRefreshedAvatar));
+  }
 
   const createKey = (address: string, chain: string): string => `${address}#${chain}`;
 
@@ -151,6 +166,35 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     address: MaybeRef<string>,
     blockchain: MaybeRef<string> = Blockchain.ETH,
   ): ComputedRef<string | undefined> => addressInfoSelector(address, 'source', blockchain);
+
+  function getAddressInfo<T extends keyof AddressBookEntry>(
+    address: string,
+    field: T,
+    blockchain: string = Blockchain.ETH,
+  ): AddressBookEntry[T] | undefined {
+    const addressVal = address;
+    if (!get(enableAliasNames) || !addressVal)
+      return undefined;
+
+    if (!isBlockchain(blockchain) || blockchain === Blockchain.ETH2)
+      return undefined;
+
+    const key = createKey(addressVal, blockchain);
+    const cachedInfo = resolve(key);
+
+    if (getIsPending(key) && !cachedInfo)
+      return undefined;
+
+    return cachedInfo?.[field] || undefined;
+  }
+
+  function getAddressName(address: string, blockchain: string = Blockchain.ETH): string | undefined {
+    return getAddressInfo(address, 'name', blockchain);
+  }
+
+  function getAddressNameSource(address: string, blockchain: string = Blockchain.ETH): string | undefined {
+    return getAddressInfo(address, 'source', blockchain);
+  }
 
   const getChainsForAddress = (address: string): string[] => {
     // Determine appropriate chains based on address type
@@ -321,13 +365,17 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     ensNameSelector,
     fetchEnsNames,
     getAddressBook,
+    getAddressName,
+    getAddressNameSource,
     getAddressesWithoutNames,
     getEnsAvatarUrl,
+    getEnsName,
     resetAddressesNames,
     resetAddressNamesData,
     setLastRefreshedAvatar,
     updateAddressBook,
     updateEnsNamesState,
+    useEnsAvatarUrl,
   };
 });
 

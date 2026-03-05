@@ -14,7 +14,7 @@ const { counterparty, location, address } = defineProps<{
 }>();
 
 const { getEventCounterpartyData } = useHistoryEventCounterpartyMappings();
-const { addressNameSelector } = useAddressesNamesStore();
+const { getAddressName } = useAddressesNamesStore();
 const { getChain } = useSupportedChains();
 const { scrambleAddress, scrambleData } = useScramble();
 
@@ -46,7 +46,7 @@ const addressAliasName = computed<string | undefined>(() => {
     return undefined;
   }
 
-  return get(addressNameSelector(address, getChain(location)));
+  return getAddressName(address, getChain(location));
 });
 
 const displayAddress = computed<string | undefined>(() => {

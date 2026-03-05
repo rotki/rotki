@@ -35,7 +35,7 @@ const { allTxChainsInfo, matchChain } = useSupportedChains();
 const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-const { addressNameSelector } = useAddressesNamesStore();
+const { getAddressName } = useAddressesNamesStore();
 
 const accounts = computed<BlockchainAccount<AddressData>[]>(() =>
   Object.values(get(accountsPerChain))
@@ -85,7 +85,7 @@ function filter(item: LocationLabel, queryText: string): boolean {
     return false;
   }
 
-  const text = getTextToken(get(addressNameSelector(item.locationLabel, chain)) ?? '');
+  const text = getTextToken(getAddressName(item.locationLabel, chain) ?? '');
 
   const labelMatches = text.includes(query);
 

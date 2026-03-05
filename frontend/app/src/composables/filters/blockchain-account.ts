@@ -27,7 +27,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
   const filters = ref<Filters>({});
 
   const { chainIds, isEvm } = useAccountCategoryHelper(category);
-  const { addressNameSelector } = useAddressesNamesStore();
+  const { getAddressName } = useAddressesNamesStore();
 
   const filterableChains = computed<string[]>(() => {
     const evm = get(isEvm);
@@ -58,7 +58,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
           for (const item of accounts) {
             const address = getAccountAddress(item);
             const chain = getChain(item);
-            const label = isXpubAccount(item) ? getAccountLabel(item) : get(addressNameSelector(address, chain));
+            const label = isXpubAccount(item) ? getAccountLabel(item) : getAddressName(address, chain);
 
             if (!seenAddresses.has(address)) {
               seenAddresses.add(address);
