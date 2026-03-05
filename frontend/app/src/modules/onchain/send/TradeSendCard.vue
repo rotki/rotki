@@ -11,7 +11,7 @@ import TradeConnectedAddressBadge from '@/modules/onchain/send/TradeConnectedAdd
 import TradeHistoryView from '@/modules/onchain/send/TradeHistoryView.vue';
 import TradeRecipientAddress from '@/modules/onchain/send/TradeRecipientAddress.vue';
 import { useBalanceQueries } from '@/modules/onchain/send/use-balance-queries';
-import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
+import { TradableAssetKey, useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { isUserRejectedError, WALLET_MODES } from '@/modules/onchain/wallet-constants';
@@ -62,7 +62,9 @@ const {
 const { connect: connectWallet, disconnect: disconnectWallet, getGasFeeForChain, sendTransaction, switchNetwork } = walletStore;
 const { useQueryingBalances, warnUntrackedAddress } = useBalanceQueries(connected, connectedAddress);
 
-const { getAssetDetail } = useTradableAsset(connectedAddress);
+const tradableAsset = useTradableAsset(connectedAddress);
+provide(TradableAssetKey, tradableAsset);
+const { getAssetDetail } = tradableAsset;
 const { getAssetBalance, getIsInteractedBefore } = useTradeApi();
 const router = useRouter();
 
