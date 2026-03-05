@@ -500,6 +500,7 @@ def test_register_v2_with_refund(
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe951C14FDEea2B4E776065b36acD7d3a33e85C88']])
 def test_register_v2_spend_before_refund(ethereum_inquirer, ethereum_accounts):
     """Test for the flow, where a smart account pays the ENS controller through EntryPoint,
@@ -529,12 +530,11 @@ def test_register_v2_spend_before_refund(ethereum_inquirer, ethereum_accounts):
             timestamp=TimestampMS(1767674711000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.NONE,
+            event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
             amount=FVal('0.00010353540632584'),
             location_label=user_address,
-            notes='Send 0.00010353540632584 ETH to 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
-            counterparty=None,
+            notes='Spend 0.00010353540632584 ETH as ERC-4337 fee via 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',  # noqa: E501
             address=string_to_evm_address('0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789'),
         ), EvmEvent(
             tx_ref=tx_hash,
