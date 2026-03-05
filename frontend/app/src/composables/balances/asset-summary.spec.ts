@@ -121,11 +121,11 @@ describe('summarizeAssetProtocols with chains', () => {
       },
     };
 
-    const mockCollectionId = vi.fn().mockImplementation((asset: string) => ({
-      value: asset === 'asset-1' || asset === 'asset-2' ? 'collection-1' : undefined,
-    }));
+    const mockCollectionId = vi.fn().mockImplementation((asset: string): string | undefined =>
+      asset === 'asset-1' || asset === 'asset-2' ? 'collection-1' : undefined,
+    );
 
-    const mockCollectionMainAsset = vi.fn().mockReturnValue({ value: 'asset-1' });
+    const mockCollectionMainAsset = vi.fn().mockReturnValue('asset-1');
 
     const result = summarizeAssetProtocols(
       {
@@ -142,8 +142,8 @@ describe('summarizeAssetProtocols with chains', () => {
       },
       {
         groupCollections: true,
-        useCollectionId: mockCollectionId,
-        useCollectionMainAsset: mockCollectionMainAsset,
+        getCollectionId: mockCollectionId,
+        getCollectionMainAsset: mockCollectionMainAsset,
       },
     );
 

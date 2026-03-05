@@ -11,11 +11,11 @@ import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 
 export const useHistoricCachePriceStore = defineStore('prices/historic-cache', () => {
-  const statsPriceQueryStatus = ref<Record<string, StatsPriceQueryData>>({});
-  const historicalPriceStatus = ref<CommonQueryStatusData>();
-  const historicalDailyPriceStatus = ref<CommonQueryStatusData>();
-  const failedDailyPrices = ref<Record<string, FailedHistoricalAssetPriceResponse>>({});
-  const resolvedFailedDailyPrices = ref<Record<string, number[]>>({});
+  const statsPriceQueryStatus = shallowRef<Record<string, StatsPriceQueryData>>({});
+  const historicalPriceStatus = shallowRef<CommonQueryStatusData>();
+  const historicalDailyPriceStatus = shallowRef<CommonQueryStatusData>();
+  const failedDailyPrices = shallowRef<Record<string, FailedHistoricalAssetPriceResponse>>({});
+  const resolvedFailedDailyPrices = shallowRef<Record<string, number[]>>({});
 
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { queryHistoricalRates } = usePriceApi();

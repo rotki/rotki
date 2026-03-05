@@ -135,11 +135,11 @@ describe('processCollectionGrouping', () => {
       },
     };
 
-    const mockCollectionId = vi.fn().mockImplementation((asset: string) => ({
-      value: asset === solanaToken || asset === mainAsset ? 'collection-1' : undefined,
-    }));
+    const mockCollectionId = vi.fn().mockImplementation((asset: string): string | undefined =>
+      asset === solanaToken || asset === mainAsset ? 'collection-1' : undefined,
+    );
 
-    const mockCollectionMainAsset = vi.fn().mockReturnValue({ value: mainAsset });
+    const mockCollectionMainAsset = vi.fn().mockReturnValue(mainAsset);
 
     const result = processCollectionGrouping(
       aggregatedBalances,
@@ -165,11 +165,11 @@ describe('processCollectionGrouping', () => {
       },
     };
 
-    const mockCollectionId = vi.fn().mockImplementation((asset: string) => ({
-      value: asset === 'WETH' || asset === 'ETH' ? 'collection-1' : undefined,
-    }));
+    const mockCollectionId = vi.fn().mockImplementation((asset: string): string | undefined =>
+      asset === 'WETH' || asset === 'ETH' ? 'collection-1' : undefined,
+    );
 
-    const mockCollectionMainAsset = vi.fn().mockReturnValue({ value: 'ETH' });
+    const mockCollectionMainAsset = vi.fn().mockReturnValue('ETH');
 
     const result = processCollectionGrouping(
       aggregatedBalances,
@@ -209,11 +209,11 @@ describe('processCollectionGrouping', () => {
       },
     };
 
-    const mockCollectionId = vi.fn().mockImplementation((asset: string) => ({
-      value: asset === solanaToken || asset === mainAsset ? 'collection-1' : undefined,
-    }));
+    const mockCollectionId = vi.fn().mockImplementation((asset: string): string | undefined =>
+      asset === solanaToken || asset === mainAsset ? 'collection-1' : undefined,
+    );
 
-    const mockCollectionMainAsset = vi.fn().mockReturnValue({ value: mainAsset });
+    const mockCollectionMainAsset = vi.fn().mockReturnValue(mainAsset);
 
     const result = processCollectionGrouping(
       aggregatedBalances,

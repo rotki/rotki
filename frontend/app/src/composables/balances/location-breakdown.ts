@@ -48,8 +48,8 @@ export function useLocationBreakdown(
   manualBalances: MaybeRefOrGetter<ManualBalanceWithValue[]>,
   useBaseExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => MaybeRefOrGetter<AssetProtocolBalances>,
   isAssetIgnored: (identifier: string) => boolean,
-  useCollectionId: (asset: string) => { value: string | undefined },
-  useCollectionMainAsset: (collectionId: string) => { value: string | undefined },
+  getCollectionId: (asset: string) => string | undefined,
+  getCollectionMainAsset: (collectionId: string) => string | undefined,
   getAssetPrice: (asset: string, defaultValue: BigNumber) => BigNumber,
   noPrice: BigNumber,
 ): ComputedRef<AssetBalanceWithPrice[]> {
@@ -73,8 +73,8 @@ export function useLocationBreakdown(
       noPrice,
     }, {
       groupCollections: true,
-      useCollectionId,
-      useCollectionMainAsset,
+      getCollectionId,
+      getCollectionMainAsset,
     });
   });
 }

@@ -29,7 +29,7 @@ import '@test/i18n';
 
 vi.mock('@/modules/assets/use-collection-info', () => ({
   useCollectionInfo: (): any => ({
-    useCollectionId: vi.fn((asset: string) => computed(() => {
+    getCollectionId: vi.fn((asset: string): string | undefined => {
       if (asset === 'ETH' || asset === 'WETH') {
         return '21';
       }
@@ -37,8 +37,8 @@ vi.mock('@/modules/assets/use-collection-info', () => ({
         return 'USDC';
       }
       return undefined;
-    })),
-    useCollectionMainAsset: vi.fn((collectionId: string) => computed(() => {
+    }),
+    getCollectionMainAsset: vi.fn((collectionId: string): string | undefined => {
       if (collectionId === '21') {
         return 'ETH';
       }
@@ -46,7 +46,7 @@ vi.mock('@/modules/assets/use-collection-info', () => ({
         return 'USDC';
       }
       return undefined;
-    })),
+    }),
   }),
 }));
 

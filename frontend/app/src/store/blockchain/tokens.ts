@@ -28,7 +28,7 @@ function noTokens(): EthDetectedTokensInfo {
 type Tokens = Record<string, EvmTokensRecord>;
 
 export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
-  const tokensState = ref<Tokens>({});
+  const tokensState = shallowRef<Tokens>({});
 
   const massDetecting = ref<string>();
 

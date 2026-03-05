@@ -284,8 +284,8 @@ interface IntermediateGroupRepresentation {
  */
 export function processCollectionGrouping(
   aggregatedBalances: AssetProtocolBalancesWithManual,
-  useCollectionId: (asset: string) => { value: string | undefined },
-  useCollectionMainAsset: (collectionId: string) => { value: string | undefined },
+  getCollectionId: (asset: string) => string | undefined,
+  getCollectionMainAsset: (collectionId: string) => string | undefined,
   getAssetPrice: (asset: string, defaultValue: BigNumber) => BigNumber,
   noPrice: BigNumber,
 ): AssetBalanceWithPriceAndChains[] {
@@ -294,14 +294,14 @@ export function processCollectionGrouping(
 
   // Group assets by collection
   for (const [asset, protocolBalances] of Object.entries(aggregatedBalances)) {
-    const collectionId = useCollectionId(asset).value;
+    const collectionId = getCollectionId(asset);
     const groupId = collectionId ? `collection-${collectionId}` : asset;
 
-    // Cache main asset lookup to avoid repeated get() calls
+    // Cache main asset lookup to avoid repeated calls
     let mainAsset: string | undefined;
     if (collectionId) {
       if (!collectionCache.has(collectionId)) {
-        collectionCache.set(collectionId, useCollectionMainAsset(collectionId).value);
+        collectionCache.set(collectionId, getCollectionMainAsset(collectionId));
       }
       mainAsset = collectionCache.get(collectionId);
     }

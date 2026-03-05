@@ -7,7 +7,7 @@ import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 export const useAssetCacheStore = defineStore('assets/cache', () => {
-  const fetchedAssetCollections = ref<Record<string, AssetCollection>>({});
+  const fetchedAssetCollections = shallowRef<Record<string, AssetCollection>>({});
 
   const { assetMapping } = useAssetInfoApi();
   const { t } = useI18n({ useScope: 'global' });

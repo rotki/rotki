@@ -6,7 +6,7 @@ import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { getErrorMessage } from '@/utils/error-handling';
 
 export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () => {
-  const whitelistedAssets = ref<string[]>([]);
+  const whitelistedAssets = shallowRef<string[]>([]);
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
