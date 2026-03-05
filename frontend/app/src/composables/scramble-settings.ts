@@ -13,12 +13,13 @@ interface UseScrambleSettingReturn {
 }
 
 export function useScrambleSetting(): UseScrambleSettingReturn {
+  const scrambleData = shallowRef<boolean>(false);
+  const scrambleMultiplier = shallowRef<string>('0');
+  const isUpdating = shallowRef<boolean>(false);
+  let timeoutId: ReturnType<typeof setTimeout>;
+
   const frontendStore = useFrontendSettingsStore();
   const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(frontendStore);
-
-  const scrambleData = ref<boolean>(false);
-  const scrambleMultiplier = ref<string>('0');
-  const isUpdating = ref<boolean>(false);
 
   // Debounced backend update
   const debouncedBackendUpdate = useDebounceFn(async (value: number) => {
@@ -39,14 +40,13 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
 
     // Update store immediately for UI
     frontendStore.update({
-      ...frontendStore.$state.settings,
+      ...get(frontendStore.settings),
       scrambleMultiplier: numValue,
     });
 
     // Debounce backend update
     startPromise(debouncedBackendUpdate(numValue));
-
-    setTimeout(() => set(isUpdating, false), 600);
+    timeoutId = setTimeout(() => set(isUpdating, false), 600);
   }
 
   function initializeData(): void {
@@ -55,6 +55,11 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
       set(scrambleMultiplier, (get(multiplier) ?? generateRandomScrambleMultiplier()).toString());
     }
   }
+
+  onScopeDispose(() => {
+    if (timeoutId)
+      clearTimeout(timeoutId);
+  });
 
   onMounted(initializeData);
 

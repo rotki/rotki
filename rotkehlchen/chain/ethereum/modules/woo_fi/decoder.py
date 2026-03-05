@@ -23,4 +23,5 @@ class WooFiDecoder(WooFiCommonDecoder):
             msg_aggregator=msg_aggregator,
             earn_vaults=[],  # There are no WOOFi earn (supercharger) vaults deployed on ethereum.
             woo_token_address=string_to_evm_address('0x4691937a7508860F876c9c0a2a617E7d9E945D4B'),
+            stake_v2_address=string_to_evm_address('0xba91ffD8a2B9F68231eCA6aF51623B3433A89b13'),
         )

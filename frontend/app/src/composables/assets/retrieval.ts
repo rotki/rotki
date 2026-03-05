@@ -63,7 +63,7 @@ interface UseAssetInfoRetrievalReturn {
 export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
-  const { queueIdentifier, retrieve } = useAssetCacheStore();
+  const { queueIdentifier, resolve: resolveAsset } = useAssetCacheStore();
   const { notify, notifyError } = useNotifications();
   const { awaitTask } = useTaskStore();
 
@@ -88,7 +88,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     } = toValue(options);
 
     const key = associate ? get(getAssociatedAssetIdentifierComputed(id)) : id;
-    const data = get(retrieve(key));
+    const data = resolveAsset(key);
 
     const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
     const collectionData = collectionParent && data?.collectionId

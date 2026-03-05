@@ -7,7 +7,18 @@ import ProtocolCacheProgressList from './ProtocolCacheProgressList.vue';
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { chains, locations, decoding, protocolCache, completedChains, totalChains, completedLocations, totalLocations } = useSyncProgress();
+const {
+  chains,
+  completedChains,
+  completedLocations,
+  decoding,
+  hasCancelledDecoding,
+  hasCancelledProtocolCache,
+  locations,
+  protocolCache,
+  totalChains,
+  totalLocations,
+} = useSyncProgress();
 
 const hasChains = computed<boolean>(() => get(chains).length > 0);
 const hasLocations = computed<boolean>(() => get(locations).length > 0);
@@ -17,13 +28,29 @@ const hasProtocolCache = computed<boolean>(() => get(protocolCache).length > 0);
 const chainsComplete = computed<boolean>(() => get(completedChains) === get(totalChains) && get(totalChains) > 0);
 const locationsComplete = computed<boolean>(() => get(completedLocations) === get(totalLocations) && get(totalLocations) > 0);
 
-const decodingCompleted = computed<number>(() => get(decoding).filter(d => d.processed >= d.total).length);
+const decodingCompleted = computed<number>(() => get(decoding).filter(d => d.processed >= d.total || d.cancelled).length);
 const decodingTotal = computed<number>(() => get(decoding).length);
 const decodingComplete = computed<boolean>(() => get(decodingCompleted) === get(decodingTotal) && get(decodingTotal) > 0);
 
-const protocolCacheCompleted = computed<number>(() => get(protocolCache).filter(p => p.processed >= p.total).length);
+const protocolCacheCompleted = computed<number>(() => get(protocolCache).filter(p => p.processed >= p.total || p.cancelled).length);
 const protocolCacheTotal = computed<number>(() => get(protocolCache).length);
 const protocolCacheComplete = computed<boolean>(() => get(protocolCacheCompleted) === get(protocolCacheTotal) && get(protocolCacheTotal) > 0);
+
+const decodingCompleteColor = computed<string>(() =>
+  get(hasCancelledDecoding) ? 'text-rui-warning' : 'text-rui-success',
+);
+
+const decodingCountColor = computed<string>(() =>
+  get(decodingComplete) ? get(decodingCompleteColor) : 'text-rui-text-disabled',
+);
+
+const protocolCacheCompleteColor = computed<string>(() =>
+  get(hasCancelledProtocolCache) ? 'text-rui-warning' : 'text-rui-success',
+);
+
+const protocolCacheCountColor = computed<string>(() =>
+  get(protocolCacheComplete) ? get(protocolCacheCompleteColor) : 'text-rui-text-disabled',
+);
 </script>
 
 <template>
@@ -86,14 +113,14 @@ const protocolCacheComplete = computed<boolean>(() => get(protocolCacheCompleted
         </span>
         <span
           class="text-xs tabular-nums"
-          :class="decodingComplete ? 'text-rui-success' : 'text-rui-text-disabled'"
+          :class="decodingCountColor"
         >
           {{ decodingCompleted }}/{{ decodingTotal }}
         </span>
         <RuiIcon
           v-if="decodingComplete"
           name="lu-check"
-          class="text-rui-success"
+          :class="decodingCompleteColor"
           size="12"
         />
       </div>
@@ -110,14 +137,14 @@ const protocolCacheComplete = computed<boolean>(() => get(protocolCacheCompleted
         </span>
         <span
           class="text-xs tabular-nums"
-          :class="protocolCacheComplete ? 'text-rui-success' : 'text-rui-text-disabled'"
+          :class="protocolCacheCountColor"
         >
           {{ protocolCacheCompleted }}/{{ protocolCacheTotal }}
         </span>
         <RuiIcon
           v-if="protocolCacheComplete"
           name="lu-check"
-          class="text-rui-success"
+          :class="protocolCacheCompleteColor"
           size="12"
         />
       </div>

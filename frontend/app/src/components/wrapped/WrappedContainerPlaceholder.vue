@@ -2,9 +2,12 @@
 import AppImage from '@/components/common/AppImage.vue';
 import GetPremiumPlaceholder from '@/components/common/GetPremiumPlaceholder.vue';
 import RotkiLogo from '@/components/common/RotkiLogo.vue';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { getPublicPlaceholderImagePath } from '@/utils/file';
 
 const { t } = useI18n({ useScope: 'global' });
+
+const { minimumTier } = useFeatureAccess(PremiumFeature.EVENT_ANALYSIS_VIEW);
 </script>
 
 <template>
@@ -31,6 +34,7 @@ const { t } = useI18n({ useScope: 'global' });
       <GetPremiumPlaceholder
         class="absolute w-full pt-20 z-1 top-0 left-1/2 transform -translate-x-1/2"
         :title="t('wrapped.free_limit')"
+        :minimum-tier="minimumTier"
       />
     </div>
   </div>

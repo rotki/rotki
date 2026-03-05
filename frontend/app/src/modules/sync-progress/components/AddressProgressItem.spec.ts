@@ -90,6 +90,14 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
       expect(wrapper.find('[data-testid="icon"]').text()).toBe('lu-loader-circle');
     });
 
+    it('should display cancelled status and circle-x icon for cancelled addresses', () => {
+      const address = createAddress(AddressStatus.CANCELLED);
+      wrapper = createWrapper(address);
+
+      expect(wrapper.text()).toContain('sync_progress.status.cancelled');
+      expect(wrapper.find('[data-testid="icon"]').text()).toBe('lu-circle-alert');
+    });
+
     it('should display step-specific querying status', () => {
       const transactionsAddress = createAddress(AddressStatus.QUERYING, { step: AddressStep.TRANSACTIONS });
       wrapper = createWrapper(transactionsAddress);
@@ -131,6 +139,14 @@ describe('modules/sync-progress/components/AddressProgressItem', () => {
 
       const icon = wrapper.find('[data-testid="icon"]');
       expect(icon.classes()).toContain('text-rui-text-disabled');
+    });
+
+    it('should apply warning color for cancelled addresses', () => {
+      const address = createAddress(AddressStatus.CANCELLED);
+      wrapper = createWrapper(address);
+
+      const icon = wrapper.find('[data-testid="icon"]');
+      expect(icon.classes()).toContain('text-rui-warning');
     });
   });
 

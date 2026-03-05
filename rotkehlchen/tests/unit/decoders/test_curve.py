@@ -393,6 +393,90 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
     assert events == expected_events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('ethereum_accounts', [['0xFa4Ebcb83902Bb1106b85Bb3D4916Dfd72E06721']])
+def test_curve_deposit_add_liquidity_in_deposit_and_stake_topic(
+        ethereum_inquirer,
+        ethereum_accounts,
+        load_global_caches,
+) -> None:
+    """Ensure deposits are decoded when pool AddLiquidityInDepositAndStake is emitted."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xa3827c755b488fb35bed20626c64fd2869d82af33cfb5b7b6d5ab93afda9e253')),  # noqa: E501,
+        relevant_address=(user_address := ethereum_accounts[0]),
+        load_global_caches=load_global_caches,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=TimestampMS(1724092043000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal('0.000412610201819214'),
+            location_label=user_address,
+            notes='Burn 0.000412610201819214 ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=506,
+            timestamp=TimestampMS(1724092043000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e'),
+            amount=FVal('115792089237316195423570985008687907853269984665640564039442.554988771473564531'),
+            location_label=user_address,
+            notes='Set YFI spending approval of 0xFa4Ebcb83902Bb1106b85Bb3D4916Dfd72E06721 by 0xC26b89A667578ec7b3f11b2F98d6Fd15C07C54ba to 115792089237316195423570985008687907853269984665640564039442.554988771473564531',  # noqa: E501
+            address=(pool_address := string_to_evm_address('0xC26b89A667578ec7b3f11b2F98d6Fd15C07C54ba')),  # noqa: E501
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=507,
+            timestamp=TimestampMS(1724092043000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_ETH,
+            amount=FVal('14.810410938822695976'),
+            location_label=user_address,
+            notes='Deposit 14.810410938822695976 ETH in curve pool',
+            counterparty=CPT_CURVE,
+            address=pool_address,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=508,
+            timestamp=TimestampMS(1724092043000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e'),
+            amount=FVal('7.529019141656075404'),
+            location_label=user_address,
+            notes='Deposit 7.529019141656075404 YFI in curve pool 0xC26b89A667578ec7b3f11b2F98d6Fd15C07C54ba',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=pool_address,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=509,
+            timestamp=TimestampMS(1724092043000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:1/erc20:0x29059568bB40344487d62f7450E78b8E6C74e0e5'),
+            amount=FVal('10.268498108556229775'),
+            location_label=user_address,
+            notes='Receive 10.268498108556229775 YFIETH-f after depositing in curve pool 0xC26b89A667578ec7b3f11b2F98d6Fd15C07C54ba',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6']])
@@ -2577,6 +2661,77 @@ def test_monerium_eure_v2(gnosis_inquirer, gnosis_accounts, load_global_caches):
             notes=f'Remove {removed_amount} EURe from 0x056C6C5e684CeC248635eD86033378Cc444459B0 curve pool',  # noqa: E501
             counterparty=CPT_CURVE,
             address=string_to_evm_address('0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('gnosis_accounts', [['0xc8D375386EC576a02eca0fe5d47800b768895B7B']])
+def test_deposit_wxdai_and_eure_zap_with_intermediate_provider(
+        gnosis_inquirer,
+        gnosis_accounts,
+        load_global_caches,
+) -> None:
+    """Regression test for deposits where AddLiquidity is emitted with an intermediate provider."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x05fcbbf7949ed36cf265c0fc25207869e509f8c8691af2ecfb099b6a85ba8e01')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1711670225000)),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal('0.003267966'),
+            location_label=(user_address := gnosis_accounts[0]),
+            notes='Burn 0.003267966 XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=3006,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),
+            amount=FVal('1.029409850972877421'),
+            location_label=user_address,
+            notes='Deposit 1.029409850972877421 EURe in curve pool 0x056C6C5e684CeC248635eD86033378Cc444459B0',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=(zap_address := string_to_evm_address('0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6')),  # noqa: E501
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=3007,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xE91D153E0b41518A2Ce8Dd3D7944Fa863463a97d'),
+            amount=FVal('1'),
+            location_label=user_address,
+            notes='Deposit 1 WXDAI in curve pool 0x056C6C5e684CeC248635eD86033378Cc444459B0',
+            counterparty=CPT_CURVE,
+            address=zap_address,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=3008,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:100/erc20:0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a'),
+            amount=FVal('1.00821844186401932'),
+            location_label=user_address,
+            notes='Receive 1.00821844186401932 crvEUReUSD after depositing in a curve pool',
+            counterparty=CPT_CURVE,
+            address=zap_address,
         ),
     ]
 

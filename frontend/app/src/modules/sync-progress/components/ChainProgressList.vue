@@ -11,16 +11,21 @@ const { t } = useI18n({ useScope: 'global' });
 const showCompleted = ref<boolean>(false);
 
 const inProgressChains = computed<ChainProgress[]>(() =>
-  chains.filter(c => c.completed < c.total || c.total === 0),
+  chains.filter(c => (c.completed + c.cancelled) < c.total || c.total === 0),
 );
 
 const completedChains = computed<ChainProgress[]>(() =>
-  chains.filter(c => c.completed === c.total && c.total > 0),
+  chains.filter(c => (c.completed + c.cancelled) === c.total && c.total > 0),
 );
 
 const hasInProgress = computed<boolean>(() => get(inProgressChains).length > 0);
 const completedCount = computed<number>(() => get(completedChains).length);
 const hasCompleted = computed<boolean>(() => !!get(completedCount));
+const hasCancelledChains = computed<boolean>(() => get(completedChains).some(c => c.cancelled > 0));
+
+const completedIconColor = computed<string>(() =>
+  get(hasCancelledChains) ? 'text-rui-warning' : 'text-rui-success',
+);
 
 function toggleCompleted(): void {
   set(showCompleted, !get(showCompleted));
@@ -47,7 +52,7 @@ function toggleCompleted(): void {
       >
         <RuiIcon
           name="lu-circle-check"
-          class="text-rui-success"
+          :class="completedIconColor"
           size="16"
         />
         <span>{{ t('sync_progress.completed_chains', { count: completedCount }, completedCount) }}</span>
@@ -67,7 +72,7 @@ function toggleCompleted(): void {
         >
           <RuiIcon
             name="lu-circle-check"
-            class="text-rui-success"
+            :class="completedIconColor"
             size="16"
           />
           <span>{{ t('sync_progress.completed_chains', { count: completedCount }, completedCount) }}</span>

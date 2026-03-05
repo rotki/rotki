@@ -13,7 +13,7 @@ from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_OP, A_SAI, A_USD, A_USDC
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_OP, A_SAI, A_USD, A_USDC, A_WSOL
 from rotkehlchen.constants.misc import DEFAULT_BALANCE_LABEL, ONE
 from rotkehlchen.constants.resolver import solana_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
@@ -1241,6 +1241,30 @@ def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHan
             key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
         )) == existing_whitelisted_count
 
+    # test that a solana token can also be marked as false positive
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'UPDATE solana_tokens SET protocol=? WHERE identifier=?',
+            (SPAM_PROTOCOL, A_WSOL.identifier),
+        )
+    AssetResolver.clean_memory_cache(A_WSOL.identifier)
+    assert A_WSOL.resolve_to_solana_token().protocol == SPAM_PROTOCOL
+
+    assert_proper_response(requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'falsepositivespamtokenresource',
+        ), json={'token': A_WSOL.identifier},
+    ))
+    assert A_WSOL.resolve_to_solana_token().protocol is None
+
+    assert_proper_response(requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'falsepositivespamtokenresource',
+        ), json={'token': A_WSOL.identifier},
+    ))
+
 
 def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
     """Test the endpoints which set the spam protocol on tokens"""
@@ -1261,7 +1285,7 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'spamevmtokenresource',
+            'spamtokenresource',
         ), json={'tokens': [A_DAI.identifier, A_OP.identifier]},
     )
     assert_proper_response(response)
@@ -1283,12 +1307,12 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
-            'spamevmtokenresource',
+            'spamtokenresource',
         ), json={'tokens': [A_BTC.identifier]},
     )
     assert_error_response(
         response=response,
-        contained_in_msg='to be EvmToken but in fact it was',
+        contained_in_msg='is not one of',
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
@@ -1296,11 +1320,29 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
-            'spamevmtokenresource',
+            'spamtokenresource',
         ), json={'token': A_DAI.identifier},
     )
     assert_proper_response(response)
     assert A_DAI.resolve_to_evm_token().protocol is None
+
+    # test adding a solana token as spam
+    assert_proper_response(requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'spamtokenresource',
+        ), json={'tokens': [A_WSOL.identifier]},
+    ))
+    assert A_WSOL.resolve_to_solana_token().protocol == SPAM_PROTOCOL
+
+    # remove the spam protocol from the solana token
+    assert_proper_response(requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'spamtokenresource',
+        ), json={'token': A_WSOL.identifier},
+    ))
+    assert A_WSOL.resolve_to_solana_token().protocol is None
 
 
 def test_edit_tokens_nullable(rotkehlchen_api_server: 'APIServer') -> None:

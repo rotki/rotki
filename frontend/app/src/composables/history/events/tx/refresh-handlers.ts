@@ -5,6 +5,7 @@ import { useModules } from '@/composables/session/modules';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTaskStore } from '@/store/tasks';
 import { type Exchange, QueryExchangeEventsPayload } from '@/types/exchanges';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
@@ -22,6 +23,7 @@ interface UseRefreshHandlersReturn {
 export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { notifyError } = useNotifications();
+  const { markLocationCancelled } = useEventsQueryStatusStore();
   const { queryExchangeEvents, queryOnlineHistoryEvents } = useHistoryEventsApi();
   const { awaitTask } = useTaskStore();
   const { isModuleEnabled } = useModules();
@@ -98,7 +100,10 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
       await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
     }
     catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
+      if (isTaskCancelled(error)) {
+        markLocationCancelled({ location: exchange.location, name: exchange.name });
+      }
+      else {
         logger.error(error);
         notifyError(
           t('actions.exchange_events.error.title'),

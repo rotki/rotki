@@ -2,16 +2,34 @@
 Changelog
 =========
 
+* :feature:`-` Transactions involving stkGHO will now be decoded properly.
+* :feature:`8145` WOOFi swaps, staking, and vault transactions will now be properly decoded on all supported EVM chains with associated balances properly detected.
 * :feature:`11693` Bitcoin wallet addition is now simplified with single-field auto-detection of xpub type from the key prefix.
 * :feature:`11639` Users can now search for settings across all settings pages and navigate directly to a specific setting.
 * :feature:`11621` users can now selectively purge exchange history by event category.
-* :feature:`-` rotki can now resolved non .eth ENS names
+* :feature:`-` rotki can now resolve non .eth ENS names
 * :feature:`-` Balancer v3 Gauge reward claims should now be properly decoded.
 * :feature:`-` Sky PSM direct swaps should now be properly decoded.
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
 * :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
 * :feature:`10712` bitcoin events can now be filtered by address.
 * :feature:`10542` StakeDAO v2 votemarket events will now be properly decoded.
+* :bug:`-` Claiming Pendle rewards from old pools, or claiming multiple rewards in one transaction should now be decoded properly by rotki.
+* :bug:`-` ETH staking historyMEV/proposer payout rewards are combined more reliably with block proposal even when beaconcha.in relay data is unavailable.
+* :bug:`11766` Value distribution graphs will now work correctly by fixing the schema types to match the backend response.
+* :bug:`-` Beefy Finance harvest call rewards will now be properly decoded as part of the beefy side of a transaction.
+* :bug:`-` Depositing via Pendle v3 router should be now properly decoded by rotki.
+* :bug:`-` Bridging ETH from mainnet to Optimism will no longer duplicate the event under some weird circumstances.
+* :bug:`-` Historic event values will no longer incorrectly fallback to the current price when the historic price is not available.
+* :bug:`-` Curve deposits with add liquidity + stake will now be properly decoded.
+* :bug:`-` Curve deposits via intermediate pools will now be properly decoded.
+* :bug:`-` cowswap swaps using both versions of the monerium tokens will now be properly decoded.
+* :bug:`11777` Redecoding a single EVM transaction will no longer remove existing transaction data if indexers are temporarily unavailable.
+* :bug:`11708` Users can now mark Solana tokens as spam in addition to EVM tokens.
+* :bug:`11709` History events page will now properly refresh after marking an asset as spam or ignoring it from the context menu.
+* :bug:`-` Registering a new device is now more reliable when rotki runs in container environments.
+* :bug:`-` Depositing native token + wrapped native token in Aaave v3 in the same transaction will now be properly decoded.
+* :bug:`-` ZKSynclite batch withdrawal on the ethereum side should now be properly decoded.
 
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.

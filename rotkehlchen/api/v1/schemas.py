@@ -23,6 +23,7 @@ from rotkehlchen.assets.asset import (
     AssetWithOracles,
     CryptoAsset,
     EvmToken,
+    SolanaToken,
 )
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
@@ -212,6 +213,7 @@ from .fields import (
     TimestampField,
     TimestampMSField,
     TimestampUntilNowField,
+    UnionAssetField,
     XpubField,
 )
 from .types import IncludeExcludeFilterData, ModuleWithBalances, ModuleWithStats, TaskName
@@ -4282,11 +4284,36 @@ class AccountingRuleConflictsPagination(DBPaginationSchema):
 
 
 class SingleTokenSchema(Schema):
-    token = AssetField(expected_type=EvmToken, required=True)
+    token = UnionAssetField(allowed_types=(EvmToken, SolanaToken), required=True)
 
 
 class SpamTokenListSchema(Schema):
-    tokens = fields.List(AssetField(expected_type=EvmToken), required=True)
+    tokens = fields.List(UnionAssetField(allowed_types=(EvmToken, SolanaToken)), required=True)
+
+
+def _is_valid_btc(address: str, chain: SupportedBlockchain) -> bool:
+    return is_valid_bitcoin_address(chain=chain, value=address)
+
+
+def _is_valid_substrate(address: str, chain: SupportedBlockchain) -> bool:
+    return is_valid_substrate_address(chain=chain, value=address)  # type: ignore  # expects polkadot or kusama
+
+
+def _is_valid_evm(address: str, _chain: SupportedBlockchain) -> bool:
+    return to_checksum_address(address) == address
+
+
+def _is_valid_solana(address: str, _chain: SupportedBlockchain) -> bool:
+    return is_valid_solana_address(address)
+
+
+ADDRESS_VALIDATORS: Final[dict[ChainType, Callable[[str, SupportedBlockchain], bool]]] = {
+    ChainType.BITCOIN: _is_valid_btc,
+    ChainType.SUBSTRATE: _is_valid_substrate,
+    ChainType.EVM: _is_valid_evm,
+    ChainType.EVMLIKE: _is_valid_evm,
+    ChainType.SOLANA: _is_valid_solana,
+}
 
 
 def _validate_address_with_blockchain(
@@ -4294,16 +4321,10 @@ def _validate_address_with_blockchain(
         blockchain: SupportedBlockchain,
 ) -> None:
     """Validate the provided address using the format in the given blockchain"""
-    if ((
-        blockchain.is_bitcoin() and
-        not is_valid_bitcoin_address(chain=blockchain, value=address)
-    ) or (
-        blockchain.get_chain_type() == ChainType.SUBSTRATE and
-        not is_valid_substrate_address(chain=blockchain, value=address)  # type: ignore  # expects polkadot or kusama
-    ) or (
-        blockchain.is_evm_or_evmlike() and
-        not to_checksum_address(address) == address
-    )):
+    if (
+        (validator := ADDRESS_VALIDATORS.get(blockchain.get_chain_type())) is None
+        or not validator(address, blockchain)
+    ):
         raise ValidationError(
             f'Given value {address} is not a {blockchain} address',
             field_name='address',

@@ -1,9 +1,12 @@
 import logging
 from typing import TYPE_CHECKING, Any, NamedTuple
 
+from rotkehlchen.assets.asset import UnderlyingToken
 from rotkehlchen.assets.utils import (
     asset_normalized_value,
     asset_raw_value,
+    get_evm_token,
+    get_or_create_evm_token,
     token_normalized_value,
     token_normalized_value_decimals,
 )
@@ -40,10 +43,16 @@ from rotkehlchen.chain.evm.decoding.woo_fi.constants import (
     WOO_REWARD_MASTER_CHEF_ABI,
     WOO_ROUTER_SWAP_TOPIC,
     WOO_ROUTER_V2,
+    WOO_STAKE_ON_LOCAL_TOPIC,
+    WOO_STAKE_ON_PROXY_TOPIC,
+    WOO_UNSTAKE_ON_LOCAL_TOPIC,
+    WOO_UNSTAKE_ON_PROXY_TOPIC,
 )
+from rotkehlchen.constants import ONE
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.types import TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
@@ -74,6 +83,7 @@ class WooFiCommonDecoder(EvmDecoderInterface):
             earn_vaults: list[WooVaultInfo],
             woo_token_address: 'ChecksumEvmAddress',
             stake_v1_address: 'ChecksumEvmAddress | None' = None,
+            stake_v2_address: 'ChecksumEvmAddress | None' = None,
     ) -> None:
         """Common decoder for the WOOFi protocol.
         `earn_tokens` is a list of WooVaultInfo tuples. Each tuple contains the address of the
@@ -88,6 +98,7 @@ class WooFiCommonDecoder(EvmDecoderInterface):
         )
         self.woo_token_address = woo_token_address
         self.stake_v1_address = stake_v1_address
+        self.stake_v2_address = stake_v2_address
         self.rewarder_addresses: dict[int, ChecksumEvmAddress] = {}
         self.superchargers = {}
         self.withdrawal_managers = {}
@@ -334,22 +345,37 @@ class WooFiCommonDecoder(EvmDecoderInterface):
 
     def _decode_supercharger_deposit(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode deposits into WooFi supercharger vaults."""
-        if not self.base.any_tracked([
+        if len(context.tx_log.topics) == 2:
+            if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+                return DEFAULT_EVM_DECODING_OUTPUT
+            depositor_address = receiver_address = user_address
+        elif not self.base.any_tracked([
             (depositor_address := bytes_to_address(context.tx_log.topics[1])),
             (receiver_address := bytes_to_address(context.tx_log.topics[2])),
         ]):
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        shares_amount = token_normalized_value(
-            token_amount=int.from_bytes(context.tx_log.data[32:64]),
-            token=(shares_asset := self.base.get_or_create_evm_token(context.tx_log.address)),
-        )
         assets_amount = asset_normalized_value(
             amount=int.from_bytes(context.tx_log.data[0:32]),
-            asset=(underlying_asset := self.base.get_or_create_evm_asset(
+            asset=(underlying_token := self.base.get_or_create_evm_token(
                 address=self.superchargers[context.tx_log.address],
             )),
         )
+        shares_amount = token_normalized_value(
+            token_amount=int.from_bytes(context.tx_log.data[32:64]),
+            token=(shares_asset := get_or_create_evm_token(
+                userdb=self.node_inquirer.database,
+                evm_address=context.tx_log.address,
+                chain_id=self.node_inquirer.chain_id,
+                protocol=CPT_WOO_FI,
+                underlying_tokens=[UnderlyingToken(
+                    address=underlying_token.evm_address,
+                    token_kind=underlying_token.token_kind,
+                    weight=ONE,
+                )],
+            )),
+        )
+
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
@@ -357,8 +383,8 @@ class WooFiCommonDecoder(EvmDecoderInterface):
                 event.amount == assets_amount and
                 event.location_label == depositor_address and
                 event.address == context.tx_log.address and
-                (event.asset == underlying_asset or (
-                    underlying_asset == self.node_inquirer.wrapped_native_token and
+                (event.asset == underlying_token or (
+                    underlying_token == self.node_inquirer.wrapped_native_token and
                     event.asset == self.node_inquirer.native_token
                 ))
             ):
@@ -504,7 +530,7 @@ class WooFiCommonDecoder(EvmDecoderInterface):
 
     def _decode_supercharger_events(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decode log events emitted by the WooFi supercharger contracts."""
-        if context.tx_log.topics[0] == DEPOSIT_TOPIC:
+        if context.tx_log.topics[0] in (DEPOSIT_TOPIC, STAKE_TOPIC):
             return self._decode_supercharger_deposit(context=context)
         if context.tx_log.topics[0] == WOO_REQUEST_WITHDRAW_TOPIC:
             return self._decode_request_withdraw(
@@ -589,6 +615,9 @@ class WooFiCommonDecoder(EvmDecoderInterface):
                 event.event_subtype = new_event_subtype
                 event.counterparty = CPT_WOO_FI
                 event.notes = notes.format(amount=event.amount, asset=resolved_asset.symbol)
+                if event.extra_data is None:
+                    event.extra_data = {}
+                event.extra_data['woo_fi_pool_id'] = int.from_bytes(context.tx_log.topics[2])
                 staking_event = event
             elif (
                 event.event_type == HistoryEventType.STAKING and
@@ -823,7 +852,31 @@ class WooFiCommonDecoder(EvmDecoderInterface):
         return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_stake_v1_events(self, context: DecoderContext) -> EvmDecodingOutput:
-        """Decode events associated with the stake_v1 contract."""
+        """Decode events associated with the stake_v1 (xWOO token) contract."""
+        if (
+            (xwoo := get_evm_token(
+                evm_address=context.tx_log.address,
+                chain_id=self.node_inquirer.chain_id,
+            )) is None or
+            xwoo.protocol != CPT_WOO_FI or
+            xwoo.underlying_tokens is None or
+            len(xwoo.underlying_tokens) != 1
+        ):  # Ensure the xWOO token exists with the proper protocol and underlying asset
+            get_or_create_evm_token(
+                userdb=self.node_inquirer.database,
+                evm_address=context.tx_log.address,
+                chain_id=self.node_inquirer.chain_id,
+                evm_inquirer=self.node_inquirer,
+                protocol=CPT_WOO_FI,
+                underlying_tokens=[UnderlyingToken(
+                    address=self.base.get_or_create_evm_token(
+                        address=self.woo_token_address,
+                    ).evm_address,
+                    token_kind=TokenKind.ERC20,
+                    weight=ONE,
+                )],
+            )
+
         if context.tx_log.topics[0] == STAKE_TOPIC:
             return self._decode_v1_stake_woo(context=context)
         if context.tx_log.topics[0] == WOO_RESERVE_WITHDRAW_TOPIC:
@@ -841,6 +894,97 @@ class WooFiCommonDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    def _decode_v2_stake_unstake(
+            self,
+            context: DecoderContext,
+            on_proxy: bool,
+            is_stake: bool,
+    ) -> EvmDecodingOutput:
+        """Decode staking/unstaking of WOO tokens on the stake_v2 contract.
+        `on_proxy` indicates whether the stake_v2 contract is a staking proxy, in which case there
+        will be LayerZero fees, or a local staking contract, in which case there are no fees.
+        `is_stake` indicates whether this is a stake or unstake event.
+        """
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        stake_amount = token_normalized_value_decimals(
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # WOO has 18 decimals
+        )
+        if is_stake:
+            expected_event_type = HistoryEventType.SPEND
+            new_event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+            notes = f'Stake {stake_amount} WOO in {CPT_WOO_FI_LABEL}'
+        else:
+            expected_event_type = HistoryEventType.RECEIVE
+            new_event_subtype = HistoryEventSubType.REMOVE_ASSET
+            notes = f'Unstake {stake_amount} WOO from {CPT_WOO_FI_LABEL}'
+
+        staking_event = fee_event = refund_event = None
+        for event in context.decoded_events:
+            if (
+                event.event_type == expected_event_type and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.amount == stake_amount and
+                self.woo_token_address in event.asset.identifier and
+                event.location_label == user_address and
+                event.address == context.tx_log.address
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = new_event_subtype
+                event.counterparty = CPT_WOO_FI
+                event.notes = notes
+                staking_event = event
+                if not on_proxy:
+                    break
+            elif (
+                on_proxy and
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == self.node_inquirer.native_token and
+                event.location_label == user_address and
+                event.address == context.tx_log.address
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.FEE
+                event.counterparty = CPT_WOO_FI
+                fee_event = event
+            elif (
+                on_proxy and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset == self.node_inquirer.native_token and
+                event.location_label == user_address
+            ):
+                refund_event = event
+
+        if on_proxy and fee_event is not None:
+            if refund_event is not None and refund_event.amount < fee_event.amount:
+                fee_event.amount -= refund_event.amount
+                context.decoded_events.remove(refund_event)
+
+            fee_event.notes = f'Spend {fee_event.amount} {self.node_inquirer.native_token.symbol} as {CPT_WOO_FI_LABEL} staking fee'  # noqa: E501
+
+        maybe_reshuffle_events(
+            events_list=context.decoded_events,
+            ordered_events=(staking_event, fee_event),
+        )
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _decode_stake_v2_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode events associated with the stake_v2 contract."""
+        if context.tx_log.topics[0] == WOO_STAKE_ON_PROXY_TOPIC:
+            return self._decode_v2_stake_unstake(context=context, on_proxy=True, is_stake=True)
+        if context.tx_log.topics[0] == WOO_STAKE_ON_LOCAL_TOPIC:
+            return self._decode_v2_stake_unstake(context=context, on_proxy=False, is_stake=True)
+        if context.tx_log.topics[0] == WOO_UNSTAKE_ON_PROXY_TOPIC:
+            return self._decode_v2_stake_unstake(context=context, on_proxy=True, is_stake=False)
+        if context.tx_log.topics[0] == WOO_UNSTAKE_ON_LOCAL_TOPIC:
+            return self._decode_v2_stake_unstake(context=context, on_proxy=False, is_stake=False)
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
@@ -852,6 +996,8 @@ class WooFiCommonDecoder(EvmDecoderInterface):
         | dict.fromkeys(self.withdrawal_managers, (self._decode_withdraw,))
         if self.stake_v1_address is not None:
             mappings[self.stake_v1_address] = (self._decode_stake_v1_events,)
+        if self.stake_v2_address is not None:
+            mappings[self.stake_v2_address] = (self._decode_stake_v2_events,)
 
         return mappings
 

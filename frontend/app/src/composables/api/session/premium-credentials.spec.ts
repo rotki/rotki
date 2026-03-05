@@ -93,9 +93,9 @@ describe('composables/api/session/premium-credentials', () => {
         http.get(`${backendUrl}/api/1/premium/capabilities`, () =>
           HttpResponse.json({
             result: {
-              ethStakingView: true,
-              eventAnalysisView: true,
-              graphsView: false,
+              ethStakingView: { enabled: true, minimumTier: 'Lite' },
+              eventAnalysisView: { enabled: true, minimumTier: 'Basic' },
+              graphsView: { enabled: false, minimumTier: 'Advanced' },
             },
             message: '',
           })),
@@ -104,9 +104,10 @@ describe('composables/api/session/premium-credentials', () => {
       const { getPremiumCapabilities } = usePremiumCredentialsApi();
       const result = await getPremiumCapabilities();
 
-      expect(result.ethStakingView).toBe(true);
-      expect(result.eventAnalysisView).toBe(true);
-      expect(result.graphsView).toBe(false);
+      expect(result.ethStakingView?.enabled).toBe(true);
+      expect(result.ethStakingView?.minimumTier).toBe('Lite');
+      expect(result.eventAnalysisView?.enabled).toBe(true);
+      expect(result.graphsView?.enabled).toBe(false);
     });
 
     it('should return defaults when no premium', async () => {
@@ -121,9 +122,33 @@ describe('composables/api/session/premium-credentials', () => {
       const { getPremiumCapabilities } = usePremiumCredentialsApi();
       const result = await getPremiumCapabilities();
 
-      expect(result.ethStakingView).toBe(false);
-      expect(result.eventAnalysisView).toBe(false);
-      expect(result.graphsView).toBe(false);
+      expect(result.ethStakingView?.enabled).toBeUndefined();
+      expect(result.eventAnalysisView?.enabled).toBeUndefined();
+      expect(result.graphsView?.enabled).toBeUndefined();
+    });
+
+    it('drops invalid keys and keeps valid ones', async () => {
+      server.use(
+        http.get(`${backendUrl}/api/1/premium/capabilities`, () =>
+          HttpResponse.json({
+            result: {
+              ethStakingView: { enabled: true, minimumTier: 'Lite' },
+              graphsView: 'not-an-object',
+              historyEventsLimit: 'not-a-number',
+              currentTier: 'Basic',
+            },
+            message: '',
+          })),
+      );
+
+      const { getPremiumCapabilities } = usePremiumCredentialsApi();
+      const result = await getPremiumCapabilities();
+
+      expect(result.ethStakingView?.enabled).toBe(true);
+      expect(result.ethStakingView?.minimumTier).toBe('Lite');
+      expect(result.currentTier).toBe('Basic');
+      expect(result.graphsView).toBeUndefined();
+      expect(result.historyEventsLimit).toBeUndefined();
     });
 
     it('should throw error on failure', async () => {

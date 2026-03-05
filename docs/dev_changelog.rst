@@ -7,6 +7,19 @@ This changelog documents API changes, schema modifications, and other developer-
 Unreleased
 ==========
 
+Spam Token Endpoint Renamed
+----------------------------
+
+The spam token endpoint now supports both EVM and Solana tokens and has been renamed accordingly.
+
+* **Renamed Endpoint**: ``/api/(version)/assets/evm/spam/`` is now ``/api/(version)/assets/spam/``
+
+  - ``POST`` and ``DELETE`` methods now accept both EVM and Solana token identifiers.
+
+
+:releasetag:`1.42.0`
+====================
+
 Event Group Position Endpoint
 -----------------------------
 

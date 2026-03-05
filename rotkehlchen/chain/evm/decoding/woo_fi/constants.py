@@ -19,6 +19,10 @@ WOO_INSTANT_WITHDRAW_TOPIC: Final = b'g \x04\xd3Z\xd2\x12O\x90)\x93q\xad\xe9\\\x
 WOO_ON_REWARDED_TOPIC: Final = b"\x92L\xd6\n|'\x92\xf2:\xc2\t\x027\xad\xb3\x99`\x92\xfa\xc4\xbe6D\xcf\xdc'\x10d\xf5;W\x04"  # noqa: E501
 WOO_RESERVE_WITHDRAW_TOPIC: Final = b'$\xbd#\xbf8\x1f\xbev\x9fd\xbc\r\x8b\xff\x86\xa8\t\xb6\xc3t\xaeU{\xe6!\xb9\xc7+\x88\x16\xf4\xa5'  # noqa: E501
 WOO_INSTANT_UNSTAKE_TOPIC: Final = b'\xab-\xaf<\x14l\xa6Al\xbc\xcd*\x86\xed+\xa9\x95\xe1q\xefc\x19\xdf\x14\xa3\x8a\xef\x01@:\x9c\x96'  # noqa: E501
+WOO_STAKE_ON_PROXY_TOPIC: Final = b'\xe8NJ\xc7C\x9e\x00\xdd\x9d"7=\xcd\xedU\xa0V\x05}|\xd1\x06\xd0\x97t\xe4\xa3j\xb3;q1'  # noqa: E501
+WOO_UNSTAKE_ON_PROXY_TOPIC: Final = b'\xde`\xe2\xb8\x81\xeb\xad\xb1\xbbM<\x07\x0cf5Q\x0c\xde\xefY\x91?\xf1\xff\x86K\x01`\xe7\xe3\r\x97'  # noqa: E501
+WOO_STAKE_ON_LOCAL_TOPIC: Final = b'\xb8\x01\x98\xf3\xdc\xe5\xb4LvU\xdc\x02\xc2\xd1\xe8\xaf$>\x94:u\xd3P\xba\xb8\xb5f\xc6+\xea\xdd\x11'  # noqa: E501
+WOO_UNSTAKE_ON_LOCAL_TOPIC: Final = b'\xd4\xc6P\xa7?\x8d\x15\xda\xb8{N\x93\xc9\xca\xaaw\xb24\x19[\x0b\x87;\x80mu\xc1\x18a%\x04z'  # noqa: E501
 
 WOO_REWARD_MASTER_CHEF_ABI: Final[ABI] = [{
     'inputs': [{'name': '', 'type': 'uint256'}],
@@ -30,6 +34,26 @@ WOO_REWARD_MASTER_CHEF_ABI: Final[ABI] = [{
         {'name': 'accTokenPerShare', 'type': 'uint256'},
         {'name': 'rewarder', 'type': 'address'},
     ],
+    'stateMutability': 'view',
+    'type': 'function',
+}, {
+    'inputs': [{'name': '', 'type': 'uint256'}, {'name': '', 'type': 'address'}],
+    'name': 'userInfo',
+    'outputs': [{'name': 'amount', 'type': 'uint256'}, {'name': 'rewardDebt', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}]
+WOO_STAKE_V1_OR_VAULT_ABI: Final[ABI] = [{
+    'inputs': [],
+    'name': 'getPricePerFullShare',
+    'outputs': [{'name': '', 'type': 'uint256'}],
+    'stateMutability': 'view',
+    'type': 'function',
+}]
+WOO_STAKE_V2_ABI: Final[ABI] = [{
+    'inputs': [{'name': '', 'type': 'address'}],
+    'name': 'balances',
+    'outputs': [{'name': '', 'type': 'uint256'}],
     'stateMutability': 'view',
     'type': 'function',
 }]

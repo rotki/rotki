@@ -5,6 +5,9 @@ from rotkehlchen.types import SolanaAddress
 CPT_JUPITER: Final = 'jupiter'
 JUPITER_AGGREGATOR_PROGRAM_V6: Final = SolanaAddress('JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4')
 JUPITER_RFQ_ORDER_ENGINE_PROGRAM: Final = SolanaAddress('61DFfeTKM7trxYcPQCM78bJ794ddZprZpAwAnLiwTpYH')  # noqa: E501
+JUPITER_LEND_EARN_PROGRAM: Final = SolanaAddress('jup3YeL8QhtSx1e253b2FDvsMNC87fDrgQZivbrndc9')
+JUPITER_LEND_BORROW_PROGRAM: Final = SolanaAddress('jupr81YtYssSyPt8jbnGuiWon5f6x9TcDEFxYe3Bdzi')
+JUPITER_LEND_LIQUIDITY_PROGRAM: Final = SolanaAddress('jupeiUmn818Jg1ekPURTpr4mFo29p46vygyykFJ3wZC')  # noqa: E501
 # Solana instruction discriminators used by Jupiter program
 ROUTE_DISCRIMINATOR: Final = b'\xe5\x17\xcb\x97z\xe3\xad*'  # v1 route instruction
 ROUTE_V2_DISCRIMINATOR: Final = b'\xbbd\xfa\xcc1\xc4\xaf\x14'  # v2 route instruction
@@ -19,6 +22,10 @@ SHARED_ACCOUNTS_EXACT_OUT_ROUTE_V2_DISCRIMINATOR: Final = b'5`\xe5\xca\xd8\xbb\x
 FILL_DISCRIMINATOR: Final = b'\xa8`\xb7\xa3\\\n(\xa0'  # RFQ fill instruction
 SWAP_EVENT_DISCRIMINATOR: Final = b'@\xc6\xcd\xe8&\x08q\xe2'
 SWAPS_EVENT_DISCRIMINATOR: Final = b'\x98/N\xeb\xc0`nj'
+LEND_DEPOSIT_DISCRIMINATOR: Final = b'\xf2#\xc6\x89R\xe1\xf2\xb6'
+LEND_WITHDRAW_DISCRIMINATOR: Final = b'\xb7\x12F\x9c\x94m\xa1"'
+LEND_INIT_POSITION_DISCRIMINATOR: Final = b'\xc5\x14\n\x01a\xa0\xb1['
+LEND_OPERATE_DISCRIMINATOR: Final = b'\xd9j\xd0ct\x97*\x87'
 
 # Mapping of route discriminators to the account index of the destination mint
 # as defined in the Jupiter aggregator program's IDL:

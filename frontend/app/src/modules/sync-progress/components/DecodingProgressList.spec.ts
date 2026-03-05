@@ -15,8 +15,10 @@ describe('modules/sync-progress/components/DecodingProgressList', () => {
     chain: string,
     processed: number,
     total: number,
+    cancelled = false,
   ): DecodingProgress {
     return {
+      cancelled,
       chain,
       processed,
       progress: total > 0 ? Math.round((processed / total) * 100) : 0,
@@ -138,6 +140,39 @@ describe('modules/sync-progress/components/DecodingProgressList', () => {
       expect(inProgressItem?.attributes('data-compact')).toBe('false');
       // Completed items are rendered in compact mode
       expect(completedItem?.attributes('data-compact')).toBe('true');
+    });
+  });
+
+  describe('cancelled items', () => {
+    it('should move cancelled items to the completed section', () => {
+      const decoding = [
+        createDecodingProgress('eth', 50, 100, true),
+        createDecodingProgress('optimism', 30, 100),
+      ];
+      wrapper = createWrapper(decoding);
+
+      // Only non-cancelled in-progress item should show
+      const items = wrapper.findAll('[data-testid="decoding-item"]');
+      expect(items).toHaveLength(1);
+      expect(items[0].attributes('data-chain')).toBe('optimism');
+
+      // Cancelled item should be in the completed toggle
+      expect(wrapper.text()).toContain('sync_progress.completed_decoding');
+    });
+
+    it('should show cancelled items when completed toggle is clicked', async () => {
+      const decoding = [
+        createDecodingProgress('eth', 50, 100, true),
+        createDecodingProgress('optimism', 30, 100),
+      ];
+      wrapper = createWrapper(decoding);
+
+      const buttons = wrapper.findAll('button');
+      const toggleButton = buttons.find(btn => btn.text().includes('sync_progress.completed_decoding'));
+      await toggleButton?.trigger('click');
+
+      const items = wrapper.findAll('[data-testid="decoding-item"]');
+      expect(items).toHaveLength(2);
     });
   });
 

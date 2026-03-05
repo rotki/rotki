@@ -4,7 +4,7 @@ import { useMainStore } from '@/store/main';
 
 const { t } = useI18n({ useScope: 'global' });
 const visible = ref<boolean>(false);
-const { connected } = toRefs(useMainStore());
+const { connected } = storeToRefs(useMainStore());
 </script>
 
 <template>

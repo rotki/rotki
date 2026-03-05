@@ -22,8 +22,8 @@ export const useHistoryEventsStatus = createSharedComposable((): UseHistoryEvent
   const { useIsTaskRunning } = useTaskStore();
   const { isLoading: isSectionLoading } = useStatusStore();
 
-  const { isAllFinished: isQueryingTxsFinished } = toRefs(useTxQueryStatusStore());
-  const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(useEventsQueryStatusStore());
+  const { isAllFinished: isQueryingTxsFinished } = storeToRefs(useTxQueryStatusStore());
+  const { isAllFinished: isQueryingOnlineEventsFinished } = storeToRefs(useEventsQueryStatusStore());
 
   const sectionLoading = isSectionLoading(Section.HISTORY);
   const txEventsDecoding = useIsTaskRunning(TaskType.TRANSACTIONS_DECODING);

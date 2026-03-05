@@ -67,6 +67,8 @@ from rotkehlchen.chain.evm.decoding.quickswap.v4.utils import get_quickswap_v4_p
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3, CPT_UNISWAP_V4
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
 from rotkehlchen.chain.evm.decoding.uniswap.v4.price import get_uniswap_v4_position_price
+from rotkehlchen.chain.evm.decoding.woo_fi.constants import CPT_WOO_FI
+from rotkehlchen.chain.evm.decoding.woo_fi.utils import query_woo_fi_token_price
 from rotkehlchen.chain.evm.protocol_constants import (
     EVM_PROTOCOLS_WITH_PRICE_LOGIC,
     LP_TOKEN_AS_POOL_PROTOCOLS,
@@ -286,6 +288,12 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     elif token.protocol == CPT_BEEFY_FINANCE:
         price = query_beefy_vault_price(
             vault_token=token,
+            inquirer=Inquirer(),
+            evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
+        )
+    elif token.protocol == CPT_WOO_FI:
+        price = query_woo_fi_token_price(
+            token=token,
             inquirer=Inquirer(),
             evm_inquirer=Inquirer.get_evm_manager(chain_id=token.chain_id).node_inquirer,
         )

@@ -65,6 +65,8 @@ from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.decoding.pendle.constants import CPT_PENDLE
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
+from rotkehlchen.chain.evm.decoding.woo_fi.balances import WoofiBalances
+from rotkehlchen.chain.evm.decoding.woo_fi.constants import CPT_WOO_FI
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
@@ -1443,4 +1445,60 @@ def test_runmoney_balances(
     assert user_balance.assets[Asset('eip155:8453/erc20:0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913')][CPT_RUNMONEY] == Balance(  # noqa: E501
         amount=FVal('102.973178'),
         value=FVal('94.6941344888'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('optimism_accounts', [['0xE0de8649F1902a8d2394fA79cA38Aa20b716bA0f']])
+def test_woofi_stake_v2_balances(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+        inquirer_defi: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Test that WOO staked in the WOOFi v2 staking contract is properly detected."""
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0xa8f93c81d857cf6e0b52a60263473f8bec210a6fca9c46b49d5cb90736307e95'),
+    )
+    protocol_balances = WoofiBalances(
+        evm_inquirer=optimism_inquirer,
+        tx_decoder=tx_decoder,
+    ).query_balances()
+    woo_token = Asset('eip155:10/erc20:0x871f2F2ff935FD1eD867842FF2a7bfD051A5E527')
+    assert protocol_balances[optimism_accounts[0]].assets[woo_token][CPT_WOO_FI] == Balance(
+        amount=FVal('1571.295767977009'),
+        value=FVal('23.67735311299979597812'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('optimism_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_woofi_stake_vault_token_balances(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+        inquirer_defi: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Test that WOO staked in the WOOFi v2 staking contract is properly detected.
+    Decodes two txs first:
+    * the initial vault deposit (creates the vault token with the proper protocol etc)
+    * the vault token staking deposit (triggers the balances logic).
+    """
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x7eb649317491dcf8a8ec1bec56e71d8e2eaac500d14f2611aebf637671a90cd9'),
+    )
+    _, tx_decoder = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=deserialize_evm_tx_hash('0x67f5e50fc2b5ba66de57ac954c5a6b9028232ec362318dd68f92cfe5bedd2d4b'),
+    )
+    protocol_balances = WoofiBalances(
+        evm_inquirer=optimism_inquirer,
+        tx_decoder=tx_decoder,
+    ).query_balances()
+    vault_token = Asset('eip155:10/erc20:0xcA7184eA1cb4cF04d49Bf219c49a39231299dA26')
+    assert protocol_balances[optimism_accounts[0]].assets[vault_token][CPT_WOO_FI] == Balance(
+        amount=FVal('15923.160753145667983352'),
+        value=FVal('1792.506669755680434705721434148408290595113020776336'),
     )

@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import WrappedContainerPlaceholder from '@/components/wrapped/WrappedContainerPlaceholder.vue';
-import { usePremiumHelper } from '@/composables/premium';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import WrappedContainer from '@/modules/statistics/wrapped/components/WrappedContainer.vue';
 import { NoteLocation } from '@/types/notes';
-import { PremiumFeature } from '@/types/session';
 
 definePage({
   meta: {
@@ -12,9 +11,7 @@ definePage({
   name: 'statistics-history-events',
 });
 
-const { isFeatureAllowed } = usePremiumHelper();
-
-const allowed = isFeatureAllowed(PremiumFeature.EVENT_ANALYSIS_VIEW);
+const { allowed } = useFeatureAccess(PremiumFeature.EVENT_ANALYSIS_VIEW);
 </script>
 
 <template>

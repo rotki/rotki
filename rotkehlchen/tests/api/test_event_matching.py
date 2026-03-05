@@ -2,6 +2,7 @@ from http import HTTPStatus
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
+import pytest
 import requests
 
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData, TaskName
@@ -30,6 +31,7 @@ from rotkehlchen.tasks.events import get_unmatched_asset_movements, match_asset_
 from rotkehlchen.tests.unit.test_eth2 import HOUR_IN_MILLISECONDS
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_async_response,
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response_with_result,
@@ -69,6 +71,7 @@ def _check_all_unlinked(
         ).fetchone()[0] == 0
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
     """Test manually matching asset movements with corresponding onchain events."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -127,6 +130,7 @@ def test_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
     assert events == [asset_movement, matched_event]
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_match_asset_movements_errors(rotkehlchen_api_server: 'APIServer') -> None:
     """Test error cases when matching asset movements."""
     assert_error_response(
@@ -165,6 +169,18 @@ def test_match_asset_movements_errors(rotkehlchen_api_server: 'APIServer') -> No
     )
 
 
+def test_match_asset_movements_requires_premium(rotkehlchen_api_server: 'APIServer') -> None:
+    assert_error_response(
+        response=requests.put(
+            url=api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+            json={'asset_movement': 1, 'matched_events': [2]},
+        ),
+        status_code=HTTPStatus.FORBIDDEN,
+        contained_in_msg='does not have a premium subscription',
+    )
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_multi_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
     """Test manually matching an asset movement with multiple onchain events."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -350,6 +366,7 @@ def test_multi_match_asset_movements(rotkehlchen_api_server: 'APIServer') -> Non
     _check_all_unlinked(dbevents=dbevents, original_events=original_events)
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_mark_asset_movement_no_match(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that marking an asset movement as not matching works as expected, and also that
     this ignored movement can also be converted to a matched pair properly.
@@ -415,6 +432,7 @@ def test_mark_asset_movement_no_match(rotkehlchen_api_server: 'APIServer') -> No
         ).fetchall() == [(asset_movement.identifier, matched_event_id)]
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_unlink_matched_asset_movements(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that unlinking matched asset movements works as expected."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -611,6 +629,7 @@ def test_get_unmatched_asset_movements(rotkehlchen_api_server: 'APIServer') -> N
     assert result == [no_match_movement.group_identifier]
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_unmatched_excludes_right_match(
         rotkehlchen_api_server: 'APIServer',
 ) -> None:
@@ -660,6 +679,7 @@ def test_get_unmatched_excludes_right_match(
     ) == []
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_possible_matches(rotkehlchen_api_server: 'APIServer') -> None:
     """Test getting possible matches for an asset movement"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -793,6 +813,7 @@ def test_get_possible_matches(rotkehlchen_api_server: 'APIServer') -> None:
         assert already_matched_id not in result['other_events']
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_protocol_counterparty_in_other_events_only(
         rotkehlchen_api_server: 'APIServer',
 ) -> None:
@@ -840,6 +861,34 @@ def test_protocol_counterparty_in_other_events_only(
     )
     assert result['close_matches'] == []
     assert result['other_events'] == [2]
+
+
+def test_get_possible_matches_requires_premium(rotkehlchen_api_server: 'APIServer') -> None:
+    assert_error_response(
+        response=requests.post(
+            api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+            json={
+                'asset_movement': 'dummy',
+                'time_range': HOUR_IN_SECONDS,
+                'tolerance': '0.002',
+            },
+        ),
+        status_code=HTTPStatus.FORBIDDEN,
+        contained_in_msg='does not have a premium subscription',
+    )
+
+
+def test_unlink_matched_asset_movements_requires_premium(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    assert_error_response(
+        response=requests.delete(
+            api_url_for(rotkehlchen_api_server, 'matchassetmovementsresource'),
+            json={'identifier': 1},
+        ),
+        status_code=HTTPStatus.FORBIDDEN,
+        contained_in_msg='does not have a premium subscription',
+    )
 
 
 def test_get_history_events_with_matched_asset_movements(
@@ -1195,6 +1244,7 @@ def test_group_header_event(rotkehlchen_api_server: 'APIServer') -> None:
     )
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_get_history_events_with_matched_asset_movements_pagination_no_duplicates(
         rotkehlchen_api_server: 'APIServer',
 ) -> None:
@@ -1305,30 +1355,45 @@ def test_get_history_events_with_matched_asset_movements_pagination_no_duplicate
     assert result['entries'][0]['entry']['group_identifier'] == movement.group_identifier
 
 
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_trigger_matching_task(rotkehlchen_api_server: 'APIServer') -> None:
-    """Test that triggering the matching task works as expected."""
-    for async_query in (True, False):
-        with patch(
-            target='rotkehlchen.tasks.events.get_unmatched_asset_movements',
-            return_value=([], []),
-        ) as match_mock:
-            response = requests.post(
-                api_url_for(rotkehlchen_api_server, 'triggertaskresource'),
-                json={
-                    'async_query': async_query,
-                    'task': TaskName.ASSET_MOVEMENT_MATCHING.serialize(),
-                },
-            )
+    """Test that triggering matching task requires capability and calls processing when allowed."""
+    with (
+        patch('rotkehlchen.api.rest.has_premium_capability', return_value=False),
+        patch('rotkehlchen.api.rest.process_asset_movements') as match_mock,
+    ):
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'triggertaskresource'),
+            json={
+                'async_query': True,
+                'task': TaskName.ASSET_MOVEMENT_MATCHING.serialize(),
+            },
+        )
+        outcome = wait_for_async_task(
+            server=rotkehlchen_api_server,
+            task_id=assert_ok_async_response(response),
+        )
+        assert_error_async_response(
+            response_data=outcome,
+            contained_in_msg='not available for your current premium tier',
+            status_code=HTTPStatus.FORBIDDEN,
+        )
+        assert match_mock.call_count == 0
 
-        if async_query:
-            wait_for_async_task(
-                server=rotkehlchen_api_server,
-                task_id=assert_ok_async_response(response),
-            )
-        else:
-            assert_simple_ok_response(response)
-
+    with (
+        patch('rotkehlchen.api.rest.has_premium_capability', return_value=True),
+        patch('rotkehlchen.api.rest.process_asset_movements') as match_mock,
+    ):
+        response = requests.post(
+            api_url_for(rotkehlchen_api_server, 'triggertaskresource'),
+            json={
+                'async_query': False,
+                'task': TaskName.ASSET_MOVEMENT_MATCHING.serialize(),
+            },
+        )
+        assert_simple_ok_response(response)
         assert match_mock.call_count == 1
+        assert match_mock.call_args.kwargs['should_auto_match'] is True
 
 
 def test_scheduler_endpoint(rotkehlchen_api_server: 'APIServer') -> None:

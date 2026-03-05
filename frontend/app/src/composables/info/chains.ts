@@ -42,7 +42,7 @@ function isStarknetChain(info: ChainInfo): info is ChainInfo {
 export const useSupportedChains = createSharedComposable(() => {
   const { fetchAllEvmChains, fetchSupportedChains } = useSupportedChainsApi();
 
-  const { connected } = toRefs(useMainStore());
+  const { connected } = storeToRefs(useMainStore());
 
   const supportedChains = asyncComputed<SupportedChains>(async () => {
     if (get(connected))

@@ -26,6 +26,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     ADD_LIQUIDITY_TOKEN_COUNTS,
     CPT_CURVE,
     CURVE_COUNTERPARTY_DETAILS,
+    DEPOSIT_AND_STAKE_ZAP,
     EXCHANGE_MULTIPLE,
     EXCHANGE_NG,
     MINTED_CRV,
@@ -457,6 +458,22 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
             user_or_contract_address: ChecksumEvmAddress,
     ) -> EvmDecodingOutput:
         """Decode information related to depositing assets in curve pools"""
+        is_direct_pool_interaction = transaction.to_address == tx_log.address
+        display_pool_address = tx_log.address
+        if (
+            user_or_contract_address in self.curve_deposit_contracts and
+            tx_log.topics[0] in ADD_LIQUIDITY_EVENTS
+        ):
+            # Some zap routes emit AddLiquidity for an intermediate pool first and then
+            # AddLiquidityInDepositAndStake for the terminal metapool.
+            for i_log in all_logs[all_logs.index(tx_log) + 1:]:
+                if (
+                    i_log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE and
+                    i_log.address in self.pools
+                ):
+                    display_pool_address = i_log.address
+                    break
+
         deposit_events: list[EvmEvent] = []
         receive_event: EvmEvent | None = None
         received_asset: Asset | None = None
@@ -482,7 +499,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user_or_contract_address and
-                tx_log.address in self.pools
+                (tx_log.address in self.pools or is_direct_pool_interaction)
             ):
                 event.event_type = HistoryEventType.RECEIVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
@@ -493,17 +510,30 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
-                is_deposit_and_stake = any(  # check if this is a deposit-and-stake operation
-                    i_log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE
-                    for i_log in all_logs
-                )
+                is_deposit_and_stake = (
+                    transaction.to_address == DEPOSIT_AND_STAKE_ZAP and
+                    any(
+                        i_log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE
+                        for i_log in all_logs
+                    )
+                )  # check if this is a deposit-and-stake operation
 
                 if (
-                    tx_log.address in self.pools and
+                    (
+                        tx_log.address in self.pools or
+                        user_or_contract_address in self.curve_deposit_contracts or
+                        is_direct_pool_interaction
+                    ) and
                     is_deposit_and_stake is False and
                     (
                         event.location_label == user_or_contract_address or
-                        user_or_contract_address in self.curve_deposit_contracts
+                        (
+                            event.location_label == transaction.from_address and
+                            (
+                                user_or_contract_address in self.curve_deposit_contracts or
+                                event.address in self.curve_deposit_contracts
+                            )
+                        )
                     )
                 ):
                     # Likely the spend event for a deposit, but the matching is not very tight,
@@ -516,6 +546,25 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                             int.from_bytes(tx_log.data[offset + i * 32:offset + (i + 1) * 32])
                             for i in range(token_amounts_len)
                         ]
+                    elif tx_log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE:
+                        # For some historical pools this topic is used without a zap call.
+                        # If the pool is unknown to cache, infer token count from spend events.
+                        token_count = len(self.pools.get(tx_log.address, []))
+                        if token_count == 0:
+                            token_count = len([
+                                maybe_spend
+                                for maybe_spend in decoded_events
+                                if (
+                                    maybe_spend.event_type == HistoryEventType.SPEND and
+                                    maybe_spend.event_subtype == HistoryEventSubType.NONE and
+                                    maybe_spend.location_label == user_or_contract_address and
+                                    maybe_spend.address == tx_log.address
+                                )
+                            ])
+                        token_amounts = [
+                            int.from_bytes(tx_log.data[i:i + 32]) for i in
+                            range(0, token_count * 32, 32)
+                        ]
                     else:  # Token amounts are in a fixed size array
                         token_count = ADD_LIQUIDITY_TOKEN_COUNTS.get(tx_log.topics[0], 0)
                         token_amounts = [
@@ -523,13 +572,29 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                             range(0, token_count * 32, 32)
                         ]
 
-                    if asset_raw_value(amount=event.amount, asset=crypto_asset) not in token_amounts:  # noqa: E501
+                    raw_amount = asset_raw_value(amount=event.amount, asset=crypto_asset)
+                    # Some zap paths emit AddLiquidity amounts for intermediate assets while
+                    # user transfers are done with another token (e.g. wxDAI -> 3CRV).
+                    # In that case accept the event if the zap contract forwards the same
+                    # token and amount within the transaction.
+                    if raw_amount not in token_amounts and not (
+                        event.address in self.curve_deposit_contracts and
+                        event.location_label == transaction.from_address and
+                        event.asset.is_evm_token() and
+                        any(
+                            i_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                            i_log.address == event.asset.resolve_to_evm_token().evm_address and
+                            bytes_to_address(i_log.topics[1]) == event.address and
+                            int.from_bytes(i_log.data) == raw_amount
+                            for i_log in all_logs
+                        )
+                    ):
                         continue  # Event is not a deposit event.
 
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
                     event.counterparty = CPT_CURVE
-                    event.notes = f'Deposit {event.amount} {crypto_asset.symbol} in curve pool {tx_log.address}'  # noqa: E501
+                    event.notes = f'Deposit {event.amount} {crypto_asset.symbol} in curve pool {display_pool_address}'  # noqa: E501
                     deposit_events.append(event)
                 elif is_deposit_and_stake:
                     # when depositing in a gauge with deposit and stake
@@ -569,20 +634,23 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                         chain_id=self.node_inquirer.chain_id,
                     )
 
-            if lp_and_gauge_token_addresses is not None:
-                deposit_addresses = {event.address for event in deposit_events} | {ZERO_ADDRESS}
-                for i_log in all_logs[all_logs.index(tx_log) + 1:]:
-                    if (  # find the first log after deposit, where user receives the token from a deposit address  # noqa: E501
-                        (i_log.topics[0] == ERC20_OR_ERC721_TRANSFER) and
-                        (bytes_to_address(i_log.topics[1]) in deposit_addresses) and
-                        self.base.is_tracked(bytes_to_address(i_log.topics[2])) and
-                        i_log.address in lp_and_gauge_token_addresses and
-                        (received_asset := self._read_curve_asset(
-                            asset_address=i_log.address,
-                            encounter=TokenEncounterInfo(tx_ref=transaction.tx_hash),
-                        )) is not None
-                    ):
-                        break
+            deposit_addresses = {event.address for event in deposit_events} | {ZERO_ADDRESS}
+            for i_log in all_logs[all_logs.index(tx_log) + 1:]:
+                if (  # find the first log after deposit, where user receives the token from a deposit address  # noqa: E501
+                    (i_log.topics[0] == ERC20_OR_ERC721_TRANSFER) and
+                    (bytes_to_address(i_log.topics[1]) in deposit_addresses) and
+                    self.base.is_tracked(bytes_to_address(i_log.topics[2])) and
+                    (
+                        lp_and_gauge_token_addresses is None or
+                        i_log.address in lp_and_gauge_token_addresses or
+                        bytes_to_address(i_log.topics[1]) in self.curve_deposit_contracts
+                    ) and
+                    (received_asset := self._read_curve_asset(
+                        asset_address=i_log.address,
+                        encounter=TokenEncounterInfo(tx_ref=transaction.tx_hash),
+                    )) is not None
+                ):
+                    break
 
         # Make sure that the order is the following:
         # 1. Receive pool token event
@@ -590,7 +658,10 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
         # 3. Deposit 2
         # etc.
         if (
-            user_or_contract_address in self.curve_deposit_contracts and
+            (
+                user_or_contract_address in self.curve_deposit_contracts or
+                any(event.address in self.curve_deposit_contracts for event in deposit_events)
+            ) and
             len(deposit_events) > 0 and
             received_asset is not None
         ):  # for deposit zap contracts, this is handled using an action item
@@ -860,6 +931,14 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 user_or_contract_address=user_or_contract_address,
             )
         if context.tx_log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE:
+            if context.transaction.to_address != DEPOSIT_AND_STAKE_ZAP:
+                return self._decode_curve_deposit_events(
+                    transaction=context.transaction,
+                    tx_log=context.tx_log,
+                    all_logs=context.all_logs,
+                    decoded_events=context.decoded_events,
+                    user_or_contract_address=bytes_to_address(context.tx_log.topics[1]),
+                )
             return self._decode_deposit_and_stake(context=context)
 
         if context.tx_log.topics[0] in (

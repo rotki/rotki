@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 from sqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.utils import token_normalized_value
+from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
@@ -66,6 +67,7 @@ if TYPE_CHECKING:
         BlockchainAddress,
         BTCTxId,
         ChecksumEvmAddress,
+        EvmInternalTransaction,
         EVMTxHash,
         SolanaAddress,
     )
@@ -830,17 +832,20 @@ class TransactionsService:
             tx_ref: EVMTxHash,
             delete_custom: bool,
     ) -> None:
-        with self.rotkehlchen.data.db.user_write() as write_cursor:
-            write_cursor.execute(
-                'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-                (tx_ref, chain.to_chain_id().serialize_for_db()),
-            )
+        chain_manager = self.rotkehlchen.chains_aggregator.get_chain_manager(
+            blockchain=chain,
+        )
 
         try:
-            chain_manager = self.rotkehlchen.chains_aggregator.get_chain_manager(
-                blockchain=chain,
-            )
-            chain_manager.transactions.get_or_query_transaction_receipt(tx_hash=tx_ref)
+            if tx_ref == GENESIS_HASH:
+                transaction, _ = chain_manager.transactions.ensure_genesis_tx_data_exists()
+                raw_receipt_data = chain_manager.transactions.evm_inquirer.get_transaction_receipt(
+                    tx_hash=tx_ref,
+                )
+            else:
+                transaction, raw_receipt_data = chain_manager.transactions.evm_inquirer.get_transaction_by_hash(  # noqa: E501
+                    tx_hash=tx_ref,
+                )
         except RemoteError as e:
             raise InputError(
                 f'hash {tx_ref!s} does not correspond to a transaction at {chain.name}. {e!s}',
@@ -848,13 +853,54 @@ class TransactionsService:
         except DeserializationError as e:
             raise InputError(str(e)) from e
 
+        dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
+        parent_hash_internal_txs: list[EvmInternalTransaction] = []
+        if transaction.to_address is not None:  # internal transactions only through contracts
+            parent_hash_internal_txs, _ = chain_manager.transactions._query_internal_transactions_for_parent_hash(  # noqa: E501
+                parent_tx_hash=tx_ref,
+                address=None,
+                return_queried_hashes=False,
+                known_parent_timestamps={tx_ref: transaction.timestamp},
+            )
+
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                (tx_ref, chain_manager.node_inquirer.chain_id.serialize_for_db()),
+            )
+            dbevmtx.add_transactions(
+                write_cursor=write_cursor,
+                evm_transactions=[transaction],
+                relevant_address=None,
+            )
+            dbevmtx.add_or_ignore_receipt_data(
+                write_cursor=write_cursor,
+                chain_id=chain_manager.node_inquirer.chain_id,
+                data=raw_receipt_data,
+            )
+            if transaction.to_address is not None:  # internal transactions only through contracts
+                chain_manager.transactions._replace_internal_transactions_for_parent_hash(
+                    write_cursor=write_cursor,
+                    parent_tx_hash=tx_ref,
+                    transactions=parent_hash_internal_txs,
+                )
+
         events = chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
             tx_hashes=[tx_ref],
             send_ws_notifications=True,
             ignore_cache=True,
             delete_customized=delete_custom,
         )
+        self._maybe_notify_missing_credentials_after_decode(
+            chain=chain,
+            events=events,
+        )
 
+    def _maybe_notify_missing_credentials_after_decode(
+            self,
+            chain: SUPPORTED_EVM_CHAINS_TYPE,
+            events: list[Any],
+    ) -> None:
         if not has_premium_check(self.rotkehlchen.premium):
             return
 

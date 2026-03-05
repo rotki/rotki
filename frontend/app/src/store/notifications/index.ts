@@ -48,13 +48,11 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   const count = computed<number>(() => get(data).length);
 
-  const nextId = computed<number>(() => {
-    const ids = get(data)
-      .map(value => value.id)
-      .sort((a, b) => b - a);
+  let nextId = 1;
 
-    return ids.length > 0 ? ids[0] + 1 : 1;
-  });
+  function getNextId(): number {
+    return nextId++;
+  }
 
   const queue = computed<NotificationData[]>(() => get(prioritized).filter(notification => notification.display));
 
@@ -110,7 +108,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
     else {
       addNotifications([
-        createNotification(get(nextId), Object.assign(notificationDefaults(), {
+        createNotification(getNextId(), Object.assign(notificationDefaults(), {
           ...newData,
           group: NotificationGroup.DESERIALIZATION_ERROR,
           groupCount: 1,
@@ -169,7 +167,7 @@ export const useNotificationsStore = defineStore('notifications', () => {
       const endpoints = [endpoint];
       const extras: BeaconchainRateLimitedExtras = { endpoints, until: newUntil || undefined };
       addNotifications([
-        createNotification(get(nextId), Object.assign(notificationDefaults(), {
+        createNotification(getNextId(), Object.assign(notificationDefaults(), {
           ...newData,
           display: true,
           extras,
@@ -182,24 +180,78 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
   }
 
+  function addNewNotification(newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
+    const notification = createNotification(getNextId(), Object.assign(notificationDefaults(), newData));
+    const groupToFind = newData.group;
+
+    if (groupToFind && notification.display) {
+      set(lastDisplay, {
+        ...get(lastDisplay),
+        [groupToFind]: notification.date.getTime(),
+      });
+    }
+
+    addNotifications([notification]);
+  }
+
+  function updateExistingGroupNotification(
+    dataList: NotificationData[],
+    notificationIndex: number,
+    newData: SemiPartial<NotificationPayload, 'title' | 'message'>,
+  ): void {
+    const notification = dataList[notificationIndex];
+    let date = new Date();
+    let display = newData.display ?? false;
+
+    const currentTime = date.getTime();
+    const group = newData.group ?? '';
+    const lastTime = get(lastDisplay)[group] ?? 0;
+
+    if (currentTime - lastTime < NOTIFICATION_COOLDOWN_MS) {
+      date = notification.date;
+      display = false;
+    }
+
+    const newNotification: NotificationData = {
+      ...notification,
+      action: newData.action,
+      date,
+      display,
+      groupCount: newData.groupCount,
+      message: newData.message,
+      priority: newData.priority,
+      severity: newData.severity ?? notification.severity,
+      title: newData.title,
+    };
+
+    dataList.splice(notificationIndex, 1);
+    dataList.unshift(newNotification);
+    set(data, dataList);
+  }
+
+  function isBulkDuplicate(dataList: NotificationData[], newData: SemiPartial<NotificationPayload, 'title' | 'message'>): boolean {
+    if (newData.priority !== Priority.BULK)
+      return false;
+
+    const messages = dataList
+      .filter(notification => notification.priority === Priority.BULK)
+      .map(notification => notification.message);
+
+    return messages.includes(newData.message);
+  }
+
   const notify = (newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void => {
     const notifications = [...get(data)];
     const dataList = take(notifications, NOTIFICATION_MAX_SIZE - 1);
 
     set(messageOverflow, notifications.length > dataList.length);
 
-    if (newData.priority === Priority.BULK) {
-      const messages = dataList.filter(notification => notification.priority === Priority.BULK)
-        .map(notification => notification.message);
+    if (isBulkDuplicate(dataList, newData))
+      return;
 
-      if (messages.includes(newData.message)) {
-        return;
-      }
-
-      if (newData.message.startsWith(DESERIALIZATION_ERROR_PREFIX)) {
-        handleDeserializationError(dataList, newData);
-        return;
-      }
+    if (newData.priority === Priority.BULK && newData.message.startsWith(DESERIALIZATION_ERROR_PREFIX)) {
+      handleDeserializationError(dataList, newData);
+      return;
     }
 
     if (newData.message.includes(BEACONCHAIN_RATE_LIMITED_PREFIX)) {
@@ -208,51 +260,12 @@ export const useNotificationsStore = defineStore('notifications', () => {
     }
 
     const groupToFind = newData.group;
-
     const notificationIndex = groupToFind ? dataList.findIndex(({ group }) => group === groupToFind) : -1;
 
-    if (notificationIndex === -1) {
-      const notification = createNotification(get(nextId), Object.assign(notificationDefaults(), newData));
-
-      if (groupToFind && notification.display) {
-        set(lastDisplay, {
-          ...get(lastDisplay),
-          [groupToFind]: notification.date.getTime(),
-        });
-      }
-
-      addNotifications([notification]);
-    }
-    else {
-      const notification = dataList[notificationIndex];
-      let date = new Date();
-      let display = newData.display ?? false;
-
-      const currentTime = date.getTime();
-      const group = groupToFind ?? '';
-      const lastTime = get(lastDisplay)[group] ?? 0;
-
-      if (currentTime - lastTime < NOTIFICATION_COOLDOWN_MS) {
-        date = notification.date;
-        display = false;
-      }
-
-      const newNotification: NotificationData = {
-        ...notification,
-        action: newData.action,
-        date,
-        display,
-        groupCount: newData.groupCount,
-        message: newData.message,
-        priority: newData.priority,
-        severity: newData.severity ?? notification.severity,
-        title: newData.title,
-      };
-
-      dataList.splice(notificationIndex, 1);
-      dataList.unshift(newNotification);
-      set(data, dataList);
-    }
+    if (notificationIndex === -1)
+      addNewNotification(newData);
+    else
+      updateExistingGroupNotification(dataList, notificationIndex, newData);
   };
 
   const displayed = (ids: number[]): void => {
@@ -282,7 +295,6 @@ export const useNotificationsStore = defineStore('notifications', () => {
     data,
     displayed,
     messageOverflow,
-    nextId,
     notify,
     prioritized,
     queue,

@@ -79,6 +79,14 @@ describe('modules/sync-progress/components/LocationProgressItem', () => {
       expect(wrapper.find('[data-testid="icon"]').text()).toBe('lu-loader-circle');
     });
 
+    it('should display cancelled status and circle-x icon', () => {
+      const location = createLocation(LocationStatus.CANCELLED);
+      wrapper = createWrapper(location);
+
+      expect(wrapper.text()).toContain('sync_progress.status.cancelled');
+      expect(wrapper.find('[data-testid="icon"]').text()).toBe('lu-check');
+    });
+
     it('should display event type when querying', () => {
       const location = createLocation(LocationStatus.QUERYING, { eventType: 'trade' });
       wrapper = createWrapper(location);
@@ -111,6 +119,14 @@ describe('modules/sync-progress/components/LocationProgressItem', () => {
 
       const icon = wrapper.find('[data-testid="icon"]');
       expect(icon.classes()).toContain('text-rui-text-disabled');
+    });
+
+    it('should apply warning color for cancelled status', () => {
+      const location = createLocation(LocationStatus.CANCELLED);
+      wrapper = createWrapper(location);
+
+      const icon = wrapper.find('[data-testid="icon"]');
+      expect(icon.classes()).toContain('text-rui-warning');
     });
   });
 
@@ -161,6 +177,13 @@ describe('modules/sync-progress/components/LocationProgressItem', () => {
       wrapper = createWrapper(location);
 
       expect(wrapper.classes()).toContain('border-l-rui-primary');
+    });
+
+    it('should apply warning border for cancelled status', () => {
+      const location = createLocation(LocationStatus.CANCELLED);
+      wrapper = createWrapper(location);
+
+      expect(wrapper.classes()).toContain('border-l-rui-warning');
     });
   });
 });

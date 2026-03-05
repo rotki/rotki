@@ -17,10 +17,10 @@ import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
 
-function defaultPagination(): KrakenStakingPagination {
+function defaultPagination(itemsPerPage: number): KrakenStakingPagination {
   return {
     ascending: [false],
-    limit: useFrontendSettingsStore().itemsPerPage,
+    limit: itemsPerPage,
     offset: 0,
     orderByAttributes: ['timestamp'],
   };
@@ -38,8 +38,13 @@ function defaultEventState(): KrakenStakingEvents {
 }
 
 export const useKrakenStakingStore = defineStore('staking/kraken', () => {
-  const pagination = ref<KrakenStakingPagination>(defaultPagination());
+  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+  const pagination = ref<KrakenStakingPagination>(defaultPagination(get(itemsPerPage)));
   const rawEvents = ref<KrakenStakingEvents>(defaultEventState());
+
+  watch(itemsPerPage, (newValue: number) => {
+    set(pagination, { ...get(pagination), limit: newValue });
+  });
 
   const api = useKrakenApi();
 

@@ -53,6 +53,7 @@ from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.lend.balances import CurveLendBalances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
+from rotkehlchen.chain.evm.decoding.woo_fi.balances import WoofiBalances
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.gnosis.modules.giveth.balances import GivethBalances as GivethGnosisBalances
 from rotkehlchen.chain.optimism.modules.extrafi.balances import (
@@ -194,6 +195,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         CurveLendBalances,
         PendleBalances,
         CurveCrvusdBalances,
+        WoofiBalances,
     ),
     ChainID.OPTIMISM: (
         VelodromeBalances,
@@ -204,6 +206,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         WalletconnectBalances,
         CurveLendBalances,
         GivethOptimismBalances,
+        WoofiBalances,
     ),
     ChainID.BASE: (
         Compoundv3Balances,
@@ -221,17 +224,19 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         UmamiBalances,
         CurveLendBalances,
         HyperliquidBalances,
+        WoofiBalances,
     ),
     ChainID.POLYGON_POS: (
         Compoundv3Balances,
         HopBalances,
+        WoofiBalances,
     ),
     ChainID.GNOSIS: (
         HopBalances,
         GivethGnosisBalances,
     ),
     ChainID.SCROLL: (Compoundv3Balances,),
-    ChainID.BINANCE_SC: (),
+    ChainID.BINANCE_SC: (WoofiBalances,),
 }
 
 

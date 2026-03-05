@@ -19,7 +19,7 @@ export function useSessionPurge(): UseSessionPurge {
   const { resetStatus } = useStatusStore();
   const { awaitTask } = useTaskStore();
   const { notifyError } = useNotifications();
-  const { resetProtocolCacheUpdatesStatus } = useHistoryStore();
+  const { markAllProtocolCacheCancelled, resetProtocolCacheUpdatesStatus } = useHistoryStore();
   const { t } = useI18n({ useScope: 'global' });
 
   const purgeCache = (purgeable: Purgeable): void => {
@@ -39,6 +39,7 @@ export function useSessionPurge(): UseSessionPurge {
     }
     catch (error: unknown) {
       if (isTaskCancelled(error)) {
+        markAllProtocolCacheCancelled();
         return;
       }
       notifyError(

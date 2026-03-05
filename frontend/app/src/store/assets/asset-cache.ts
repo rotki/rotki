@@ -1,7 +1,7 @@
 import type { AssetMap } from '@/types/asset';
 import { type AssetCollection, type AssetInfo, transformCase } from '@rotki/common';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
-import { useItemCache } from '@/composables/item-cache';
+import { createItemCache } from '@/composables/item-cache';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
@@ -30,20 +30,22 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     }
   };
 
-  const { cache, deleteCacheKey, isPending, queueIdentifier, reset, retrieve } = useItemCache<AssetInfo>(
+  const { cache, deleteCacheKey, isPending, queueIdentifier, reset, resolve } = createItemCache<AssetInfo>(
     async (keys: string[]) => {
       const response = await getAssetMappingHandler(keys);
       return function* (): Generator<{ item: AssetInfo; key: string }, void> {
         if (!response)
           return;
 
-        for (const key of keys) {
-          const { assetCollections, assets } = response;
+        const { assetCollections, assets } = response;
+        if (Object.keys(assetCollections).length > 0) {
           set(fetchedAssetCollections, {
             ...get(fetchedAssetCollections),
             ...assetCollections,
           });
+        }
 
+        for (const key of keys) {
           const item = assets[transformCase(key, true)];
           yield { item, key };
         }
@@ -62,7 +64,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
     isPending,
     queueIdentifier,
     reset,
-    retrieve,
+    resolve,
   };
 });
 

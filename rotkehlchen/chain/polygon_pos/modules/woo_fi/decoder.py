@@ -36,4 +36,5 @@ class WooFiDecoder(WooFiCommonDecoder):
             )],
             woo_token_address=string_to_evm_address('0x1B815d120B3eF02039Ee11dC2d33DE7aA4a8C603'),
             stake_v1_address=string_to_evm_address('0x9BCf8b0B62F220f3900e2dc42dEB85C3f79b405B'),
+            stake_v2_address=string_to_evm_address('0xba91ffD8a2B9F68231eCA6aF51623B3433A89b13'),
         )

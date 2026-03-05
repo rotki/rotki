@@ -667,6 +667,10 @@ class EvmToken(CryptoAsset):
     def get_decimals(self) -> int:
         return 18 if self.decimals is None else self.decimals
 
+    @property
+    def db_table(self) -> str:
+        return 'evm_tokens'
+
     def is_liability(self) -> bool:
         """Returns True if the token is a liability token, False if it's an asset token"""
         return (
@@ -822,6 +826,10 @@ class SolanaToken(CryptoAsset):
             cryptocompare=entry[9],
             protocol=entry[10],
         )
+
+    @property
+    def db_table(self) -> str:
+        return 'solana_tokens'
 
     def to_dict(self) -> dict[str, Any]:
         return super(SolanaToken, self).to_dict() | {

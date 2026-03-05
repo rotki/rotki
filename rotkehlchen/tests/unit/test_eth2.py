@@ -752,6 +752,98 @@ def test_combine_block_with_tx_events(eth2, database):
         assert hidden_ids == [2]
 
 
+def test_combine_block_with_tx_events_without_relay_data(eth2, database):
+    """Test mev reward event combination when relay data is missing."""
+    dbevents = DBHistoryEvents(database)
+    dbeth2 = DBEth2(database)
+    dbevmtx = DBEvmTx(database)
+    vindex = 4242
+    payout_recipient = string_to_evm_address('0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b')
+    fee_recipient = string_to_evm_address('0x690B9A9E9aa1C9dB991C7721a92d351Db4FaC990')
+    block_number = 1337
+    tx_hash = deserialize_evm_tx_hash('0x8d0969db1e536969ba2e29abf8e8945e4304d49ae14523b66cbe9be5d52df804')  # noqa: E501
+    mev_reward = FVal('0.1')
+    timestampms = TimestampMS(1666693607000)
+
+    with database.user_write() as write_cursor:
+        dbeth2.add_or_update_validators(write_cursor, [
+            ValidatorDetails(
+                validator_index=vindex,
+                validator_type=ValidatorType.DISTRIBUTING,
+                public_key=Eth2PubKey('0xadd9843b2eb53ccaf5afb52abcc0a1322308832065v6fdfb162360ca53a71ebf8775dbebd0f1f1bf6c3e823d4bf2815f7'),
+            ),
+        ])
+        database.add_blockchain_accounts(write_cursor, [BlockchainAccountData(chain=SupportedBlockchain.ETHEREUM, address=payout_recipient)])  # noqa: E501
+
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[EvmTransaction(
+                tx_hash=tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                timestamp=Timestamp(1666693607),
+                block_number=block_number,
+                from_address=fee_recipient,
+                to_address=payout_recipient,
+                value=100000000000000000,
+                gas=27500,
+                gas_price=9213569214,
+                gas_used=0,  # irrelevant
+                input_data=b'',  # irrelevant
+                nonce=16239,
+            )],
+            relevant_address=payout_recipient,
+        )
+
+        dbevents.add_history_events(write_cursor, [
+            EthBlockEvent(
+                validator_index=vindex,
+                timestamp=timestampms,
+                amount=mev_reward,
+                fee_recipient=fee_recipient,
+                fee_recipient_tracked=False,
+                block_number=block_number,
+                is_mev_reward=False,
+            ), EvmEvent(
+                tx_ref=tx_hash,
+                sequence_index=0,
+                timestamp=timestampms,
+                location=Location.ETHEREUM,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                amount=mev_reward,
+                location_label=payout_recipient,
+                notes=f'Received {mev_reward} ETH from {fee_recipient}',
+            ),
+        ])
+
+    eth2.combine_block_with_tx_events()
+
+    with database.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events_internal(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            aggregate_by_group_ids=False,
+        )
+
+    modified_event = EvmEvent(
+        identifier=2,
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestampms,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.MEV_REWARD,
+        asset=A_ETH,
+        amount=mev_reward,
+        location_label=payout_recipient,
+        notes=f'Received {mev_reward} ETH from {fee_recipient} as mev reward for block {block_number} in {tx_hash!s}',  # noqa: E501
+        group_identifier=EthBlockEvent.form_group_identifier(block_number),
+        extra_data={'validator_index': vindex},
+    )
+    assert modified_event == events[1]
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-04-30 21:52:55 GMT')

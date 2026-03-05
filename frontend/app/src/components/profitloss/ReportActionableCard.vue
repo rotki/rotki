@@ -33,7 +33,7 @@ function setDialog(dialog: boolean) {
 }
 
 const reportsStore = useReportsStore();
-const { actionableItems } = toRefs(reportsStore);
+const { actionableItems } = storeToRefs(reportsStore);
 
 const step = ref<number>(1);
 

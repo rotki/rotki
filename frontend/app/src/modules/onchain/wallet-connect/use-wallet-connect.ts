@@ -4,6 +4,7 @@ import { type AppKitNetwork, arbitrum, base, bsc, gnosis, mainnet, optimism, pol
 import { type AppKit, createAppKit } from '@reown/appkit/vue';
 import { BrowserProvider, getAddress } from 'ethers';
 import { logger } from '@/utils/logging';
+import { EIP155 } from '../wallet-constants';
 
 const ROTKI_DAPP_METADATA = {
   description: 'Rotki Dapp',
@@ -11,8 +12,6 @@ const ROTKI_DAPP_METADATA = {
   name: 'Rotki Dapp',
   url: 'https://rotki.com',
 };
-
-export const EIP155 = 'eip155';
 
 export const supportedNetworks: [AppKitNetwork, ...AppKitNetwork[]] = [
   mainnet,

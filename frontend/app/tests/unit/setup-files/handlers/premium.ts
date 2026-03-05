@@ -32,9 +32,10 @@ const mockPremiumDevicesResponse: ActionResult<PremiumDevicesResponse> = {
 
 const mockPremiumCapabilitiesResponse: ActionResult<PremiumCapabilities> = {
   result: {
-    [PremiumFeature.ETH_STAKING_VIEW]: true,
-    [PremiumFeature.EVENT_ANALYSIS_VIEW]: true,
-    [PremiumFeature.GRAPHS_VIEW]: true,
+    [PremiumFeature.ASSET_MOVEMENT_MATCHING]: { enabled: true, minimumTier: 'Free' },
+    [PremiumFeature.ETH_STAKING_VIEW]: { enabled: true, minimumTier: 'Free' },
+    [PremiumFeature.EVENT_ANALYSIS_VIEW]: { enabled: true, minimumTier: 'Free' },
+    [PremiumFeature.GRAPHS_VIEW]: { enabled: true, minimumTier: 'Free' },
   },
   message: '',
 };

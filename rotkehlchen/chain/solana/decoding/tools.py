@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any
 
 from solders.solders import Signature
 
+from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_solana_token
 from rotkehlchen.chain.decoding.tools import BaseDecoderTools
 from rotkehlchen.chain.solana.types import SolanaInstruction, SolanaTransaction
 from rotkehlchen.fval import FVal
@@ -16,7 +17,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
-    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.assets.asset import Asset, SolanaToken
     from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -102,3 +103,18 @@ class SolanaDecoderTools(BaseDecoderTools[SolanaTransaction, SolanaAddress, Sign
             extra_data=extra_data,
         )] = instruction
         return event
+
+    def get_or_create_solana_token(
+            self,
+            address: SolanaAddress,
+            protocol: str | None = None,
+            encounter: 'TokenEncounterInfo | None' = None,
+    ) -> 'SolanaToken':
+        """A version of get_or_create_solana_token to be called from the decoders"""
+        return get_or_create_solana_token(
+            userdb=self.database,
+            address=address,
+            solana_inquirer=self.node_inquirer,
+            protocol=protocol,
+            encounter=encounter,
+        )

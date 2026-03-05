@@ -16,8 +16,10 @@ describe('modules/sync-progress/components/ProtocolCacheProgressList', () => {
     protocol: string,
     processed: number,
     total: number,
+    cancelled = false,
   ): ProtocolCacheProgress {
     return {
+      cancelled,
       chain,
       processed,
       progress: total > 0 ? Math.round((processed / total) * 100) : 0,
@@ -141,6 +143,39 @@ describe('modules/sync-progress/components/ProtocolCacheProgressList', () => {
       expect(inProgressItem?.attributes('data-compact')).toBe('false');
       // Completed items are rendered in compact mode
       expect(completedItem?.attributes('data-compact')).toBe('true');
+    });
+  });
+
+  describe('cancelled items', () => {
+    it('should move cancelled items to the completed section', () => {
+      const protocolCache = [
+        createProtocolCacheProgress('eth', 'uniswap_v3', 50, 100, true),
+        createProtocolCacheProgress('optimism', 'velodrome', 30, 100),
+      ];
+      wrapper = createWrapper(protocolCache);
+
+      // Only non-cancelled in-progress item should show
+      const items = wrapper.findAll('[data-testid="protocol-cache-item"]');
+      expect(items).toHaveLength(1);
+      expect(items[0].attributes('data-chain')).toBe('optimism');
+
+      // Cancelled item should be in the completed toggle
+      expect(wrapper.text()).toContain('sync_progress.completed_protocol_cache');
+    });
+
+    it('should show cancelled items when completed toggle is clicked', async () => {
+      const protocolCache = [
+        createProtocolCacheProgress('eth', 'uniswap_v3', 50, 100, true),
+        createProtocolCacheProgress('optimism', 'velodrome', 30, 100),
+      ];
+      wrapper = createWrapper(protocolCache);
+
+      const buttons = wrapper.findAll('button');
+      const toggleButton = buttons.find(btn => btn.text().includes('sync_progress.completed_protocol_cache'));
+      await toggleButton?.trigger('click');
+
+      const items = wrapper.findAll('[data-testid="protocol-cache-item"]');
+      expect(items).toHaveLength(2);
     });
   });
 

@@ -11,9 +11,9 @@ export const useTagStore = defineStore('session/tags', () => {
 
   const tags = computed(() => Object.values(get(allTags)));
 
+  const { t } = useI18n({ useScope: 'global' });
   const { removeTag, renameTag } = useBlockchainAccountsStore();
   const { showErrorMessage } = useNotifications();
-  const { t } = useI18n({ useScope: 'global' });
   const { queryAddTag, queryDeleteTag, queryEditTag, queryTags } = useTagsApi();
 
   const addTag = async (tag: Tag): Promise<ActionStatus> => {
@@ -68,9 +68,7 @@ export const useTagStore = defineStore('session/tags', () => {
   };
 
   function tagExists(tagName: string): boolean {
-    return get(tags)
-      .map(({ name }) => name)
-      .includes(tagName);
+    return get(tags).some(({ name }) => name === tagName);
   }
 
   async function attemptTagCreation(tag: string, backgroundColor?: string): Promise<boolean> {

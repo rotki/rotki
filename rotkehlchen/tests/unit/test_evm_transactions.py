@@ -218,9 +218,9 @@ def test_query_and_save_internal_transactions_returns_only_new_hashes(
         'get_transaction_by_hash',
         side_effect=_mock_get_transaction_by_hash,
     ):
-        queried_hashes = ethereum_manager.transactions._query_and_save_internal_transactions_for_range_or_parent_hash(  # noqa: E501
+        queried_hashes = ethereum_manager.transactions._query_and_save_internal_transactions_for_range(  # noqa: E501
             address=address,
-            period_or_hash=TimestampOrBlockRange(range_type='blocks', from_value=0, to_value=1),
+            period=TimestampOrBlockRange(range_type='blocks', from_value=0, to_value=1),
             return_queried_hashes=True,
         )
 
@@ -279,8 +279,8 @@ def test_query_single_parent_hash_replaces_existing_internal_transactions(
             gas_used=0,
         )]]),
     ):
-        ethereum_manager.transactions._query_and_save_internal_transactions_for_range_or_parent_hash(
-            period_or_hash=parent_tx.tx_hash,
+        ethereum_manager.transactions._query_and_save_internal_transactions_for_parent_hash(
+            parent_tx_hash=parent_tx.tx_hash,
         )
 
     with database.conn.read_ctx() as cursor:

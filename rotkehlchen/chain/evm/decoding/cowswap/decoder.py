@@ -211,7 +211,7 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
         Returns a list of pairs (spend_event, receive_event, fee_event, swap_data)
         which represent the relevant trades.
         """
-        related_transfer_events: dict[tuple[EventDirection, Asset, FVal], EvmEvent] = {}
+        related_transfer_events: dict[tuple[EventDirection, str, FVal], EvmEvent] = {}
         for event in decoded_events:
             if (
                     (event.event_type in (HistoryEventType.SPEND, HistoryEventType.RECEIVE) or
@@ -224,17 +224,18 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
                     log.error(f'Could not find direction of event {event}. Should never happen')
                     continue
 
-                related_transfer_events[direction, event.asset, event.amount] = event
+                # use symbols due to Monerium and its different versions
+                related_transfer_events[direction, event.asset.resolve_to_asset_with_symbol().symbol, event.amount] = event  # noqa: E501
 
         trades_events: list[tuple[EvmEvent, EvmEvent, EvmEvent | None, CowswapSwapData]] = []
         for swap_data in all_swap_data:
-            receive_event = related_transfer_events.get((EventDirection.IN, swap_data.to_asset, swap_data.to_amount))  # noqa: E501
+            receive_event = related_transfer_events.get((EventDirection.IN, swap_data.to_asset.resolve_to_asset_with_symbol().symbol, swap_data.to_amount))  # noqa: E501
             if receive_event is None:
                 continue
 
             if swap_data.from_asset != self.node_inquirer.native_token:
                 # If a token is spent, there has to be an event for that.
-                spend_event = related_transfer_events.get((EventDirection.OUT, swap_data.from_asset, swap_data.from_amount + swap_data.fee_amount))  # noqa: E501
+                spend_event = related_transfer_events.get((EventDirection.OUT, swap_data.from_asset.resolve_to_asset_with_symbol().symbol, swap_data.from_amount + swap_data.fee_amount))  # noqa: E501
                 if spend_event is None:
                     log.error(
                         f'Could not find a spend event of {swap_data.from_amount} '

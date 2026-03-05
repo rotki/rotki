@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import asset_normalized_value, get_single_underlying_token
@@ -160,12 +160,14 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         for event in decoded_events:  # identify the events decoded till now
             if (
                     event.event_type == HistoryEventType.DEPOSIT and
-                    event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                    event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED and
+                    event.counterparty == self.counterparty
             ):
                 supply_events.append(event)
             elif (
                     event.event_type == HistoryEventType.WITHDRAWAL and
-                    event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED
+                    event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED and
+                    event.counterparty == self.counterparty
             ):
                 withdraw_events.append(event)
             elif (
@@ -311,15 +313,31 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                     interest_event_lookup[earned_event.asset].append(earned_event)
 
         if len(supply_events) != 0 and len(receive_events) != 0:  # re-assign the receive amount  # noqa: E501
+            grouped_receive_events: dict[tuple[Asset, ChecksumEvmAddress | None], list[EvmEvent]] = defaultdict(list)  # noqa: E501
             for receive_event in receive_events:
+                grouped_receive_events[
+                    receive_event.asset,
+                    cast('ChecksumEvmAddress | None', receive_event.location_label),
+                ].append(receive_event)
+
+            for (asset, location_label), grouped_events in grouped_receive_events.items():
                 if (interest_amount := self._get_interest_amount_for_event(
-                    event=receive_event,
+                    asset=asset,
+                    location_label=location_label,
                     interest_event_lookup=interest_event_lookup,
                 )) == ZERO:
                     continue
 
-                receive_event.amount = FVal((receive_event.amount - interest_amount).num.normalize())  # noqa: E501
-                receive_event.notes = f'Receive {receive_event.amount} {receive_event.asset.resolve_to_asset_with_symbol().symbol} from {self.label}'  # noqa: E501
+                # Native and wrapped-native can both be supplied into the same aToken reserve.
+                # Aggregate all receives for the same wrapped asset and user, then subtract
+                # interest once to derive the principal received amount.
+                total_received = FVal(sum((x.amount for x in grouped_events), start=ZERO))
+                grouped_events[0].amount = FVal((total_received - interest_amount).num.normalize())
+                grouped_events[0].notes = f'Receive {grouped_events[0].amount} {grouped_events[0].asset.resolve_to_asset_with_symbol().symbol} from {self.label}'  # noqa: E501
+
+                for extra_receive_event in grouped_events[1:]:
+                    receive_events.remove(extra_receive_event)
+                    decoded_events.remove(extra_receive_event)
 
         if len(withdraw_events) != 0 and earned_event is not None:
             if len(return_events) != 0:  # re-assign the withdraw amounts
@@ -389,6 +407,42 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                 ),
             )
 
+        # If a wrapped-native withdraw is immediately unwrapped in the same tx,
+        # keep it between the AAVE withdraw and the final interest event.
+        for unwrap_event in decoded_events:
+            if (
+                    unwrap_event in ordered_events or
+                    unwrap_event.event_type != HistoryEventType.SPEND or
+                    unwrap_event.event_subtype != HistoryEventSubType.RETURN_WRAPPED or
+                    unwrap_event.asset != self.node_inquirer.wrapped_native_token
+            ):
+                continue
+
+            matching_receive = next((
+                event for event in decoded_events
+                if (
+                    event not in ordered_events and
+                    event.event_type == HistoryEventType.WITHDRAWAL and
+                    event.event_subtype == HistoryEventSubType.REDEEM_WRAPPED and
+                    event.asset == self.node_inquirer.native_token and
+                    event.location_label == unwrap_event.location_label and
+                    event.amount == unwrap_event.amount
+                )
+            ), None)
+            if matching_receive is None:
+                continue
+
+            for idx, maybe_interest_event in enumerate(ordered_events):
+                if (
+                    maybe_interest_event.event_type == HistoryEventType.RECEIVE and
+                    maybe_interest_event.event_subtype == HistoryEventSubType.INTEREST and
+                    maybe_interest_event.asset == self.node_inquirer.wrapped_native_token and
+                    maybe_interest_event.location_label == unwrap_event.location_label
+                ):
+                    ordered_events.insert(idx, unwrap_event)
+                    ordered_events.insert(idx + 1, matching_receive)
+                    break
+
         for interest_event in interest_events_in_order:
             if interest_event.sequence_index not in used_interest_event_ids:
                 ordered_events.append(interest_event)
@@ -410,24 +464,32 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
             match_fn: 'Callable[["EvmEvent", "EvmEvent"], bool]',
     ) -> None:
         """Helper to pair events by underlying asset and track assets for interest events."""
-        for primary_event in primary_events:
-            matched_asset = {primary_event.asset}
-            found_match = False
-            for secondary_event in secondary_events:
-                if match_fn(primary_event, secondary_event):
-                    matched_asset.add(secondary_event.asset)
-                    ordered_events.extend([primary_event, secondary_event])
-                    found_match = True
-
-            # add matching interest events for this asset pair
-            if found_match:
-                Aavev3LikeCommonDecoder._append_interest_events(
-                    matched_asset=matched_asset,
-                    location_label=primary_event.location_label,  # type: ignore  # we know it is an address
-                    ordered_events=ordered_events,
-                    interest_event_lookup=interest_event_lookup,
-                    used_interest_event_ids=used_interest_event_ids,
+        used_primary_events: set[int] = set()
+        for secondary_event in secondary_events:
+            matched_primary_events = [
+                primary_event for primary_event in primary_events
+                if (
+                    primary_event.sequence_index not in used_primary_events and
+                    match_fn(primary_event, secondary_event)
                 )
+            ]
+            if len(matched_primary_events) == 0:
+                continue
+
+            matched_asset = {secondary_event.asset}
+            for primary_event in matched_primary_events:
+                ordered_events.append(primary_event)
+                used_primary_events.add(primary_event.sequence_index)
+                matched_asset.add(primary_event.asset)
+
+            ordered_events.append(secondary_event)
+            Aavev3LikeCommonDecoder._append_interest_events(
+                matched_asset=matched_asset,
+                location_label=cast('ChecksumEvmAddress | None', secondary_event.location_label),
+                ordered_events=ordered_events,
+                interest_event_lookup=interest_event_lookup,
+                used_interest_event_ids=used_interest_event_ids,
+            )
 
     @staticmethod
     def _append_interest_events(
@@ -451,16 +513,17 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
 
     @staticmethod
     def _get_interest_amount_for_event(
-            event: 'EvmEvent',
+            asset: 'Asset',
+            location_label: 'ChecksumEvmAddress | None',
             interest_event_lookup: 'dict[Asset, list[EvmEvent]]',
     ) -> FVal:
-        """Return the total interest amount already decoded for the same asset."""
-        if (interest_events := interest_event_lookup.get(event.asset)) is None:
+        """Return the total interest amount already decoded for the same asset and user."""
+        if (interest_events := interest_event_lookup.get(asset)) is None:
             return ZERO
 
         return FVal(sum(
             (interest_event.amount for interest_event in interest_events
-            if interest_event.location_label == event.location_label),
+            if interest_event.location_label == location_label),
             start=ZERO,
         ))
 

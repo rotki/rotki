@@ -8,7 +8,13 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.beefy_finance.constants import CPT_BEEFY_FINANCE
 from rotkehlchen.chain.evm.decoding.morpho.constants import CPT_MORPHO
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    NodeName,
+    SerializableChainIndexerOrder,
+    WeightedNode,
+    string_to_evm_address,
+)
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH, A_GMX, A_USDC, A_WETH_ARB, A_WETH_BASE
 from rotkehlchen.globaldb.cache import (
@@ -24,6 +30,7 @@ from rotkehlchen.types import (
     ChainID,
     FVal,
     Location,
+    SupportedBlockchain,
     TimestampMS,
     TokenKind,
     deserialize_evm_tx_hash,
@@ -398,6 +405,105 @@ def test_deposit_to_beefy_morpho_vault(
         notes=f'Receive {receive_amount} mooMorpho-Seamless-WETH after depositing in a Beefy vault',  # noqa: E501
         counterparty=CPT_BEEFY_FINANCE,
         address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{
+    'evm_indexers_order': SerializableChainIndexerOrder({ChainID.BASE: [EvmIndexer.ROUTESCAN]}),
+}])
+@pytest.mark.parametrize('base_manager_connect_at_start', [(
+    WeightedNode(
+        node_info=NodeName(
+            name='base-open-rpc',
+            endpoint='https://mainnet.base.org',
+            owned=False,
+            blockchain=SupportedBlockchain.BASE,
+        ), active=True, weight=ONE,
+    ),
+)])
+@pytest.mark.parametrize('base_accounts', [['0x4d2A353Dcd9B25A241382241C9b9a27B7cD08f20']])
+def test_beefy_base_deposit_no_rogue_aerodrome_receive(
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list['ChecksumEvmAddress'],
+        allow_base_routescan: None,
+) -> None:
+    _set_beefy_cache(
+        chain_id=ChainID.BASE,
+        entries=[(
+            string_to_evm_address('0xc005B9833deBcF5fe6cc5bC9ba4fD74Bb382ae55'),
+            string_to_evm_address('0x6cDcb1C4A4D1C3C6d054b27AC5B77e89eAFb971d'),
+            False,
+        )],
+    )
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xf0cb2118b1c25cb5623e8f56b7105f2e426164f8f9390e747baed0d68fcf23f4')),  # noqa: E501
+        relevant_address=base_accounts[0],
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1709578855000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000138113516888167'),
+        location_label=(user_address := base_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=30,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:8453/erc20:0x6cDcb1C4A4D1C3C6d054b27AC5B77e89eAFb971d'),
+        amount=FVal(approval_amount := '7999999999.999986806502451894'),
+        location_label=user_address,
+        notes=f'Set vAMM-USDC/AERO spending approval of {user_address} by 0xc005B9833deBcF5fe6cc5bC9ba4fD74Bb382ae55 to {approval_amount}',  # noqa: E501
+        address=string_to_evm_address('0xc005B9833deBcF5fe6cc5bC9ba4fD74Bb382ae55'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=31,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        asset=Asset('eip155:8453/erc20:0x6cDcb1C4A4D1C3C6d054b27AC5B77e89eAFb971d'),
+        amount=FVal(lp_spend_amount := '0.000000678153946349'),
+        location_label=user_address,
+        notes=f'Deposit {lp_spend_amount} vAMM-USDC/AERO in a Beefy vault',
+        counterparty=CPT_BEEFY_FINANCE,
+        address=string_to_evm_address('0xc005B9833deBcF5fe6cc5bC9ba4fD74Bb382ae55'),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=32,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        asset=Asset('eip155:8453/erc20:0xc005b9833debcf5fe6cc5bc9ba4fd74bb382ae55'),
+        amount=FVal(moo_receive_amount := '0.000000584391176883'),
+        location_label=user_address,
+        notes=f'Receive {moo_receive_amount} mooAeroUSDC-AERO after depositing in a Beefy vault',
+        counterparty=CPT_BEEFY_FINANCE,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=33,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_WETH_BASE,
+        amount=FVal(weth_receive_amount := '0.000006021253801975'),
+        location_label=user_address,
+        notes=f'Receive {weth_receive_amount} WETH as Beefy strategy harvest call reward',
+        counterparty=CPT_BEEFY_FINANCE,
+        address=string_to_evm_address('0xedE4Dd6758634007Eb1f4cF8A203bf237A44ea4C'),
     )]
 
 

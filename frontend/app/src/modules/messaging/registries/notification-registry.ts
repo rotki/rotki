@@ -4,6 +4,7 @@ import { createGnosisPaySessionHandler } from '../handlers/gnosis-pay-session';
 import { createLegacyHandler } from '../handlers/legacy';
 import { createMissingApiKeyHandler } from '../handlers/missing-api-key';
 import { createMoneriumSessionHandler } from '../handlers/monerium-session';
+import { createNoAvailableIndexersHandler } from '../handlers/no-available-indexers';
 import { createPremiumStatusHandler } from '../handlers/premium-status';
 import { createSnapshotErrorHandler } from '../handlers/snapshot-error';
 import { createSolanaTokensHandler } from '../handlers/solana-tokens-migration';
@@ -24,6 +25,7 @@ export function createNotificationRegistry(
     [SocketMessageType.LEGACY]: createLegacyHandler(t),
     [SocketMessageType.MISSING_API_KEY]: missingApiKeyHandler,
     [SocketMessageType.MONERIUM_SESSIONKEY_EXPIRED]: createMoneriumSessionHandler(t, router),
+    [SocketMessageType.NO_AVAILABLE_INDEXERS]: createNoAvailableIndexersHandler(t, router),
     [SocketMessageType.PREMIUM_STATUS_UPDATE]: createPremiumStatusHandler(t),
     [SocketMessageType.SOLANA_TOKENS_MIGRATION]: createSolanaTokensHandler(t, router),
     [SocketMessageType.UNMATCHED_ASSET_MOVEMENTS]: createUnmatchedAssetMovementsHandler(t, router),

@@ -75,12 +75,13 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
       return Zero;
     }
 
-    // If historic timestamp is provided, use historic price
+    // If historic timestamp is provided, use historic price (no fallback to current price)
     if (ts > 0) {
       const historicPrice = get(historicPriceInCurrentCurrency(assetVal, ts));
       if (historicPrice.gt(0)) {
         return historicPrice;
       }
+      return Zero;
     }
 
     // If known price is provided, use it directly

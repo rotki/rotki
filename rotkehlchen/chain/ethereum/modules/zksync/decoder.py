@@ -1,13 +1,15 @@
 from typing import Any, Final
 
-from rotkehlchen.assets.utils import asset_raw_value
+from rotkehlchen.assets.utils import asset_normalized_value, asset_raw_value
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
+    ActionItem,
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
@@ -18,6 +20,7 @@ ONCHAIN_DEPOSIT: Final = b'\xb6\x86k\x02\x9f:\xa2\x9c\xd9\xe2\xbf\xf8\x15\x9a\x8
 DEPOSIT: Final = b'\x8f_QD\x83\x94i\x9a\xd6\xa3\xb8\x0c\xda\xdfN\xc6\x8c]rL\x8c?\xea\t\xbe\xa5[<-\x0e-\xd0'  # noqa: E501
 NEW_PRIORITY_REQUEST: Final = b'\xd0\x943r\xc0\x8bC\x8a\x88\xd4\xb3\x9dw!i\x01\x07\x9e\xda\x9c\xa5\x9dE4\x98A\xc0\x99\x08;h0'  # noqa: E501
 PENDING_WITHDRAWALS_COMPLETE: Final = b'\x9bTx\xc9\x9b\\\xa4\x1b\xee\xc4\xf6\xf6\x08A&\xd6\xf9\xe2c\x82\xd0\x17\xb4\xbbg\xc3|\x9e\x84S\xa3\x13'  # noqa: E501
+WITHDRAWAL: Final = b'\xef\xefa\x9a\xe4\xa5B\xa2\xb8\x81\x0bN\xfe\xcc\xd8G\x8b\xd6\x83\xe9\x855N\xe3\x1d\xd2\xd6D\xaf\xf6\xd0\xca'  # noqa: E501
 
 
 class ZksyncDecoder(EvmDecoderInterface):
@@ -36,6 +39,8 @@ class ZksyncDecoder(EvmDecoderInterface):
                     return self._decode_deposit(context, user_address)
         elif context.tx_log.topics[0] == PENDING_WITHDRAWALS_COMPLETE:
             return self._decode_withdrawal(context)
+        elif context.tx_log.topics[0] == WITHDRAWAL:
+            return self._decode_single_withdrawal(context)
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
@@ -81,6 +86,60 @@ class ZksyncDecoder(EvmDecoderInterface):
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ZKSYNC
                 event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from zksync'
+
+        return DEFAULT_EVM_DECODING_OUTPUT
+
+    def _decode_single_withdrawal(self, context: DecoderContext) -> EvmDecodingOutput:
+        """Decode a single zksync lite withdrawal event from batched withdrawals."""
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        amount_raw = int.from_bytes(context.tx_log.data)
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.location_label == user_address and
+                    asset_raw_value(
+                        amount=event.amount,
+                        asset=event.asset.resolve_to_crypto_asset(),
+                    ) == amount_raw
+            ):
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.BRIDGE
+                event.counterparty = CPT_ZKSYNC
+                event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from zksync'
+                break
+        else:  # no matching transfer found
+            if int.from_bytes(context.tx_log.topics[2]) != 0:  # non-ETH token
+                return EvmDecodingOutput(action_items=[ActionItem(
+                    action='transform',
+                    from_event_type=HistoryEventType.RECEIVE,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    location_label=user_address,
+                    to_event_type=HistoryEventType.WITHDRAWAL,
+                    to_event_subtype=HistoryEventSubType.BRIDGE,
+                    to_notes='Withdraw {amount} {symbol} from zksync',
+                    to_counterparty=CPT_ZKSYNC,
+                    to_address=ZKSYNC_BRIDGE,
+                )])
+
+            amount = asset_normalized_value(
+                amount=amount_raw,
+                asset=(asset := A_ETH.resolve_to_crypto_asset()),
+            )
+            return EvmDecodingOutput(events=[self.base.make_event_from_transaction(
+                transaction=context.transaction,
+                tx_log=context.tx_log,
+                event_type=HistoryEventType.WITHDRAWAL,
+                event_subtype=HistoryEventSubType.BRIDGE,
+                asset=asset,
+                amount=amount,
+                location_label=user_address,
+                notes=f'Withdraw {amount} {asset.symbol} from zksync',
+                counterparty=CPT_ZKSYNC,
+                address=ZKSYNC_BRIDGE,
+            )])
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
