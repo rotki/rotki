@@ -1,6 +1,6 @@
-import type { ComputedRef, MaybeRef } from 'vue';
+import type { ComputedRef, InjectionKey, MaybeRefOrGetter } from 'vue';
 import type { TradableAsset, TradableAssetWithoutValue } from '@/modules/onchain/types';
-import type { BlockchainAssetBalances, EthBalance, ProtocolBalances } from '@/types/blockchain/balances';
+import type { BlockchainAssetBalances, EthBalance } from '@/types/blockchain/balances';
 import { Zero } from '@rotki/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -10,179 +10,119 @@ import { useWalletStore } from './use-wallet-store';
 
 interface UseTradableAssetReturn {
   allOwnedAssets: ComputedRef<TradableAsset[]>;
-  getAssetDetail: (asset: MaybeRef<string>, chain: MaybeRef<string>) => ComputedRef<TradableAsset | undefined>;
+  getAssetDetail: (asset: MaybeRefOrGetter<string>, chain: MaybeRefOrGetter<string>) => ComputedRef<TradableAsset | undefined>;
 }
 
-export function useTradableAsset(address: MaybeRef<string | undefined>): UseTradableAssetReturn {
+export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>): UseTradableAssetReturn {
   const { balances } = storeToRefs(useBalancesStore());
-  const { getAssetPrice } = usePriceUtils();
   const { supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
+  const { getAssetPrice } = usePriceUtils();
   const { getNativeAsset, isEvm } = useSupportedChains();
 
-  // Cache for memoized asset detail computed with size limit
-  const assetDetailCache = new Map<string, ComputedRef<TradableAsset | undefined>>();
-  const MAX_CACHE_SIZE = 50;
-
-  // Helper function to process specific address balances
-  const processAddressBalances = (
+  function collectAddressBalances(
     chain: string,
     chainBalances: BlockchainAssetBalances,
     addressVal: string,
-  ): TradableAssetWithoutValue[] => {
-    const result: TradableAssetWithoutValue[] = [];
+    result: TradableAssetWithoutValue[],
+  ): void {
     const addressBalance: EthBalance | undefined = chainBalances[addressVal];
-
-    if (!addressBalance?.assets) {
-      return result;
-    }
+    if (!addressBalance?.assets)
+      return;
 
     for (const [asset, balance] of Object.entries(addressBalance.assets)) {
-      const protocolBalance: ProtocolBalances = balance;
-      if (!protocolBalance.address?.amount) {
-        continue;
+      if (balance.address?.amount) {
+        result.push({ amount: balance.address.amount, asset, chain });
       }
-      result.push({
-        amount: protocolBalance.address.amount,
-        asset,
-        chain,
-      });
     }
+  }
 
-    return result;
-  };
-
-  // Helper function to process all addresses with deduplication
-  const processAllAddressBalances = (
+  function collectDeduplicatedBalances(
     chain: string,
     chainBalances: BlockchainAssetBalances,
-  ): TradableAssetWithoutValue[] => {
-    const result: TradableAssetWithoutValue[] = [];
-    const seenAssets = new Map<string, boolean>();
-
+    result: TradableAssetWithoutValue[],
+    seen: Set<string>,
+  ): void {
     for (const addressBalance of Object.values(chainBalances)) {
-      if (!addressBalance?.assets) {
+      if (!addressBalance?.assets)
         continue;
-      }
+
       for (const [asset, balance] of Object.entries(addressBalance.assets)) {
-        const protocolBalance: ProtocolBalances = balance;
-        if (!(protocolBalance.address?.amount && !seenAssets.has(asset))) {
-          continue;
+        if (balance.address?.amount && !seen.has(asset)) {
+          seen.add(asset);
+          result.push({ amount: Zero, asset, chain });
         }
-        seenAssets.set(asset, true);
-        result.push({
-          amount: Zero,
-          asset,
-          chain,
-        });
       }
     }
+  }
 
-    return result;
-  };
-
-  // Helper function to batch price calculations
-  const enhanceWithPrices = (assets: TradableAssetWithoutValue[]): TradableAsset[] => {
-    // Batch price lookups to avoid individual calls
-    const uniqueAssets = [...new Set(assets.map(a => a.asset))];
-    const priceCache = new Map<string, any>();
-
-    // Pre-fetch all prices
-    for (const assetId of uniqueAssets) {
-      priceCache.set(assetId, getAssetPrice(assetId));
-    }
-
+  function enhanceWithPrices(assets: TradableAssetWithoutValue[]): TradableAsset[] {
     return assets.map((item) => {
-      const price = priceCache.get(item.asset);
+      const price = getAssetPrice(item.asset);
       return {
         ...item,
         fiatValue: price?.multipliedBy(item.amount),
         price,
       };
     }).sort((a, b) => {
-      // Check if either asset is a native token
       const aNative = getNativeAsset(a.chain) === a.asset;
       const bNative = getNativeAsset(b.chain) === b.asset;
 
-      // If one is native and the other isn't, prioritize the native token
       if (aNative && !bNative)
         return -1;
       if (!aNative && bNative)
         return 1;
 
-      // If both are native or both are not native, sort by fiat value
       return sortDesc(a.fiatValue ?? Zero, b.fiatValue ?? Zero);
     });
-  };
+  }
 
   const allOwnedAssets = computed<TradableAsset[]>(() => {
-    const addressVal = get(address);
+    const addressVal = toValue(address);
     const supportedChains = get(supportedChainsForConnectedAccount);
     const balancesData = get(balances);
 
     const result: TradableAssetWithoutValue[] = [];
+    const seen = new Set<string>();
 
-    // Single pass through balances with early filtering
     for (const [chain, chainBalances] of Object.entries(balancesData)) {
-      // Early exit conditions
-      if (!isEvm(chain) || !supportedChains.includes(chain)) {
+      if (!isEvm(chain) || !supportedChains.includes(chain))
         continue;
-      }
 
-      if (addressVal) {
-        result.push(...processAddressBalances(chain, chainBalances, addressVal));
-      }
-      else {
-        result.push(...processAllAddressBalances(chain, chainBalances));
-      }
+      if (addressVal)
+        collectAddressBalances(chain, chainBalances, addressVal, result);
+      else
+        collectDeduplicatedBalances(chain, chainBalances, result, seen);
     }
 
-    // Return early if no address provided (no price calculation needed)
-    if (!addressVal) {
+    if (!addressVal)
       return result;
-    }
 
-    // Enhance with prices and sort
     return enhanceWithPrices(result);
   });
 
-  const createAssetDetailComputed = (
-    asset: MaybeRef<string>,
-    chain: MaybeRef<string>,
-  ): ComputedRef<TradableAsset | undefined> => computed(() =>
-    get(allOwnedAssets).find(item =>
-      item.asset === get(asset) && item.chain === get(chain),
-    ),
-  );
-
-  const getAssetDetail = (
-    asset: MaybeRef<string>,
-    chain: MaybeRef<string>,
-  ): ComputedRef<TradableAsset | undefined> => {
-    const cacheKey = computed<string>(() => `${get(asset)}-${get(chain)}`);
-
-    return computed<TradableAsset | undefined>(() => {
-      const key = get(cacheKey);
-
-      if (!assetDetailCache.has(key)) {
-        // If cache is at max size, remove oldest entry (first inserted)
-        if (assetDetailCache.size >= MAX_CACHE_SIZE) {
-          const firstKey = assetDetailCache.keys().next().value;
-          if (firstKey) {
-            assetDetailCache.delete(firstKey);
-          }
-        }
-
-        const detailComputed = createAssetDetailComputed(asset, chain);
-        assetDetailCache.set(key, detailComputed);
-      }
-
-      const cachedDetail = assetDetailCache.get(key);
-      return cachedDetail ? get(cachedDetail) : undefined;
-    });
-  };
+  function getAssetDetail(
+    asset: MaybeRefOrGetter<string>,
+    chain: MaybeRefOrGetter<string>,
+  ): ComputedRef<TradableAsset | undefined> {
+    return computed<TradableAsset | undefined>(() =>
+      get(allOwnedAssets).find(item =>
+        item.asset === toValue(asset) && item.chain === toValue(chain),
+      ),
+    );
+  }
 
   return {
+    // eslint-disable-next-line @rotki/composable-return-readonly -- ComputedRef is inherently readonly; wrapping with readonly() creates DeepReadonly which breaks BigNumber
     allOwnedAssets,
     getAssetDetail,
   };
+}
+
+export const TradableAssetKey: InjectionKey<UseTradableAssetReturn> = Symbol('tradable-asset');
+
+export function useInjectedTradableAsset(): UseTradableAssetReturn {
+  const injected = inject(TradableAssetKey);
+  if (!injected)
+    throw new Error('useTradableAsset must be provided by a parent component');
+  return injected;
 }

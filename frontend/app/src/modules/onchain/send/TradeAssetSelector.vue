@@ -5,7 +5,7 @@ import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
 import { useTokenDetection } from '@/composables/balances/token-detection';
 import TradeAssetDisplay from '@/modules/onchain/send/TradeAssetDisplay.vue';
 import { useBalanceQueries } from '@/modules/onchain/send/use-balance-queries';
-import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
+import { useInjectedTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useTaskStore } from '@/store/tasks';
 import { TaskType } from '@/types/task-type';
@@ -28,7 +28,7 @@ const internalChain = ref<string>(Blockchain.ETH);
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { allOwnedAssets, getAssetDetail } = useTradableAsset(computed<string | undefined>(() => address));
+const { allOwnedAssets, getAssetDetail } = useInjectedTradableAsset();
 
 const { connected, connectedAddress, supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
 const { useIsTaskRunning } = useTaskStore();
@@ -67,7 +67,7 @@ function setMax() {
   emit('set-max');
 }
 
-watchImmediate([asset, chain, allOwnedAssets], ([currentAsset, chain, _]) => {
+watchImmediate([asset, chain, allOwnedAssets], ([currentAsset, chain]) => {
   const ownedByChain = getOwnedAssetsByChain(chain);
 
   if (ownedByChain.length > 0 && !ownedByChain.map(item => item.asset).includes(currentAsset)) {
