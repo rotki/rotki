@@ -53,6 +53,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.balances.historical import HistoricalBalancesManager
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.balances.types import HistoricalBalancesParams
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount, SingleBlockchainAccountData
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
@@ -90,7 +91,6 @@ from rotkehlchen.db.filtering import (
     CounterpartyAssetMappingsFilterQuery,
     CustomAssetsFilterQuery,
     DBFilterQuery,
-    HistoricalBalancesFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
     LevenshteinFilterQuery,
@@ -3097,21 +3097,23 @@ class RestAPI:
     @async_api_call()
     def get_historical_balance(
             self,
-            filter_query: HistoricalBalancesFilterQuery,
+            filter_params: HistoricalBalancesParams,
     ) -> dict[str, Any]:
         """Query historical balances for all assets at a given timestamp
         by processing historical events
         """
-        processing_required, balances = HistoricalBalancesManager(
+        balances, last_group_identifier = HistoricalBalancesManager(
             self.rotkehlchen.data.db,
-        ).get_balances(filter_query=filter_query)
+        ).get_balances(filter_params=filter_params)
 
-        result: dict[str, Any] = {'processing_required': processing_required}
+        result: dict[str, Any] = {}
         if balances is not None:
             result['entries'] = {
                 asset.identifier: str(amount)
                 for asset, amount in balances.items()
             }
+        if last_group_identifier is not None:
+            result['last_group_identifier'] = last_group_identifier
 
         return _wrap_in_ok_result(result=result, status_code=HTTPStatus.OK)
 
@@ -3135,9 +3137,11 @@ class RestAPI:
                     assets = tuple(Asset(row[0]) for row in cursor)
 
             balances, last_group_identifier = HistoricalBalancesManager(self.rotkehlchen.data.db).get_assets_amounts(  # noqa: E501
-                assets=assets,
-                from_ts=from_timestamp,
-                to_ts=to_timestamp,
+                filter_params=HistoricalBalancesParams(
+                    assets=assets,
+                    from_timestamp=from_timestamp,
+                    to_timestamp=to_timestamp,
+                ),
             )
         except DeserializationError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.INTERNAL_SERVER_ERROR)  # noqa: E501
@@ -3151,39 +3155,6 @@ class RestAPI:
         if last_group_identifier is not None:
             result['last_group_identifier'] = last_group_identifier
 
-        return api_response(_wrap_in_ok_result(result=result))
-
-    def get_historical_asset_amounts_event_metrics(
-            self,
-            asset: Asset | None,
-            collection_id: int | None,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        """Get historical asset amounts via the event metrics table.
-        TODO (balances): Replace get_historical_asset_amounts with this.
-        """
-        assets: tuple[Asset, ...]
-        if asset is not None:
-            assets = (asset,)
-        else:  # collection_id is present due to validation.
-            with GlobalDBHandler().conn.read_ctx() as cursor:
-                cursor.execute(
-                    'SELECT asset FROM multiasset_mappings WHERE collection_id=?',
-                    (collection_id,),
-                )
-                assets = tuple(Asset(row[0]) for row in cursor)
-
-        processing_required, amounts = HistoricalBalancesManager(self.rotkehlchen.data.db).get_assets_amounts_event_metrics(  # noqa: E501
-            assets=assets,
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-        )
-
-        result: dict[str, Any] = {'processing_required': processing_required}
-        if amounts is not None:
-            result['times'] = list(amounts)
-            result['values'] = [str(x) for x in amounts.values()]
         return api_response(_wrap_in_ok_result(result=result))
 
     @async_api_call()

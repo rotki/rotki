@@ -28,6 +28,7 @@ from rotkehlchen.assets.asset import (
 from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
+from rotkehlchen.balances.types import HistoricalBalancesParams
 from rotkehlchen.chain.accounts import OptionalBlockchainAccount
 from rotkehlchen.chain.bitcoin.bch.utils import (
     is_valid_bitcoin_cash_address,
@@ -73,7 +74,6 @@ from rotkehlchen.db.filtering import (
     CustomAssetsFilterQuery,
     EthStakingEventFilterQuery,
     EvmEventFilterQuery,
-    HistoricalBalancesFilterQuery,
     HistoryEventFilterQuery,
     HistoryEventWithCounterpartyFilterQuery,
     HistoryEventWithTxRefFilterQuery,
@@ -4555,16 +4555,16 @@ class HistoricalPerAssetBalanceSchema(SnapshotTimestampQuerySchema, AsyncQueryAr
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> dict[str, Any]:
-        filter_query = HistoricalBalancesFilterQuery.make(
-            timestamp=data['timestamp'],
-            asset=data['asset'],
+        filter_params = HistoricalBalancesParams(
+            to_timestamp=data['timestamp'],
+            assets=(data['asset'],) if data['asset'] is not None else None,
             location=data['location'],
             location_label=data['location_label'],
             protocol=data['protocol'],
         )
         return {
             'async_query': data['async_query'],
-            'filter_query': filter_query,
+            'filter_params': filter_params,
         }
 
 
