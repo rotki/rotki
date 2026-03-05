@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Certain cases of ENS registrations with a specific refund ordering will now also be properly understood by rotki.
 * :bug:`-` Gearbox withdrawals should now always have the correct order of events.
 * :bug:`-` Gearbox deposit through some wrapper routes will now be properly decoded.
 * :feature:`9024` rotki now supports yearn in all EVM chains.
