@@ -28,7 +28,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { awaitTask } = useTaskStore();
   const { isModuleEnabled } = useModules();
   const isEth2Enabled = isModuleEnabled(Module.ETH2);
-  const { apiKey } = useExternalApiKeys(t);
+  const { getApiKey } = useExternalApiKeys();
   const { authenticated: moneriumAuthenticated, refreshStatus } = useMoneriumOAuth();
 
   const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
@@ -40,7 +40,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     if (!get(isEth2Enabled) && eth2QueryTypes.includes(queryType))
       return;
 
-    if (!get(apiKey('gnosis_pay')) && queryType === OnlineHistoryEventsQueryType.GNOSIS_PAY) {
+    if (!getApiKey('gnosis_pay') && queryType === OnlineHistoryEventsQueryType.GNOSIS_PAY) {
       return;
     }
 

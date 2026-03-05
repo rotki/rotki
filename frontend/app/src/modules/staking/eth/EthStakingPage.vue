@@ -19,7 +19,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { allowed, enabled, module } = useEthStakingAccess();
 
 // API key check (only when module is allowed and enabled)
-const { apiKey } = useExternalApiKeys(t);
+const { getApiKey } = useExternalApiKeys();
 const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
 
 const missingApiKeyService = computed<'beaconchain' | 'consensusRpc' | undefined>(() => {
@@ -27,7 +27,7 @@ const missingApiKeyService = computed<'beaconchain' | 'consensusRpc' | undefined
     return undefined;
   }
 
-  if (!get(apiKey('beaconchain'))) {
+  if (!getApiKey('beaconchain')) {
     if (!get(beaconRpcEndpoint)) {
       return 'consensusRpc';
     }

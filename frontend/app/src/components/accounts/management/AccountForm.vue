@@ -46,7 +46,7 @@ const chain = useRefPropVModel(modelValue, 'chain');
 
 const { isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
-const { apiKey } = useExternalApiKeys(t);
+const { getApiKey } = useExternalApiKeys();
 
 const { beaconRpcEndpoint, defaultEvmIndexerOrder, evmIndexersOrder } = storeToRefs(useGeneralSettingsStore());
 
@@ -85,7 +85,7 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
   if (currentModelValue.mode !== 'add' || !selectedChain)
     return undefined;
 
-  if (currentModelValue.type === 'validator' && !get(apiKey('beaconchain'))) {
+  if (currentModelValue.type === 'validator' && !getApiKey('beaconchain')) {
     if (!get(beaconRpcEndpoint)) {
       return 'consensusRpc';
     }
@@ -93,10 +93,10 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
     return 'beaconchain';
   }
 
-  if (!get(apiKey('etherscan')) && shouldShowEtherscanWarning(selectedChain))
+  if (!getApiKey('etherscan') && shouldShowEtherscanWarning(selectedChain))
     return 'etherscan';
 
-  if (isSolanaChains(selectedChain) && !get(apiKey('helius')))
+  if (isSolanaChains(selectedChain) && !getApiKey('helius'))
     return 'helius';
 
   return undefined;
