@@ -1,22 +1,27 @@
 import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
-import type { ExchangeRates } from '@/types/user';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { PriceOracle } from '@/types/settings/price-oracle';
 
 interface UsePriceUtilsReturn {
-  assetPrice: (asset: MaybeRefOrGetter<string>) => ComputedRef<BigNumber | undefined>;
-  useExchangeRate: <T extends BigNumber | undefined = undefined>(
-    currency: MaybeRefOrGetter<string>,
-    defaultValue?: T,
-  ) => ComputedRef<T extends undefined ? BigNumber | undefined : BigNumber>;
-  getAssetPriceOracle: (asset: MaybeRefOrGetter<string>) => ComputedRef<string>;
-  isManualAssetPrice: (asset: MaybeRefOrGetter<string>) => ComputedRef<boolean>;
+  useAssetPrice: (asset: MaybeRefOrGetter<string>) => ComputedRef<BigNumber | undefined>;
+  useExchangeRate: {
+    (currency: MaybeRefOrGetter<string>): ComputedRef<BigNumber | undefined>;
+    (currency: MaybeRefOrGetter<string>, defaultValue: BigNumber): ComputedRef<BigNumber>;
+  };
+  useAssetPriceOracle: (asset: MaybeRefOrGetter<string>) => ComputedRef<string>;
+  useIsManualAssetPrice: (asset: MaybeRefOrGetter<string>) => ComputedRef<boolean>;
+  getAssetPrice: {
+    (asset: string): BigNumber | undefined;
+    (asset: string, defaultValue: BigNumber): BigNumber;
+  };
+  getExchangeRate: {
+    (currency: string): BigNumber | undefined;
+    (currency: string, defaultValue: BigNumber): BigNumber;
+  };
+  getAssetPriceOracle: (asset: string) => string;
+  isManualAssetPrice: (asset: string) => boolean;
   hasCachedPrice: (asset: string) => boolean;
-  getAssetPrice: <T extends BigNumber | undefined = undefined>(
-    asset: string,
-    defaultValue?: T,
-  ) => T extends undefined ? BigNumber | undefined : BigNumber;
 }
 
 export function usePriceUtils(): UsePriceUtilsReturn {
@@ -25,54 +30,60 @@ export function usePriceUtils(): UsePriceUtilsReturn {
     prices,
   } = storeToRefs(useBalancePricesStore());
 
-  function getExchangeRate(rates: ExchangeRates, currency: string): BigNumber | undefined {
-    return rates[currency];
+  function useAssetPrice(asset: MaybeRefOrGetter<string>): ComputedRef<BigNumber | undefined> {
+    return computed<BigNumber | undefined>(() => get(prices)[toValue(asset)]?.value);
   }
 
-  const useExchangeRate = <T extends BigNumber | undefined>(
-    currency: MaybeRefOrGetter<string>,
-    defaultValue?: T,
-  ): ComputedRef<T extends undefined ? BigNumber | undefined : BigNumber> => computed(() => {
-    const rate = getExchangeRate(get(exchangeRates), toValue(currency));
-    if (rate === undefined)
-      return defaultValue as (T extends undefined ? BigNumber | undefined : BigNumber);
-    return rate as (T extends undefined ? BigNumber | undefined : BigNumber);
-  });
+  function getAssetPrice(asset: string): BigNumber | undefined;
+  function getAssetPrice(asset: string, defaultValue: BigNumber): BigNumber;
 
-  const assetPrice = (asset: MaybeRefOrGetter<string>): ComputedRef<BigNumber | undefined> => computed(() => {
-    const assetVal = toValue(asset);
-    return get(prices)[assetVal]?.value;
-  });
+  function getAssetPrice(asset: string, defaultValue?: BigNumber): BigNumber | undefined {
+    return get(prices)[asset]?.value ?? defaultValue;
+  }
 
-  const getAssetPriceOracle = (asset: MaybeRefOrGetter<string>): ComputedRef<string> =>
-    computed(() => get(prices)[toValue(asset)]?.oracle || '');
+  function useExchangeRate(currency: MaybeRefOrGetter<string>): ComputedRef<BigNumber | undefined>;
+  function useExchangeRate(currency: MaybeRefOrGetter<string>, defaultValue: BigNumber): ComputedRef<BigNumber>;
 
-  const isManualAssetPrice = (asset: MaybeRefOrGetter<string>): ComputedRef<boolean> =>
-    computed(() => get(getAssetPriceOracle(asset)) === PriceOracle.MANUALCURRENT);
+  function useExchangeRate(currency: MaybeRefOrGetter<string>, defaultValue?: BigNumber): ComputedRef<BigNumber | undefined> {
+    return computed<BigNumber | undefined>(() => get(exchangeRates)[toValue(currency)] ?? defaultValue);
+  }
+
+  function getExchangeRate(currency: string): BigNumber | undefined;
+  function getExchangeRate(currency: string, defaultValue: BigNumber): BigNumber;
+
+  function getExchangeRate(currency: string, defaultValue?: BigNumber): BigNumber | undefined {
+    return get(exchangeRates)[currency] ?? defaultValue;
+  }
+
+  function useAssetPriceOracle(asset: MaybeRefOrGetter<string>): ComputedRef<string> {
+    return computed<string>(() => get(prices)[toValue(asset)]?.oracle || '');
+  }
+
+  function getAssetPriceOracle(asset: string): string {
+    return get(prices)[asset]?.oracle || '';
+  }
+
+  function useIsManualAssetPrice(asset: MaybeRefOrGetter<string>): ComputedRef<boolean> {
+    return computed<boolean>(() => get(prices)[toValue(asset)]?.oracle === PriceOracle.MANUALCURRENT);
+  }
+
+  function isManualAssetPrice(asset: string): boolean {
+    return get(prices)[asset]?.oracle === PriceOracle.MANUALCURRENT;
+  }
 
   function hasCachedPrice(asset: string): boolean {
     return get(prices)[asset]?.value !== undefined;
   }
 
-  function getAssetPrice<T extends BigNumber | undefined = undefined>(
-    asset: string,
-    defaultValue?: T,
-  ): T extends undefined ? BigNumber | undefined : BigNumber {
-    const price = get(prices)[asset]?.value;
-
-    if (price === undefined) {
-      return defaultValue as (T extends undefined ? BigNumber | undefined : BigNumber);
-    }
-
-    return price as (T extends undefined ? BigNumber | undefined : BigNumber);
-  }
-
   return {
-    assetPrice,
     getAssetPrice,
     getAssetPriceOracle,
+    getExchangeRate,
     hasCachedPrice,
     isManualAssetPrice,
+    useAssetPrice,
+    useAssetPriceOracle,
     useExchangeRate,
+    useIsManualAssetPrice,
   };
 }

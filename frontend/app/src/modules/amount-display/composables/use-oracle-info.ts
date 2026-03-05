@@ -25,7 +25,7 @@ export function useOracleInfo(options: OracleInfoOptions): OracleInfoReturn {
   const isManualPrice = computed<boolean>(() => {
     if (!toValue(isAssetPrice) || !toValue(priceAsset) || get(isSameAsMainCurrency))
       return false;
-    return get(isManualAssetPrice(priceAsset));
+    return isManualAssetPrice(toValue(priceAsset));
   });
 
   const assetOracle = computed<string | undefined>(() => {
@@ -33,7 +33,7 @@ export function useOracleInfo(options: OracleInfoOptions): OracleInfoReturn {
       return undefined;
     }
 
-    const oracleKey = get(getAssetPriceOracle(priceAsset));
+    const oracleKey = getAssetPriceOracle(toValue(priceAsset));
     const mapping: Record<string, string> = {
       [PriceOracle.MANUALCURRENT]: t('oracles.manual_current'),
       [PriceOracle.UNISWAP2]: t('oracles.uniswap_v2'),

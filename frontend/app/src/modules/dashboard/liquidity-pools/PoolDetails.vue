@@ -25,7 +25,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { assetPrice } = usePriceUtils();
+const { getAssetPrice } = usePriceUtils();
 const { getAssetInfo } = useAssetSelectInfo();
 const premium = usePremium();
 const { t } = useI18n({ useScope: 'global' });
@@ -64,7 +64,7 @@ const sorted = computed<AssetBalanceWithPrice[]>(() => {
   const transformed: AssetBalanceWithPrice[] = assets.map(item => ({
     amount: item.userBalance.amount,
     asset: item.asset,
-    price: get(assetPrice(item.asset)) ?? Zero,
+    price: getAssetPrice(item.asset, Zero),
     value: item.userBalance.value,
   }));
 

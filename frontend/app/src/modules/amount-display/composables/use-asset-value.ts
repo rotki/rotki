@@ -40,7 +40,7 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
     timestamp,
   } = options;
 
-  const { assetPrice } = usePriceUtils();
+  const { getAssetPrice } = usePriceUtils();
   const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
 
   const timestampToUse = computed<number>(() => {
@@ -90,7 +90,7 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
     }
 
     // Fall back to looking up the price (already in current currency)
-    return get(assetPrice(asset)) ?? Zero;
+    return getAssetPrice(toValue(asset), Zero);
   });
 
   const value = computed<BigNumber>(() => {

@@ -13,13 +13,13 @@ interface UseManualBalancePaginationReturn {
 
 export function useManualBalancePagination(): UseManualBalancePaginationReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
-  const { assetPrice } = usePriceUtils();
+  const { getAssetPrice } = usePriceUtils();
 
   const resolvers: {
     resolveAssetPrice: (asset: string) => BigNumber | undefined;
   } = {
     resolveAssetPrice(asset: string): BigNumber | undefined {
-      return get(assetPrice(asset));
+      return getAssetPrice(asset);
     },
   };
 
