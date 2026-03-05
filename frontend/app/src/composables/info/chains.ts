@@ -1,70 +1,85 @@
-import type { MaybeRef, MaybeRefOrGetter } from 'vue';
-import type {
-  ChainInfo,
-  EvmChainEntries,
-  EvmChainInfo,
-  EvmLikeChainInfo,
-  SubstrateChainInfo,
-  SupportedChains,
-} from '@/types/api/chains';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { Blockchain, getTextToken, toHumanReadable, toSnakeCase } from '@rotki/common';
 import { useSupportedChainsApi } from '@/composables/api/info/chains';
-import { useArrayInclude } from '@/composables/array';
 import { Routes } from '@/router/routes';
 import { useMainStore } from '@/store/main';
+import {
+  type ChainInfo,
+  ChainType,
+  type EvmChainEntries,
+  type EvmChainInfo,
+  type EvmLikeChainInfo,
+  type SupportedChains,
+} from '@/types/api/chains';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 function isEvmChain(info: ChainInfo): info is EvmChainInfo {
-  return info.type === 'evm';
-}
-
-function isSubstrateChain(info: ChainInfo): info is SubstrateChainInfo {
-  return info.type === 'substrate';
+  return info.type === ChainType.EVM;
 }
 
 function isEvmLikeChain(info: ChainInfo): info is EvmLikeChainInfo {
-  return info.type === 'evmlike';
+  return info.type === ChainType.EVMLIKE;
 }
 
-function isBitcoinChain(info: ChainInfo): info is ChainInfo {
-  return info.type === 'bitcoin';
+function isBitcoinChain(info: ChainInfo): boolean {
+  return info.type === ChainType.BITCOIN;
 }
 
-function isSolanaChain(info: ChainInfo): info is ChainInfo {
-  return info.type === 'solana';
+function isSolanaChain(info: ChainInfo): boolean {
+  return info.type === ChainType.SOLANA;
 }
 
-function isStarknetChain(info: ChainInfo): info is ChainInfo {
-  return info.type === 'starknet';
+function isStarknetChain(info: ChainInfo): boolean {
+  return info.type === ChainType.STARKNET;
 }
 
-export const useSupportedChains = createSharedComposable(() => {
+interface UseSupportedChainsReturn {
+  allEvmChains: Readonly<Ref<EvmChainEntries>>;
+  allTxChainsInfo: ComputedRef<ChainInfo[]>;
+  bitcoinChainsData: ComputedRef<ChainInfo[]>;
+  decodableTxChainsInfo: ComputedRef<ChainInfo[]>;
+  evmAndEvmLikeTxChainsInfo: ComputedRef<ChainInfo[]>;
+  evmChains: ComputedRef<string[]>;
+  evmChainsData: ComputedRef<EvmChainInfo[]>;
+  evmLikeChainsData: ComputedRef<EvmLikeChainInfo[]>;
+  getBlockchainRedirectLink: (blockchain: string) => string;
+  getChain: (location: string, defaultValue?: Blockchain) => Blockchain;
+  getChainAccountType: (chain: string) => string | undefined;
+  getChainImageUrl: (chain: string) => string;
+  getChainName: (location: string) => string;
+  getEvmChainName: (chain: string) => string | undefined;
+  getNativeAsset: (chain: string) => string;
+  isBtcChains: (chain: string) => boolean;
+  isDecodableChains: (chain: string) => boolean;
+  isEvm: (chain: string) => boolean;
+  isEvmCompatible: (chain: string) => boolean;
+  isEvmLikeChains: (chain: string) => boolean;
+  isSolanaChains: (chain: string) => boolean;
+  isStarknetChains: (chain: string) => boolean;
+  matchChain: (location: string) => Blockchain | undefined;
+  solanaChainsData: ComputedRef<ChainInfo[]>;
+  starknetChainsData: ComputedRef<ChainInfo[]>;
+  supportedChains: Readonly<Ref<SupportedChains>>;
+  supportsTransactions: (chain: string) => boolean;
+  txChainsToLocation: ComputedRef<string[]>;
+  txEvmChains: ComputedRef<EvmChainInfo[]>;
+  useBlockchainRedirectLink: (blockchain: MaybeRefOrGetter<string>) => ComputedRef<string>;
+  useChainImageUrl: (chain: MaybeRefOrGetter<string>) => ComputedRef<string>;
+  useChainName: (location: MaybeRefOrGetter<string | undefined>) => ComputedRef<string>;
+}
+
+export const useSupportedChains = createSharedComposable((): UseSupportedChainsReturn => {
   const { fetchAllEvmChains, fetchSupportedChains } = useSupportedChainsApi();
 
   const { connected } = storeToRefs(useMainStore());
 
-  const supportedChains = asyncComputed<SupportedChains>(async () => {
-    if (get(connected))
-      return fetchSupportedChains();
+  const supportedChains = shallowRef<SupportedChains>([]);
+  const allEvmChains = shallowRef<EvmChainEntries>([]);
 
-    return [];
-  }, []);
-
-  const allEvmChains = asyncComputed<EvmChainEntries>(async () => {
-    if (get(connected))
-      return fetchAllEvmChains();
-
-    return [];
-  }, []);
-
+  // Derived filtered views
   const evmChainsData = computed<EvmChainInfo[]>(() =>
-    // isEvmChain guard does not work the same with useArrayFilter
     get(supportedChains).filter(isEvmChain),
-  );
-
-  const substrateChainsData = computed<SubstrateChainInfo[]>(() =>
-    get(supportedChains).filter(isSubstrateChain),
   );
 
   const evmLikeChainsData = computed<EvmLikeChainInfo[]>(() =>
@@ -83,9 +98,14 @@ export const useSupportedChains = createSharedComposable(() => {
     get(supportedChains).filter(isStarknetChain),
   );
 
-  const txEvmChains: ComputedRef<EvmChainInfo[]> = useArrayFilter(evmChainsData, x => x.id !== Blockchain.AVAX);
+  const txEvmChains = computed<EvmChainInfo[]>(() =>
+    get(evmChainsData).filter(x => x.id !== Blockchain.AVAX),
+  );
 
-  const evmAndEvmLikeTxChainsInfo = computed<ChainInfo[]>(() => [...get(txEvmChains), ...get(evmLikeChainsData)]);
+  const evmAndEvmLikeTxChainsInfo = computed<ChainInfo[]>(() => [
+    ...get(txEvmChains),
+    ...get(evmLikeChainsData),
+  ]);
 
   const decodableTxChainsInfo = computed<ChainInfo[]>(() => [
     ...get(evmAndEvmLikeTxChainsInfo),
@@ -98,92 +118,80 @@ export const useSupportedChains = createSharedComposable(() => {
     ...get(bitcoinChainsData),
   ]);
 
-  const evmChains: ComputedRef<string[]> = useArrayMap(evmChainsData, x => x.id);
+  const evmChains = computed<string[]>(() => get(evmChainsData).map(x => x.id));
 
-  const evmChainNames: ComputedRef<string[]> = useArrayMap(evmChainsData, x => x.evmChainName);
+  // Lookup structures for O(1) access
+  const chainById = computed<Map<string, ChainInfo>>(() => {
+    const map = new Map<string, ChainInfo>();
+    for (const chain of get(supportedChains))
+      map.set(chain.id, chain);
+    return map;
+  });
 
-  const isEvm = (chain: MaybeRef<string>): ComputedRef<boolean> => useArrayInclude(evmChains, chain);
+  const evmChainSet = computed<Set<string>>(() => new Set(get(evmChains)));
+  const evmLikeChainSet = computed<Set<string>>(() => new Set(get(evmLikeChainsData).map(x => x.id)));
+  const btcChainSet = computed<Set<string>>(() => new Set(get(bitcoinChainsData).map(x => x.id)));
+  const solanaChainSet = computed<Set<string>>(() => new Set(get(solanaChainsData).map(x => x.id)));
+  const starknetChainSet = computed<Set<string>>(() => new Set(get(starknetChainsData).map(x => x.id)));
+  const decodableChainSet = computed<Set<string>>(() => new Set(get(decodableTxChainsInfo).map(x => x.id)));
+  const txEvmChainSet = computed<Set<string>>(() => new Set(get(txEvmChains).map(x => x.id)));
 
-  const supportsTransactions = (chain: MaybeRef<string>): boolean => {
-    const chains = get(txEvmChains);
-    const selectedChain = get(chain);
-    return chains.some(x => x.id === selectedChain);
+  const chainTokenLookup = computed<Map<string, Blockchain>>(() => {
+    const map = new Map<string, Blockchain>();
+    for (const item of get(supportedChains)) {
+      if (!isBlockchain(item.id))
+        continue;
+      map.set(getTextToken(item.id), item.id);
+      map.set(getTextToken(item.name), item.id);
+      if (isEvmChain(item))
+        map.set(getTextToken(item.evmChainName), item.id);
+    }
+    return map;
+  });
+
+  // Type check functions
+  const isEvm = (chain: string): boolean => get(evmChainSet).has(chain);
+
+  const supportsTransactions = (chain: string): boolean => get(txEvmChainSet).has(chain);
+
+  const isEvmLikeChains = (chain: string): boolean => get(evmLikeChainSet).has(chain);
+
+  const isEvmCompatible = (chain: string): boolean =>
+    isEvm(chain) || isEvmLikeChains(chain);
+
+  const isBtcChains = (chain: string): boolean => get(btcChainSet).has(chain);
+
+  const isSolanaChains = (chain: string): boolean => get(solanaChainSet).has(chain);
+
+  const isStarknetChains = (chain: string): boolean => get(starknetChainSet).has(chain);
+
+  const isDecodableChains = (chain: string): boolean => get(decodableChainSet).has(chain);
+
+  // Info lookup (internal)
+  const getChainInfoById = (chain: string): ChainInfo | null =>
+    get(chainById).get(chain) ?? null;
+
+  const getEvmChainName = (chain: string): string | undefined => {
+    const info = getChainInfoById(chain);
+    return info && isEvmChain(info) ? info.evmChainName : undefined;
   };
 
-  const isEvmLikeChains = (chain: MaybeRef<string>): boolean => {
-    const chains = get(evmLikeChainsData);
-    const selectedChain = get(chain);
-    return chains.some(x => x.id === selectedChain);
+  const getNativeAsset = (chain: string): string => {
+    const info = getChainInfoById(chain);
+    return (info && 'nativeToken' in info ? info.nativeToken : undefined) ?? chain.toUpperCase();
   };
 
-  const isBtcChains = (chain: MaybeRef<string>): boolean => {
-    const chains = get(bitcoinChainsData);
-    const selectedChain = get(chain);
-    return chains.some(x => x.id === selectedChain);
-  };
-
-  const isSolanaChains = (chain: MaybeRef<string>): boolean => {
-    const chains = get(solanaChainsData);
-    const selectedChain = get(chain);
-    return chains.some(x => x.id === selectedChain);
-  };
-
-  const isStarknetChains = (chain: MaybeRef<string>): boolean => {
-    const chains = get(starknetChainsData);
-    const selectedChain = get(chain);
-    return chains.some(x => x.id === selectedChain);
-  };
-
-  const isDecodableChains = (chain: MaybeRef<string>): boolean => {
-    const chains = get(decodableTxChainsInfo);
-    const selectedChain = get(chain);
-    return chains.some(x => x.id === selectedChain);
-  };
-
-  const getEvmChainName = (chain: string): string | undefined =>
-    get(evmChainsData).find(x => x.id === chain)?.evmChainName || undefined;
-
-  const getChainInfoByName = (chain: MaybeRef<string>): ComputedRef<ChainInfo | null> =>
-    computed(() => get(supportedChains).find(({ name }) => name.toLowerCase() === get(chain).toLowerCase()) || null);
-
-  const getChainInfoById = (chain: MaybeRef<string>): ComputedRef<ChainInfo | null> =>
-    computed(() => get(supportedChains).find(x => x.id === get(chain)) || null);
-
-  const getNativeAsset = (chain: MaybeRef<string>): string => {
-    const blockchain = get(chain);
-    return (
-      [...get(evmChainsData), ...get(substrateChainsData), ...get(evmLikeChainsData)].find(
-        ({ id }) => id === blockchain,
-      )?.nativeToken || blockchain.toUpperCase()
-    );
-  };
+  // Chain matching and name resolution
 
   /**
-   *
    * @param {string} location - String to find the chain (can be the chain id, or the evmChainName)
    * @return {Blockchain} - Blockchain id found
    * @example
-   * getChain('zksync_lite'); // Blockchain.ZKSYNC_LITE
-   * getChain('ethereum'); // Blockchain.ETH
+   * matchChain('zksync_lite'); // Blockchain.ZKSYNC_LITE
+   * matchChain('ethereum'); // Blockchain.ETH
    */
-  const matchChain = (location: string): Blockchain | undefined => {
-    // note: we're using toSnakeCase here to always ensure that chains
-    // with combined names gets parsed to match their chain name
-    const chainData = get(supportedChains).find((item) => {
-      const transformed = getTextToken(toSnakeCase(location));
-      if ('evmChainName' in item && getTextToken(item.evmChainName) === transformed)
-        return true;
-
-      if (getTextToken(item.name) === transformed)
-        return true;
-
-      return getTextToken(item.id) === transformed;
-    });
-
-    if (chainData && isBlockchain(chainData.id))
-      return chainData.id;
-    return undefined;
-  };
+  const matchChain = (location: string): Blockchain | undefined =>
+    get(chainTokenLookup).get(getTextToken(toSnakeCase(location)));
 
   /**
    * Retrieves the blockchain chain based on the specified location.
@@ -203,59 +211,91 @@ export const useSupportedChains = createSharedComposable(() => {
   ): Blockchain => matchChain(location) ?? defaultValue;
 
   /**
-   *
    * @param {string} location - String to find the chain (can be the chain id, or the evmChainName)
    * @return {string} - Readable chain name
    * @example
    * getChainName('zksync_lite'); // ZKSync Lite
    * getChainName('ethereum'); // Ethereum
    */
-  const getChainName = (location: MaybeRefOrGetter<string>): ComputedRef<string> =>
+  const useChainName = (location: MaybeRefOrGetter<string | undefined>): ComputedRef<string> =>
     computed(() => {
       const locationVal = toValue(location);
+      if (!locationVal)
+        return '';
+
       const chain = matchChain(locationVal);
       if (!chain)
         return toHumanReadable(locationVal, 'capitalize');
 
-      return get(getChainInfoById(chain))?.name || toHumanReadable(locationVal, 'capitalize');
+      return getChainInfoById(chain)?.name ?? toHumanReadable(locationVal, 'capitalize');
     });
 
-  const getChainImageUrl = (chain: MaybeRefOrGetter<string>): ComputedRef<string> => computed<string>(() => {
+  const getChainName = (location: string): string => {
+    const chain = matchChain(location);
+    if (!chain)
+      return toHumanReadable(location, 'capitalize');
+
+    return getChainInfoById(chain)?.name ?? toHumanReadable(location, 'capitalize');
+  };
+
+  const useChainImageUrl = (chain: MaybeRefOrGetter<string>): ComputedRef<string> => computed<string>(() => {
     const chainVal = toValue(chain);
-    const image = get(getChainInfoById(chainVal))?.image || `${chainVal}.svg`;
+    const image = getChainInfoById(chainVal)?.image ?? `${chainVal}.svg`;
 
     return getPublicProtocolImagePath(image);
   });
 
-  const txChainsToLocation = useArrayMap(evmAndEvmLikeTxChainsInfo, (item) => {
-    if ('evmChainName' in item)
-      return toHumanReadable(item.evmChainName);
+  const getChainImageUrl = (chain: string): string => {
+    const image = getChainInfoById(chain)?.image ?? `${chain}.svg`;
+    return getPublicProtocolImagePath(image);
+  };
 
-    return toHumanReadable(item.id);
-  });
+  // Derived display data
+  const txChainsToLocation = computed<string[]>(() =>
+    get(evmAndEvmLikeTxChainsInfo).map((item) => {
+      if (isEvmChain(item))
+        return toHumanReadable(item.evmChainName);
+
+      return toHumanReadable(item.id);
+    }),
+  );
 
   const getChainAccountType = (chain: string): string | undefined => {
-    const allChains = get(supportedChains);
-    const match = allChains.find(entry => entry.id === chain);
-    if (match?.type === 'evmlike')
-      return 'evm';
+    const match = getChainInfoById(chain);
+    if (match?.type === ChainType.EVMLIKE)
+      return ChainType.EVM;
     return match?.type;
   };
 
   const getBlockchainRedirectLink = (blockchain: string): string => {
-    const chain = get(blockchain);
-    if (chain === Blockchain.ETH2) {
+    if (blockchain === Blockchain.ETH2)
       return '/staking/eth2';
-    }
 
-    const target = getChainAccountType(chain) ?? 'evm';
+    const target = getChainAccountType(blockchain) ?? ChainType.EVM;
     const basePath = `${Routes.ACCOUNTS.toString()}/${target}`;
-    // Only EVM route has the optional tab parameter that requires explicit path
-    if (target === 'evm') {
-      return `${basePath}/accounts?chain=${chain}`;
-    }
-    return `${basePath}?chain=${chain}`;
+    if (target === ChainType.EVM)
+      return `${basePath}/accounts?chain=${blockchain}`;
+
+    return `${basePath}?chain=${blockchain}`;
   };
+
+  const useBlockchainRedirectLink = (blockchain: MaybeRefOrGetter<string>): ComputedRef<string> =>
+    computed<string>(() => getBlockchainRedirectLink(toValue(blockchain)));
+
+  watch(connected, async (isConnected) => {
+    if (isConnected) {
+      const [chains, evmChains] = await Promise.all([
+        fetchSupportedChains(),
+        fetchAllEvmChains(),
+      ]);
+      set(supportedChains, chains);
+      set(allEvmChains, evmChains);
+    }
+    else {
+      set(supportedChains, []);
+      set(allEvmChains, []);
+    }
+  }, { immediate: true });
 
   return {
     allEvmChains,
@@ -263,7 +303,6 @@ export const useSupportedChains = createSharedComposable(() => {
     bitcoinChainsData,
     decodableTxChainsInfo,
     evmAndEvmLikeTxChainsInfo,
-    evmChainNames,
     evmChains,
     evmChainsData,
     evmLikeChainsData,
@@ -271,14 +310,13 @@ export const useSupportedChains = createSharedComposable(() => {
     getChain,
     getChainAccountType,
     getChainImageUrl,
-    getChainInfoById,
-    getChainInfoByName,
     getChainName,
     getEvmChainName,
     getNativeAsset,
     isBtcChains,
     isDecodableChains,
     isEvm,
+    isEvmCompatible,
     isEvmLikeChains,
     isSolanaChains,
     isStarknetChains,
@@ -289,5 +327,8 @@ export const useSupportedChains = createSharedComposable(() => {
     supportsTransactions,
     txChainsToLocation,
     txEvmChains,
+    useBlockchainRedirectLink,
+    useChainImageUrl,
+    useChainName,
   };
 });

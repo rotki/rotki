@@ -1,6 +1,17 @@
 import { toCapitalCase } from '@rotki/common';
 import { z } from 'zod/v4';
 
+export const ChainType = {
+  BITCOIN: 'bitcoin',
+  EVM: 'evm',
+  EVMLIKE: 'evmlike',
+  SOLANA: 'solana',
+  STARKNET: 'starknet',
+  SUBSTRATE: 'substrate',
+} as const;
+
+export type ChainType = (typeof ChainType)[keyof typeof ChainType];
+
 const BasicChainInfo = z.object({
   id: z.string(),
   image: z.string(),
