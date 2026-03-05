@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import { usePremiumStore } from '@/store/session/premium';
 import { PremiumFeature } from '@/types/session';
 
@@ -6,11 +6,11 @@ export { PremiumFeature };
 
 interface UseFeatureAccessReturn {
   /** Whether the user has premium and the feature is enabled for their tier */
-  allowed: ComputedRef<boolean>;
+  allowed: Readonly<Ref<boolean>>;
   /** The minimum subscription tier required for this feature, null if unknown */
-  minimumTier: ComputedRef<string | null>;
+  minimumTier: Readonly<Ref<string | null>>;
   /** The user's current subscription tier */
-  currentTier: ComputedRef<string>;
+  currentTier: Readonly<Ref<string>>;
   /** Whether the user has an active premium subscription */
   premium: Readonly<Ref<boolean>>;
 }
@@ -36,12 +36,12 @@ export function useFeatureAccess(feature: MaybeRefOrGetter<PremiumFeature>): Use
     return caps?.[toValue(feature)]?.minimumTier ?? null;
   });
 
-  const currentTier = computed<string>(() => get(capabilities)?.currentTier ?? '');
+  const currentTier = computed<string>(() => get(capabilities)?.currentTier ?? 'Free');
 
   return {
-    allowed,
-    currentTier,
-    minimumTier,
+    allowed: readonly(allowed),
+    currentTier: readonly(currentTier),
+    minimumTier: readonly(minimumTier),
     premium,
   };
 }

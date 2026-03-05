@@ -1,27 +1,22 @@
-import type { ComputedRef } from 'vue';
-import type { Module } from '@/types/modules';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { Module } from '@/types/modules';
 
-interface UseModulesReturn {
-  isAnyModuleEnabled: (modules: Module[]) => ComputedRef<boolean>;
-  isModuleEnabled: (module: Module) => ComputedRef<boolean>;
-  activeModules: ComputedRef<Module[]>;
+export { Module };
+
+interface UseModuleEnabledReturn {
+  enabled: Readonly<Ref<boolean>>;
 }
 
-export function useModules(): UseModulesReturn {
+export function getModuleEnabled(module: Module): boolean {
+  const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  return get(activeModules).includes(module);
+}
+
+export function useModuleEnabled(module: MaybeRefOrGetter<Module>): UseModuleEnabledReturn {
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
-  const isAnyModuleEnabled = (modules: Module[]): ComputedRef<boolean> =>
-    computed(() => get(activeModules).some(module => modules.includes(module)));
+  const enabled = computed<boolean>(() => get(activeModules).includes(toValue(module)));
 
-  const isModuleEnabled = (module: Module): ComputedRef<boolean> => computed(() => {
-    const active = get(activeModules);
-    return active.includes(module);
-  });
-
-  return {
-    activeModules,
-    isAnyModuleEnabled,
-    isModuleEnabled,
-  };
+  return { enabled: readonly(enabled) };
 }
