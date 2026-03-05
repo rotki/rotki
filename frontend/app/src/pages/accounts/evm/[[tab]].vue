@@ -10,9 +10,8 @@ import EvmAccountPageButtons from '@/components/accounts/EvmAccountPageButtons.v
 import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
-import { useModules } from '@/composables/session/modules';
+import { Module, useModuleEnabled } from '@/composables/session/modules';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
-import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
@@ -37,13 +36,12 @@ const table = useTemplateRef<InstanceType<typeof AccountBalances>>('table');
 
 const category = 'evm';
 const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
-const { isModuleEnabled } = useModules();
-const isEth2Enabled = isModuleEnabled(Module.ETH2);
+const { enabled: isEth2Enabled } = useModuleEnabled(Module.ETH2);
+const { chainIds } = useAccountCategoryHelper(category);
 
 const isAccountsTabSelected = computed<boolean>(() => tab === 'accounts');
 
-const { chainIds } = useAccountCategoryHelper(category);
-const usedChainIds = computed(() => {
+const usedChainIds = computed<string[]>(() => {
   if (get(isAccountsTabSelected)) {
     return [
       'all',
@@ -87,9 +85,8 @@ function getTabLink(category: string): RouteLocationRaw {
 
 onMounted(async () => {
   const { query } = get(route);
-  if (query.add) {
-    const address = query.addressToAdd as string;
-    createNewBlockchainAccount(address);
+  if (query.add && query.addressToAdd && typeof query.addressToAdd === 'string') {
+    createNewBlockchainAccount(query.addressToAdd);
     await router.replace({ query: {} });
   }
 });

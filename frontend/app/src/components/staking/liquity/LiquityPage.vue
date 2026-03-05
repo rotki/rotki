@@ -4,22 +4,20 @@ import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDetails.vue';
 import LiquityStakingPagePlaceholder from '@/components/staking/liquity/LiquityStakingPagePlaceholder.vue';
 import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session/modules';
+import { Module, useModuleEnabled } from '@/composables/session/modules';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
-import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
 const modules = [Module.LIQUITY];
-const { isModuleEnabled } = useModules();
+const { enabled: moduleEnabled } = useModuleEnabled(modules[0]);
 const { fetchPools, fetchStaking, fetchStatistics, setStakingQueryStatus } = useLiquityStore();
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const { useShouldShowLoadingScreen } = useStatusStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const moduleEnabled = isModuleEnabled(modules[0]);
 const premium = usePremium();
 const { fetchPrices } = usePriceTaskManager();
 

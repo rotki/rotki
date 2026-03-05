@@ -37,8 +37,8 @@ interface UseUnmatchedAssetMovementsReturn {
   loading: Ref<boolean>;
   ignoredLoading: Ref<boolean>;
   autoMatchLoading: ComputedRef<boolean>;
-  autoMatchMinimumTier: ComputedRef<string | null>;
-  isAutoMatchAllowed: ComputedRef<boolean>;
+  autoMatchMinimumTier: Readonly<Ref<string | null>>;
+  isAutoMatchAllowed: Readonly<Ref<boolean>>;
   fetchUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<void>;
   matchAssetMovement: (assetMovementId: number, matchedEventIds: number[]) => Promise<ActionStatus>;
   refreshUnmatchedAssetMovements: (skipIgnored?: boolean) => Promise<void>;
