@@ -47,8 +47,7 @@ class StarknetTransactions:
             tx_hash: str,
             relevant_address: StarknetAddress | None = None,
     ) -> StarknetTransaction:
-        """Gets a transaction from the DB or from onchain. If it must be queried from onchain,
-        it is also saved to the DB.
+        """Gets a transaction from the DB or fetches it via Voyager (with RPC fallback).
 
         May raise:
         - RemoteError if there is a problem with querying the external service.
@@ -60,7 +59,12 @@ class StarknetTransactions:
             )) == 1:
                 return txs[0]
 
-        tx = self.node_inquirer.get_transaction_for_hash(tx_hash=tx_hash)
+        try:
+            tx = self.voyager.get_transaction_object(tx_hash)
+        except (MissingAPIKey, RemoteError) as e:
+            log.debug(f'Voyager unavailable for tx {tx_hash}: {e}. Falling back to RPC.')
+            tx = self.node_inquirer.get_transaction_for_hash(tx_hash=tx_hash)
+
         with self.database.conn.write_ctx() as write_cursor:
             self.dbtx.add_transactions(
                 write_cursor=write_cursor,

@@ -22,6 +22,7 @@ from eth_utils.address import to_checksum_address
 from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
+from rotkehlchen.chain.starknet.validation import is_valid_starknet_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.misc import AddressNotSupported, InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -711,6 +712,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.ZKSYNC_LITE,
     SupportedBlockchain.BINANCE_SC,
     SupportedBlockchain.SOLANA,
+    SupportedBlockchain.STARKNET,
 ]
 
 SUPPORTED_BITCOIN_CHAINS_TYPE = Literal[
@@ -1005,6 +1007,7 @@ class AddressbookEntry(NamedTuple):
         ChainType.EVMLIKE,
         ChainType.SUBSTRATE,
         ChainType.SOLANA,
+        ChainType.STARKNET,
     ]:
         """Get the chain ecosystem for the provided address.
 
@@ -1024,6 +1027,8 @@ class AddressbookEntry(NamedTuple):
             return ChainType.SUBSTRATE
         if is_valid_solana_address(address=address):
             return ChainType.SOLANA
+        if is_valid_starknet_address(address=address):
+            return ChainType.STARKNET
 
         # Whenever we add a new ecosystem we need to update this function.
         raise AddressNotSupported(f'Unsupported address {address}')

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 import requests
 
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
+from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -62,10 +63,24 @@ class StarknetInquirer:
         self.blockchain = SupportedBlockchain.STARKNET
         self.rpc_timeout = DEFAULT_RPC_TIMEOUT
         self.rpc_endpoint = DEFAULT_STARKNET_RPC_ENDPOINT
+        self.failed_to_connect_nodes: set[str] = set()
 
         # Cache commonly used selectors
         self._balance_of_selector = get_selector_from_name('balanceOf')
         log.debug(f'Initialized Starknet inquirer with balanceOf selector: {self._balance_of_selector}')  # noqa: E501
+
+    def get_connected_nodes(self) -> list[NodeName]:
+        """Get all currently connected nodes.
+
+        For Starknet we use a single RPC endpoint, so we return it as a
+        single-element list when the endpoint is configured.
+        """
+        return [NodeName(
+            name='starknet rpc',
+            endpoint=self.rpc_endpoint,
+            owned=False,
+            blockchain=self.blockchain,
+        )]
 
     def _rpc_call(self, method: str, params: list[Any] | dict[str, Any]) -> Any:
         """Make a JSON-RPC call to the Starknet node

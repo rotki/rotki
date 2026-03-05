@@ -74,7 +74,8 @@ const {
 
 // Computed
 const isSolana = computed<boolean>(() => category === 'solana');
-const showSelectionToggle = computed<boolean>(() => get(isEvm) || get(isSolana));
+const isStarknet = computed<boolean>(() => category === 'starknet');
+const showSelectionToggle = computed<boolean>(() => get(isEvm) || get(isSolana) || get(isStarknet));
 
 const anyExpansion = computed<boolean>(() => get(accounts).data.some(item => item.expansion));
 

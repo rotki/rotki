@@ -183,9 +183,25 @@ class Voyager(ExternalServiceWithRecommendedApiKey):
         log.debug(f'Voyager fetched {len(transactions)} transactions for {address}')
         return transactions
 
+    def get_transaction_object(self, tx_hash: str) -> StarknetTransaction:
+        """Fetch a transaction from Voyager and return as StarknetTransaction.
+
+        May raise:
+        - MissingAPIKey if the user has no Voyager api key.
+        - RemoteError if there was a problem with the remote query.
+        """
+        raw = self.get_transaction(tx_hash)
+        tx = self._deserialize_voyager_tx(raw)
+        if tx is None:
+            raise RemoteError(f'Failed to deserialize Voyager transaction {tx_hash}')
+        return tx
+
     @staticmethod
     def _deserialize_voyager_tx(raw: dict[str, Any]) -> StarknetTransaction | None:
-        """Convert a Voyager transaction list item into a StarknetTransaction."""
+        """Convert a Voyager transaction response into a StarknetTransaction.
+
+        Works with both list endpoint items and single-tx endpoint responses.
+        """
         try:
             tx_hash = raw['hash']
             sender = raw.get('senderAddress') or raw.get('contractAddress', '0x0')
@@ -200,6 +216,13 @@ class Voyager(ExternalServiceWithRecommendedApiKey):
             block_number = raw.get('blockNumber', 0)
             tx_type = raw.get('type', 'INVOKE')
 
+            # Parse maxFee — Voyager may return hex string or int
+            max_fee_raw = raw.get('maxFee', '0')
+            if isinstance(max_fee_raw, str) and max_fee_raw.startswith('0x'):
+                max_fee = int(max_fee_raw, 16)
+            else:
+                max_fee = int(max_fee_raw)
+
             # Determine status
             status = raw.get('status', 'ACCEPTED_ON_L2')
             execution = raw.get('executionStatus', 'Succeeded')
@@ -212,9 +235,9 @@ class Voyager(ExternalServiceWithRecommendedApiKey):
                 block_timestamp=timestamp,
                 from_address=from_address,
                 to_address=to_address,
-                selector=None,
-                calldata=[],
-                max_fee=0,
+                selector=raw.get('selector'),
+                calldata=raw.get('calldata', []),
+                max_fee=max_fee,
                 actual_fee=actual_fee,
                 status=status,
                 transaction_type=tx_type,

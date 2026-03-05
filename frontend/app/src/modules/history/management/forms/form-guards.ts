@@ -5,9 +5,11 @@ import type {
   HistoryEvent,
   SolanaEvent,
   SolanaSwapEvent,
+  StarknetEvent,
+  StarknetSwapEvent,
 } from '@/types/history/events/schemas';
 import { HistoryEventEntryType } from '@rotki/common';
-import { isEvmEvent, isEvmSwapEvent, isSolanaEvent, isSolanaSwapEvent } from '@/utils/history/events';
+import { isEvmEvent, isEvmSwapEvent, isSolanaEvent, isSolanaSwapEvent, isStarknetEvent, isStarknetSwapEvent } from '@/utils/history/events';
 
 export function isGroupEditableHistoryEvent(event: HistoryEvent): event is GroupEditableHistoryEvents {
   return event.entryType === HistoryEventEntryType.ASSET_MOVEMENT_EVENT
@@ -32,20 +34,30 @@ export function isSolanaTypeEvent(type: HistoryEventEntryType): boolean {
   return Array.prototype.includes.call(SOLANA_EVENTS, type);
 }
 
+export const STARKNET_EVENTS = [
+  HistoryEventEntryType.STARKNET_EVENT,
+  HistoryEventEntryType.STARKNET_SWAP_EVENT,
+] as const;
+
+export function isStarknetTypeEvent(type: HistoryEventEntryType): boolean {
+  return Array.prototype.includes.call(STARKNET_EVENTS, type);
+}
+
 const SWAP_EVENTS = [
   HistoryEventEntryType.SWAP_EVENT,
   HistoryEventEntryType.EVM_SWAP_EVENT,
   HistoryEventEntryType.SOLANA_SWAP_EVENT,
+  HistoryEventEntryType.STARKNET_SWAP_EVENT,
 ] as const;
 
 export function isSwapTypeEvent(type: HistoryEventEntryType): boolean {
   return Array.prototype.includes.call(SWAP_EVENTS, type);
 }
 
-export type DecodableEventType = EvmHistoryEvent | EvmSwapEvent | SolanaEvent | SolanaSwapEvent;
+export type DecodableEventType = EvmHistoryEvent | EvmSwapEvent | SolanaEvent | SolanaSwapEvent | StarknetEvent | StarknetSwapEvent;
 
 export function isEventDecodable(event: HistoryEvent): DecodableEventType | undefined {
-  if (isEvmEvent(event) || isEvmSwapEvent(event) || isSolanaEvent(event) || isSolanaSwapEvent(event)) {
+  if (isEvmEvent(event) || isEvmSwapEvent(event) || isSolanaEvent(event) || isSolanaSwapEvent(event) || isStarknetEvent(event) || isStarknetSwapEvent(event)) {
     return event;
   }
   return undefined;

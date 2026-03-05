@@ -440,6 +440,10 @@ class TransactionsService:
                 evmlike_tx_refs = cast('list[EVMTxHash]', tx_refs)
                 for evmlike_tx_ref in evmlike_tx_refs:
                     self._decode_given_evmlike_tx(evmlike_tx_ref, delete_custom)
+            elif chain == SupportedBlockchain.STARKNET:
+                starknet_tx_refs = cast('list[str]', tx_refs)
+                for starknet_tx_ref in starknet_tx_refs:
+                    self._decode_given_starknet_tx(starknet_tx_ref, delete_custom)
             else:
                 solana_tx_refs = cast('list[Signature]', tx_refs)
                 for solana_tx_ref in solana_tx_refs:
@@ -909,6 +913,20 @@ class TransactionsService:
             )
 
         self.rotkehlchen.chains_aggregator.solana.transactions_decoder.decode_and_get_transaction_hashes(
+            tx_hashes=[tx_ref],
+            send_ws_notifications=True,
+            ignore_cache=True,
+            delete_customized=delete_custom,
+        )
+
+    def _decode_given_starknet_tx(self, tx_ref: str, delete_custom: bool) -> None:
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM starknet_transactions WHERE transaction_hash=?',
+                (tx_ref,),
+            )
+
+        self.rotkehlchen.chains_aggregator.starknet.transactions_decoder.decode_and_get_transaction_hashes(
             tx_hashes=[tx_ref],
             send_ws_notifications=True,
             ignore_cache=True,

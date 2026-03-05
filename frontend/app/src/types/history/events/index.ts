@@ -11,12 +11,14 @@ export enum TransactionChainType {
   EVMLIKE = 'evmlike',
   BITCOIN = 'bitcoin',
   SOLANA = 'solana',
+  STARKNET = 'starknet',
 }
 
 export const TransactionChainTypeNeedDecoding: TransactionChainType[] = [
   TransactionChainType.EVM,
   TransactionChainType.EVMLIKE,
   TransactionChainType.SOLANA,
+  TransactionChainType.STARKNET,
 ] as const;
 
 export interface TransactionRequestPayload {
@@ -37,7 +39,7 @@ export type PullEventPayload = {
   type: typeof HistoryEventEntryType.ETH_BLOCK_EVENT;
   data: number [];
 } | {
-  type: typeof HistoryEventEntryType.EVM_SWAP_EVENT | typeof HistoryEventEntryType.EVM_EVENT | typeof HistoryEventEntryType.SOLANA_EVENT | typeof HistoryEventEntryType.SOLANA_SWAP_EVENT;
+  type: typeof HistoryEventEntryType.EVM_SWAP_EVENT | typeof HistoryEventEntryType.EVM_EVENT | typeof HistoryEventEntryType.SOLANA_EVENT | typeof HistoryEventEntryType.SOLANA_SWAP_EVENT | typeof HistoryEventEntryType.STARKNET_EVENT | typeof HistoryEventEntryType.STARKNET_SWAP_EVENT;
   data: LocationAndTxRef;
 };
 

@@ -46,6 +46,10 @@ const services = [
     name: 'thegraph',
   },
   {
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/VoyagerApiKey.vue')),
+    name: 'voyager',
+  },
+  {
     component: defineAsyncComponent(() => import('@/modules/external-services/gnosis-pay/components/GnosisPayAuth.vue')),
     name: 'gnosispay',
   },

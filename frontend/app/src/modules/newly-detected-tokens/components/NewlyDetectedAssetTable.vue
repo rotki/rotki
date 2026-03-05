@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdentifier } from '@rotki/common';
+import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdentifier, getAddressFromStarknetIdentifier } from '@rotki/common';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
@@ -34,6 +34,9 @@ const TOKEN_KIND_MAPPING = {
   },
   [NewDetectedTokenKind.SOLANA]: {
     addressFormatter: getAddressFromSolanaIdentifier,
+  },
+  [NewDetectedTokenKind.STARKNET]: {
+    addressFormatter: getAddressFromStarknetIdentifier,
   },
 } as const;
 
@@ -138,6 +141,7 @@ const tokenKindOptions = computed<{ title: string; value: NewDetectedTokenKind |
   { title: t('asset_table.newly_detected.all_types'), value: undefined },
   { title: 'EVM', value: NewDetectedTokenKind.EVM },
   { title: 'Solana', value: NewDetectedTokenKind.SOLANA },
+  { title: 'Starknet', value: NewDetectedTokenKind.STARKNET },
 ]);
 
 async function toggleSelection(): Promise<void> {
