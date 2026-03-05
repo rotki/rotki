@@ -36,6 +36,7 @@ Changelog
 * :bug:`-` WETH Unwrapping in base will now be properly decoded.
 * :bug:`-` The rare case of balancer v2 swaps with repeated swap logs for a single events is now decoded properly.
 * :feature:`-` ERC4337 fee payments will now be properly understood by rotki
+* :bug:`-` 1inch swaps using Trader Joe Liquidity Book swap should now be properly decoded by rotki.
 
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.
