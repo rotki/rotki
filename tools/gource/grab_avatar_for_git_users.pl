@@ -26,12 +26,12 @@ while(<GITLOG>) {
 
     my $author_image_file = $output_dir . '/' . $author . '.png';
 
-    #skip images we have
+    # Skip images we have
     next if -e $author_image_file;
 
-    #try and fetch image
+    # Try and fetch image
 
-    my $grav_url = "http://www.gravatar.com/avatar/".md5_hex(lc $email)."?d=404&size=".$size;
+    my $grav_url = "https://www.gravatar.com/avatar/".md5_hex(lc $email)."?d=404&size=".$size;
 
     warn "fetching image for '$author' $email ($grav_url)...\n";
 
