@@ -557,6 +557,36 @@ CREATE TABLE IF NOT EXISTS chain_events_info (
 );
 """  # noqa: E501
 
+DB_CREATE_EVM_CHAIN_EVENT_TXS = """
+CREATE TABLE IF NOT EXISTS evm_chain_event_txs (
+    event_identifier INTEGER NOT NULL PRIMARY KEY,
+    tx_id INTEGER NOT NULL,
+    FOREIGN KEY(event_identifier) REFERENCES chain_events_info(identifier)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(tx_id) REFERENCES evm_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+);
+"""
+
+DB_CREATE_SOLANA_CHAIN_EVENT_TXS = """
+CREATE TABLE IF NOT EXISTS solana_chain_event_txs (
+    event_identifier INTEGER NOT NULL PRIMARY KEY,
+    tx_id INTEGER NOT NULL,
+    FOREIGN KEY(event_identifier) REFERENCES chain_events_info(identifier)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(tx_id) REFERENCES solana_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+);
+"""  # noqa: E501
+
+DB_CREATE_ZKSYNCLITE_CHAIN_EVENT_TXS = """
+CREATE TABLE IF NOT EXISTS zksynclite_chain_event_txs (
+    event_identifier INTEGER NOT NULL PRIMARY KEY,
+    tx_id INTEGER NOT NULL,
+    FOREIGN KEY(event_identifier) REFERENCES chain_events_info(identifier)
+        ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(tx_id) REFERENCES zksynclite_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE
+);
+"""  # noqa: E501
+
 # Table that maps bitcoin history events to zero, one, or many counterparty addresses.
 # WITHOUT ROWID keeps this mapping compact since the composite PK is the natural key.
 DB_CREATE_BITCOIN_EVENTS_ADDRESSES = """
@@ -956,6 +986,9 @@ CREATE INDEX IF NOT EXISTS idx_history_events_asset ON history_events(asset);
 CREATE INDEX IF NOT EXISTS idx_history_events_type ON history_events(type);
 CREATE INDEX IF NOT EXISTS idx_history_events_subtype ON history_events(subtype);
 CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored);
+CREATE INDEX IF NOT EXISTS idx_evm_chain_event_txs_tx_id ON evm_chain_event_txs(tx_id);
+CREATE INDEX IF NOT EXISTS idx_solana_chain_event_txs_tx_id ON solana_chain_event_txs(tx_id);
+CREATE INDEX IF NOT EXISTS idx_zksynclite_chain_event_txs_tx_id ON zksynclite_chain_event_txs(tx_id);
 CREATE INDEX IF NOT EXISTS idx_bitcoin_events_addresses_address ON bitcoin_events_addresses(address);
 CREATE INDEX IF NOT EXISTS idx_history_event_links_right ON history_event_links(right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_links_composite ON history_event_links(link_type, left_event_id, right_event_id);
@@ -1012,6 +1045,9 @@ BEGIN TRANSACTION;
 {DB_CREATE_ETH_VALIDATORS_DATA_CACHE}
 {DB_CREATE_HISTORY_EVENTS}
 {DB_CREATE_CHAIN_EVENTS_INFO}
+{DB_CREATE_EVM_CHAIN_EVENT_TXS}
+{DB_CREATE_SOLANA_CHAIN_EVENT_TXS}
+{DB_CREATE_ZKSYNCLITE_CHAIN_EVENT_TXS}
 {DB_CREATE_BITCOIN_EVENTS_ADDRESSES}
 {DB_CREATE_ETH_STAKING_EVENTS_INFO}
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}

@@ -38,6 +38,129 @@ def _extract_addresses_from_notes(location: Location, notes: str) -> list[str]:
 def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v51 to v52. This happened in 1.43."""
 
+    @progress_step(description='Create chain event transaction link tables.')
+    def _create_chain_event_tx_link_tables(write_cursor: 'DBCursor') -> None:
+        write_cursor.executescript("""
+        CREATE TABLE IF NOT EXISTS evm_chain_event_txs (
+            event_identifier INTEGER NOT NULL PRIMARY KEY,
+            tx_id INTEGER NOT NULL,
+            FOREIGN KEY(event_identifier)
+                REFERENCES chain_events_info(identifier)
+                ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY(tx_id)
+                REFERENCES evm_transactions(identifier)
+                ON UPDATE CASCADE ON DELETE CASCADE
+        );
+        CREATE TABLE IF NOT EXISTS solana_chain_event_txs (
+            event_identifier INTEGER NOT NULL PRIMARY KEY,
+            tx_id INTEGER NOT NULL,
+            FOREIGN KEY(event_identifier)
+                REFERENCES chain_events_info(identifier)
+                ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY(tx_id)
+                REFERENCES solana_transactions(identifier)
+                ON UPDATE CASCADE ON DELETE CASCADE
+        );
+        CREATE TABLE IF NOT EXISTS zksynclite_chain_event_txs (
+            event_identifier INTEGER NOT NULL PRIMARY KEY,
+            tx_id INTEGER NOT NULL,
+            FOREIGN KEY(event_identifier)
+                REFERENCES chain_events_info(identifier)
+                ON UPDATE CASCADE ON DELETE CASCADE,
+            FOREIGN KEY(tx_id)
+                REFERENCES zksynclite_transactions(identifier)
+                ON UPDATE CASCADE ON DELETE CASCADE
+        );
+        """)
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_evm_chain_event_txs_tx_id '
+            'ON evm_chain_event_txs(tx_id)',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_solana_chain_event_txs_tx_id '
+            'ON solana_chain_event_txs(tx_id)',
+        )
+        write_cursor.execute(
+            'CREATE INDEX IF NOT EXISTS idx_zksynclite_chain_event_txs_tx_id '
+            'ON zksynclite_chain_event_txs(tx_id)',
+        )
+
+    @progress_step(description='Backfill chain event transaction links.')
+    def _backfill_chain_event_tx_links(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute('DELETE FROM evm_chain_event_txs')
+        write_cursor.execute('DELETE FROM solana_chain_event_txs')
+        write_cursor.execute('DELETE FROM zksynclite_chain_event_txs')
+        for location in (
+                Location.ETHEREUM,
+                Location.OPTIMISM,
+                Location.POLYGON_POS,
+                Location.ARBITRUM_ONE,
+                Location.BASE,
+                Location.GNOSIS,
+                Location.SCROLL,
+                Location.BINANCE_SC,
+        ):
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO evm_chain_event_txs(event_identifier, tx_id) '
+                'SELECT C.identifier, T.identifier FROM chain_events_info C '
+                'INNER JOIN history_events H ON H.identifier = C.identifier '
+                'INNER JOIN evm_transactions T ON T.tx_hash = C.tx_ref AND T.chain_id = ? '
+                'WHERE H.location = ?',
+                (location.to_chain_id(), location.serialize_for_db()),
+            )
+
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO solana_chain_event_txs(event_identifier, tx_id) '
+            'SELECT C.identifier, T.identifier FROM chain_events_info C '
+            'INNER JOIN history_events H ON H.identifier = C.identifier '
+            'INNER JOIN solana_transactions T ON T.signature = C.tx_ref '
+            'WHERE H.location = ?',
+            (Location.SOLANA.serialize_for_db(),),
+        )
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO zksynclite_chain_event_txs(event_identifier, tx_id) '
+            'SELECT C.identifier, T.identifier FROM chain_events_info C '
+            'INNER JOIN history_events H ON H.identifier = C.identifier '
+            'INNER JOIN zksynclite_transactions T ON T.tx_hash = C.tx_ref '
+            'WHERE H.location = ?',
+            (Location.ZKSYNC_LITE.serialize_for_db(),),
+        )
+        orphaned_event_ids = {
+            row[0] for row in write_cursor.execute(
+                'SELECT C.identifier FROM chain_events_info C '
+                'INNER JOIN history_events H ON H.identifier = C.identifier '
+                'WHERE H.location IN (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) '
+                'AND C.identifier NOT IN (SELECT event_identifier FROM evm_chain_event_txs) '
+                'AND C.identifier NOT IN (SELECT event_identifier FROM solana_chain_event_txs) '
+                'AND C.identifier NOT IN ('
+                'SELECT event_identifier FROM zksynclite_chain_event_txs)',
+                (
+                    Location.ETHEREUM.serialize_for_db(),
+                    Location.OPTIMISM.serialize_for_db(),
+                    Location.POLYGON_POS.serialize_for_db(),
+                    Location.ARBITRUM_ONE.serialize_for_db(),
+                    Location.BASE.serialize_for_db(),
+                    Location.GNOSIS.serialize_for_db(),
+                    Location.SCROLL.serialize_for_db(),
+                    Location.BINANCE_SC.serialize_for_db(),
+                    Location.SOLANA.serialize_for_db(),
+                    Location.ZKSYNC_LITE.serialize_for_db(),
+                ),
+            )
+        }
+        if len(orphaned_event_ids) == 0:
+            return
+
+        placeholders = ','.join(['?'] * len(orphaned_event_ids))
+        write_cursor.execute(
+            f'DELETE FROM history_events WHERE identifier IN ({placeholders})',
+            tuple(orphaned_event_ids),
+        )
+        log.warning(
+            f'Removed {len(orphaned_event_ids)} on-chain events with missing transactions '
+            'during v51->v52 upgrade',
+        )
+
     @progress_step(description='Create bitcoin event address mappings table.')
     def _create_bitcoin_address_mappings_table(write_cursor: 'DBCursor') -> None:
         write_cursor.execute("""

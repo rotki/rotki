@@ -86,6 +86,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_ms_to_sec, ts_sec_to_ms
 
@@ -187,6 +188,132 @@ class DBHistoryEvents:
 
     def __init__(self, database: 'DBHandler') -> None:
         self.db = database
+
+    @staticmethod
+    def _serialize_onchain_tx_ref(
+            tx_ref: EVMTxHash | Signature,
+    ) -> bytes:
+        if isinstance(tx_ref, Signature):
+            return tx_ref.to_bytes()
+
+        return bytes(tx_ref)
+
+    def _sync_chain_event_tx_link(
+            self,
+            write_cursor: 'DBCursor',
+            event_identifier: int,
+            location: Location,
+            tx_ref: EVMTxHash | Signature,
+    ) -> None:
+        """Sync FK-backed transaction link tables from chain_events_info.tx_ref."""
+        self._sync_chain_event_tx_links_bulk(
+            write_cursor=write_cursor,
+            events_data=[(event_identifier, location, tx_ref)],
+        )
+
+    def _sync_chain_event_tx_links_bulk(
+            self,
+            write_cursor: 'DBCursor',
+            events_data: Sequence[tuple[int, Location, EVMTxHash | Signature]],
+    ) -> None:
+        """Sync FK-backed tx links in bulk for on-chain events."""
+        if len(events_data) == 0:
+            return
+
+        event_ids = [event_id for event_id, _, _ in events_data]
+        for event_ids_chunk, placeholders in get_query_chunks(event_ids):
+            for table in (
+                    'evm_chain_event_txs',
+                    'solana_chain_event_txs',
+                    'zksynclite_chain_event_txs',
+            ):
+                write_cursor.execute(
+                    f'DELETE FROM {table} WHERE event_identifier IN ({placeholders})',
+                    event_ids_chunk,
+                )
+
+        evm_groups: defaultdict[Location, defaultdict[bytes, list[int]]] = defaultdict(
+            lambda: defaultdict(list),
+        )
+        solana_group: defaultdict[bytes, list[int]] = defaultdict(list)
+        zksync_group: defaultdict[bytes, list[int]] = defaultdict(list)
+        for event_id, location, tx_ref in events_data:
+            tx_ref_db = self._serialize_onchain_tx_ref(tx_ref=tx_ref)
+            if location.is_evm():
+                evm_groups[location][tx_ref_db].append(event_id)
+            elif location == Location.SOLANA:
+                solana_group[tx_ref_db].append(event_id)
+            elif location == Location.ZKSYNC_LITE:
+                zksync_group[tx_ref_db].append(event_id)
+
+        evm_rows: list[tuple[int, int]] = []
+        for location, tx_refs in evm_groups.items():
+            found: dict[bytes, int] = {}
+            for tx_refs_chunk, placeholders in get_query_chunks(list(tx_refs.keys())):
+                query = (
+                    'SELECT tx_hash, identifier FROM evm_transactions WHERE chain_id=? '
+                    f'AND tx_hash IN ({placeholders})'
+                )
+                found.update(dict(write_cursor.execute(
+                    query,
+                    (location.to_chain_id(), *tx_refs_chunk),
+                )))
+
+            for tx_hash, identifiers in tx_refs.items():
+                if (tx_id := found.get(tx_hash)) is not None:
+                    evm_rows.extend((identifier, tx_id) for identifier in identifiers)
+
+        def build_rows(
+                tx_refs: dict[bytes, list[int]],
+                tx_table: str,
+                tx_col: str,
+                chain_name: str,
+        ) -> list[tuple[int, int]]:
+            if len(tx_refs) == 0:
+                return []
+
+            found: dict[bytes, int] = {}
+            for tx_refs_chunk, placeholders in get_query_chunks(list(tx_refs.keys())):
+                found.update(dict(write_cursor.execute(
+                    f'SELECT {tx_col}, identifier FROM {tx_table} '
+                    f'WHERE {tx_col} IN ({placeholders})',
+                    tx_refs_chunk,
+                )))
+
+            rows: list[tuple[int, int]] = []
+            for tx_ref, identifiers in tx_refs.items():
+                if (tx_id := found.get(tx_ref)) is not None:
+                    rows.extend((identifier, tx_id) for identifier in identifiers)
+
+            return rows
+
+        solana_rows = build_rows(
+            tx_refs=solana_group,
+            tx_table='solana_transactions',
+            tx_col='signature',
+            chain_name='Solana',
+        )
+        zksync_rows = build_rows(
+            tx_refs=zksync_group,
+            tx_table='zksynclite_transactions',
+            tx_col='tx_hash',
+            chain_name='zkSync Lite',
+        )
+        if len(evm_rows) != 0:
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO evm_chain_event_txs(event_identifier, tx_id) VALUES(?, ?)',
+                evm_rows,
+            )
+        if len(solana_rows) != 0:
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO solana_chain_event_txs(event_identifier, tx_id) VALUES(?, ?)',  # noqa: E501
+                solana_rows,
+            )
+        if len(zksync_rows) != 0:
+            write_cursor.executemany(
+                'INSERT OR REPLACE INTO zksynclite_chain_event_txs(event_identifier, tx_id) VALUES(?, ?)',  # noqa: E501
+                zksync_rows,
+            )
 
     def _mark_events_modified(
             self,
@@ -318,6 +445,7 @@ class DBHistoryEvents:
             event: HistoryBaseEntry,
             mapping_values: dict[str, HistoryMappingState] | None = None,
             skip_tracking: bool = False,
+            sync_chain_tx_link: bool = True,
     ) -> int | None:
         """Insert a single history entry to the DB. Returns its identifier or
         None if it already exists. This function serializes the event depending
@@ -364,6 +492,13 @@ class DBHistoryEvents:
             notes=event.notes,
             decoded_addresses=getattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY, None),
         )
+        if sync_chain_tx_link is True and isinstance(event, OnchainEvent):
+            self._sync_chain_event_tx_link(
+                write_cursor=write_cursor,
+                event_identifier=identifier,
+                location=event.location,
+                tx_ref=event.tx_ref,
+            )
 
         # TODO (balances): add _mark_events_modified for event.timestamp if not skip_tracking
         return identifier
@@ -386,19 +521,26 @@ class DBHistoryEvents:
             return
 
         min_timestamp: TimestampMS | None = None
+        new_onchain_events: list[tuple[int, Location, EVMTxHash | Signature]] = []
 
         # Add all events WITHOUT calling _mark_events_modified for each
         for event in history:
-            if (
-                self.add_history_event(
-                    write_cursor=write_cursor,
-                    event=event,
-                    skip_tracking=True,  # Skip tracking per-event
-                ) is not None  # Only track if event was actually added (not a duplicate)
-                and (min_timestamp is None or event.timestamp < min_timestamp)
-            ):
+            if (identifier := self.add_history_event(
+                write_cursor=write_cursor,
+                event=event,
+                skip_tracking=True,  # Skip tracking per-event
+                sync_chain_tx_link=False,
+            )) is not None:  # Only track if event was actually added (not a duplicate)
                 # Track the minimum timestamp
-                min_timestamp = event.timestamp
+                if isinstance(event, OnchainEvent):
+                    new_onchain_events.append((identifier, event.location, event.tx_ref))
+                if min_timestamp is None or event.timestamp < min_timestamp:
+                    min_timestamp = event.timestamp
+
+        self._sync_chain_event_tx_links_bulk(
+            write_cursor=write_cursor,
+            events_data=new_onchain_events,
+        )
 
         # Call tracking ONCE for the entire batch with minimum timestamp
         # TODO (balances): add _mark_events_modified for min_timestamp if min_timestamp is not None
@@ -425,8 +567,8 @@ class DBHistoryEvents:
             (identifier,),
         )
 
-    @staticmethod
     def maybe_restore_history_events_from_backup(
+            self,
             write_cursor: 'DBCursor',
             identifiers: list[int],
     ) -> None:
@@ -439,6 +581,22 @@ class DBHistoryEvents:
                     f'INSERT OR REPLACE INTO {table} '
                     f'SELECT * FROM {table}_backup WHERE identifier IN ({placeholders})',
                     chunk,
+                )
+            for event_identifier, location, tx_ref in write_cursor.execute(
+                'SELECT C.identifier, H.location, C.tx_ref '
+                'FROM chain_events_info C INNER JOIN history_events H ON H.identifier = C.identifier '  # noqa: E501
+                f'WHERE C.identifier IN ({placeholders})',
+                chunk,
+            ):
+                self._sync_chain_event_tx_link(
+                    write_cursor=write_cursor,
+                    event_identifier=event_identifier,
+                    location=Location.deserialize_from_db(location),
+                    tx_ref=(
+                        Signature(tx_ref)
+                        if location == Location.SOLANA.serialize_for_db()
+                        else deserialize_evm_tx_hash(tx_ref)
+                    ),
                 )
             # Delete backup entries (also deletes backup chain info via foreign key)
             write_cursor.execute(
@@ -570,6 +728,13 @@ class DBHistoryEvents:
             notes=event.notes,
             decoded_addresses=getattr(event, BITCOIN_COUNTERPARTY_ADDRESSES_METADATA_KEY, None),
         )
+        if isinstance(event, OnchainEvent):
+            self._sync_chain_event_tx_link(
+                write_cursor=write_cursor,
+                event_identifier=event.identifier,
+                location=event.location,
+                tx_ref=event.tx_ref,
+            )
 
         # Mark event state and store original position for duplicate prevention during redecode.
         # Only store original position on first customization (when INSERT succeeds).
