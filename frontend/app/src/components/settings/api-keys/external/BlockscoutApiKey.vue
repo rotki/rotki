@@ -12,9 +12,9 @@ const { evmChain, chainName } = defineProps<{ evmChain: string; chainName: strin
 const name = 'blockscout';
 const { t } = useI18n({ useScope: 'global' });
 
-const { actionStatus, apiKey, confirmDelete, getName, loading, save } = useExternalApiKeys(t);
+const { actionStatus, useApiKey, confirmDelete, getName, loading, save } = useExternalApiKeys();
 
-const key = apiKey(name, () => evmChain);
+const key = useApiKey(name, () => evmChain);
 const status = actionStatus(name, () => evmChain);
 const identifier = computed(() => getName(name, evmChain));
 

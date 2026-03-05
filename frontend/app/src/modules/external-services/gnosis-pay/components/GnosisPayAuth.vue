@@ -21,8 +21,8 @@ import GnosisPayWalletConnection from './GnosisPayWalletConnection.vue';
 const { t } = useI18n({ useScope: 'global' });
 
 const name = 'gnosis_pay';
-const { apiKey, confirmDelete, load, loading } = useExternalApiKeys(t);
-const key = apiKey(name);
+const { useApiKey, confirmDelete, load, loading } = useExternalApiKeys();
+const key = useApiKey(name);
 
 const serviceKeyCard = useTemplateRef<InstanceType<typeof ServiceKeyCard>>('serviceKeyCard');
 

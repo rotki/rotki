@@ -15,10 +15,10 @@ const router = useRouter();
 
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { fetchLoopringBalances } = useBlockchainBalances();
-const { actionStatus, apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
+const { actionStatus, useApiKey, confirmDelete, loading, save } = useExternalApiKeys();
 const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
 
-const key = apiKey(name);
+const key = useApiKey(name);
 const status = actionStatus(name);
 const isLoopringActive = useArrayIncludes(activeModules, Module.LOOPRING);
 

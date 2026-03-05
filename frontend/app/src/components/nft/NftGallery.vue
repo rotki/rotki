@@ -19,7 +19,7 @@ const { modules } = defineProps<{ modules: Module[] }>();
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const premium = usePremium();
-const { apiKey } = useExternalApiKeys(t);
+const { useApiKey } = useExternalApiKeys();
 
 // Use composables
 const {
@@ -50,7 +50,7 @@ const noData = computed<boolean>(() =>
   get(visibleNfts).length === 0 && !(get(selectedCollection) || get(selectedAccounts).length > 0),
 );
 
-const openSeaKey = apiKey('opensea');
+const openSeaKey = useApiKey('opensea');
 const hasOpenSeaKey = computed<boolean>(() => !!get(openSeaKey));
 
 // Methods

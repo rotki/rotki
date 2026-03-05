@@ -9,7 +9,7 @@ import { getPublicServiceImagePath } from '@/utils/file';
 
 const name = 'blockscout';
 const { t } = useI18n({ useScope: 'global' });
-const { keys } = useExternalApiKeys(t);
+const { keys } = useExternalApiKeys();
 const tabIndex = ref<number>(0);
 const route = useRoute();
 const router = useRouter();

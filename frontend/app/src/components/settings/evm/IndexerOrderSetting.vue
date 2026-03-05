@@ -41,9 +41,9 @@ const DEFAULT_TAB = 'default';
 const { getChain, getChainName, getEvmChainName, txEvmChains } = useSupportedChains();
 const { defaultEvmIndexerOrder, evmIndexersOrder } = storeToRefs(useGeneralSettingsStore());
 const { update: updateSettings } = useSettingsStore();
-const { apiKey } = useExternalApiKeys(t);
+const { getApiKey, useApiKey } = useExternalApiKeys();
 
-const etherscanApiKey = apiKey('etherscan');
+const etherscanApiKey = useApiKey('etherscan');
 
 const activeTab = ref<string>(DEFAULT_TAB);
 const showChainMenu = ref<boolean>(false);
@@ -181,8 +181,7 @@ const missingApiKeyIndexer = computed<string | null>(() => {
   else if (firstIndexer === EvmIndexer.BLOCKSCOUT) {
     const tab = get(activeTab);
     const chainId = tab === DEFAULT_TAB ? 'ethereum' : tab;
-    const blockscoutKey = apiKey('blockscout', chainId);
-    if (!get(blockscoutKey))
+    if (!getApiKey('blockscout', chainId))
       return toCapitalCase(EvmIndexer.BLOCKSCOUT);
   }
 
