@@ -192,6 +192,28 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 found_receive_event = True
 
         if not found_receive_event:
+            possible_receive_assets = (
+                pool_info.lp_tokens if pool_info.farming_pool_token is None
+                else pool_info.lp_tokens.union({pool_info.farming_pool_token})
+            )
+            # Some wrapper routes (for example Arbitrum staking wrappers) mint the final farm
+            # token from the tx target contract, so include matching transfer assets from logs.
+            if context.transaction.to_address is not None:
+                possible_receive_assets = possible_receive_assets.union({
+                    self.base.get_or_create_evm_token(address=tx_log.address).identifier
+                    for tx_log in context.all_logs
+                    if (
+                        tx_log.log_index > context.tx_log.log_index and
+                        len(tx_log.topics) == 3 and
+                        tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                        int.from_bytes(tx_log.data) == int.from_bytes(
+                            context.tx_log.data[32:64],
+                        ) and
+                        bytes_to_address(tx_log.topics[2]) == user_address and
+                        bytes_to_address(tx_log.topics[1]) == context.transaction.to_address
+                    )
+                })
+
             action_items = [
                 ActionItem(
                     action='transform',
@@ -204,10 +226,7 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                     to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
                     to_notes=self._get_note_by_pool(pool_info, asset, shares),
                     to_counterparty=CPT_GEARBOX,
-                ) for asset_id in (
-                    pool_info.lp_tokens if pool_info.farming_pool_token is None
-                    else pool_info.lp_tokens.union({pool_info.farming_pool_token})
-                )
+                ) for asset_id in possible_receive_assets
             ]
 
         return EvmDecodingOutput(action_items=action_items)
