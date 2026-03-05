@@ -32,7 +32,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const massDetecting = ref<string>();
 
-  const { useIsAssetIgnored } = useIgnoredAssetsStore();
+  const { isAssetIgnored } = useIgnoredAssetsStore();
   const { t } = useI18n({ useScope: 'global' });
   const { balances } = storeToRefs(useBalancesStore());
   const { addresses } = useAccountAddresses();
@@ -106,20 +106,15 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
 
   const getTokens = (balances: BlockchainAssetBalances, address: string): string[] => {
     const assets = balances?.[address]?.assets ?? [];
-    return Object.keys(assets).filter(id => !get(useIsAssetIgnored(id)));
+    return Object.keys(assets).filter(id => !isAssetIgnored(id));
   };
 
-  const getEthDetectedTokensInfo = (
-    chain: MaybeRefOrGetter<string>,
-    address: MaybeRefOrGetter<string | null>,
-  ): ComputedRef<EthDetectedTokensInfo> => computed<EthDetectedTokensInfo>(() => {
-    const blockchain = toValue(chain);
+  function findEthDetectedTokensInfo(blockchain: string, addr: string | null): EthDetectedTokensInfo {
     if (!supportsTransactions(blockchain))
       return noTokens();
 
     const state = get(tokensState);
     const detected: EvmTokensRecord | undefined = state[blockchain];
-    const addr = toValue(address);
 
     if (!addr)
       return noTokens();
@@ -134,7 +129,14 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       tokens,
       total: tokens.length,
     };
-  });
+  }
+
+  const getEthDetectedTokensInfo = (
+    chain: MaybeRefOrGetter<string>,
+    address: MaybeRefOrGetter<string | null>,
+  ): ComputedRef<EthDetectedTokensInfo> => computed<EthDetectedTokensInfo>(() =>
+    findEthDetectedTokensInfo(toValue(chain), toValue(address)),
+  );
 
   watch(monitoredAddresses, async (curr, prev) => {
     for (const chain in curr) {
@@ -183,6 +185,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   return {
     fetchDetected,
     fetchDetectedTokens,
+    findEthDetectedTokensInfo,
     getEthDetectedTokensInfo,
     massDetecting,
   };

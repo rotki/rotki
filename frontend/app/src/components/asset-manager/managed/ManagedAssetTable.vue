@@ -53,6 +53,7 @@ const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
 // Use composables
 const {
+  isAssetWhitelisted,
   loadingIgnore,
   loadingSpam,
   loadingWhitelist,
@@ -61,7 +62,6 @@ const {
   toggleIgnoreAsset,
   toggleSpam,
   toggleWhitelistAsset,
-  useIsAssetWhitelisted,
 } = useManagedAssetOperations(() => emit('refresh'), ignoredFilter, selected);
 
 const { cols, data, expand, isExpanded } = useManagedAssetTable(
@@ -73,7 +73,7 @@ const { cols, data, expand, isExpanded } = useManagedAssetTable(
 
 const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAssetDisplayHelpers(
   () => collection,
-  useIsAssetWhitelisted,
+  isAssetWhitelisted,
 );
 
 const { fetchIgnoredAssets } = useIgnoredAssetsStore();

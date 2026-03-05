@@ -24,18 +24,19 @@ export const useAirdropsMetadata = createSharedComposable(() => {
     { evaluating: loading },
   );
 
-  const getAirdropData = (identifier: MaybeRefOrGetter<string>): ComputedRef<ProtocolMetadata | undefined> =>
-    useArrayFind(metadata, item => camelCase(item.identifier) === camelCase(toValue(identifier)));
+  function findAirdropData(identifier: string): ProtocolMetadata | undefined {
+    return get(metadata).find(item => camelCase(item.identifier) === camelCase(identifier));
+  }
 
   const getAirdropName = (identifier: MaybeRefOrGetter<string>): ComputedRef<string> =>
     useValueOrDefault(
-      () => get(getAirdropData(identifier))?.name,
+      () => findAirdropData(toValue(identifier))?.name,
       identifier,
     );
 
   const getAirdropImageUrl = (identifier: MaybeRefOrGetter<string>): ComputedRef<string> =>
-    computed(() => {
-      const data = get(getAirdropData(identifier));
+    computed<string>(() => {
+      const data = findAirdropData(toValue(identifier));
 
       if (data?.iconUrl)
         return data.iconUrl;

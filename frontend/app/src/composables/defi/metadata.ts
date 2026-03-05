@@ -25,16 +25,21 @@ export const useDefiMetadata = createSharedComposable(() => {
     { evaluating: loading },
   );
 
-  const getDefiData = (identifier: MaybeRefOrGetter<string>): ComputedRef<ProtocolMetadata | undefined> =>
-    useArrayFind(metadata, item => camelCase(item.identifier) === camelCase(toValue(identifier)));
+  function findDefiData(identifier: string): ProtocolMetadata | undefined {
+    return get(metadata).find(item => camelCase(item.identifier) === camelCase(identifier));
+  }
 
-  const getDefiDataByName = (name: MaybeRefOrGetter<string>): ComputedRef<ProtocolMetadata | undefined> =>
-    useArrayFind<ProtocolMetadata>(metadata, item => decodeHtmlEntities(item.name) === decodeHtmlEntities(toValue(name)));
+  function findDefiDataByName(name: string): ProtocolMetadata | undefined {
+    return get(metadata).find(item => decodeHtmlEntities(item.name) === decodeHtmlEntities(name));
+  }
+
+  const getDefiData = (identifier: MaybeRefOrGetter<string>): ComputedRef<ProtocolMetadata | undefined> =>
+    computed<ProtocolMetadata | undefined>(() => findDefiData(toValue(identifier)));
 
   const getDefiName = (identifier: MaybeRefOrGetter<string>): ComputedRef<string> =>
     useValueOrDefault(
       computed<string | undefined>(() => {
-        const data = get(getDefiData(identifier));
+        const data = findDefiData(toValue(identifier));
         return data?.name && decodeHtmlEntities(data.name);
       }),
       identifier,
@@ -45,16 +50,29 @@ export const useDefiMetadata = createSharedComposable(() => {
     return getPublicProtocolImagePath(imageName);
   };
 
+  function findDefiName(identifier: string): string {
+    const data = findDefiData(identifier);
+    return data?.name ? decodeHtmlEntities(data.name) : identifier;
+  }
+
+  function findDefiImage(identifier: string): string {
+    return getDefiImageUrl(identifier, findDefiData(identifier)?.icon);
+  }
+
   const getDefiImage = (identifier: MaybeRefOrGetter<string>): ComputedRef<string> =>
-    computed(() => getDefiImageUrl(toValue(identifier), get(getDefiData(identifier))?.icon));
+    computed<string>(() => findDefiImage(toValue(identifier)));
 
   const getDefiIdentifierByName = (name: MaybeRefOrGetter<string>): ComputedRef<string> =>
     useValueOrDefault(
-      computed<string | undefined>(() => get(getDefiDataByName(name))?.identifier),
+      computed<string | undefined>(() => findDefiDataByName(toValue(name))?.identifier),
       name,
     );
 
   return {
+    findDefiData,
+    findDefiDataByName,
+    findDefiImage,
+    findDefiName,
     getDefiData,
     getDefiIdentifierByName,
     getDefiImage,

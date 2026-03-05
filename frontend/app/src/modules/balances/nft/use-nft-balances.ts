@@ -47,7 +47,7 @@ export function useNftBalances(): NftBalancesReturn {
 
   const syncNonFungiblesTask = async (): Promise<void> => {
     const taskType = TaskType.NF_BALANCES;
-    if (get(isTaskRunning(taskType)))
+    if (isTaskRunning(taskType))
       return;
 
     const defaults: NonFungibleBalancesRequestPayload = {

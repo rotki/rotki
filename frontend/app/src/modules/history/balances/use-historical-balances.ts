@@ -79,9 +79,9 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
   const { fetchHistoricalBalances, fetchOnchainHistoricalBalance, processHistoricalBalances } = useHistoricalBalancesApi();
   const { getEvmChainName } = useSupportedChains();
   const { isAssetIgnored } = useIgnoredAssetsStore();
-  const { useCollectionId, useCollectionMainAsset } = useCollectionInfo();
+  const { getCollectionId, getCollectionMainAsset, useCollectionId, useCollectionMainAsset } = useCollectionInfo();
   const { awaitTask } = useTaskStore();
-  const { historicPriceInCurrentCurrency } = useHistoricCachePriceStore();
+  const { getHistoricPrice } = useHistoricCachePriceStore();
   const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
   const balances = computed<AssetBalanceWithPrice[]>(() => {
@@ -95,7 +95,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
     const prices: Record<string, BigNumber> = {};
 
     for (const [asset, amount] of Object.entries(entries)) {
-      const price = get(historicPriceInCurrentCurrency(asset, ts));
+      const price = getHistoricPrice(asset, ts);
       prices[asset] = price.lt(0) ? Zero : price;
       const value = amount.multipliedBy(prices[asset]);
 
@@ -104,11 +104,11 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
       };
 
       // Also fetch price for collection main asset if this asset belongs to a collection
-      const collectionId = get(useCollectionId(asset));
+      const collectionId = getCollectionId(asset);
       if (collectionId) {
-        const mainAsset = get(useCollectionMainAsset(collectionId));
+        const mainAsset = getCollectionMainAsset(collectionId);
         if (mainAsset && !prices[mainAsset]) {
-          const price = get(historicPriceInCurrentCurrency(mainAsset, ts));
+          const price = getHistoricPrice(mainAsset, ts);
           prices[mainAsset] = price.lt(0) ? Zero : price;
         }
       }

@@ -133,7 +133,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
     for (const account of accountData) {
       if (isXpubAccount(account))
         continue;
-      accountsWithBalances.push(createAccountWithBalance(account, balanceData));
+      accountsWithBalances.push(createAccountWithBalance(account, balanceData, isAssetIgnored));
     }
     return accountsWithBalances;
   };
@@ -158,7 +158,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
       const accountAssets = Object.values(balanceData)
         .filter(data => !isEmpty(data) && !isEmpty(data[address]))
         .map(data => data[address]);
-      const value = accountAssets.reduce((previousValue, currentValue) => previousValue.plus(assetSum(currentValue.assets)), Zero);
+      const value = accountAssets.reduce((previousValue, currentValue) => previousValue.plus(assetSum(currentValue.assets, isAssetIgnored)), Zero);
 
       const accountsForAddress = Object.values(accountData).flatMap(
         accounts => accounts.filter(account => getAccountAddress(account) === address),
@@ -195,7 +195,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
         const accounts = accountData[account.chain];
         const groupAccounts = accounts.filter(acc => !acc.groupHeader && acc.groupId === account.groupId);
         for (const subAccount of groupAccounts) {
-          const { balance: subBalance } = getAccountBalance(subAccount, chainBalances);
+          const { balance: subBalance } = getAccountBalance(subAccount, chainBalances, isAssetIgnored);
           if (account.nativeAsset === subAccount.nativeAsset)
             balance.amount = balance.amount.plus(subBalance.amount);
 
@@ -223,7 +223,7 @@ export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
       const chainBalances = balanceData[chain] ?? {};
       for (const account of accounts) {
         if (!account.groupHeader) {
-          entries.push(createAccountWithBalance(account, chainBalances));
+          entries.push(createAccountWithBalance(account, chainBalances, isAssetIgnored));
         }
       }
     }

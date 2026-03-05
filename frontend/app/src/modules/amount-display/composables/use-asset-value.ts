@@ -41,7 +41,7 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
   } = options;
 
   const { getAssetPrice } = usePriceUtils();
-  const { createKey, historicPriceInCurrentCurrency, isPending } = useHistoricCachePriceStore();
+  const { createKey, getHistoricPrice, getIsPending } = useHistoricCachePriceStore();
 
   const timestampToUse = computed<number>(() => {
     const ts = normalizeTimestamp(toValue(timestamp));
@@ -60,7 +60,7 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
     }
 
     if (ts > 0) {
-      return get(isPending(createKey(assetVal, ts)));
+      return getIsPending(createKey(assetVal, ts));
     }
 
     return false;
@@ -77,7 +77,7 @@ export function useAssetValue(options: UseAssetValueOptions): UseAssetValueRetur
 
     // If historic timestamp is provided, use historic price (no fallback to current price)
     if (ts > 0) {
-      const historicPrice = get(historicPriceInCurrentCurrency(assetVal, ts));
+      const historicPrice = getHistoricPrice(assetVal, ts);
       if (historicPrice.gt(0)) {
         return historicPrice;
       }

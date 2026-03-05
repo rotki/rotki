@@ -88,15 +88,17 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     fetchHistoricPrices(keys),
   );
 
+  function getHistoricPrice(fromAsset: string, timestamp: number): BigNumber {
+    const key = createKey(fromAsset, timestamp);
+
+    if (getIsPending(key))
+      return NoPrice;
+
+    return resolve(key) || NoPrice;
+  }
+
   const historicPriceInCurrentCurrency = (fromAsset: string, timestamp: number): ComputedRef<BigNumber> =>
-    computed(() => {
-      const key = createKey(fromAsset, timestamp);
-
-      if (getIsPending(key))
-        return NoPrice;
-
-      return resolve(key) || NoPrice;
-    });
+    computed<BigNumber>(() => getHistoricPrice(fromAsset, timestamp));
 
   const resetHistoricalPricesData = (items: { fromAsset: string; timestamp: number }[]): void => {
     const oneHourInMs = 60 * 60;
@@ -166,6 +168,8 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     cache,
     createKey,
     failedDailyPrices,
+    getHistoricPrice,
+    getIsPending,
     getProtocolStatsPriceQueryStatus,
     historicalDailyPriceStatus,
     historicalPriceStatus,

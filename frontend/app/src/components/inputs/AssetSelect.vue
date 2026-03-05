@@ -61,7 +61,7 @@ const emit = defineEmits<{
 defineSlots<{
   prepend: () => any;
 }>();
-const { useIsAssetIgnored } = useIgnoredAssetsStore();
+const { isAssetIgnored } = useIgnoredAssetsStore();
 const { getEvmChainName, matchChain } = useSupportedChains();
 
 const search = ref<string>('');
@@ -88,7 +88,7 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
 
   const filtered = knownAssets.filter(({ identifier }: AssetInfoWithId) => {
     const isCurrentValue = identifier === currentValue;
-    const unIgnored = showIgnored || isCurrentValue || !get(useIsAssetIgnored(identifier));
+    const unIgnored = showIgnored || isCurrentValue || !isAssetIgnored(identifier);
 
     const included = items && items.length > 0 ? items.includes(identifier) : true;
 

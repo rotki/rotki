@@ -55,12 +55,12 @@ const headers: DataTableColumn<Data>[] = [{
   label: t('transactions.events_decoding.progress'),
 }];
 
-const { getDefiImage, getDefiName, loading: metadataLoading } = useDefiMetadata();
+const { findDefiImage, findDefiName, loading: metadataLoading } = useDefiMetadata();
 
 const dataWithInfo = computed<Data[]>(() =>
   get(protocolCacheStatus).map((item) => {
-    const protocolImage = get(getDefiImage(item.protocol));
-    const protocolName = get(getDefiName(item.protocol));
+    const protocolImage = findDefiImage(item.protocol);
+    const protocolName = findDefiName(item.protocol);
 
     return {
       ...item,

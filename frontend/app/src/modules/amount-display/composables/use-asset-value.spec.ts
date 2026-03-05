@@ -1,4 +1,3 @@
-import type { ComputedRef } from 'vue';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import { updateGeneralSettings } from '@test/utils/general-settings';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -7,15 +6,15 @@ import { useCurrencies } from '@/types/currencies';
 
 vi.mock('@/modules/prices/use-price-utils', () => ({
   usePriceUtils: (): {
-    assetPrice: (asset: string) => ComputedRef<BigNumber | null>;
+    getAssetPrice: (asset: string, fallback: BigNumber) => BigNumber;
   } => ({
-    assetPrice: (asset: string): ComputedRef<BigNumber | null> => computed<BigNumber | null>(() => {
+    getAssetPrice: (asset: string, fallback: BigNumber): BigNumber => {
       if (asset === 'ETH')
         return bigNumberify(2000);
       if (asset === 'BTC')
         return bigNumberify(50000);
-      return null;
-    }),
+      return fallback;
+    },
   }),
 }));
 

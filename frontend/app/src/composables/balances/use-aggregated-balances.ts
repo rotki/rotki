@@ -26,6 +26,7 @@ interface UseAggregatedBalancesReturn {
   getAssetPriceInfo: (identifier: string, groupMultiChain?: boolean) => AssetPriceInfo;
   assets: ComputedRef<string[]>;
   useBlockchainBalances: (chains: MaybeRefOrGetter<string[]>, address?: MaybeRefOrGetter<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
+  getExchangeBalances: (exchange?: string) => AssetBalanceWithPriceAndChains[];
   useExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   useLocationBreakdown: (location: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   balancesByLocation: ComputedRef<Record<string, BigNumber>>;
@@ -34,7 +35,7 @@ interface UseAggregatedBalancesReturn {
 export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { getAssetPrice } = usePriceUtils();
-  const { exchanges, useBaseExchangeBalances } = useExchangeData();
+  const { exchanges, getBaseExchangeBalances, useBaseExchangeBalances } = useExchangeData();
   const { balances: blockchainBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { manualBalanceByLocation } = useManualBalanceData();
 
@@ -132,13 +133,11 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     });
   });
 
-  const useExchangeBalances = (
-    exchange?: MaybeRefOrGetter<string>,
-  ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => {
-    const exchanges = get(useBaseExchangeBalances(exchange));
+  function getExchangeBalances(exchange?: string): AssetBalanceWithPriceAndChains[] {
+    const exchangeData = getBaseExchangeBalances(exchange);
     return summarizeAssetProtocols({
       resolveIdentifier: resolveAssetIdentifier,
-      sources: { blockchain: {}, exchanges, manual: {} },
+      sources: { blockchain: {}, exchanges: exchangeData, manual: {} },
     }, {
       hideIgnored: true,
       isAssetIgnored,
@@ -150,7 +149,13 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       useCollectionId,
       useCollectionMainAsset,
     });
-  });
+  }
+
+  const useExchangeBalances = (
+    exchange?: MaybeRefOrGetter<string>,
+  ): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() =>
+    getExchangeBalances(exchange ? toValue(exchange) : undefined),
+  );
 
   const assets = computed<string[]>(() => {
     const assetSet = new Set<string>();
@@ -204,6 +209,7 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
     balancesByLocation,
     getAssetPriceInfo,
     getBalances,
+    getExchangeBalances,
     getLiabilities,
     useAssetPriceInfo,
     useBalances,

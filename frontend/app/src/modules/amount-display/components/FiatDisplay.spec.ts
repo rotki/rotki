@@ -135,9 +135,9 @@ describe('modules/amount-display/components/FiatDisplay', () => {
 
   describe('historic prices', () => {
     it('should use historic rate when timestamp is provided', async () => {
-      const getPrice = vi.spyOn(useHistoricCachePriceStore(), 'historicPriceInCurrentCurrency');
-      getPrice.mockReturnValue(computed(() => bigNumberify(1.2)));
-      vi.spyOn(useHistoricCachePriceStore(), 'isPending').mockReturnValue(computed(() => false));
+      const getPrice = vi.spyOn(useHistoricCachePriceStore(), 'getHistoricPrice');
+      getPrice.mockReturnValue(bigNumberify(1.2));
+      vi.spyOn(useHistoricCachePriceStore(), 'getIsPending').mockReturnValue(false);
 
       wrapper = createWrapper({
         from: 'USD',
@@ -153,9 +153,9 @@ describe('modules/amount-display/components/FiatDisplay', () => {
     });
 
     it('should use historic rate when timestamp with ms is provided', async () => {
-      const getPrice = vi.spyOn(useHistoricCachePriceStore(), 'historicPriceInCurrentCurrency');
-      getPrice.mockReturnValue(computed(() => bigNumberify(1.2)));
-      vi.spyOn(useHistoricCachePriceStore(), 'isPending').mockReturnValue(computed(() => false));
+      const getPrice = vi.spyOn(useHistoricCachePriceStore(), 'getHistoricPrice');
+      getPrice.mockReturnValue(bigNumberify(1.2));
+      vi.spyOn(useHistoricCachePriceStore(), 'getIsPending').mockReturnValue(false);
 
       wrapper = createWrapper({
         from: 'USD',

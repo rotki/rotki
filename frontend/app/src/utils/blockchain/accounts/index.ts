@@ -330,12 +330,12 @@ export function hasTokens(nativeAsset: string, assetBalances?: AssetProtocolBala
   return !isEmpty(omit(assetBalances, [nativeAsset]));
 }
 
-export function getAccountBalance(account: BlockchainAccount, chainBalances: BlockchainAssetBalances): AccountBalance {
+export function getAccountBalance(account: BlockchainAccount, chainBalances: BlockchainAssetBalances, isAssetIgnored: (asset: string) => boolean): AccountBalance {
   const address = getAccountAddress(account);
   const accountBalances = chainBalances?.[address] ?? {};
   const assets = accountBalances?.assets;
   const nativeAsset = account.nativeAsset;
-  const valueSum = assets ? assetSum(assets) : Zero;
+  const valueSum = assets ? assetSum(assets, isAssetIgnored) : Zero;
   const balance = assets
     ? {
         amount: assets[nativeAsset] && !isEmpty(assets[nativeAsset])

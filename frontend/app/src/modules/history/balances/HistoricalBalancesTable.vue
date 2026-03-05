@@ -27,12 +27,12 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 
 const { getAssetInfo } = useAssetSelectInfo();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { createKey, isPending } = useHistoricCachePriceStore();
+const { createKey, getIsPending } = useHistoricCachePriceStore();
 
 function isPriceLoading(asset: string): boolean {
   if (!timestamp)
     return false;
-  return get(isPending(createKey(asset, timestamp)));
+  return getIsPending(createKey(asset, timestamp));
 }
 
 const isExpanded = (asset: string): boolean => some(get(expanded), { asset });

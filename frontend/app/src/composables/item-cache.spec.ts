@@ -96,22 +96,24 @@ describe('createItemCache', () => {
 
       resolve('KEY');
 
+      const keyPending = isPending('KEY');
       expect(getIsPending('KEY')).toBe(true);
-      expect(get(isPending('KEY'))).toBe(true);
+      expect(get(keyPending)).toBe(true);
 
       vi.advanceTimersByTime(1000);
       await flushPromises();
 
       expect(getIsPending('KEY')).toBe(false);
-      expect(get(isPending('KEY'))).toBe(false);
+      expect(get(keyPending)).toBe(false);
     });
 
     it('should return false for keys never queued', () => {
       const { fetch } = createMockFetch({});
       const { getIsPending, isPending } = createItemCache(fetch);
 
+      const nopePending = isPending('NOPE');
       expect(getIsPending('NOPE')).toBe(false);
-      expect(get(isPending('NOPE'))).toBe(false);
+      expect(get(nopePending)).toBe(false);
     });
   });
 

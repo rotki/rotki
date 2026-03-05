@@ -16,6 +16,7 @@ interface IgnoredFilter {
 }
 
 interface UseManagedAssetOperationsReturn {
+  isAssetWhitelisted: (identifier: string) => boolean;
   useIsAssetWhitelisted: (identifier: string) => ComputedRef<boolean>;
   loadingIgnore: Ref<string | undefined>;
   loadingSpam: Ref<string | undefined>;
@@ -145,6 +146,7 @@ export function useManagedAssetOperations(
   };
 
   return {
+    isAssetWhitelisted,
     loadingIgnore,
     loadingSpam,
     loadingWhitelist,

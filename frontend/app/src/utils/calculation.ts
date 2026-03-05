@@ -1,23 +1,18 @@
 import type { ProtocolBalances } from '@/types/blockchain/balances';
 import { type Balance, type BigNumber, Zero } from '@rotki/common';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 
-export function assetSum(balances: Record<string, ProtocolBalances>): BigNumber {
-  const { useIsAssetIgnored } = useIgnoredAssetsStore();
-
+export function assetSum(balances: Record<string, ProtocolBalances>, isAssetIgnored: (asset: string) => boolean): BigNumber {
   return Object.entries(balances).reduce((sum, [asset, protocols]) => {
-    if (get(useIsAssetIgnored(asset)))
+    if (isAssetIgnored(asset))
       return sum;
 
     return sum.plus(Object.entries(protocols).reduce((previousValue, [_protocol, balance]) => previousValue.plus(balance.value), Zero));
   }, Zero);
 }
 
-export function exchangeAssetSum(balances: Record<string, Balance>): BigNumber {
-  const { useIsAssetIgnored } = useIgnoredAssetsStore();
-
+export function exchangeAssetSum(balances: Record<string, Balance>, isAssetIgnored: (asset: string) => boolean): BigNumber {
   return Object.entries(balances).reduce((sum, [asset, balance]) => {
-    if (get(useIsAssetIgnored(asset)))
+    if (isAssetIgnored(asset))
       return sum;
 
     return sum.plus(balance.value);

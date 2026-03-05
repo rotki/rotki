@@ -16,35 +16,29 @@ interface UseBlockchainAccountLoadingReturn {
 }
 
 export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> = ''): UseBlockchainAccountLoadingReturn {
-  const { useIsTaskRunning } = useTaskStore();
+  const { isTaskRunning, useIsTaskRunning } = useTaskStore();
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
-  const { useIsLoading } = useStatusStore();
+  const { getIsLoading } = useStatusStore();
 
   const { chainIds, isEvm } = useAccountCategoryHelper(category);
 
   const isAnyBalancesFetching = computed<boolean>(() => {
     if (!toValue(category)) {
-      return get(logicOr(
-        useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES),
-        useIsTaskRunning(TaskType.L2_LOOPRING),
-      ));
+      return isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES)
+        || isTaskRunning(TaskType.L2_LOOPRING);
     }
 
-    const chainsTask = get(chainIds).map(chain => useIsTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES, { blockchain: chain }));
+    if (get(chainIds).some(chain => isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES, { blockchain: chain })))
+      return true;
 
-    if (get(isEvm)) {
-      chainsTask.push(useIsTaskRunning(TaskType.L2_LOOPRING));
-    }
-
-    return get(logicOr(...(chainsTask)));
+    return get(isEvm) && isTaskRunning(TaskType.L2_LOOPRING);
   });
 
   const isSectionLoading = computed<boolean>(() => {
     if (!toValue(category))
-      return get(useIsLoading(Section.BLOCKCHAIN));
+      return getIsLoading(Section.BLOCKCHAIN);
 
-    const chainsTask = get(chainIds).map(chain => useIsLoading(Section.BLOCKCHAIN, chain));
-    return get(logicOr(...(chainsTask)));
+    return get(chainIds).some(chain => getIsLoading(Section.BLOCKCHAIN, chain));
   });
 
   const isDetectingTokens = computed<boolean>(() => get(isEvm) && isDefined(massDetecting));

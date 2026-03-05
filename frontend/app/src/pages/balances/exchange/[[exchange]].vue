@@ -32,7 +32,7 @@ const { exchange } = defineProps<{ exchange?: string }>();
 const { t } = useI18n({ useScope: 'global' });
 const selectedTab = ref<string | undefined>(exchange ?? undefined);
 const { useIsTaskRunning } = useTaskStore();
-const { useExchangeBalances } = useAggregatedBalances();
+const { getExchangeBalances } = useAggregatedBalances();
 const { refreshExchangeSavings } = useBinanceSavings();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
@@ -73,7 +73,7 @@ watch(route, () => {
 });
 
 function exchangeBalance(exchange: string): BigNumber {
-  const balances = get(useExchangeBalances(exchange));
+  const balances = getExchangeBalances(exchange);
   return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.value), Zero);
 }
 
@@ -95,7 +95,7 @@ const balances = computed(() => {
   if (!currentExchange)
     return [];
 
-  return get(useExchangeBalances(currentExchange));
+  return getExchangeBalances(currentExchange);
 });
 
 const vueRouter = useRouter();
