@@ -198,6 +198,7 @@ test.describe.serial('history events', () => {
   });
 
   test('add solana swap event', async () => {
+    await waitForNoRunningTasks(ctx.sharedPage);
     await page.openAddDialog();
     await page.selectEntryType('solana swap event');
     await page.fillSolanaSwapEventForm(solanaSwapEventFixture);
@@ -408,6 +409,7 @@ test.describe.serial('evm history events', () => {
   });
 
   test('add evm multi-asset swap with fees', async () => {
+    await waitForNoRunningTasks(ctx.sharedPage);
     const swapsBefore = await page.getSwapRows();
 
     await page.openAddDialog();
