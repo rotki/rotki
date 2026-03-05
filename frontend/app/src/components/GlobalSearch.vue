@@ -3,7 +3,7 @@ import type { RuiIcons } from '@rotki/ui-library';
 import type { RouteLocationRaw } from 'vue-router';
 import type { Exchange } from '@/types/exchanges';
 import type { TradeLocationData } from '@/types/history/trade/location';
-import { type AssetBalanceWithPrice, type BigNumber, getTextToken } from '@rotki/common';
+import { type BigNumber, getTextToken } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import AppImage from '@/components/common/AppImage.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
@@ -51,9 +51,10 @@ const visibleItems = ref<SearchItem[]>([]);
 const key = '/';
 
 const router = useRouter();
+const interop = useInterop();
 
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-const { balances, balancesByLocation } = useAggregatedBalances();
+const { balancesByLocation, getBalances } = useAggregatedBalances();
 const { getLocationData } = useLocations();
 const { assetSearch } = useAssetInfoRetrieval();
 
@@ -269,7 +270,7 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
     limit: 5,
     value: keyword,
   });
-  const assetBalances = get(balances()) as AssetBalanceWithPrice[];
+  const assetBalances = getBalances();
   const map: Record<string, string> = {};
   for (const match of matches) map[match.identifier] = match.symbol ?? match.name ?? '';
 
@@ -322,6 +323,20 @@ function getLocations(keyword: string) {
   return filterItems([...transformLocations()], keyword);
 }
 
+function change(index?: number) {
+  if (!isDefined(index))
+    return;
+
+  const item: SearchItem = get(visibleItems)[index];
+  if (item) {
+    if (item.route && get(router.currentRoute).fullPath !== item.route)
+      startPromise(router.push(item.route));
+
+    item?.action?.();
+    set(open, false);
+  }
+}
+
 watchDebounced(
   search,
   async (keyword) => {
@@ -369,21 +384,6 @@ watch(open, (open) => {
   });
 });
 
-function change(index?: number) {
-  if (!isDefined(index))
-    return;
-
-  const item: SearchItem = get(visibleItems)[index];
-  if (item) {
-    if (item.route && get(router.currentRoute).fullPath !== item.route)
-      startPromise(router.push(item.route));
-
-    item?.action?.();
-    set(open, false);
-  }
-}
-
-const interop = useInterop();
 onBeforeMount(async () => {
   set(isMac, await interop.isMac());
 

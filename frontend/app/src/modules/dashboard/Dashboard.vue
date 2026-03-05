@@ -20,11 +20,11 @@ const dashboardRef = useTemplateRef<HTMLElement>('dashboardRef');
 const floatingRef = useTemplateRef<HTMLElement>('floatingRef');
 
 const { t } = useI18n({ useScope: 'global' });
-const { balances, liabilities } = useAggregatedBalances();
+const { useBalances, useLiabilities } = useAggregatedBalances();
 const { activeDashboardMessages } = useDynamicMessages();
 
-const aggregatedBalances = balances();
-const aggregatedLiabilities = liabilities();
+const aggregatedBalances = useBalances();
+const aggregatedLiabilities = useLiabilities();
 
 const { enabled: nftEnabled } = useModuleEnabled(Module.NFTS);
 

@@ -1,11 +1,11 @@
-import type { EthBalance } from '@/types/blockchain/balances';
+import type { AssetProtocolBalances, EthBalance } from '@/types/blockchain/balances';
 import type { AssetPriceInfo } from '@/types/prices';
 import { type AssetBalanceWithPrice, type AssetBalanceWithPriceAndChains, type BigNumber, type ExclusionSource, NoPrice, Zero } from '@rotki/common';
 import { storeToRefs } from 'pinia';
 import { computed, type ComputedRef, type MaybeRefOrGetter } from 'vue';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { summarizeAssetProtocols } from '@/composables/balances/asset-summary';
-import { blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';
+import { type AssetProtocolBalancesWithChains, blockchainToAssetProtocolBalances, manualToAssetProtocolBalances } from '@/composables/balances/balance-transformations';
 import { getBlockchainLocationBreakdown, getExchangeByLocationBalances, useLocationBreakdown } from '@/composables/balances/location-breakdown';
 import { TRADE_LOCATION_BLOCKCHAIN } from '@/data/defaults';
 import { useCollectionInfo } from '@/modules/assets/use-collection-info';
@@ -18,9 +18,12 @@ import { samePriceAssets } from '@/types/blockchain';
 import { bigNumberSum } from '@/utils/calculation';
 
 interface UseAggregatedBalancesReturn {
-  balances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
-  liabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
-  assetPriceInfo: (identifier: MaybeRefOrGetter<string>, groupCollection?: MaybeRefOrGetter<boolean>) => ComputedRef<AssetPriceInfo>;
+  useBalances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
+  getBalances: (hideIgnored?: boolean, groupMultiChain?: boolean, exclude?: ExclusionSource[]) => AssetBalanceWithPriceAndChains[];
+  useLiabilities: (hideIgnored?: boolean) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
+  getLiabilities: (hideIgnored?: boolean) => AssetBalanceWithPriceAndChains[];
+  useAssetPriceInfo: (identifier: MaybeRefOrGetter<string>, groupCollection?: MaybeRefOrGetter<boolean>) => ComputedRef<AssetPriceInfo>;
+  getAssetPriceInfo: (identifier: string, groupMultiChain?: boolean) => AssetPriceInfo;
   assets: ComputedRef<string[]>;
   useBlockchainBalances: (chains: MaybeRefOrGetter<string[]>, address?: MaybeRefOrGetter<string>, key?: keyof EthBalance) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
   useExchangeBalances: (exchange?: MaybeRefOrGetter<string>) => ComputedRef<AssetBalanceWithPriceAndChains[]>;
@@ -37,55 +40,72 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
 
   const resolveAssetIdentifier = useResolveAssetIdentifier();
   const { useCollectionId, useCollectionMainAsset } = useCollectionInfo();
+  const baseExchangeBalances = useBaseExchangeBalances();
 
-  const balances = (
+  const blockchainAssetBalances = computed<AssetProtocolBalancesWithChains>(() => blockchainToAssetProtocolBalances(get(blockchainBalances)));
+  const blockchainLiabilityBalances = computed<AssetProtocolBalancesWithChains>(() => blockchainToAssetProtocolBalances(get(blockchainBalances), 'liabilities'));
+  const manualAssetBalances = computed<AssetProtocolBalances>(() => manualToAssetProtocolBalances(get(manualBalances)));
+  const manualLiabilityBalances = computed<AssetProtocolBalances>(() => manualToAssetProtocolBalances(get(manualLiabilities)));
+
+  function getBalances(hideIgnored = true, groupCollections = true, exclude: ExclusionSource[] = []): AssetBalanceWithPriceAndChains[] {
+    const sources = {
+      blockchain: exclude.includes('blockchain') ? {} : get(blockchainAssetBalances),
+      exchanges: exclude.includes('exchange') ? {} : get(baseExchangeBalances),
+      manual: exclude.includes('manual') ? {} : get(manualAssetBalances),
+    };
+
+    return summarizeAssetProtocols({ resolveIdentifier: resolveAssetIdentifier, sources }, { hideIgnored, isAssetIgnored }, {
+      getAssetPrice,
+      noPrice: NoPrice,
+    }, {
+      groupCollections,
+      useCollectionId,
+      useCollectionMainAsset,
+    });
+  }
+
+  function getLiabilities(hideIgnored = true): AssetBalanceWithPriceAndChains[] {
+    const sources = {
+      blockchain: get(blockchainLiabilityBalances),
+      exchanges: {},
+      manual: get(manualLiabilityBalances),
+    };
+    return summarizeAssetProtocols({ resolveIdentifier: resolveAssetIdentifier, sources }, { hideIgnored, isAssetIgnored }, {
+      getAssetPrice,
+      noPrice: NoPrice,
+    }, {
+      groupCollections: true,
+      useCollectionId,
+      useCollectionMainAsset,
+    });
+  }
+
+  function getAssetPriceInfo(identifier: string, groupMultiChain = false): AssetPriceInfo {
+    const assetValue = getBalances(true, groupMultiChain).find(
+      (value: AssetBalanceWithPrice) => value.asset === identifier,
+    );
+
+    return {
+      amount: assetValue?.amount ?? Zero,
+      price: assetValue?.price ?? Zero,
+      value: assetValue?.value ?? Zero,
+    };
+  }
+
+  const useBalances = (
     hideIgnored = true,
     groupCollections = true,
     exclude: ExclusionSource[] = [],
   ): ComputedRef<AssetBalanceWithPriceAndChains[]> =>
-    computed<AssetBalanceWithPriceAndChains[]>(() => {
-      const exchange = get(useBaseExchangeBalances());
-      const manual = manualToAssetProtocolBalances(get(manualBalances));
-      const blockchain = blockchainToAssetProtocolBalances(get(blockchainBalances));
-      const allSources = {
-        blockchain,
-        exchanges: exchange,
-        manual,
-      };
+    computed<AssetBalanceWithPriceAndChains[]>(() => getBalances(hideIgnored, groupCollections, exclude));
 
-      const filteredSources = Object.entries(allSources)
-        .filter(([key]) => !exclude.includes(key as ExclusionSource))
-        .reduce((acc, [key, value]) => {
-          acc[key as 'blockchain' | 'exchanges' | 'manual'] = value;
-          return acc;
-        }, {} as Record<'blockchain' | 'exchanges' | 'manual', typeof blockchain>);
+  const useLiabilities = (hideIgnored = true): ComputedRef<AssetBalanceWithPriceAndChains[]> =>
+    computed<AssetBalanceWithPriceAndChains[]>(() => getLiabilities(hideIgnored));
 
-      return summarizeAssetProtocols({ resolveIdentifier: resolveAssetIdentifier, sources: filteredSources }, { hideIgnored, isAssetIgnored }, {
-        getAssetPrice,
-        noPrice: NoPrice,
-      }, {
-        groupCollections,
-        useCollectionId,
-        useCollectionMainAsset,
-      });
-    });
-
-  const liabilities = (hideIgnored = true): ComputedRef<AssetBalanceWithPriceAndChains[]> =>
-    computed<AssetBalanceWithPriceAndChains[]>(() => {
-      const sources = {
-        blockchain: blockchainToAssetProtocolBalances(get(blockchainBalances), 'liabilities'),
-        exchanges: {},
-        manual: manualToAssetProtocolBalances(get(manualLiabilities)),
-      };
-      return summarizeAssetProtocols({ resolveIdentifier: resolveAssetIdentifier, sources }, { hideIgnored, isAssetIgnored }, {
-        getAssetPrice,
-        noPrice: NoPrice,
-      }, {
-        groupCollections: true,
-        useCollectionId,
-        useCollectionMainAsset,
-      });
-    });
+  const useAssetPriceInfo = (
+    identifier: MaybeRefOrGetter<string>,
+    groupMultiChain: MaybeRefOrGetter<boolean> = false,
+  ): ComputedRef<AssetPriceInfo> => computed<AssetPriceInfo>(() => getAssetPriceInfo(toValue(identifier), toValue(groupMultiChain)));
 
   const useBlockchainBalances = (
     chains: MaybeRefOrGetter<string[]> = [],
@@ -146,30 +166,14 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
       Object.keys(balances).forEach(processAsset);
     };
 
-    processAssetBalances(blockchainToAssetProtocolBalances(get(blockchainBalances)));
-    processAssetBalances(blockchainToAssetProtocolBalances(get(blockchainBalances), 'liabilities'));
-    processAssetBalances(get(useBaseExchangeBalances()));
+    processAssetBalances(get(blockchainAssetBalances));
+    processAssetBalances(get(blockchainLiabilityBalances));
+    processAssetBalances(get(baseExchangeBalances));
 
     get(manualBalances).forEach(({ asset }) => processAsset(asset));
     get(manualLiabilities).forEach(({ asset }) => processAsset(asset));
 
     return Array.from(assetSet);
-  });
-
-  const assetPriceInfo = (
-    identifier: MaybeRefOrGetter<string>,
-    groupMultiChain: MaybeRefOrGetter<boolean> = false,
-  ): ComputedRef<AssetPriceInfo> => computed<AssetPriceInfo>(() => {
-    const id = toValue(identifier);
-    const assetValue = get(balances(true, toValue(groupMultiChain))).find(
-      (value: AssetBalanceWithPrice) => value.asset === id,
-    );
-
-    return {
-      amount: assetValue?.amount ?? Zero,
-      price: assetValue?.price ?? Zero,
-      value: assetValue?.value ?? Zero,
-    };
   });
 
   const balancesByLocation = computed<Record<string, BigNumber>>(() => {
@@ -196,11 +200,14 @@ export function useAggregatedBalances(): UseAggregatedBalancesReturn {
   });
 
   return {
-    assetPriceInfo,
     assets,
-    balances,
     balancesByLocation,
-    liabilities,
+    getAssetPriceInfo,
+    getBalances,
+    getLiabilities,
+    useAssetPriceInfo,
+    useBalances,
+    useLiabilities,
     useBlockchainBalances,
     useExchangeBalances,
     useLocationBreakdown: (location: MaybeRefOrGetter<string>) => useLocationBreakdown(

@@ -27,6 +27,7 @@ interface BreakdownData {
 
 interface UseAssetBalancesBreakdownReturn {
   useAssetBreakdown: (asset: string, liabilities?: boolean, filters?: BreakdownExtendedFilters) => ComputedRef<AssetBreakdown[]>;
+  getAssetBreakdown: (asset: string, liabilities?: boolean, filters?: BreakdownExtendedFilters) => AssetBreakdown[];
 }
 
 export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
@@ -126,11 +127,11 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
     return breakdown;
   }
 
-  const useAssetBreakdown = (
+  function getAssetBreakdown(
     asset: string,
     liabilities: boolean = false,
     filters: BreakdownExtendedFilters = {},
-  ): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() => {
+  ): AssetBreakdown[] {
     const data: AssetBreakdown[] = [];
     const {
       blockchainOnly = false,
@@ -148,8 +149,8 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
     ));
 
     if (!onlyBlockchain) {
-      const balances = liabilities ? get(manualLiabilities) : get(manualBalances);
-      data.push(...getManualBalancesAssetBreakdown(balances, asset));
+      const balanceData = liabilities ? get(manualLiabilities) : get(manualBalances);
+      data.push(...getManualBalancesAssetBreakdown(balanceData, asset));
       if (!liabilities) {
         data.push(...getExchangeAssetBreakdown(
           get(exchangeBalances),
@@ -159,9 +160,16 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
     }
 
     return groupAssetBreakdown(data.filter(item => !!item.amount && !item.amount.isZero()));
-  });
+  }
+
+  const useAssetBreakdown = (
+    asset: string,
+    liabilities: boolean = false,
+    filters: BreakdownExtendedFilters = {},
+  ): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() => getAssetBreakdown(asset, liabilities, filters));
 
   return {
+    getAssetBreakdown,
     useAssetBreakdown,
   };
 }

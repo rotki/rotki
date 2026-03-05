@@ -55,7 +55,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
   const premium = usePremium();
 
   const api = useStatisticsApi();
-  const { balances, liabilities } = useAggregatedBalances();
+  const { getBalances, getLiabilities } = useAggregatedBalances();
   const { logged } = storeToRefs(useSessionAuthStore());
 
   /**
@@ -66,8 +66,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
   }
 
   const calculateTotalValue = (includeNft: MaybeRef<boolean> = false): ComputedRef<BigNumber> => computed<BigNumber>(() => {
-    const aggregatedBalances = get(balances());
-    const totalLiabilities = get(liabilities());
+    const aggregatedBalances = getBalances();
+    const totalLiabilities = getLiabilities();
     const nftTotal = get(includeNft) ? get(nonFungibleTotalValue) : Zero;
     const mainCurrency = get(currencySymbol);
     const rate = getExchangeRate(mainCurrency, One);

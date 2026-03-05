@@ -43,9 +43,9 @@ const { coingeckoAsset, cryptocompareAsset } = externalLinks;
 
 const { refetchAssetInfo, useAssetContractInfo, useAssetInfo } = useAssetInfoRetrieval();
 const premium = usePremium();
-const { balances } = useAggregatedBalances();
+const { useBalances } = useAggregatedBalances();
 
-const aggregatedBalances = balances();
+const aggregatedBalances = useBalances();
 
 const isCollectionParent = computed<boolean>(() => {
   const currentRoute = get(route);

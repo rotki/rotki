@@ -54,8 +54,7 @@ describe('useAssetBalancesBreakdown', () => {
   });
 
   it('should give an accurate breakdown for the asset', () => {
-    const { useAssetBreakdown } = useAssetBalancesBreakdown();
-    const assetBreakdown = useAssetBreakdown('GNO');
+    const { getAssetBreakdown } = useAssetBalancesBreakdown();
     const expectedResult: AssetBreakdown[] = [{
       address: '',
       amount: bigNumberify(2000),
@@ -76,7 +75,7 @@ describe('useAssetBalancesBreakdown', () => {
       value: bigNumberify(300),
     }];
 
-    expect(get(assetBreakdown)).toMatchObject(expectedResult);
+    expect(getAssetBreakdown('GNO')).toMatchObject(expectedResult);
   });
 
   describe('manual balances', () => {
@@ -115,8 +114,8 @@ describe('useAssetBalancesBreakdown', () => {
     });
 
     it('should return the breakdown of liabilities', () => {
-      const { useAssetBreakdown } = useAssetBalancesBreakdown();
-      expect(get(useAssetBreakdown('EUR', true))).toMatchObject([{
+      const { getAssetBreakdown } = useAssetBalancesBreakdown();
+      expect(getAssetBreakdown('EUR', true)).toMatchObject([{
         address: '',
         amount: bigNumberify(60),
         location: TRADE_LOCATION_BANKS,
@@ -126,8 +125,8 @@ describe('useAssetBalancesBreakdown', () => {
     });
 
     it('should return the breakdown of assets', async () => {
-      const { useAssetBreakdown } = useAssetBalancesBreakdown();
-      expect(get(useAssetBreakdown('BTC'))).toMatchObject([{
+      const { getAssetBreakdown, useAssetBreakdown } = useAssetBalancesBreakdown();
+      expect(getAssetBreakdown('BTC')).toMatchObject([{
         address: '',
         amount: bigNumberify(30),
         location: TRADE_LOCATION_BLOCKCHAIN,
@@ -135,7 +134,7 @@ describe('useAssetBalancesBreakdown', () => {
         value: bigNumberify(30),
       }]);
 
-      expect(get(useAssetBreakdown('DAI'))).toMatchObject([{
+      expect(getAssetBreakdown('DAI')).toMatchObject([{
         address: '',
         amount: bigNumberify(50),
         location: TRADE_LOCATION_BLOCKCHAIN,
@@ -144,7 +143,7 @@ describe('useAssetBalancesBreakdown', () => {
       }]);
 
       // Breakdown for liabilities
-      expect(get(useAssetBreakdown('EUR'))).toMatchObject([]);
+      expect(getAssetBreakdown('EUR')).toMatchObject([]);
 
       const ethBalances = [
         createTestManualBalance('ETH', 50, 50, TRADE_LOCATION_EXTERNAL, BalanceType.ASSET, 4),
