@@ -371,7 +371,7 @@ def test_get_free_user_capabilities(rotkehlchen_api_server: APIServer) -> None:
             'max_backup_size_mb': 0,
             'history_events_limit': FREE_HISTORY_EVENTS_LIMIT,
             'reports_lookup_limit': FREE_REPORTS_LOOKUP_LIMIT,
-            'eth_staked_limit': 128,
+            'eth_staked_limit': 0,
             'eth_staking_view': {
                 'enabled': False,
                 'minimum_tier': 'Basic',
@@ -403,7 +403,7 @@ def test_get_free_user_capabilities(rotkehlchen_api_server: APIServer) -> None:
             'max_backup_size_mb': 0,
             'history_events_limit': FREE_HISTORY_EVENTS_LIMIT,
             'reports_lookup_limit': FREE_REPORTS_LOOKUP_LIMIT,
-            'eth_staked_limit': 128,
+            'eth_staked_limit': 0,
             'eth_staking_view': {
                 'enabled': False,
                 'minimum_tier': 'Basic',
