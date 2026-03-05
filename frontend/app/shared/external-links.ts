@@ -5,6 +5,7 @@ const DOCS_BASE_URL = `https://docs.rotki.com/${DOCS_SUBFOLDER}`;
 const USAGE_GUIDE_URL = `${DOCS_BASE_URL}usage-guides/`;
 const CONTRIBUTE_URL = `${DOCS_BASE_URL}contribution-guides/`;
 const GITHUB_BASE_URL = 'https://github.com/rotki/rotki/';
+const UTM_PARAMS = '?utm_source=rotki_app&utm_medium=desktop&utm_campaign=upgrade';
 
 // Cannot be checked with fetch because it always returns 400
 export const TWITTER_URL = 'https://twitter.com/rotkiapp';
@@ -27,10 +28,10 @@ export const blockscoutLinks = {
 };
 
 export const externalLinks = {
-  premium: `${BASE_URL}products`,
+  premium: `${BASE_URL}products${UTM_PARAMS}`,
   premiumDevices: `${DOCS_BASE_URL}premium/devices`,
   sponsor: `${BASE_URL}sponsor/mint`,
-  manageSubscriptions: `${BASE_URL}home/subscription`,
+  manageSubscriptions: `${BASE_URL}home/subscription${UTM_PARAMS}`,
   usageGuide: USAGE_GUIDE_URL,
   usageGuideSection: {
     dockerWarning: `${USAGE_GUIDE_URL}using-rotki-from-mobile#docker`,

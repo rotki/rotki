@@ -4625,6 +4625,7 @@
     "tooltip": "Feature is only supported with a premium subscription"
   },
   "premium_placeholder": {
+    "current_plan": "{tier} plan",
     "free_description": "This feature requires a minimum of {tier} tier.",
     "premium_description": "This feature requires a minimum of {tier} tier. Your current tier is {currentTier}.",
     "upgrade_plan": "Upgrade plan"
@@ -4643,6 +4644,7 @@
       "statistic": "The statistics view is not available",
       "title": "Graphs are not available"
     },
+    "current_plan_label": "Current plan:",
     "delete_confirmation": {
       "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
       "title": "Delete rotki premium keys?"
@@ -4660,6 +4662,7 @@
       "api_secret": "API Secret"
     },
     "get": "Get premium",
+    "manage_or_upgrade": "Manage or upgrade subscription",
     "premium_active": "@:premium_settings.title is active",
     "subtitle": "@:premium_settings.title is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
     "title": "rotki Premium"
