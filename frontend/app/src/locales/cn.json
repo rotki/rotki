@@ -139,10 +139,6 @@
   },
   "actions": {
     "add_eth2_validator": {
-      "error": {
-        "description": "添加 ETH 質押驗證器 {id} 時出錯：{message}",
-        "title": "添加 ETH 質押驗證器"
-      },
       "task": {
         "description": "添加 ETH 質押驗證器",
         "title": "添加验证器：{id}"
@@ -334,12 +330,6 @@
       "error": {
         "description": "刪除 ETH 質押驗證器失敗：{message}",
         "title": "刪除 ETH 抵押驗證器"
-      }
-    },
-    "edit_eth2_validator": {
-      "error": {
-        "description": "編輯 ETH 質押驗證器 {id} 時出錯：{message}",
-        "title": "編輯 ETH 質押驗證器"
       }
     },
     "get_accounts": {

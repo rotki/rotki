@@ -9,6 +9,7 @@ export function usePremium(): Ref<boolean> {
 
 interface UsePremiumHelperReturn {
   currentTier: Readonly<Ref<string>>;
+  ethStakedLimit: Readonly<Ref<number>>;
   premium: Readonly<Ref<boolean>>;
   showGetPremiumButton: () => void;
 }
@@ -22,10 +23,12 @@ export function usePremiumHelper(): UsePremiumHelperReturn {
     premiumUserLoggedIn(get(premium));
   };
 
-  const currentTier = computed<string>(() => get(capabilities)?.currentTier ?? '');
+  const currentTier = computed<string>(() => get(capabilities)?.currentTier ?? 'Free');
+  const ethStakedLimit = computed<number>(() => get(capabilities)?.ethStakedLimit ?? 0);
 
   return {
     currentTier: readonly(currentTier),
+    ethStakedLimit: readonly(ethStakedLimit),
     premium: readonly(premium),
     showGetPremiumButton,
   };

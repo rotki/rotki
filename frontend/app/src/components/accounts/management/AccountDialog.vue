@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { assert } from '@rotki/common';
+import { externalLinks } from '@shared/external-links';
 import { isEqual } from 'es-toolkit';
 import AccountForm from '@/components/accounts/management/AccountForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { type AccountManageState, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAccountLoading } from '@/composables/accounts/loading';
+import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { usePremiumHelper } from '@/composables/premium';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
@@ -33,21 +37,46 @@ const subtitle = computed<string>(() =>
   get(model)?.mode === 'edit' ? t('blockchain_balances.form_dialog.edit_subtitle') : '',
 );
 
-const { errorMessages, pending, save } = useAccountManage();
+const { errorMessages, pending, save, saveError, saveErrorIsPremium } = useAccountManage();
 const { loading } = useAccountLoading();
 const { apiKey } = useExternalApiKeys(t);
 const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
+const { validatorsLimitInfo } = useEthStaking();
+const { currentTier, ethStakedLimit, premium } = usePremiumHelper();
+
+const isValidatorLimitReached = computed<boolean>(() => {
+  const state = get(model);
+  if (!state || state.mode === 'edit')
+    return false;
+
+  return state.type === 'validator' && get(validatorsLimitInfo).showWarning;
+});
+
+const upgradeLinkText = computed<string>(() =>
+  get(premium)
+    ? t('upgrade_row.upgrade_your_plan')
+    : t('upgrade_row.rotki_premium'),
+);
+
+const upgradeLinkUrl = computed<string | undefined>(() =>
+  get(premium) ? externalLinks.manageSubscriptions : undefined,
+);
 
 const isSaveDisabled = computed<boolean>(() => {
   const state = get(model);
   if (!state || state.mode === 'edit')
     return false;
 
+  if (get(isValidatorLimitReached))
+    return true;
+
   // Disable save button for validator addition without beaconchain API key and consensus client RPC
   return state.type === 'validator' && !(get(apiKey('beaconchain')) || get(beaconRpcEndpoint));
 });
 
 function dismiss() {
+  set(saveError, '');
+  set(saveErrorIsPremium, false);
   set(model, undefined);
 }
 
@@ -55,6 +84,7 @@ async function confirm() {
   assert(isDefined(form));
   const accountForm = get(form);
   set(errorMessages, {});
+  set(saveError, '');
   const valid = await accountForm.validate();
   if (!valid)
     return;
@@ -105,5 +135,64 @@ watch(model, (model, oldModel) => {
       :chain-ids="chainIds"
       :loading="loading"
     />
+
+    <RuiAlert
+      v-if="saveError"
+      type="error"
+      class="mt-4"
+    >
+      <template v-if="saveErrorIsPremium">
+        <i18n-t
+          scope="global"
+          keypath="blockchain_balances.eth_staking_limit_error"
+          tag="span"
+        >
+          <template #limit>
+            {{ ethStakedLimit }}
+          </template>
+          <template #currentTier>
+            {{ currentTier }}
+          </template>
+          <template #link>
+            <ExternalLink
+              :text="upgradeLinkText"
+              :url="upgradeLinkUrl"
+              premium
+              color="primary"
+            />
+          </template>
+        </i18n-t>
+      </template>
+      <template v-else>
+        {{ saveError }}
+      </template>
+    </RuiAlert>
+
+    <RuiAlert
+      v-if="isValidatorLimitReached"
+      type="error"
+      class="mt-4"
+    >
+      <i18n-t
+        scope="global"
+        keypath="blockchain_balances.validator_limit_reached"
+        tag="span"
+      >
+        <template #limit>
+          {{ validatorsLimitInfo.limit }}
+        </template>
+        <template #total>
+          {{ validatorsLimitInfo.total }}
+        </template>
+        <template #link>
+          <ExternalLink
+            :text="upgradeLinkText"
+            :url="upgradeLinkUrl"
+            premium
+            color="primary"
+          />
+        </template>
+      </i18n-t>
+    </RuiAlert>
   </BigDialog>
 </template>

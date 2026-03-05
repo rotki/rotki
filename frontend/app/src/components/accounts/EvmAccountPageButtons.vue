@@ -9,8 +9,9 @@ import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 
-defineProps<{
+const { addDisabled = false } = defineProps<{
   isAccountsTabSelected: boolean;
+  addDisabled?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -79,16 +80,25 @@ const isEth2Loading = logicOr(
     {{ t('common.refresh') }}
   </RuiButton>
 
-  <RuiButton
-    data-cy="add-blockchain-account"
-    color="primary"
-    @click="emit('add-account')"
+  <RuiTooltip
+    :disabled="!addDisabled"
+    :open-delay="300"
   >
-    <template #prepend>
-      <RuiIcon name="lu-plus" />
+    <template #activator>
+      <RuiButton
+        data-cy="add-blockchain-account"
+        color="primary"
+        :disabled="addDisabled"
+        @click="emit('add-account')"
+      >
+        <template #prepend>
+          <RuiIcon name="lu-plus" />
+        </template>
+        {{ t('blockchain_balances.add_account') }}
+      </RuiButton>
     </template>
-    {{ t('blockchain_balances.add_account') }}
-  </RuiButton>
+    {{ t('blockchain_balances.add_validator_premium') }}
+  </RuiTooltip>
 
   <AccountBalancesExportImport />
 </template>

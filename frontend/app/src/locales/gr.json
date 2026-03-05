@@ -133,10 +133,6 @@
   },
   "actions": {
     "add_eth2_validator": {
-      "error": {
-        "description": "There was an error while adding the ETH staking validator {id}: {message}",
-        "title": "Adding ETH staking validator"
-      },
       "task": {
         "description": "Adding ETH staking validator",
         "title": "Adding validator: {id}"
@@ -337,12 +333,6 @@
       "error": {
         "description": "Deleting the ETH staking validators failed: {message}",
         "title": "Deleting ETH staking validators"
-      }
-    },
-    "edit_eth2_validator": {
-      "error": {
-        "description": "There was an error while editing the ETH staking validator {id}: {message}",
-        "title": "Editing ETH staking validator"
       }
     },
     "get_accounts": {

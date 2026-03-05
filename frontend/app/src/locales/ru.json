@@ -272,10 +272,6 @@
       }
     },
     "add_eth2_validator": {
-      "error": {
-        "description": "Ошибка при добавлении валидатора стейкинга ETH {id}: {message}",
-        "title": "Добавление валидатора стейкинга ETH"
-      },
       "task": {
         "description": "Добавление валидатора стейкинга ETH",
         "title": "Добавление валидатора: {id}"
@@ -557,12 +553,6 @@
       },
       "task": {
         "title": "Обнаружение EVM-аккаунтов"
-      }
-    },
-    "edit_eth2_validator": {
-      "error": {
-        "description": "Ошибка при редактировании валидатора стейкинга ETH {id}: {message}",
-        "title": "Редактирование валидатора стейкинга ETH"
       }
     },
     "eth_block_events_redecoding": {
