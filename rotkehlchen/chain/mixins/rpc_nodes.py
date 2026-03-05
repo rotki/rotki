@@ -1,9 +1,12 @@
 import json
 import logging
+import math
 import random
+import sys
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from contextlib import suppress
+from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Generic, TypeVar
 from urllib.parse import urlparse
 
@@ -43,6 +46,7 @@ if TYPE_CHECKING:
 WEB3_NODE_TYPE = TypeVar('WEB3_NODE_TYPE', Web3, Client)
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+MIN_POSITIVE_RPC_WEIGHT = sys.float_info.min
 
 
 class RPCNode(NamedTuple, Generic[WEB3_NODE_TYPE]):
@@ -153,6 +157,34 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
                 connectivity_check=True,
             )
 
+    @staticmethod
+    def _weighted_shuffle_nodes(nodes: list[WeightedNode]) -> list[WeightedNode]:
+        """Weighted random ordering without replacement.
+
+        Uses an exponential race key (`-log(U) / weight`) for O(n log n) ordering and
+        does not require weights to sum to 1.
+        """
+        weighted_scores: list[tuple[float, WeightedNode]] = []
+        invalid_weight_nodes: list[WeightedNode] = []
+        for node in nodes:
+            try:
+                weight = float(node.weight)
+            except (TypeError, ValueError):
+                invalid_weight_nodes.append(node)
+                continue
+
+            if math.isfinite(weight) is False or weight <= 0:
+                invalid_weight_nodes.append(node)
+                continue
+
+            random_value = max(random.random(), MIN_POSITIVE_RPC_WEIGHT)
+            weighted_scores.append(((-math.log(random_value)) / weight, node))
+
+        weighted_scores.sort(key=itemgetter(0))
+        ordered_nodes = [node for _, node in weighted_scores]
+        random.shuffle(invalid_weight_nodes)
+        return ordered_nodes + invalid_weight_nodes
+
     def default_call_order(self) -> list['WeightedNode']:
         """Default call order for RPCx nodes
 
@@ -167,21 +199,15 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
             if wnode.node_info.owned is False:
                 selection.append(wnode)
             else:
-                owned_nodes.append(wnode.node_info)
+                # Keep historical behavior: owned nodes are always first and weight=ONE.
+                owned_nodes.append(WeightedNode(
+                    identifier=wnode.identifier,
+                    node_info=wnode.node_info,
+                    weight=ONE,
+                    active=True,
+                ))
 
-        ordered_list = []
-        while len(selection) != 0:
-            weights = [float(entry.weight) for entry in selection]
-            node = random.choices(selection, weights, k=1)
-            ordered_list.append(node[0])
-            selection.remove(node[0])
-
-        if len(owned_nodes) != 0:
-            # Assigning one is just a default since we always use it.
-            # The weight is only important for the other nodes since they
-            # are selected using this parameter
-            ordered_list = [WeightedNode(node_info=node, weight=ONE, active=True) for node in owned_nodes] + ordered_list  # noqa: E501
-        return ordered_list
+        return owned_nodes + self._weighted_shuffle_nodes(selection)
 
 
 class EVMRPCMixin(RPCManagerMixin['Web3']):

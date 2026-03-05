@@ -607,13 +607,11 @@ def deserialize_evm_transaction(
             tx_hash = deserialize_evm_tx_hash(data['transactionHash'])
 
         block_number = read_integer(data, 'blockNumber', source)
-        block_data = None
         if 'timeStamp' not in data:
             if evm_inquirer is None:
                 raise DeserializationError('Got in deserialize evm transaction without timestamp and without evm inquirer')  # noqa: E501
 
-            block_data = evm_inquirer.get_block_by_number(block_number)
-            timestamp = Timestamp(read_integer(block_data, 'timestamp', source))
+            timestamp = evm_inquirer.get_block_timestamp(block_number=block_number)
         else:
             timestamp = deserialize_timestamp(data['timeStamp'])
 

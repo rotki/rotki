@@ -44,7 +44,7 @@ from rotkehlchen.types import (
     Timestamp,
     deserialize_evm_tx_hash,
 )
-from rotkehlchen.utils.misc import hexstr_to_int, set_user_agent
+from rotkehlchen.utils.misc import convert_to_int, hexstr_to_int, set_user_agent
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
@@ -64,6 +64,13 @@ def _hashes_tuple_to_list(hashes: set[tuple[EVMTxHash, Timestamp]]) -> list[EVMT
     This function needs to exist since Set has no guaranteed order of iteration.
     """
     return [x[0] for x in sorted(hashes, key=operator.itemgetter(1))]
+
+
+def _token_tx_data_tuple_to_list(
+        tx_data: set[tuple[EVMTxHash, Timestamp, int]],
+) -> list[tuple[EVMTxHash, Timestamp, int]]:
+    """Turns token tx hash/timestamp/block tuples into timestamp ascending ordered list."""
+    return sorted(tx_data, key=operator.itemgetter(1))
 
 
 class HasChainActivity(Enum):
@@ -631,6 +638,21 @@ class EtherscanLikeApi(ABC):
             from_block: int | None = None,
             to_block: int | None = None,
     ) -> Iterator[list[EVMTxHash]]:
+        for tx_data_batch in self.get_token_transaction_data(
+            chain_id=chain_id,
+            account=account,
+            from_block=from_block,
+            to_block=to_block,
+        ):
+            yield [tx_hash for tx_hash, _, _ in tx_data_batch]
+
+    def get_token_transaction_data(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress,
+            from_block: int | None = None,
+            to_block: int | None = None,
+    ) -> Iterator[list[tuple[EVMTxHash, Timestamp, int]]]:
         options = {'address': str(account), 'sort': 'asc'}
         if (pagination_options := self._get_account_pagination_options(
             action='tokentx',
@@ -642,7 +664,7 @@ class EtherscanLikeApi(ABC):
         if to_block is not None:
             options['endblock'] = str(to_block)
 
-        hashes: set[tuple[EVMTxHash, Timestamp]] = set()
+        tx_data: set[tuple[EVMTxHash, Timestamp, int]] = set()
         while True:
             result = self._query(
                 chain_id=chain_id,
@@ -661,16 +683,21 @@ class EtherscanLikeApi(ABC):
                     )
                     continue
 
-                if timestamp > last_ts and len(hashes) >= TRANSACTIONS_BATCH_NUM:  # type: ignore
-                    yield _hashes_tuple_to_list(hashes)
-                    hashes = set()
+                if timestamp > last_ts and len(tx_data) >= TRANSACTIONS_BATCH_NUM:  # type: ignore
+                    yield _token_tx_data_tuple_to_list(tx_data)
+                    tx_data = set()
                     last_ts = timestamp
                 try:
-                    hashes.add((deserialize_evm_tx_hash(entry['hash']), timestamp))
+                    tx_data.add((
+                        deserialize_evm_tx_hash(entry['hash']),
+                        timestamp,
+                        convert_to_int(entry['blockNumber']),
+                    ))
                 except DeserializationError as e:
                     log.error(
-                        f"Failed to read transaction hash {entry['hash']} from {chain_id} "
-                        f'{self.name} for {account} in the range {from_block} to {to_block}. {e!s}',  # noqa: E501
+                        f"Failed to read transaction hash or block number for {entry['hash']} "
+                        f'from {chain_id} {self.name} for {account} in the range '
+                        f'{from_block} to {to_block}. {e!s}',
                     )
                     continue
 
@@ -678,7 +705,7 @@ class EtherscanLikeApi(ABC):
                 break  # no need to paginate further
             options = new_options
 
-        yield _hashes_tuple_to_list(hashes)
+        yield _token_tx_data_tuple_to_list(tx_data)
 
     def get_blocknumber_by_time(
             self,

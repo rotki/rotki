@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.chain.evm.transactions import MAX_TX_FETCH_POOL_SIZE
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     NodeName,
@@ -450,6 +451,105 @@ def test_query_and_save_erc20_transfers_returns_only_new_hashes(
         )
 
     assert queried_hashes == [new_tx.tx_hash]
+
+
+def test_query_and_save_erc20_transfers_queries_missing_hashes_once(
+        database: 'DBHandler',
+        ethereum_manager: 'EthereumManager',
+) -> None:
+    address = make_evm_address()
+    existing_tx = make_ethereum_transaction()
+    new_tx = make_ethereum_transaction()
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[existing_tx],
+            relevant_address=address,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(existing_tx.tx_hash),
+        )
+
+    period = TimestampOrBlockRange(
+        range_type='timestamps',
+        from_value=Timestamp(0),
+        to_value=Timestamp(1),
+    )
+    location_string = (
+        f'{ethereum_manager.node_inquirer.blockchain.to_range_prefix("tokentxs")}_{address}'
+    )
+
+    with patch.object(
+            ethereum_manager.node_inquirer,
+            'get_blocknumber_by_time',
+            side_effect=[0, 1],
+    ), patch.object(
+            ethereum_manager.node_inquirer,
+            'get_token_transaction_hashes',
+            return_value=iter([[existing_tx.tx_hash, new_tx.tx_hash, new_tx.tx_hash]]),
+    ), patch.object(
+            ethereum_manager.node_inquirer,
+            'get_transaction_by_hash',
+            return_value=(new_tx, _make_receipt_data(new_tx.tx_hash)),
+    ) as get_tx_patch, patch.object(
+            ethereum_manager.transactions,
+            'get_or_create_transaction',
+            wraps=ethereum_manager.transactions.get_or_create_transaction,
+    ) as get_or_create_patch:
+        queried_hashes = ethereum_manager.transactions._query_and_save_erc20_transfers_for_range(
+            address=address,
+            period=period,
+            location_string=location_string,
+            return_queried_hashes=True,
+        )
+
+    assert queried_hashes == [new_tx.tx_hash]
+    assert get_tx_patch.call_count == 1
+    assert get_tx_patch.call_args.args[0] == new_tx.tx_hash
+    assert all(
+        call.kwargs['tx_hash'] == existing_tx.tx_hash
+        for call in get_or_create_patch.call_args_list
+    )
+
+
+def test_tx_fetch_pool_size_depends_on_active_nodes(
+        ethereum_manager: 'EthereumManager',
+) -> None:
+    with patch.object(
+            ethereum_manager.transactions.database,
+            'get_rpc_nodes',
+            return_value=[],
+    ) as get_nodes_patch:
+        assert ethereum_manager.transactions._tx_fetch_pool_size() == 1
+        get_nodes_patch.assert_called_once_with(
+            blockchain=ethereum_manager.node_inquirer.blockchain,
+            only_active=True,
+        )
+
+    with patch.object(
+            ethereum_manager.transactions.database,
+            'get_rpc_nodes',
+            return_value=[object()] * 3,
+    ) as get_nodes_patch:
+        assert ethereum_manager.transactions._tx_fetch_pool_size() == 2
+        get_nodes_patch.assert_called_once_with(
+            blockchain=ethereum_manager.node_inquirer.blockchain,
+            only_active=True,
+        )
+
+    with patch.object(
+            ethereum_manager.transactions.database,
+            'get_rpc_nodes',
+            return_value=[object()] * (2 * MAX_TX_FETCH_POOL_SIZE + 5),
+    ) as get_nodes_patch:
+        assert ethereum_manager.transactions._tx_fetch_pool_size() == MAX_TX_FETCH_POOL_SIZE
+        get_nodes_patch.assert_called_once_with(
+            blockchain=ethereum_manager.node_inquirer.blockchain,
+            only_active=True,
+        )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

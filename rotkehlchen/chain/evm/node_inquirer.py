@@ -4,7 +4,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, TypeVar, overload
 
 import requests
 from eth_abi.exceptions import DecodingError
@@ -78,7 +78,7 @@ from rotkehlchen.types import (
     TokenKind,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
-from rotkehlchen.utils.misc import from_wei, get_chunks
+from rotkehlchen.utils.misc import convert_to_int, from_wei, get_chunks, ts_now
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
@@ -99,6 +99,7 @@ def _connect_task_prefix(chain_name: str) -> str:
 
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
 MAX_NODE_LOG_QUERY_CALLS = 500  # max queries for a node that can query logs from up to 1000/10_000 blocks  # noqa: E501
+DEFAULT_RATE_LIMIT_COOLDOWN_SECS: Final = 60
 
 
 def _query_web3_get_logs(
@@ -250,6 +251,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # the same information. Remove from here with
         # https://github.com/rotki/rotki/issues/9998
         self.timestamp_to_block_cache: dict[ChainID, LRUCacheWithRemove[Timestamp, int]] = defaultdict(lambda: LRUCacheWithRemove(maxsize=32))  # noqa: E501
+        # Cache block_number -> timestamp to avoid extra block header calls when transaction
+        # lists from indexers already include the timestamp.
+        self.block_to_timestamp_cache: LRUCacheWithRemove[int, Timestamp] = LRUCacheWithRemove(maxsize=2048)  # noqa: E501
 
         # A cache for erc20 and erc721 contract info to not requery the info
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
@@ -259,6 +263,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # tracks the request length that failed to proactively use smaller chunks per node type
         self._multicall_failed_length: dict[Literal['nodes', 'indexers'], int] = {}
         self._no_indexer_notified: bool = False
+        self.rate_limited_nodes: dict[str, Timestamp] = {}
         LockableQueryMixIn.__init__(self)
         EVMRPCMixin.__init__(self)
         # Log the available nodes so we have extra information when debugging connection errors.
@@ -475,6 +480,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         gas_limit_error_seen = False
         for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
+            if (until := self.rate_limited_nodes.get(node_info.endpoint)) is not None:
+                if until > ts_now():
+                    continue
+
+                self.rate_limited_nodes.pop(node_info.endpoint, None)
+
             if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
                 if node_info.name in self.failed_to_connect_nodes:
                     continue
@@ -533,6 +544,16 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     AttributeError,  # happened at the web3 level when response is a string instead of dict # noqa: E501
                     json.JSONDecodeError,  # happens when RPC returns empty or invalid JSON responses # noqa: E501
             ) as e:
+                if self._is_rate_limited(error=e):
+                    self.rate_limited_nodes[node_info.endpoint] = Timestamp(
+                        ts_now() + self._get_retry_after_seconds(error=e),
+                    )
+                    log.warning(
+                        f'Got rate limit response from {node_info.name} while querying '
+                        f'{method.__name__}. Will skip this endpoint temporarily.',
+                    )
+                    continue
+
                 log.warning(
                     f'Failed to query {node_info.name} with position on the query list {node_idx} '
                     f'for {method.__name__} due to {e!s}',
@@ -555,6 +576,35 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             )
 
         raise RemoteError(f'Error querying information from {self.blockchain!s}. Check logs for more information')  # noqa: E501
+
+    @staticmethod
+    def _is_rate_limited(error: Exception) -> bool:
+        if (
+            (response := getattr(error, 'response', None)) is not None and
+            response.status_code == 429
+        ):
+            return True
+
+        error_string = str(error).lower()
+        return '429' in error_string and (
+            'too many requests' in error_string or
+            'rate limit' in error_string
+        )
+
+    @staticmethod
+    def _get_retry_after_seconds(error: Exception) -> int:
+        if (response := getattr(error, 'response', None)) is None:
+            return DEFAULT_RATE_LIMIT_COOLDOWN_SECS
+
+        if (retry_after := response.headers.get('Retry-After')) is None:
+            return DEFAULT_RATE_LIMIT_COOLDOWN_SECS
+
+        try:
+            seconds = int(retry_after)
+        except ValueError:
+            return DEFAULT_RATE_LIMIT_COOLDOWN_SECS
+
+        return seconds if seconds > 0 else DEFAULT_RATE_LIMIT_COOLDOWN_SECS
 
     def _get_latest_block_number(self, web3: Web3 | None) -> int:
         if web3 is not None:
@@ -1420,6 +1470,20 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             log.error(f'Failed to get L1 fees for {account=} {tx_hash=} {block_number=} due to {e!s}')  # noqa: E501
             return None
 
+    def cache_block_timestamp(self, block_number: int, timestamp: Timestamp) -> None:
+        self.block_to_timestamp_cache.add(key=block_number, value=timestamp)
+
+    def get_block_timestamp(self, block_number: int) -> Timestamp:
+        """Return block timestamp using cache first and falling back to block query."""
+        if (cached_timestamp := self.block_to_timestamp_cache.get(block_number)) is not None:
+            return cached_timestamp
+
+        timestamp = Timestamp(convert_to_int(
+            self.get_block_by_number(num=block_number)['timestamp'],
+        ))
+        self.cache_block_timestamp(block_number=block_number, timestamp=timestamp)
+        return timestamp
+
     # -- methods to be optionally implemented by child classes --
 
     def logquery_block_range(
@@ -1560,12 +1624,30 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         """Returns an iterator of transaction lists for a given account, action, and period/hash.
         Tries etherscan first, then blockscout. Raises RemoteError if both fail.
         """
-        yield from self._try_indexers_iterable(func=lambda indexer: indexer.get_transactions(  # type: ignore[misc]
-            chain_id=self.chain_id,
-            account=account,
-            period_or_hash=period_or_hash,
-            action=action,
-        ))
+        if action == 'txlist':
+            for tx_batch in self._try_indexers_iterable(
+                func=lambda indexer: indexer.get_transactions(
+                chain_id=self.chain_id,
+                account=account,
+                period_or_hash=period_or_hash,
+                action='txlist',
+            )):
+                for tx in tx_batch:
+                    self.cache_block_timestamp(
+                        block_number=tx.block_number,
+                        timestamp=tx.timestamp,
+                    )
+
+                yield tx_batch
+        else:
+            yield from self._try_indexers_iterable(
+                func=lambda indexer: indexer.get_transactions(
+                    chain_id=self.chain_id,
+                    account=account,
+                    period_or_hash=period_or_hash,
+                    action='txlistinternal',
+                ),
+            )
 
     def get_token_transaction_hashes(
             self,
@@ -1573,12 +1655,19 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             from_block: int | None = None,
             to_block: int | None = None,
     ) -> Iterator[list[EVMTxHash]]:
-        yield from self._try_indexers_iterable(func=lambda indexer: indexer.get_token_transaction_hashes(  # noqa: E501
+        for tx_data_batch in self._try_indexers_iterable(func=lambda indexer: indexer.get_token_transaction_data(  # noqa: E501
             chain_id=self.chain_id,
             account=account,
             from_block=from_block,
             to_block=to_block,
-        ))
+        )):
+            for _, timestamp, block_number in tx_data_batch:
+                self.cache_block_timestamp(
+                    block_number=block_number,
+                    timestamp=timestamp,
+                )
+
+            yield [tx_hash for tx_hash, _, _ in tx_data_batch]
 
     def has_activity(
             self,

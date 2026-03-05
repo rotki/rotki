@@ -4,9 +4,10 @@ from collections import defaultdict
 from collections.abc import Callable, Iterator, Sequence
 from contextlib import contextmanager
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, Optional, TypeVar, cast, overload
 
 from gevent.lock import Semaphore
+from gevent.pool import Pool
 
 from rotkehlchen.api.websockets.typedefs import (
     TransactionStatusStep,
@@ -16,6 +17,7 @@ from rotkehlchen.api.websockets.typedefs import (
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, LAST_SPAM_TXS_CACHE
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.pool import compute_rpc_pool_size
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -56,6 +58,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 T = TypeVar('T', bound=Callable[..., Any])
+MAX_TX_FETCH_POOL_SIZE: Final = 8
 
 
 def with_tx_status_messaging(func: T) -> T:
@@ -142,6 +145,54 @@ class EvmTransactions(ABC):  # noqa: B024
             )
 
         return existing_hashes
+
+    def _query_missing_transaction_data(
+            self,
+            tx_hashes: Sequence[EVMTxHash],
+    ) -> dict[EVMTxHash, tuple[EvmTransaction, dict[str, Any]]]:
+        """Query missing transaction + receipt data in parallel."""
+        if len(tx_hashes) == 0:
+            return {}
+
+        pool = Pool(size=min(self._tx_fetch_pool_size(), len(tx_hashes)))
+        greenlets = [(tx_hash, pool.spawn(self.evm_inquirer.get_transaction_by_hash, tx_hash)) for tx_hash in tx_hashes]  # noqa: E501
+        result: dict[EVMTxHash, tuple[EvmTransaction, dict[str, Any]]] = {}
+        for tx_hash, greenlet in greenlets:
+            result[tx_hash] = greenlet.get()
+
+        return result
+
+    def _tx_fetch_pool_size(self) -> int:
+        """Pool size based on active user RPC nodes, capped to avoid over-parallelism."""
+        return compute_rpc_pool_size(
+            active_nodes=len(self.database.get_rpc_nodes(
+                blockchain=self.evm_inquirer.blockchain,
+                only_active=True,
+            )),
+            max_pool_size=MAX_TX_FETCH_POOL_SIZE,
+        )
+
+    def _save_queried_transaction_data(
+            self,
+            tx_data: dict[EVMTxHash, tuple[EvmTransaction, dict[str, Any]]],
+            relevant_address: ChecksumEvmAddress,
+    ) -> None:
+        """Persist fetched transactions and receipts to the DB."""
+        if len(tx_data) == 0:
+            return
+
+        with self.database.conn.write_ctx() as write_cursor:
+            for transaction, raw_receipt_data in tx_data.values():
+                self.dbevmtx.add_transactions(
+                    write_cursor=write_cursor,
+                    evm_transactions=[transaction],
+                    relevant_address=relevant_address,
+                )
+                self.dbevmtx.add_or_ignore_receipt_data(
+                    write_cursor=write_cursor,
+                    chain_id=self.evm_inquirer.chain_id,
+                    data=raw_receipt_data,
+                )
 
     @contextmanager
     def wait_until_no_query_for(self, addresses: list[ChecksumEvmAddress]) -> Iterator[None]:
@@ -860,21 +911,32 @@ class EvmTransactions(ABC):  # noqa: B024
             from_block=from_block,
             to_block=to_block,
         ):
-            existing_hashes: set[EVMTxHash] = set()
-            if queried_hashes is not None and len(erc20_tx_hashes) != 0:
-                with self.database.conn.read_ctx() as cursor:
-                    existing_hashes = self._get_existing_evm_tx_hashes(
-                        cursor=cursor,
-                        tx_hashes=erc20_tx_hashes,
-                    )
+            tx_hashes = list(dict.fromkeys(erc20_tx_hashes))
+            if len(tx_hashes) == 0:
+                continue
 
-            for tx_hash in erc20_tx_hashes:
-                with self.database.conn.read_ctx() as cursor:
-                    tx, _ = self.get_or_create_transaction(
-                        cursor=cursor,
-                        tx_hash=tx_hash,
-                        relevant_address=address,
-                    )
+            with self.database.conn.read_ctx() as cursor:
+                existing_hashes = self._get_existing_evm_tx_hashes(
+                    cursor=cursor,
+                    tx_hashes=tx_hashes,
+                )
+
+            missing_tx_hashes = [
+                tx_hash for tx_hash in tx_hashes if tx_hash not in existing_hashes
+            ]
+            queried_tx_data = self._query_missing_transaction_data(tx_hashes=missing_tx_hashes)
+            self._save_queried_transaction_data(tx_data=queried_tx_data, relevant_address=address)
+
+            for tx_hash in tx_hashes:
+                if (tx_data := queried_tx_data.get(tx_hash)) is not None:
+                    tx = tx_data[0]
+                else:
+                    with self.database.conn.read_ctx() as cursor:
+                        tx, _ = self.get_or_create_transaction(
+                            cursor=cursor,
+                            tx_hash=tx_hash,
+                            relevant_address=address,
+                        )
                 if queried_hashes is not None and tx.tx_hash not in existing_hashes:
                     queried_hashes.append(tx.tx_hash)
                     existing_hashes.add(tx.tx_hash)
