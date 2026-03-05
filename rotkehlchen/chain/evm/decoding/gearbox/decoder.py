@@ -236,6 +236,7 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         user_address, _, amount, shares = lp_data
+        return_event = withdraw_event = None
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -247,6 +248,7 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.counterparty = CPT_GEARBOX
                 event.notes = f'Withdraw {event.amount} {event.asset.symbol_or_name()} from Gearbox'  # noqa: E501
+                withdraw_event = event
             elif (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -256,6 +258,17 @@ class GearboxCommonDecoder(EvmDecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_GEARBOX
                 event.notes = f'Return {event.amount} {event.asset.symbol_or_name()}'
+                return_event = event
+
+        if (
+            return_event is not None and
+            withdraw_event is not None and
+            return_event.sequence_index > withdraw_event.sequence_index
+        ):
+            return_event.sequence_index, withdraw_event.sequence_index = (
+                withdraw_event.sequence_index,
+                return_event.sequence_index,
+            )
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
