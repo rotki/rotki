@@ -236,6 +236,12 @@ class DBHandler:
         self.get_or_create_token_lock = Semaphore()
         self.match_asset_movements_lock = Semaphore()
         self._ignored_asset_ids_cache: dict[bool, set[str]] = {}
+        # Caches rpc node query results keyed by (blockchain, only_active).
+        # Value is an immutable snapshot from the last DB read for that key.
+        self._rpc_nodes_cache: dict[
+            tuple[SupportedBlockchain, bool],
+            tuple[WeightedNode, ...],
+        ] = {}
         self.password = password
         self._connect()
         self._check_unfinished_upgrades(resume_from_backup=resume_from_backup)
@@ -3733,12 +3739,36 @@ class DBHandler:
         Get all the nodes in the database. If only_active is set to true only the nodes that
         have the column active set to True will be returned.
         """
+        cache_key = (blockchain, only_active)
+        if (cached_nodes := self._rpc_nodes_cache.get(cache_key)) is not None:
+            return list(cached_nodes)
+
+        fetched_nodes = self._query_rpc_nodes_from_db(
+            blockchain=blockchain,
+            only_active=only_active,
+        )
+        self._rpc_nodes_cache[cache_key] = tuple(fetched_nodes)
+        return fetched_nodes
+
+    def _query_rpc_nodes_from_db(
+            self,
+            blockchain: SupportedBlockchain,
+            only_active: bool = False,
+    ) -> list[WeightedNode]:
+        """Read rpc nodes from DB without using the in-memory cache."""
         with self.conn.read_ctx() as cursor:
             if only_active:
-                cursor.execute('SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? AND active=1 AND (CAST(weight as decimal) != 0 OR owned == 1) ORDER BY name;', (blockchain.value,))  # noqa: E501
+                cursor.execute(
+                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain '
+                    'FROM rpc_nodes WHERE blockchain=? AND active=1 '
+                    'AND (CAST(weight as decimal) != 0 OR owned == 1) ORDER BY name;',
+                    (blockchain.value,),
+                )
             else:
                 cursor.execute(
-                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain FROM rpc_nodes WHERE blockchain=? ORDER BY name;', (blockchain.value,),  # noqa: E501
+                    'SELECT identifier, name, endpoint, owned, weight, active, blockchain '
+                    'FROM rpc_nodes WHERE blockchain=? ORDER BY name;',
+                    (blockchain.value,),
                 )
 
             return [
@@ -3752,9 +3782,17 @@ class DBHandler:
                     ),
                     weight=FVal(entry[4]),
                     active=bool(entry[5]),
-                )
-                for entry in cursor
+                ) for entry in cursor
             ]
+
+    def _invalidate_rpc_nodes_cache(self, blockchain: SupportedBlockchain | None = None) -> None:
+        """Invalidate cached rpc node lists globally or for a single blockchain."""
+        if blockchain is None:
+            self._rpc_nodes_cache.clear()
+            return
+
+        self._rpc_nodes_cache.pop((blockchain, True), None)
+        self._rpc_nodes_cache.pop((blockchain, False), None)
 
     def rebalance_rpc_nodes_weights(
             self,
@@ -3814,6 +3852,7 @@ class DBHandler:
                 exclude_identifier=write_cursor.lastrowid,
                 blockchain=node.node_info.blockchain,
             )
+        self._invalidate_rpc_nodes_cache(blockchain=node.node_info.blockchain)
 
     def update_rpc_node(self, node: WeightedNode) -> None:
         """
@@ -3851,6 +3890,7 @@ class DBHandler:
                 exclude_identifier=node.identifier,
                 blockchain=node.node_info.blockchain,
             )
+        self._invalidate_rpc_nodes_cache(blockchain=node.node_info.blockchain)
 
     def delete_rpc_node(self, identifier: int, blockchain: SupportedBlockchain) -> None:
         """Delete a rpc node by identifier and blockchain.
@@ -3867,6 +3907,7 @@ class DBHandler:
                 exclude_identifier=None,
                 blockchain=blockchain,
             )
+        self._invalidate_rpc_nodes_cache(blockchain=blockchain)
 
     def get_user_notes(
             self,

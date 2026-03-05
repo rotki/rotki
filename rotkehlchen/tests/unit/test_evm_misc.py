@@ -21,6 +21,7 @@ from rotkehlchen.chain.evm.types import (
 from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS,
     wait_until_all_nodes_connected,
@@ -239,3 +240,113 @@ def test_query_skips_rate_limited_nodes_temporarily(
     call_sequence.clear()
     assert ethereum_inquirer._query(method=mock_method, call_order=call_order) == 'ok'
     assert call_sequence == [second_node.node_info.endpoint]
+
+
+def test_default_call_order_handles_non_normalized_weights(
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    call_order_nodes = [
+        WeightedNode(
+            identifier=1,
+            node_info=NodeName(
+                name='owned',
+                endpoint='https://owned.example',
+                owned=True,
+                blockchain=SupportedBlockchain.ETHEREUM,
+            ),
+            active=True,
+            weight=FVal('0.01'),
+        ),
+        WeightedNode(
+            identifier=2,
+            node_info=NodeName(
+                name='heavy',
+                endpoint='https://heavy.example',
+                owned=False,
+                blockchain=SupportedBlockchain.ETHEREUM,
+            ),
+            active=True,
+            weight=FVal('10'),
+        ),
+        WeightedNode(
+            identifier=3,
+            node_info=NodeName(
+                name='medium',
+                endpoint='https://medium.example',
+                owned=False,
+                blockchain=SupportedBlockchain.ETHEREUM,
+            ),
+            active=True,
+            weight=FVal('3'),
+        ),
+        WeightedNode(
+            identifier=4,
+            node_info=NodeName(
+                name='invalid-negative',
+                endpoint='https://invalid-negative.example',
+                owned=False,
+                blockchain=SupportedBlockchain.ETHEREUM,
+            ),
+            active=True,
+            weight=FVal('-1'),
+        ),
+    ]
+    expected_names = {node.node_info.name for node in call_order_nodes}
+    with patch.object(ethereum_inquirer.database, 'get_rpc_nodes', return_value=call_order_nodes):
+        for _ in range(10):
+            ordered = ethereum_inquirer.default_call_order(skip_indexers=True)
+            assert len(ordered) == len(call_order_nodes)
+            assert {node.node_info.name for node in ordered} == expected_names
+            assert ordered[0].node_info.name == 'owned'
+
+
+def test_rpc_nodes_cache_invalidated_on_mutations(database) -> None:
+    blockchain = SupportedBlockchain.ETHEREUM
+    added_endpoint = 'https://cache-add.example'
+    updated_endpoint = 'https://cache-update.example'
+    with patch.object(
+            database,
+            '_query_rpc_nodes_from_db',
+            wraps=database._query_rpc_nodes_from_db,
+    ) as query_patch:
+        database.get_rpc_nodes(blockchain=blockchain, only_active=True)
+        database.get_rpc_nodes(blockchain=blockchain, only_active=True)
+        assert query_patch.call_count == 1
+
+        database.add_rpc_node(WeightedNode(
+            node_info=NodeName(
+                name='cache-add',
+                endpoint=added_endpoint,
+                owned=False,
+                blockchain=blockchain,
+            ),
+            active=True,
+            weight=FVal('0.01'),
+        ))
+        nodes_after_add = database.get_rpc_nodes(blockchain=blockchain, only_active=True)
+        assert query_patch.call_count == 2
+        added_node = next(
+            node for node in nodes_after_add
+            if node.node_info.endpoint == added_endpoint
+        )
+
+        database.update_rpc_node(WeightedNode(
+            identifier=added_node.identifier,
+            node_info=NodeName(
+                name='cache-update',
+                endpoint=updated_endpoint,
+                owned=False,
+                blockchain=blockchain,
+            ),
+            active=True,
+            weight=FVal('0.02'),
+        ))
+        nodes_after_update = database.get_rpc_nodes(blockchain=blockchain, only_active=True)
+        assert query_patch.call_count == 3
+        assert added_endpoint not in {node.node_info.endpoint for node in nodes_after_update}
+        assert updated_endpoint in {node.node_info.endpoint for node in nodes_after_update}
+
+        database.delete_rpc_node(identifier=added_node.identifier, blockchain=blockchain)
+        nodes_after_delete = database.get_rpc_nodes(blockchain=blockchain, only_active=True)
+        assert query_patch.call_count == 4
+        assert updated_endpoint not in {node.node_info.endpoint for node in nodes_after_delete}
