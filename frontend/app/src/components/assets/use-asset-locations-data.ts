@@ -42,14 +42,14 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
   const { getAccountByAddress } = useBlockchainAccountsStore();
   const { getAddressName } = useAddressesNamesStore();
 
-  const { assetPriceInfo } = useAggregatedBalances();
+  const { getAssetPriceInfo } = useAggregatedBalances();
   const { getChainName, matchChain } = useSupportedChains();
-  const { useAssetBreakdown } = useAssetBalancesBreakdown();
+  const { getAssetBreakdown } = useAssetBalancesBreakdown();
 
-  const totalValue = computed<BigNumber>(() => get(assetPriceInfo(identifier)).value);
+  const totalValue = computed<BigNumber>(() => getAssetPriceInfo(toValue(identifier)).value);
 
   const assetLocations = computed<AssetLocations>(() => {
-    const breakdowns = get(useAssetBreakdown(toValue(identifier)));
+    const breakdowns = getAssetBreakdown(toValue(identifier));
     return breakdowns.map((item: AssetBreakdown) => {
       const account = item.address ? getAccountByAddress(item.address, item.location) : undefined;
       return {

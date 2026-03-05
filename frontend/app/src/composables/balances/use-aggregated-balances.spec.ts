@@ -60,7 +60,7 @@ describe('useAggregatedBalances', () => {
     const { balances: ethBalances, exchangeBalances, manualBalances } = storeToRefs(useBalancesStore());
     const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
     const { prices } = storeToRefs(useBalancePricesStore());
-    const { balances } = useAggregatedBalances();
+    const { getBalances } = useAggregatedBalances();
 
     set(connectedExchanges, [{
       location: 'kraken',
@@ -106,7 +106,7 @@ describe('useAggregatedBalances', () => {
       },
     });
 
-    const actualResult = sortBy(get(balances()), ['asset']);
+    const actualResult = sortBy(getBalances(), ['asset']);
 
     const expectedResult = sortBy([{
       amount: bigNumberify(50),
@@ -160,14 +160,14 @@ describe('useAggregatedBalances', () => {
 
   describe('balances', () => {
     it('should return empty array when no balances exist', () => {
-      const { balances } = useAggregatedBalances();
-      const result = get(balances());
+      const { getBalances } = useAggregatedBalances();
+      const result = getBalances();
       expect(result).toEqual([]);
     });
 
     it('should respect hideIgnored parameter', () => {
       const { exchangeBalances } = storeToRefs(useBalancesStore());
-      const { balances } = useAggregatedBalances();
+      const { getBalances } = useAggregatedBalances();
 
       set(exchangeBalances, {
         kraken: {
@@ -177,29 +177,29 @@ describe('useAggregatedBalances', () => {
 
       const ignoredStore = useIgnoredAssetsStore();
       ignoredStore.ignoredAssets.push('BTC');
-      const hidden = get(balances(true));
-      const visible = get(balances(false));
+      const hidden = getBalances(true);
+      const visible = getBalances(false);
 
       expect(hidden).toHaveLength(0);
       expect(visible).toHaveLength(1);
     });
 
     it('should support groupCollections parameter', () => {
-      const { balances } = useAggregatedBalances();
+      const { getBalances } = useAggregatedBalances();
 
-      const grouped = get(balances(true, true));
-      const ungrouped = get(balances(true, false));
+      const grouped = getBalances(true, true);
+      const ungrouped = getBalances(true, false);
 
       expect(Array.isArray(grouped)).toBe(true);
       expect(Array.isArray(ungrouped)).toBe(true);
     });
 
     it('should support exclusion sources parameter', () => {
-      const { balances } = useAggregatedBalances();
+      const { getBalances } = useAggregatedBalances();
 
-      const allSources = get(balances(true, true, []));
-      const excludeManual = get(balances(true, true, ['manual']));
-      const excludeExchange = get(balances(true, true, ['exchange']));
+      const allSources = getBalances(true, true, []);
+      const excludeManual = getBalances(true, true, ['manual']);
+      const excludeExchange = getBalances(true, true, ['exchange']);
 
       expect(Array.isArray(allSources)).toBe(true);
       expect(Array.isArray(excludeManual)).toBe(true);
@@ -209,16 +209,16 @@ describe('useAggregatedBalances', () => {
 
   describe('liabilities', () => {
     it('should return empty array when no liabilities exist', () => {
-      const { liabilities } = useAggregatedBalances();
-      const result = get(liabilities());
+      const { getLiabilities } = useAggregatedBalances();
+      const result = getLiabilities();
       expect(result).toEqual([]);
     });
 
     it('should respect hideIgnored parameter for liabilities', () => {
-      const { liabilities } = useAggregatedBalances();
+      const { getLiabilities } = useAggregatedBalances();
 
-      const hidden = get(liabilities(true));
-      const visible = get(liabilities(false));
+      const hidden = getLiabilities(true);
+      const visible = getLiabilities(false);
 
       expect(Array.isArray(hidden)).toBe(true);
       expect(Array.isArray(visible)).toBe(true);
@@ -226,13 +226,13 @@ describe('useAggregatedBalances', () => {
 
     it('should aggregate liabilities from blockchain and manual sources', () => {
       const { manualLiabilities } = storeToRefs(useBalancesStore());
-      const { liabilities } = useAggregatedBalances();
+      const { getLiabilities } = useAggregatedBalances();
 
       set(manualLiabilities, [
         createTestManualBalance('DAI', 100, 100, 'compound', BalanceType.LIABILITY),
       ]);
 
-      const result = get(liabilities());
+      const result = getLiabilities();
       expect(result).toEqual([{
         amount: bigNumberify(100),
         asset: 'DAI',
@@ -288,8 +288,8 @@ describe('useAggregatedBalances', () => {
 
   describe('assetPriceInfo', () => {
     it('should return zero values for non-existent asset', () => {
-      const { assetPriceInfo } = useAggregatedBalances();
-      const result = get(assetPriceInfo('NON_EXISTENT'));
+      const { getAssetPriceInfo } = useAggregatedBalances();
+      const result = getAssetPriceInfo('NON_EXISTENT');
 
       expect(result).toMatchObject({
         amount: Zero,
@@ -301,7 +301,7 @@ describe('useAggregatedBalances', () => {
     it('should return correct price info for existing asset', () => {
       const { exchangeBalances } = storeToRefs(useBalancesStore());
       const { prices } = storeToRefs(useBalancePricesStore());
-      const { assetPriceInfo } = useAggregatedBalances();
+      const { getAssetPriceInfo } = useAggregatedBalances();
 
       set(exchangeBalances, {
         kraken: {
@@ -313,7 +313,7 @@ describe('useAggregatedBalances', () => {
         BTC: createTestPriceInfo(50000),
       });
 
-      const result = get(assetPriceInfo('BTC'));
+      const result = getAssetPriceInfo('BTC');
 
       expect(result.amount).toEqual(bigNumberify(1));
       expect(result.price).toEqual(bigNumberify(50000));
@@ -323,7 +323,7 @@ describe('useAggregatedBalances', () => {
     it('should support groupMultiChain parameter', () => {
       const { balances: blockchainBalances, exchangeBalances } = storeToRefs(useBalancesStore());
       const { prices } = storeToRefs(useBalancePricesStore());
-      const { assetPriceInfo } = useAggregatedBalances();
+      const { getAssetPriceInfo } = useAggregatedBalances();
 
       set(blockchainBalances, {
         [Blockchain.ETH]: {
@@ -352,8 +352,8 @@ describe('useAggregatedBalances', () => {
         WETH: createTestPriceInfo(40000),
       });
 
-      const ungrouped = get(assetPriceInfo('ETH', false));
-      const grouped = get(assetPriceInfo('ETH', true));
+      const ungrouped = getAssetPriceInfo('ETH', false);
+      const grouped = getAssetPriceInfo('ETH', true);
 
       // Ungrouped should only show ETH balances (no collection grouping)
       expect(ungrouped.amount).toEqual(bigNumberify(3));
@@ -366,19 +366,16 @@ describe('useAggregatedBalances', () => {
       expect(grouped.value).toEqual(bigNumberify(140000));
     });
 
-    it('should work with reactive identifier', () => {
-      const { assetPriceInfo } = useAggregatedBalances();
-      const reactiveAsset = ref('BTC');
+    it('should work with plain identifier', () => {
+      const { getAssetPriceInfo } = useAggregatedBalances();
 
-      const result = get(assetPriceInfo(reactiveAsset));
+      const result = getAssetPriceInfo('BTC');
 
       expect(result).toHaveProperty('amount');
       expect(result).toHaveProperty('price');
       expect(result).toHaveProperty('value');
 
-      reactiveAsset.value = 'ETH';
-
-      const updatedResult = get(assetPriceInfo(reactiveAsset));
+      const updatedResult = getAssetPriceInfo('ETH');
       expect(updatedResult).toHaveProperty('amount');
     });
   });
@@ -387,7 +384,7 @@ describe('useAggregatedBalances', () => {
     it('should create main asset with zero balance when user owns collection asset but not main asset', () => {
       const { balances: blockchainBalances } = storeToRefs(useBalancesStore());
       const { prices } = storeToRefs(useBalancePricesStore());
-      const { balances } = useAggregatedBalances();
+      const { getBalances } = useAggregatedBalances();
 
       // User has WETH but not ETH (the main asset of the ethereum collection)
       set(blockchainBalances, {
@@ -408,7 +405,7 @@ describe('useAggregatedBalances', () => {
         WETH: createTestPriceInfo(4000),
       });
 
-      const result = get(balances(true, true));
+      const result = getBalances(true, true);
 
       // Should return one result (the ethereum collection)
       expect(result).toHaveLength(1);
@@ -440,7 +437,7 @@ describe('useAggregatedBalances', () => {
     it('should not duplicate main asset when it already exists in collection', () => {
       const { balances: blockchainBalances } = storeToRefs(useBalancesStore());
       const { prices } = storeToRefs(useBalancePricesStore());
-      const { balances } = useAggregatedBalances();
+      const { getBalances } = useAggregatedBalances();
 
       // User has both ETH and WETH
       set(blockchainBalances, {
@@ -464,7 +461,7 @@ describe('useAggregatedBalances', () => {
         WETH: createTestPriceInfo(4000),
       });
 
-      const result = get(balances(true, true));
+      const result = getBalances(true, true);
 
       expect(result).toHaveLength(1);
       const collectionResult = result[0];

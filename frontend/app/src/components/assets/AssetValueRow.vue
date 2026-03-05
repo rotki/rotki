@@ -25,14 +25,14 @@ const customPrice = ref<ManualPriceFormPayload | null>(null);
 const { t } = useI18n({ useScope: 'global' });
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { deletePrice, refreshCurrentPrices, refreshing } = useLatestPrices(t);
-const { assetPriceInfo } = useAggregatedBalances();
+const { useAssetPriceInfo } = useAggregatedBalances();
 const { useAssetPrice, useIsManualAssetPrice } = usePriceUtils();
 const { getAssetField } = useAssetInfoRetrieval();
 const { refreshPrice } = usePriceRefresh();
 const { isLoading: refreshingPrices } = useSectionStatus(Section.PRICES);
 const { show } = useConfirmStore();
 
-const info = assetPriceInfo(() => identifier, () => isCollectionParent);
+const info = useAssetPriceInfo(() => identifier, () => isCollectionParent);
 const price = useAssetPrice(() => identifier);
 const isManualPrice = useIsManualAssetPrice(() => identifier);
 

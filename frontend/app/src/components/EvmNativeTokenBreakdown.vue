@@ -38,7 +38,7 @@ const {
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { useAssetBreakdown } = useAssetBalancesBreakdown();
+const { getAssetBreakdown } = useAssetBalancesBreakdown();
 const { matchChain } = useSupportedChains();
 
 const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
@@ -46,10 +46,10 @@ const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
   const breakdown: Record<string, AssetBreakdown[]> = {};
 
   for (const asset of usedAssets) {
-    breakdown[asset] = get(useAssetBreakdown(asset, isLiability, {
+    breakdown[asset] = getAssetBreakdown(asset, isLiability, {
       ...details,
       blockchainOnly,
-    }));
+    });
   }
 
   return breakdown;
