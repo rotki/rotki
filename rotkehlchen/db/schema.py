@@ -470,7 +470,7 @@ CREATE TABLE IF NOT EXISTS used_query_ranges (
 );
 """
 
-# Currently this table is used only to store a flag that shows whether a transaction is decoded.
+# Stores per-transaction state flags (e.g. decoded, spam, internals queried).
 DB_CREATE_EVM_TX_MAPPINGS = """
 CREATE TABLE IF NOT EXISTS evm_tx_mappings (
     tx_id INTEGER NOT NULL,

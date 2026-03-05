@@ -17,6 +17,8 @@ USER_CREDENTIAL_MAPPING_KEYS: Final = (KRAKEN_ACCOUNT_TYPE_KEY, KRAKEN_FUTURES_A
 # -- EVM transactions attributes values -- used in evm_tx_mappings
 TX_DECODED: Final = 0
 TX_SPAM: Final = 1
+# Marks that full parent-hash internal transactions were queried and persisted for this tx.
+TX_INTERNALS_QUERIED: Final = 2
 
 # -- history_events_mappings values --
 HISTORY_MAPPING_KEY_STATE: Final = 'state'

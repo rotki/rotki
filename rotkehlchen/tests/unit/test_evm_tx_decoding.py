@@ -12,7 +12,13 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_SAI
-from rotkehlchen.db.constants import TX_DECODED, TX_SPAM, HistoryMappingState
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    TX_DECODED,
+    TX_INTERNALS_QUERIED,
+    TX_SPAM,
+    HistoryMappingState,
+)
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     EvmEventFilterQuery,
@@ -24,6 +30,7 @@ from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntry,
+    HistoryBaseEntryType,
     HistoryEventSubType,
     HistoryEventType,
 )
@@ -256,6 +263,17 @@ def test_query_and_decode_transactions_works_with_different_chains(
     )
     assert len(hashes) == 2
 
+    # see that setting internals queried does not duplicate undecoded txs nor count as decoded
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (3, TX_INTERNALS_QUERIED),
+        )
+    hashes = dbevmtx.get_transaction_hashes_not_decoded(
+        filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
+    )
+    assert len(hashes) == 2
+
     # see that setting the decoded attribute counts properly
     with database.user_write() as write_cursor:
         write_cursor.execute(
@@ -266,6 +284,80 @@ def test_query_and_decode_transactions_works_with_different_chains(
         filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
     )
     assert len(hashes) == 1
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # noqa: E501
+def test_delete_transactions_removes_internals_queried_mapping(
+        database: 'DBHandler',
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Ensure TX_INTERNALS_QUERIED mapping is removed when deleting txs for an address.
+
+    Covers the case where the tx itself is preserved due customized events.
+    """
+    tx_hash_eth, _, _ = _add_transactions_to_db(database, ethereum_accounts)
+    dbevmtx = DBEvmTx(database)
+    with database.user_write() as write_cursor:
+        tx_id = write_cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash_eth, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+        write_cursor.execute(
+            'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (tx_id, TX_INTERNALS_QUERIED),
+        )
+        event_id = write_cursor.execute(
+            'INSERT INTO history_events(entry_type, group_identifier, sequence_index, '
+            'timestamp, location, location_label, asset, amount, notes, type, subtype, '
+            'extra_data, ignored) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.EVM_EVENT.value,
+                f'10x{tx_hash_eth!s}',
+                0,
+                TimestampMS(1646375440000),
+                Location.ETHEREUM.serialize_for_db(),
+                ethereum_accounts[0],
+                A_ETH.identifier,
+                '1',
+                'customized event to preserve tx',
+                HistoryEventType.SPEND.value,
+                HistoryEventSubType.NONE.value,
+                None,
+                0,
+            ),
+        ).lastrowid
+        write_cursor.execute(
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) '
+            'VALUES(?, ?, ?, ?)',
+            (event_id, tx_hash_eth, None, None),
+        )
+        write_cursor.execute(
+            'INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES(?, ?, ?)',
+            (
+                event_id,
+                HISTORY_MAPPING_KEY_STATE,
+                HistoryMappingState.CUSTOMIZED.serialize_for_db(),
+            ),
+        )
+        dbevmtx.delete_transactions(
+            write_cursor=write_cursor,
+            address=ethereum_accounts[0],
+            chain=SupportedBlockchain.ETHEREUM,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash_eth, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0] == 1  # tx is preserved by customized event
+        assert (
+            cursor.execute(
+                'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id IN ('
+                'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?) '
+                'AND value=?',
+                (tx_hash_eth, ChainID.ETHEREUM.serialize_for_db(), TX_INTERNALS_QUERIED),
+            ).fetchone()[0] == 0
+        ), 'Expected TX_INTERNALS_QUERIED mapping to be removed with deleted tx data'
 
 
 @pytest.mark.vcr

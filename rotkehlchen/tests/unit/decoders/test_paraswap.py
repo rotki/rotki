@@ -23,6 +23,7 @@ from rotkehlchen.constants.assets import (
     A_WBTC,
 )
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.constants import TX_INTERNALS_QUERIED
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -175,6 +176,15 @@ def test_simple_swap_eth_fee(ethereum_inquirer, ethereum_accounts):
         address=PARASWAP_AUGUSTUS_ROUTER,
     )]
     assert expected_events == events
+    with ethereum_inquirer.database.conn.read_ctx() as cursor:
+        assert (
+            cursor.execute(
+                'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id IN ('
+                'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?) '
+                'AND value=?',
+                (tx_hash, ethereum_inquirer.chain_id.serialize_for_db(), TX_INTERNALS_QUERIED),
+            ).fetchone()[0] == 1
+        ), 'Expected TX_INTERNALS_QUERIED mapping to be persisted for this transaction'
 
 
 @pytest.mark.vcr
