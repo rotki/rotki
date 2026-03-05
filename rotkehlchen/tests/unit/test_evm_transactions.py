@@ -519,28 +519,37 @@ def test_tx_fetch_pool_size_depends_on_active_nodes(
         ethereum_manager: 'EthereumManager',
 ) -> None:
     with patch.object(
-            ethereum_manager.node_inquirer,
-            'default_call_order',
+            ethereum_manager.transactions.database,
+            'get_rpc_nodes',
             return_value=[],
-    ) as call_order_patch:
+    ) as get_nodes_patch:
         assert ethereum_manager.transactions._tx_fetch_pool_size() == 1
-        call_order_patch.assert_called_once_with(skip_indexers=True)
+        get_nodes_patch.assert_called_once_with(
+            blockchain=ethereum_manager.node_inquirer.blockchain,
+            only_active=True,
+        )
 
     with patch.object(
-            ethereum_manager.node_inquirer,
-            'default_call_order',
+            ethereum_manager.transactions.database,
+            'get_rpc_nodes',
             return_value=[object()] * 3,
-    ) as call_order_patch:
+    ) as get_nodes_patch:
         assert ethereum_manager.transactions._tx_fetch_pool_size() == 2
-        call_order_patch.assert_called_once_with(skip_indexers=True)
+        get_nodes_patch.assert_called_once_with(
+            blockchain=ethereum_manager.node_inquirer.blockchain,
+            only_active=True,
+        )
 
     with patch.object(
-            ethereum_manager.node_inquirer,
-            'default_call_order',
+            ethereum_manager.transactions.database,
+            'get_rpc_nodes',
             return_value=[object()] * (2 * MAX_TX_FETCH_POOL_SIZE + 5),
-    ) as call_order_patch:
+    ) as get_nodes_patch:
         assert ethereum_manager.transactions._tx_fetch_pool_size() == MAX_TX_FETCH_POOL_SIZE
-        call_order_patch.assert_called_once_with(skip_indexers=True)
+        get_nodes_patch.assert_called_once_with(
+            blockchain=ethereum_manager.node_inquirer.blockchain,
+            only_active=True,
+        )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

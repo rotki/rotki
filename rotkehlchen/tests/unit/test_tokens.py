@@ -1,5 +1,5 @@
 import datetime
-from contextlib import suppress
+from contextlib import nullcontext, suppress
 from typing import TYPE_CHECKING, Any, get_args
 from unittest.mock import MagicMock, call, patch
 
@@ -10,7 +10,11 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import _query_or_get_given_token_info, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.decoding.summer_fi.constants import CPT_SUMMER_FI
-from rotkehlchen.chain.evm.tokens import EvmTokensWithProxies, generate_multicall_chunks
+from rotkehlchen.chain.evm.tokens import (
+    MAX_TOKEN_CHUNK_QUERY_POOL_SIZE,
+    EvmTokensWithProxies,
+    generate_multicall_chunks,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.structures import EvmTokenDetectionData
 from rotkehlchen.constants import ONE, ZERO
@@ -47,6 +51,11 @@ if TYPE_CHECKING:
 
 ERC20_INFO_RESPONSE = ((True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06'), (True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x04USDT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'), (True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\nTether USD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))  # noqa: E501
 ERC721_INFO_RESPONSE = ((True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x06BLOCKS\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'), (True, b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\nArt Blocks\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'))  # noqa: E501
+
+
+def _double_chunk_value(value: int) -> int:
+    gevent.sleep(0)
+    return value * 2
 
 
 @pytest.fixture(name='tokens')
@@ -268,6 +277,108 @@ def test_query_chunks_retries_with_smaller_chunks(tokens: EthereumTokens) -> Non
 
     assert result == {}
     assert queried_chunk_sizes == [4, 2, 2, 1]
+
+
+def test_run_chunk_queries_in_pool(tokens: EthereumTokens) -> None:
+    with patch.object(tokens, '_token_chunk_query_pool_size', return_value=2):
+        result = tokens._run_chunk_queries_in_pool(
+            chunks=[1, 2, 3],
+            query_method=_double_chunk_value,
+        )
+
+    assert result == [2, 4, 6]
+
+
+def test_token_chunk_pool_size_depends_on_active_nodes(tokens: EthereumTokens) -> None:
+    with patch.object(
+            tokens.db,
+            'get_rpc_nodes',
+            return_value=[],
+    ) as get_nodes_patch:
+        assert tokens._token_chunk_query_pool_size() == 1
+        get_nodes_patch.assert_called_once_with(
+            blockchain=tokens.evm_inquirer.blockchain,
+            only_active=True,
+        )
+
+    with patch.object(tokens.db, 'get_rpc_nodes', return_value=[object()] * 3) as get_nodes_patch:
+        assert tokens._token_chunk_query_pool_size() == 2
+        get_nodes_patch.assert_called_once_with(
+            blockchain=tokens.evm_inquirer.blockchain,
+            only_active=True,
+        )
+
+    with patch.object(
+            tokens.db,
+            'get_rpc_nodes',
+            return_value=[object()] * (2 * MAX_TOKEN_CHUNK_QUERY_POOL_SIZE + 5),
+    ) as get_nodes_patch:
+        assert tokens._token_chunk_query_pool_size() == MAX_TOKEN_CHUNK_QUERY_POOL_SIZE
+        get_nodes_patch.assert_called_once_with(
+            blockchain=tokens.evm_inquirer.blockchain,
+            only_active=True,
+        )
+
+
+def test_detect_tokens_uses_chunk_query_pool(tokens: EthereumTokens) -> None:
+    addresses = [make_evm_address(), make_evm_address()]
+    detected_asset = Asset('eip155:1/erc20:0x0000000000000000000000000000000000000001')
+    mocked_detected_tokens = [
+        (addresses[0], [detected_asset]),
+        (addresses[1], []),
+    ]
+    with patch.object(
+            tokens,
+            '_run_chunk_queries_in_pool',
+            return_value=mocked_detected_tokens,
+    ) as pool_patch:
+        result = tokens._detect_tokens(
+            addresses=addresses,
+            tokens_to_check=[],
+        )
+
+    assert result == dict(mocked_detected_tokens)
+    assert pool_patch.call_count == 1
+    assert pool_patch.call_args.kwargs['chunks'] == addresses
+
+
+def test_query_tokens_for_addresses_uses_chunk_query_pool(tokens: EthereumTokens) -> None:
+    address = make_evm_address()
+    token_erc20 = MagicMock()
+    token_erc20.evm_address = make_evm_address()
+    token_erc20.token_kind = TokenKind.ERC20
+    token_erc721 = MagicMock()
+    token_erc721.evm_address = make_evm_address()
+    token_erc721.token_kind = TokenKind.ERC721
+    cursor = MagicMock()
+    cursor.__iter__.return_value = iter([])
+    multicall_chunks = [[(address, [token_erc20])], [(address, [token_erc721])]]
+
+    with patch.object(tokens.db.conn, 'read_ctx', return_value=nullcontext(cursor)), patch.object(
+            tokens.db,
+            'get_tokens_for_address',
+            return_value=([token_erc20, token_erc721], None),
+    ), patch(
+            'rotkehlchen.chain.evm.tokens.generate_multicall_chunks',
+            return_value=multicall_chunks,
+    ), patch.object(
+            tokens,
+            '_run_chunk_queries_in_pool',
+            return_value=[
+                {address: {token_erc20: FVal('2')}},
+                {address: {token_erc721: FVal('5')}},
+            ],
+    ) as pool_patch, patch(
+            'rotkehlchen.chain.evm.tokens.Inquirer.find_main_currency_prices',
+            return_value={token_erc20: ONE, token_erc721: ONE},
+    ):
+        balances, prices = tokens.query_tokens_for_addresses(addresses=[address])
+
+    assert pool_patch.call_count == 1
+    assert pool_patch.call_args.kwargs['chunks'] == multicall_chunks
+    assert balances[address][token_erc20] == FVal('2')
+    assert balances[address][token_erc721] == ONE
+    assert prices == {token_erc20: ONE, token_erc721: ONE}
 
 
 def test_last_queried_ts(tokens, freezer):

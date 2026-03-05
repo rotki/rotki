@@ -1,8 +1,11 @@
 import logging
 from abc import ABC
 from collections import defaultdict
-from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, TypeVar, cast
+from collections.abc import Callable, Mapping, Sequence
+from functools import partial
+from typing import TYPE_CHECKING, Final, TypeVar, cast
+
+from gevent.pool import Pool
 
 from rotkehlchen.assets.asset import Asset, EvmToken, Nft
 from rotkehlchen.assets.utils import (
@@ -10,6 +13,7 @@ from rotkehlchen.assets.utils import (
     token_normalized_value_decimals,
 )
 from rotkehlchen.balances.historical import HistoricalBalancesManager
+from rotkehlchen.chain.evm.pool import compute_rpc_pool_size
 from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.chain.structures import EvmTokenDetectionData
@@ -94,6 +98,9 @@ ARBISCAN_MAX_ARGUMENTS_TO_CONTRACT = 25
 PURE_TOKENS_BALANCE_ARGUMENTS = 7
 
 T = TypeVar('T')
+ChunkType = TypeVar('ChunkType')
+ResultType = TypeVar('ResultType')
+MAX_TOKEN_CHUNK_QUERY_POOL_SIZE: Final = 8
 
 
 def generate_multicall_chunks(
@@ -307,6 +314,29 @@ class EvmTokens(ABC):  # noqa: B024
             total_token_balances = combine_dicts(total_token_balances, new_token_balances)
         return total_token_balances
 
+    def _token_chunk_query_pool_size(self) -> int:
+        """Pool size based on active user RPC nodes, capped to avoid over-parallelism."""
+        return compute_rpc_pool_size(
+            active_nodes=len(self.db.get_rpc_nodes(
+                blockchain=self.evm_inquirer.blockchain,
+                only_active=True,
+            )),
+            max_pool_size=MAX_TOKEN_CHUNK_QUERY_POOL_SIZE,
+        )
+
+    def _run_chunk_queries_in_pool(
+            self,
+            chunks: Sequence[ChunkType],
+            query_method: Callable[[ChunkType], ResultType],
+    ) -> list[ResultType]:
+        """Run independent chunk queries in parallel while preserving input order."""
+        if len(chunks) == 0:
+            return []
+
+        pool = Pool(size=min(self._token_chunk_query_pool_size(), len(chunks)))
+        greenlets = [pool.spawn(query_method, chunk) for chunk in chunks]
+        return [greenlet.get() for greenlet in greenlets]
+
     def _compute_detected_tokens_info(self, addresses: Sequence[ChecksumEvmAddress]) -> DetectedTokensType:  # noqa: E501
         """
         Generate a structure that contains information about the addresses that tokens
@@ -450,18 +480,30 @@ class EvmTokens(ABC):  # noqa: B024
           token has no code. That means the chain is not synced
         """
         chunk_size, call_order = get_chunk_size_call_order(self.evm_inquirer)
-        tokens_per_address = defaultdict(list)
-        for address in addresses:
-            token_balances = self._query_chunks(
-                address=address,
+        return dict(self._run_chunk_queries_in_pool(
+            chunks=addresses,
+            query_method=partial(
+                self._detect_tokens_for_address,
                 tokens=tokens_to_check,
                 chunk_size=chunk_size,
                 call_order=call_order,
-            )
-            detected_tokens = list(token_balances.keys())
-            tokens_per_address[address] = detected_tokens
+            ),
+        ))
 
-        return tokens_per_address
+    def _detect_tokens_for_address(
+            self,
+            address: ChecksumEvmAddress,
+            tokens: list[EvmTokenDetectionData],
+            chunk_size: int,
+            call_order: list[WeightedNode],
+    ) -> tuple[ChecksumEvmAddress, list[Asset]]:
+        token_balances = self._query_chunks(
+            address=address,
+            tokens=tokens,
+            chunk_size=chunk_size,
+            call_order=call_order,
+        )
+        return address, list(token_balances.keys())
 
     def query_tokens_for_addresses(
             self,
@@ -510,11 +552,13 @@ class EvmTokens(ABC):  # noqa: B024
             addresses_to_tokens=addresses_to_tokens,
             chunk_length=chunk_size,
         )
-        for chunk in multicall_chunks:
-            new_balances = self._get_multicall_token_balances(
-                chunk=chunk,
+        for new_balances in self._run_chunk_queries_in_pool(
+            chunks=multicall_chunks,
+            query_method=partial(
+                self._get_multicall_token_balances,
                 call_order=call_order,
-            )
+            ),
+        ):
             for address, balances in new_balances.items():
                 for token, balance in balances.items():
                     if balance == ZERO:

@@ -17,6 +17,7 @@ from rotkehlchen.api.websockets.typedefs import (
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, LAST_SPAM_TXS_CACHE
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.pool import compute_rpc_pool_size
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -163,11 +164,13 @@ class EvmTransactions(ABC):  # noqa: B024
 
     def _tx_fetch_pool_size(self) -> int:
         """Pool size based on active user RPC nodes, capped to avoid over-parallelism."""
-        active_nodes = len(self.evm_inquirer.default_call_order(skip_indexers=True))
-        if active_nodes <= 0:
-            return 1
-
-        return min(max(1, (active_nodes + 1) // 2), MAX_TX_FETCH_POOL_SIZE)
+        return compute_rpc_pool_size(
+            active_nodes=len(self.database.get_rpc_nodes(
+                blockchain=self.evm_inquirer.blockchain,
+                only_active=True,
+            )),
+            max_pool_size=MAX_TX_FETCH_POOL_SIZE,
+        )
 
     def _save_queried_transaction_data(
             self,
