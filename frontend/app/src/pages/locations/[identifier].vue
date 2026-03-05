@@ -22,8 +22,8 @@ const { identifier } = defineProps<{
   identifier: string;
 }>();
 
-const { locationData } = useLocations();
-const location = locationData(() => identifier);
+const { useLocationData } = useLocations();
+const location = useLocationData(() => identifier);
 </script>
 
 <template>

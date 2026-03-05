@@ -5,12 +5,12 @@ import type { ExchangeSavingsEvent, ExchangeSavingsRequestPayload } from '@/type
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
+import { useSectionStatus } from '@/composables/status';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { AssetValueDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 
 const { exchange } = defineProps<{
@@ -22,10 +22,8 @@ const { t } = useI18n({ useScope: 'global' });
 const savingsAssets = ref<string[]>([]);
 const savingsReceived = ref<AssetBalance[]>([]);
 
-const { isLoading: isSectionLoading } = useStatusStore();
+const { isLoading: loading } = useSectionStatus(Section.EXCHANGE_SAVINGS);
 const { fetchExchangeSavings } = useBinanceSavings();
-
-const loading = isSectionLoading(Section.EXCHANGE_SAVINGS);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const defaultParams = computed(() => ({

@@ -1,25 +1,21 @@
-import type { MaybeRefOrGetter } from 'vue';
+import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type { TradeLocationData } from '@/types/history/trade/location';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLocationStore } from '@/store/locations';
 import { isBlockchain } from '@/types/blockchain/chains';
 
-export const useLocations = createSharedComposable(() => {
+interface UseLocationsReturn {
+  getExchangeName: (location: string) => string;
+  getLocationData: (id: string) => TradeLocationData | undefined;
+  tradeLocations: DeepReadonly<Ref<TradeLocationData[]>>;
+  useLocationData: (identifier: MaybeRefOrGetter<string | null>) => ComputedRef<TradeLocationData | undefined>;
+}
+
+export function useLocations(): UseLocationsReturn {
   const { tradeLocations } = storeToRefs(useLocationStore());
-
-  const exchangeName = (location: MaybeRefOrGetter<string>): string => {
-    const exchange = get(tradeLocations).find(tl => tl.identifier === toValue(location));
-
-    return exchange?.name ?? '';
-  };
-
   const { getBlockchainRedirectLink, getChainImageUrl, getChainName, matchChain } = useSupportedChains();
 
-  const locationData = (identifier: MaybeRefOrGetter<string | null>): ComputedRef<TradeLocationData | null> => computed(() => {
-    const id = toValue(identifier);
-    if (!id)
-      return null;
-
+  function getLocationData(id: string): TradeLocationData | undefined {
     const blockchainId = id.split(' ').join('_');
 
     const chain = matchChain(blockchainId);
@@ -28,21 +24,34 @@ export const useLocations = createSharedComposable(() => {
       return {
         detailPath,
         identifier: blockchainId,
-        image: get(getChainImageUrl(blockchainId)),
-        name: get(getChainName(blockchainId)),
+        image: getChainImageUrl(blockchainId),
+        name: getChainName(blockchainId),
       };
     }
 
     const locations = get(tradeLocations);
-    return locations.find(location => location.identifier === id) ?? null;
-  });
+    return locations.find(location => location.identifier === id);
+  }
 
-  const getLocationData = (identifier: string): TradeLocationData | null => get(locationData(identifier));
+  function useLocationData(identifier: MaybeRefOrGetter<string | null>): ComputedRef<TradeLocationData | undefined> {
+    return computed<TradeLocationData | undefined>(() => {
+      const id = toValue(identifier);
+      if (!id)
+        return undefined;
+
+      return getLocationData(id);
+    });
+  }
+
+  function getExchangeName(location: string): string {
+    const exchange = get(tradeLocations).find(tl => tl.identifier === location);
+    return exchange?.name ?? '';
+  }
 
   return {
-    exchangeName,
+    getExchangeName,
     getLocationData,
-    locationData,
-    tradeLocations,
+    tradeLocations: readonly(tradeLocations),
+    useLocationData,
   };
-});
+}

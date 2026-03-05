@@ -22,7 +22,7 @@ const queries: OnlineHistoryEventsQueryType[] = [
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { apiKey } = useExternalApiKeys(t);
+const { getApiKey } = useExternalApiKeys();
 const { authenticated: moneriumAuthenticated } = useMoneriumOAuth();
 
 interface QueryConfig {
@@ -31,7 +31,7 @@ interface QueryConfig {
 }
 
 const queryConfigs = computed<Record<OnlineHistoryEventsQueryType, QueryConfig>>(() => {
-  const gnosisPayEnabled = !!get(apiKey('gnosis_pay'));
+  const gnosisPayEnabled = !!getApiKey('gnosis_pay');
   const moneriumEnabled = get(moneriumAuthenticated);
 
   return {

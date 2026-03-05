@@ -10,9 +10,9 @@ const { chain } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { getChainName } = useSupportedChains();
+const { useChainName } = useSupportedChains();
 
-const chainName = getChainName(computed(() => chain.chain));
+const chainName = useChainName(() => chain.chain);
 
 const INITIAL_SHOW_COUNT = 5;
 

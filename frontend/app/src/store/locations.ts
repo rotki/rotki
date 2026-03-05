@@ -72,7 +72,9 @@ export const useLocationStore = defineStore('locations', () => {
     return get(exchangesWithKey).filter(key => locations[key].exchangeDetails?.experimental);
   });
 
-  const useIsExperimentalExchange = (location: MaybeRef<string>): ComputedRef<boolean> => computed(() => get(experimentalExchanges).includes(get(location)));
+  function useIsExperimentalExchange(location: MaybeRefOrGetter<string>): ComputedRef<boolean> {
+    return computed(() => get(experimentalExchanges).includes(toValue(location)));
+  }
 
   return {
     allExchanges,

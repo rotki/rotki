@@ -103,12 +103,14 @@ vi.mock('@/utils/download', () => ({
 
 vi.mock('@/composables/info/chains', async () => {
   const { useSupportedChains } = await import('@/composables/info/chains');
-  const { computed } = await import('vue');
+
+  const evmCompatibleChains = new Set(['eth', 'optimism']);
 
   return {
     useSupportedChains: vi.fn(() => ({
       ...useSupportedChains(),
-      isEvm: vi.fn().mockImplementation(chain => computed(() => chain === 'eth' || chain === 'optimism')),
+      isEvm: vi.fn().mockImplementation((chain: string): boolean => evmCompatibleChains.has(chain)),
+      isEvmCompatible: vi.fn().mockImplementation((chain: string): boolean => evmCompatibleChains.has(chain)),
     })),
   };
 });

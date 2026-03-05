@@ -10,10 +10,10 @@ const { t } = useI18n({ useScope: 'global' });
 
 const name = 'alchemy';
 
-const { actionStatus, apiKey, confirmDelete, loading, save } = useExternalApiKeys(t);
+const { actionStatus, useApiKey, confirmDelete, loading, save } = useExternalApiKeys();
 const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
 
-const key = apiKey(name);
+const key = useApiKey(name);
 const status = actionStatus(name);
 </script>
 

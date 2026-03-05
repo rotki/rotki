@@ -8,13 +8,13 @@ import {
 import { sortDesc } from '@/utils/bignumbers';
 
 /**
- * Configuration for asset sources and associations
+ * Configuration for asset sources and identifier resolution
  */
 interface AssetSourceConfig {
   /** Asset protocol balances from different sources */
   sources: Record<string, AssetProtocolBalances>;
-  /** Map of associated assets */
-  associatedAssets: Record<string, string>;
+  /** Resolves an asset identifier to its canonical form */
+  resolveIdentifier: (id: string) => string;
 }
 
 /**
@@ -79,7 +79,7 @@ export function summarizeAssetProtocols(
 ): AssetBalanceWithPriceAndChains[] {
   const aggregatedBalances = aggregateSourceBalances(
     sourceConfig.sources,
-    sourceConfig.associatedAssets,
+    sourceConfig.resolveIdentifier,
     filterConfig.isAssetIgnored,
     filterConfig.hideIgnored,
   );

@@ -2,7 +2,6 @@
 import { bigNumberify } from '@rotki/common';
 import { get, set } from '@vueuse/core';
 import AmountInput from '@/components/inputs/AmountInput.vue';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { useTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useGeneralSettingsStore } from '@/store/settings/general';
@@ -28,7 +27,7 @@ const { currency } = storeToRefs(useGeneralSettingsStore());
 
 const { getAssetDetail } = useTradableAsset(computed<string | undefined>(() => address));
 const assetDetail = getAssetDetail(computed<string>(() => asset), computed<string>(() => chain));
-const price = useRefMap(assetDetail, m => m?.price);
+const price = computed(() => get(assetDetail)?.price);
 const fiatValueToBigNumber = bigNumberifyFromRef(fiatValue);
 const amountToBigNumber = bigNumberifyFromRef(model);
 

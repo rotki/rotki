@@ -6,7 +6,6 @@ import AppImage from '@/components/common/AppImage.vue';
 import LabeledAddressDisplay from '@/components/display/LabeledAddressDisplay.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
@@ -36,9 +35,6 @@ const currentModule = computed(() => {
 
   return SUPPORTED_MODULES.find(({ identifier }) => identifier === module);
 });
-
-const moduleName = useRefMap(currentModule, m => m?.name);
-const moduleIcon = useRefMap(currentModule, m => m?.icon);
 
 const addresses = computed(() => {
   if (!module)
@@ -93,14 +89,14 @@ function close() {
             class="icon-bg"
             size="1.5rem"
             contain
-            :src="moduleIcon"
+            :src="currentModule?.icon"
           />
           <RuiCardHeader class="p-0">
             <template #header>
               {{ t('queried_address_dialog.title') }}
             </template>
             <template #subheader>
-              {{ t('queried_address_dialog.subtitle', { module: moduleName }) }}
+              {{ t('queried_address_dialog.subtitle', { module: currentModule?.name }) }}
             </template>
           </RuiCardHeader>
 
@@ -184,7 +180,7 @@ function close() {
       >
         {{
           t('queried_address_dialog.all_address_queried', {
-            module: moduleName,
+            module: currentModule?.name,
           })
         }}
       </div>

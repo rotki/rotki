@@ -62,7 +62,7 @@ const selectedChainName = computed<string>(() => {
   if (!account)
     return '';
 
-  return get(getChainName(account.chain));
+  return getChainName(account.chain);
 });
 
 const chainSettingsRoute = computed(() => {

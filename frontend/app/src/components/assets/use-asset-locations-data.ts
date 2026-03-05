@@ -77,7 +77,7 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
       const tags = assetLocation.tags ?? [];
       const includedInTags = tagsFilter.every(tag => tags.includes(tag));
       const currentLocation = assetLocation.location;
-      const locationToCheck = get(getChainName(currentLocation));
+      const locationToCheck = getChainName(currentLocation);
       const locationMatches = !location || locationToCheck === toSentenceCase(location);
       const accountMatches = accounts.length === 0 || accounts.some(account =>
         getAccountAddress(account) === assetLocation.address,

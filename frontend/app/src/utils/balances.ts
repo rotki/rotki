@@ -5,7 +5,7 @@ import type {
   Writeable,
 } from '@rotki/common';
 import type { DataTableSortData } from '@rotki/ui-library';
-import type { AssetInfoReturn } from '@/composables/assets/retrieval';
+import type { PlainAssetInfoReturn } from '@/composables/assets/retrieval';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import { getSortItems } from '@/utils/assets';
 import { sortDesc, zeroBalance } from '@/utils/bignumbers';
@@ -34,8 +34,8 @@ export function sum(balances: { value: BigNumber }[]): BigNumber {
   return bigNumberSum(balances.map(account => account.value));
 }
 
-export function sortAssetBalances<T extends AssetBalance = AssetBalanceWithPrice>(data: T[], sort: DataTableSortData<T>, assetInfo: AssetInfoReturn): T[] {
-  const sortItems = getSortItems<T>(asset => get(assetInfo(asset)));
+export function sortAssetBalances<T extends AssetBalance = AssetBalanceWithPrice>(data: T[], sort: DataTableSortData<T>, getAssetInfo: PlainAssetInfoReturn): T[] {
+  const sortItems = getSortItems<T>(asset => getAssetInfo(asset));
 
   const sortBy = get(sort);
   if (!Array.isArray(sortBy) && sortBy?.column)

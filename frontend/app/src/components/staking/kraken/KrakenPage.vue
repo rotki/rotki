@@ -9,18 +9,17 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import KrakenStaking from '@/components/staking/kraken/KrakenStaking.vue';
 import KrakenStakingPagePlaceholder from '@/components/staking/kraken/KrakenStakingPagePlaceholder.vue';
 import { usePremium } from '@/composables/premium';
+import { useSectionStatus } from '@/composables/status';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { Routes } from '@/router/routes';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
-import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 const filters = ref<KrakenStakingDateFilter>({});
 
-const { isLoading, shouldShowLoadingScreen } = useStatusStore();
 const store = useKrakenStakingStore();
 const { $reset, load } = store;
 const { events } = toRefs(store);
@@ -40,8 +39,7 @@ const addKrakenApiKeysLink: RouteLocationRaw = {
   },
 };
 
-const loading = shouldShowLoadingScreen(Section.STAKING_KRAKEN);
-const refreshing = isLoading(Section.STAKING_KRAKEN);
+const { isInitialLoading: loading, isLoading: refreshing } = useSectionStatus(Section.STAKING_KRAKEN);
 
 const isKrakenConnected = computed<boolean>(() => {
   const exchanges = get(connectedExchanges);

@@ -9,8 +9,8 @@ import {
 } from '@rotki/common';
 import { useLiquityApi } from '@/composables/api/defi/liquity';
 import { usePremium } from '@/composables/premium';
-import { useModules } from '@/composables/session/modules';
 import { useStatusUpdater } from '@/composables/status';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -27,7 +27,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const stakingQueryStatus = ref<CommonQueryStatusData>();
 
   const isPremium = usePremium();
-  const { activeModules } = useModules();
+  const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const { t } = useI18n({ useScope: 'global' });
   const {
     fetchLiquityBalances,

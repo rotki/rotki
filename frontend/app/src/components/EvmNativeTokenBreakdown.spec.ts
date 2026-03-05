@@ -65,7 +65,7 @@ vi.mock('@/composables/api/assets/icon', (): Record<string, unknown> => ({
 
 vi.mock('@/composables/locations', (): Record<string, unknown> => ({
   useLocations: vi.fn().mockReturnValue({
-    locationData: vi.fn().mockImplementation((identifier): ComputedRef<{ identifier: unknown; name: unknown }> => computed<{ identifier: unknown; name: unknown }>(() => {
+    useLocationData: vi.fn().mockImplementation((identifier): ComputedRef<{ identifier: unknown; name: unknown }> => computed<{ identifier: unknown; name: unknown }>(() => {
       const val = toValue(identifier);
       return {
         identifier: val,

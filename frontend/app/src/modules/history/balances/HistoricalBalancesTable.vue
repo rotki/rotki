@@ -25,7 +25,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
   direction: 'desc' as const,
 });
 
-const { assetInfo } = useAssetSelectInfo();
+const { getAssetInfo } = useAssetSelectInfo();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { createKey, isPending } = useHistoricCachePriceStore();
 
@@ -75,7 +75,7 @@ const tableHeaders = computed<DataTableColumn<AssetBalanceWithPrice>[]>(() => [{
   sortable: true,
 }]);
 
-const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...balances], get(sort), assetInfo));
+const sorted = computed<AssetBalanceWithPrice[]>(() => sortAssetBalances([...balances], get(sort), getAssetInfo));
 </script>
 
 <template>

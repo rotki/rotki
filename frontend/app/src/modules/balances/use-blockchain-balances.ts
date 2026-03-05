@@ -1,6 +1,7 @@
 import type { BlockchainBalancePayload, FetchBlockchainBalancePayload } from '@/types/blockchain/balances';
 import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { waitUntilIdle } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useStatusStore } from '@/store/status';
 import { BalanceSource } from '@/types/settings/frontend-settings';
@@ -16,23 +17,20 @@ interface UseBlockchainBalancesReturn {
 
 export function useBlockchainBalances(): UseBlockchainBalancesReturn {
   const { supportedChains } = useSupportedChains();
-  const { isLoading } = useStatusStore();
+  const { getIsLoading } = useStatusStore();
   const valueThreshold = useValueThreshold(BalanceSource.BLOCKCHAIN);
 
   // Use services
   const { handleFetch } = useBalanceProcessingService();
   const { fetchLoopringBalances } = useLoopringBalanceService();
+  const { queueBalanceQueries } = useBalanceQueue();
 
   const fetchSingleChain = async (payload: FetchBlockchainBalancePayload, periodic: boolean): Promise<void> => {
-    const loading = isLoading(Section.BLOCKCHAIN, payload.blockchain);
-
-    // Skip if already loading and this is a periodic call
-    if (get(loading) && periodic)
-      return;
-
-    // Wait for existing operation to complete if not periodic
-    if (get(loading))
-      await until(loading).toBe(false);
+    if (getIsLoading(Section.BLOCKCHAIN, payload.blockchain)) {
+      if (periodic)
+        return;
+      await waitUntilIdle(Section.BLOCKCHAIN, payload.blockchain);
+    }
 
     await handleFetch(payload, get(valueThreshold));
   };
@@ -44,7 +42,6 @@ export function useBlockchainBalances(): UseBlockchainBalancesReturn {
     const { addresses, blockchain, ignoreCache = false, isXpub = false } = payload;
     const chains = blockchain ? arrayify(blockchain) : get(supportedChains).map(chain => chain.id);
 
-    const { queueBalanceQueries } = useBalanceQueue();
     await queueBalanceQueries(chains, async blockchain => fetchSingleChain({ addresses, blockchain, ignoreCache, isXpub }, periodic));
   };
 

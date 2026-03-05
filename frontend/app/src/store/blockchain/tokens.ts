@@ -69,7 +69,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
           chain,
           description: t('actions.balances.detect_tokens.task.description', {
             address,
-            chain: get(getChainName(chain)),
+            chain: getChainName(chain),
           }),
           title: t('actions.balances.detect_tokens.task.title'),
         };
@@ -91,7 +91,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
           t('actions.balances.detect_tokens.task.title'),
           t('actions.balances.detect_tokens.error.message', {
             address,
-            chain: get(getChainName(chain)),
+            chain: getChainName(chain),
             error: getErrorMessage(error),
           }),
         );

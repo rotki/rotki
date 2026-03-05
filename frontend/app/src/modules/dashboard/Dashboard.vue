@@ -7,61 +7,57 @@ import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
-import { useModules } from '@/composables/session/modules';
+import { Module, useModuleEnabled } from '@/composables/session/modules';
 import DashboardProgressIndicator from '@/modules/dashboard/progress/DashboardProgressIndicator.vue';
-import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';
 import Summary from './summary/Summary.vue';
 
 const Type = DashboardTableType;
 
+const dashboardWidth = ref<number>(0);
+const dashboardRef = useTemplateRef<HTMLElement>('dashboardRef');
+const floatingRef = useTemplateRef<HTMLElement>('floatingRef');
+
 const { t } = useI18n({ useScope: 'global' });
-const { isModuleEnabled } = useModules();
 const { balances, liabilities } = useAggregatedBalances();
 const { activeDashboardMessages } = useDynamicMessages();
 
 const aggregatedBalances = balances();
 const aggregatedLiabilities = liabilities();
 
-const nftEnabled = isModuleEnabled(Module.NFTS);
+const { enabled: nftEnabled } = useModuleEnabled(Module.NFTS);
+
+const { width } = useElementSize(dashboardRef);
+const { height: floatingHeight } = useElementBounding(floatingRef);
 
 const { loadingBalancesAndDetection: isAnyLoading } = useBalancesLoading();
 const dismissedMessage = useSessionStorage('rotki.messages.dash.dismissed', false);
 
-const dashboardRef = useTemplateRef<HTMLElement>('dashboardRef');
-const floatingRef = useTemplateRef<HTMLElement>('floatingRef');
-const dashboardWidth = ref(0);
-
-const { width } = useElementSize(dashboardRef);
-watch(width, (newWidth) => {
-  set(dashboardWidth, newWidth);
-});
-
-const showDynamicMessage = computed(() => get(activeDashboardMessages).length > 0 && !get(dismissedMessage));
-
-const { height: floatingHeight } = useElementBounding(floatingRef);
+const paddingTop = computed<number>(() => get(floatingHeight) || 0);
+const showDynamicMessage = computed<boolean>(() => get(activeDashboardMessages).length > 0 && !get(dismissedMessage));
 
 watch(floatingHeight, (newHeight, oldHeight) => {
   const diff = newHeight - oldHeight;
-  if (diff !== 0) {
-    const scrollElement = document.documentElement.scrollTop > 0 ? document.documentElement : document.body;
-    const currentScroll = scrollElement.scrollTop;
-
-    // Temporarily disable smooth scrolling
-    const originalBehavior = scrollElement.style.scrollBehavior;
-    scrollElement.style.scrollBehavior = 'auto';
-
-    scrollElement.scrollTop = currentScroll + diff;
-
-    // Restore original scroll behavior after a frame
-    requestAnimationFrame(() => {
-      scrollElement.style.scrollBehavior = originalBehavior;
-    });
+  if (diff === 0) {
+    return;
   }
+
+  const scrollElement = document.documentElement.scrollTop > 0 ? document.documentElement : document.body;
+  const currentScroll = scrollElement.scrollTop;
+  const originalBehavior = scrollElement.style.scrollBehavior;
+
+  scrollElement.style.scrollBehavior = 'auto';
+  scrollElement.scrollTop = currentScroll + diff;
+
+  requestAnimationFrame(() => {
+    scrollElement.style.scrollBehavior = originalBehavior;
+  });
 });
 
-const paddingTop = computed(() => get(floatingHeight) || 0);
+watch(width, (newWidth) => {
+  set(dashboardWidth, newWidth);
+});
 </script>
 
 <template>

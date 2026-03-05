@@ -2,11 +2,10 @@ import type { ComputedRef, Ref } from 'vue';
 import { Blockchain } from '@rotki/common';
 import dayjs from 'dayjs';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
-import { useStatusUpdater } from '@/composables/status';
+import { useSectionStatus, useStatusUpdater } from '@/composables/status';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { Section } from '@/types/status';
@@ -31,7 +30,6 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
   const performanceSection = Section.STAKING_ETH2;
 
   const { username } = storeToRefs(useSessionAuthStore());
-  const { isLoading } = useStatusStore();
   const { useIsTaskRunning } = useTaskStore();
   const { stakingValidatorsLimits } = storeToRefs(useBlockchainValidatorsStore());
   const { fetchEthStakingValidators } = useEthStaking();
@@ -45,14 +43,15 @@ export function useEthStakingRefresh(callbacks: RefreshCallbacks): UseEthStaking
   const lastRefresh = createLastRefreshStorage(get(username));
 
   // Loading states
-  const performanceRefreshing = isLoading(performanceSection);
+  const { isLoading: performanceRefreshing } = useSectionStatus(performanceSection);
+  const { isLoading: eth2Loading } = useSectionStatus(Section.BLOCKCHAIN, Blockchain.ETH2);
   const blockProductionLoading = useIsTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
     queryType: OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
   });
 
   const refreshing = logicOr(
     performanceRefreshing,
-    isLoading(Section.BLOCKCHAIN, Blockchain.ETH2),
+    eth2Loading,
     blockProductionLoading,
   );
 

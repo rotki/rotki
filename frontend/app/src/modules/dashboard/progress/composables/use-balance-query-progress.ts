@@ -122,7 +122,7 @@ function createRunningItemProgress(
     return createTokenDetectionProgress(item, currentStep, total, progress, t);
   }
 
-  const chainName = get(getChainName(item.chain));
+  const chainName = getChainName(item.chain);
   return createBalanceQueryProgress(item, currentStep, total, progress, chainName, t);
 }
 

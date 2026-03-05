@@ -1,7 +1,7 @@
 import type { TaskMeta } from '@/types/task';
 import { groupBy, omit } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useModules } from '@/composables/session/modules';
+import { Module, useModuleEnabled } from '@/composables/session/modules';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
 import { useNotifications } from '@/modules/notifications/use-notifications';
@@ -9,7 +9,6 @@ import { useEventsQueryStatusStore } from '@/store/history/query-status/events-q
 import { useTaskStore } from '@/store/tasks';
 import { type Exchange, QueryExchangeEventsPayload } from '@/types/exchanges';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
-import { Module } from '@/types/modules';
 import { TaskType } from '@/types/task-type';
 import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
@@ -26,9 +25,8 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { markLocationCancelled } = useEventsQueryStatusStore();
   const { queryExchangeEvents, queryOnlineHistoryEvents } = useHistoryEventsApi();
   const { awaitTask } = useTaskStore();
-  const { isModuleEnabled } = useModules();
-  const isEth2Enabled = isModuleEnabled(Module.ETH2);
-  const { apiKey } = useExternalApiKeys(t);
+  const { enabled: isEth2Enabled } = useModuleEnabled(Module.ETH2);
+  const { getApiKey } = useExternalApiKeys();
   const { authenticated: moneriumAuthenticated, refreshStatus } = useMoneriumOAuth();
 
   const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
@@ -40,7 +38,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     if (!get(isEth2Enabled) && eth2QueryTypes.includes(queryType))
       return;
 
-    if (!get(apiKey('gnosis_pay')) && queryType === OnlineHistoryEventsQueryType.GNOSIS_PAY) {
+    if (!getApiKey('gnosis_pay') && queryType === OnlineHistoryEventsQueryType.GNOSIS_PAY) {
       return;
     }
 

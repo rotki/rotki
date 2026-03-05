@@ -35,7 +35,7 @@ const subtitle = computed<string>(() =>
 
 const { errorMessages, pending, save } = useAccountManage();
 const { loading } = useAccountLoading();
-const { apiKey } = useExternalApiKeys(t);
+const { getApiKey } = useExternalApiKeys();
 const { beaconRpcEndpoint } = storeToRefs(useGeneralSettingsStore());
 
 const isSaveDisabled = computed<boolean>(() => {
@@ -44,7 +44,7 @@ const isSaveDisabled = computed<boolean>(() => {
     return false;
 
   // Disable save button for validator addition without beaconchain API key and consensus client RPC
-  return state.type === 'validator' && !(get(apiKey('beaconchain')) || get(beaconRpcEndpoint));
+  return state.type === 'validator' && !(getApiKey('beaconchain') || get(beaconRpcEndpoint));
 });
 
 function dismiss() {

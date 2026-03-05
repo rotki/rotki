@@ -1406,6 +1406,86 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
             address=addr2,
         )]
 
+    # Remove a receive event from the multi-trade group. The fee event (id=5, seq_idx=4) should
+    # shift to seq_idx=3, taking the sequence index of the removed receive event (id=8, seq_idx=3).
+    # This tests that deletions happen before edits to avoid sequence_index conflicts.
+    entry['identifiers'] = [1, 2, 3, 8, 5]  # update to match current DB state
+    entry['receive'] = [entry['receive'][0]]  # type: ignore[index]  # keep only the first receive
+    entry['fee'] = [{'identifier': 5, 'amount': '0.0012', 'asset': A_WETH.identifier}]
+    assert_proper_sync_response_with_result(requests.patch(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json=entry,
+    ))
+    with rotki.data.db.conn.read_ctx() as cursor:
+        multi_trade_events = [
+            e for e in db.get_history_events_internal(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(),
+                aggregate_by_group_ids=False,
+            ) if e.group_identifier == 'test_id'
+        ]
+        assert len(multi_trade_events) == 4
+        assert multi_trade_events[0] == EvmSwapEvent(
+            identifier=1,
+            group_identifier='test_id',
+            sequence_index=0,
+            timestamp=TimestampMS(1569924575000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.MULTI_TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.16'),
+            location_label=location_label,
+            notes='Example note',
+            tx_ref=tx_hash,
+            counterparty=counterparty,
+            address=addr1,
+        )
+        assert multi_trade_events[1] == EvmSwapEvent(
+            identifier=2,
+            group_identifier='test_id',
+            sequence_index=1,
+            timestamp=TimestampMS(1569924575000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.MULTI_TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_WBNB,
+            amount=FVal('0.54'),
+            location_label=location_label,
+            tx_ref=tx_hash,
+            counterparty=counterparty,
+            address=addr1,
+        )
+        assert multi_trade_events[2] == EvmSwapEvent(
+            identifier=3,
+            group_identifier='test_id',
+            sequence_index=2,
+            timestamp=TimestampMS(1569924575000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.MULTI_TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_WBTC,
+            amount=FVal('0.003'),
+            location_label='0x706A70067BE19BdadBea3600Db0626859Ff25D74',
+            tx_ref=tx_hash,
+            counterparty=counterparty,
+            address=addr1,
+        )
+        assert multi_trade_events[3] == EvmSwapEvent(
+            identifier=5,
+            group_identifier='test_id',
+            sequence_index=3,
+            timestamp=TimestampMS(1569924575000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.MULTI_TRADE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_WETH,
+            amount=FVal('0.0012'),
+            tx_ref=tx_hash,
+            counterparty=counterparty,
+            address=addr1,
+        )
+
     # Check event serialization.
     assert generate_events_response(data=[events[5]])[0]['entry'] == {
         'timestamp': 1569924576000,

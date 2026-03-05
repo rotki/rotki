@@ -6,6 +6,7 @@ import { startPromise } from '@shared/utils';
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
 import { useAccountAdditionNotifications } from '@/composables/blockchain/use-account-addition-notifications';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useTagStore } from '@/store/session/tags';
@@ -58,6 +59,8 @@ interface ChainAccountAdditionParams {
 
 type RefreshAccountsCallback = (params: RefreshAccountsParams) => Promise<void>;
 
+type FetchAccountsCallback = (blockchain?: string | string[], refreshEns?: boolean) => Promise<void>;
+
 type EvmCompletionCallback = (params: EvmAccountAdditionParams) => Promise<void>;
 
 type ChainCompletionCallback = (params: ChainAccountAdditionParams) => Promise<void>;
@@ -74,13 +77,14 @@ interface UseAccountAdditionServiceReturn {
   addMultipleEvmAccounts: (payload: AddAccountsPayload, onComplete: EvmCompletionCallback) => Promise<void>;
   addSingleAccount: (account: AccountPayload | XpubAccountPayload, chain: string) => Promise<AccountAdditionSuccess | AccountAdditionFailure>;
   addSingleEvmAddress: (account: AccountPayload) => Promise<EvmAccountAdditionSuccess | EvmAccountAdditionFailure>;
-  completeAccountAddition: (params: AccountAdditionParams, onRefreshAccounts: RefreshAccountsCallback) => Promise<void>;
+  completeAccountAddition: (params: AccountAdditionParams, onRefreshAccounts: RefreshAccountsCallback, onFetchAccounts?: FetchAccountsCallback) => Promise<void>;
   getNewAccountPayload: (chain: string, payload: AccountPayload[]) => AccountPayload[];
 }
 
 export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const { addAccount, addEvmAccount } = useBlockchainAccounts();
   const { fetchDetected } = useBlockchainTokensStore();
+  const { trackAddedAddresses } = useBlockchainAccountsStore();
   const { fetchTags } = useTagStore();
   const { enableModule } = useSettingsStore();
   const { evmChains, supportedChains, supportsTransactions } = useSupportedChains();
@@ -102,6 +106,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const completeAccountAddition = async (
     params: AccountAdditionParams,
     onRefreshAccounts: RefreshAccountsCallback,
+    onFetchAccounts?: FetchAccountsCallback,
   ): Promise<void> => {
     const {
       addedAccounts,
@@ -112,7 +117,20 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
 
     // Refresh tags first in case new system tags (like 'Contract') were created
     await fetchTags();
-    await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
+
+    trackAddedAddresses(addedAccounts.map(item => item.address));
+
+    const chainsSupportsTransactions = !chain || supportsTransactions(chain);
+    if (chainsSupportsTransactions && onFetchAccounts) {
+      // For EVM chains, only load account metadata without fetching balances.
+      // Token detection will run next, and the detectionStatus watcher in the
+      // tokens store will trigger a balance refresh after detection completes.
+      await onFetchAccounts(chain, true);
+    }
+    else {
+      await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
+    }
+
     const chains = chain ? [chain] : get(supportedChains).map(chain => chain.id);
     // Sort accounts by chain, so they are called in order
     const sortedAccounts = addedAccounts.sort(CHAIN_ORDER_COMPARATOR(chains));

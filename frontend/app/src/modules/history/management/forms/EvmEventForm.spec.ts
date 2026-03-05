@@ -85,9 +85,9 @@ describe('forms/EvmEventForm.vue', () => {
     addHistoricalPriceMock = vi.fn<ReturnType<typeof useAssetPricesApi>['addHistoricalPrice']>();
     vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
     vi.mocked(useLocations).mockReturnValue({
-      exchangeName: vi.fn<ReturnType<typeof useLocations>['exchangeName']>(),
+      getExchangeName: vi.fn<ReturnType<typeof useLocations>['getExchangeName']>(),
       getLocationData: vi.fn<ReturnType<typeof useLocations>['getLocationData']>(),
-      locationData: vi.fn<ReturnType<typeof useLocations>['locationData']>(),
+      useLocationData: vi.fn<ReturnType<typeof useLocations>['useLocationData']>(),
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'ethereum',
         name: 'Ethereum',

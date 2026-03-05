@@ -18,7 +18,7 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
 
   const api = useStatisticsApi();
   const { awaitTask } = useTaskStore();
-  const { assetName } = useAssetInfoRetrieval();
+  const { getAssetField } = useAssetInfoRetrieval();
   const { notifyError } = useNotifications();
   const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
 
@@ -68,7 +68,7 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
       });
       const { result } = await awaitTask<HistoricalAssetPriceResponse, TaskMeta>(taskId, taskType, {
         description: t('actions.balances.historic_fetch_price.daily.task.detail', {
-          asset: get(assetName(payload.asset)),
+          asset: getAssetField(payload.asset, 'name'),
         }),
         title: t('actions.balances.historic_fetch_price.daily.task.title'),
       });

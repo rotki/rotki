@@ -3,8 +3,7 @@ import type { ChainInfo } from '@/types/api/chains';
 import { Blockchain } from '@rotki/common';
 import ChainDisplay from '@/components/accounts/blockchain/ChainDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useModules } from '@/composables/session/modules';
-import { Module } from '@/types/modules';
+import { getModuleEnabled, Module } from '@/composables/session/modules';
 
 defineOptions({
   inheritAttrs: false,
@@ -26,14 +25,12 @@ const {
   items?: string[];
 }>();
 
-const { isModuleEnabled } = useModules();
-
 const { isEvm, supportedChains } = useSupportedChains();
 
 const { t } = useI18n({ useScope: 'global' });
 
 const filteredItems = computed<string[]>(() => {
-  const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
+  const isEth2Enabled = getModuleEnabled(Module.ETH2);
 
   let data: string[] = get(supportedChains).map(({ id }) => id);
 
@@ -44,7 +41,7 @@ const filteredItems = computed<string[]>(() => {
     data = data.filter(symbol => symbol !== Blockchain.ETH2);
 
   if (evmOnly)
-    data = data.filter(symbol => get(isEvm(symbol as Blockchain)));
+    data = data.filter(isEvm);
 
   return data;
 });

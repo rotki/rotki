@@ -3,7 +3,7 @@ import type { Accounts, AssetBreakdown, Balances } from '@/types/blockchain/acco
 import type { ExchangeData } from '@/types/exchanges';
 import type { ManualBalanceWithValue } from '@/types/manual-balances';
 import { Zero } from '@rotki/common';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -33,18 +33,17 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
   const { balances, exchangeBalances, manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { getEvmChainName } = useSupportedChains();
-  const { assetAssociationMap } = useAssetInfoRetrieval();
+  const resolveAssetIdentifier = useResolveAssetIdentifier();
 
   const getExchangeAssetBreakdown = (
     balances: ExchangeData,
     asset: string,
-    assetAssociationMap: Record<string, string>,
   ): AssetBreakdown[] => {
     const breakdown: AssetBreakdown[] = [];
     for (const exchange in balances) {
       const exchangeData = balances[exchange];
       for (const exchangeDataAsset in exchangeData) {
-        if ((assetAssociationMap?.[exchangeDataAsset] ?? exchangeDataAsset) !== asset)
+        if (resolveAssetIdentifier(exchangeDataAsset) !== asset)
           continue;
 
         breakdown.push({
@@ -61,11 +60,10 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
   function getManualBalancesAssetBreakdown(
     balances: ManualBalanceWithValue[],
     asset: string,
-    assetAssociationMap: Record<string, string>,
   ): AssetBreakdown[] {
     const breakdown: AssetBreakdown[] = [];
     for (const balance of balances) {
-      if ((assetAssociationMap?.[balance.asset] ?? balance.asset) !== asset)
+      if (resolveAssetIdentifier(balance.asset) !== asset)
         continue;
 
       breakdown.push({
@@ -83,7 +81,6 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
     data: BreakdownData,
     asset: string,
     isLiability: boolean = false,
-    associatedIdentifiers: Record<string, string> = {},
     filters: BreakdownFilters = {},
   ): AssetBreakdown[] {
     const breakdown: AssetBreakdown[] = [];
@@ -103,7 +100,8 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
           continue;
 
         const balance = chainBalanceData[address];
-        const identifiers = associatedIdentifiers[asset] ? [asset, associatedIdentifiers[asset]] : [asset];
+        const resolved = resolveAssetIdentifier(asset);
+        const identifiers = resolved !== asset ? [asset, resolved] : [asset];
         for (const identifier of identifiers) {
           const assetBalance = balance[isLiability ? 'liabilities' : 'assets'][identifier];
           if (!assetBalance)
@@ -142,23 +140,20 @@ export function useAssetBalancesBreakdown(): UseAssetBalancesBreakdownReturn {
 
     const onlyBlockchain = chains.length > 0 || groupId !== undefined || blockchainOnly;
 
-    const associatedIdentifiers = get(assetAssociationMap);
     data.push(...getBlockchainAssetBreakdown(
       { accounts: get(accounts), balances: get(balances) },
       asset,
       liabilities,
-      associatedIdentifiers,
       filters,
     ));
 
     if (!onlyBlockchain) {
       const balances = liabilities ? get(manualLiabilities) : get(manualBalances);
-      data.push(...getManualBalancesAssetBreakdown(balances, asset, associatedIdentifiers));
+      data.push(...getManualBalancesAssetBreakdown(balances, asset));
       if (!liabilities) {
         data.push(...getExchangeAssetBreakdown(
           get(exchangeBalances),
           asset,
-          associatedIdentifiers,
         ));
       }
     }

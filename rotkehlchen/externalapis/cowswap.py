@@ -90,7 +90,7 @@ class CowswapAPI:
             return int(result[1]), result[0]
 
         # else, we need to query the API
-        data = self._query(f'orders/{order_uid}')
+        data = self._query(f'orders/0x{order_uid}')
         raw_fee_amount, order_type = parse_order_data(data)
 
         with self.database.conn.write_ctx() as write_cursor:

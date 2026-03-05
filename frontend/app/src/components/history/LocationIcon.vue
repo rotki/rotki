@@ -14,9 +14,9 @@ const emit = defineEmits<{
   click: [location: string];
 }>();
 
-const { locationData } = useLocations();
+const { useLocationData } = useLocations();
 
-const location = locationData(() => item);
+const location = useLocationData(() => item);
 </script>
 
 <template>

@@ -20,12 +20,11 @@ interface UseWrappedGnosisPayReturn {
 }
 
 export function useWrappedGnosisPay(summary: Ref<WrapStatisticsResult | null | undefined>): UseWrappedGnosisPayReturn {
-  const { t } = useI18n({ useScope: 'global' });
   const premium = usePremium();
-  const { apiKey } = useExternalApiKeys(t);
+  const { getApiKey } = useExternalApiKeys();
   const { findCurrency } = useCurrencies();
 
-  const gnosisPayKey = computed<string | null>(() => get(apiKey('gnosis_pay')));
+  const gnosisPayKey = computed<string>(() => getApiKey('gnosis_pay'));
   const showGnosisData = computed<boolean>(() => get(premium) && !!get(gnosisPayKey));
 
   const gnosisPayResult = computed<GnosisPayResult[]>(() => {

@@ -215,7 +215,7 @@ function getExchanges(keyword: string): SearchItemWithoutValue[] {
     const name = exchange.name;
 
     return {
-      location: getLocationData(identifier) ?? undefined,
+      location: getLocationData(identifier),
       route: `${Routes.BALANCES_EXCHANGE.route}/${identifier}`,
       texts: [Routes.BALANCES.text, Routes.BALANCES_EXCHANGE.text, name],
     };

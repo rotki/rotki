@@ -37,8 +37,8 @@ interface UseUnmatchedAssetMovementsReturn {
   loading: Ref<boolean>;
   ignoredLoading: Ref<boolean>;
   autoMatchLoading: ComputedRef<boolean>;
-  autoMatchMinimumTier: ComputedRef<string | null>;
-  isAutoMatchAllowed: ComputedRef<boolean>;
+  autoMatchMinimumTier: Readonly<Ref<string | null>>;
+  isAutoMatchAllowed: Readonly<Ref<boolean>>;
   fetchUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<void>;
   matchAssetMovement: (assetMovementId: number, matchedEventIds: number[]) => Promise<ActionStatus>;
   refreshUnmatchedAssetMovements: (skipIgnored?: boolean) => Promise<void>;
@@ -54,7 +54,7 @@ const triggerAutoMatchLoading = ref<boolean>(false);
 export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatchedAssetMovementsReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const { showErrorMessage, showSuccessMessage } = useNotifications();
-  const { assetInfo } = useAssetInfoRetrieval();
+  const { getAssetInfo } = useAssetInfoRetrieval();
   const { awaitTask, useIsTaskRunning } = useTaskStore();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
@@ -72,7 +72,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   function addIsFiat(movements: RawUnmatchedAssetMovement[]): UnmatchedAssetMovement[] {
     return movements.map(movement => ({
       ...movement,
-      isFiat: get(assetInfo(movement.asset))?.assetType === 'fiat',
+      isFiat: getAssetInfo(movement.asset)?.assetType === 'fiat',
     }));
   }
 

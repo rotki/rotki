@@ -190,7 +190,7 @@ function aggregateBalanceForProtocol(
  */
 export function aggregateSourceBalances(
   sources: Record<string, AssetProtocolBalances | AssetProtocolBalancesWithChains>,
-  associatedAssets: Record<string, string>,
+  resolveIdentifier: (id: string) => string,
   isAssetIgnored: (identifier: string) => boolean,
   hideIgnored: boolean,
 ): AssetProtocolBalancesWithManual {
@@ -200,7 +200,7 @@ export function aggregateSourceBalances(
     const isManualSource = sourceType === 'manual';
 
     for (const asset in source) {
-      const identifier = associatedAssets[asset] ?? asset;
+      const identifier = resolveIdentifier(asset);
       if (isAssetIgnored(identifier) && hideIgnored) {
         continue;
       }

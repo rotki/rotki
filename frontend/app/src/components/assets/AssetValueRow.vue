@@ -6,12 +6,12 @@ import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useLatestPrices } from '@/composables/price-manager/latest';
+import { useSectionStatus } from '@/composables/status';
 import { AssetAmountDisplay, AssetValueDisplay, FiatDisplay } from '@/modules/amount-display/components';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useConfirmStore } from '@/store/confirm';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 
 const { identifier, isCollectionParent = false } = defineProps<{
@@ -22,11 +22,9 @@ const { identifier, isCollectionParent = false } = defineProps<{
 const { assetPriceInfo } = useAggregatedBalances();
 const { assetPrice } = usePriceUtils();
 
-const { assetName } = useAssetInfoRetrieval();
+const { getAssetField } = useAssetInfoRetrieval();
 const { refreshPrice } = usePriceRefresh();
-const { isLoading } = useStatusStore();
-
-const refreshingPrices = isLoading(Section.PRICES);
+const { isLoading: refreshingPrices } = useSectionStatus(Section.PRICES);
 
 const info = assetPriceInfo(() => identifier, () => isCollectionParent);
 const price = assetPrice(() => identifier);
@@ -59,7 +57,7 @@ function showDeleteConfirmation() {
   show(
     {
       message: t('assets.custom_price.delete.message', {
-        asset: get(assetName(identifier)) ?? identifier,
+        asset: getAssetField(identifier, 'name') || identifier,
       }),
       title: t('assets.custom_price.delete.tooltip'),
     },

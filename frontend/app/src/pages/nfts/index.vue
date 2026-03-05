@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import ModuleNotActive from '@/components/defi/ModuleNotActive.vue';
 import NftGallery from '@/components/nft/NftGallery.vue';
-import { useModules } from '@/composables/session/modules';
-import { Module } from '@/types/modules';
+import { Module, useModuleEnabled } from '@/composables/session/modules';
 import { NoteLocation } from '@/types/notes';
 
 definePage({
@@ -13,8 +12,7 @@ definePage({
 });
 
 const modules = [Module.NFTS];
-const { isModuleEnabled } = useModules();
-const enabled = isModuleEnabled(modules[0]);
+const { enabled } = useModuleEnabled(modules[0]);
 </script>
 
 <template>

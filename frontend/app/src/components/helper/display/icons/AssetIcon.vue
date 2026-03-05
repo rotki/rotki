@@ -53,7 +53,7 @@ const abortController = ref<AbortController>();
 
 const { checkIfAssetExists, getAssetImageUrl } = useAssetIconStore();
 const { currencies } = useCurrencies();
-const { assetInfo } = useAssetInfoRetrieval();
+const { useAssetInfo } = useAssetInfoRetrieval();
 
 const mappedIdentifier = computed<string>(() => {
   const id = getIdentifierFromSymbolMap(identifier);
@@ -66,7 +66,7 @@ const currency = computed<string | undefined>(() => {
   return fiatCurrencies.find(({ tickerSymbol }) => tickerSymbol === id)?.unicodeSymbol;
 });
 
-const asset = assetInfo(mappedIdentifier, () => resolutionOptions);
+const asset = useAssetInfo(mappedIdentifier, () => resolutionOptions);
 const url = reactify(getAssetImageUrl)(mappedIdentifier);
 
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);

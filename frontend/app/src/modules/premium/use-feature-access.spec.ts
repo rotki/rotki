@@ -102,10 +102,10 @@ describe('modules/premium/use-feature-access', () => {
       expect(get(currentTier)).toBe('Lite');
     });
 
-    it('should return empty currentTier when capabilities are not loaded', () => {
+    it('should return Free currentTier when capabilities are not loaded', () => {
       const { currentTier } = useFeatureAccess(PremiumFeature.ETH_STAKING_VIEW);
 
-      expect(get(currentTier)).toBe('');
+      expect(get(currentTier)).toBe('Free');
     });
 
     it('should reactively update when capabilities change', async () => {

@@ -34,14 +34,9 @@ vi.mock('@/modules/balances/use-balances-store', () => ({
   }),
 }));
 
-vi.mock('@/composables/assets/retrieval', async () => {
-  const { ref } = await import('vue');
-  return ({
-    useAssetInfoRetrieval: vi.fn().mockReturnValue({
-      getAssociatedAssetIdentifier: vi.fn().mockReturnValue(ref()),
-    }),
-  });
-});
+vi.mock('@/composables/assets/common', () => ({
+  useResolveAssetIdentifier: vi.fn(() => (asset: string): string => asset),
+}));
 
 vi.mock('@/composables/api/balances/blockchain', () => ({
   useBlockchainBalancesApi: vi.fn().mockReturnValue({
@@ -207,8 +202,8 @@ describe('useBlockchainBalances', () => {
         }, undefined);
       };
 
-      const { isLoading } = useStatusStore();
-      const loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH);
+      const { useIsLoading } = useStatusStore();
+      const loading = useIsLoading(Section.BLOCKCHAIN, Blockchain.ETH);
 
       startPromise(call());
       assert(1);
@@ -241,8 +236,8 @@ describe('useBlockchainBalances', () => {
         }, undefined);
       };
 
-      const { isLoading } = useStatusStore();
-      const loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH);
+      const { useIsLoading } = useStatusStore();
+      const loading = useIsLoading(Section.BLOCKCHAIN, Blockchain.ETH);
 
       startPromise(call());
       assert(1);
@@ -251,6 +246,7 @@ describe('useBlockchainBalances', () => {
       assert(1);
 
       await until(loading).toBe(false);
+      await nextTick();
       assert(2);
     });
 

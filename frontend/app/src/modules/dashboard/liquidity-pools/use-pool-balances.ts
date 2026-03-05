@@ -5,9 +5,10 @@ import { type BigNumber, Blockchain, createEvmIdentifierFromAddress, type Writea
 import { cloneDeep, isEqual } from 'es-toolkit';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { usePremium } from '@/composables/premium';
+import { useSectionStatus } from '@/composables/status';
+import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useStatusStore } from '@/store/status';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -65,18 +66,18 @@ export function usePoolBalances(): UsePoolBalancesReturn {
   const ethAddresses = computed<string[]>(() => get(addresses)[Blockchain.ETH] ?? []);
 
   const { sushiswapPoolBalances, uniswapPoolBalances } = storeToRefs(usePoolBalancesStore());
+  const { recentlyAddedAddresses } = storeToRefs(useBlockchainAccountsStore());
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
   const premium = usePremium();
   const { t } = useI18n({ useScope: 'global' });
-  const { isLoading } = useStatusStore();
-  const { getSushiswapBalances, getUniswapV2Balances } = usePoolApi();
-  const { assetSymbol } = useAssetInfoRetrieval();
 
-  const loading = logicOr(
-    isLoading(Section.POOLS_UNISWAP_V2),
-    isLoading(Section.POOLS_SUSHISWAP),
-  );
+  const { getSushiswapBalances, getUniswapV2Balances } = usePoolApi();
+  const { getAssetField } = useAssetInfoRetrieval();
+
+  const { isLoading: uniswapLoading } = useSectionStatus(Section.POOLS_UNISWAP_V2);
+  const { isLoading: sushiswapLoading } = useSectionStatus(Section.POOLS_SUSHISWAP);
+  const loading = logicOr(uniswapLoading, sushiswapLoading);
 
   const balances = computed<PoolLiquidityBalance[]>(() => {
     const uniswap = toArray(get(uniswapPoolBalances));
@@ -109,7 +110,7 @@ export function usePoolBalances(): UsePoolBalancesReturn {
   const total = computed<BigNumber>(() => bigNumberSum(get(balances).map(item => item.value)));
 
   const getPoolName = (type: PoolType, assets: string[]): string => {
-    const concatAssets = (assets: string[]): string => assets.map(asset => get(assetSymbol(asset))).join('-');
+    const concatAssets = (assets: string[]): string => assets.map(asset => getAssetField(asset, 'symbol')).join('-');
 
     const data = [{
       identifier: PoolType.UNISWAP_V2,
@@ -225,9 +226,18 @@ export function usePoolBalances(): UsePoolBalancesReturn {
     await retrieveSushiswapBalances(refresh);
   }
 
-  watch(ethAddresses, async (addresses, previousAddresses) => {
-    if (!isEqual(addresses, previousAddresses))
-      await fetch(true);
+  watch(ethAddresses, async (current, previous) => {
+    if (isEqual(current, previous))
+      return;
+
+    const added = current.filter(a => !previous.includes(a));
+    const removed = previous.filter(a => !current.includes(a));
+    const recent = get(recentlyAddedAddresses);
+
+    if (removed.length === 0 && added.length > 0 && added.every(a => recent.has(a)))
+      return;
+
+    await fetch(true);
   });
 
   watch(premium, async (isActive, wasActive) => {

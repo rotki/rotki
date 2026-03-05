@@ -1,22 +1,19 @@
-import type { ComputedRef } from 'vue';
-import { useModules } from '@/composables/session/modules';
+import type { Ref } from 'vue';
+import { Module, useModuleEnabled } from '@/composables/session/modules';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
-import { Module } from '@/types/modules';
 
 interface UseEthStakingAccessReturn {
-  enabled: ComputedRef<boolean>;
+  enabled: Readonly<Ref<boolean>>;
   module: Module;
-  allowed: ComputedRef<boolean>;
+  allowed: Readonly<Ref<boolean>>;
 }
 
 export function useEthStakingAccess(): UseEthStakingAccessReturn {
   const module = Module.ETH2;
 
-  const { isModuleEnabled } = useModules();
+  const { enabled } = useModuleEnabled(module);
 
   const { allowed } = useFeatureAccess(PremiumFeature.ETH_STAKING_VIEW);
-
-  const enabled = isModuleEnabled(module);
 
   return {
     allowed,

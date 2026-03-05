@@ -46,7 +46,7 @@ const chain = useRefPropVModel(modelValue, 'chain');
 
 const { isEvm, isSolanaChains, isStarknetChains, txEvmChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
-const { apiKey } = useExternalApiKeys(t);
+const { getApiKey } = useExternalApiKeys();
 
 const { beaconRpcEndpoint, defaultEvmIndexerOrder, evmIndexersOrder } = storeToRefs(useGeneralSettingsStore());
 
@@ -72,7 +72,7 @@ function shouldShowEtherscanWarning(selectedChain: string): boolean {
     return get(txEvmChains).some(chain => isEtherscanTopPriority(chain.id));
   }
 
-  if (!get(isEvm(selectedChain)))
+  if (!isEvm(selectedChain))
     return false;
 
   return isEtherscanTopPriority(selectedChain);
@@ -85,7 +85,7 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'voyager' | 'beac
   if (currentModelValue.mode !== 'add' || !selectedChain)
     return undefined;
 
-  if (currentModelValue.type === 'validator' && !get(apiKey('beaconchain'))) {
+  if (currentModelValue.type === 'validator' && !getApiKey('beaconchain')) {
     if (!get(beaconRpcEndpoint)) {
       return 'consensusRpc';
     }
@@ -93,10 +93,10 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'voyager' | 'beac
     return 'beaconchain';
   }
 
-  if (!get(apiKey('etherscan')) && shouldShowEtherscanWarning(selectedChain))
+  if (!getApiKey('etherscan') && shouldShowEtherscanWarning(selectedChain))
     return 'etherscan';
 
-  if (get(isSolanaChains(selectedChain)) && !get(apiKey('helius')))
+  if (isSolanaChains(selectedChain) && !getApiKey('helius'))
     return 'helius';
 
   if (isStarknetChains(selectedChain) && !get(apiKey('voyager')))

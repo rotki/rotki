@@ -410,6 +410,7 @@ class EvmTransactions(ABC):  # noqa: B024
         """Query internal txs for a time/block range and persist them incrementally."""
         queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
         parent_tx_timestamps: dict[EVMTxHash, Timestamp] = {}
+        replaced_parent_hashes: set[EVMTxHash] = set()
         if period.range_type == 'timestamps':
             assert location_string, 'should always be given for timestamps'
             queried_from_ts = Timestamp(period.from_value)
@@ -429,10 +430,36 @@ class EvmTransactions(ABC):  # noqa: B024
             )) == 0:
                 continue
 
+            batch_transactions: list[EvmInternalTransaction] = []
+            parent_tx_hashes: set[EVMTxHash] = set()
+            for internal_tx, _ in internal_txs_with_timestamps:
+                batch_transactions.append(internal_tx)
+                parent_tx_hashes.add(internal_tx.parent_tx_hash)
+
+            # deletes internal tx before readding them and after repulling them
             with self.database.conn.write_ctx() as write_cursor:
+                for parent_tx_hash in parent_tx_hashes:
+                    if parent_tx_hash in replaced_parent_hashes:
+                        continue
+
+                    if address is None:
+                        self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash(
+                            write_cursor=write_cursor,
+                            parent_tx_hash=parent_tx_hash,
+                            chain_id=self.evm_inquirer.chain_id,
+                        )
+                    else:
+                        self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash_and_address(
+                            write_cursor=write_cursor,
+                            parent_tx_hash=parent_tx_hash,
+                            chain_id=self.evm_inquirer.chain_id,
+                            address=address,
+                        )
+                    replaced_parent_hashes.add(parent_tx_hash)
+
                 self.dbevmtx.add_evm_internal_transactions(
                     write_cursor=write_cursor,
-                    transactions=[entry[0] for entry in internal_txs_with_timestamps],
+                    transactions=batch_transactions,
                     relevant_address=None,
                 )
 

@@ -1,4 +1,4 @@
-import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import type { ConfirmationMessage } from '@/modules/history/events/composables/use-deletion-strategies';
 import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
@@ -26,78 +26,76 @@ interface Status {
 }
 
 interface UseExternalApiKeysReturn {
-  loading: Ref<boolean>;
+  readonly loading: DeepReadonly<Ref<boolean>>;
   getName: (name: ExternalServiceName, chain?: string) => string;
-  apiKey: (name: MaybeRefOrGetter<ExternalServiceName>, chain?: MaybeRefOrGetter<string>) => ComputedRef<string>;
+  getApiKey: (name: ExternalServiceName, chain?: string) => string;
+  useApiKey: (name: MaybeRefOrGetter<ExternalServiceName>, chain?: MaybeRefOrGetter<string>) => ComputedRef<string>;
   actionStatus: (name: MaybeRefOrGetter<ExternalServiceName>, chain?: MaybeRefOrGetter<string>) => ComputedRef<Status | undefined>;
   load: () => Promise<void>;
   save: (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void) => Promise<void>;
   confirmDelete: (name: string, postConfirmAction?: () => Promise<void> | void, confirmation?: Partial<ConfirmationMessage>) => void;
-  keys: Ref<ExternalServiceKeys | undefined>;
+  readonly keys: DeepReadonly<Ref<ExternalServiceKeys | undefined>>;
 }
 
-export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof useI18n>['t']): UseExternalApiKeysReturn => {
+export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysReturn => {
+  const { t } = useI18n({ useScope: 'global' });
   const loading = ref<boolean>(false);
   const status = ref<Record<string, Status>>({});
+  const keys = ref<ExternalServiceKeys>();
 
   const { show } = useConfirmStore();
   const { deleteExternalServices, queryExternalServices, setExternalServices } = useExternalServicesApi();
 
   const { logged } = storeToRefs(useSessionAuthStore());
 
-  const keys: Ref<ExternalServiceKeys | undefined> = asyncComputed<ExternalServiceKeys | undefined>(
-    async () => {
-      if (get(logged))
-        return queryExternalServices();
+  function getBlockscoutApiKey(items: ExternalServiceKeys, chain: string): string {
+    const itemService = items.blockscout;
+    const transformedChainId = transformCase(chain, true);
 
-      return undefined;
-    },
-    undefined,
-    { evaluating: loading },
-  );
-
-  const apiKey = (
-    name: MaybeRefOrGetter<ExternalServiceName>,
-    chain?: MaybeRefOrGetter<string>,
-  ): ComputedRef<string> => computed(() => {
-    const items = get(keys);
-    const service = toValue(name);
-
-    if (!items)
-      return '';
-
-    if (service === 'blockscout') {
-      const itemService = items[service];
-      const chainId = toValue(chain);
-      assert(chainId, `missing chain for ${service}`);
-
-      const transformedChainId = transformCase(chainId, true);
-
-      if (itemService && transformedChainId in itemService) {
-        const chainData = itemService[transformedChainId];
-        if (chainData && 'apiKey' in chainData)
-          return chainData.apiKey || '';
-      }
-    }
-    else {
-      const itemService = items[service];
-
-      if (itemService && 'apiKey' in itemService)
-        return itemService.apiKey || '';
+    if (itemService && transformedChainId in itemService) {
+      const chainData = itemService[transformedChainId];
+      if (chainData && 'apiKey' in chainData)
+        return chainData.apiKey || '';
     }
 
     return '';
-  });
+  }
 
-  const actionStatus = (
+  function getApiKey(name: ExternalServiceName, chain?: string): string {
+    const items = get(keys);
+    if (!items)
+      return '';
+
+    if (name === 'blockscout') {
+      assert(chain, `missing chain for ${name}`);
+      return getBlockscoutApiKey(items, chain);
+    }
+
+    const itemService = items[name];
+    if (itemService && 'apiKey' in itemService)
+      return itemService.apiKey || '';
+
+    return '';
+  }
+
+  function useApiKey(
     name: MaybeRefOrGetter<ExternalServiceName>,
     chain?: MaybeRefOrGetter<string>,
-  ): ComputedRef<Status | undefined> => computed(() => {
-    const key = getName(toValue(name), toValue(chain));
-    return get(status)[key];
-  });
+  ): ComputedRef<string> {
+    return computed<string>(() => getApiKey(toValue(name), toValue(chain)));
+  }
 
-  const load = async (): Promise<void> => {
+  function actionStatus(
+    name: MaybeRefOrGetter<ExternalServiceName>,
+    chain?: MaybeRefOrGetter<string>,
+  ): ComputedRef<Status | undefined> {
+    return computed<Status | undefined>(() => {
+      const key = getName(toValue(name), toValue(chain));
+      return get(status)[key];
+    });
+  }
+
+  async function load(): Promise<void> {
     set(loading, true);
     try {
       set(keys, await queryExternalServices());
@@ -108,23 +106,23 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     finally {
       set(loading, false);
     }
-  };
+  }
 
-  const resetStatus = (key: string): void => {
-    const { [key]: service, ...newStatus } = get(status);
+  function resetStatus(key: string): void {
+    const { [key]: removed, ...newStatus } = get(status);
     set(status, newStatus);
-  };
+  }
 
-  const setStatus = (key: string, message: Status): void => {
+  function setStatus(key: string, message: Status): void {
     setTimeout(() => resetStatus(key), 4500);
 
     set(status, {
       ...get(status),
       [key]: message,
     });
-  };
+  }
 
-  const save = async (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void): Promise<void> => {
+  async function save(payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void): Promise<void> {
     const { name } = payload;
     resetStatus(name);
     try {
@@ -152,9 +150,9 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     finally {
       set(loading, false);
     }
-  };
+  }
 
-  const deleteService = async (name: string): Promise<void> => {
+  async function deleteService(name: string): Promise<void> {
     set(loading, true);
     try {
       set(keys, await deleteExternalServices(name));
@@ -169,9 +167,9 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     finally {
       set(loading, false);
     }
-  };
+  }
 
-  const confirmDelete = (name: string, postConfirmAction?: () => Promise<void> | void, confirmation: Partial<ConfirmationMessage> = {}): void => {
+  function confirmDelete(name: string, postConfirmAction?: () => Promise<void> | void, confirmation: Partial<ConfirmationMessage> = {}): void {
     resetStatus(name);
     show(
       {
@@ -185,17 +183,27 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
         await postConfirmAction?.();
       },
     );
-  };
+  }
+
+  watchImmediate(logged, async (isLogged) => {
+    if (isLogged) {
+      await load();
+    }
+    else {
+      set(keys, undefined);
+    }
+  });
 
   return {
     actionStatus,
-    apiKey,
     confirmDelete,
+    getApiKey,
     getName,
-    keys,
+    keys: readonly(keys),
     load,
-    loading,
+    loading: readonly(loading),
     save,
+    useApiKey,
   };
 });
 
@@ -216,6 +224,7 @@ export function useServiceKeyHandler<T extends InstanceType<typeof ServiceKey>>(
 
   return {
     saveHandler,
+    // eslint-disable-next-line @rotki/composable-return-readonly -- template ref must be writable
     serviceKeyRef,
   };
 }

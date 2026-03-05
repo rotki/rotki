@@ -48,9 +48,9 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
     const notifications: Notification[] = [];
     for (const chain in addresses) {
       const chainAddresses = addresses[chain];
-      const chainName = get(getChainName(chain));
+      const chainName = getChainName(chain);
       promises.push(fetchAccounts(chain));
-      if (get(isEvm(chain)))
+      if (isEvm(chain))
         promises.push(useTokenDetection(chain).detectTokens(chainAddresses));
 
       notifications.push({

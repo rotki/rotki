@@ -10,7 +10,6 @@ import ExchangeKeysFormStructure from '@/components/settings/api-keys/exchange/E
 import OkxRegionSelectorItem from '@/components/settings/api-keys/exchange/OkxRegionSelectorItem.vue';
 import { useFormStateWatcher } from '@/composables/form';
 import { useLocations } from '@/composables/locations';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { useLocationStore } from '@/store/locations';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { type ExchangeFormData, KrakenAccountType, OkxLocation } from '@/types/exchanges';
@@ -67,8 +66,7 @@ const isOkx = computed(() => {
   return ['okx'].includes(location);
 });
 
-const location = useRefMap(modelValue, item => item.location);
-const experimental = useIsExperimentalExchange(location);
+const experimental = useIsExperimentalExchange(() => get(modelValue).location);
 
 const showKeyWaitingTimeWarning = logicOr(isKraken, isCoinbase, isCoinbasePro);
 

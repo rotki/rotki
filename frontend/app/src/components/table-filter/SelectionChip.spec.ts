@@ -8,7 +8,7 @@ import SelectionChip from '@/components/table-filter/SelectionChip.vue';
 
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
-    assetInfo: vi.fn().mockImplementation(identifier => ({
+    getAssetInfo: vi.fn().mockImplementation((identifier: string | undefined) => ({
       identifier,
       evmChain: 'ethereum',
       symbol: 'ETH',

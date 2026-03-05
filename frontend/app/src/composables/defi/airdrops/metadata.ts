@@ -3,7 +3,6 @@ import type { ProtocolMetadata } from '@/types/defi';
 import { transformCase } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import { useDefiApi } from '@/composables/api/defi';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
 import { useMainStore } from '@/store/main';
 import { getPublicProtocolImagePath } from '@/utils/file';
@@ -30,7 +29,7 @@ export const useAirdropsMetadata = createSharedComposable(() => {
 
   const getAirdropName = (identifier: MaybeRefOrGetter<string>): ComputedRef<string> =>
     useValueOrDefault(
-      useRefMap(getAirdropData(identifier), i => i?.name),
+      () => get(getAirdropData(identifier))?.name,
       identifier,
     );
 

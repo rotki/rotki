@@ -1284,6 +1284,72 @@ def test_stake_reward(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: 
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x3d5Cb9a945542732f9943fA787e12cD7F468b273']])
+def test_stake_reward_and_restake(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    """Test claim+stake where AAVE transfer is internal to the staking contract."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd140498b2fd93004f21125a4e4ad0d902f34b69b00759e0e8234d4ea0c83199d')),  # noqa: E501
+        relevant_address=ethereum_accounts[0],
+    )
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1712957855000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas_fees := '0.003992661365792024'),
+            location_label=ethereum_accounts[0],
+            notes=f'Burn {gas_fees} ETH for gas',
+            tx_ref=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=140,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_AAVE,
+            amount=FVal(amount := '0.992221335725229645'),
+            location_label=ethereum_accounts[0],
+            notes=f'Claim {amount} AAVE from staking',
+            tx_ref=tx_hash,
+            address=STK_AAVE_ADDR,
+            counterparty=CPT_AAVE,
+        ), EvmEvent(
+            sequence_index=141,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_AAVE,
+            amount=FVal(amount),
+            location_label=ethereum_accounts[0],
+            notes=f'Stake {amount} AAVE',
+            tx_ref=tx_hash,
+            address=STK_AAVE_ADDR,
+            counterparty=CPT_AAVE,
+        ), EvmEvent(
+            sequence_index=142,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset(STKAAVE_IDENTIFIER),
+            amount=FVal(amount),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {amount} stkAAVE from staking in Aave',
+            counterparty=CPT_AAVE,
+            tx_ref=tx_hash,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6Cf9AA65EBaD7028536E353393630e2340ca6049']])
 def test_stake_reward_from_incentives(ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
     """Test that the decoder can decode aave staking reward claiming in the old way ~2022
@@ -1305,18 +1371,44 @@ def test_stake_reward_from_incentives(ethereum_inquirer: 'EthereumInquirer', eth
             tx_ref=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(
-            sequence_index=67,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_AAVE,
+            amount=FVal(amount),
+            location_label=ethereum_accounts[0],
+            notes=f'Claim {amount} AAVE from staking',
+            tx_ref=tx_hash,
+            address=STK_AAVE_ADDR,
+            counterparty=CPT_AAVE,
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_AAVE,
+            amount=FVal(amount),
+            location_label=ethereum_accounts[0],
+            notes=f'Stake {amount} AAVE',
+            tx_ref=tx_hash,
+            address=STK_AAVE_ADDR,
+            counterparty=CPT_AAVE,
+        ), EvmEvent(
+            sequence_index=3,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.REWARD,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=Asset('eip155:1/erc20:0x4da27a545c0c5B758a6BA100e3a049001de870f5'),
             amount=FVal(amount),
             location_label=ethereum_accounts[0],
-            notes=f'Claim {amount} stkAAVE from AAVE v2 incentives',
+            notes=f'Receive {amount} stkAAVE from staking in Aave',
             tx_ref=tx_hash,
-            address=string_to_evm_address('0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5'),
-            counterparty=CPT_AAVE_V2,
+            address=ZERO_ADDRESS,
+            counterparty=CPT_AAVE,
         ),
     ]
     assert events == expected_events

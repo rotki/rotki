@@ -4,8 +4,7 @@ import { type AssetInfoWithId, Zero } from '@rotki/common';
 import { useTemplateRef } from 'vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AssetDetailsMenuContent from '@/components/helper/AssetDetailsMenuContent.vue';
-import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useRefMap } from '@/composables/utils/useRefMap';
+import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { AssetAmountDisplay, AssetValueDisplay } from '@/modules/amount-display/components';
 
 const { event, dense, disableOptions } = defineProps<{
@@ -18,38 +17,30 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
-const { assetSymbol, assetInfo } = useAssetInfoRetrieval();
-
-const showBalance = computed<boolean>(() => event.eventType !== 'informational');
-
-const eventAsset = useRefMap(() => event, ({ asset }) => asset);
-
-const symbol = assetSymbol(eventAsset, {
-  collectionParent: false,
-});
-
 const menuOpened = ref<boolean>(false);
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
 
-const ASSET_RESOLUTION_OPTIONS: AssetResolutionOptions = { collectionParent: false };
-const assetDetails = assetInfo(eventAsset, ASSET_RESOLUTION_OPTIONS);
+const { useAssetInfo } = useAssetInfoRetrieval();
 
+const assetDetails = useAssetInfo(() => event.asset, NO_COLLECTION_RESOLVE);
+
+const showBalance = computed<boolean>(() => event.eventType !== 'informational');
 const currentAsset = computed<AssetInfoWithId>(() => ({
   ...get(assetDetails),
-  identifier: get(eventAsset),
+  identifier: event.asset,
 }));
-
-watch(menuOpened, (menuOpened) => {
-  if (!menuOpened) {
-    get(menuContentRef)?.setConfirm(false);
-  }
-});
 
 function openMenuHandler(event: MouseEvent): void {
   event.preventDefault();
   event.stopPropagation();
   set(menuOpened, !get(menuOpened));
 }
+
+watch(menuOpened, (menuOpened) => {
+  if (!menuOpened) {
+    get(menuContentRef)?.setConfirm(false);
+  }
+});
 </script>
 
 <template>
@@ -76,7 +67,7 @@ function openMenuHandler(event: MouseEvent): void {
           hide-menu
           optimize-for-virtual-scroll
           :asset="event.asset"
-          :resolution-options="ASSET_RESOLUTION_OPTIONS"
+          :resolution-options="NO_COLLECTION_RESOLVE"
           @refresh="emit('refresh')"
         />
         <div
@@ -104,7 +95,7 @@ function openMenuHandler(event: MouseEvent): void {
           v-else
           class="text-truncate text-sm"
         >
-          {{ symbol }}
+          {{ assetDetails?.symbol }}
         </div>
 
         <div

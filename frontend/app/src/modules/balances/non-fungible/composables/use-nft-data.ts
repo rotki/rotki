@@ -4,13 +4,13 @@ import type { ComputedRef, Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Collection } from '@/types/collection';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
+import { useSectionStatus } from '@/composables/status';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useNftBalances } from '@/modules/balances/nft/use-nft-balances';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { useStatusStore } from '@/store/status';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
@@ -51,8 +51,7 @@ export function useNftData(options: UseNftDataOptions = {}): UseNftDataReturn {
     ignoredAssetsHandling: get(ignoredAssetsHandling),
   }));
 
-  const { isLoading: isSectionLoading } = useStatusStore();
-  const sectionLoading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
+  const { isLoading: sectionLoading } = useSectionStatus(Section.NON_FUNGIBLE_BALANCES);
 
   const {
     fetchData,

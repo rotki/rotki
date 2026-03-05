@@ -6,11 +6,11 @@ import { type StakingValidatorManage, useAccountManage } from '@/composables/acc
 import { useBlockchains } from '@/composables/blockchain/index';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useSectionStatus } from '@/composables/status';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useTagStore } from '@/store/session/tags';
-import { useStatusStore } from '@/store/status';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 import { Section } from '@/types/status';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
@@ -68,12 +68,11 @@ function doesAccountExist(row: CSVRow, accounts: { address: string; chain: strin
 }
 
 export function useAccountImportExport(): UseAccountImportExportReturn {
-  const { isEvm, isEvmLikeChains } = useSupportedChains();
+  const { isEvmCompatible } = useSupportedChains();
   const { getAccounts } = useBlockchainAccountData();
   const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
   const { addAccounts, addEvmAccounts } = useBlockchains();
   const { attemptTagCreation } = useTagStore();
-  const { isLoading } = useStatusStore();
   const { save } = useAccountManage();
   const { notifyError, notifyInfo } = useNotifications();
   const { generateCSV, parseCSV } = useCsvImportExport();
@@ -83,7 +82,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   const { increment, setTotal, skip } = progressStore;
   const { progress } = storeToRefs(progressStore);
 
-  const blockchainLoading = isLoading(Section.BLOCKCHAIN);
+  const { isLoading: blockchainLoading } = useSectionStatus(Section.BLOCKCHAIN);
   const doneLoading = refDebounced(logicNot(blockchainLoading), 2000);
 
   const csvToAccount = (acc: CSVRow): AccountPayload => ({
@@ -94,7 +93,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
 
   function getChainType(chains: string[]): string {
     const EVM_CHAIN_TYPE = 'evm';
-    const hasEvmSupport = (chain: string): boolean => get(isEvm(chain)) || get(isEvmLikeChains(chain));
+    const hasEvmSupport = (chain: string): boolean => isEvmCompatible(chain);
 
     if (chains.length > 1 && chains.some(hasEvmSupport)) {
       return EVM_CHAIN_TYPE;

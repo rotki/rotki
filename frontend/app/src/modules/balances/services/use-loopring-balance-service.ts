@@ -3,7 +3,7 @@ import type { AssetProtocolBalances } from '@/types/blockchain/balances';
 import type { TaskMeta } from '@/types/task';
 import { Blockchain } from '@rotki/common';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
-import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
@@ -30,7 +30,7 @@ export function useLoopringBalanceService(): UseLoopringBalanceServiceReturn {
   const { updateAccounts } = useBlockchainAccountsStore();
   const { t } = useI18n({ useScope: 'global' });
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
-  const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
+  const resolveAssetIdentifier = useResolveAssetIdentifier();
 
   const fetchLoopringBalances = async (refresh: boolean): Promise<void> => {
     if (!get(activeModules).includes(Module.LOOPRING))
@@ -76,8 +76,7 @@ export function useLoopringBalanceService(): UseLoopringBalanceServiceReturn {
       const assets: AssetProtocolBalances = {};
       for (const loopringAssets of Object.values(loopringBalances)) {
         for (const [asset, value] of Object.entries(loopringAssets)) {
-          const identifier = getAssociatedAssetIdentifier(asset);
-          const associatedAsset: string = get(identifier) ?? asset;
+          const associatedAsset: string = resolveAssetIdentifier(asset);
           const ownedAsset = assets[associatedAsset];
 
           if (!ownedAsset)

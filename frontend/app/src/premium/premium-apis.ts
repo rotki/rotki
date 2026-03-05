@@ -31,17 +31,17 @@ import { isNft } from '@/utils/nft';
 import { truncateAddress } from '@/utils/truncate';
 
 export function assetsApi(): AssetsApi {
-  const { assetInfo, assetName, assetSymbol, tokenAddress } = useAssetInfoRetrieval();
+  const { getAssetInfo, useAssetInfo, useTokenAddress } = useAssetInfoRetrieval();
 
   return {
-    assetInfo,
-    assetSymbol: (identifier: MaybeRef<string>) => computed(() => {
+    assetInfo: useAssetInfo,
+    assetSymbol: (identifier: MaybeRef<string>) => computed<string>(() => {
       if (isNft(get(identifier)))
-        return get(assetName(identifier));
+        return getAssetInfo(get(identifier))?.name ?? '';
 
-      return get(assetSymbol(identifier));
+      return getAssetInfo(get(identifier))?.symbol ?? '';
     }),
-    tokenAddress: (identifier: MaybeRef<string>) => tokenAddress(identifier),
+    tokenAddress: (identifier: MaybeRef<string>) => useTokenAddress(identifier),
   };
 }
 

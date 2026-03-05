@@ -87,7 +87,7 @@ const rows = computed<OracleCacheEntry[]>(() => {
 const pending = useIsTaskRunning(TaskType.CREATE_PRICE_CACHE);
 
 const { notify } = useNotificationsStore();
-const { assetSymbol } = useAssetInfoRetrieval();
+const { getAssetField } = useAssetInfoRetrieval();
 
 async function clearCache(entry: OracleCacheMeta) {
   const { fromAsset, toAsset } = entry;
@@ -101,8 +101,8 @@ async function clearCache(entry: OracleCacheMeta) {
 
     const message = t('oracle_cache_management.clear_error', {
       error: getErrorMessage(error),
-      fromAsset: get(assetSymbol(fromAsset)),
-      toAsset: get(assetSymbol(toAsset)),
+      fromAsset: getAssetField(fromAsset, 'symbol'),
+      toAsset: getAssetField(toAsset, 'symbol'),
     });
 
     notify({
@@ -129,8 +129,8 @@ async function fetchPrices() {
   if (!('message' in status))
     await load();
 
-  const from = get(assetSymbol(fromAssetVal));
-  const to = get(assetSymbol(toAssetVal));
+  const from = getAssetField(fromAssetVal, 'symbol');
+  const to = getAssetField(toAssetVal, 'symbol');
   const message = status.success
     ? t('oracle_cache_management.notification.success', {
         fromAsset: from,
@@ -161,8 +161,8 @@ function clearFilter() {
 const { show } = useConfirmStore();
 
 function showDeleteConfirmation(entry: OracleCacheMeta) {
-  const deleteFromAsset = entry?.fromAsset ? get(assetSymbol(entry.fromAsset)) : '';
-  const deleteToAsset = entry?.toAsset ? get(assetSymbol(entry.toAsset)) : '';
+  const deleteFromAsset = entry?.fromAsset ? getAssetField(entry.fromAsset, 'symbol') : '';
+  const deleteToAsset = entry?.toAsset ? getAssetField(entry.toAsset, 'symbol') : '';
 
   show(
     {

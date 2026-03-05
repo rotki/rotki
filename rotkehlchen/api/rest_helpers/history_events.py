@@ -98,25 +98,31 @@ def edit_grouped_swap_events(
     May raise InputError if a new event is added that collides
     with the sequence index of an existing event.
     """
-    edited_identifiers, new_events = [], []
+    events_to_edit, new_events = [], []
+    edited_identifiers = set()
     for event in events:
         if event.identifier is None:  # No existing identifier - this is a new event.
             new_events.append(event)
-        else:  # Already has an identifier - edit existing event.
-            events_db.edit_history_event(
-                write_cursor=write_cursor,
-                event=event,
-                mapping_state=HistoryMappingState.CUSTOMIZED,
-            )
-            edited_identifiers.append(event.identifier)
+        else:  # Already has an identifier - will be edited after deletions.
+            events_to_edit.append(event)
+            edited_identifiers.add(event.identifier)
 
-    if identifiers != edited_identifiers:  # There are identifiers with no corresponding events - these events need to be deleted.  # noqa: E501
-        ids_to_delete = tuple(set(identifiers) - set(edited_identifiers))
+    # Deletions must happen before edits, since edited events may be assigned
+    # sequence indices that were previously held by the deleted events.
+    ids_to_delete = tuple(set(identifiers) - edited_identifiers)
+    if ids_to_delete:
         placeholders = ','.join(['?'] * len(ids_to_delete))
         events_db.delete_events_and_track(
             write_cursor=write_cursor,
             where_clause=f'WHERE identifier IN ({placeholders})',
             where_bindings=ids_to_delete,
+        )
+
+    for event in events_to_edit:
+        events_db.edit_history_event(
+            write_cursor=write_cursor,
+            event=event,
+            mapping_state=HistoryMappingState.CUSTOMIZED,
         )
 
     for event in new_events:

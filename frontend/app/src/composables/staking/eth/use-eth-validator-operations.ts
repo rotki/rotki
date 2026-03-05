@@ -4,8 +4,8 @@ import type { EthereumValidator } from '@/types/blockchain/accounts';
 import { Blockchain } from '@rotki/common';
 import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-delete';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { useSectionStatus } from '@/composables/status';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { useStatusStore } from '@/store/status';
 import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -24,9 +24,7 @@ export function useEthValidatorOperations(): UseEthValidatorOperationsReturn {
   const { fetchEthStakingValidators } = useEthStaking();
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const { useIsTaskRunning } = useTaskStore();
-  const { isLoading } = useStatusStore();
-
-  const loading = isLoading(Section.BLOCKCHAIN, Blockchain.ETH2);
+  const { isLoading: loading } = useSectionStatus(Section.BLOCKCHAIN, Blockchain.ETH2);
 
   const accountOperation = logicOr(
     useIsTaskRunning(TaskType.ADD_ACCOUNT),

@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { Blockchain, type ProtocolBalance, toSentenceCase, transformCase } from '@rotki/common';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { AssetAmountDisplay, FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import ProtocolIcon from '@/modules/balances/protocols/ProtocolIcon.vue';
 import { useProtocolData } from '@/modules/balances/protocols/use-protocol-data';
@@ -14,15 +13,14 @@ const { protocolBalance, asset, loading } = defineProps<{
   loading?: boolean;
 }>();
 
-const protocol = useRefMap(() => protocolBalance, balance => balance.protocol);
-
 const { shouldShowAmount } = storeToRefs(useFrontendSettingsStore());
-const { t } = useI18n({ useScope: 'global' });
 
-const { isProxy, parsedProtocol, proxyAddress } = useProxyProtocol(protocol);
+const { t } = useI18n({ useScope: 'global' });
+const { isProxy, parsedProtocol, proxyAddress } = useProxyProtocol(() => protocolBalance.protocol);
+const { protocolData } = useProtocolData(parsedProtocol);
 
 const transformedProtocol = computed<string>(() => {
-  const value = get(protocol);
+  const value = protocolBalance.protocol;
   if (get(isProxy)) {
     const parts = value.split(':');
     // Only transform the protocol part, keep the address intact
@@ -30,8 +28,6 @@ const transformedProtocol = computed<string>(() => {
   }
   return transformCase(value);
 });
-
-const { protocolData } = useProtocolData(parsedProtocol);
 
 const name = computed<string>(() => {
   const data = get(protocolData);

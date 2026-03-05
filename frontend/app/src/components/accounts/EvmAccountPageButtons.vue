@@ -4,7 +4,7 @@ import AccountBalancesExportImport from '@/components/accounts/AccountBalancesEx
 import BlockchainBalanceRefreshBehaviourMenu
   from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
-import { useStatusStore } from '@/store/status';
+import { useSectionStatus } from '@/composables/status';
 import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -22,11 +22,11 @@ const emit = defineEmits<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { isSectionLoading, refreshDisabled } = useBlockchainAccountLoading('evm');
-const { isLoading } = useStatusStore();
 const { useIsTaskRunning } = useTaskStore();
+const { isLoading: eth2Loading } = useSectionStatus(Section.BLOCKCHAIN, Blockchain.ETH2);
 
 const isEth2Loading = logicOr(
-  isLoading(Section.BLOCKCHAIN, Blockchain.ETH2),
+  eth2Loading,
   useIsTaskRunning(TaskType.FETCH_ETH2_VALIDATORS),
 );
 </script>

@@ -20,8 +20,8 @@ const {
   horizontal?: boolean;
 }>();
 
-const { locationData } = useLocations();
-const location = locationData(() => identifier);
+const { useLocationData } = useLocations();
+const location = useLocationData(() => identifier);
 
 const route = computed<RouteLocationRaw>(() => {
   const details = detailPath;

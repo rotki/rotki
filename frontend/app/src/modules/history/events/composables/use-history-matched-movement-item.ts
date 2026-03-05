@@ -2,7 +2,7 @@ import type { ComputedRef, Ref } from 'vue';
 import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/events/composables/use-selection-mode';
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
-import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLocations } from '@/composables/locations';
 import { isEventMissingAccountingRule } from '@/utils/history/events';
@@ -31,7 +31,7 @@ export interface UseHistoryMatchedMovementItemReturn {
   eventTypeLabel: ComputedRef<string>;
 }
 
-const ASSET_RESOLUTION_OPTIONS: AssetResolutionOptions = { collectionParent: false };
+const ASSET_RESOLUTION_OPTIONS = NO_COLLECTION_RESOLVE;
 
 export function useHistoryMatchedMovementItem(
   props: UseHistoryMatchedMovementItemProps,
@@ -39,9 +39,9 @@ export function useHistoryMatchedMovementItem(
   const { events, selection } = props;
   const { t } = useI18n({ useScope: 'global' });
   const { getChain } = useSupportedChains();
-  const { getAssetSymbol } = useAssetInfoRetrieval();
+  const { getAssetField } = useAssetInfoRetrieval();
 
-  const { locationData } = useLocations();
+  const { getLocationData } = useLocations();
 
   // For asset movements, use the first non-fee asset movement event as primary
   const primaryEvent = computed<HistoryEventEntry>(() => {
@@ -51,12 +51,21 @@ export function useHistoryMatchedMovementItem(
     return assetMovementEvent ?? get(events)[0];
   });
 
-  // Secondary event is the matching counterpart (non-fee, different from primary)
+  // Secondary event is the matching counterpart (non-fee, different from primary).
+  // Prefer events with a different entryType (e.g., EVM_EVENT vs ASSET_MOVEMENT_EVENT).
+  // Among multiple matches, pick the one with the largest amount (main counterpart, not adjustment).
   const secondaryEvent = computed<HistoryEventEntry | undefined>(() => {
-    const primaryId = get(primaryEvent).identifier;
-    return get(events).find(
-      item => item.eventSubtype !== 'fee' && item.identifier !== primaryId,
+    const primary = get(primaryEvent);
+    const candidates = get(events).filter(
+      item => item.eventSubtype !== 'fee' && item.identifier !== primary.identifier,
     );
+    if (candidates.length === 0)
+      return undefined;
+
+    const differentType = candidates.filter(item => item.entryType !== primary.entryType);
+    const pool = differentType.length > 0 ? differentType : candidates;
+
+    return pool.reduce((best, item) => (item.amount.gt(best.amount) ? item : best));
   });
 
   const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(primaryEvent)));
@@ -105,14 +114,20 @@ export function useHistoryMatchedMovementItem(
     const secondary = get(secondaryEvent);
 
     const amount = primary.amount;
-    const asset = getAssetSymbol(primary.asset, ASSET_RESOLUTION_OPTIONS);
-    const locationLabel = primary.locationLabel || get(locationData(primary.location))?.name || '';
-    const address = secondary?.locationLabel || (secondary && get(locationData(secondary.location))?.name) || '';
+    const asset = getAssetField(primary.asset, 'symbol', ASSET_RESOLUTION_OPTIONS);
+    const exchangeLabel = primary.locationLabel || getLocationData(primary.location)?.name || '';
+    const addressLabel = secondary?.locationLabel || (secondary && getLocationData(secondary.location)?.name) || '';
 
-    const to = locationLabel ? t('asset_movement_matching.compact_notes.to_part', { locationLabel }) : '';
-    const from = address ? t('asset_movement_matching.compact_notes.from_part', { address }) : '';
+    const isDeposit = primary.eventSubtype === 'receive';
+    // For deposits: to = exchange, from = address
+    // For withdrawals: from = exchange, to = address
+    const toLabel = isDeposit ? exchangeLabel : addressLabel;
+    const fromLabel = isDeposit ? addressLabel : exchangeLabel;
 
-    const notes = primary.eventSubtype === 'receive'
+    const to = toLabel ? t('asset_movement_matching.compact_notes.to_part', { locationLabel: toLabel }) : '';
+    const from = fromLabel ? t('asset_movement_matching.compact_notes.from_part', { address: fromLabel }) : '';
+
+    const notes = isDeposit
       ? t('asset_movement_matching.compact_notes.deposit', { amount, asset, to, from })
       : t('asset_movement_matching.compact_notes.withdraw', { amount, asset, from, to });
 
@@ -121,7 +136,7 @@ export function useHistoryMatchedMovementItem(
     if (fee.length === 0)
       return notes;
 
-    const feeText = fee.map(item => `${item.amount.toFixed()} ${getAssetSymbol(item.asset, ASSET_RESOLUTION_OPTIONS)}`).join('; ');
+    const feeText = fee.map(item => `${item.amount.toFixed()} ${getAssetField(item.asset, 'symbol', ASSET_RESOLUTION_OPTIONS)}`).join('; ');
     return t('history_events_list_swap.fee_description', { feeText, notes });
   });
 

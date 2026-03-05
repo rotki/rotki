@@ -17,10 +17,10 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import LiquityPools from '@/components/staking/liquity/LiquityPools.vue';
 import LiquityStake from '@/components/staking/liquity/LiquityStake.vue';
 import LiquityStatistics from '@/components/staking/liquity/LiquityStatistics.vue';
+import { useSectionStatus } from '@/composables/status';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 import { zeroBalance } from '@/utils/bignumbers';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
@@ -42,8 +42,7 @@ const { staking, stakingPools, stakingQueryStatus, statistics } = storeToRefs(li
 const { getProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const liquityHistoricPriceStatus = getProtocolStatsPriceQueryStatus('liquity');
 
-const { isLoading } = useStatusStore();
-const loading = isLoading(Section.DEFI_LIQUITY_STAKING);
+const { isLoading: loading } = useSectionStatus(Section.DEFI_LIQUITY_STAKING);
 
 const chains = [Blockchain.ETH];
 

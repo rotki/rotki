@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import type { RouteLocationRaw } from 'vue-router';
 import type { BlockchainTotal } from '@/types/blockchain';
 import { Blockchain, toSentenceCase } from '@rotki/common';
 import Eth2ValidatorLimitTooltip from '@/components/accounts/blockchain/eth2/Eth2ValidatorLimitTooltip.vue';
 import ListItem from '@/components/common/ListItem.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { FiatDisplay } from '@/modules/amount-display/components';
 
 interface BlockChainBalanceCardListProps {
@@ -15,12 +13,10 @@ interface BlockChainBalanceCardListProps {
 
 const { total } = defineProps<BlockChainBalanceCardListProps>();
 
-const { getBlockchainRedirectLink, getChainName } = useSupportedChains();
+const { useBlockchainRedirectLink, useChainName } = useSupportedChains();
 
-const chain = useRefMap(() => total, ({ chain }) => chain);
-const name = getChainName(chain);
-
-const navTarget = computed<RouteLocationRaw>(() => getBlockchainRedirectLink(total.chain));
+const name = useChainName(() => total.chain);
+const navTarget = useBlockchainRedirectLink(() => total.chain);
 </script>
 
 <template>
@@ -35,7 +31,7 @@ const navTarget = computed<RouteLocationRaw>(() => getBlockchainRedirectLink(tot
           <div class="grayscale group-hover:grayscale-0">
             <ChainIcon
               size="24px"
-              :chain="chain"
+              :chain="total.chain"
             />
           </div>
         </template>
@@ -43,7 +39,7 @@ const navTarget = computed<RouteLocationRaw>(() => getBlockchainRedirectLink(tot
           {{ toSentenceCase(name) }}
 
           <div class="flex gap-2 items-center">
-            <Eth2ValidatorLimitTooltip v-if="chain === Blockchain.ETH2" />
+            <Eth2ValidatorLimitTooltip v-if="total.chain === Blockchain.ETH2" />
 
             <FiatDisplay
               :value="total.value"

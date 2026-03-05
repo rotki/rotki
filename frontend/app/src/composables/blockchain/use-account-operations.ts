@@ -62,7 +62,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     const namesPayload: AddressBookSimplePayload[] = [];
 
     chains.forEach((chain) => {
-      if (!get(isEvm(chain)))
+      if (!isEvm(chain))
         return;
 
       const addresses = getAddresses(chain);
@@ -87,7 +87,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
     if (isEth || !chain) {
       pending.push(fetchLoopringBalances(false));
 
-      if (isEth)
+      if (isEth && getAddresses(Blockchain.ETH2).length > 0)
         startPromise(refreshAccounts({ blockchain: Blockchain.ETH2 }));
     }
 

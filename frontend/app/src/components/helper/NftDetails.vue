@@ -16,14 +16,14 @@ const { identifier, size = '50px', styled } = defineProps<{
   size?: string;
 }>();
 
-const { assetInfo } = useAssetInfoRetrieval();
+const { useAssetInfo } = useAssetInfoRetrieval();
 
 const frontendStore = useFrontendSettingsStore();
 
 const { whitelistedDomainsForNftImages } = storeToRefs(frontendStore);
 const { updateSetting } = frontendStore;
 
-const balanceData = assetInfo(() => identifier);
+const balanceData = useAssetInfo(() => identifier);
 
 const { t } = useI18n({ useScope: 'global' });
 

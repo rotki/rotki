@@ -33,9 +33,9 @@ const emit = defineEmits<{
   refresh: [];
 }>();
 
-const { assetInfo } = useAssetInfoRetrieval();
+const { useAssetInfo } = useAssetInfoRetrieval();
 
-const assetDetails = assetInfo(() => asset, computed<AssetResolutionOptions>(() => ({
+const assetDetails = useAssetInfo(() => asset, computed<AssetResolutionOptions>(() => ({
   associate: enableAssociation,
   collectionParent: isCollectionParent,
   ...resolutionOptions,

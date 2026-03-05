@@ -1,9 +1,9 @@
 import type { ComputedRef } from 'vue';
 import type { ManualBalance, ManualBalanceWithPrice } from '@/types/manual-balances';
 import { omit } from 'es-toolkit';
+import { useSectionStatus } from '@/composables/status';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useConfirmStore } from '@/store/confirm';
-import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 
 interface UseManualBalanceTableActionsReturn {
@@ -17,11 +17,10 @@ interface UseManualBalanceTableActionsReturn {
 export function useManualBalanceTableActions(): UseManualBalanceTableActionsReturn {
   const { deleteManualBalance, fetchManualBalances } = useManualBalances();
   const { show } = useConfirmStore();
-  const { isLoading } = useStatusStore();
   const { t } = useI18n({ useScope: 'global' });
 
-  const refreshing = isLoading(Section.MANUAL_BALANCES);
-  const pricesLoading = isLoading(Section.PRICES);
+  const { isLoading: refreshing } = useSectionStatus(Section.MANUAL_BALANCES);
+  const { isLoading: pricesLoading } = useSectionStatus(Section.PRICES);
 
   async function refresh(): Promise<void> {
     await fetchManualBalances(true);

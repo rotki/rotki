@@ -65,7 +65,7 @@ const hint = computed<string>(() => {
 
   return t('transactions.protocol_cache_updates.hint', {
     ...data,
-    chain: get(getChainName(data.chain)),
+    chain: getChainName(data.chain),
     protocol: toCapitalCase(data.protocol),
   });
 });

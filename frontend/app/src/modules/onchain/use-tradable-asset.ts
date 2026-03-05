@@ -124,7 +124,7 @@ export function useTradableAsset(address: MaybeRef<string | undefined>): UseTrad
     // Single pass through balances with early filtering
     for (const [chain, chainBalances] of Object.entries(balancesData)) {
       // Early exit conditions
-      if (!get(isEvm(chain)) || !supportedChains.includes(chain)) {
+      if (!isEvm(chain) || !supportedChains.includes(chain)) {
         continue;
       }
 

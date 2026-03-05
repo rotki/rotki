@@ -1,3 +1,4 @@
+import type { MaybeRefOrGetter } from 'vue';
 import type { StatusPayload } from '@/types/action';
 import { isEmpty } from 'es-toolkit/compat';
 import { Section, Status } from '@/types/status';
@@ -58,41 +59,53 @@ export const useStatusStore = defineStore('status', () => {
   const getStatus = (section: Section, subsection: string = defaultSection): Status =>
     get(status)[section]?.[subsection] ?? Status.NONE;
 
-  const isLoading = (
+  const getIsLoading = (
     section: Section,
     subsection: string = defaultSection,
-  ): ComputedRef<boolean> => computed<boolean>(() => {
+  ): boolean => {
     const statuses = get(status)[section];
     if (!statuses)
       return false;
 
     return matchesStatus(statuses, subsection, isLoadingStatus);
-  });
+  };
 
-  const shouldShowLoadingScreen = (
+  const useIsLoading = (
+    section: MaybeRefOrGetter<Section>,
+    subsection: MaybeRefOrGetter<string> = defaultSection,
+  ): ComputedRef<boolean> => computed<boolean>(() => getIsLoading(toValue(section), toValue(subsection)));
+
+  const getIsInitialLoading = (
     section: Section,
     subsection: string = defaultSection,
-  ): ComputedRef<boolean> => computed<boolean>(() => {
+  ): boolean => {
     const statuses = get(status)[section];
     if (!statuses)
       return true;
 
     return matchesStatus(statuses, subsection, isInitialLoadingStatus);
-  });
+  };
+
+  const useShouldShowLoadingScreen = (
+    section: MaybeRefOrGetter<Section>,
+    subsection: MaybeRefOrGetter<string> = defaultSection,
+  ): ComputedRef<boolean> => computed<boolean>(() => getIsInitialLoading(toValue(section), toValue(subsection)));
 
   const detailsLoading = logicOr(
-    isLoading(Section.BLOCKCHAIN),
-    isLoading(Section.EXCHANGES),
-    isLoading(Section.MANUAL_BALANCES),
+    useIsLoading(Section.BLOCKCHAIN),
+    useIsLoading(Section.EXCHANGES),
+    useIsLoading(Section.MANUAL_BALANCES),
   );
 
   return {
     detailsLoading,
+    getIsInitialLoading,
+    getIsLoading,
     getStatus,
-    isLoading,
     resetStatus,
     setStatus,
-    shouldShowLoadingScreen,
+    useShouldShowLoadingScreen,
+    useIsLoading,
     status,
   };
 });

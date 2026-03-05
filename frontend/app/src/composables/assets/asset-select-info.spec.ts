@@ -30,48 +30,48 @@ describe('useAssetSelectInfo', () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
-      const result = assetSelectInfo.assetInfo(undefined);
-      expect(get(result)).toBeNull();
+      const result = assetSelectInfo.getAssetInfo(undefined);
+      expect(result).toBeNull();
     });
 
     it('should return null when identifier is empty string', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
-      const result = assetSelectInfo.assetInfo('');
-      expect(get(result)).toBeNull();
+      const result = assetSelectInfo.getAssetInfo('');
+      expect(result).toBeNull();
     });
 
     it('should return empty string for symbol when identifier is undefined', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
-      const result = assetSelectInfo.assetSymbol(undefined);
-      expect(get(result)).toBe('');
+      const result = assetSelectInfo.getAssetField(undefined, 'symbol');
+      expect(result).toBe('');
     });
 
     it('should return empty string for symbol when identifier is empty', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
-      const result = assetSelectInfo.assetSymbol('');
-      expect(get(result)).toBe('');
+      const result = assetSelectInfo.getAssetField('', 'symbol');
+      expect(result).toBe('');
     });
 
     it('should return empty string for name when identifier is undefined', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
-      const result = assetSelectInfo.assetName(undefined);
-      expect(get(result)).toBe('');
+      const result = assetSelectInfo.getAssetField(undefined, 'name');
+      expect(result).toBe('');
     });
 
     it('should return empty string for name when identifier is empty', async () => {
       const { useAssetSelectInfo } = await import('@/composables/assets/asset-select-info');
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
-      const result = assetSelectInfo.assetName('');
-      expect(get(result)).toBe('');
+      const result = assetSelectInfo.getAssetField('', 'name');
+      expect(result).toBe('');
     });
   });
 
@@ -81,9 +81,9 @@ describe('useAssetSelectInfo', () => {
       const assetSelectInfo = scope.run(() => useAssetSelectInfo())!;
 
       const identifier = ref<string | undefined>(undefined);
-      const nameResult = assetSelectInfo.assetName(identifier);
-      const symbolResult = assetSelectInfo.assetSymbol(identifier);
-      const infoResult = assetSelectInfo.assetInfo(identifier);
+      const nameResult = assetSelectInfo.useAssetField(identifier, 'name');
+      const symbolResult = assetSelectInfo.useAssetField(identifier, 'symbol');
+      const infoResult = assetSelectInfo.useAssetInfo(identifier);
 
       // Initially all return default values for undefined
       expect(get(nameResult)).toBe('');
@@ -123,7 +123,7 @@ describe('useAssetSelectInfo', () => {
       });
 
       const undefinedId = `UNDEFINED_TEST_${Date.now()}`;
-      const result = assetSelectInfo.assetInfo(undefinedId);
+      const result = assetSelectInfo.useAssetInfo(undefinedId);
 
       // Initially null
       expect(get(result)).toBeNull();

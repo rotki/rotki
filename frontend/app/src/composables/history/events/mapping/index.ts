@@ -9,7 +9,6 @@ import { HistoryEventEntryType, toCapitalCase, toSentenceCase, toSnakeCase } fro
 import { startPromise } from '@shared/utils';
 import { cloneDeep } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { useLocationStore } from '@/store/locations';
 import { uniqueStrings } from '@/utils/data';
@@ -39,12 +38,9 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const { getTransactionTypeMappings } = useHistoryEventsApi();
   const { notify } = useNotifications();
 
-  const historyEventTypeGlobalMapping = useRefMap(historyEventTypeData, ({ globalMappings }) => globalMappings);
+  const historyEventTypeGlobalMapping = computed(() => get(historyEventTypeData).globalMappings);
 
-  const historyEventTypeByEntryTypeMapping = useRefMap(
-    historyEventTypeData,
-    ({ entryTypeMappings }) => entryTypeMappings,
-  );
+  const historyEventTypeByEntryTypeMapping = computed(() => get(historyEventTypeData).entryTypeMappings);
 
   const historyEventTypes = computed<string[]>(() => Object.keys(get(historyEventTypeGlobalMapping)));
 
@@ -73,8 +69,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     };
   });
 
-  const transactionEventTypesData: ComputedRef<HistoryEventCategoryMapping> = useRefMap(historyEventTypeData, ({ eventCategoryDetails }) => {
-    const newEventCategoryDetails = cloneDeep(eventCategoryDetails);
+  const transactionEventTypesData = computed<HistoryEventCategoryMapping>(() => {
+    const newEventCategoryDetails = cloneDeep(get(historyEventTypeData).eventCategoryDetails);
     for (const eventCategory in newEventCategoryDetails) {
       const counterpartyMappings = newEventCategoryDetails[eventCategory].counterpartyMappings;
       for (const counterparty in counterpartyMappings) {
@@ -87,8 +83,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     return newEventCategoryDetails;
   });
 
-  const accountingEventsTypeData: Ref<ActionDataEntry[]> = useRefMap(historyEventTypeData, ({ accountingEventsIcons }) =>
-    Object.entries(accountingEventsIcons).map(([identifier, icon]) => {
+  const accountingEventsTypeData = computed<ActionDataEntry[]>(() =>
+    Object.entries(get(historyEventTypeData).accountingEventsIcons).map(([identifier, icon]) => {
       const translationId = toSnakeCase(identifier);
       const translationKey = `backend_mappings.profit_loss_event_type.${translationId}`;
 
