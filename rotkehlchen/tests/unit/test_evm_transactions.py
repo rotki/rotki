@@ -118,7 +118,7 @@ def test_erc20_transfers_range_not_updated_on_remote_error(database: 'DBHandler'
         ):
             stack.enter_context(patch.object(
                 target=indexer,
-                attribute='get_token_transaction_hashes',
+                attribute='get_token_transaction_data',
                 side_effect=RemoteError('FAIL')),
             )
 
@@ -496,11 +496,11 @@ def test_indexers_fall_back_properly(
             ))
             hashes_mock = stack.enter_context(patch.object(
                 target=indexer,
-                attribute='get_token_transaction_hashes',
-                wraps=indexer.get_token_transaction_hashes,
+                attribute='get_token_transaction_data',
+                wraps=indexer.get_token_transaction_data,
             ) if name == tested_indexer else patch.object(
                 target=indexer,
-                attribute='get_token_transaction_hashes',
+                attribute='get_token_transaction_data',
                 side_effect=RemoteError('FAIL'),
             ))
 

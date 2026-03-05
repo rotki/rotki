@@ -57,6 +57,7 @@ from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.routescan import Routescan
+from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -250,6 +251,9 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         # the same information. Remove from here with
         # https://github.com/rotki/rotki/issues/9998
         self.timestamp_to_block_cache: dict[ChainID, LRUCacheWithRemove[Timestamp, int]] = defaultdict(lambda: LRUCacheWithRemove(maxsize=32))  # noqa: E501
+        # Cache block_number -> timestamp to avoid extra block header calls when transaction
+        # lists from indexers already include the timestamp.
+        self.block_to_timestamp_cache: LRUCacheWithRemove[int, Timestamp] = LRUCacheWithRemove(maxsize=2048)  # noqa: E501
 
         # A cache for erc20 and erc721 contract info to not requery the info
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
@@ -1420,6 +1424,16 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             log.error(f'Failed to get L1 fees for {account=} {tx_hash=} {block_number=} due to {e!s}')  # noqa: E501
             return None
 
+    def get_block_timestamp(self, block_number: int) -> Timestamp:
+        """Return block timestamp using cache first and falling back to block query."""
+        if (cached_timestamp := self.block_to_timestamp_cache.get(block_number)) is not None:
+            return cached_timestamp
+
+        block_data = self.get_block_by_number(num=block_number)
+        timestamp = Timestamp(read_integer(block_data, 'timestamp', 'web3'))
+        self.block_to_timestamp_cache.add(key=block_number, value=timestamp)
+        return timestamp
+
     # -- methods to be optionally implemented by child classes --
 
     def logquery_block_range(
@@ -1557,15 +1571,33 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             action: Literal['txlist', 'txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
     ) -> Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]:
-        """Returns an iterator of transaction lists for a given account, action, and period/hash.
-        Tries etherscan first, then blockscout. Raises RemoteError if both fail.
+        """Return transaction batches from indexers in configured order.
+
+        For `action='txlist'`, this also stores each tx's block->timestamp mapping in
+        `self.block_to_timestamp_cache` so later RPC timestamp lookups can be skipped.
         """
-        yield from self._try_indexers_iterable(func=lambda indexer: indexer.get_transactions(  # type: ignore[misc]
-            chain_id=self.chain_id,
-            account=account,
-            period_or_hash=period_or_hash,
-            action=action,
-        ))
+        if action == 'txlist':
+            for tx_batch in self._try_indexers_iterable(
+                func=lambda indexer: indexer.get_transactions(
+                    chain_id=self.chain_id,
+                    account=account,
+                    period_or_hash=period_or_hash,
+                    action='txlist',
+                ),
+            ):
+                for tx in tx_batch:
+                    self.block_to_timestamp_cache.add(key=tx.block_number, value=tx.timestamp)
+
+                yield tx_batch
+        else:
+            yield from self._try_indexers_iterable(
+                func=lambda indexer: indexer.get_transactions(
+                    chain_id=self.chain_id,
+                    account=account,
+                    period_or_hash=period_or_hash,
+                    action='txlistinternal',
+                ),
+            )
 
     def get_token_transaction_hashes(
             self,
@@ -1573,12 +1605,21 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             from_block: int | None = None,
             to_block: int | None = None,
     ) -> Iterator[list[EVMTxHash]]:
-        yield from self._try_indexers_iterable(func=lambda indexer: indexer.get_token_transaction_hashes(  # noqa: E501
-            chain_id=self.chain_id,
-            account=account,
-            from_block=from_block,
-            to_block=to_block,
-        ))
+        """Return ERC20/721 token transaction hash batches for an account.
+
+        The underlying indexer response also contains timestamps and block numbers, those are
+        cached in `self.block_to_timestamp_cache` while only transaction hashes are yielded.
+        """
+        for tx_data_batch in self._try_indexers_iterable(func=lambda indexer: indexer.get_token_transaction_data(  # noqa: E501
+                chain_id=self.chain_id,
+                account=account,
+                from_block=from_block,
+                to_block=to_block,
+        )):
+            for _, timestamp, block_number in tx_data_batch:
+                self.block_to_timestamp_cache.add(key=block_number, value=timestamp)
+
+            yield [tx_hash for tx_hash, _, _ in tx_data_batch]
 
     def has_activity(
             self,

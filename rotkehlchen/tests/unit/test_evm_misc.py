@@ -19,12 +19,19 @@ from rotkehlchen.chain.evm.types import (
 )
 from rotkehlchen.constants import ONE
 from rotkehlchen.errors.misc import RemoteError, RequestTooLargeError
+from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS,
     wait_until_all_nodes_connected,
 )
-from rotkehlchen.tests.utils.factories import make_evm_address
-from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID, SupportedBlockchain
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
+from rotkehlchen.types import (
+    SUPPORTED_CHAIN_IDS,
+    ChainID,
+    EvmTransaction,
+    SupportedBlockchain,
+    Timestamp,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -181,3 +188,78 @@ def test_query_raises_request_too_large_when_gas_limit_seen(
         ethereum_inquirer._query(method=mock_method, call_order=call_order)
 
     assert call_count == len(call_order)
+
+
+def test_get_transactions_populates_block_timestamp_cache(
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    tx = EvmTransaction(
+        tx_hash=make_evm_tx_hash(),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1710000000),
+        block_number=123456,
+        from_address=make_evm_address(),
+        to_address=make_evm_address(),
+        value=0,
+        gas=21000,
+        gas_price=100,
+        gas_used=21000,
+        input_data=b'',
+        nonce=1,
+    )
+    with patch.object(ethereum_inquirer, '_try_indexers_iterable', return_value=iter([[tx]])):
+        result = list(ethereum_inquirer.get_transactions(
+            account=make_evm_address(),
+            action='txlist',
+        ))
+
+    assert result == [[tx]]
+    assert ethereum_inquirer.block_to_timestamp_cache.get(tx.block_number) == tx.timestamp
+
+
+def test_get_token_transaction_hashes_populates_block_timestamp_cache(
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    tx_hash = make_evm_tx_hash()
+    block_number = 654321
+    timestamp = Timestamp(1712222222)
+    with patch.object(
+            ethereum_inquirer,
+            '_try_indexers_iterable',
+            return_value=iter([[(tx_hash, timestamp, block_number)]]),
+    ):
+        result = list(ethereum_inquirer.get_token_transaction_hashes(
+            account=make_evm_address(),
+        ))
+
+    assert result == [[tx_hash]]
+    assert ethereum_inquirer.block_to_timestamp_cache.get(block_number) == timestamp
+
+
+def test_deserialize_evm_transaction_uses_cached_block_timestamp(
+        ethereum_inquirer: 'EthereumInquirer',
+) -> None:
+    block_number = 999
+    expected_timestamp = Timestamp(1711111111)
+    ethereum_inquirer.block_to_timestamp_cache.add(key=block_number, value=expected_timestamp)
+    tx_data = {
+        'hash': str(make_evm_tx_hash()),
+        'blockNumber': str(block_number),
+        'from': make_evm_address(),
+        'to': make_evm_address(),
+        'value': '0',
+        'gas': '21000',
+        'gasPrice': '100',
+        'gasUsed': '21000',
+        'input': '0x',
+        'nonce': '1',
+    }
+    with patch.object(ethereum_inquirer, 'get_block_by_number', side_effect=AssertionError):
+        tx, _ = deserialize_evm_transaction(
+            data=tx_data,
+            internal=False,
+            chain_id=ChainID.ETHEREUM,
+            evm_inquirer=ethereum_inquirer,
+        )
+
+    assert tx.timestamp == expected_timestamp
