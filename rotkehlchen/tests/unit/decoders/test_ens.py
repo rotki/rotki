@@ -500,6 +500,74 @@ def test_register_v2_with_refund(
     ]
 
 
+@pytest.mark.parametrize('ethereum_accounts', [['0xe951C14FDEea2B4E776065b36acD7d3a33e85C88']])
+def test_register_v2_spend_before_refund(ethereum_inquirer, ethereum_accounts):
+    """Test for the flow, where a smart account pays the ENS controller through EntryPoint,
+    then receives a refund from the controller in a later internal tx"""
+    events, decoder = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe1a1c33b86b46b37f7581c19500dd55cf6f8d9488d0ecb1cc12ce622ca1d745b')),  # noqa: E501
+    )
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=TimestampMS(1767674711000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            amount=FVal('0.001548174343066733'),
+            location_label=(user_address := ethereum_accounts[0]),
+            notes=f'Register ENS name kennetoshi.eth for 0.001548174343066733 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp := Timestamp(1799210711))}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_2,
+            extra_data={'name': 'kennetoshi.eth', 'expires': expires_timestamp},
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=TimestampMS(1767674711000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=FVal('0.00010353540632584'),
+            location_label=user_address,
+            notes='Send 0.00010353540632584 ETH to 0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789',
+            counterparty=None,
+            address=string_to_evm_address('0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789'),
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=291,
+            timestamp=TimestampMS(1767674711000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes=f'Address for name with nodehash 080c3a9748f1df968ec8399d8f9cd1dbce8d4e94de3a35d1d06ea5b4fdf38eea changed to {user_address}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_PUBLIC_RESOLVER_3_ADDRESS,
+        ),
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=293,
+            timestamp=TimestampMS(1767674711000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            amount=ZERO,
+            location_label=user_address,
+            notes=f'Transfer node with nodehash 91d1777781884d03a6757a803996e38de2a42967fb37eeaca72729271025a9e2 ownership of subnode with label hash 0x4889f7c88864a9bc7fc14651453f0394872589327557e5ea52a1a8053e6f63f3 to {user_address}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRY_WITH_FALLBACK,
+        ),
+    ]
+    assert events == expected_events
+
+
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c']])
 def test_renewal_with_refund_old_controller(ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument  # noqa: E501

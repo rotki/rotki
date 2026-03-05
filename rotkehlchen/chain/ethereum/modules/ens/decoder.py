@@ -206,31 +206,40 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
             amount = from_wei(decoded_data[1] + decoded_data[2])  # In the new version the amount is baseCost + premium  # noqa: E501
             expires = decoded_data[3]
 
-        refund_from_registrar = None
+        refund_from_registrar = ZERO
         to_remove_indices = []
         spend_event = receive_event = None
         for event_idx, event in enumerate(context.decoded_events):
             if event.event_type == HistoryEventType.RECEIVE and event.asset == A_ETH and event.address in {ENS_REGISTRAR_CONTROLLER_1, ENS_REGISTRAR_CONTROLLER_2}:  # noqa: E501
-                # remove ETH refund event
-                refund_from_registrar = event.amount
+                # remove ETH refund event and net it out from the registration spend event.
+                refund_from_registrar += event.amount
                 to_remove_indices.append(event_idx)
 
-            # Find the ETH transfer event which should be before the registered event
-            if event.event_type == HistoryEventType.SPEND and event.asset == A_ETH and event.address == context.tx_log.address:  # noqa: E501
-                expected_amount = amount
-                if refund_from_registrar:
-                    expected_amount = amount + refund_from_registrar
-                if event.amount != expected_amount:
-                    return DEFAULT_EVM_DECODING_OUTPUT  # registration amount did not match
+        expected_amounts = {amount}
+        if refund_from_registrar != ZERO:
+            expected_amounts.add(amount + refund_from_registrar)
 
-                event.amount = amount  # adjust the spent amount too, after refund
+        for event in context.decoded_events:
+            # Find the ETH transfer event that pays for registration.
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.asset == A_ETH and
+                event.address == context.tx_log.address and
+                event.amount in expected_amounts
+            ):
+                event.amount = amount
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = CPT_ENS
                 event.notes = f'Register ENS name {fullname} for {amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
                 event.extra_data = {'name': fullname, 'expires': expires}
                 spend_event = event
+                break
 
+        if spend_event is None:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        for event in context.decoded_events:
             # Find the ENS ERC721 receive event which should be before the registered event
             if event.event_type == HistoryEventType.RECEIVE and tokenid_belongs_to_collection(
                 token_identifier=event.asset.identifier,
@@ -240,10 +249,10 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 receive_event = event
 
-        for index in to_remove_indices:
+        for index in reversed(to_remove_indices):
             del context.decoded_events[index]
 
-        if spend_event is not None and receive_event is not None:
+        if receive_event is not None:
             maybe_reshuffle_events(
                 ordered_events=[spend_event, receive_event],
                 events_list=context.decoded_events,
