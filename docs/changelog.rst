@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Gearbox withdrawals should now always have the correct order of events.
 * :bug:`-` Gearbox deposit through some wrapper routes will now be properly decoded.
 * :feature:`9024` rotki now supports yearn in all EVM chains.
 * :bug:`11797` Adding an ETH account on a fresh instance will no longer trigger unnecessary ETH2 and Uniswap balance queries when no validators exist and no events have been decoded.
