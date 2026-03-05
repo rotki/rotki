@@ -19,8 +19,9 @@ from rotkehlchen.data_migrations.manager import (
     DataMigrationManager,
     MigrationRecord,
 )
-from rotkehlchen.db.constants import UpdateType
+from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX, TX_INTERNALS_QUERIED, UpdateType
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.fval import FVal
@@ -32,12 +33,14 @@ from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     CacheType,
+    ChainID,
     ChecksumEvmAddress,
+    EvmTransaction,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -756,3 +759,103 @@ def test_migration_19(
         f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{gnosis_accounts[0]}',
         f'transactions_{gnosis_accounts[0]}',
     }
+
+
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('data_migration_version', [22])
+def test_migration_23(database: DBHandler) -> None:
+    """Test migration 23.
+
+    - Move extrainternaltx cache keys to evm_tx_mappings(TX_INTERNALS_QUERIED)
+    - Delete migrated (and malformed) extrainternaltx cache keys
+    """
+    rotki = MockRotkiForMigrations(database)
+    dbevmtx = DBEvmTx(database)
+    tx_hash_1 = make_evm_tx_hash()
+    tx_hash_2 = make_evm_tx_hash()
+    tx_1 = EvmTransaction(
+        tx_hash=tx_hash_1,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000000),
+        block_number=1,
+        from_address=(address_1 := make_evm_address()),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    )
+    tx_2 = EvmTransaction(
+        tx_hash=tx_hash_2,
+        chain_id=ChainID.OPTIMISM,
+        timestamp=Timestamp(1700000001),
+        block_number=2,
+        from_address=(address_2 := make_evm_address()),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=2,
+    )
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[tx_1, tx_2],
+            relevant_address=address_1,
+        )
+        write_cursor.executemany(
+            'INSERT INTO key_value_cache(name, value) VALUES(?, ?)',
+            [
+                (
+                    f'{EXTRAINTERNALTXPREFIX}_{ChainID.ETHEREUM.value}_{make_evm_address()}_{tx_hash_1!s}',
+                    str(address_1),
+                ),
+                (
+                    f'{EXTRAINTERNALTXPREFIX}_{ChainID.ETHEREUM.value}_{make_evm_address()}_{tx_hash_1!s}',
+                    str(address_1),
+                ),  # same tx, different receiver
+                (
+                    f'{EXTRAINTERNALTXPREFIX}_{ChainID.OPTIMISM.value}_{make_evm_address()}_{tx_hash_2!s}',
+                    str(address_2),
+                ),
+                (f'{EXTRAINTERNALTXPREFIX}_invalid_chain_None_0x1234', str(address_1)),
+            ],
+        )
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ? ESCAPE ?',
+            (f'{EXTRAINTERNALTXPREFIX}\\_%', '\\'),
+        ).fetchone()[0] == 4
+
+    with patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[next(
+            migration for migration in MIGRATION_LIST if migration.version == 23
+        )],
+    ):
+        migration_manager = DataMigrationManager(rotki)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM key_value_cache WHERE name LIKE ? ESCAPE ?',
+            (f'{EXTRAINTERNALTXPREFIX}\\_%', '\\'),
+        ).fetchone()[0] == 0
+        tx_1_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash_1, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+        tx_2_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash_2, ChainID.OPTIMISM.serialize_for_db()),
+        ).fetchone()[0]
+        assert set(cursor.execute(
+            'SELECT tx_id, value FROM evm_tx_mappings WHERE value=?',
+            (TX_INTERNALS_QUERIED,),
+        ).fetchall()) == {(tx_1_id, TX_INTERNALS_QUERIED), (tx_2_id, TX_INTERNALS_QUERIED)}

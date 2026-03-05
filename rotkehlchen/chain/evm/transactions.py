@@ -20,6 +20,7 @@ from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.cache import DBCacheDynamic
+from rotkehlchen.db.constants import TX_INTERNALS_QUERIED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
@@ -1080,45 +1081,36 @@ class EvmTransactions(ABC):  # noqa: B024
             from_address: 'ChecksumEvmAddress | None' = None,
     ) -> list[EvmInternalTransaction]:
         """Queries the internal transactions of a parent tx_hash, saves them in the DB and returns
-        them. `to_address` and `user_address` are used to check if they have been queried before,
-        to avoid querying them again if there was no internal transaction.
+        them. Uses tx mappings to avoid querying the same parent hash repeatedly.
 
         May raise:
         - RemoteError if there is a problem querying the data sources or transaction hash does
         not exist."""
-        # check cache if this parent hash was queried before for this receiver and affected address
+        # check if full internal txs for this parent tx and chain have already been queried.
         with self.database.conn.read_ctx() as cursor:
-            affected_address = self.database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.EXTRA_INTERNAL_TX,
-                chain_id=chain_id.value,
-                receiver=to_address,
-                tx_hash=str(tx_hash),
-            )
-        if affected_address == user_address:  # if we have queried them before
-            return self.dbevmtx.get_evm_internal_transactions(
-                parent_tx_hash=tx_hash,
-                blockchain=CHAINID_TO_SUPPORTED_BLOCKCHAIN[self.evm_inquirer.chain_id],
-                from_address=from_address,
-                to_address=to_address,
+            was_queried = cursor.execute(
+                'SELECT 1 FROM evm_tx_mappings WHERE tx_id IN ('
+                'SELECT identifier FROM evm_transactions '
+                'WHERE tx_hash=? AND chain_id=?) AND value=?',
+                (tx_hash, chain_id.serialize_for_db(), TX_INTERNALS_QUERIED),
+            ).fetchone() is not None
+
+        if was_queried is False:
+            self._query_and_save_internal_transactions_for_parent_hash(parent_tx_hash=tx_hash)
+            with self.database.user_write() as write_cursor:
+                write_cursor.execute(
+                    'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) '
+                    'SELECT identifier, ? FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                    (TX_INTERNALS_QUERIED, tx_hash, chain_id.serialize_for_db()),
+                )
+            log.debug(
+                f'Queried full internal txs for {tx_hash!s} on {chain_id.to_name()} '
+                f'for {user_address} with filters from={from_address} to={to_address}.',
             )
 
-        # else query again and save the DB cache to avoid querying it again
-        self._query_and_save_internal_transactions_for_parent_hash(
-            parent_tx_hash=tx_hash,
-        )
-        with self.database.user_write() as write_cursor:
-            self.database.set_dynamic_cache(
-                write_cursor=write_cursor,
-                name=DBCacheDynamic.EXTRA_INTERNAL_TX,
-                value=user_address,
-                chain_id=chain_id.value,
-                receiver=to_address,
-                tx_hash=str(tx_hash),
-            )
         return self.dbevmtx.get_evm_internal_transactions(
             parent_tx_hash=tx_hash,
-            blockchain=CHAINID_TO_SUPPORTED_BLOCKCHAIN[self.evm_inquirer.chain_id],
+            blockchain=CHAINID_TO_SUPPORTED_BLOCKCHAIN[chain_id],
             from_address=from_address,
             to_address=to_address,
         )

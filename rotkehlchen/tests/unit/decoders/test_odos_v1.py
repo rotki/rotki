@@ -18,6 +18,7 @@ from rotkehlchen.constants.assets import (
     A_WETH,
     A_WETH_ARB,
 )
+from rotkehlchen.db.constants import TX_INTERNALS_QUERIED
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -172,6 +173,15 @@ def test_swap_token_to_eth_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts
         address=ARB_ROUTER,
     )]
     assert expected_events == events
+    with arbitrum_one_inquirer.database.conn.read_ctx() as cursor:
+        assert (
+            cursor.execute(
+                'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id IN ('
+                'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?) '
+                'AND value=?',
+                (tx_hash, arbitrum_one_inquirer.chain_id.serialize_for_db(), TX_INTERNALS_QUERIED),
+            ).fetchone()[0] == 1
+        ), 'Expected TX_INTERNALS_QUERIED mapping to be persisted for this transaction'
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

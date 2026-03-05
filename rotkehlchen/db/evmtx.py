@@ -21,6 +21,7 @@ from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.db.constants import (
     EXTRAINTERNALTXPREFIX,
     TX_DECODED,
+    TX_INTERNALS_QUERIED,
     TX_SPAM,
 )
 from rotkehlchen.db.dbtx import DBCommonTx
@@ -559,8 +560,8 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         )
         # Delete all remaining evm_tx_mappings so decoding can happen again
         write_cursor.executemany(
-            'DELETE FROM evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
-            [(x, TX_DECODED, TX_SPAM) for x in tx_ids],
+            'DELETE FROM evm_tx_mappings WHERE tx_id=? AND value IN (?, ?, ?)',
+            [(x, TX_DECODED, TX_SPAM, TX_INTERNALS_QUERIED) for x in tx_ids],
         )
         # Delete any key_value_cache entries
         write_cursor.executemany(
