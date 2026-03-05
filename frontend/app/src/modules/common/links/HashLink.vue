@@ -87,7 +87,7 @@ const tooltip = useTemplateRef<InstanceType<typeof RuiTooltip>>('tooltip');
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { useAccountTags } = useBlockchainAccountData();
-const { addressNameSelector, addressNameSourceSelector } = useAddressesNamesStore();
+const { getAddressName, getAddressNameSource } = useAddressesNamesStore();
 const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();
 const { matchChain } = useSupportedChains();
 
@@ -136,14 +136,14 @@ const aliasName = computed<string | undefined>(() => {
   if (!get(canShowAddressInfo))
     return undefined;
 
-  return get(addressNameSelector(text, get(blockchain)));
+  return getAddressName(text, get(blockchain));
 });
 
 const addressSource = computed<string | undefined>(() => {
   if (!get(canShowAddressInfo))
     return undefined;
 
-  return get(addressNameSourceSelector(text, get(blockchain)));
+  return getAddressNameSource(text, get(blockchain));
 });
 
 const displayText = computed<string>(() => {

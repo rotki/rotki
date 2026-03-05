@@ -16,7 +16,7 @@ const { account, hideChainIcon = false, noTruncate = false, size = '24px', useAl
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { addressNameSelector } = useAddressesNamesStore();
+const { getAddressName } = useAddressesNamesStore();
 
 const { scrambleAddress, scrambleData, shouldShowAmount } = useScramble();
 
@@ -29,7 +29,7 @@ const aliasName = computed<string | null>(() => {
   if (!get(scrambleData) && useAliasName) {
     const { address, chain } = account;
     const chainId = chain === 'ALL' ? Blockchain.ETH : chain;
-    const name = get(addressNameSelector(address, chainId));
+    const name = getAddressName(address, chainId);
     if (name)
       return truncateAddress(name, 10);
   }

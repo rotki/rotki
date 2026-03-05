@@ -36,7 +36,7 @@ const blockchain = useRefPropVModel(modelValue, 'blockchain');
 const blockchainModel = nullDefined(blockchain);
 const { addresses } = useAccountAddresses();
 const addressesNamesStore = useAddressesNamesStore();
-const { addressNameSelector, getAddressesWithoutNames } = addressesNamesStore;
+const { getAddressName, getAddressesWithoutNames } = addressesNamesStore;
 
 const addressSuggestions = getAddressesWithoutNames(blockchain);
 const locations = computed<SelectOptions<AddressBookLocation>>(() => [
@@ -76,7 +76,7 @@ function fetchNames() {
   const addressMap = get(addresses);
 
   each(Blockchain, (chain) => {
-    addressMap[chain]?.forEach(address => get(addressNameSelector(address, chain)));
+    addressMap[chain]?.forEach(address => getAddressName(address, chain));
   });
 }
 
