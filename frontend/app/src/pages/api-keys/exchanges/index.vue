@@ -35,7 +35,7 @@ const { show } = useConfirmStore();
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('/api-keys/exchanges/');
-const { exchangeName } = useLocations();
+const { getExchangeName } = useLocations();
 
 const cols = computed<DataTableColumn<Exchange>[]>(() => [{
   align: 'center',
@@ -147,7 +147,7 @@ async function remove(item: Exchange) {
 function showRemoveConfirmation(item: Exchange) {
   show({
     message: t('exchange_settings.confirmation.message', {
-      location: item ? exchangeName(item.location) : '',
+      location: item ? getExchangeName(item.location) : '',
       name: item?.name ?? '',
     }),
     title: t('exchange_settings.confirmation.title'),

@@ -7,9 +7,9 @@ const { exchange, size = '1.5rem' } = defineProps<{
   size?: string;
 }>();
 
-const { locationData } = useLocations();
+const { useLocationData } = useLocations();
 
-const location = locationData(() => exchange);
+const location = useLocationData(() => exchange);
 </script>
 
 <template>

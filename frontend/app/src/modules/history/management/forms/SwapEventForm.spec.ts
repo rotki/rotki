@@ -92,9 +92,9 @@ describe('forms/SwapEventForm', () => {
     addHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['addHistoryEvent']>();
     editHistoryEventMock = vi.fn<ReturnType<typeof useHistoryEvents>['editHistoryEvent']>();
     vi.mocked(useLocations).mockReturnValue({
-      exchangeName: vi.fn<ReturnType<typeof useLocations>['exchangeName']>(),
+      getExchangeName: vi.fn<ReturnType<typeof useLocations>['getExchangeName']>(),
       getLocationData: vi.fn<ReturnType<typeof useLocations>['getLocationData']>(),
-      locationData: vi.fn<ReturnType<typeof useLocations>['locationData']>(),
+      useLocationData: vi.fn<ReturnType<typeof useLocations>['useLocationData']>(),
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'kraken',
         name: 'Kraken',

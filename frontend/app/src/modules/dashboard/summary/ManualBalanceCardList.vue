@@ -17,9 +17,9 @@ const manualBalancesRoute = computed<RouteLocationRaw>(() => ({
   query: { location: name },
 }));
 
-const { locationData } = useLocations();
+const { useLocationData } = useLocations();
 
-const location = locationData(() => name);
+const location = useLocationData(() => name);
 </script>
 
 <template>

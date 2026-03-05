@@ -41,7 +41,7 @@ export function useHistoryMatchedMovementItem(
   const { getChain } = useSupportedChains();
   const { getAssetField } = useAssetInfoRetrieval();
 
-  const { locationData } = useLocations();
+  const { getLocationData } = useLocations();
 
   // For asset movements, use the first non-fee asset movement event as primary
   const primaryEvent = computed<HistoryEventEntry>(() => {
@@ -115,8 +115,8 @@ export function useHistoryMatchedMovementItem(
 
     const amount = primary.amount;
     const asset = getAssetField(primary.asset, 'symbol', ASSET_RESOLUTION_OPTIONS);
-    const exchangeLabel = primary.locationLabel || get(locationData(primary.location))?.name || '';
-    const addressLabel = secondary?.locationLabel || (secondary && get(locationData(secondary.location))?.name) || '';
+    const exchangeLabel = primary.locationLabel || getLocationData(primary.location)?.name || '';
+    const addressLabel = secondary?.locationLabel || (secondary && getLocationData(secondary.location)?.name) || '';
 
     const isDeposit = primary.eventSubtype === 'receive';
     // For deposits: to = exchange, from = address

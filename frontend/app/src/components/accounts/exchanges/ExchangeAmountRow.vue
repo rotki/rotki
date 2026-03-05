@@ -9,13 +9,13 @@ const { balance, exchange } = defineProps<{
   exchange: string;
 }>();
 
-const { exchangeName } = useLocations();
+const { getExchangeName } = useLocations();
 
 const name = computed<string>(() => {
   if (!exchange)
     return '';
 
-  return exchangeName(exchange);
+  return getExchangeName(exchange);
 });
 </script>
 
