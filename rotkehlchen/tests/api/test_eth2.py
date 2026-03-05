@@ -61,6 +61,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
+    from rotkehlchen.premium.premium import Premium
     from rotkehlchen.types import ChecksumEvmAddress
 
 
@@ -473,6 +474,22 @@ def test_add_get_edit_delete_eth2_validators(
             'eth2validatorsresource',
         ), json={'public_key': validators[1].public_key},
     )
+    if start_with_valid_premium is False:
+        assert_error_response(
+            response=response,
+            contained_in_msg='ETH staking limit exceeded. Current staked: 0 ETH, limit: 0 ETH. Would be: 32.003809708 ETH',  # noqa: E501
+            status_code=HTTPStatus.FORBIDDEN,
+        )
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'eth2validatorsresource',
+            ),
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert result == {'entries': [validators[0].serialize()], 'entries_limit': -1, 'entries_found': 1}  # noqa: E501
+        return
+
     assert_simple_ok_response(response)
     response = requests.put(
         api_url_for(
@@ -497,19 +514,6 @@ def test_add_get_edit_delete_eth2_validators(
     )
     result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': -1, 'entries_found': 4}  # noqa: E501
-
-    if start_with_valid_premium is False:
-        response = requests.put(
-            api_url_for(
-                rotkehlchen_api_server,
-                'eth2validatorsresource',
-            ), json={'validator_index': 460424},
-        )
-        assert_error_response(
-            response=response,
-            contained_in_msg='ETH staking limit exceeded. Current staked: 64.007394748 ETH, limit: 128 ETH. Would be: 2112.09736885 ETH',  # noqa: E501
-            status_code=HTTPStatus.FORBIDDEN,
-        )
 
     database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     dbevents = DBHistoryEvents(database)
@@ -1173,8 +1177,14 @@ def test_get_validators(
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_modules', [['eth2']])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_balances_get_deleted_when_removing_validator(rotkehlchen_api_server: 'APIServer') -> None:
+def test_balances_get_deleted_when_removing_validator(
+        rotkehlchen_api_server: 'APIServer',
+        rotki_premium_object: 'Premium',
+) -> None:
     """Test that removing a validator correctly resets the balance caches"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    rotki.premium = rotki_premium_object
+    rotki.chains_aggregator.activate_premium_status(rotki_premium_object)
     response = requests.put(  # add a validator
         api_url_for(
             rotkehlchen_api_server,

@@ -168,7 +168,7 @@ class UserLimitType(Enum):
         if self == UserLimitType.PNL_REPORTS_LOOKUP:
             return FREE_REPORTS_LOOKUP_LIMIT
         if self == UserLimitType.ETH_STAKED:
-            return 128  # 128 ETH limit for free users (4 validators * 32 ETH each)
+            return 0  # ETH staking is not available on free tier
 
         raise NotImplementedError(f'Unknown limit type: {self}. This indicates a bug in the code.')
 
