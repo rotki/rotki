@@ -85,7 +85,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const selectedTimeframe = get(timeframe);
     const allTimeframes = timeframes((unit, amount) => dayjs().subtract(amount, unit).startOf(TimeUnit.DAY).unix());
     const startingDate = allTimeframes[selectedTimeframe].startingDate();
-    const data = get(getNetValue(startingDate)).data;
+    const data = getNetValue(startingDate).data;
     let start = data[0];
     if (start?.isZero()) {
       for (let i = 1; i < data.length; i++) {
@@ -142,44 +142,46 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const totalNetWorthUsd = calculateTotalValue(true);
 
-  function getNetValue(startingDate: number): ComputedRef<NetValueChartData> {
-    return computed<NetValueChartData>(() => {
-      const currency = get(currencySymbol);
-      const rate = getExchangeRate(currency, One);
+  function getNetValue(startingDate: number): NetValueChartData {
+    const currency = get(currencySymbol);
+    const rate = getExchangeRate(currency, One);
 
-      const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
+    const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
 
-      const { data, times } = get(netValue);
+    const { data, times } = get(netValue);
 
-      const now = millisecondsToSeconds(Date.now());
-      const netWorth = get(totalNetWorth);
+    const now = millisecondsToSeconds(Date.now());
+    const netWorth = get(totalNetWorth);
 
-      if (times.length === 0 && data.length === 0) {
-        const oneDayTimestamp = 24 * 60 * 60;
-
-        return {
-          data: [Zero, netWorth],
-          snapshotCount: 0,
-          times: [now - oneDayTimestamp, now],
-        };
-      }
-
-      const nv: NetValue = { data: [], times: [] };
-
-      for (const [i, time] of times.entries()) {
-        if (time < startingDate)
-          continue;
-
-        nv.times.push(time);
-        nv.data.push(convert(data[i]));
-      }
+    if (times.length === 0 && data.length === 0) {
+      const oneDayTimestamp = 24 * 60 * 60;
 
       return {
-        data: [...nv.data, netWorth],
-        snapshotCount: nv.data.length,
-        times: [...nv.times, now],
+        data: [Zero, netWorth],
+        snapshotCount: 0,
+        times: [now - oneDayTimestamp, now],
       };
-    });
+    }
+
+    const nv: NetValue = { data: [], times: [] };
+
+    for (const [i, time] of times.entries()) {
+      if (time < startingDate)
+        continue;
+
+      nv.times.push(time);
+      nv.data.push(convert(data[i]));
+    }
+
+    return {
+      data: [...nv.data, netWorth],
+      snapshotCount: nv.data.length,
+      times: [...nv.times, now],
+    };
+  }
+
+  function useNetValue(startingDate: number): ComputedRef<NetValueChartData> {
+    return computed<NetValueChartData>(() => getNetValue(startingDate));
   }
 
   const fetchNetValue = async (): Promise<void> => {
@@ -202,6 +204,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     fetchNetValue,
     getNetValue,
     netValue,
+    useNetValue,
     overall,
     totalNetWorth,
     totalNetWorthUsd,

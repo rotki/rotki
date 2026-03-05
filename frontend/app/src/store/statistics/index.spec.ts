@@ -3,7 +3,6 @@ import { type AssetBalanceWithPriceAndChains, BigNumber } from '@rotki/common';
 import { get } from '@vueuse/core';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { computed, type ComputedRef, type MaybeRefOrGetter, toValue } from 'vue';
 import { defaultGeneralSettings } from '@/data/factories';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useCurrencies } from '@/types/currencies';
@@ -44,14 +43,14 @@ function createBalanceWithPrice(
 
 vi.mock('@/composables/balances/use-aggregated-balances', () => ({
   useAggregatedBalances: vi.fn(() => ({
-    balances: (): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => [
+    getBalances: (): AssetBalanceWithPriceAndChains[] => [
       createBalanceWithPrice('10000', 'JPY', '0.01'),
       createBalanceWithPrice('2', 'ETH', '2000'),
       createBalanceWithPrice('0.5', 'BTC', '40000'),
-    ]),
-    liabilities: (): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => [
+    ],
+    getLiabilities: (): AssetBalanceWithPriceAndChains[] => [
       createBalanceWithPrice('1000', 'USD', '1'),
-    ]),
+    ],
   })),
 }));
 
@@ -60,11 +59,8 @@ vi.mock('@/composables/utils/useNumberScrambler', () => ({
 }));
 
 vi.mock('@/modules/prices/use-price-utils', () => ({
-  usePriceUtils: (): Pick<ReturnType<typeof usePriceUtils>, 'useExchangeRate'> => ({
-    useExchangeRate: (currency: MaybeRefOrGetter<string>): ComputedRef<BigNumber> => computed<BigNumber>(() => {
-      const curr = toValue(currency);
-      return getExchangeRate(curr);
-    }),
+  usePriceUtils: (): Pick<ReturnType<typeof usePriceUtils>, 'getExchangeRate'> => ({
+    getExchangeRate: (currency: string): BigNumber => getExchangeRate(currency),
   }),
 }));
 
@@ -151,15 +147,15 @@ describe('useStatisticsStore', () => {
     it('should correctly handle when main currency appears in liabilities', async () => {
       // Update the mock for this specific test
       const module = await import('@/composables/balances/use-aggregated-balances');
-      // @ts-expect-error partial mock - only balances and liabilities are used by the store
+      // @ts-expect-error partial mock - only getBalances and getLiabilities are used by the store
       vi.mocked(module.useAggregatedBalances).mockImplementationOnce(() => ({
-        balances: (): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => [
+        getBalances: (): AssetBalanceWithPriceAndChains[] => [
           createBalanceWithPrice('2', 'ETH', '2000'),
-        ]),
-        liabilities: (): ComputedRef<AssetBalanceWithPriceAndChains[]> => computed<AssetBalanceWithPriceAndChains[]>(() => [
+        ],
+        getLiabilities: (): AssetBalanceWithPriceAndChains[] => [
           createBalanceWithPrice('5000', 'JPY', '0.01'),
           createBalanceWithPrice('1000', 'USD', '1'),
-        ]),
+        ],
       }));
 
       // Set the currency to JPY before creating the store
@@ -203,7 +199,7 @@ describe('useStatisticsStore', () => {
     it('should return snapshotCount of 0 when there is no backend data', () => {
       const store = useStatisticsStore();
       // netValue is empty by default (no backend data)
-      const result = get(get(store.getNetValue(0)));
+      const result = store.getNetValue(0);
 
       expect(result.snapshotCount).toBe(0);
       // Should still have 2 data points (synthetic zero + current balance)
@@ -219,7 +215,7 @@ describe('useStatisticsStore', () => {
         times: [now - 300, now - 200, now - 100],
       };
 
-      const result = get(get(store.getNetValue(0)));
+      const result = store.getNetValue(0);
 
       // 3 real snapshots from the backend
       expect(result.snapshotCount).toBe(3);
@@ -237,7 +233,7 @@ describe('useStatisticsStore', () => {
       };
 
       // Only include snapshots after now - 150 (should exclude first two)
-      const result = get(get(store.getNetValue(now - 150)));
+      const result = store.getNetValue(now - 150);
 
       expect(result.snapshotCount).toBe(1);
       // 1 real snapshot + 1 appended current balance
