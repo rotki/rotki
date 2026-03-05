@@ -99,7 +99,7 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'voyager' | 'beac
   if (isSolanaChains(selectedChain) && !getApiKey('helius'))
     return 'helius';
 
-  if (isStarknetChains(selectedChain) && !get(apiKey('voyager')))
+  if (isStarknetChains(selectedChain) && !getApiKey('voyager'))
     return 'voyager';
 
   return undefined;
