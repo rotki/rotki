@@ -109,9 +109,9 @@ describe('forms/AssetMovementEventForm.vue', () => {
     vi.mocked(usePriceTaskManager().getHistoricPrice).mockResolvedValue(One);
 
     vi.mocked(useLocations).mockReturnValue({
-      exchangeName: vi.fn<ReturnType<typeof useLocations>['exchangeName']>(),
+      getExchangeName: vi.fn<ReturnType<typeof useLocations>['getExchangeName']>(),
       getLocationData: vi.fn<ReturnType<typeof useLocations>['getLocationData']>(),
-      locationData: vi.fn<ReturnType<typeof useLocations>['locationData']>(),
+      useLocationData: vi.fn<ReturnType<typeof useLocations>['useLocationData']>(),
       tradeLocations: computed<TradeLocationData[]>(() => [{
         identifier: 'kraken',
         name: 'Kraken',

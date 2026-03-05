@@ -13,7 +13,7 @@ interface ExchangeBoxProps {
 
 const { location } = defineProps<ExchangeBoxProps>();
 
-const { exchangeName } = useLocations();
+const { getExchangeName } = useLocations();
 
 const exchangeLocationRoute = computed<string>(() => {
   const route = Routes.BALANCES_EXCHANGE;
@@ -37,7 +37,7 @@ const exchangeLocationRoute = computed<string>(() => {
         </div>
       </template>
       <div class="flex flex-wrap justify-between gap-1 text-rui-text">
-        {{ exchangeName(location) }}
+        {{ getExchangeName(location) }}
         <FiatDisplay
           :value="amount"
           class="font-medium"
