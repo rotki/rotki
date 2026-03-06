@@ -12,12 +12,12 @@ import { usePriceApi } from '@/composables/api/balances/price';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
-import { useTaskStore } from '@/store/tasks';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
-import { TaskType } from '@/types/task-type';
 import { getErrorMessage } from '@/utils/error-handling';
 
 type OracleCacheEntry = OracleCacheMeta & { id: number };

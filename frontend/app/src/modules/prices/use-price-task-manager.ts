@@ -1,19 +1,19 @@
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ActionStatus } from '@/types/action';
 import type { FetchPricePayload } from '@/types/blockchain/accounts';
 import type { SupportedCurrency } from '@/types/currencies';
-import type { TaskMeta } from '@/types/task';
 import { type BigNumber, One } from '@rotki/common';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatusUpdater } from '@/composables/status';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTaskStore } from '@/store/tasks';
 import { AssetPriceResponse, type HistoricPricePayload, HistoricPrices, type OracleCachePayload } from '@/types/prices';
 import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 import { ExchangeRates } from '@/types/user';
-import { isTaskCancelled } from '@/utils';
 import { chunkArray } from '@/utils/data';
 import { convertFromTimestamp } from '@/utils/date';
 import { logger } from '@/utils/logging';
@@ -27,7 +27,8 @@ interface UsePriceTaskManagerReturn {
 
 export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { runTask } = useTaskHandler();
+  const { isTaskRunning } = useTaskStore();
   const { notifyError } = useNotifications();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
@@ -39,24 +40,28 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   } = usePriceApi();
 
   const fetchPrices = async (payload: FetchPricePayload): Promise<void> => {
-    const taskType = TaskType.UPDATE_PRICES;
-
     const fetch = async (assets: string[]): Promise<void> => {
-      const { taskId } = await queryPrices(assets, get(currencySymbol), payload.ignoreCache);
-      const { result } = await awaitTask<AssetPriceResponse, TaskMeta>(
-        taskId,
-        taskType,
+      const outcome = await runTask<AssetPriceResponse, TaskMeta>(
+        async () => queryPrices(assets, get(currencySymbol), payload.ignoreCache),
         {
-          description: t('actions.session.fetch_prices.task.description', { count: assets.length }, assets.length),
-          title: t('actions.session.fetch_prices.task.title'),
+          type: TaskType.UPDATE_PRICES,
+          meta: {
+            description: t('actions.session.fetch_prices.task.description', { count: assets.length }, assets.length),
+            title: t('actions.session.fetch_prices.task.title'),
+          },
+          unique: false,
         },
-        true,
       );
 
-      set(prices, {
-        ...get(prices),
-        ...AssetPriceResponse.parse(result),
-      });
+      if (outcome.success) {
+        set(prices, {
+          ...get(prices),
+          ...AssetPriceResponse.parse(outcome.result),
+        });
+      }
+      else if (isActionableFailure(outcome)) {
+        throw new Error(outcome.message);
+      }
     };
 
     const { setStatus } = useStatusUpdater(Section.PRICES);
@@ -69,13 +74,11 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
       }
     }
     catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        const title = t('actions.session.fetch_prices.error.title');
-        const message = t('actions.session.fetch_prices.error.message', {
-          error: getErrorMessage(error),
-        });
-        notifyError(title, message);
-      }
+      const title = t('actions.session.fetch_prices.error.title');
+      const message = t('actions.session.fetch_prices.error.message', {
+        error: getErrorMessage(error),
+      });
+      notifyError(title, message);
     }
     finally {
       setStatus(Status.LOADED);
@@ -83,15 +86,15 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
   };
 
   const fetchExchangeRates = async (symbol?: SupportedCurrency): Promise<void> => {
-    try {
-      const selectedCurrency = symbol ?? get(currencySymbol);
+    const selectedCurrency = symbol ?? get(currencySymbol);
 
-      const { taskId } = await queryFiatExchangeRates([selectedCurrency]);
-      const { result } = await awaitTask<ExchangeRates, TaskMeta>(taskId, TaskType.EXCHANGE_RATES, {
-        title: t('actions.balances.exchange_rates.task.title'),
-      });
+    const outcome = await runTask<ExchangeRates, TaskMeta>(
+      async () => queryFiatExchangeRates([selectedCurrency]),
+      { type: TaskType.EXCHANGE_RATES, meta: { title: t('actions.balances.exchange_rates.task.title') } },
+    );
 
-      const rates = ExchangeRates.parse(result);
+    if (outcome.success) {
+      const rates = ExchangeRates.parse(outcome.result);
 
       set(exchangeRates, {
         ...get(exchangeRates),
@@ -104,14 +107,11 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
         notifyError(t('missing_exchange_rate.title'), t('missing_exchange_rate.message'));
       }
     }
-    catch (error: unknown) {
-      if (isTaskCancelled(error)) {
-        return;
-      }
+    else if (isActionableFailure(outcome)) {
       notifyError(
         t('actions.balances.exchange_rates.error.title'),
         t('actions.balances.exchange_rates.error.message', {
-          message: getErrorMessage(error),
+          message: outcome.message,
         }),
       );
     }
@@ -121,14 +121,12 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     if (fromAsset === toAsset) {
       return One;
     }
-    const taskType = TaskType.FETCH_HISTORIC_PRICE;
 
-    try {
-      const { taskId } = await queryHistoricalRate(fromAsset, toAsset, timestamp);
-      const { result } = await awaitTask<HistoricPrices, TaskMeta>(
-        taskId,
-        taskType,
-        {
+    const outcome = await runTask<HistoricPrices, TaskMeta>(
+      async () => queryHistoricalRate(fromAsset, toAsset, timestamp),
+      {
+        type: TaskType.FETCH_HISTORIC_PRICE,
+        meta: {
           description: t(
             'actions.balances.historic_fetch_price.task.description',
             {
@@ -140,18 +138,19 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
           ),
           title: t('actions.balances.historic_fetch_price.task.title'),
         },
-        true,
-      );
+        unique: false,
+      },
+    );
 
-      const parsed = HistoricPrices.parse(result);
+    if (outcome.success) {
+      const parsed = HistoricPrices.parse(outcome.result);
       return parsed.assets[fromAsset]?.[timestamp] ?? One.negated();
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error))
-        logger.error(error);
 
-      return One.negated();
-    }
+    if (isActionableFailure(outcome))
+      logger.error(outcome.error);
+
+    return One.negated();
   };
 
   const createOracleCache = async ({
@@ -160,52 +159,51 @@ export function usePriceTaskManager(): UsePriceTaskManagerReturn {
     source,
     toAsset,
   }: OracleCachePayload): Promise<ActionStatus> => {
-    const taskType = TaskType.CREATE_PRICE_CACHE;
-    if (isTaskRunning(taskType)) {
+    if (isTaskRunning(TaskType.CREATE_PRICE_CACHE)) {
       return {
         message: t('actions.balances.create_oracle_cache.already_running'),
         success: false,
       };
     }
-    try {
-      const { taskId } = await createPriceCache(source, fromAsset, toAsset, purgeOld);
-      const { result } = await awaitTask<true, TaskMeta>(
-        taskId,
-        taskType,
-        {
+
+    const outcome = await runTask<true, TaskMeta>(
+      async () => createPriceCache(source, fromAsset, toAsset, purgeOld),
+      {
+        type: TaskType.CREATE_PRICE_CACHE,
+        meta: {
           title: t('actions.balances.create_oracle_cache.task', {
             fromAsset,
             source,
             toAsset,
           }),
         },
-        true,
-      );
+        guard: false,
+        unique: false,
+      },
+    );
 
-      return {
-        success: result,
-      };
+    if (outcome.success) {
+      return { success: outcome.result };
     }
-    catch (error: unknown) {
-      const message = getErrorMessage(error);
-      if (!isTaskCancelled(error)) {
-        notifyError(
-          t('actions.balances.create_oracle_cache.error.title'),
-          t('actions.balances.create_oracle_cache.error.message', {
-            message,
-          }),
-        );
-      }
-      return {
-        message: t('actions.balances.create_oracle_cache.failed', {
-          error: message,
-          fromAsset,
-          source,
-          toAsset,
+
+    if (isActionableFailure(outcome)) {
+      notifyError(
+        t('actions.balances.create_oracle_cache.error.title'),
+        t('actions.balances.create_oracle_cache.error.message', {
+          message: outcome.message,
         }),
-        success: false,
-      };
+      );
     }
+
+    return {
+      message: t('actions.balances.create_oracle_cache.failed', {
+        error: outcome.message,
+        fromAsset,
+        source,
+        toAsset,
+      }),
+      success: false,
+    };
   };
 
   return {

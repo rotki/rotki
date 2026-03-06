@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { EvmChainAddress } from '@/types/history/events';
-import type { TaskMeta } from '@/types/task';
 import {
   type AssetInfoWithId,
   getAddressFromEvmIdentifier,
@@ -17,11 +17,11 @@ import { type AssetSearchParams, useAssetInfoApi } from '@/composables/api/asset
 import { processAssetInfo, useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useTaskStore } from '@/store/tasks';
 import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
-import { TaskType } from '@/types/task-type';
-import { isAbortError, isTaskCancelled } from '@/utils';
+import { isAbortError } from '@/utils';
 
 export interface AssetResolutionOptions {
   associate?: boolean;
@@ -71,7 +71,7 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { queueIdentifier, resolve: resolveAsset } = assetCacheStore;
   const { fetchedAssetCollections } = storeToRefs(assetCacheStore);
   const { notify, notifyError } = useNotifications();
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
 
   const { getChain } = useSupportedChains();
 
@@ -196,22 +196,20 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     computed<string>(() => getTokenAddress(toValue(identifier), toValue(options)));
 
   const fetchTokenDetails = async (payload: EvmChainAddress): Promise<ERC20Token> => {
-    try {
-      const taskType = TaskType.ERC20_DETAILS;
-      const { taskId } = await erc20details(payload);
-      const { result } = await awaitTask<ERC20Token, TaskMeta>(taskId, taskType, {
-        title: t('actions.assets.erc20.task.title', payload),
-      });
-      return result;
+    const outcome = await runTask<ERC20Token, TaskMeta>(
+      async () => erc20details(payload),
+      { type: TaskType.ERC20_DETAILS, meta: { title: t('actions.assets.erc20.task.title', payload) } },
+    );
+
+    if (outcome.success) {
+      return outcome.result;
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.description', {
-          message: getErrorMessage(error),
-        }));
-      }
-      return {};
+    else if (isActionableFailure(outcome)) {
+      notifyError(t('actions.assets.erc20.error.title', payload), t('actions.assets.erc20.error.description', {
+        message: outcome.message,
+      }));
     }
+    return {};
   };
 
   const assetSearch = async (params: AssetSearchParams): Promise<AssetsWithId> => {

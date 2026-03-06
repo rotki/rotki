@@ -1,7 +1,7 @@
 import { type EthStakingPayload, EthStakingPerformanceResponse } from '@rotki/common';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 
 interface UseEth2ApiReturn {
   fetchStakingPerformance: (payload: EthStakingPayload) => Promise<EthStakingPerformanceResponse>;

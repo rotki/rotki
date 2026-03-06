@@ -4,8 +4,9 @@ import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useNotificationsStore } from '@/store/notifications';
-import { useTaskStore } from '@/store/tasks';
 import { CUSTOM_ASSET } from '@/types/asset';
+
+const runTaskMock = vi.fn();
 
 vi.mock('@/composables/api/assets/info', () => ({
   useAssetInfoApi: vi.fn().mockReturnValue({
@@ -13,9 +14,15 @@ vi.mock('@/composables/api/assets/info', () => ({
   }),
 }));
 
-vi.mock('@/store/tasks', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({}),
+vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTaskHandler: vi.fn().mockReturnValue({
+    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
+      await taskFn();
+      return runTaskMock(taskFn, ...rest);
+    },
+    cancelTask: vi.fn(),
+    cancelTaskByTaskType: vi.fn(),
   }),
 }));
 
@@ -52,10 +59,7 @@ describe('useAssetRetrieval', () => {
         symbol: 'RACA',
       };
 
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        result: tokenDetail,
-        meta: { title: '' },
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: tokenDetail });
 
       const result = await assetInfoRetrieval.fetchTokenDetails(payload);
 
@@ -67,7 +71,7 @@ describe('useAssetRetrieval', () => {
     });
 
     it('should handle failure', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
+      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
 
       const result = await assetInfoRetrieval.fetchTokenDetails(payload);
 

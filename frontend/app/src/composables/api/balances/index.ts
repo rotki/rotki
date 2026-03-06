@@ -1,6 +1,6 @@
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 import { api } from '@/modules/api/rotki-api';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 
 interface UseBalancesApiReturn { queryBalancesAsync: (payload: Partial<AllBalancePayload>) => Promise<PendingTask> }
 

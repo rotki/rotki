@@ -1,3 +1,4 @@
+import type { BlockchainMetadata } from '@/modules/tasks/types';
 import type { EvmAccountsResult } from '@/types/api/accounts';
 import type {
   AccountPayload,
@@ -7,18 +8,16 @@ import type {
   XpubAccountPayload,
 } from '@/types/blockchain/accounts';
 import type { BlockchainBalances } from '@/types/blockchain/balances';
-import type { BlockchainMetadata } from '@/types/task';
 import { Blockchain } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useTaskStore } from '@/store/tasks';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { convertBtcAccounts } from '@/utils/blockchain/accounts';
 import { createAccount } from '@/utils/blockchain/accounts/create';
 import { logger } from '@/utils/logging';
@@ -50,7 +49,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const { fetchEthStakingValidators } = useEthStaking();
   const { updateAccounts } = useBlockchainAccountsStore();
 
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { notifyError } = useNotifications();
 
   const { resetAddressNamesData } = useAddressesNamesStore();
@@ -58,57 +57,54 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const { getChainName, getNativeAsset } = useSupportedChains();
 
   const addAccount = async (chain: string, payload: AccountPayload[] | XpubAccountPayload): Promise<string> => {
-    const taskType = TaskType.ADD_ACCOUNT;
-    const { taskId } = await addBlockchainAccount(chain, payload);
-
     const address = Array.isArray(payload) ? payload.map(item => item.address).join(',\n') : payload.xpub.xpub;
-    const { result } = await awaitTask<string[] | true, BlockchainMetadata>(
-      taskId,
-      taskType,
+    const outcome = await runTask<string[] | true, BlockchainMetadata>(
+      async () => addBlockchainAccount(chain, payload),
       {
-        blockchain: chain,
-        description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
-        title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: getChainName(chain) }),
+        type: TaskType.ADD_ACCOUNT,
+        meta: {
+          blockchain: chain,
+          description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
+          title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: getChainName(chain) }),
+        },
+        unique: false,
       },
-      true,
     );
 
-    if (result === true) {
+    if (!outcome.success) {
+      if (isActionableFailure(outcome))
+        throw new Error(outcome.message);
+      return '';
+    }
+
+    if (outcome.result === true) {
       return address;
     }
 
-    return result.length > 0 ? result[0] : '';
+    return outcome.result.length > 0 ? outcome.result[0] : '';
   };
 
   const addEvmAccount = async ({ address, label, tags }: AccountPayload): Promise<EvmAccountsResult> => {
-    const taskType = TaskType.ADD_ACCOUNT;
-    const { taskId } = await addEvmAccountCaller({
-      address,
-      label,
-      tags,
-    });
-
-    try {
-      const blockchain = 'EVM';
-      const { result } = await awaitTask<EvmAccountsResult, BlockchainMetadata>(
-        taskId,
-        taskType,
-        {
+    const blockchain = 'EVM';
+    const outcome = await runTask<EvmAccountsResult, BlockchainMetadata>(
+      async () => addEvmAccountCaller({ address, label, tags }),
+      {
+        type: TaskType.ADD_ACCOUNT,
+        meta: {
           description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
-          title: t('actions.balances.blockchain_accounts_add.task.title', {
-            blockchain,
-          }),
+          title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain }),
         },
-        true,
-      );
+        unique: false,
+      },
+    );
 
-      return result;
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error))
-        throw error;
-      return {};
-    }
+    if (outcome.success)
+      return outcome.result;
+
+    if (isActionableFailure(outcome))
+      throw new Error(outcome.message);
+
+    return {};
   };
 
   const resetAddressesData = (chain: string | null, payload: AccountPayload): void => {
@@ -160,52 +156,50 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
   const removeAccount = async (payload: DeleteBlockchainAccountParams): Promise<void> => {
     const { accounts, chain } = payload;
-    const { taskId } = await removeBlockchainAccount(chain, accounts);
-    try {
-      const taskType = TaskType.REMOVE_ACCOUNT;
-      await awaitTask<BlockchainBalances, BlockchainMetadata>(taskId, taskType, {
+    const outcome = await runTask<BlockchainBalances, BlockchainMetadata>(
+      async () => removeBlockchainAccount(chain, accounts),
+      {
+        type: TaskType.REMOVE_ACCOUNT,
+        meta: {
+          blockchain: chain,
+          description: t('actions.balances.blockchain_account_removal.task.description', { count: accounts.length }),
+          title: t('actions.balances.blockchain_account_removal.task.title', { blockchain: chain }),
+        },
+      },
+    );
+
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      const title = t('actions.balances.blockchain_account_removal.error.title', {
         blockchain: chain,
-        description: t('actions.balances.blockchain_account_removal.task.description', { count: accounts.length }),
-        title: t('actions.balances.blockchain_account_removal.task.title', {
-          blockchain: chain,
-        }),
+        count: accounts.length,
       });
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        const title = t('actions.balances.blockchain_account_removal.error.title', {
-          blockchain: chain,
-          count: accounts.length,
-        });
-        const description = t('actions.balances.blockchain_account_removal.error.description', {
-          error: getErrorMessage(error),
-        });
-        notifyError(title, description);
-      }
+      const description = t('actions.balances.blockchain_account_removal.error.description', {
+        error: outcome.message,
+      });
+      notifyError(title, description);
     }
   };
 
   const removeAgnosticAccount = async (chainType: string, address: string): Promise<void> => {
-    const { taskId } = await removeAgnosticBlockchainAccount(chainType, [address]);
-    try {
-      const taskType = TaskType.REMOVE_ACCOUNT;
-      await awaitTask<BlockchainBalances, BlockchainMetadata>(taskId, taskType, {
-        description: t('actions.balances.blockchain_account_removal.agnostic.task.description', { address }),
-        title: t('actions.balances.blockchain_account_removal.agnostic.task.title'),
+    const outcome = await runTask<BlockchainBalances, BlockchainMetadata>(
+      async () => removeAgnosticBlockchainAccount(chainType, [address]),
+      {
+        type: TaskType.REMOVE_ACCOUNT,
+        meta: {
+          description: t('actions.balances.blockchain_account_removal.agnostic.task.description', { address }),
+          title: t('actions.balances.blockchain_account_removal.agnostic.task.title'),
+        },
+      },
+    );
+
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      const title = t('actions.balances.blockchain_account_removal.agnostic.error.title', { address });
+      const description = t('actions.balances.blockchain_account_removal.error.description', {
+        error: outcome.message,
       });
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        const title = t('actions.balances.blockchain_account_removal.agnostic.error.title', {
-          address,
-        });
-        const description = t('actions.balances.blockchain_account_removal.error.description', {
-          error: getErrorMessage(error),
-        });
-        notifyError(title, description);
-      }
+      notifyError(title, description);
     }
   };
 
@@ -256,30 +250,26 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   };
 
   const deleteXpub = async (params: DeleteXpubParams): Promise<void> => {
-    try {
-      const taskType = TaskType.REMOVE_ACCOUNT;
-      if (isTaskRunning(taskType))
-        return;
+    const outcome = await runTask<boolean, BlockchainMetadata>(
+      async () => deleteXpubCaller(params),
+      {
+        type: TaskType.REMOVE_ACCOUNT,
+        meta: {
+          blockchain: params.chain,
+          description: t('actions.balances.xpub_removal.task.description', { xpub: params.xpub }),
+          title: t('actions.balances.xpub_removal.task.title'),
+        },
+      },
+    );
 
-      const { taskId } = await deleteXpubCaller(params);
-      await awaitTask<boolean, BlockchainMetadata>(taskId, taskType, {
-        blockchain: params.chain,
-        description: t('actions.balances.xpub_removal.task.description', {
-          xpub: params.xpub,
-        }),
-        title: t('actions.balances.xpub_removal.task.title'),
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      const title = t('actions.balances.xpub_removal.error.title');
+      const description = t('actions.balances.xpub_removal.error.description', {
+        error: outcome.message,
+        xpub: params.xpub,
       });
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        const title = t('actions.balances.xpub_removal.error.title');
-        const description = t('actions.balances.xpub_removal.error.description', {
-          error: getErrorMessage(error),
-          xpub: params.xpub,
-        });
-        notifyError(title, description);
-      }
+      notifyError(title, description);
     }
   };
 

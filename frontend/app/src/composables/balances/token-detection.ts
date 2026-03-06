@@ -4,9 +4,9 @@ import { assert } from '@rotki/common';
 import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import { arrayify } from '@/utils/array';
 
 interface UseTokenDetectionReturn {

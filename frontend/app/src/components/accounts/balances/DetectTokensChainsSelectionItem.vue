@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import type { EvmChainInfo } from '@/types/api/chains';
 import LocationIcon from '@/components/history/LocationIcon.vue';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 
 const { item } = defineProps<{
   item: EvmChainInfo;

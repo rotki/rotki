@@ -1,23 +1,21 @@
 import type { MaybeRef } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { Collection } from '@/types/collection';
 import type {
   NonFungibleBalance,
   NonFungibleBalancesCollectionResponse,
   NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
-import type { TaskMeta } from '@/types/task';
 import { useNftBalancesApi } from '@/composables/api/balances/nft';
 import { useStatusUpdater } from '@/composables/status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTaskStore } from '@/store/tasks';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { mapCollectionResponse } from '@/utils/collection';
-import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 interface NftBalancesReturn {
@@ -28,7 +26,7 @@ interface NftBalancesReturn {
 export function useNftBalances(): NftBalancesReturn {
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNfBalances, fetchNfBalancesTask } = useNftBalancesApi();
@@ -46,10 +44,6 @@ export function useNftBalances(): NftBalancesReturn {
   };
 
   const syncNonFungiblesTask = async (): Promise<void> => {
-    const taskType = TaskType.NF_BALANCES;
-    if (isTaskRunning(taskType))
-      return;
-
     const defaults: NonFungibleBalancesRequestPayload = {
       ascending: [true],
       ignoreCache: true,
@@ -58,23 +52,19 @@ export function useNftBalances(): NftBalancesReturn {
       orderByAttributes: ['name'],
     };
 
-    const { taskId } = await fetchNfBalancesTask(defaults);
+    const outcome = await runTask<NonFungibleBalancesCollectionResponse, TaskMeta>(
+      async () => fetchNfBalancesTask(defaults),
+      { type: TaskType.NF_BALANCES, meta: { title: t('actions.nft_balances.task.title') } },
+    );
 
-    try {
-      await awaitTask<NonFungibleBalancesCollectionResponse, TaskMeta>(taskId, taskType, {
-        title: t('actions.nft_balances.task.title'),
-      });
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        notifyError(
-          t('actions.nft_balances.error.title'),
-          t('actions.nft_balances.error.message', {
-            message: getErrorMessage(error),
-          }),
-        );
-        throw error;
-      }
+    if (isActionableFailure(outcome)) {
+      notifyError(
+        t('actions.nft_balances.error.title'),
+        t('actions.nft_balances.error.message', {
+          message: outcome.message,
+        }),
+      );
+      throw new Error(outcome.message);
     }
   };
 

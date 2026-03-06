@@ -12,13 +12,22 @@ import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { isOfEventType } from '@/utils/history/events';
 
-vi.mock('@/store/tasks', async () => {
+vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTaskHandler: vi.fn().mockReturnValue({
+    runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>): Promise<unknown> => {
+      await taskFn();
+      return { success: true, result: {} };
+    }),
+  }),
+}));
+
+vi.mock('@/modules/tasks/use-task-store', async () => {
   const { ref } = await import('vue');
   return {
     useTaskStore: vi.fn().mockReturnValue({
       useIsTaskRunning: vi.fn().mockImplementation(() => ref(false)),
       isTaskRunning: vi.fn().mockImplementation(() => false),
-      awaitTask: vi.fn().mockResolvedValue({}),
     }),
   };
 });

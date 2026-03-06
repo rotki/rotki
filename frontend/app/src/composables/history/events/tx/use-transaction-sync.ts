@@ -1,15 +1,14 @@
+import type { TaskMeta } from '@/modules/tasks/types';
 import { groupBy } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { useTaskStore } from '@/store/tasks';
 import { type BlockchainAddress, type ChainAddress, TransactionChainType, TransactionChainTypeNeedDecoding, type TransactionRequestPayload } from '@/types/history/events';
-import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 import { logger } from '@/utils/logging';
@@ -32,7 +31,7 @@ export function useTransactionSync(): UseTransactionSyncReturn {
   const queue = new LimitedParallelizationQueue(1);
   const { fetchTransactionsTask } = useHistoryEventsApi();
 
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { isAddressCancelled, markAddressCancelled, removeQueryStatus, setEvmlikeStatus } = useTxQueryStatusStore();
   const { getChainName } = useSupportedChains();
   const { decodeTransactionsTask } = useHistoryTransactionDecoding();
@@ -43,7 +42,6 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     type: TransactionChainType,
     trackProgress = true,
   ): Promise<void> => {
-    const taskType = TaskType.TX;
     const { address, chain } = account;
     const isEvmlike = type === TransactionChainType.EVMLIKE;
 
@@ -61,7 +59,6 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       setEvmlikeStatus(account, 'started');
 
     const chainName = getChainName(chain);
-    const { taskId } = await fetchTransactionsTask(defaults);
     const taskMeta = {
       address,
       chain,
@@ -73,34 +70,35 @@ export function useTransactionSync(): UseTransactionSyncReturn {
       type,
     };
 
-    try {
-      await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
-    }
-    catch (error: unknown) {
-      if (error instanceof BackendCancelledTaskError) {
-        logger.debug(error);
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => fetchTransactionsTask(defaults),
+      { type: TaskType.TX, meta: taskMeta, unique: false },
+    );
+
+    if (!outcome.success) {
+      if (outcome.backendCancelled) {
+        logger.debug(outcome.message);
         removeQueryStatus(account);
       }
-      else if (isTaskCancelled(error)) {
+      else if (outcome.cancelled) {
         markAddressCancelled(account);
       }
-      else {
+      else if (!outcome.skipped) {
         notifyError(
           t('actions.transactions.error.title'),
           t('actions.transactions.error.description', {
             address,
             chain: chainName,
-            error,
+            error: outcome.message,
           }),
         );
       }
     }
-    finally {
-      // Mark evmlike as finished when the task completes (but not when cancelled)
-      // setEvmlikeStatus already guards against overwriting cancelled entries
-      if (isEvmlike && trackProgress)
-        setEvmlikeStatus(account, 'finished');
-    }
+
+    // Mark evmlike as finished when the task completes (but not when cancelled)
+    // setEvmlikeStatus already guards against overwriting cancelled entries
+    if (isEvmlike && trackProgress)
+      setEvmlikeStatus(account, 'finished');
   };
 
   const syncAndReDecodeEvents = async (

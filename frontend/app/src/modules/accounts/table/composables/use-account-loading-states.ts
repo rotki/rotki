@@ -2,10 +2,10 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AccountDataRow } from '../types';
 import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useStatusStore } from '@/store/status';
-import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 
 interface UseAccountLoadingStates<T extends BlockchainAccountBalance> {
   accountOperation: ComputedRef<boolean>;

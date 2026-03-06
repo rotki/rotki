@@ -9,9 +9,10 @@ import { useManualBalances } from '@/modules/balances/manual/use-manual-balances
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSettingsStore } from '@/store/settings';
-import { useTaskStore } from '@/store/tasks';
 import { BalanceType } from '@/types/balances';
 import { CURRENCY_USD } from '@/types/currencies';
+
+const runTaskMock = vi.fn();
 
 vi.mock('@/composables/api/balances/manual', () => ({
   useManualBalancesApi: vi.fn().mockReturnValue({
@@ -22,10 +23,15 @@ vi.mock('@/composables/api/balances/manual', () => ({
   }),
 }));
 
-vi.mock('@/store/tasks', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({}),
-    cancelTaskByTaskType: vi.fn().mockResolvedValue(undefined),
+vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTaskHandler: vi.fn().mockReturnValue({
+    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
+      await taskFn();
+      return runTaskMock(taskFn, ...rest);
+    },
+    cancelTask: vi.fn(),
+    cancelTaskByTaskType: vi.fn(),
   }),
 }));
 
@@ -73,10 +79,7 @@ const balances: ManualBalance[] = [{
 
 async function updateBalances(balances: ManualBalance[]): Promise<void> {
   const { fetchManualBalances } = useManualBalances();
-  vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-    meta: { title: '' },
-    result: { balances },
-  });
+  runTaskMock.mockResolvedValue({ success: true, result: { balances } });
 
   await fetchManualBalances(true);
   await nextTick();

@@ -6,9 +6,9 @@ import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useRefWithDebounce } from '@/composables/ref';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useHistoryStore } from '@/store/history';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 
 interface LocationData {
   evmChain: string;

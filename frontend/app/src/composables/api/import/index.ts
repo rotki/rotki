@@ -1,5 +1,5 @@
 import { api } from '@/modules/api/rotki-api';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 
 interface UseImportDataApiReturn {
   importDataFrom: (source: string, file: string, timestampFormat: string | null) => Promise<PendingTask>;

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { TaskMeta } from '@/types/task';
 import { type BigNumber, Blockchain, Zero } from '@rotki/common';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 import PoapDeliveryAirdrops from '@/components/defi/airdrops/PoapDeliveryAirdrops.vue';
@@ -11,9 +11,10 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useDefiApi } from '@/composables/api/defi';
 import { AssetAmountDisplay, ValueDisplay } from '@/modules/amount-display/components';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import {
   type Airdrop,
   AIRDROP_POAP,
@@ -21,8 +22,6 @@ import {
   type PoapDelivery,
   type PoapDeliveryDetails,
 } from '@/types/defi/airdrops';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
 
@@ -31,7 +30,7 @@ type AirdropWithIndex = Omit<Airdrop, 'amount'> & { index: number; amount: BigNu
 type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed' | 'missed';
 const ETH = Blockchain.ETH;
 const { t } = useI18n({ useScope: 'global' });
-const { awaitTask } = useTaskStore();
+const { runTask } = useTaskHandler();
 const { notifyError } = useNotifications();
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
 const hideUnknownAlert = useLocalStorage('rotki.airdrops.hide_unknown_alert', false);
@@ -150,29 +149,28 @@ function filterByAddress(data: Airdrops, addresses: string[]): Airdrop[] {
   return result;
 }
 
-async function fetchAirdrops() {
+async function fetchAirdrops(): Promise<void> {
   set(loading, true);
-  try {
-    const { taskId } = await fetchAirdropsCaller();
-    const { result } = await awaitTask<Airdrops, TaskMeta>(taskId, TaskType.DEFI_AIRDROPS, {
-      title: t('actions.defi.airdrops.task.title'),
-    });
-    set(airdrops, Airdrops.parse(result));
+
+  const outcome = await runTask<Airdrops, TaskMeta>(
+    () => fetchAirdropsCaller(),
+    { type: TaskType.DEFI_AIRDROPS, meta: { title: t('actions.defi.airdrops.task.title') } },
+  );
+
+  if (outcome.success) {
+    set(airdrops, Airdrops.parse(outcome.result));
   }
-  catch (error: unknown) {
-    if (!isTaskCancelled(error)) {
-      logger.error(error);
-      notifyError(
-        t('actions.defi.airdrops.error.title'),
-        t('actions.defi.airdrops.error.description', {
-          error: getErrorMessage(error),
-        }),
-      );
-    }
+  else if (isActionableFailure(outcome)) {
+    logger.error(outcome.error);
+    notifyError(
+      t('actions.defi.airdrops.error.title'),
+      t('actions.defi.airdrops.error.description', {
+        error: outcome.message,
+      }),
+    );
   }
-  finally {
-    set(loading, false);
-  }
+
+  set(loading, false);
 }
 
 function hasDetails(details?: PoapDeliveryDetails[]): details is PoapDeliveryDetails[] {

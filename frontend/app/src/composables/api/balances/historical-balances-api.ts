@@ -1,7 +1,7 @@
 import type { HistoricalBalancesPayload, OnchainHistoricalBalancePayload } from '@/modules/history/balances/types';
 import { useTaskApi } from '@/composables/api/task';
 import { api } from '@/modules/api/rotki-api';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 
 interface UseHistoricalBalancesApiReturn {
   fetchHistoricalBalances: (payload: HistoricalBalancesPayload) => Promise<PendingTask>;

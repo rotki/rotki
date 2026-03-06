@@ -8,11 +8,12 @@ import SyncSettings from '@/components/status/sync/SyncSettings.vue';
 import { useLinks } from '@/composables/links';
 import { useSync } from '@/composables/session/sync';
 import { useLogout } from '@/modules/account/use-logout';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { usePremiumStore } from '@/store/session/premium';
-import { useTaskStore } from '@/store/tasks';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
-import { TaskType } from '@/types/task-type';
 
 const syncSettingMenuOpen = ref<boolean>(false);
 const pending = ref<boolean>(false);
@@ -34,7 +35,8 @@ const {
   uploadProgress,
   uploadStatus,
 } = useSync();
-const { cancelTaskByTaskType, useIsTaskRunning } = useTaskStore();
+const { cancelTaskByTaskType } = useTaskHandler();
+const { useIsTaskRunning } = useTaskStore();
 const { logout } = useLogout();
 const { href, onLinkClick } = useLinks();
 

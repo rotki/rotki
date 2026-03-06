@@ -3,9 +3,9 @@ import { useRefresh } from '@/composables/balances/refresh';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
 import SummaryCardCreateButton from '@/modules/dashboard/summary/SummaryCardCreateButton.vue';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Routes } from '@/router/routes';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import ExchangeBox from './ExchangeBox.vue';
 
 const { exchanges } = useExchangeData();

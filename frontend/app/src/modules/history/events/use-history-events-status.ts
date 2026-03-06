@@ -1,11 +1,11 @@
 import type { ComputedRef } from 'vue';
 import { not } from '@vueuse/math';
 import { useSectionStatus } from '@/composables/status';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
-import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 
 interface UseHistoryEventStatusReturn {
   ethBlockEventsDecoding: ComputedRef<boolean>;

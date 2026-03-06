@@ -1,12 +1,12 @@
 import type { Ref } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { FetchData } from '@/types/fetch';
-import type { TaskMeta } from '@/types/task';
 import { useStatusUpdater } from '@/composables/status';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useTaskStore } from '@/store/tasks';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils/index';
 import { logger } from '@/utils/logging';
 
 export async function fetchDataAsync<T extends TaskMeta, R>(data: FetchData<T, R>, state: Ref<R>): Promise<void> {
@@ -17,7 +17,8 @@ export async function fetchDataAsync<T extends TaskMeta, R>(data: FetchData<T, R
     logger.debug(`module ${data.requires.module} inactive or not premium`);
     return;
   }
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { isTaskRunning } = useTaskStore();
+  const { runTask } = useTaskHandler();
 
   const task = data.task;
   const { getStatus, setStatus } = useStatusUpdater(task.section);
@@ -29,17 +30,18 @@ export async function fetchDataAsync<T extends TaskMeta, R>(data: FetchData<T, R
 
   setStatus(data.refresh ? Status.REFRESHING : Status.LOADING);
 
-  try {
-    const { taskId } = await task.query();
-    const { result } = await awaitTask<R, T>(taskId, task.type, task.meta);
-    set(state, task.parser ? task.parser(result) : result);
+  const outcome = await runTask<R, T>(
+    async () => task.query(),
+    { type: task.type, meta: task.meta, guard: false },
+  );
+
+  if (outcome.success) {
+    set(state, task.parser ? task.parser(outcome.result) : outcome.result);
   }
-  catch (error: unknown) {
-    if (!isTaskCancelled(error)) {
-      logger.error(`action failure for task ${TaskType[task.type]}:`, error);
-      const { notifyError } = useNotifications();
-      notifyError(task.onError.title, task.onError.error(getErrorMessage(error)));
-    }
+  else if (isActionableFailure(outcome)) {
+    logger.error(`action failure for task ${TaskType[task.type]}:`, outcome.error);
+    const { notifyError } = useNotifications();
+    notifyError(task.onError.title, task.onError.error(outcome.message));
   }
   setStatus(Status.LOADED);
 }

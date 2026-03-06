@@ -1,13 +1,13 @@
 import { apiUrls } from '@/modules/api/api-urls';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_ACCOUNT_OPERATION_STATUS } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import {
   AccountSession,
   type BasicLoginCredentials,
   type CreateAccountPayload,
   type LoginCredentials,
 } from '@/types/login';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseUserApiReturn {
   createAccount: (payload: CreateAccountPayload) => Promise<PendingTask>;

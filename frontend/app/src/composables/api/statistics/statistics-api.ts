@@ -7,7 +7,7 @@ import {
   TimedBalances,
 } from '@rotki/common';
 import { api } from '@/modules/api/rotki-api';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 
 interface UseStatisticsApiReturn {
   queryNetValueData: (includeNfts: boolean) => Promise<NetValue>;

@@ -2,7 +2,7 @@
 import type { BalanceQueryProgressType, CommonQueryProgressData } from '@/modules/dashboard/progress/types';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { TaskType } from '@/types/task-type';
+import { TaskType } from '@/modules/tasks/task-type';
 
 interface BalanceQueryProgressOperationData {
   type: BalanceQueryProgressType;

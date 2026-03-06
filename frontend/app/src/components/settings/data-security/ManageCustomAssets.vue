@@ -3,9 +3,9 @@ import { assert, Severity } from '@rotki/common';
 import FileUpload from '@/components/import/FileUpload.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useAssets } from '@/composables/assets';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useNotificationsStore } from '@/store/notifications';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 
 const zip = ref<File>();
 const importError = ref<string>('');

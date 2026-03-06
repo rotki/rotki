@@ -1,6 +1,6 @@
 import { api } from '@/modules/api/rotki-api';
 import { type GnosisPayAdminsMapping, GnosisPayAdminsMappingSchema } from '@/modules/external-services/gnosis-pay/types';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 
 interface GnosisPaySiweApiReturn {
   fetchGnosisPayAdmins: () => Promise<GnosisPayAdminsMapping>;

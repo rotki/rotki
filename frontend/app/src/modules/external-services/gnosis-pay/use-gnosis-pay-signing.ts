@@ -1,15 +1,14 @@
 import type { MaybePromise } from '@rotki/common';
 import type { BrowserProvider } from 'ethers';
 import type { Ref } from 'vue';
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useInjectedWallet } from '@/modules/onchain/wallet-bridge/use-injected-wallet';
 import { useWalletConnect } from '@/modules/onchain/wallet-connect/use-wallet-connect';
 import { isUserRejectedError, WALLET_MODES } from '@/modules/onchain/wallet-constants';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { logger } from '@/utils/logging';
 import { GnosisPayError, type GnosisPayErrorContext } from './types';
 import { useGnosisPaySiweApi } from './use-gnosis-pay-api';
@@ -44,7 +43,7 @@ export function useGnosisPaySigning(options: UseGnosisPaySigningOptions): UseGno
 
   const { t } = useI18n({ useScope: 'global' });
   const { showErrorMessage } = useNotifications();
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { fetchNonce, verifySiweSignature } = useGnosisPaySiweApi();
 
   const { walletMode } = storeToRefs(useWalletStore());
@@ -95,48 +94,55 @@ Issued At: ${issuedAt}`;
       }
 
       // Fetch nonce with async task
-      const nonceTask = await fetchNonce();
-      const { result: nonce } = await awaitTask<string, TaskMeta>(
-        nonceTask.taskId,
-        TaskType.GNOSISPAY_FETCH_NONCE,
-        {
-          title: t('external_services.gnosispay.siwe.fetching_nonce'),
-        },
+      const nonceOutcome = await runTask<string, TaskMeta>(
+        async () => fetchNonce(),
+        { type: TaskType.GNOSISPAY_FETCH_NONCE, meta: { title: t('external_services.gnosispay.siwe.fetching_nonce') } },
       );
 
-      const message = createSiweMessage(address, nonce);
+      if (!nonceOutcome.success) {
+        if (isActionableFailure(nonceOutcome)) {
+          showErrorMessage(t('external_services.gnosispay.siwe.failed'), nonceOutcome.message);
+          logger.error('Sign-in with Ethereum failed:', nonceOutcome.message);
+        }
+        return;
+      }
+
+      const message = createSiweMessage(address, nonceOutcome.result);
       const provider = getBrowserProvider();
       const signature = await signMessage(provider, message);
 
       // Verify signature with async task
-      const verifyTask = await verifySiweSignature(message, signature);
-      const { result } = await awaitTask<boolean, TaskMeta>(
-        verifyTask.taskId,
-        TaskType.GNOSISPAY_VERIFY_SIGNATURE,
-        {
-          title: t('external_services.gnosispay.siwe.verifying_signature'),
-        },
+      const verifyOutcome = await runTask<boolean, TaskMeta>(
+        async () => verifySiweSignature(message, signature),
+        { type: TaskType.GNOSISPAY_VERIFY_SIGNATURE, meta: { title: t('external_services.gnosispay.siwe.verifying_signature') } },
       );
 
-      if (result) {
+      if (!verifyOutcome.success) {
+        if (isActionableFailure(verifyOutcome)) {
+          showErrorMessage(t('external_services.gnosispay.siwe.failed'), verifyOutcome.message);
+          logger.error('Sign-in with Ethereum failed:', verifyOutcome.message);
+        }
+        return;
+      }
+
+      if (verifyOutcome.result) {
         set(signInSuccess, true);
         if (onSignInComplete)
           await onSignInComplete();
       }
       else {
-        throw new Error(t('external_services.gnosispay.siwe.failed'));
+        showErrorMessage(t('external_services.gnosispay.siwe.failed'), t('external_services.gnosispay.siwe.failed'));
+        logger.error('Sign-in with Ethereum failed: verification returned false');
       }
     }
     catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        if (isUserRejectedError(error)) {
-          setError(GnosisPayError.SIGNATURE_REJECTED);
-        }
-        else {
-          showErrorMessage(t('external_services.gnosispay.siwe.failed'), String(error));
-        }
-        logger.error('Sign-in with Ethereum failed:', error);
+      if (isUserRejectedError(error)) {
+        setError(GnosisPayError.SIGNATURE_REJECTED);
       }
+      else {
+        showErrorMessage(t('external_services.gnosispay.siwe.failed'), String(error));
+      }
+      logger.error('Sign-in with Ethereum failed:', error);
     }
     finally {
       set(signingInProgress, false);

@@ -8,9 +8,9 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useCacheClear } from '@/composables/session/cache-clear';
 import { useSessionPurge } from '@/composables/session/purge';
 import { SettingsHighlightIds } from '@/composables/settings/types';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useHistoryStore } from '@/store/history';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 
 const source = ref<string>();
 

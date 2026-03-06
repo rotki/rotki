@@ -4,8 +4,8 @@ import type {
 } from '@/modules/dashboard/progress/types';
 import { get, set, watchDebounced } from '@vueuse/shared';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
+import { TaskType } from '@/modules/tasks/task-type';
 import { BalanceQueueService, type QueueItem, type QueueItemMetadata, type QueueStats } from '@/services/balance-queue';
-import { TaskType } from '@/types/task-type';
 
 interface BalanceQueueMetadata extends QueueItemMetadata {
   chain: string;

@@ -1,21 +1,19 @@
-import type { BlockchainMetadata } from '@/types/task';
+import type { BlockchainMetadata } from '@/modules/tasks/types';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import {
   BlockchainBalances,
   type BtcBalances,
   type FetchBlockchainBalancePayload,
 } from '@/types/blockchain/balances';
 import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { convertBtcBalances } from '@/utils/blockchain/accounts';
-import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
 function isBtcBalances(data?: BtcBalances | any): data is BtcBalances {
@@ -27,7 +25,7 @@ interface UseBalanceProcessingServiceReturn {
 }
 
 export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn {
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { notifyError } = useNotifications();
   const { queryBlockchainBalances, queryXpubBalances } = useBlockchainBalancesApi();
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
@@ -38,27 +36,25 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
 
   const handleFetch = async (payload: FetchBlockchainBalancePayload, threshold: string | undefined): Promise<void> => {
     const blockchain = payload.blockchain;
-    try {
-      setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING, { subsection: blockchain });
+    setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING, { subsection: blockchain });
 
-      const account = get(accounts)[blockchain];
+    const account = get(accounts)[blockchain];
 
-      if (account && account.length > 0) {
-        const { taskId } = !payload.isXpub ? await queryBlockchainBalances(payload, threshold) : await queryXpubBalances(payload);
-        const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
-        const { result } = await awaitTask<BlockchainBalances, BlockchainMetadata>(
-          taskId,
-          taskType,
-          {
-            blockchain,
-            title: t('actions.balances.blockchain.task.title', {
-              chain: getChainName(blockchain),
-            }),
-          },
-          true,
-        );
+    if (account && account.length > 0) {
+      const meta: BlockchainMetadata = {
+        blockchain,
+        title: t('actions.balances.blockchain.task.title', {
+          chain: getChainName(blockchain),
+        }),
+      };
 
-        const parsedBalances: BlockchainBalances = BlockchainBalances.parse(result);
+      const outcome = await runTask<BlockchainBalances, BlockchainMetadata>(
+        async () => !payload.isXpub ? queryBlockchainBalances(payload, threshold) : queryXpubBalances(payload),
+        { type: TaskType.QUERY_BLOCKCHAIN_BALANCES, meta, unique: false },
+      );
+
+      if (outcome.success) {
+        const parsedBalances: BlockchainBalances = BlockchainBalances.parse(outcome.result);
         const perAccount = parsedBalances.perAccount[blockchain];
 
         if (isBtcBalances(perAccount)) {
@@ -68,31 +64,32 @@ export function useBalanceProcessingService(): UseBalanceProcessingServiceReturn
         else {
           updateBalances(blockchain, parsedBalances);
         }
+
+        setStatus(Status.LOADED, { subsection: blockchain });
       }
       else {
-        const emptyData: BlockchainBalances = {
-          perAccount: {},
-          totals: {
-            assets: {},
-            liabilities: {},
-          },
-        };
-        updateBalances(blockchain, emptyData);
+        if (isActionableFailure(outcome)) {
+          logger.error(outcome.error);
+          notifyError(
+            t('actions.balances.blockchain.error.title'),
+            t('actions.balances.blockchain.error.description', {
+              error: outcome.message,
+            }),
+          );
+        }
+        resetStatus({ subsection: blockchain });
       }
-
-      setStatus(Status.LOADED, { subsection: blockchain });
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        notifyError(
-          t('actions.balances.blockchain.error.title'),
-          t('actions.balances.blockchain.error.description', {
-            error: getErrorMessage(error),
-          }),
-        );
-      }
-      resetStatus({ subsection: blockchain });
+    else {
+      const emptyData: BlockchainBalances = {
+        perAccount: {},
+        totals: {
+          assets: {},
+          liabilities: {},
+        },
+      };
+      updateBalances(blockchain, emptyData);
+      setStatus(Status.LOADED, { subsection: blockchain });
     }
   };
 

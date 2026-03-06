@@ -6,9 +6,9 @@ import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSectionStatus } from '@/composables/status';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 
 interface UseEthValidatorOperationsReturn {
   accountOperation: ComputedRef<boolean>;

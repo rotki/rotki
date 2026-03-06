@@ -1,3 +1,4 @@
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ActionStatus } from '@/types/action';
 import type {
   ApplyUpdateResult,
@@ -7,14 +8,12 @@ import type {
   AssetUpdatePayload,
   AssetUpdateResult,
 } from '@/types/asset';
-import type { TaskMeta } from '@/types/task';
 import { useAssetsApi } from '@/composables/api/assets';
 import { useInterop } from '@/composables/electron-interop';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
 
 interface ExportCustomAssetsResult {
@@ -32,7 +31,7 @@ interface UseAssetsReturn {
 }
 
 export function useAssets(): UseAssetsReturn {
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { t } = useI18n({ useScope: 'global' });
   const { appSession, getPath, openDirectory } = useInterop();
   const {
@@ -48,62 +47,57 @@ export function useAssets(): UseAssetsReturn {
   const { notifyError } = useNotifications();
 
   const checkForUpdate = async (): Promise<AssetUpdateCheckResult> => {
-    try {
-      const taskType = TaskType.ASSET_UPDATE;
-      const { taskId } = await checkForAssetUpdate();
-      const { result } = await awaitTask<AssetDBVersion, TaskMeta>(taskId, taskType, {
-        title: t('actions.assets.versions.task.title'),
-      });
+    const outcome = await runTask<AssetDBVersion, TaskMeta>(
+      async () => checkForAssetUpdate(),
+      { type: TaskType.ASSET_UPDATE, meta: { title: t('actions.assets.versions.task.title') } },
+    );
 
+    if (outcome.success) {
       return {
-        updateAvailable: result.local < result.remote && result.newChanges > 0,
-        versions: result,
+        updateAvailable: outcome.result.local < outcome.result.remote && outcome.result.newChanges > 0,
+        versions: outcome.result,
       };
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        const title = t('actions.assets.versions.task.title');
-        const description = t('actions.assets.versions.error.description', {
-          message: getErrorMessage(error),
-        }).toString();
+    else if (isActionableFailure(outcome)) {
+      const title = t('actions.assets.versions.task.title');
+      const description = t('actions.assets.versions.error.description', {
+        message: outcome.message,
+      }).toString();
 
-        notifyError(title, description);
-      }
-      return {
-        updateAvailable: false,
-      };
+      notifyError(title, description);
     }
+    return {
+      updateAvailable: false,
+    };
   };
 
   const applyUpdates = async ({ resolution, version }: AssetUpdatePayload): Promise<ApplyUpdateResult> => {
-    try {
-      const { taskId } = await performUpdate(version, resolution);
-      const { result } = await awaitTask<AssetUpdateResult, TaskMeta>(taskId, TaskType.ASSET_UPDATE_PERFORM, {
-        title: t('actions.assets.update.task.title'),
-      });
+    const outcome = await runTask<AssetUpdateResult, TaskMeta>(
+      async () => performUpdate(version, resolution),
+      { type: TaskType.ASSET_UPDATE_PERFORM, meta: { title: t('actions.assets.update.task.title') } },
+    );
 
-      if (typeof result === 'boolean') {
+    if (outcome.success) {
+      if (typeof outcome.result === 'boolean') {
         return {
           done: true,
         };
       }
       return {
-        conflicts: result,
+        conflicts: outcome.result,
         done: false,
       };
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        const title = t('actions.assets.update.task.title');
-        const description = t('actions.assets.update.error.description', {
-          message: getErrorMessage(error),
-        }).toString();
-        notifyError(title, description);
-      }
-      return {
-        done: false,
-      };
+    else if (isActionableFailure(outcome)) {
+      const title = t('actions.assets.update.task.title');
+      const description = t('actions.assets.update.error.description', {
+        message: outcome.message,
+      }).toString();
+      notifyError(title, description);
     }
+    return {
+      done: false,
+    };
   };
 
   const mergeAssets = async ({
@@ -129,83 +123,78 @@ export function useAssets(): UseAssetsReturn {
   };
 
   const importCustomAssets = async (file: File): Promise<ActionStatus> => {
-    try {
-      const path = getPath(file);
-      const { taskId } = await importCustom(path ?? file);
-      await awaitTask<boolean, TaskMeta>(taskId, TaskType.IMPORT_ASSET, {
-        title: t('actions.assets.import.task.title'),
-      });
+    const path = getPath(file);
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => importCustom(path ?? file),
+      { type: TaskType.IMPORT_ASSET, meta: { title: t('actions.assets.import.task.title') } },
+    );
 
+    if (outcome.success) {
       return {
         success: true,
       };
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error))
-        logger.error(error);
 
-      return {
-        message: getErrorMessage(error),
-        success: false,
-      };
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      return { message: outcome.message, success: false };
     }
+
+    return { message: '', success: false };
   };
 
   const exportCustomAssets = async (): Promise<ActionStatus | ExportCustomAssetsResult> => {
-    try {
-      let directory: string | undefined;
-      if (appSession) {
-        const selectedDirectory = await openDirectory(t('common.select_directory').toString());
-        if (!selectedDirectory) {
-          return {
-            message: t('assets.backup.missing_directory'),
-            success: false,
-          };
-        }
-        directory = selectedDirectory;
+    let directory: string | undefined;
+    if (appSession) {
+      const selectedDirectory = await openDirectory(t('common.select_directory').toString());
+      if (!selectedDirectory) {
+        return {
+          message: t('assets.backup.missing_directory'),
+          success: false,
+        };
       }
-      const { taskId } = await exportCustom(directory);
-      const { result } = await awaitTask<{ filePath: string }, TaskMeta>(taskId, TaskType.EXPORT_ASSET, {
-        title: t('actions.assets.export.task.title'),
-      });
+      directory = selectedDirectory;
+    }
 
+    const outcome = await runTask<{ filePath: string }, TaskMeta>(
+      async () => exportCustom(directory),
+      { type: TaskType.EXPORT_ASSET, meta: { title: t('actions.assets.export.task.title') } },
+    );
+
+    if (outcome.success) {
       // For web case (no directory selected), download the file using the returned file path
       if (!directory)
-        await downloadCustomAssets(result.filePath);
+        await downloadCustomAssets(outcome.result.filePath);
 
-      return { directory, filePath: result.filePath };
+      return { directory, filePath: outcome.result.filePath };
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error))
-        logger.error(error);
 
-      return {
-        message: getErrorMessage(error),
-        success: false,
-      };
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      return { message: outcome.message, success: false };
     }
+
+    return { message: '', success: false };
   };
 
   const restoreAssetsDatabase = async (resetType: 'hard' | 'soft'): Promise<ActionStatus> => {
-    try {
-      const { taskId } = await restoreAssetsDatabaseCaller(resetType, resetType === 'hard');
-      await awaitTask<boolean, TaskMeta>(taskId, TaskType.RESET_ASSET, {
-        title: t('actions.assets.reset.task.title'),
-      });
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => restoreAssetsDatabaseCaller(resetType, resetType === 'hard'),
+      { type: TaskType.RESET_ASSET, meta: { title: t('actions.assets.reset.task.title') } },
+    );
 
+    if (outcome.success) {
       return {
         success: true,
       };
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error))
-        logger.error(error);
 
-      return {
-        message: getErrorMessage(error),
-        success: false,
-      };
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      return { message: outcome.message, success: false };
     }
+
+    return { message: '', success: false };
   };
 
   return {

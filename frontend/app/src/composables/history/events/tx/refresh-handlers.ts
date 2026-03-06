@@ -1,16 +1,15 @@
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { groupBy, omit } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
-import { useTaskStore } from '@/store/tasks';
 import { type Exchange, QueryExchangeEventsPayload } from '@/types/exchanges';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
 
@@ -24,7 +23,7 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { notifyError } = useNotifications();
   const { markLocationCancelled } = useEventsQueryStatusStore();
   const { queryExchangeEvents, queryOnlineHistoryEvents } = useHistoryEventsApi();
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { enabled: isEth2Enabled } = useModuleEnabled(Module.ETH2);
   const { getApiKey } = useExternalApiKeys();
   const { authenticated: moneriumAuthenticated, refreshStatus } = useMoneriumOAuth();
@@ -50,34 +49,27 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     }
 
     logger.debug(`querying for ${queryType} events`);
-    const taskType = TaskType.QUERY_ONLINE_EVENTS;
-    const { taskId } = await queryOnlineHistoryEvents({
-      asyncQuery: true,
-      queryType,
-    });
 
     const taskMeta = {
-      description: t('actions.online_events.task.description', {
-        queryType,
-      }),
+      description: t('actions.online_events.task.description', { queryType }),
       queryType,
       title: t('actions.online_events.task.title'),
     };
 
-    try {
-      await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        notifyError(
-          t('actions.online_events.error.title'),
-          t('actions.online_events.error.description', {
-            error,
-            queryType,
-          }),
-        );
-      }
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => queryOnlineHistoryEvents({ asyncQuery: true, queryType }),
+      { type: TaskType.QUERY_ONLINE_EVENTS, meta: taskMeta, unique: false },
+    );
+
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      notifyError(
+        t('actions.online_events.error.title'),
+        t('actions.online_events.error.description', {
+          error: outcome.message,
+          queryType,
+        }),
+      );
     }
     logger.debug(`finished querying for ${queryType} events`);
   };
@@ -85,28 +77,28 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const queryExchange = async (payload: Exchange): Promise<void> => {
     logger.debug(`querying exchange events for ${payload.location} (${payload.name})`);
     const exchange = omit(payload, ['krakenAccountType', 'okxLocation']);
-    const taskType = TaskType.QUERY_EXCHANGE_EVENTS;
     const taskMeta = {
       description: t('actions.exchange_events.task.description', exchange),
       exchange,
       title: t('actions.exchange_events.task.title'),
     };
 
-    try {
-      const payload = QueryExchangeEventsPayload.parse(exchange);
-      const { taskId } = await queryExchangeEvents(payload);
-      await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
-    }
-    catch (error: unknown) {
-      if (isTaskCancelled(error)) {
+    const parsedPayload = QueryExchangeEventsPayload.parse(exchange);
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => queryExchangeEvents(parsedPayload),
+      { type: TaskType.QUERY_EXCHANGE_EVENTS, meta: taskMeta, unique: false },
+    );
+
+    if (!outcome.success) {
+      if (outcome.cancelled) {
         markLocationCancelled({ location: exchange.location, name: exchange.name });
       }
-      else {
-        logger.error(error);
+      else if (!outcome.skipped) {
+        logger.error(outcome.error);
         notifyError(
           t('actions.exchange_events.error.title'),
           t('actions.exchange_events.error.description', {
-            error,
+            error: outcome.message,
             ...payload,
           }),
         );

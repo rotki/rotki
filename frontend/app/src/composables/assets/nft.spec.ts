@@ -2,7 +2,8 @@ import type { NftResponse } from '@/types/nfts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/composables/api/assets';
 import { useNfts } from '@/composables/assets/nft';
-import { useTaskStore } from '@/store/tasks';
+
+const runTaskMock = vi.fn();
 
 vi.mock('@/composables/api/assets/index', () => ({
   useAssetsApi: vi.fn().mockReturnValue({
@@ -10,9 +11,15 @@ vi.mock('@/composables/api/assets/index', () => ({
   }),
 }));
 
-vi.mock('@/store/tasks', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({}),
+vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTaskHandler: vi.fn().mockReturnValue({
+    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
+      await taskFn();
+      return runTaskMock(taskFn, ...rest);
+    },
+    cancelTask: vi.fn(),
+    cancelTaskByTaskType: vi.fn(),
   }),
 }));
 
@@ -22,9 +29,9 @@ describe('useNftStore', () => {
   let api: ReturnType<typeof useAssetsApi>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     store = useNfts();
     api = useAssetsApi();
-    vi.clearAllMocks();
   });
 
   describe('fetchNfts', () => {
@@ -37,10 +44,7 @@ describe('useNftStore', () => {
         entriesLimit: 0,
       };
 
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        result: nfts,
-        meta: { title: '' },
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: nfts });
 
       const result = await store.fetchNfts(true);
 
@@ -53,7 +57,7 @@ describe('useNftStore', () => {
     });
 
     it('should handle failure', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
+      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
 
       const result = await store.fetchNfts(true);
 

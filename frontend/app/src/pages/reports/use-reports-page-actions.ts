@@ -1,17 +1,16 @@
 import type { Ref } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
-import type { TaskMeta } from '@/types/task';
 import { Priority, Severity } from '@rotki/common';
 import { useReportsApi } from '@/composables/api/reports';
 import { useInterop } from '@/composables/electron-interop';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useReportsStore } from '@/store/reports';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { downloadFileByTextContent } from '@/utils/download';
 
 interface UseReportsPageActionsOptions {
@@ -32,7 +31,7 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const reportsStore = useReportsStore();
   const { exportReportData, fetchReports, generateReport } = reportsStore;
   const { pinned } = storeToRefs(useAreaVisibilityStore());
@@ -109,40 +108,28 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
 
     set(importDataLoading, true);
 
-    let success: boolean;
-    let message = '';
-
-    const taskType = TaskType.IMPORT_PNL_REPORT_DATA;
     const file = get(reportDebugData);
+    const path = getPath(file);
 
-    try {
-      const path = getPath(file);
-      const { taskId } = path
-        ? await importReportData(path)
-        : await uploadReportData(file);
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => path ? importReportData(path) : uploadReportData(file),
+      { type: TaskType.IMPORT_PNL_REPORT_DATA, meta: { title: t('profit_loss_reports.debug.import_message.title') } },
+    );
 
-      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-        title: t('profit_loss_reports.debug.import_message.title'),
-      });
-      success = result;
-    }
-    catch (error: unknown) {
-      if (isTaskCancelled(error)) {
+    if (outcome.success) {
+      if (outcome.result) {
+        showSuccessMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.success'));
         await fetchReports();
-        set(importDataLoading, false);
-        return;
       }
-
-      message = getErrorMessage(error);
-      success = false;
+      else {
+        showErrorMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.failure', { message: '' }));
+      }
     }
-
-    if (!success) {
-      showErrorMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.failure', { message }));
-    }
-    else {
-      showSuccessMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.success'));
+    else if (outcome.cancelled) {
       await fetchReports();
+    }
+    else if (!outcome.skipped) {
+      showErrorMessage(t('profit_loss_reports.debug.import_message.title'), t('profit_loss_reports.debug.import_message.failure', { message: outcome.message }));
     }
 
     set(importDataLoading, false);

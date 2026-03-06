@@ -1,12 +1,12 @@
 import type { Ref } from 'vue';
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { type BigNumber, type Eth2ValidatorEntry, Eth2Validators, type EthStakingCombinedFilter, type EthStakingFilter, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { isEmpty } from 'es-toolkit/compat';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import { nonEmptyProperties } from '@/utils/data';
 
 interface UseEthValidatorManagementReturn {
@@ -26,7 +26,7 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
 
   const { getEth2Validators } = useBlockchainAccountsApi();
   const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
 
   function setTotal(validators?: Eth2Validators['entries']): void {
     const publicKeys = validators?.map((validator: Eth2ValidatorEntry) => validator.publicKey);
@@ -54,11 +54,15 @@ export function useEthValidatorManagement(): UseEthValidatorManagementReturn {
       return;
     }
 
-    const { taskId } = await getEth2Validators(combinedFilter);
-    const taskMeta: TaskMeta = { title: '' };
-    const { result } = await awaitTask<Eth2Validators, TaskMeta>(taskId, TaskType.FETCH_ETH2_VALIDATORS, taskMeta);
-    const parsed = Eth2Validators.parse(result);
-    setTotal(parsed.entries);
+    const outcome = await runTask<Eth2Validators, TaskMeta>(
+      async () => getEth2Validators(combinedFilter),
+      { type: TaskType.FETCH_ETH2_VALIDATORS, meta: { title: '' } },
+    );
+
+    if (outcome.success) {
+      const parsed = Eth2Validators.parse(outcome.result);
+      setTotal(parsed.entries);
+    }
   }
 
   // Watch for filter changes

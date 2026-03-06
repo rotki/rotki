@@ -1,16 +1,17 @@
 import type { DatabaseUploadProgress, DbUploadResult } from '@/modules/messaging/types';
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { useSyncApi } from '@/composables/api/session/sync';
 import { serializer } from '@/composables/dynamic-messages';
 import { api } from '@/modules/api/rotki-api';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useTaskStore } from '@/store/tasks';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 
 export const useSync = createSharedComposable(() => {
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { runTask } = useTaskHandler();
+  const { isTaskRunning } = useTaskStore();
   const { notifyError, notifyInfo } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const syncAction = ref<SyncAction>(SYNC_DOWNLOAD);
@@ -33,32 +34,29 @@ export const useSync = createSharedComposable(() => {
   };
 
   const forceSync = async (logout: () => Promise<void>): Promise<void> => {
-    const taskType = TaskType.FORCE_SYNC;
-    if (isTaskRunning(taskType))
+    if (isTaskRunning(TaskType.FORCE_SYNC))
       return;
 
     const notifyFailure = (error: string): void => {
       const title = t('actions.session.force_sync.error.title');
-      const message = t('actions.session.force_sync.error.message', {
-        error,
-      });
+      const message = t('actions.session.force_sync.error.message', { error });
 
       notifyError(title, message);
     };
 
-    try {
-      api.cancelAllQueued();
-      api.cancel();
-      const action = get(syncAction);
-      if (action === SYNC_UPLOAD)
-        set(displaySyncConfirmation, false);
+    api.cancelAllQueued();
+    api.cancel();
+    const action = get(syncAction);
+    if (action === SYNC_UPLOAD)
+      set(displaySyncConfirmation, false);
 
-      const { taskId } = await useSyncApi().forceSync(action);
-      const { message, result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-        title: t('actions.session.force_sync.task.title'),
-      });
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => useSyncApi().forceSync(action),
+      { type: TaskType.FORCE_SYNC, meta: { title: t('actions.session.force_sync.task.title') }, guard: false },
+    );
 
-      if (result) {
+    if (outcome.success) {
+      if (outcome.result) {
         const title = t('actions.session.force_sync.success.title');
         const message = t('actions.session.force_sync.success.message');
 
@@ -68,12 +66,11 @@ export const useSync = createSharedComposable(() => {
           await logout();
       }
       else {
-        notifyFailure(message ?? '');
+        notifyFailure(outcome.message ?? '');
       }
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error))
-        notifyFailure(getErrorMessage(error));
+    else if (isActionableFailure(outcome)) {
+      notifyFailure(outcome.message);
     }
   };
 

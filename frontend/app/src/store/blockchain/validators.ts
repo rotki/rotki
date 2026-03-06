@@ -12,11 +12,11 @@ import { usePremium } from '@/composables/premium';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTaskStore } from '@/store/tasks';
 import { Module } from '@/types/modules';
-import { TaskType } from '@/types/task-type';
 import { createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { isValidatorAccount } from '@/utils/blockchain/accounts/utils';
 import { sortAndFilterValidators } from '@/utils/blockchain/accounts/validator';
@@ -74,18 +74,19 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
     },
   );
 
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
 
   const fetchEthStakingValidators = async (payload?: EthValidatorFilter): Promise<void> => {
     if (!isEth2Enabled())
       return;
 
-    try {
-      const { taskId } = await getEth2Validators(payload);
-      const { result } = await awaitTask<Eth2Validators, { title: string }>(taskId, TaskType.FETCH_ETH2_VALIDATORS, {
-        title: t('actions.get_accounts.task.title', { blockchain: Blockchain.ETH2 }),
-      });
-      const validators = Eth2Validators.parse(result);
+    const outcome = await runTask<Eth2Validators, { title: string }>(
+      async () => getEth2Validators(payload),
+      { type: TaskType.FETCH_ETH2_VALIDATORS, meta: { title: t('actions.get_accounts.task.title', { blockchain: Blockchain.ETH2 }) } },
+    );
+
+    if (outcome.success) {
+      const validators = Eth2Validators.parse(outcome.result);
       updateAccounts(
         Blockchain.ETH2,
         validators.entries.map(validator =>
@@ -97,13 +98,13 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
       );
       set(stakingValidatorsLimits, { limit: validators.entriesLimit, total: validators.entriesFound });
     }
-    catch (error: unknown) {
-      logger.error(error);
+    else if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
       notifyError(
         t('actions.get_accounts.error.title'),
         t('actions.get_accounts.error.description', {
           blockchain: Blockchain.ETH2,
-          message: getErrorMessage(error),
+          message: outcome.message,
         }),
       );
     }

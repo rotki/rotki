@@ -3,8 +3,8 @@ import { getTextToken } from '@rotki/common';
 import DetectTokensChainsSelectionItem from '@/components/accounts/balances/DetectTokensChainsSelectionItem.vue';
 import { useRefresh } from '@/composables/balances/refresh';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 
 const emit = defineEmits<{
   'redetect:all': [];

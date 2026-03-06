@@ -7,6 +7,7 @@ import {
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
   VALID_WITH_SESSION_STATUS,
 } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import {
   type AccountPayload,
   BitcoinAccounts,
@@ -17,7 +18,6 @@ import {
   type XpubAccountPayload,
 } from '@/types/blockchain/accounts';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 function payloadToData({ address, label, tags }: Omit<BlockchainAccountPayload, 'blockchain'>, isAdd = false): {
   accounts: GeneralAccountData[];

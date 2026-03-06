@@ -8,11 +8,11 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTaskStore } from '@/store/tasks';
 import { CURRENCY_USD } from '@/types/currencies';
-import { TaskType } from '@/types/task-type';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
 import { toMessages } from '@/utils/validation';
 
