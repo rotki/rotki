@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.gnosis.constants import GNOSIS_GENESIS
+from rotkehlchen.chain.monad.constants import MONAD_GENESIS
 from rotkehlchen.chain.optimism.constants import OPTIMISM_GENESIS
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_GENESIS
 from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
@@ -636,6 +637,8 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
                 timestamp = SCROLL_GENESIS
             elif chain_id == ChainID.BINANCE_SC:
                 timestamp = BINANCE_SC_GENESIS
+            elif chain_id == ChainID.MONAD:
+                timestamp = MONAD_GENESIS
             else:
                 timestamp = POLYGON_POS_GENESIS
             tx = EvmTransaction(
