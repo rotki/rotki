@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { TaskMeta } from '@/types/task';
 import {
   type AssetBalanceWithPrice,
   type BigNumber,
@@ -19,12 +19,12 @@ import {
   OnchainHistoricalBalanceResponse,
   HistoricalBalanceSource as Source,
 } from '@/modules/history/balances/types';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { TaskType } from '@/types/task-type';
 import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseHistoricalBalancesReturn {
@@ -80,7 +80,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
   const { getEvmChainName } = useSupportedChains();
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { getCollectionId, getCollectionMainAsset } = useCollectionInfo();
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { getHistoricPrice } = useHistoricCachePriceStore();
   const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
@@ -159,18 +159,24 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
       ...(protocol ? { protocol } : {}),
     };
 
-    const { taskId } = await fetchHistoricalBalances(payload);
-
-    const { result } = await awaitTask<HistoricalBalancesResponse, TaskMeta>(
-      taskId,
-      TaskType.QUERY_HISTORICAL_BALANCES,
+    const outcome = await runTask<HistoricalBalancesResponse, TaskMeta>(
+      async () => fetchHistoricalBalances(payload),
       {
-        title: t('historical_balances.title'),
-        description: getTaskDescription(ts, asset),
+        type: TaskType.QUERY_HISTORICAL_BALANCES,
+        meta: {
+          title: t('historical_balances.title'),
+          description: getTaskDescription(ts, asset),
+        },
       },
     );
 
-    return HistoricalBalancesResponse.parse(result);
+    if (!outcome.success) {
+      if (isActionableFailure(outcome))
+        throw outcome.error instanceof Error ? outcome.error : new Error(outcome.message);
+      return { entries: {}, processingRequired: false };
+    }
+
+    return HistoricalBalancesResponse.parse(outcome.result);
   }
 
   async function queryOnchainBalance(ts: number, chain: string, addr: string, asset: string): Promise<OnchainHistoricalBalanceResponse> {
@@ -185,39 +191,49 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
       timestamp: ts,
     };
 
-    const { taskId } = await fetchOnchainHistoricalBalance(payload);
-
-    const { result } = await awaitTask<OnchainHistoricalBalanceResponse, TaskMeta>(
-      taskId,
-      TaskType.QUERY_ONCHAIN_HISTORICAL_BALANCE,
+    const outcome = await runTask<OnchainHistoricalBalanceResponse, TaskMeta>(
+      async () => fetchOnchainHistoricalBalance(payload),
       {
-        title: t('historical_balances.title'),
-        description: t('historical_balances.onchain_task_description', {
-          address: addr,
-          asset,
-          chain: evmChainName,
-          timestamp: formatTimestamp(ts),
-        }),
+        type: TaskType.QUERY_ONCHAIN_HISTORICAL_BALANCE,
+        meta: {
+          title: t('historical_balances.title'),
+          description: t('historical_balances.onchain_task_description', {
+            address: addr,
+            asset,
+            chain: evmChainName,
+            timestamp: formatTimestamp(ts),
+          }),
+        },
       },
     );
 
-    return OnchainHistoricalBalanceResponse.parse(result);
+    if (!outcome.success) {
+      if (isActionableFailure(outcome))
+        throw outcome.error instanceof Error ? outcome.error : new Error(outcome.message);
+      return {};
+    }
+
+    return OnchainHistoricalBalanceResponse.parse(outcome.result);
   }
 
   async function triggerHistoricalBalancesProcessing(): Promise<void> {
     if (!import.meta.env.VITE_ENABLE_HISTORICAL_BALANCES) {
       return;
     }
-    const { taskId } = await processHistoricalBalances();
 
-    await awaitTask<boolean, TaskMeta>(
-      taskId,
-      TaskType.PROCESS_HISTORICAL_BALANCES,
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => processHistoricalBalances(),
       {
-        title: t('historical_balances.title'),
-        description: t('historical_balances.processing_description'),
+        type: TaskType.PROCESS_HISTORICAL_BALANCES,
+        meta: {
+          title: t('historical_balances.title'),
+          description: t('historical_balances.processing_description'),
+        },
       },
     );
+
+    if (isActionableFailure(outcome))
+      throw outcome.error instanceof Error ? outcome.error : new Error(outcome.message);
   }
 
   async function fetchBalances(): Promise<void> {

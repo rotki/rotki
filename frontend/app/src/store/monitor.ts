@@ -3,11 +3,11 @@ import { useBalances } from '@/composables/balances';
 import { useMonitorWatchers } from '@/composables/monitor/use-monitor-watchers';
 import { useAutoLogin } from '@/composables/user/account';
 import { useMessageHandling } from '@/modules/messaging';
+import { useTaskMonitor } from '@/modules/tasks/use-task-monitor';
 import { useHistoryStore } from '@/store/history';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTaskStore } from '@/store/tasks';
 import { useWebsocketStore } from '@/store/websocket';
 import { logger } from '@/utils/logging';
 
@@ -33,7 +33,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
   const { check } = usePeriodicStore();
   const { consume } = useMessageHandling();
-  const { monitor } = useTaskStore();
+  const { monitor } = useTaskMonitor();
   const { autoRefresh } = useBalances();
   const { fetchTransactionStatusSummary } = useHistoryStore();
 

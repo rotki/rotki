@@ -7,8 +7,8 @@ import type {
 import { get } from '@vueuse/shared';
 import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 
 interface BalanceQueryProgressOperationData {
   type: BalanceQueryProgressType;

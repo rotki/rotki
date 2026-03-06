@@ -1,16 +1,15 @@
 import type { ComputedRef, MaybeRef, Ref } from 'vue';
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { assert, Blockchain, type EthStakingPayload, type EthStakingPerformance, type EthStakingPerformanceResponse } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { useEth2Api } from '@/composables/api/staking/eth2';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useTaskStore } from '@/store/tasks';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { isAccountWithBalanceValidator } from '@/utils/blockchain/accounts';
 import { logger } from '@/utils/logging';
 
@@ -31,7 +30,7 @@ export function useEth2Staking(): UseEthStakingReturn {
   const pagination = ref<EthStakingPayload>(defaultPagination());
 
   const premium = usePremium();
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -55,28 +54,27 @@ export function useEth2Staking(): UseEthStakingReturn {
       offset: 0,
     };
 
-    try {
-      setStatus(userInitiated ? Status.REFRESHING : Status.LOADING);
-      const { taskId } = await api.refreshStakingPerformance(defaults);
-      await awaitTask<EthStakingPerformanceResponse, TaskMeta>(taskId, taskType, {
-        title: t('actions.staking.eth2.task.title'),
-      });
+    setStatus(userInitiated ? Status.REFRESHING : Status.LOADING);
+    const outcome = await runTask<EthStakingPerformanceResponse, TaskMeta>(
+      async () => api.refreshStakingPerformance(defaults),
+      { type: taskType, meta: { title: t('actions.staking.eth2.task.title') } },
+    );
 
+    if (outcome.success) {
       setStatus(Status.LOADED);
       return true;
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        notifyError(
-          t('actions.staking.eth2.error.title'),
-          t('actions.staking.eth2.error.description', {
-            error: getErrorMessage(error),
-          }),
-        );
-      }
-      resetStatus();
+
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      notifyError(
+        t('actions.staking.eth2.error.title'),
+        t('actions.staking.eth2.error.description', {
+          error: outcome.message,
+        }),
+      );
     }
+    resetStatus();
     return false;
   }
 

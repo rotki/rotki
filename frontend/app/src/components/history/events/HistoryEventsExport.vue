@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useInterop } from '@/composables/electron-interop';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { getErrorMessage } from '@/utils/error-handling';
 
 const { filters, matchExactEvents } = defineProps<{
@@ -23,32 +23,29 @@ const { appSession, openDirectory } = useInterop();
 
 const { downloadHistoryEventsCSV, exportHistoryEventsCSV } = useHistoryEventsApi();
 
-const { awaitTask, useIsTaskRunning } = useTaskStore();
+const { runTask } = useTaskHandler();
+const { useIsTaskRunning } = useTaskStore();
 const { notify } = useNotificationsStore();
 
 async function createCsv(directoryPath?: string): Promise<{ result: boolean | { filePath: string }; message?: string } | null> {
-  try {
-    const { taskId } = await exportHistoryEventsCSV({
+  const outcome = await runTask<boolean | { filePath: string }, TaskMeta>(
+    () => exportHistoryEventsCSV({
       ...omit(filters, ['limit', 'offset', 'aggregateByGroupIds']),
       matchExactEvents,
-    }, directoryPath);
-    const { result } = await awaitTask<boolean | { filePath: string }, TaskMeta>(taskId, TaskType.EXPORT_HISTORY_EVENTS, {
-      title: t('actions.history_events_export.title'),
-    });
+    }, directoryPath),
+    { type: TaskType.EXPORT_HISTORY_EVENTS, meta: { title: t('actions.history_events_export.title') } },
+  );
 
-    return {
-      result,
-    };
-  }
-  catch (error: unknown) {
-    if (isTaskCancelled(error))
-      return null;
+  if (outcome.success)
+    return { result: outcome.result };
 
-    return {
-      message: getErrorMessage(error),
-      result: false,
-    };
-  }
+  if (!isActionableFailure(outcome))
+    return null;
+
+  return {
+    message: outcome.message,
+    result: false,
+  };
 }
 
 async function exportCSV(): Promise<void> {

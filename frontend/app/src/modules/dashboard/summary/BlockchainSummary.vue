@@ -4,9 +4,9 @@ import BlockchainBalanceRefreshBehaviourMenu
 import { useRefresh } from '@/composables/balances/refresh';
 import { useBlockchainTotalSummary } from '@/modules/balances/blockchain/use-blockchain-total-summary';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Routes } from '@/router/routes';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import BlockchainBalanceCardList from './BlockchainBalanceCardList.vue';
 import BlockchainSummaryCardCreateButton from './BlockchainSummaryCardCreateButton.vue';
 

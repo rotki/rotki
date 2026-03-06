@@ -23,9 +23,13 @@ vi.mock('@/composables/api/blockchain/addresses-names', async () => {
   });
 });
 
-vi.mock('@/store/tasks', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({ result: {} }),
+vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTaskHandler: vi.fn().mockReturnValue({
+    runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>): Promise<unknown> => {
+      await taskFn();
+      return { success: true, result: {} };
+    }),
   }),
 }));
 

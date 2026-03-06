@@ -26,9 +26,18 @@ vi.mock('@/store/notifications', () => ({
   })),
 }));
 
-vi.mock('@/store/tasks', () => ({
+vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTaskHandler: vi.fn(() => ({
+    runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>): Promise<unknown> => {
+      await taskFn();
+      return { success: true, result: {} };
+    }),
+  })),
+}));
+
+vi.mock('@/modules/tasks/use-task-store', () => ({
   useTaskStore: vi.fn(() => ({
-    awaitTask: vi.fn().mockResolvedValue({}),
     isTaskRunning: vi.fn().mockReturnValue(false),
   })),
 }));

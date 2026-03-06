@@ -20,13 +20,14 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useHistoricalPriceFetcher } from '@/modules/prices/use-historical-price-fetcher';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import { isNft } from '@/utils/nft';
 import { truncateAddress } from '@/utils/truncate';
 
@@ -59,7 +60,8 @@ export function statisticsApi(): StatisticsApi {
   } = useStatisticsApi();
   const { queryOwnedAssets } = useAssetManagementApi();
 
-  const { cancelTaskByTaskType, useIsTaskRunning } = useTaskStore();
+  const { cancelTaskByTaskType } = useTaskHandler();
+  const { useIsTaskRunning } = useTaskStore();
 
   return {
     async assetValueDistribution(): Promise<TimedAssetBalances> {

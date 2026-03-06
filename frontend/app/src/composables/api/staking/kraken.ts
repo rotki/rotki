@@ -1,4 +1,4 @@
-import type { PendingTask } from '@/types/task';
+import type { PendingTask } from '@/modules/tasks/types';
 import { transformCase } from '@rotki/common';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';

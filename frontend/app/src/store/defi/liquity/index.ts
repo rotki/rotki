@@ -1,5 +1,5 @@
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { OnError } from '@/types/fetch';
-import type { TaskMeta } from '@/types/task';
 import {
   type CommonQueryStatusData,
   LiquityBalancesWithCollateralInfo,
@@ -10,10 +10,10 @@ import {
 import { useLiquityApi } from '@/composables/api/defi/liquity';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
+import { TaskType } from '@/modules/tasks/task-type';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 import { fetchDataAsync } from '@/utils/fetch-async';
 
 const defaultBalances = (): LiquityBalancesWithCollateralInfo => ({ balances: {}, totalCollateralRatio: null });

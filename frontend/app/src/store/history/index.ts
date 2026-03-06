@@ -5,8 +5,8 @@ import { useHistoryApi } from '@/composables/api/history';
 import { type TransactionStatus, useHistoryEventsApi } from '@/composables/api/history/events';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 

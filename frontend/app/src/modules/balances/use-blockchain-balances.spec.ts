@@ -46,13 +46,15 @@ vi.mock('@/composables/api/balances/blockchain', () => ({
   }),
 }));
 
-vi.mock('@/store/tasks', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockImplementation(async (taskId) => {
-      if (taskId === 2) {
-        // Loopring balances response
+vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTaskHandler: vi.fn().mockReturnValue({
+    runTask: vi.fn().mockImplementation(async (taskFn: () => Promise<unknown>, options: { type: number }) => {
+      await taskFn();
+      const { TaskType } = await import('@/modules/tasks/task-type');
+      if (options.type === TaskType.L2_LOOPRING) {
         return {
-          meta: { title: '' },
+          success: true,
           result: {
             '0x1234567890abcdef1234567890abcdef12345678': {
               ETH: createTestBalanceResponse(1.5, 3000),
@@ -61,9 +63,8 @@ vi.mock('@/store/tasks', () => ({
           },
         };
       }
-      // Default blockchain balances response
       return {
-        meta: { title: '' },
+        success: true,
         result: {
           perAccount: {},
           totals: {
@@ -73,7 +74,6 @@ vi.mock('@/store/tasks', () => ({
         },
       };
     }),
-    isTaskRunning: vi.fn(),
   }),
 }));
 

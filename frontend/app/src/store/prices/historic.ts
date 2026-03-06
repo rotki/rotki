@@ -1,14 +1,13 @@
 import type { StatsPriceQueryData } from '@/modules/messaging/types';
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { type BigNumber, type CommonQueryStatusData, type FailedHistoricalAssetPriceResponse, NoPrice } from '@rotki/common';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { createItemCache } from '@/composables/item-cache';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTaskStore } from '@/store/tasks';
 import { HistoricPrices } from '@/types/prices';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 
 export const useHistoricCachePriceStore = defineStore('prices/historic-cache', () => {
   const statsPriceQueryStatus = shallowRef<Record<string, StatsPriceQueryData>>({});
@@ -19,7 +18,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
 
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { queryHistoricalRates } = usePriceApi();
-  const { awaitTask, cancelTaskByTaskType } = useTaskStore();
+  const { cancelTaskByTaskType, runTask } = useTaskHandler();
   const { t } = useI18n({ useScope: 'global' });
   const { notifyError } = useNotifications();
 
@@ -34,18 +33,16 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     });
     const targetAsset = get(currencySymbol);
 
-    const { taskId } = await queryHistoricalRates({
-      assetsTimestamp,
-      targetAsset,
-    });
+    let data: HistoricPrices = { assets: {}, targetAsset: '' };
 
-    let data = { assets: {}, targetAsset: '' };
-
-    try {
-      const { result } = await awaitTask<HistoricPrices, TaskMeta>(
-        taskId,
-        taskType,
-        {
+    const outcome = await runTask<HistoricPrices, TaskMeta>(
+      async () => queryHistoricalRates({
+        assetsTimestamp,
+        targetAsset,
+      }),
+      {
+        type: taskType,
+        meta: {
           description: t(
             'actions.balances.historic_fetch_price.task.description',
             {
@@ -56,19 +53,20 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
           ),
           title: t('actions.balances.historic_fetch_price.task.title'),
         },
-        true,
-      );
-      data = result;
+        unique: false,
+      },
+    );
+
+    if (outcome.success) {
+      data = outcome.result;
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        notifyError(
-          t('actions.balances.historic_fetch_price.task.title'),
-          t('actions.balances.historic_fetch_price.error.message', {
-            message: getErrorMessage(error),
-          }),
-        );
-      }
+    else if (isActionableFailure(outcome)) {
+      notifyError(
+        t('actions.balances.historic_fetch_price.task.title'),
+        t('actions.balances.historic_fetch_price.error.message', {
+          message: outcome.message,
+        }),
+      );
     }
 
     const response = HistoricPrices.parse(data);

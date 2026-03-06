@@ -7,8 +7,8 @@ import TradeAssetDisplay from '@/modules/onchain/send/TradeAssetDisplay.vue';
 import { useBalanceQueries } from '@/modules/onchain/send/use-balance-queries';
 import { useInjectedTradableAsset } from '@/modules/onchain/use-tradable-asset';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 
 const asset = defineModel<string>({ required: true });
 const chain = defineModel<string>('chain', { required: true });

@@ -4,13 +4,12 @@ import { useBalancesApi } from '@/composables/api/balances';
 import { useBlockchains } from '@/composables/blockchain';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useStatisticsStore } from '@/store/statistics';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 
 export const useBalances = createSharedComposable(() => {
   const { fetchManualBalances } = useManualBalances();
@@ -20,30 +19,23 @@ export const useBalances = createSharedComposable(() => {
   const { fetchExchangeRates } = usePriceTaskManager();
   const { refreshPrices } = usePriceRefresh();
   const { notifyError } = useNotifications();
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { t } = useI18n({ useScope: 'global' });
   const { fetchNetValue } = useStatisticsStore();
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}): Promise<void> => {
-    const taskType = TaskType.QUERY_BALANCES;
-    if (isTaskRunning(taskType))
-      return;
+    const outcome = await runTask(
+      async () => queryBalancesAsync(payload),
+      { type: TaskType.QUERY_BALANCES, meta: { title: t('actions.balances.all_balances.task.title') } },
+    );
 
-    try {
-      const { taskId } = await queryBalancesAsync(payload);
-      await awaitTask(taskId, taskType, {
-        title: t('actions.balances.all_balances.task.title'),
-      });
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        notifyError(
-          t('actions.balances.all_balances.error.title'),
-          t('actions.balances.all_balances.error.message', {
-            message: getErrorMessage(error),
-          }),
-        );
-      }
+    if (isActionableFailure(outcome)) {
+      notifyError(
+        t('actions.balances.all_balances.error.title'),
+        t('actions.balances.all_balances.error.message', {
+          message: outcome.message,
+        }),
+      );
     }
   };
 

@@ -1,15 +1,16 @@
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ActionStatus } from '@/types/action';
 import type { Exchange } from '@/types/exchanges';
-import type { TaskMeta } from '@/types/task';
 import { objectPick } from '@vueuse/shared';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useUsersApi } from '@/composables/api/session/users';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useSessionSettings } from '@/composables/session/settings';
 import { api } from '@/modules/api/rotki-api';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { useTaskStore } from '@/store/tasks';
 import {
   type CreateAccountPayload,
   IncompleteUpgradeError,
@@ -18,7 +19,6 @@ import {
   type UnlockPayload,
 } from '@/types/login';
 import { migrateSettingsIfNeeded } from '@/types/settings/frontend-settings-migrations';
-import { TaskType } from '@/types/task-type';
 import { type SettingsUpdate, UserAccount, UserSettingsModel } from '@/types/user';
 import { lastLogin } from '@/utils/account-management';
 import { getErrorMessage } from '@/utils/error-handling';
@@ -39,7 +39,7 @@ export function useLogin(): UseLoginReturn {
     syncConflict,
     username,
   } = storeToRefs(authStore);
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { start } = useMonitorStore();
 
   const { initialize } = useSessionSettings();
@@ -88,14 +88,14 @@ export function useLogin(): UseLoginReturn {
   };
 
   const createAccount = async (payload: CreateAccountPayload): Promise<ActionStatus> => {
-    try {
-      start();
-      const taskType = TaskType.CREATE_ACCOUNT;
-      const { taskId } = await callCreatAccount(payload);
-      const { result } = await awaitTask<UserAccount, TaskMeta>(taskId, taskType, {
-        title: 'creating account',
-      });
-      const { exchanges, settings } = UserAccount.parse(result);
+    start();
+    const outcome = await runTask<UserAccount, TaskMeta>(
+      async () => callCreatAccount(payload),
+      { type: TaskType.CREATE_ACCOUNT, meta: { title: 'creating account' } },
+    );
+
+    if (outcome.success) {
+      const { exchanges, settings } = UserAccount.parse(outcome.result);
       const data: UnlockPayload = {
         exchanges,
         fetchData: payload.premiumSetup?.syncDatabase,
@@ -106,10 +106,11 @@ export function useLogin(): UseLoginReturn {
       await colibriLogin(objectPick(payload.credentials, ['username', 'password']));
       return response;
     }
-    catch (error: unknown) {
-      logger.error(error);
-      return { message: getErrorMessage(error), success: false };
-    }
+
+    if (isActionableFailure(outcome))
+      logger.error(outcome.error);
+
+    return { message: outcome.message, success: false };
   };
 
   async function migrateAndSaveSettings(frontendSettings?: string): Promise<string | undefined> {
@@ -147,21 +148,26 @@ export function useLogin(): UseLoginReturn {
 
         authStore.resetSyncConflict();
         authStore.resetIncompleteUpgradeConflict();
-        const taskType = TaskType.LOGIN;
-        const { taskId } = await callLogin(credentials);
         start();
-        const { result } = await awaitTask<{
+        const outcome = await runTask<{
           settings: SettingsUpdate;
           exchanges: Exchange[];
-        }, TaskMeta>(taskId, taskType, {
-          title: 'login in',
-        });
+        }, TaskMeta>(
+          async () => callLogin(credentials),
+          { type: TaskType.LOGIN, meta: { title: 'login in' } },
+        );
+
+        if (!outcome.success) {
+          if (isActionableFailure(outcome))
+            throw new Error(outcome.message);
+          return { message: '', success: false };
+        }
 
         await colibriLogin(objectPick(credentials, ['username', 'password']));
 
-        result.settings.frontendSettings = await migrateAndSaveSettings(result.settings.frontendSettings);
+        outcome.result.settings.frontendSettings = await migrateAndSaveSettings(outcome.result.settings.frontendSettings);
 
-        const account = UserAccount.parse(result);
+        const account = UserAccount.parse(outcome.result);
         ({ exchanges, settings } = account);
       }
 

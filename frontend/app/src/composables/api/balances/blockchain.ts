@@ -6,8 +6,8 @@ import {
   VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
 } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import { EvmTokensRecord } from '@/types/balances';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseBlockchainBalancesApiReturn {
   queryBlockchainBalances: (payload: FetchBlockchainBalancePayload, valueThreshold?: string) => Promise<PendingTask>;

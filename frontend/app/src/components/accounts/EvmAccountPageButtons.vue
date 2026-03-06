@@ -5,9 +5,9 @@ import BlockchainBalanceRefreshBehaviourMenu
   from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
 import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { useSectionStatus } from '@/composables/status';
-import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 
 const { addDisabled = false } = defineProps<{
   isAccountsTabSelected: boolean;

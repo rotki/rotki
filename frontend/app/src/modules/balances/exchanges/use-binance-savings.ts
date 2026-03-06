@@ -1,18 +1,18 @@
 import type { MaybeRef } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type {
   ExchangeSavingsCollection,
   ExchangeSavingsCollectionResponse,
   ExchangeSavingsRequestPayload,
 } from '@/types/exchanges';
-import type { TaskMeta } from '@/types/task';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
 import { useStatusUpdater } from '@/composables/status';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { mapCollectionResponse } from '@/utils/collection';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
@@ -24,7 +24,8 @@ interface UseBinanceSavingsReturn {
 
 export function useBinanceSavings(): UseBinanceSavingsReturn {
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { runTask } = useTaskHandler();
+  const { isTaskRunning } = useTaskStore();
   const { notifyError } = useNotifications();
   const { getExchangeSavings, getExchangeSavingsTask } = useExchangeApi();
   const { t } = useI18n({ useScope: 'global' });
@@ -41,8 +42,6 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
   };
 
   const syncExchangeSavings = async (location: string): Promise<boolean> => {
-    const taskType = TaskType.QUERY_EXCHANGE_SAVINGS;
-
     const defaults: ExchangeSavingsRequestPayload = {
       ascending: [false],
       limit: 0,
@@ -51,25 +50,27 @@ export function useBinanceSavings(): UseBinanceSavingsReturn {
       orderByAttributes: ['timestamp'],
     };
 
-    const { taskId } = await getExchangeSavingsTask(defaults);
+    const outcome = await runTask<ExchangeSavingsCollectionResponse, TaskMeta>(
+      async () => getExchangeSavingsTask(defaults),
+      {
+        type: TaskType.QUERY_EXCHANGE_SAVINGS,
+        meta: {
+          title: t('actions.balances.exchange_savings_interest.task.title', {
+            location,
+          }),
+        },
+        unique: false,
+      },
+    );
 
-    const taskMeta = {
-      title: t('actions.balances.exchange_savings_interest.task.title', {
-        location,
-      }),
-    };
-
-    try {
-      await awaitTask<ExchangeSavingsCollectionResponse, TaskMeta>(taskId, taskType, taskMeta, true);
+    if (outcome.success)
       return true;
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        notifyError(
-          t('actions.balances.exchange_savings_interest.error.title', { location }),
-          t('actions.balances.exchange_savings_interest.error.message', { location }),
-        );
-      }
+
+    if (isActionableFailure(outcome)) {
+      notifyError(
+        t('actions.balances.exchange_savings_interest.error.title', { location }),
+        t('actions.balances.exchange_savings_interest.error.message', { location }),
+      );
     }
 
     return false;

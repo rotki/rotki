@@ -1,19 +1,18 @@
 import type { ComputedRef } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ActionStatus } from '@/types/action';
 import type { Eth2Validator } from '@/types/balances';
-import type { TaskMeta } from '@/types/task';
 import { type BigNumber, Blockchain, type EthValidatorFilter } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
 import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
 
 interface UseEthStakingReturn {
@@ -38,7 +37,7 @@ export function useEthStaking(): UseEthStakingReturn {
   const { fetchEthStakingValidators, isEth2Enabled, updateEthStakingOwnership } = blockchainValidatorsStore;
 
   const premium = usePremium();
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { showErrorMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
   const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
@@ -51,16 +50,19 @@ export function useEthStaking(): UseEthStakingReturn {
       };
     }
     const id = payload.publicKey || payload.validatorIndex;
-    try {
-      const taskType = TaskType.ADD_ETH2_VALIDATOR;
-      const { taskId } = await addEth2ValidatorCaller(payload);
-      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-        description: t('actions.add_eth2_validator.task.description', {
-          id,
-        }),
-        title: t('actions.add_eth2_validator.task.title'),
-      });
-      if (result) {
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => addEth2ValidatorCaller(payload),
+      {
+        type: TaskType.ADD_ETH2_VALIDATOR,
+        meta: {
+          description: t('actions.add_eth2_validator.task.description', { id }),
+          title: t('actions.add_eth2_validator.task.title'),
+        },
+      },
+    );
+
+    if (outcome.success) {
+      if (outcome.result) {
         resetStatus();
         resetStatus({ section: Section.STAKING_ETH2_DEPOSITS });
         resetStatus({ section: Section.STAKING_ETH2_STATS });
@@ -68,22 +70,24 @@ export function useEthStaking(): UseEthStakingReturn {
 
       return {
         message: '',
-        success: result,
+        success: outcome.result,
       };
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error))
-        logger.error(error);
 
-      let message: ValidationErrors | string = getErrorMessage(error);
-      if (error instanceof ApiValidationError)
-        message = error.getValidationErrors(payload);
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+
+      let message: ValidationErrors | string = outcome.message;
+      if (outcome.error instanceof ApiValidationError)
+        message = outcome.error.getValidationErrors(payload);
 
       return {
         message,
         success: false,
       };
     }
+
+    return { message: '', success: false };
   };
 
   const editEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {

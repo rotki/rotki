@@ -1,7 +1,7 @@
 import type { MaybeRefOrGetter } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/types/balances';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
-import type { TaskMeta } from '@/types/task';
 import { isEqual } from 'es-toolkit';
 import { useBlockchainBalancesApi } from '@/composables/api/balances/blockchain';
 import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
@@ -10,10 +10,10 @@ import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-a
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
 
@@ -56,37 +56,47 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     });
   };
 
+  const { runTask } = useTaskHandler();
+
   const fetchDetectedTokens = async (chain: string, address: string | null = null): Promise<void> => {
-    try {
-      if (address) {
-        const { awaitTask } = useTaskStore();
-        const taskType = TaskType.FETCH_DETECTED_TOKENS;
-
-        const { taskId } = await fetchDetectedTokensTask(chain, [address]);
-
-        const taskMeta = {
+    if (address) {
+      const taskMeta = {
+        address,
+        chain,
+        description: t('actions.balances.detect_tokens.task.description', {
           address,
-          chain,
-          description: t('actions.balances.detect_tokens.task.description', {
+          chain: getChainName(chain),
+        }),
+        title: t('actions.balances.detect_tokens.task.title'),
+      };
+
+      const outcome = await runTask<EvmTokensRecord, TaskMeta>(
+        async () => fetchDetectedTokensTask(chain, [address]),
+        { type: TaskType.FETCH_DETECTED_TOKENS, meta: taskMeta, unique: false },
+      );
+
+      if (outcome.success) {
+        setState(chain, outcome.result);
+      }
+      else if (isActionableFailure(outcome)) {
+        logger.error(outcome.error);
+        notifyError(
+          t('actions.balances.detect_tokens.task.title'),
+          t('actions.balances.detect_tokens.error.message', {
             address,
             chain: getChainName(chain),
+            error: outcome.message,
           }),
-          title: t('actions.balances.detect_tokens.task.title'),
-        };
-
-        const { result } = await awaitTask<EvmTokensRecord, TaskMeta>(taskId, taskType, taskMeta, true);
-
-        setState(chain, result);
+        );
       }
-      else {
+    }
+    else {
+      try {
         const result = await fetchDetectedTokensCaller(chain, null);
         setState(chain, result);
       }
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
+      catch (error: unknown) {
         logger.error(error);
-
         notifyError(
           t('actions.balances.detect_tokens.task.title'),
           t('actions.balances.detect_tokens.error.message', {

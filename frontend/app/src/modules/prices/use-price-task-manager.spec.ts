@@ -4,14 +4,20 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useTaskStore } from '@/store/tasks';
 import { useCurrencies } from '@/types/currencies';
 import { PriceOracle } from '@/types/settings/price-oracle';
 
-vi.mock('@/store/tasks', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({}),
-    isTaskRunning: vi.fn().mockReturnValue(false),
+const runTaskMock = vi.fn();
+
+vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTaskHandler: vi.fn().mockReturnValue({
+    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
+      await taskFn();
+      return runTaskMock(taskFn, ...rest);
+    },
+    cancelTask: vi.fn(),
+    cancelTaskByTaskType: vi.fn(),
   }),
 }));
 
@@ -30,6 +36,7 @@ describe('usePriceTaskManager', () => {
   });
 
   beforeEach(() => {
+    runTaskMock.mockReset();
     vi.clearAllMocks();
     priceTaskManager = usePriceTaskManager();
   });
@@ -49,10 +56,7 @@ describe('usePriceTaskManager', () => {
       mockResponse: PriceResponse,
       expectedCurrency = 'USD',
     ): Promise<void> => {
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        meta: { title: '' },
-        result: mockResponse,
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: mockResponse });
 
       await priceTaskManager.fetchPrices({
         ignoreCache: false,
@@ -112,10 +116,7 @@ describe('usePriceTaskManager', () => {
       EUR: 1.5,
     };
 
-    vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-      meta: { title: '' },
-      result: mockExchangeRatesResponse,
-    });
+    runTaskMock.mockResolvedValue({ success: true, result: mockExchangeRatesResponse });
 
     await priceTaskManager.fetchExchangeRates();
 
@@ -137,10 +138,7 @@ describe('usePriceTaskManager', () => {
         },
       };
 
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        meta: { title: '' },
-        result: { assets: mockResponse, targetAsset: 'USD' },
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: { assets: mockResponse, targetAsset: 'USD' } });
 
       const price = await priceTaskManager.getHistoricPrice({
         fromAsset: 'DAI',
@@ -154,10 +152,7 @@ describe('usePriceTaskManager', () => {
     });
 
     it('should return minus one on failure', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        meta: { title: '' },
-        result: { assets: {}, targetAsset: 'USD' },
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: { assets: {}, targetAsset: 'USD' } });
 
       const price = await priceTaskManager.getHistoricPrice({
         fromAsset: 'DAI',

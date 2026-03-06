@@ -1,12 +1,12 @@
 import { api } from '@/modules/api/rotki-api';
 import { VALID_WITH_SESSION_STATUS } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import {
   type Messages,
   MessagesSchema,
   type PeriodicClientQueryResult,
   PeriodicClientQueryResultSchema,
 } from '@/types/session';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UseSessionApiReturn {
   consumeMessages: () => Promise<Messages>;

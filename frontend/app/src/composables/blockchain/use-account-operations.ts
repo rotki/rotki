@@ -1,6 +1,6 @@
 import type { MaybeRef } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
-import type { TaskMeta } from '@/types/task';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
@@ -9,12 +9,11 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
@@ -41,7 +40,7 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   const { isEvm, supportedChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();
 
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
@@ -95,23 +94,19 @@ export function useAccountOperations(): UseAccountOperationsReturn {
   };
 
   const detectEvmAccounts = async (): Promise<void> => {
-    try {
-      const taskType = TaskType.DETECT_EVM_ACCOUNTS;
-      const { taskId } = await detectEvmAccountsCaller();
-      await awaitTask<unknown, TaskMeta>(taskId, taskType, {
-        title: t('actions.detect_evm_accounts.task.title'),
-      });
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        notifyError(
-          t('actions.detect_evm_accounts.error.title'),
-          t('actions.detect_evm_accounts.error.message', {
-            message: getErrorMessage(error),
-          }),
-        );
-      }
+    const outcome = await runTask<unknown, TaskMeta>(
+      async () => detectEvmAccountsCaller(),
+      { type: TaskType.DETECT_EVM_ACCOUNTS, meta: { title: t('actions.detect_evm_accounts.task.title') } },
+    );
+
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      notifyError(
+        t('actions.detect_evm_accounts.error.title'),
+        t('actions.detect_evm_accounts.error.message', {
+          message: outcome.message,
+        }),
+      );
     }
   };
 

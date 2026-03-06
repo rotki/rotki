@@ -1,4 +1,5 @@
 import type { MaybeRef, MaybeRefOrGetter } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { Collection } from '@/types/collection';
 import type {
   AddressBookEntries,
@@ -9,17 +10,15 @@ import type {
   AddressNameRequestPayload,
   EthNames,
 } from '@/types/eth-names';
-import type { TaskMeta } from '@/types/task';
 import { Blockchain, isValidBchAddress, isValidBtcAddress, isValidEthAddress, isValidSolanaAddress } from '@rotki/common';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useSupportedChains } from '@/composables/info/chains';
 import { createItemCache } from '@/composables/item-cache';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTaskStore } from '@/store/tasks';
 import { isBlockchain } from '@/types/blockchain/chains';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { defaultCollectionState } from '@/utils/collection';
 import { uniqueStrings } from '@/utils/data';
 import { getErrorMessage } from '@/utils/error-handling';
@@ -30,7 +29,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
 
   const ensNames = shallowRef<EthNames>({});
 
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { t } = useI18n({ useScope: 'global' });
   const { notifyError } = useNotifications();
   const { supportedChains } = useSupportedChains();
@@ -326,23 +325,16 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     let newResult: Record<string, string | null> = {};
 
     if (forceUpdate) {
-      const taskType = TaskType.FETCH_ENS_NAMES;
-      const { taskId } = await getEnsNamesTask(filteredAddresses);
-      try {
-        const { result } = await awaitTask<EthNames, TaskMeta>(
-          taskId,
-          taskType,
-          {
-            title: t('ens_names.task.title'),
+      const outcome = await runTask<EthNames, TaskMeta>(
+        async () => getEnsNamesTask(filteredAddresses),
+        { type: TaskType.FETCH_ENS_NAMES, meta: { title: t('ens_names.task.title') } },
+      );
 
-          },
-        );
-        newResult = result;
+      if (outcome.success) {
+        newResult = outcome.result;
       }
-      catch (error: unknown) {
-        if (!isTaskCancelled(error)) {
-          notifyError(t('ens_names.task.title'), t('ens_names.error.message', { message: getErrorMessage(error) }));
-        }
+      else if (isActionableFailure(outcome)) {
+        notifyError(t('ens_names.task.title'), t('ens_names.error.message', { message: outcome.message }));
       }
     }
     else {

@@ -4,12 +4,12 @@ import ListItem from '@/components/common/ListItem.vue';
 import { useAssets } from '@/composables/assets';
 import { useBackendManagement } from '@/composables/backend';
 import { useLogout } from '@/modules/account/use-logout';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
 import { useMainStore } from '@/store/main';
 import { useNotificationsStore } from '@/store/notifications';
-import { useTaskStore } from '@/store/tasks';
 import { DialogType } from '@/types/dialogs';
-import { TaskType } from '@/types/task-type';
 
 const { dropdown = false } = defineProps<{
   dropdown?: boolean;

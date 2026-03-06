@@ -5,10 +5,10 @@ import { DEFAULT_TIMEOUT, TASKS_TIMEOUT } from '@/modules/api/constants';
 import { api } from '@/modules/api/rotki-api';
 import { camelCaseTransformer } from '@/modules/api/transformers';
 import { VALID_TASK_STATUS } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/modules/tasks/types';
 import { ApiValidationError } from '@/types/api/errors';
 import { HTTPStatus } from '@/types/api/http';
 import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '@/types/login';
-import { type PendingTask, PendingTaskSchema, TaskNotFoundError, type TaskResultResponse, type TaskStatus } from '@/types/task';
 
 export type TriggerTaskType = 'historical_balance_processing' | 'asset_movement_matching';
 

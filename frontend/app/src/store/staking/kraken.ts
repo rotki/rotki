@@ -1,19 +1,20 @@
+import type { TaskMeta } from '@/modules/tasks/types';
 import type {
   KrakenStakingDateFilter,
   KrakenStakingEvents,
   KrakenStakingPagination,
 } from '@/types/staking';
-import type { TaskMeta } from '@/types/task';
 import { type AssetBalance, Zero } from '@rotki/common';
 import { omit } from 'es-toolkit';
 import { useKrakenApi } from '@/composables/api/staking/kraken';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useStatusUpdater } from '@/composables/status';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 import { balanceSum } from '@/utils/calculation';
 import { logger } from '@/utils/logging';
 
@@ -79,18 +80,16 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     };
   });
 
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { runTask } = useTaskHandler();
+  const { isTaskRunning } = useTaskStore();
   const { notifyError } = useNotifications();
   const { isFirstLoad, loading, setStatus } = useStatusUpdater(Section.STAKING_KRAKEN);
 
   const refreshEvents = async (): Promise<void> => {
-    const { taskId } = await api.refreshKrakenStaking();
-
-    const taskMeta: TaskMeta = {
-      title: t('actions.kraken_staking.task.title'),
-    };
-
-    await awaitTask<KrakenStakingEvents, TaskMeta>(taskId, TaskType.STAKING_KRAKEN, taskMeta, true);
+    await runTask<KrakenStakingEvents, TaskMeta>(
+      async () => api.refreshKrakenStaking(),
+      { type: TaskType.STAKING_KRAKEN, meta: { title: t('actions.kraken_staking.task.title') }, unique: false },
+    );
   };
 
   const fetchEvents = async (

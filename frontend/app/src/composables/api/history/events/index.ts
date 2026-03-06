@@ -9,6 +9,7 @@ import {
   VALID_WITH_PARAMS_SESSION_AND_EXTERNAL_SERVICE,
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
 } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import { type ActionDataEntry, ActionDataEntryArraySchema, type ActionStatus } from '@/types/action';
 import {
   type AddTransactionHashPayload,
@@ -28,7 +29,6 @@ import {
   type ModifyHistoryEventPayload,
   type OnlineHistoryEventsRequestPayload,
 } from '@/types/history/events/schemas';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
 import { downloadFileByUrl } from '@/utils/download';
 import { getErrorMessage } from '@/utils/error-handling';
 import { getFilename } from '@/utils/file';

@@ -8,9 +8,9 @@ import HistoricalBalancesContent from '@/modules/history/balances/HistoricalBala
 import NegativeBalancesDialog from '@/modules/history/balances/NegativeBalancesDialog.vue';
 import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
 import { useHistoricalBalances } from '@/modules/history/balances/use-historical-balances';
-import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { NoteLocation } from '@/types/notes';
-import { TaskType } from '@/types/task-type';
 
 definePage({
   meta: {

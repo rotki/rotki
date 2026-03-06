@@ -1,3 +1,4 @@
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { Collection, CollectionResponse } from '@/types/collection';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
 import type {
@@ -9,17 +10,15 @@ import type {
   ReportError,
   Reports,
 } from '@/types/reports';
-import type { TaskMeta } from '@/types/task';
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryApi } from '@/composables/api/history';
 import { useReportsApi } from '@/composables/api/reports';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
-import { useTaskStore } from '@/store/tasks';
 import { isBlockchain } from '@/types/blockchain/chains';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { mapCollectionResponse } from '@/utils/collection';
 import { getEthAddressesFromText } from '@/utils/history';
 import { logger } from '@/utils/logging';
@@ -86,7 +85,7 @@ export const useReportsStore = defineStore('reports', () => {
     generateReport: generateReportCaller,
   } = useReportsApi();
 
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { getProgress } = useHistoryApi();
 
   const isLatestReport = (reportId: number): ComputedRef<boolean> => computed<boolean>(() => get(lastGeneratedReport) === reportId);
@@ -188,29 +187,29 @@ export const useReportsStore = defineStore('reports', () => {
     const intervalId = checkProgress();
 
     try {
-      const { taskId } = await generateReportCaller(period);
-      const { result } = await awaitTask<number, TaskMeta>(taskId, TaskType.TRADE_HISTORY, {
-        title: t('actions.reports.generate.task.title'),
-      });
+      const outcome = await runTask<number, TaskMeta>(
+        async () => generateReportCaller(period),
+        { type: TaskType.TRADE_HISTORY, meta: { title: t('actions.reports.generate.task.title') } },
+      );
 
-      if (result) {
-        set(lastGeneratedReport, result);
-        await fetchReports();
-      }
-      else {
-        set(reportError, {
-          error: '',
-          message: t('actions.reports.generate.error.description', {
+      if (outcome.success) {
+        if (outcome.result) {
+          set(lastGeneratedReport, outcome.result);
+          await fetchReports();
+        }
+        else {
+          set(reportError, {
             error: '',
-          }),
-        });
+            message: t('actions.reports.generate.error.description', {
+              error: '',
+            }),
+          });
+        }
+        return outcome.result;
       }
-      return result;
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
+      else if (isActionableFailure(outcome)) {
         set(reportError, {
-          error: getErrorMessage(error),
+          error: outcome.message,
           message: t('actions.reports.generate.error.description'),
         });
       }
@@ -236,17 +235,17 @@ export const useReportsStore = defineStore('reports', () => {
     const intervalId = checkProgress();
 
     try {
-      const { taskId } = await exportReportDataCaller(payload);
-      const { result } = await awaitTask<boolean | object, TaskMeta>(taskId, TaskType.TRADE_HISTORY, {
-        title: t('actions.reports.generate.task.title'),
-      });
+      const outcome = await runTask<boolean | object, TaskMeta>(
+        async () => exportReportDataCaller(payload),
+        { type: TaskType.TRADE_HISTORY, meta: { title: t('actions.reports.generate.task.title') } },
+      );
 
-      return result;
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
+      if (outcome.success) {
+        return outcome.result;
+      }
+      else if (isActionableFailure(outcome)) {
         set(reportError, {
-          error: getErrorMessage(error),
+          error: outcome.message,
           message: t('actions.reports.generate.error.description'),
         });
       }

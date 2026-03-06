@@ -3,12 +3,18 @@ import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useTaskStore } from '@/store/tasks';
 
-vi.mock('@/store/tasks', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    isTaskRunning: vi.fn().mockReturnValue(false),
-    awaitTask: vi.fn().mockResolvedValue({}),
+const runTaskMock = vi.fn();
+
+vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTaskHandler: vi.fn().mockReturnValue({
+    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
+      await taskFn();
+      return runTaskMock(taskFn, ...rest);
+    },
+    cancelTask: vi.fn(),
+    cancelTaskByTaskType: vi.fn(),
   }),
 }));
 
@@ -40,10 +46,7 @@ describe('useHistoricPricesStore', () => {
         },
       },
     };
-    vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-      result: mockPricesResponse,
-      meta: { title: '' },
-    });
+    runTaskMock.mockResolvedValue({ success: true, result: mockPricesResponse });
     store.resolve(key);
     store.resolve(key);
     vi.advanceTimersByTime(2500);
@@ -53,12 +56,12 @@ describe('useHistoricPricesStore', () => {
   });
 
   it('should not request failed assets twice unless they expire', async () => {
-    vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
+    runTaskMock.mockResolvedValue({
+      success: true,
       result: {
         targetAsset: 'USD',
         assets: {},
       },
-      meta: { title: '' },
     });
     const { createKey } = store;
     const key = createKey(mockAsset, mockTimestamp);
@@ -87,10 +90,7 @@ describe('useHistoricPricesStore', () => {
         },
       },
     };
-    vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-      result: mockPricesResponse,
-      meta: { title: '' },
-    });
+    runTaskMock.mockResolvedValue({ success: true, result: mockPricesResponse });
 
     store.resolve(key);
     vi.advanceTimersToNextTimer();
@@ -140,10 +140,7 @@ describe('useHistoricPricesStore', () => {
         },
       },
     };
-    vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-      result: mockPricesResponse,
-      meta: { title: '' },
-    });
+    runTaskMock.mockResolvedValue({ success: true, result: mockPricesResponse });
 
     resolve(key);
     resolve(key1);

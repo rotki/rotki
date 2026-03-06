@@ -1,10 +1,10 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useStatusStore } from '@/store/status';
-import { useTaskStore } from '@/store/tasks';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 
 interface UseBlockchainAccountLoadingReturn {
   isDetectingTokens: ComputedRef<boolean>;

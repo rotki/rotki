@@ -1,3 +1,4 @@
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ActionStatus } from '@/types/action';
 import type {
   AddTransactionHashPayload,
@@ -8,17 +9,15 @@ import type {
   RepullingTransactionPayload,
   RepullingTransactionResponse,
 } from '@/types/history/events';
-import type { TaskMeta } from '@/types/task';
 import { toHumanReadable } from '@rotki/common';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useRefreshTransactions } from '@/composables/history/events/tx/use-refresh-transactions';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
 
 export interface RepullingTransactionResult {
@@ -36,7 +35,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     repullingTransactions: repullingTransactionsCaller,
   } = useHistoryEventsApi();
 
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
   const { refreshTransactions } = useRefreshTransactions();
 
@@ -81,9 +80,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
   };
 
   const repullingTransactions = async (payload: RepullingTransactionPayload): Promise<RepullingTransactionResult | undefined> => {
-    const taskType = TaskType.REPULLING_TXS;
-    const { taskId } = await repullingTransactionsCaller(payload);
-
     const dateRange = buildDateRange(payload.fromTimestamp, payload.toTimestamp);
     const messagePayload = {
       address: payload.address,
@@ -100,15 +96,16 @@ export const useHistoryTransactions = createSharedComposable(() => {
       title: t('actions.repulling_transaction.task.title'),
     };
 
-    try {
-      const { result } = await awaitTask<RepullingTransactionResponse, TaskMeta>(taskId, taskType, taskMeta, true);
-      return result;
+    const outcome = await runTask<RepullingTransactionResponse, TaskMeta>(
+      async () => repullingTransactionsCaller(payload),
+      { type: TaskType.REPULLING_TXS, meta: taskMeta, unique: false },
+    );
+
+    if (outcome.success) {
+      return outcome.result;
     }
-    catch (error: unknown) {
-      if (isTaskCancelled(error)) {
-        return undefined;
-      }
-      logger.error(error);
+    else if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
       notifyError(
         t('actions.repulling_transaction.task.title'),
         isAddressSpecified
@@ -120,9 +117,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
   };
 
   const repullingExchangeEvents = async (payload: RepullingExchangeEventsPayload): Promise<boolean> => {
-    const taskType = TaskType.REPULLING_TXS;
-    const { taskId } = await repullingExchangeEventsCaller(payload);
-
     const dateRange = buildDateRange(payload.fromTimestamp, payload.toTimestamp);
     const messagePayload = {
       dateRange,
@@ -134,9 +128,13 @@ export const useHistoryTransactions = createSharedComposable(() => {
       title: t('actions.repulling_exchange_events.task.title'),
     };
 
-    try {
-      const { result } = await awaitTask<RepullingExchangeEventsResponse, TaskMeta>(taskId, taskType, taskMeta, true);
-      const { storedEvents } = result;
+    const outcome = await runTask<RepullingExchangeEventsResponse, TaskMeta>(
+      async () => repullingExchangeEventsCaller(payload),
+      { type: TaskType.REPULLING_TXS, meta: taskMeta, unique: false },
+    );
+
+    if (outcome.success) {
+      const { storedEvents } = outcome.result;
       notifyInfo(
         t('actions.repulling_exchange_events.task.title'),
         storedEvents ? t('actions.repulling_exchange_events.success.description', { length: storedEvents }) : t('actions.repulling_exchange_events.success.no_events_description'),
@@ -144,11 +142,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
       return storedEvents > 0;
     }
-    catch (error: unknown) {
-      if (isTaskCancelled(error)) {
-        return false;
-      }
-      logger.error(error);
+    else if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
       notifyError(
         t('actions.repulling_exchange_events.task.title'),
         t('actions.repulling_exchange_events.error.description', messagePayload),
@@ -158,9 +153,6 @@ export const useHistoryTransactions = createSharedComposable(() => {
   };
 
   const repullingEthStakingEvents = async (payload: RepullingEthStakingPayload): Promise<boolean> => {
-    const taskType = TaskType.REPULLING_TXS;
-    const { taskId } = await repullingEthStakingEventsCaller(payload);
-
     const dateRange = buildDateRange(payload.fromTimestamp, payload.toTimestamp);
     const messagePayload = {
       dateRange,
@@ -172,9 +164,13 @@ export const useHistoryTransactions = createSharedComposable(() => {
       title: t('actions.repulling_eth_staking.task.title'),
     };
 
-    try {
-      const { result } = await awaitTask<RepullingEthStakingResponse, TaskMeta>(taskId, taskType, taskMeta, true);
-      const { total, perValidator, perAddress } = result;
+    const outcome = await runTask<RepullingEthStakingResponse, TaskMeta>(
+      async () => repullingEthStakingEventsCaller(payload),
+      { type: TaskType.REPULLING_TXS, meta: taskMeta, unique: false },
+    );
+
+    if (outcome.success) {
+      const { total, perValidator, perAddress } = outcome.result;
 
       const validatorDetails = Object.entries(perValidator)
         .map(([index, count]) => `  ${t('actions.repulling_eth_staking.success.validator_entry', { index, count })}`)
@@ -198,11 +194,8 @@ export const useHistoryTransactions = createSharedComposable(() => {
 
       return total > 0;
     }
-    catch (error: unknown) {
-      if (isTaskCancelled(error)) {
-        return false;
-      }
-      logger.error(error);
+    else if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
       notifyError(
         t('actions.repulling_eth_staking.task.title'),
         t('actions.repulling_eth_staking.error.description', messagePayload),

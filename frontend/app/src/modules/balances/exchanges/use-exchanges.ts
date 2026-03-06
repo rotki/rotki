@@ -1,5 +1,5 @@
+import type { ExchangeMeta } from '@/modules/tasks/types';
 import type { ExchangeBalancePayload } from '@/types/blockchain/accounts';
-import type { ExchangeMeta } from '@/types/task';
 import { assert, toSentenceCase } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
@@ -7,14 +7,13 @@ import { useStatusUpdater } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useSessionSettingsStore } from '@/store/settings/session';
-import { useTaskStore } from '@/store/tasks';
 import { AssetBalances } from '@/types/balances';
 import { type EditExchange, Exchange, type ExchangeFormData } from '@/types/exchanges';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseExchangesReturn {
@@ -30,7 +29,7 @@ interface UseExchangesReturn {
 export function useExchanges(): UseExchangesReturn {
   const { t } = useI18n({ useScope: 'global' });
 
-  const { awaitTask, isTaskRunning, metadata } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { notifyError, showErrorMessage } = useNotifications();
   const { exchangeBalances } = storeToRefs(useBalancesStore());
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
@@ -42,48 +41,38 @@ export function useExchanges(): UseExchangesReturn {
 
   const fetchExchangeBalances = async (payload: ExchangeBalancePayload): Promise<void> => {
     const { ignoreCache, location } = payload;
-    const taskType = TaskType.QUERY_EXCHANGE_BALANCES;
-    const meta = metadata<ExchangeMeta>(taskType);
-
     const threshold = get(valueThreshold);
-
-    if (isTaskRunning(taskType) && meta?.location === location)
-      return;
 
     const { isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.EXCHANGES);
 
     const newStatus = isFirstLoad() ? Status.LOADING : Status.REFRESHING;
     setStatus(newStatus);
 
-    try {
-      const { taskId } = await queryExchangeBalances(location, ignoreCache, threshold);
-      const meta: ExchangeMeta = {
+    const outcome = await runTask<AssetBalances, ExchangeMeta>(
+      async () => queryExchangeBalances(location, ignoreCache, threshold),
+      { type: TaskType.QUERY_EXCHANGE_BALANCES, meta: {
         location,
-        title: t('actions.balances.exchange_balances.task.title', {
-          location,
-        }),
-      };
+        title: t('actions.balances.exchange_balances.task.title', { location }),
+      }, unique: false },
+    );
 
-      const { result } = await awaitTask<AssetBalances, ExchangeMeta>(taskId, taskType, meta, true);
-
+    if (outcome.success) {
       set(exchangeBalances, {
         ...get(exchangeBalances),
-        [location]: AssetBalances.parse(result),
+        [location]: AssetBalances.parse(outcome.result),
       });
       setStatus(Status.LOADED);
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        const message = t('actions.balances.exchange_balances.error.message', {
-          error: getErrorMessage(error),
-          location,
-        });
-        const title = t('actions.balances.exchange_balances.error.title', {
-          location: toSentenceCase(location),
-        });
+    else if (isActionableFailure(outcome)) {
+      const message = t('actions.balances.exchange_balances.error.message', {
+        error: outcome.message,
+        location,
+      });
+      const title = t('actions.balances.exchange_balances.error.title', {
+        location: toSentenceCase(location),
+      });
 
-        notifyError(title, message);
-      }
+      notifyError(title, message);
       resetStatus();
     }
   };

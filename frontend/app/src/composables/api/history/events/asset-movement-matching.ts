@@ -1,7 +1,7 @@
 import { useTaskApi } from '@/composables/api/task';
 import { snakeCaseTransformer } from '@/modules/api';
 import { api } from '@/modules/api/rotki-api';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 
 export interface AssetMovementMatchSuggestions {
   closeMatches: number[];

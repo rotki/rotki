@@ -2,6 +2,7 @@ import type { Collection, CollectionResponse } from '@/types/collection';
 import { omit } from 'es-toolkit';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_TASK_STATUS, VALID_WITH_SESSION_AND_EXTERNAL_SERVICE } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import {
   AddressBookCollectionResponse,
   type AddressBookEntries,
@@ -13,7 +14,6 @@ import {
   type EthNames,
   EthNamesSchema,
 } from '@/types/eth-names';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
 import { mapCollectionResponse } from '@/utils/collection';
 
 interface UseAddressesNamesApiReturn {

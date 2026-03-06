@@ -1,11 +1,10 @@
 import type { ActionResult } from '@rotki/common';
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { useAssetsApi } from '@/composables/api/assets';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useTaskStore } from '@/store/tasks';
 import { NftResponse } from '@/types/nfts';
-import { TaskType } from '@/types/task-type';
-import { getErrorMessage } from '@/utils/error-handling';
 import { getDomain } from '@/utils/url';
 
 interface UseNftsReturn {
@@ -14,7 +13,7 @@ interface UseNftsReturn {
 }
 
 export function useNfts(): UseNftsReturn {
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { t } = useI18n({ useScope: 'global' });
 
   const assetsApi = useAssetsApi();
@@ -23,23 +22,22 @@ export function useNfts(): UseNftsReturn {
     = storeToRefs(useFrontendSettingsStore());
 
   const fetchNfts = async (ignoreCache: boolean): Promise<ActionResult<NftResponse | null>> => {
-    try {
-      const taskType = TaskType.FETCH_NFTS;
-      const { taskId } = await assetsApi.fetchNfts(ignoreCache);
-      const { result } = await awaitTask<NftResponse, TaskMeta>(taskId, taskType, {
-        title: t('actions.session.fetch_nfts.task.title'),
-      });
+    const outcome = await runTask<NftResponse, TaskMeta>(
+      async () => assetsApi.fetchNfts(ignoreCache),
+      { type: TaskType.FETCH_NFTS, meta: { title: t('actions.session.fetch_nfts.task.title') } },
+    );
+
+    if (outcome.success) {
       return {
         message: '',
-        result: NftResponse.parse(result),
+        result: NftResponse.parse(outcome.result),
       };
     }
-    catch (error: unknown) {
-      return {
-        message: getErrorMessage(error),
-        result: null,
-      };
-    }
+
+    return {
+      message: isActionableFailure(outcome) ? outcome.message : '',
+      result: null,
+    };
   };
 
   const shouldRenderImage = (url: string): boolean => {

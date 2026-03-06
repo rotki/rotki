@@ -1,4 +1,5 @@
 import type { MaybeRef } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
 import type {
@@ -8,13 +9,11 @@ import type {
   AccountingRuleEntry,
   AccountingRuleRequestPayload,
 } from '@/types/settings/accounting';
-import type { TaskMeta } from '@/types/task';
 import { useAccountingApi } from '@/composables/api/settings/accounting-api';
 import { useInterop } from '@/composables/electron-interop';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { defaultCollectionState, mapCollectionResponse } from '@/utils/collection';
 import { downloadFileByTextContent } from '@/utils/download';
 import { logger } from '@/utils/logging';
@@ -123,30 +122,29 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
     }
   };
 
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
 
   const exportAccountingRulesData = async (
     directoryPath?: string,
   ): Promise<{ result: boolean | object; message?: string } | null> => {
-    try {
-      const { taskId } = await exportAccountingRules(directoryPath);
-      const { result } = await awaitTask<boolean | object, TaskMeta>(taskId, TaskType.EXPORT_ACCOUNTING_RULES, {
-        title: t('actions.accounting_rules.export.title'),
-      });
+    const outcome = await runTask<boolean | object, TaskMeta>(
+      async () => exportAccountingRules(directoryPath),
+      { type: TaskType.EXPORT_ACCOUNTING_RULES, meta: { title: t('actions.accounting_rules.export.title') } },
+    );
 
+    if (outcome.success) {
       return {
-        result,
+        result: outcome.result,
       };
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error))
-        return null;
 
-      return {
-        message: getErrorMessage(error),
-        result: false,
-      };
-    }
+    if (!isActionableFailure(outcome))
+      return null;
+
+    return {
+      message: outcome.message,
+      result: false,
+    };
   };
 
   const { appSession, getPath, openDirectory } = useInterop();
@@ -190,31 +188,19 @@ export function useAccountingSettings(): UseAccountingSettingReturn {
   }
 
   async function importJSON(file: File): Promise<ActionStatus | null> {
-    let success: boolean;
-    let message = '';
+    const path = getPath(file);
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => path ? importAccountingRulesData(path) : uploadAccountingRulesData(file),
+      { type: TaskType.IMPORT_ACCOUNTING_RULES, meta: { title: t('actions.accounting_rules.import.title') } },
+    );
 
-    const taskType = TaskType.IMPORT_ACCOUNTING_RULES;
+    if (outcome.success)
+      return { message: '', success: outcome.result };
 
-    try {
-      const path = getPath(file);
-      const { taskId } = path
-        ? await importAccountingRulesData(path)
-        : await uploadAccountingRulesData(file);
+    if (!isActionableFailure(outcome))
+      return null;
 
-      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-        title: t('actions.accounting_rules.import.title'),
-      });
-      success = result;
-    }
-    catch (error: unknown) {
-      if (isTaskCancelled(error))
-        return null;
-
-      message = getErrorMessage(error);
-      success = false;
-    }
-
-    return { message, success };
+    return { message: outcome.message, success: false };
   }
 
   return {

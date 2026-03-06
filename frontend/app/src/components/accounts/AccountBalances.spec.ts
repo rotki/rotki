@@ -7,11 +7,11 @@ import { setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useMainStore } from '@/store/main';
 import { useStatusStore } from '@/store/status';
-import { useTaskStore } from '@/store/tasks';
 import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn().mockImplementation(() =>

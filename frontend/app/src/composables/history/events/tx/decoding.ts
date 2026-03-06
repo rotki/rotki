@@ -1,13 +1,15 @@
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { groupBy } from 'es-toolkit';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { snakeCaseTransformer } from '@/modules/api/transformers';
 import { EvmUndecodedTransactionResponse } from '@/modules/messaging/types';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useHistoryStore } from '@/store/history';
-import { useTaskStore } from '@/store/tasks';
 import {
   type PullEthBlockEventPayload,
   type PullLocationTransactionPayload,
@@ -16,8 +18,6 @@ import {
   TransactionChainTypeNeedDecoding,
 } from '@/types/history/events';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { logger } from '@/utils/logging';
 
@@ -32,7 +32,8 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     pullAndRecodeTransactionRequest,
   } = useHistoryEventsApi();
 
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { runTask } = useTaskHandler();
+  const { isTaskRunning } = useTaskStore();
   const {
     markDecodingCancelled,
     resetUndecodedTransactionsStatus,
@@ -45,32 +46,26 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { resetStatus } = useStatusUpdater(Section.HISTORY);
 
   const fetchUndecodedTransactionsBreakdown = async (): Promise<void> => {
-    const taskType = TaskType.FETCH_UNDECODED_TXS;
-    if (isTaskRunning(taskType)) {
+    if (isTaskRunning(TaskType.FETCH_UNDECODED_TXS)) {
       logger.debug(`was already fetching undecoded transactions`);
       return;
     }
 
     const title = t('actions.history.fetch_undecoded_transactions.task.title');
 
-    const taskMeta = {
-      title,
-    };
+    const outcome = await runTask<EvmUndecodedTransactionResponse, TaskMeta>(
+      async () => getUndecodedTransactionsBreakdown(),
+      { type: TaskType.FETCH_UNDECODED_TXS, meta: { title }, guard: false },
+    );
 
-    try {
-      const { taskId } = await getUndecodedTransactionsBreakdown();
-      const { result } = await awaitTask<EvmUndecodedTransactionResponse, TaskMeta>(taskId, taskType, taskMeta);
-
-      const breakdown = EvmUndecodedTransactionResponse.parse(snakeCaseTransformer(result));
+    if (outcome.success) {
+      const breakdown = EvmUndecodedTransactionResponse.parse(snakeCaseTransformer(outcome.result));
 
       if (Object.keys(breakdown).length > 0) {
         updateUndecodedTransactionsStatus(
           Object.fromEntries(
             Object.entries(breakdown).map(([chain, entry]) => [
               chain,
-              // The ws message assumes that total is the number of undecoded txs,
-              // For this reason we initialize the status similarly and ignore the total,
-              // which in this case is the total of all transactions.
               {
                 chain,
                 processed: 0,
@@ -81,17 +76,12 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         );
       }
       else {
-        // If the response is empty, it means all chains has been processed.
-        // We should set the processed equal to total, so it appears as completed.
         resetUndecodedTransactionsStatus();
       }
     }
-    catch (error: unknown) {
-      if (isTaskCancelled(error))
-        return;
-
+    else if (isActionableFailure(outcome)) {
       const description = t('actions.history.fetch_undecoded_transactions.error.message', {
-        message: getErrorMessage(error),
+        message: outcome.message,
       });
       notifyError(title, description);
     }
@@ -111,38 +101,33 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     chain: string,
     ignoreCache = false,
   ): Promise<void> => {
-    const taskType = TaskType.TRANSACTIONS_DECODING;
+    const taskMeta = {
+      all: false,
+      chain,
+      description: t('actions.transactions_redecode_by_chain.task.description', { chain: getChainName(chain) }),
+      title: t('actions.transactions_redecode_by_chain.task.title'),
+    };
 
-    if (isTaskRunning(taskType, { chain }))
-      return;
+    const outcome = await runTask(
+      async () => decodeTransactions(chain, ignoreCache),
+      { type: TaskType.TRANSACTIONS_DECODING, meta: taskMeta, unique: false },
+    );
 
-    try {
-      const { taskId } = await decodeTransactions(chain, ignoreCache);
-
-      const taskMeta = {
-        all: false,
-        chain,
-        description: t('actions.transactions_redecode_by_chain.task.description', { chain: getChainName(chain) }),
-        title: t('actions.transactions_redecode_by_chain.task.title'),
-      };
-
-      await awaitTask(taskId, taskType, taskMeta, true);
+    if (outcome.success) {
       clearDependedSection();
     }
-    catch (error) {
-      if (isTaskCancelled(error)) {
-        markDecodingCancelled(chain);
-      }
-      else {
-        logger.error(error);
-        notifyError(
-          t('actions.transactions_redecode_by_chain.error.title'),
-          t('actions.transactions_redecode_by_chain.error.description', {
-            chain: getChainName(chain),
-            error,
-          }),
-        );
-      }
+    else if (outcome.cancelled) {
+      markDecodingCancelled(chain);
+    }
+    else if (!outcome.skipped) {
+      logger.error(outcome.error);
+      notifyError(
+        t('actions.transactions_redecode_by_chain.error.title'),
+        t('actions.transactions_redecode_by_chain.error.description', {
+          chain: getChainName(chain),
+          error: outcome.message,
+        }),
+      );
     }
   };
 
@@ -188,44 +173,40 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       }),
     );
 
-    try {
-      const taskType = TaskType.TRANSACTIONS_DECODING;
-      const { taskId } = await pullAndRecodeTransactionRequest(payload);
+    let taskMeta = {
+      description: t('actions.transactions_redecode.task.single_description', {
+        chain: getChainName(payload.chain),
+        number: payload.txRefs.length,
+      }),
+      title: t('actions.transactions_redecode.task.title'),
+    };
 
-      let taskMeta = {
-        description: t('actions.transactions_redecode.task.single_description', {
-          chain: getChainName(payload.chain),
-          number: payload.txRefs.length,
+    if (payload.txRefs.length === 1) {
+      taskMeta = {
+        description: t('actions.transactions_redecode.task.description', {
+          chain: payload.chain,
+          tx: payload.txRefs[0],
         }),
         title: t('actions.transactions_redecode.task.title'),
       };
+    }
 
-      if (payload.txRefs.length === 1) {
-        taskMeta = {
-          description: t('actions.transactions_redecode.task.description', {
-            chain: payload.chain,
-            tx: payload.txRefs[0],
-          }),
-          title: t('actions.transactions_redecode.task.title'),
-        };
-      }
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => pullAndRecodeTransactionRequest(payload),
+      { type: TaskType.TRANSACTIONS_DECODING, meta: taskMeta, unique: false },
+    );
 
-      const { message, result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
-
-      if (result) {
+    if (outcome.success) {
+      if (outcome.result) {
         clearDependedSection();
       }
       else {
-        notifyUser(message ?? '');
+        notifyUser(outcome.message ?? '');
       }
     }
-    catch (error: unknown) {
-      if (isTaskCancelled(error)) {
-        return;
-      }
-
-      logger.error(error);
-      notifyUser(getErrorMessage(error));
+    else if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      notifyUser(outcome.message);
     }
   };
 
@@ -295,42 +276,40 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   };
 
   const pullAndRecodeEthBlockEvents = async (payload: PullEthBlockEventPayload): Promise<void> => {
-    try {
-      const taskType = TaskType.ETH_BLOCK_EVENTS_DECODING;
-      const { taskId } = await pullAndRecodeEthBlockEventRequest(payload);
+    let taskMeta = {
+      description: t('actions.eth_block_events_redecoding.task.single_description', {
+        number: payload.blockNumbers.length,
+      }),
+      title: t('actions.eth_block_events_redecoding.task.title'),
+    };
 
-      let taskMeta = {
-        description: t('actions.eth_block_events_redecoding.task.single_description', {
-          number: payload.blockNumbers.length,
+    if (payload.blockNumbers.length === 1) {
+      const data = payload.blockNumbers[0];
+      taskMeta = {
+        description: t('actions.eth_block_events_redecoding.task.description', {
+          block: data,
         }),
         title: t('actions.eth_block_events_redecoding.task.title'),
       };
+    }
 
-      if (payload.blockNumbers.length === 1) {
-        const data = payload.blockNumbers[0];
-        taskMeta = {
-          description: t('actions.eth_block_events_redecoding.task.description', {
-            block: data,
-          }),
-          title: t('actions.eth_block_events_redecoding.task.title'),
-        };
-      }
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => pullAndRecodeEthBlockEventRequest(payload),
+      { type: TaskType.ETH_BLOCK_EVENTS_DECODING, meta: taskMeta, unique: false },
+    );
 
-      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
-
-      if (result)
+    if (outcome.success) {
+      if (outcome.result)
         clearDependedSection();
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
-        notifyError(
-          t('actions.eth_block_events_redecoding.error.title'),
-          t('actions.eth_block_events_redecoding.error.description', {
-            error,
-          }),
-        );
-      }
+    else if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      notifyError(
+        t('actions.eth_block_events_redecoding.error.title'),
+        t('actions.eth_block_events_redecoding.error.description', {
+          error: outcome.message,
+        }),
+      );
     }
   };
 

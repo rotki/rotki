@@ -18,7 +18,6 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useCompleteEvents } from '@/modules/history/events/composables/use-complete-events';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useConfirmStore } from '@/store/confirm';
-import { isTaskCancelled } from '@/utils';
 import { getErrorMessage } from '@/utils/error-handling';
 import { isAssetMovementEvent, isCustomizedEvent } from '@/utils/history/events';
 
@@ -162,9 +161,6 @@ export function useHistoryEventsOperations(
       emit('refresh');
     }
     catch (error: unknown) {
-      if (isTaskCancelled(error))
-        return;
-
       const title = t('transactions.dialog.delete.error.title');
       const message = t('transactions.dialog.delete.error.message', {
         message: getErrorMessage(error),

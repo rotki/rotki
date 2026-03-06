@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ImportSourceType } from '@/types/upload-types';
 import useVuelidate from '@vuelidate/core';
 import { helpers, requiredIf } from '@vuelidate/validators';
@@ -9,12 +9,15 @@ import { useImportDataApi } from '@/composables/api/import';
 import { useInterop } from '@/composables/electron-interop';
 import { refIsTruthy } from '@/composables/ref';
 import { displayDateFormatter } from '@/data/date-formatter';
-import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { DateFormat } from '@/types/date-format';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
-import { getErrorMessage } from '@/utils/error-handling';
 import { toMessages } from '@/utils/validation';
+
+interface ImportTaskMeta extends TaskMeta {
+  readonly source: ImportSourceType;
+}
 
 const { source } = defineProps<{ source: ImportSourceType }>();
 
@@ -63,32 +66,32 @@ const dateInputFormatExample = computed(() => {
 });
 
 const taskType = TaskType.IMPORT_CSV;
-const { awaitTask, useIsTaskRunning } = useTaskStore();
+const { runTask } = useTaskHandler();
+const { useIsTaskRunning } = useTaskStore();
 
 const loading = useIsTaskRunning(taskType, { source });
 const { importDataFrom, importFile } = useImportDataApi();
 
-async function uploadPackaged(file: string) {
-  try {
-    const { taskId } = await importDataFrom(source, file, get(dateInputFormat) || null);
+async function uploadPackaged(file: string): Promise<void> {
+  const outcome = await runTask<boolean, ImportTaskMeta>(
+    () => importDataFrom(source, file, get(dateInputFormat) || null),
+    {
+      type: taskType,
+      meta: { source, title: t('file_upload.task.title', { source }) },
+      unique: false,
+    },
+  );
 
-    const taskMeta = {
-      source,
-      title: t('file_upload.task.title', { source }),
-    };
-
-    const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
-
-    if (result)
+  if (outcome.success) {
+    if (outcome.result)
       set(uploaded, true);
   }
-  catch (error: unknown) {
-    if (!isTaskCancelled(error))
-      set(errorMessage, getErrorMessage(error));
+  else if (isActionableFailure(outcome)) {
+    set(errorMessage, outcome.message);
   }
 }
 
-async function uploadFile() {
+async function uploadFile(): Promise<void> {
   const fileVal = get(file);
   if (fileVal) {
     const path = getPath(fileVal);
@@ -104,20 +107,20 @@ async function uploadFile() {
       if (dateInputFormatVal)
         formData.append('timestamp_format', dateInputFormatVal);
 
-      try {
-        const { taskId } = await importFile(formData);
-        const taskMeta = {
-          source,
-          title: t('file_upload.task.title', { source }),
-        };
-        const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta);
+      const outcome = await runTask<boolean, ImportTaskMeta>(
+        () => importFile(formData),
+        {
+          type: taskType,
+          meta: { source, title: t('file_upload.task.title', { source }) },
+        },
+      );
 
-        if (result)
+      if (outcome.success) {
+        if (outcome.result)
           set(uploaded, true);
       }
-      catch (error: unknown) {
-        if (!isTaskCancelled(error))
-          set(errorMessage, getErrorMessage(error));
+      else if (isActionableFailure(outcome)) {
+        set(errorMessage, outcome.message);
       }
     }
   }

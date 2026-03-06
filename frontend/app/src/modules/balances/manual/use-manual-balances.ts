@@ -1,11 +1,12 @@
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ActionStatus } from '@/types/action';
-import type { TaskMeta } from '@/types/task';
 import { useManualBalancesApi } from '@/composables/api/balances/manual';
 import { useStatusUpdater } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { BalanceType } from '@/types/balances';
 import {
@@ -16,8 +17,6 @@ import {
 } from '@/types/manual-balances';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section, Status } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
@@ -32,7 +31,7 @@ interface UseManualBalancesReturn {
 export function useManualBalances(): UseManualBalancesReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useBalancesStore());
   const { notifyError, showErrorMessage } = useNotifications();
-  const { awaitTask, cancelTaskByTaskType } = useTaskStore();
+  const { cancelTaskByTaskType, runTask } = useTaskHandler();
   const { fetchDisabled, getStatus, resetStatus, setStatus } = useStatusUpdater(Section.MANUAL_BALANCES);
   const { addManualBalances, deleteManualBalances, editManualBalances, queryManualBalances } = useManualBalancesApi();
   const valueThreshold = useValueThreshold(BalanceSource.MANUAL);
@@ -67,24 +66,22 @@ export function useManualBalances(): UseManualBalancesReturn {
 
     const threshold = get(valueThreshold);
 
-    try {
-      const taskType = TaskType.MANUAL_BALANCES;
-      const { taskId } = await queryManualBalances(threshold);
-      const { result } = await awaitTask<ManualBalances, TaskMeta>(taskId, taskType, {
-        title: t('actions.manual_balances.fetch.task.title'),
-      });
+    const outcome = await runTask<ManualBalances, TaskMeta>(
+      async () => queryManualBalances(threshold),
+      { type: TaskType.MANUAL_BALANCES, meta: { title: t('actions.manual_balances.fetch.task.title') } },
+    );
 
-      const { balances } = ManualBalances.parse(result);
+    if (outcome.success) {
+      const { balances } = ManualBalances.parse(outcome.result);
       updateBalances(balances);
-
       setStatus(Status.LOADED);
     }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error)) {
-        logger.error(error);
+    else {
+      if (isActionableFailure(outcome)) {
+        logger.error(outcome.error);
         notifyError(
           t('actions.balances.manual_balances.error.title'),
-          t('actions.balances.manual_balances.error.message', { message: getErrorMessage(error) }),
+          t('actions.balances.manual_balances.error.message', { message: outcome.message }),
         );
       }
       resetStatus();
@@ -92,61 +89,61 @@ export function useManualBalances(): UseManualBalancesReturn {
   };
 
   const addManualBalance = async (balance: RawManualBalance): Promise<ActionStatus<ValidationErrors | string>> => {
-    try {
-      await cancelTaskByTaskType(TaskType.MANUAL_BALANCES);
-      const taskType = TaskType.MANUAL_BALANCES_ADD;
-      const { taskId } = await addManualBalances([balance]);
-      const { result } = await awaitTask<ManualBalances, TaskMeta>(taskId, taskType, {
-        title: t('actions.manual_balances.add.task.title'),
-      });
-      const { balances } = ManualBalances.parse(result);
-      updateBalances(balances);
-      return {
-        success: true,
-      };
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error))
-        logger.error(error);
+    await cancelTaskByTaskType(TaskType.MANUAL_BALANCES);
+    const outcome = await runTask<ManualBalances, TaskMeta>(
+      async () => addManualBalances([balance]),
+      { type: TaskType.MANUAL_BALANCES_ADD, meta: { title: t('actions.manual_balances.add.task.title') } },
+    );
 
-      let messages: ValidationErrors | string = getErrorMessage(error);
-      if (error instanceof ApiValidationError)
-        messages = error.getValidationErrors(balance);
+    if (outcome.success) {
+      const { balances } = ManualBalances.parse(outcome.result);
+      updateBalances(balances);
+      return { success: true };
+    }
+
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+
+      let messages: ValidationErrors | string = outcome.message;
+      if (outcome.error instanceof ApiValidationError)
+        messages = outcome.error.getValidationErrors(balance);
 
       return {
         message: messages,
         success: false,
       };
     }
+
+    return { message: '', success: false };
   };
 
   const editManualBalance = async (balance: ManualBalance): Promise<ActionStatus<ValidationErrors | string>> => {
-    try {
-      await cancelTaskByTaskType(TaskType.MANUAL_BALANCES);
-      const taskType = TaskType.MANUAL_BALANCES_EDIT;
-      const { taskId } = await editManualBalances([balance]);
-      const { result } = await awaitTask<ManualBalances, TaskMeta>(taskId, taskType, {
-        title: t('actions.manual_balances.edit.task.title'),
-      });
-      const { balances } = ManualBalances.parse(result);
-      updateBalances(balances);
-      return {
-        success: true,
-      };
-    }
-    catch (error: unknown) {
-      if (!isTaskCancelled(error))
-        logger.error(error);
+    await cancelTaskByTaskType(TaskType.MANUAL_BALANCES);
+    const outcome = await runTask<ManualBalances, TaskMeta>(
+      async () => editManualBalances([balance]),
+      { type: TaskType.MANUAL_BALANCES_EDIT, meta: { title: t('actions.manual_balances.edit.task.title') } },
+    );
 
-      let message: ValidationErrors | string = getErrorMessage(error);
-      if (error instanceof ApiValidationError)
-        message = error.getValidationErrors(balance);
+    if (outcome.success) {
+      const { balances } = ManualBalances.parse(outcome.result);
+      updateBalances(balances);
+      return { success: true };
+    }
+
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+
+      let message: ValidationErrors | string = outcome.message;
+      if (outcome.error instanceof ApiValidationError)
+        message = outcome.error.getValidationErrors(balance);
 
       return {
         message,
         success: false,
       };
     }
+
+    return { message: '', success: false };
   };
 
   const save = async (balance: ManualBalance | RawManualBalance): Promise<ActionStatus<ValidationErrors | string>> =>

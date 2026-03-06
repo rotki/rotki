@@ -8,13 +8,13 @@ import RepullingTransactionForm, { type AccountType } from '@/components/history
 import { type RepullingTransactionResult, useHistoryTransactions } from '@/composables/history/events/tx';
 import { useRepullingTransactionForm } from '@/composables/history/events/tx/use-repulling-transaction-form';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
 import { useHistoryStore } from '@/store/history';
 import { useMessageStore } from '@/store/message';
-import { useTaskStore } from '@/store/tasks';
 import { ApiValidationError } from '@/types/api/errors';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
-import { TaskType } from '@/types/task-type';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 

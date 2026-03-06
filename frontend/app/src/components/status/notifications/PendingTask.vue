@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import type { Task, TaskMeta } from '@/types/task';
+import type { Task, TaskMeta } from '@/modules/tasks/types';
 import { bigNumberify } from '@rotki/common';
 import dayjs from 'dayjs';
+import { TaskType } from '@/modules/tasks/task-type';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useReportsStore } from '@/store/reports';
-import { TaskType } from '@/types/task-type';
 import { calculatePercentage } from '@/utils/calculation';
 
 const { task } = defineProps<{ task: Task<TaskMeta> }>();

@@ -2,7 +2,7 @@ import type { ActionStatus } from '@/types/action';
 import type { ConflictResolution } from '@/types/asset';
 import { api } from '@/modules/api/rotki-api';
 import { VALID_FILE_OPERATION_STATUS, VALID_WITHOUT_SESSION_STATUS } from '@/modules/api/utils';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import { downloadFileByUrl } from '@/utils/download';
 import { getErrorMessage } from '@/utils/error-handling';
 import { getFilename } from '@/utils/file';

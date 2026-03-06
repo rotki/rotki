@@ -1,13 +1,12 @@
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { useSessionApi } from '@/composables/api/session';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useHistoryStore } from '@/store/history';
 import { useStatusStore } from '@/store/status';
-import { useTaskStore } from '@/store/tasks';
 import { Purgeable } from '@/types/session/purge';
 import { Section } from '@/types/status';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 
 interface UseSessionPurge {
   purgeCache: (purgeable: Purgeable, value: string) => void;
@@ -17,7 +16,7 @@ interface UseSessionPurge {
 export function useSessionPurge(): UseSessionPurge {
   const { refreshGeneralCacheTask } = useSessionApi();
   const { resetStatus } = useStatusStore();
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { notifyError } = useNotifications();
   const { markAllProtocolCacheCancelled, resetProtocolCacheUpdatesStatus } = useHistoryStore();
   const { t } = useI18n({ useScope: 'global' });
@@ -30,25 +29,25 @@ export function useSessionPurge(): UseSessionPurge {
 
   const refreshGeneralCache = async (source: string): Promise<void> => {
     resetProtocolCacheUpdatesStatus();
-    const taskType = TaskType.REFRESH_GENERAL_CACHE;
-    const { taskId } = await refreshGeneralCacheTask(source);
-    try {
-      await awaitTask<boolean, TaskMeta>(taskId, taskType, {
-        title: t('actions.session.refresh_general_cache.task.title', { name: source }),
-      });
-    }
-    catch (error: unknown) {
-      if (isTaskCancelled(error)) {
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => refreshGeneralCacheTask(source),
+      { type: TaskType.REFRESH_GENERAL_CACHE, meta: { title: t('actions.session.refresh_general_cache.task.title', { name: source }) } },
+    );
+
+    if (!outcome.success) {
+      if (outcome.cancelled) {
         markAllProtocolCacheCancelled();
         return;
       }
-      notifyError(
-        t('actions.session.refresh_general_cache.task.title', { name: source }),
-        t('actions.session.refresh_general_cache.error.message', {
-          message: getErrorMessage(error),
-          name: source,
-        }),
-      );
+      if (!outcome.skipped) {
+        notifyError(
+          t('actions.session.refresh_general_cache.task.title', { name: source }),
+          t('actions.session.refresh_general_cache.error.message', {
+            message: outcome.message,
+            name: source,
+          }),
+        );
+      }
     }
   };
 

@@ -5,7 +5,8 @@ import { useAssetsApi } from '@/composables/api/assets';
 import { useAssets } from '@/composables/assets';
 import { useInterop } from '@/composables/electron-interop';
 import { useNotificationsStore } from '@/store/notifications';
-import { useTaskStore } from '@/store/tasks';
+
+const runTaskMock = vi.fn();
 
 vi.mock('@/composables/api/assets/index', () => ({
   useAssetsApi: vi.fn().mockReturnValue({
@@ -23,9 +24,15 @@ vi.mock('@/composables/api/assets/icon', () => ({
   } satisfies Partial<ReturnType<typeof useAssetIconApi>>),
 }));
 
-vi.mock('@/store/tasks', () => ({
-  useTaskStore: vi.fn().mockReturnValue({
-    awaitTask: vi.fn().mockResolvedValue({}),
+vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
+  ...(await importOriginal<Record<string, unknown>>()),
+  useTaskHandler: vi.fn().mockReturnValue({
+    runTask: async (taskFn: () => Promise<unknown>, ...rest: unknown[]): Promise<unknown> => {
+      await taskFn();
+      return runTaskMock(taskFn, ...rest);
+    },
+    cancelTask: vi.fn(),
+    cancelTaskByTaskType: vi.fn(),
   }),
 }));
 
@@ -55,9 +62,9 @@ describe('useAssets', () => {
   let api: ReturnType<typeof useAssetsApi>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
     store = useAssets();
     api = useAssetsApi();
-    vi.clearAllMocks();
   });
 
   describe('checkForUpdate', () => {
@@ -68,10 +75,7 @@ describe('useAssets', () => {
         newChanges: 2,
       };
 
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        result: versions,
-        meta: { title: '' },
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: versions });
 
       const result = await store.checkForUpdate();
 
@@ -90,10 +94,7 @@ describe('useAssets', () => {
         newChanges: 2,
       };
 
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        result: versions,
-        meta: { title: '' },
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: versions });
 
       const result = await store.checkForUpdate();
 
@@ -106,7 +107,7 @@ describe('useAssets', () => {
     });
 
     it('should handle error', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
+      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
 
       const result = await store.checkForUpdate();
 
@@ -128,10 +129,7 @@ describe('useAssets', () => {
     };
 
     it('should complete successfully', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        result: true,
-        meta: { title: '' },
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: true });
 
       const result = await store.applyUpdates(payload);
 
@@ -151,10 +149,7 @@ describe('useAssets', () => {
         },
       ];
 
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        result: conflicts,
-        meta: { title: '' },
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: conflicts });
 
       const result = await store.applyUpdates(payload);
 
@@ -167,7 +162,7 @@ describe('useAssets', () => {
     });
 
     it('should handle error', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
+      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
 
       const result = await store.applyUpdates(payload);
 
@@ -216,10 +211,7 @@ describe('useAssets', () => {
     const file = new File(['0'], 'test.csv');
 
     it('should succeed', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        result: true,
-        meta: { title: '' },
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: true });
 
       const result = await store.importCustomAssets(file);
 
@@ -231,7 +223,7 @@ describe('useAssets', () => {
     });
 
     it('should handle failure', async () => {
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
+      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
 
       const result = await store.importCustomAssets(file);
 
@@ -252,10 +244,7 @@ describe('useAssets', () => {
 
     it('should succeed', async () => {
       vi.mocked(api.exportCustom).mockResolvedValue({ taskId: 1 });
-      vi.mocked(useTaskStore().awaitTask).mockResolvedValue({
-        result: true,
-        meta: { title: '' },
-      });
+      runTaskMock.mockResolvedValue({ success: true, result: { filePath: 'export.csv' } });
 
       const result = await store.exportCustomAssets();
 
@@ -263,12 +252,13 @@ describe('useAssets', () => {
 
       expect(result).toEqual({
         directory,
+        filePath: 'export.csv',
       });
     });
 
     it('should handle failure', async () => {
       vi.mocked(api.exportCustom).mockResolvedValue({ taskId: 1 });
-      vi.mocked(useTaskStore().awaitTask).mockRejectedValue(new Error('failed'));
+      runTaskMock.mockResolvedValue({ success: false, message: 'failed', cancelled: false, backendCancelled: false, skipped: false });
 
       const result = await store.exportCustomAssets();
 

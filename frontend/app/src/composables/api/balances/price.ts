@@ -5,8 +5,8 @@ import {
   VALID_WITH_SESSION_AND_EXTERNAL_SERVICE,
   VALID_WITHOUT_SESSION_STATUS,
 } from '@/modules/api/utils';
+import { type PendingTask, PendingTaskSchema } from '@/modules/tasks/types';
 import { AssetPriceResponse, HistoricPrices, type HistoricPricesPayload, type OracleCacheMeta } from '@/types/prices';
-import { type PendingTask, PendingTaskSchema } from '@/types/task';
 
 interface UsePriceApiReturn {
   queryPrices: (assets: string[], targetAsset: string, ignoreCache: boolean) => Promise<PendingTask>;

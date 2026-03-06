@@ -1,12 +1,11 @@
-import type { TaskMeta } from '@/types/task';
+import type { TaskMeta } from '@/modules/tasks/types';
 import { type HistoricalAssetPricePayload, HistoricalAssetPriceResponse } from '@rotki/common';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
-import { isTaskCancelled } from '@/utils';
 import { logger } from '@/utils/logging';
 
 interface UseHistoricalPriceFetcherReturn {
@@ -17,7 +16,7 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const api = useStatisticsApi();
-  const { awaitTask } = useTaskStore();
+  const { runTask } = useTaskHandler();
   const { getAssetField } = useAssetInfoRetrieval();
   const { notifyError } = useNotifications();
   const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
@@ -51,47 +50,50 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
   };
 
   const fetchHistoricalAssetPrice = async (payload: HistoricalAssetPricePayload): Promise<HistoricalAssetPriceResponse> => {
-    try {
-      const asset = payload.asset;
-      const failedState = { ...get(failedDailyPrices) };
-      const resolvedState = { ...get(resolvedFailedDailyPrices) };
-      const failedTimestamps = failedState[asset]?.noPricesTimestamps || [];
-      const resolvedTimestamps = resolvedState[asset] || [];
+    const asset = payload.asset;
+    const failedState = { ...get(failedDailyPrices) };
+    const resolvedState = { ...get(resolvedFailedDailyPrices) };
+    const failedTimestamps = failedState[asset]?.noPricesTimestamps || [];
+    const resolvedTimestamps = resolvedState[asset] || [];
 
-      const excludeTimestamps
-        = failedTimestamps.filter(timestamp => !resolvedTimestamps.includes(timestamp));
+    const excludeTimestamps
+      = failedTimestamps.filter(timestamp => !resolvedTimestamps.includes(timestamp));
 
-      const taskType = TaskType.FETCH_DAILY_HISTORIC_PRICE;
-      const { taskId } = await api.queryHistoricalAssetPrices({
+    const outcome = await runTask<HistoricalAssetPriceResponse, TaskMeta>(
+      async () => api.queryHistoricalAssetPrices({
         ...payload,
         excludeTimestamps,
-      });
-      const { result } = await awaitTask<HistoricalAssetPriceResponse, TaskMeta>(taskId, taskType, {
-        description: t('actions.balances.historic_fetch_price.daily.task.detail', {
-          asset: getAssetField(payload.asset, 'name'),
-        }),
-        title: t('actions.balances.historic_fetch_price.daily.task.title'),
-      });
+      }),
+      {
+        type: TaskType.FETCH_DAILY_HISTORIC_PRICE,
+        meta: {
+          description: t('actions.balances.historic_fetch_price.daily.task.detail', {
+            asset: getAssetField(payload.asset, 'name'),
+          }),
+          title: t('actions.balances.historic_fetch_price.daily.task.title'),
+        },
+      },
+    );
 
-      const parsed = HistoricalAssetPriceResponse.parse(result);
+    if (outcome.success) {
+      const parsed = HistoricalAssetPriceResponse.parse(outcome.result);
       resetFailedStates(asset, parsed, excludeTimestamps);
       return parsed;
     }
-    catch (error: unknown) {
-      logger.error(error);
-      if (!isTaskCancelled(error)) {
-        notifyError(
-          t('actions.balances.historic_fetch_price.daily.task.title'),
-          t('actions.balances.historic_fetch_price.daily.error.message'),
-        );
-      }
 
-      return {
-        noPricesTimestamps: [],
-        prices: {},
-        rateLimitedPricesTimestamps: [],
-      };
+    if (isActionableFailure(outcome)) {
+      logger.error(outcome.error);
+      notifyError(
+        t('actions.balances.historic_fetch_price.daily.task.title'),
+        t('actions.balances.historic_fetch_price.daily.error.message'),
+      );
     }
+
+    return {
+      noPricesTimestamps: [],
+      prices: {},
+      rateLimitedPricesTimestamps: [],
+    };
   };
 
   return {

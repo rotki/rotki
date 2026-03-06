@@ -1,17 +1,19 @@
 <script setup lang="ts">
-import type { Task, TaskMeta } from '@/types/task';
+import type { Task, TaskMeta } from '@/modules/tasks/types';
 import CollapsedPendingTasks from '@/components/status/notifications/CollapsedPendingTasks.vue';
 import NoTasksRunning from '@/components/status/notifications/NoTasksRunning.vue';
 import PendingTask from '@/components/status/notifications/PendingTask.vue';
+import { useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
-import { useTaskStore } from '@/store/tasks';
 
 const expanded = defineModel<boolean>({ required: true });
 
 const { t } = useI18n({ useScope: 'global' });
 const store = useTaskStore();
 const { hasRunningTasks, tasks } = storeToRefs(store);
-const { cancelTask, useIsTaskRunning } = store;
+const { useIsTaskRunning } = store;
+const { cancelTask } = useTaskHandler();
 const { dismiss, show } = useConfirmStore();
 
 const debounceDismiss = useDebounceFn((running: boolean) => !running && dismiss(), 1000);

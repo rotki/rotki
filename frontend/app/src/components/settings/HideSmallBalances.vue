@@ -3,11 +3,11 @@ import useVuelidate from '@vuelidate/core';
 import { minValue, required } from '@vuelidate/validators';
 import { omit } from 'es-toolkit';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
-import { useTaskStore } from '@/store/tasks';
 import { BalanceSource, type BalanceValueThreshold } from '@/types/settings/frontend-settings';
-import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
 
 const { source } = defineProps<{

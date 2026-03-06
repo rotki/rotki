@@ -1,15 +1,16 @@
 import type { ComputedRef, Ref } from 'vue';
+import type { TaskMeta } from '@/modules/tasks/types';
 import type { ActionStatus } from '@/types/action';
 import type { HistoryEventCollectionRow, HistoryEventEntry } from '@/types/history/events/schemas';
-import type { TaskMeta } from '@/types/task';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
+import { TaskType } from '@/modules/tasks/task-type';
+import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useHistoryStore } from '@/store/history';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import { arrayify } from '@/utils/array';
 import { logger } from '@/utils/logging';
 
@@ -55,7 +56,8 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
   const { t } = useI18n({ useScope: 'global' });
   const { showErrorMessage, showSuccessMessage } = useNotifications();
   const { getAssetInfo } = useAssetInfoRetrieval();
-  const { awaitTask, useIsTaskRunning } = useTaskStore();
+  const { runTask } = useTaskHandler();
+  const { useIsTaskRunning } = useTaskStore();
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
   const {
@@ -172,27 +174,21 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
     set(triggerAutoMatchLoading, true);
 
-    try {
-      const { taskId } = await triggerAssetMovementMatching();
+    const outcome = await runTask<boolean, TaskMeta>(
+      async () => triggerAssetMovementMatching(),
+      { type: TaskType.MATCH_ASSET_MOVEMENTS, meta: { title: t('asset_movement_matching.auto_match.task_title') }, guard: false },
+    );
 
-      await awaitTask<boolean, TaskMeta>(
-        taskId,
-        TaskType.MATCH_ASSET_MOVEMENTS,
-        {
-          title: t('asset_movement_matching.auto_match.task_title'),
-        },
-      );
-
+    if (outcome.success) {
       await refreshUnmatchedAssetMovements(true);
       signalEventsModified();
     }
-    catch (error: unknown) {
-      logger.error('Failed to trigger auto match:', error);
-      showErrorMessage(t('asset_movement_matching.auto_match.error_title'), t('asset_movement_matching.auto_match.error', { error: getErrorMessage(error) }));
+    else if (isActionableFailure(outcome)) {
+      logger.error('Failed to trigger auto match:', outcome.error);
+      showErrorMessage(t('asset_movement_matching.auto_match.error_title'), t('asset_movement_matching.auto_match.error', { error: outcome.message }));
     }
-    finally {
-      set(triggerAutoMatchLoading, false);
-    }
+
+    set(triggerAutoMatchLoading, false);
   };
 
   return {
