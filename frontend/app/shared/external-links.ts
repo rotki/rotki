@@ -18,6 +18,8 @@ export const etherscanLink = 'https://etherscan.io/myapikey';
 
 export const heliusLink = 'https://dev.helius.xyz/dashboard/app';
 
+export const voyagerLink = 'https://voyager.online/';
+
 export const blockscoutLinks = {
   ethereum: 'https://eth.blockscout.com/account/api-key',
   optimism: 'https://optimism.blockscout.com/account/api-key',

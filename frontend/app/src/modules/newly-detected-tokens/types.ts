@@ -4,6 +4,7 @@ import { z } from 'zod/v4';
 export enum NewDetectedTokenKind {
   EVM = 'evm',
   SOLANA = 'solana',
+  STARKNET = 'starknet',
 }
 
 export const NewDetectedToken = z.object({

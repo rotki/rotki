@@ -68,6 +68,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    'accounts-starknet': RouteRecordInfo<
+      'accounts-starknet',
+      '/accounts/starknet',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     'accounts-substrate': RouteRecordInfo<
       'accounts-substrate',
       '/accounts/substrate',
@@ -532,6 +539,12 @@ declare module 'vue-router/auto-routes' {
     'src/pages/accounts/solana/index.vue': {
       routes:
         | 'accounts-solana'
+      views:
+        | never
+    }
+    'src/pages/accounts/starknet/index.vue': {
+      routes:
+        | 'accounts-starknet'
       views:
         | never
     }

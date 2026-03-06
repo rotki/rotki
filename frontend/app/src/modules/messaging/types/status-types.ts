@@ -89,10 +89,19 @@ const SolanaTransactionStatusData = z.object({
   subtype: z.literal('solana'),
 });
 
+const StarknetTransactionStatusData = z.object({
+  address: z.string(),
+  chain: z.string(),
+  period: z.tuple([z.number(), z.number()]),
+  status: z.enum(TransactionsQueryStatus),
+  subtype: z.literal('starknet'),
+});
+
 export const UnifiedTransactionStatusData = z.union([
   EvmTransactionStatusData,
   BitcoinTransactionStatusData,
   SolanaTransactionStatusData,
+  StarknetTransactionStatusData,
 ]);
 
 export type UnifiedTransactionStatusData = z.infer<typeof UnifiedTransactionStatusData>;

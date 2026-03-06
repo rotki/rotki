@@ -45,6 +45,7 @@ from rotkehlchen.types import (
     OptionalBlockchainAddress,
     OptionalChainAddress,
     SolanaAddress,
+    StarknetAddress,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -1128,6 +1129,8 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
                 HistoryBaseEntryType.EVM_EVENT,
                 HistoryBaseEntryType.EVM_SWAP_EVENT,
                 HistoryBaseEntryType.SOLANA_SWAP_EVENT,
+                HistoryBaseEntryType.STARKNET_EVENT,
+                HistoryBaseEntryType.STARKNET_SWAP_EVENT,
                 HistoryBaseEntryType.HISTORY_EVENT,
             ])
 
@@ -1258,6 +1261,8 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
                 HistoryBaseEntryType.EVM_EVENT,
                 HistoryBaseEntryType.EVM_SWAP_EVENT,
                 HistoryBaseEntryType.SOLANA_SWAP_EVENT,
+                HistoryBaseEntryType.STARKNET_EVENT,
+                HistoryBaseEntryType.STARKNET_SWAP_EVENT,
             ])
 
         filter_query = super().make(
@@ -2395,6 +2400,164 @@ class SolanaTransactionsNotDecodedFilterQuery(DBFilterQuery):
             mappings_table_name='solana_tx_mappings',
         )]
         return filter_query
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class StarknetTransactionsFilterQuery(DBFilterQuery, FilterWithTimestamp):
+    """Filter query for Starknet transactions.
+    If `transaction_hash` is provided, other filter parameters are ignored.
+    """
+
+    @classmethod
+    def make(
+            cls: type['StarknetTransactionsFilterQuery'],
+            and_op: bool = True,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            transaction_hash: str | None = None,
+            status: str | None = None,
+    ) -> 'StarknetTransactionsFilterQuery':
+        """May raise:
+        - InvalidFilter for invalid combination of filters
+        """
+        if order_by_rules is None:
+            order_by_rules = [('block_timestamp', True)]
+
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+            order_by_rules=order_by_rules,
+        )
+        filter_query.timestamp_filter = DBTimestampFilter(
+            and_op=True,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            timestamp_field='block_timestamp',
+        )
+        filters: list[DBFilter] = []
+        if transaction_hash is not None:
+            filters.append(DBEqualsFilter(and_op=True, column='transaction_hash', value=transaction_hash))  # noqa: E501
+        else:
+            filters.append(filter_query.timestamp_filter)
+            if status is not None:
+                filters.append(DBEqualsFilter(and_op=True, column='status', value=status))
+
+        filter_query.filters = filters
+        return filter_query
+
+
+class StarknetTransactionsNotDecodedFilterQuery(DBFilterQuery):
+
+    @classmethod
+    def make(
+            cls: type['StarknetTransactionsNotDecodedFilterQuery'],
+            limit: int | None = None,
+    ) -> 'StarknetTransactionsNotDecodedFilterQuery':
+        filter_query = cls.create(
+            and_op=True,
+            limit=limit,
+            offset=None,
+            order_by_rules=[('A.block_timestamp', True)],
+        )
+        filter_query.filters = [DBTransactionsPendingDecodingFilter(
+            and_op=True,
+            mappings_table_name='starknet_tx_mappings',
+        )]
+        return filter_query
+
+
+class StarknetEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
+
+    @classmethod
+    def make(  # type: ignore[override]
+            cls,
+            and_op: bool = True,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+            limit: int | None = None,
+            offset: int | None = None,
+            from_ts: Timestamp | None = None,
+            to_ts: Timestamp | None = None,
+            assets: tuple['Asset', ...] | None = None,
+            event_types: list[HistoryEventType] | None = None,
+            event_subtypes: list[HistoryEventSubType] | None = None,
+            type_and_subtype_combinations: 'Iterable[tuple[HistoryEventType, HistoryEventSubType]] | None' = None,  # noqa: E501
+            exclude_subtypes: list[HistoryEventSubType] | None = None,
+            location: 'Location | None' = None,
+            location_labels: list[str] | None = None,
+            excluded_locations: list['Location'] | None = None,
+            ignored_ids: list[int] | None = None,
+            null_columns: list[str] | None = None,
+            identifiers: list[int] | None = None,
+            group_identifiers: list[str] | None = None,
+            entry_types: IncludeExcludeFilterData | None = None,
+            exclude_ignored_assets: bool = False,
+            state_markers: list['HistoryMappingState'] | None = None,
+            notes_substring: str | None = None,
+            tx_hashes: list[str] | None = None,
+            counterparties: list[str] | None = None,
+            addresses: list['StarknetAddress'] | None = None,
+    ) -> 'Self':
+        if entry_types is None:
+            entry_types = IncludeExcludeFilterData(values=[
+                HistoryBaseEntryType.STARKNET_EVENT,
+                HistoryBaseEntryType.STARKNET_SWAP_EVENT,
+            ])
+
+        filter_query = super().make(
+            and_op=and_op,
+            order_by_rules=order_by_rules,
+            limit=limit,
+            offset=offset,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            assets=assets,
+            event_types=event_types,
+            event_subtypes=event_subtypes,
+            type_and_subtype_combinations=type_and_subtype_combinations,
+            exclude_subtypes=exclude_subtypes,
+            location=location,
+            location_labels=location_labels,
+            excluded_locations=excluded_locations,
+            ignored_ids=ignored_ids,
+            null_columns=null_columns,
+            identifiers=identifiers,
+            group_identifiers=group_identifiers,
+            entry_types=entry_types,
+            exclude_ignored_assets=exclude_ignored_assets,
+            state_markers=state_markers,
+            notes_substring=notes_substring,
+            counterparties=counterparties,
+        )
+
+        if tx_hashes is not None:
+            filter_query.filters.append(DBMultiBytesFilter(
+                and_op=True,
+                column='tx_ref',
+                values=[tx_hash.encode('utf-8') for tx_hash in tx_hashes],
+                operator='IN',
+            ))
+
+        if addresses is not None:
+            filter_query.filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='address',
+                values=addresses,
+                operator='IN',
+            ))
+
+        return filter_query
+
+    @staticmethod
+    def get_join_query() -> str:
+        return EVENTS_WITH_COUNTERPARTY_JOIN
+
+    @staticmethod
+    def get_columns() -> str:
+        return f'{HISTORY_BASE_ENTRY_FIELDS}, {CHAIN_EVENT_FIELDS}'
 
 
 class AccountingRulesFilterQuery(DBFilterQuery):

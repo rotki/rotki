@@ -12,6 +12,8 @@ import type {
   SolanaEvent,
   SolanaSwapEvent,
   StandaloneEditableEvents,
+  StarknetEvent,
+  StarknetSwapEvent,
 } from '@/types/history/events/schemas';
 import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
@@ -29,6 +31,8 @@ import {
   isOnlineHistoryEvent,
   isSolanaEvent,
   isSolanaSwapEvent,
+  isStarknetEvent,
+  isStarknetSwapEvent,
   toLocationAndTxRef,
 } from '@/utils/history/events';
 
@@ -76,11 +80,20 @@ const solanaEvent = computed<SolanaEvent | SolanaSwapEvent | undefined>(() => {
   return undefined;
 });
 
-const eventWithDecoding = computed<DecodableEventType | undefined>(() => get(evmEvent) || get(solanaEvent));
+const starknetEvent = computed<StarknetEvent | StarknetSwapEvent | undefined>(() => {
+  if (isStarknetSwapEvent(event) || isStarknetEvent(event)) {
+    return event;
+  }
+
+  return undefined;
+});
+
+const eventWithDecoding = computed<DecodableEventType | undefined>(() => get(evmEvent) || get(solanaEvent) || get(starknetEvent));
 
 const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
   const evm = get(evmEvent);
   const solana = get(solanaEvent);
+  const starknet = get(starknetEvent);
   if (evm) {
     return {
       location: evm.location,
@@ -92,6 +105,13 @@ const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>
     return {
       location: solana.location,
       txRef: solana.txRef,
+    };
+  }
+
+  if (starknet) {
+    return {
+      location: starknet.location,
+      txRef: starknet.txRef,
     };
   }
 

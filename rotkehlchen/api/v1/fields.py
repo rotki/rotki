@@ -31,6 +31,7 @@ from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.utils import is_valid_derivation_path
 from rotkehlchen.chain.evm.types import EvmIndexer
 from rotkehlchen.chain.solana.validation import is_valid_solana_address
+from rotkehlchen.chain.starknet.validation import is_valid_starknet_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.dbtx import T_TxHash
@@ -59,6 +60,7 @@ from rotkehlchen.types import (
     Location,
     Price,
     SolanaAddress,
+    StarknetAddress,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -776,6 +778,34 @@ class SolanaAddressField(fields.Field):
             )
 
         return SolanaAddress(value)
+
+
+class StarknetAddressField(fields.Field):
+
+    @staticmethod
+    def _serialize(
+            value: StarknetAddress | None,
+            attr: str | None,  # pylint: disable=unused-argument
+            obj: Any,
+            **_kwargs: Any,
+    ) -> str:
+        assert value, 'should never be called with None'  # type kept due to Liskov principle
+        return str(value)
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> StarknetAddress:
+        if not is_valid_starknet_address(value):
+            raise ValidationError(
+                f'Given value {value} is not a starknet address',
+                field_name='address',
+            )
+
+        return StarknetAddress(value)
 
 
 class BaseTransactionHashField(fields.Field, ABC, Generic[T_TxHash]):

@@ -278,6 +278,9 @@ def is_valid_db_blockchain_account(
     if blockchain.is_substrate():  # mypy does not understand the type narrowing here
         return is_valid_substrate_address(blockchain, account)  # type: ignore[arg-type]
 
+    if blockchain == SupportedBlockchain.STARKNET:
+        return True
+
     raise AssertionError(f'Should not store blockchain: {blockchain} addresses in the DB')
 
 
@@ -340,6 +343,7 @@ DBTupleType = Literal[
     'solana_account_key',
     'solana_instruction',
     'solana_instruction_account',
+    'starknet_transaction',
 ]
 
 
@@ -367,6 +371,8 @@ def db_tuple_to_str(
         return f'Solana account key at index {data[1]} for transaction {data[0]}'
     if tuple_type == 'solana_instruction_account':
         return f'Solana instruction account at order {data[2]} for instruction {data[1]}'
+    if tuple_type == 'starknet_transaction':
+        return f'Starknet transaction with hash {data[0]}'
 
     # else can only be evm transaction
     assert tuple_type == 'evm_transaction', 'only DBTupleType possible here is evm_transaction'

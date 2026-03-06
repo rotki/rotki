@@ -78,6 +78,16 @@ function getBeaconchainRegisterUrl(): ExternalUrl {
   };
 }
 
+function getVoyagerRegisterUrl(): ExternalUrl {
+  return {
+    external: 'https://voyager.online/',
+    route: {
+      path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(),
+      query: { service: 'voyager' },
+    },
+  };
+}
+
 /**
  * Returns the registration url of a specified service and a path to the local page
  * @param {string} service
@@ -93,6 +103,8 @@ export function getServiceRegisterUrl(service: string): ExternalUrl | undefined 
       return getHeliusRegisterUrl();
     case 'beaconchain':
       return getBeaconchainRegisterUrl();
+    case 'voyager':
+      return getVoyagerRegisterUrl();
     default:
       logger.warn(`Unsupported service: '${service}'`);
       return undefined;

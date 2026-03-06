@@ -23,7 +23,7 @@ const emit = defineEmits<{ 'update:all-selected': [allSelected: boolean] }>();
 
 const selection = ref<Record<string, string[]>>({});
 
-const { bitcoinChainsData, evmLikeChainsData, solanaChainsData, txEvmChains } = useSupportedChains();
+const { bitcoinChainsData, evmLikeChainsData, solanaChainsData, starknetChainsData, txEvmChains } = useSupportedChains();
 const { getAddresses } = useAccountAddresses();
 const { t } = useI18n({ useScope: 'global' });
 
@@ -51,6 +51,12 @@ const refreshChains = computed<ChainData[]>(() => [
     id: item.id,
     name: item.name,
     type: TransactionChainType.SOLANA,
+  })),
+  ...get(starknetChainsData).map(item => ({
+    chain: item.id,
+    id: item.id,
+    name: item.name,
+    type: TransactionChainType.STARKNET,
   })),
 ]);
 

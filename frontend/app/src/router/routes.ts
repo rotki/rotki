@@ -13,6 +13,7 @@ export const Routes = {
   ACCOUNTS_BITCOIN: ensureRoute('/accounts/bitcoin'),
   ACCOUNTS_EVM: ensureRoute('/accounts/evm'),
   ACCOUNTS_SOLANA: ensureRoute('/accounts/solana'),
+  ACCOUNTS_STARKNET: ensureRoute('/accounts/starknet'),
   ACCOUNTS_SUBSTRATE: ensureRoute('/accounts/substrate'),
   ADDRESS_BOOK_MANAGER: ensureRoute('/address-book-manager'),
   AIRDROPS: ensureRoute('/airdrops'),
@@ -92,6 +93,11 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'lu-solana-accounts-fill' as const,
       route: Routes.ACCOUNTS_SOLANA,
       text: t('navigation_menu.accounts_sub.solana'),
+    },
+    ACCOUNTS_STARKNET: {
+      icon: 'lu-layers' as const,
+      route: Routes.ACCOUNTS_STARKNET,
+      text: t('navigation_menu.accounts_sub.starknet'),
     },
     ACCOUNTS_SUBSTRATE: {
       icon: 'lu-substrate-accounts' as const,

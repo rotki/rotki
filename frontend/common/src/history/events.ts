@@ -8,6 +8,8 @@ export const HistoryEventEntryType = {
   HISTORY_EVENT: 'history event',
   SOLANA_EVENT: 'solana event',
   SOLANA_SWAP_EVENT: 'solana swap event',
+  STARKNET_EVENT: 'starknet event',
+  STARKNET_SWAP_EVENT: 'starknet swap event',
   SWAP_EVENT: 'swap event',
 } as const;
 

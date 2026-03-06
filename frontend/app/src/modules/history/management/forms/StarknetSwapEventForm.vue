@@ -1,0 +1,275 @@
+<script lang="ts" setup>
+import type { GroupEventData, StandaloneEventData } from '@/modules/history/management/forms/form-types';
+import type { StarknetSwapFormData } from '@/modules/history/management/forms/starknet-swap-event-form';
+import type { AddStarknetSwapEventPayload, StarknetEvent, StarknetSwapEvent } from '@/types/history/events/schemas';
+import { assert, HistoryEventEntryType } from '@rotki/common';
+import dayjs from 'dayjs';
+import AmountInput from '@/components/inputs/AmountInput.vue';
+import CounterpartyInput from '@/components/inputs/CounterpartyInput.vue';
+import EventDateLocation from '@/modules/history/management/forms/common/EventDateLocation.vue';
+import { toMessages, useEventFormBase } from '@/modules/history/management/forms/composables/use-event-form-base';
+import { useSwapEventForm } from '@/modules/history/management/forms/composables/use-swap-event-form';
+import SwapSubEventList from '@/modules/history/management/forms/swap/SwapSubEventList.vue';
+import { toSubEvent } from '@/modules/history/management/forms/utils';
+import { STARKNET_CHAIN } from '@/types/asset';
+import { useRefPropVModel } from '@/utils/model';
+
+const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, required: false });
+
+const { data } = defineProps<{ data: StandaloneEventData<StarknetEvent> | GroupEventData<StarknetSwapEvent> }>();
+
+const { emptySubEvent, handleValidationErrors, submitAllPrices, addHistoryEvent, editHistoryEvent } = useSwapEventForm();
+
+function emptyEvent(): StarknetSwapFormData {
+  return {
+    address: '',
+    counterparty: '',
+    entryType: HistoryEventEntryType.STARKNET_SWAP_EVENT,
+    fee: [],
+    receive: [emptySubEvent()],
+    sequenceIndex: '0',
+    spend: [emptySubEvent()],
+    timestamp: dayjs().valueOf(),
+    txRef: '',
+  };
+}
+
+const states = ref<StarknetSwapFormData>(emptyEvent());
+const location = ref<string>(STARKNET_CHAIN);
+const hasFee = ref<boolean>(false);
+const identifiers = ref<number[]>([]);
+const errorMessages = ref<Record<string, string[]>>({});
+
+const spendListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('spendListRef');
+const receiveListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('receiveListRef');
+const feeListRef = useTemplateRef<InstanceType<typeof SwapSubEventList>>('feeListRef');
+
+const timestamp = useRefPropVModel(states, 'timestamp');
+
+const { t } = useI18n({ useScope: 'global' });
+
+const { v$, captureEditModeState, shouldSkipSave } = useEventFormBase({
+  rules: commonRules => computed(() => ({
+    address: commonRules.createValidStarknetAddressRule(),
+    counterparty: commonRules.createExternalValidationRule(),
+    fee: get(hasFee) ? commonRules.createRequiredAtLeastOne() : {},
+    location: commonRules.createExternalValidationRule(),
+    receive: commonRules.createRequiredAtLeastOne(),
+    sequenceIndex: commonRules.createRequiredSequenceIndexRule(),
+    spend: commonRules.createRequiredAtLeastOne(),
+    timestamp: commonRules.createExternalValidationRule(),
+    txRef: commonRules.createValidStarknetTxHashRule(),
+  })),
+  states: computed(() => ({ ...get(states), location: get(location) })),
+  errorMessages,
+  stateUpdated,
+  formStates: { states },
+});
+
+async function save(): Promise<boolean> {
+  if (!(await get(v$).$validate())) {
+    return false;
+  }
+
+  const isEditMode = get(identifiers).length > 0;
+
+  // Submit prices from all nested HistoryEventAssetPriceForm components
+  const pricesSubmitted = await submitAllPrices({ spendListRef, receiveListRef, feeListRef });
+  if (!pricesSubmitted) {
+    return false;
+  }
+
+  if (shouldSkipSave(isEditMode, get(states))) {
+    return true;
+  }
+
+  const payload: AddStarknetSwapEventPayload = { ...get(states) };
+
+  if (!get(hasFee)) {
+    delete payload.fee;
+  }
+
+  if (payload.address === '') {
+    payload.address = undefined;
+  }
+
+  const result = isEditMode
+    ? await editHistoryEvent({
+        ...payload,
+        ...{
+          identifiers: get(identifiers),
+        },
+      })
+    : await addHistoryEvent(payload);
+
+  if (result.success) {
+    set(states, emptyEvent());
+    set(identifiers, []);
+    set(hasFee, false);
+  }
+  else {
+    const message = result.message;
+    if (message) {
+      handleValidationErrors(message);
+      set(errorMessages, typeof message === 'string' ? {} : message);
+    }
+  }
+
+  return result.success;
+}
+
+watchImmediate(() => data, (data) => {
+  if (data.type === 'group-add') {
+    const group = data.group;
+
+    set(states, {
+      ...get(states),
+      sequenceIndex: data.nextSequenceId.toString(),
+      timestamp: group.timestamp,
+      txRef: group.txRef,
+    });
+  }
+  else if (data.type === 'edit-group') {
+    const spend = data.eventsInGroup.filter(item => item.eventSubtype === 'spend');
+    const receive = data.eventsInGroup.filter(item => item.eventSubtype === 'receive');
+    const fee = data.eventsInGroup.filter(item => item.eventSubtype === 'fee');
+
+    assert(spend.length > 0);
+    assert(receive.length > 0);
+
+    set(hasFee, fee.length > 0);
+    set(identifiers, data.eventsInGroup.map(item => item.identifier));
+
+    const firstSpend = spend[0];
+    set(states, {
+      address: firstSpend.address ?? '',
+      counterparty: firstSpend.counterparty ?? '',
+      entryType: HistoryEventEntryType.STARKNET_SWAP_EVENT,
+      fee: fee.map(event => toSubEvent(event)),
+      receive: receive.map(event => toSubEvent(event)),
+      sequenceIndex: firstSpend.sequenceIndex.toString(),
+      spend: spend.map(event => toSubEvent(event)),
+      timestamp: firstSpend.timestamp,
+      txRef: firstSpend.txRef,
+    });
+
+    captureEditModeState(get(states));
+  }
+});
+
+watch(hasFee, (hasFee) => {
+  set(states, { ...get(states), fee: hasFee ? [emptySubEvent()] : [] });
+});
+
+defineExpose({
+  save,
+  v$,
+});
+</script>
+
+<template>
+  <div>
+    <EventDateLocation
+      v-model:timestamp="timestamp"
+      v-model:location="location"
+      location-disabled
+      :error-messages="{
+        location: toMessages(v$.location),
+        timestamp: toMessages(v$.timestamp),
+      }"
+      @blur="v$[$event].$touch()"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <RuiTextField
+      v-model="states.txRef"
+      variant="outlined"
+      color="primary"
+      :disabled="data.type !== 'add'"
+      data-cy="tx-ref"
+      :label="t('common.tx_hash')"
+      required
+      :error-messages="toMessages(v$.txRef)"
+      @blur="v$.txRef.$touch()"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <SwapSubEventList
+      ref="spendListRef"
+      v-model="states.spend"
+      data-cy="spend"
+      :location="location"
+      :timestamp="timestamp"
+      type="spend"
+      starknet
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <SwapSubEventList
+      ref="receiveListRef"
+      v-model="states.receive"
+      data-cy="receive"
+      :location="location"
+      :timestamp="timestamp"
+      type="receive"
+      starknet
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <RuiCheckbox
+      v-model="hasFee"
+      :label="t('transactions.events.form.has_fee.label')"
+      data-cy="has-fee"
+      color="primary"
+    />
+
+    <SwapSubEventList
+      ref="feeListRef"
+      v-model="states.fee"
+      data-cy="fee"
+      :location="location"
+      :disabled="!hasFee"
+      :timestamp="timestamp"
+      type="fee"
+      starknet
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
+    <RuiTextField
+      v-model="states.address"
+      clearable
+      variant="outlined"
+      data-cy="address"
+      :label="t('transactions.events.form.contract_address.label')"
+      :error-messages="toMessages(v$.address)"
+      @blur="v$.address.$touch()"
+    />
+
+    <div class="grid md:grid-cols-2 gap-4">
+      <AmountInput
+        v-model="states.sequenceIndex"
+        variant="outlined"
+        integer
+        :disabled="data.type === 'edit-group'"
+        data-cy="sequence-index"
+        :label="t('transactions.events.form.sequence_index.label')"
+        required
+        :error-messages="toMessages(v$.sequenceIndex)"
+        @blur="v$.sequenceIndex.$touch()"
+      />
+
+      <CounterpartyInput
+        v-model="states.counterparty"
+        :label="t('common.counterparty')"
+        data-cy="counterparty"
+        :error-messages="toMessages(v$.counterparty)"
+        @blur="v$.counterparty.$touch()"
+      />
+    </div>
+  </div>
+</template>

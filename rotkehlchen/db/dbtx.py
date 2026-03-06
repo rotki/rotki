@@ -4,23 +4,25 @@ from typing import TYPE_CHECKING, Generic, TypeVar
 from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
     SolanaTransactionsNotDecodedFilterQuery,
+    StarknetTransactionsNotDecodedFilterQuery,
 )
 
 if TYPE_CHECKING:
     from solders.solders import Signature
 
     from rotkehlchen.chain.solana.types import SolanaTransaction
+    from rotkehlchen.chain.starknet.types import StarknetTransaction
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.types import EvmTransaction, EVMTxHash
 
 T_Address = TypeVar('T_Address')
-T_Transaction = TypeVar('T_Transaction', bound='SolanaTransaction | EvmTransaction')
-T_TxHash = TypeVar('T_TxHash', bound='EVMTxHash | Signature')
+T_Transaction = TypeVar('T_Transaction', bound='SolanaTransaction | EvmTransaction | StarknetTransaction')  # noqa: E501
+T_TxHash = TypeVar('T_TxHash', bound='EVMTxHash | Signature | str')
 T_TxFilterQuery = TypeVar('T_TxFilterQuery')
 T_TxNotDecodedFilterQuery = TypeVar(
     'T_TxNotDecodedFilterQuery',
-    bound=EvmTransactionsNotDecodedFilterQuery | SolanaTransactionsNotDecodedFilterQuery,
+    bound=EvmTransactionsNotDecodedFilterQuery | SolanaTransactionsNotDecodedFilterQuery | StarknetTransactionsNotDecodedFilterQuery,  # noqa: E501
 )
 
 

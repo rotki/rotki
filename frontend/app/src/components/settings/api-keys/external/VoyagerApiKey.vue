@@ -1,0 +1,94 @@
+<script setup lang="ts">
+import { NotificationCategory } from '@rotki/common';
+import { voyagerLink } from '@shared/external-links';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
+import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
+import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import { useExternalApiKeys, useServiceKeyHandler } from '@/composables/settings/api-keys/external';
+import { useNotificationsStore } from '@/store/notifications';
+import { getPublicServiceImagePath } from '@/utils/file';
+
+const name = 'voyager';
+const { t } = useI18n({ useScope: 'global' });
+
+const { actionStatus, useApiKey, confirmDelete, loading, save } = useExternalApiKeys();
+const { saveHandler, serviceKeyRef } = useServiceKeyHandler<InstanceType<typeof ServiceKey>>();
+
+const key = useApiKey(name);
+const status = actionStatus(name);
+
+const { prioritized, remove: removeNotification } = useNotificationsStore();
+
+/**
+ * After an api key is added, remove the voyager notification
+ */
+function removeVoyagerNotification(): void {
+  // using prioritized list here, because the actionable notifications are always on top (index 0|1)
+  // so it is faster to find
+  const notifications = prioritized.filter(data => data.category === NotificationCategory.VOYAGER);
+
+  notifications.forEach((notification) => {
+    removeNotification(notification.id);
+  });
+}
+</script>
+
+<template>
+  <ServiceKeyCard
+    :name="name"
+    :key-set="!!key"
+    data-cy="voyager-api-keys"
+    :title="t('external_services.voyager.title')"
+    :subtitle="t('external_services.voyager.description')"
+    :image-src="getPublicServiceImagePath('voyager.svg')"
+    :action-disabled="!serviceKeyRef?.currentValue"
+    @confirm="saveHandler()"
+  >
+    <template #left-buttons>
+      <RuiButton
+        :disabled="loading || !key"
+        color="error"
+        variant="text"
+        data-cy="delete-button"
+        @click="confirmDelete(name)"
+      >
+        <template #prepend>
+          <RuiIcon
+            name="lu-trash-2"
+            size="16"
+          />
+        </template>
+        {{ t('external_services.actions.delete_key') }}
+      </RuiButton>
+    </template>
+
+    <ServiceKey
+      ref="serviceKeyRef"
+      hide-actions
+      :api-key="key"
+      :name="name"
+      :data-cy="name"
+      :label="t('external_services.api_key')"
+      :hint="t('external_services.voyager.hint')"
+      :loading="loading"
+      :status="status"
+      @save="save($event, removeVoyagerNotification)"
+    >
+      <i18n-t
+        scope="global"
+        tag="div"
+        class="text-rui-text-secondary text-body-2"
+        keypath="external_services.get_api_key"
+      >
+        <template #link>
+          <ExternalLink
+            color="primary"
+            :url="voyagerLink"
+          >
+            {{ t('common.here') }}
+          </ExternalLink>
+        </template>
+      </i18n-t>
+    </ServiceKey>
+  </ServiceKeyCard>
+</template>
