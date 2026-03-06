@@ -4,6 +4,7 @@ import { useBalances } from '@/composables/balances';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { useStatusUpdater } from '@/composables/status';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
+import { sigilBus } from '@/modules/sigil/event-bus';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { useLocationStore } from '@/store/locations';
@@ -39,6 +40,7 @@ export function useDataLoader(): UseDataLoaderReturn {
     ]);
     await refreshPrices();
     onBalancesLoaded();
+    sigilBus.emit('balances:loaded');
   };
 
   const load = (): void => {
