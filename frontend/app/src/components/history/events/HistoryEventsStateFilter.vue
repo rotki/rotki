@@ -12,6 +12,7 @@ const { stateConfigs } = useHistoryEventStateMapping();
 
 const stateMarkers = useRefPropVModel(toggles, 'stateMarkers');
 const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
+const showHiddenTransactions = useRefPropVModel(toggles, 'showHiddenTransactions');
 const matchExactEvents = useRefPropVModel(toggles, 'matchExactEvents');
 
 const stateOptions = Object.values(HistoryEventState).map(state => ({
@@ -20,7 +21,7 @@ const stateOptions = Object.values(HistoryEventState).map(state => ({
 }));
 
 const hasActiveToggles = computed<boolean>(
-  () => get(stateMarkers).length > 0 || get(showIgnoredAssets) || get(matchExactEvents),
+  () => get(stateMarkers).length > 0 || get(showIgnoredAssets) || get(showHiddenTransactions) || get(matchExactEvents),
 );
 
 function isChecked(state: HistoryEventState): boolean {
@@ -81,6 +82,15 @@ function toggleState(state: HistoryEventState): void {
         size="sm"
         hide-details
         :label="t('transactions.filter.show_ignored_assets')"
+      />
+      <RuiDivider />
+      <RuiSwitch
+        v-model="showHiddenTransactions"
+        color="primary"
+        class="p-4"
+        size="sm"
+        hide-details
+        :label="t('transactions.filter.show_hidden_transactions')"
       />
       <RuiDivider />
       <RuiSwitch

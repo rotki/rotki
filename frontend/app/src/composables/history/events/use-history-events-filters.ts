@@ -43,6 +43,7 @@ export function getDefaultToggles(): HistoryEventsToggles {
   return {
     matchExactEvents: false,
     showIgnoredAssets: false,
+    showHiddenTransactions: false,
     stateMarkers: [],
   };
 }
@@ -172,6 +173,7 @@ export function useHistoryEventsFilters(
       const stateMarkers = get(toggles, 'stateMarkers');
       return {
         excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
+        excludeHiddenTransactions: !get(toggles, 'showHiddenTransactions'),
         groupIdentifiers: get(groupIdentifiersFromQuery),
         ...(stateMarkers.length > 0 ? { stateMarkers } : {}),
       };

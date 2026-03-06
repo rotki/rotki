@@ -35,6 +35,7 @@ const emit = defineEmits<{
   'edit-event': [data: HistoryEventEditData];
   'delete-event': [data: HistoryEventDeletePayload];
   'show:missing-rule-action': [data: HistoryEventEditData];
+  'toggle-hidden-transaction': [event: HistoryEventEntry];
   'unlink-event': [];
 }>();
 
@@ -137,6 +138,7 @@ function deleteEvent(item: HistoryEventEntry) {
         v-else-if="!hasMissingRule"
         :event="item"
         :can-unlink="canUnlink"
+        @toggle-hidden-transaction="emit('toggle-hidden-transaction', $event)"
         @unlink="emit('unlink-event')"
       />
     </RowActions>

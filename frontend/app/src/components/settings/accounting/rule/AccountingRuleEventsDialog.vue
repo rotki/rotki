@@ -70,6 +70,7 @@ watch(display, (value) => {
         v-model:pagination="pagination"
         hide-actions
         :groups="groups"
+        :exclude-hidden-transactions="true"
         :exclude-ignored="false"
         :group-loading="groupLoading"
         :page-params="pageParams"

@@ -15,8 +15,8 @@ from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     TX_DECODED,
+    TX_HIDDEN,
     TX_INTERNALS_QUERIED,
-    TX_SPAM,
     HistoryMappingState,
 )
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -252,11 +252,11 @@ def test_query_and_decode_transactions_works_with_different_chains(
     )
     assert len(hashes) == 2
 
-    # see that setting the spam attribute alone does not count it as decoded
+    # see that setting the hidden attribute alone does not count it as decoded
     with database.user_write() as write_cursor:
         write_cursor.execute(
             'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-            (3, TX_SPAM),
+            (3, TX_HIDDEN),
         )
     hashes = dbevmtx.get_transaction_hashes_not_decoded(
         filter_query=EvmTransactionsNotDecodedFilterQuery.make(chain_id=ChainID.ETHEREUM, limit=None),  # noqa: E501
@@ -358,6 +358,44 @@ def test_delete_transactions_removes_internals_queried_mapping(
                 (tx_hash_eth, ChainID.ETHEREUM.serialize_for_db(), TX_INTERNALS_QUERIED),
             ).fetchone()[0] == 0
         ), 'Expected TX_INTERNALS_QUERIED mapping to be removed with deleted tx data'
+
+
+def test_user_transaction_hidden_marker_survives_redecode(
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        database: 'DBHandler',
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    tx_hash_eth, _, _ = _add_transactions_to_db(database, ethereum_accounts)
+    dbevmtx = DBEvmTx(database)
+    with database.conn.read_ctx() as cursor:
+        transaction = dbevmtx.get_transactions(
+            cursor=cursor,
+            filter_=EvmTransactionsFilterQuery.make(
+                chain_id=ChainID.ETHEREUM,
+                tx_hash=tx_hash_eth,
+            ),
+        )[0]
+        tx_id = transaction.get_or_query_db_id(cursor)
+
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (tx_id, TX_HIDDEN),
+        )
+
+    ethereum_transaction_decoder._maybe_load_or_purge_events_from_db(
+        transaction=transaction,
+        tx_ref=transaction.tx_hash,
+        location=Location.ETHEREUM,
+        ignore_cache=True,
+        delete_customized=False,
+    )
+
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_id, TX_HIDDEN),
+        ).fetchone()[0] == 1
 
 
 @pytest.mark.vcr

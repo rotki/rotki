@@ -5,8 +5,6 @@ import type {
 } from '@/types/history/events';
 import type {
   EthBlockEvent,
-  EvmHistoryEvent,
-  EvmSwapEvent,
   HistoryEvent,
   HistoryEventEntry,
   SolanaEvent,
@@ -41,6 +39,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   'add-event': [event: StandaloneEditableEvents];
   'toggle-ignore': [event: HistoryEventEntry];
+  'toggle-hidden-transaction': [event: HistoryEventEntry];
   'redecode': [event: PullEventPayload];
   'redecode-with-options': [event: PullEventPayload];
   'delete-tx': [data: LocationAndTxRef];
@@ -62,7 +61,12 @@ const isDuplicate = computed<boolean>(() => !!get(duplicateHandlingStatus) && ge
 
 const showMenu = ref<boolean>(false);
 
-const evmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
+const evmEvent = computed<boolean>(() => {
+  const currentEvent = get(event);
+  return isEvmSwapEvent(currentEvent) || isEvmEvent(currentEvent);
+});
+
+const evmEventWithDecoding = computed<DecodableEventType | undefined>(() => {
   const currentEvent = get(event);
   if (isEvmSwapEvent(currentEvent) || isEvmEvent(currentEvent)) {
     return currentEvent;
@@ -80,16 +84,15 @@ const solanaEvent = computed<SolanaEvent | SolanaSwapEvent | undefined>(() => {
   return undefined;
 });
 
-const eventWithDecoding = computed<DecodableEventType | undefined>(() => get(evmEvent) || get(solanaEvent));
+const eventWithDecoding = computed<DecodableEventType | undefined>(() => get(evmEventWithDecoding) || get(solanaEvent));
 
 const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
   const currentEvent = get(event);
-  const evm = get(evmEvent);
   const solana = get(solanaEvent);
-  if (evm) {
+  if ((isEvmSwapEvent(currentEvent) || isEvmEvent(currentEvent)) && 'txRef' in currentEvent) {
     return {
-      location: evm.location,
-      txRef: evm.txRef,
+      location: currentEvent.location,
+      txRef: currentEvent.txRef,
     };
   }
 
@@ -121,6 +124,7 @@ function addEvent(event: HistoryEvent) {
   emit('add-event', event);
 }
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
+const toggleHiddenTransaction = (): void => emit('toggle-hidden-transaction', get(event));
 
 function redecode(event: EthBlockEvent | DecodableEventType): void {
   if (isEthBlockEvent(event)) {
@@ -264,6 +268,16 @@ function confirmIgnoreDuplicate(): void {
           </template>
           {{ event.ignoredInAccounting ? t('transactions.unignore') : t('transactions.ignore') }}
         </RuiButton>
+        <RuiButton
+          v-if="evmEvent"
+          variant="list"
+          @click="toggleHiddenTransaction()"
+        >
+          <template #prepend>
+            <RuiIcon :name="event.isHiddenTransaction ? 'lu-shield-check' : 'lu-shield-alert'" />
+          </template>
+          {{ event.isHiddenTransaction ? t('transactions.actions.unhide_transaction') : t('transactions.actions.hide_transaction') }}
+        </RuiButton>
         <template v-if="blockEvent">
           <RuiButton
             variant="list"
@@ -303,7 +317,7 @@ function confirmIgnoreDuplicate(): void {
                     size="sm"
                     class="!p-2"
                     :disabled="loading || txEventsDecoding"
-                    @click.stop="redecodeWithOptions(evmEvent)"
+                    @click.stop="evmEventWithDecoding && redecodeWithOptions(evmEventWithDecoding)"
                   >
                     <RuiIcon
                       name="lu-settings-2"
