@@ -185,6 +185,71 @@ def test_kyber_aggregator_swap_ethereum(ethereum_inquirer, ethereum_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc2E8fdd6638e8ef469f39E3024D96eEF7FCf7DdC']])
+def test_kyber_aggregator_swap_ethereum_with_refund(ethereum_inquirer, ethereum_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe29c8695ba05e994e2890fe920147b5d4dbc21dcd9355681844b625c1ecb52a0')),  # noqa: E501
+    )
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1757449319000)),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas := '0.000256338161229945'),
+            location_label=ethereum_accounts[0],
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=383,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=(a_eeth := Asset('eip155:1/erc20:0x35fA164735182de50811E8e2E824cFb9B6118ac2')),
+            amount=ZERO,
+            location_label=ethereum_accounts[0],
+            notes=f'Revoke eETH spending approval of {ethereum_accounts[0]} by {KYBER_AGGREGATOR_CONTRACT}',  # noqa: E501
+            address=KYBER_AGGREGATOR_CONTRACT,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=384,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=a_eeth,
+            amount=FVal(spend_amount := '1.985158248360464351'),
+            location_label=ethereum_accounts[0],
+            notes=f'Swap {spend_amount} eETH in kyber',
+            counterparty=CPT_KYBER,
+            address=(
+                pool_address := string_to_evm_address(
+                    '0x6E4141d33021b52C91c28608403db4A0FFB50Ec6',
+                )
+            ),
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=385,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0xF0Bb20865277aBd641a307EcE5Ee04E79073416C'),
+            amount=FVal(receive_amount := '1.872813330450180743'),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {receive_amount} liquidETH from kyber swap',
+            counterparty=CPT_KYBER,
+            address=pool_address,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_kyber_aggregator_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0xbcc690fb11b0a6b0f3b1e5bed6abb5c3e93d5b4855472f94adea824bfa2be6ed')  # noqa: E501

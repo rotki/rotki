@@ -47,25 +47,53 @@ class KyberCommonDecoder(EvmDecoderInterface):
         Use the information from a trade transaction to modify the HistoryEvents from receive/send
         to trade if the conditions are correct.
         """
-        in_event = out_event = None
+        in_event = out_event = refund_event = None
         for event in decoded_events:
+            if event.location_label != sender:
+                continue
+
             crypto_asset = event.asset.symbol_or_name()
             # it can happen that a spend event get decoded first by an amm decoder. To make sure
             # that the event matches we check both event type and subtype
-            if (event.event_type == HistoryEventType.SPEND or event.event_subtype == HistoryEventSubType.SPEND) and event.location_label == sender and event.asset == source_asset and event.amount == spent_amount:  # noqa: E501
+            if (
+                    (event.event_type == HistoryEventType.SPEND or event.event_subtype == HistoryEventSubType.SPEND) and  # noqa: E501
+                    event.asset == source_asset and
+                    event.amount == spent_amount
+            ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = counterparty
-                event.notes = f'Swap {event.amount} {crypto_asset} in kyber'
                 out_event = event
-            elif (event.event_type == HistoryEventType.RECEIVE or event.event_subtype == HistoryEventSubType.RECEIVE) and event.location_label == sender and event.amount == return_amount and destination_asset == event.asset:  # noqa: E501
+            elif (
+                    (event.event_type == HistoryEventType.RECEIVE or event.event_subtype == HistoryEventSubType.RECEIVE) and  # noqa: E501
+                    event.amount == return_amount and
+                    destination_asset == event.asset
+            ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
                 event.notes = f'Receive {event.amount} {crypto_asset} from kyber swap'
                 in_event = event
+            elif (
+                    source_asset != destination_asset and
+                    refund_event is None and
+                    (event.event_type == HistoryEventType.RECEIVE or event.event_subtype == HistoryEventSubType.RECEIVE) and  # noqa: E501
+                    event.asset == source_asset and
+                    event.amount < spent_amount
+            ):
+                refund_event = event
 
-            if out_event is not None and in_event is not None:
-                maybe_reshuffle_events(ordered_events=[out_event, in_event], events_list=decoded_events)  # noqa: E501
+        if refund_event is not None and out_event is not None:
+            out_event.amount -= refund_event.amount
+            decoded_events.remove(refund_event)
+
+        if out_event is not None and in_event is not None:
+            out_event.notes = (
+                f'Swap {out_event.amount} {out_event.asset.symbol_or_name()} in kyber'
+            )
+            maybe_reshuffle_events(
+                ordered_events=[out_event, in_event],
+                events_list=decoded_events,
+            )
 
     def _decode_aggregator_trade(self, context: DecoderContext) -> EvmDecodingOutput:
         """Decodes a kyber aggregator swap, updating the events with proper metadata"""
