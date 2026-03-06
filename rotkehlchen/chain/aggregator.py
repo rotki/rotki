@@ -146,6 +146,7 @@ if TYPE_CHECKING:
         ChainManagerWithNodesMixin,
         ChainManagerWithTransactions,
     )
+    from rotkehlchen.chain.monad.manager import MonadManager
     from rotkehlchen.chain.optimism.manager import OptimismManager
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
     from rotkehlchen.chain.scroll.manager import ScrollManager
@@ -236,6 +237,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ),
     ChainID.SCROLL: (Compoundv3Balances,),
     ChainID.BINANCE_SC: (WoofiBalances,),
+    ChainID.MONAD: (),
 }
 
 
@@ -255,6 +257,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             gnosis_manager: 'GnosisManager',
             scroll_manager: 'ScrollManager',
             binance_sc_manager: 'BinanceSCManager',
+            monad_manager: 'MonadManager',
             kusama_manager: 'SubstrateManager',
             polkadot_manager: 'SubstrateManager',
             avalanche_manager: 'AvalancheManager',
@@ -281,6 +284,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.gnosis = gnosis_manager
         self.scroll = scroll_manager
         self.binance_sc = binance_sc_manager
+        self.monad = monad_manager
         self.kusama = kusama_manager
         self.polkadot = polkadot_manager
         self.avalanche = avalanche_manager
@@ -311,6 +315,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.gnosis_lock = Semaphore()
         self.scroll_lock = Semaphore()
         self.binance_sc_lock = Semaphore()
+        self.monad_lock = Semaphore()
         self.zksync_lite_lock = Semaphore()
 
         # Per account balances

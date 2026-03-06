@@ -45,6 +45,7 @@ class BlockchainBalances:
     gnosis: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     scroll: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     binance_sc: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+    monad: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     eth2: defaultdict[Eth2PubKey, BalanceSheet] = field(init=False)
     btc: dict[BTCAddress, Balance] = field(init=False)
     bch: dict[BTCAddress, Balance] = field(init=False)

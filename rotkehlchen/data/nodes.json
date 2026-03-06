@@ -78,5 +78,13 @@
         "owned": false,
         "active": true,
         "blockchain": "OPTIMISM"
+    },
+    {
+        "name": "monad official",
+        "endpoint": "https://rpc.monad.xyz",
+        "weight": 0.50,
+        "owned": false,
+        "active": true,
+        "blockchain": "MONAD"
     }
 ]
