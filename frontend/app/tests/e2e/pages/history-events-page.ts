@@ -304,6 +304,25 @@ export class HistoryEventsPage {
     }
   }
 
+  async expandSwap(index: number): Promise<void> {
+    const swapRow = this.page.locator('[data-cy=history-event-swap]').nth(index);
+    await swapRow.hover();
+    await swapRow.locator('[data-cy=swap-expand]').click();
+  }
+
+  async getExpandedEventRows(): Promise<number> {
+    return this.page.locator('[data-cy=history-event-row]').count();
+  }
+
+  async deleteSubEvent(index: number): Promise<void> {
+    const row = this.page.locator('[data-cy=history-event-row]').nth(index);
+    await row.hover();
+    await row.locator('[data-cy=row-delete]').click();
+    const dialog = this.page.locator('[data-cy=confirm-dialog]');
+    await dialog.locator('[data-cy=button-confirm]').click();
+    await dialog.waitFor({ state: 'detached', timeout: TIMEOUT_MEDIUM });
+  }
+
   async fillEvmMultiSwapEventForm(data: EvmMultiSwapEventFixture): Promise<void> {
     await this.fillDatetime();
     await this.selectLocation('ethereum');

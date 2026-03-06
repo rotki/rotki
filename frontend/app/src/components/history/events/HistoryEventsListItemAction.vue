@@ -9,6 +9,11 @@ import type {
 import RowActions from '@/components/helper/RowActions.vue';
 import HistoryEventAction from '@/components/history/events/HistoryEventAction.vue';
 import {
+  hideDeleteAction,
+  hideEditAction,
+  shouldDeleteGroup,
+} from '@/modules/history/events/event-action-visibility';
+import {
   isGroupEditableHistoryEvent,
   isSwapTypeEvent,
 } from '@/modules/history/management/forms/form-guards';
@@ -45,12 +50,6 @@ const COLLAPSE_ACTION_CLASSES = 'w-0 group-hover/row:w-auto 2xl:!w-24 2xl:opacit
 const { item } = toRefs(props);
 
 const hasMissingRule = computed<boolean>(() => isEventMissingAccountingRule(get(item)));
-
-function hideEditDeleteActions(item: HistoryEventEntry, index: number): boolean {
-  const isSwapButNotSpend = isSwapTypeEvent(item.entryType) && index !== 0;
-  const isAssetMovementFee = isAssetMovementEvent(item) && item.eventSubtype === 'fee';
-  return isAssetMovementFee || isSwapButNotSpend;
-}
 
 function getEmittedEvent(item: HistoryEvent): HistoryEventEditData {
   if (isSwapTypeEvent(item.entryType)) {
@@ -91,7 +90,7 @@ function deleteEvent(item: HistoryEventEntry) {
         type: 'ignore',
       }
     : {
-        ids: isGroupEditableHistoryEvent(item) || isSwapTypeEvent(item.entryType) ? props.completeGroupEvents.map(event => event.identifier) : [item.identifier],
+        ids: shouldDeleteGroup(item, props.index) ? props.completeGroupEvents.map(event => event.identifier) : [item.identifier],
         type: 'delete',
       };
 
@@ -116,8 +115,8 @@ function deleteEvent(item: HistoryEventEntry) {
       align="end"
       :delete-tooltip="t('transactions.events.actions.delete')"
       :edit-tooltip="t('transactions.events.actions.edit')"
-      :no-delete="hideEditDeleteActions(item, index)"
-      :no-edit="hideEditDeleteActions(item, index)"
+      :no-delete="hideDeleteAction(item, index, completeGroupEvents)"
+      :no-edit="hideEditAction(item, index)"
       @edit-click="editEvent(item)"
       @delete-click="deleteEvent(item)"
     >
