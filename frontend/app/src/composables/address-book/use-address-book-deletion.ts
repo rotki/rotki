@@ -1,7 +1,7 @@
 import type { MaybeRef } from 'vue';
 import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
+import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useConfirmStore } from '@/store/confirm';
 import { getErrorMessage } from '@/utils/error-handling';
 
@@ -17,7 +17,7 @@ export function useAddressBookDeletion(
   const { t } = useI18n({ useScope: 'global' });
   const { show } = useConfirmStore();
   const { notifyError } = useNotifications();
-  const { deleteAddressBook: deleteAddressBookCaller } = useAddressesNamesStore();
+  const { deleteAddressBook: deleteAddressBookCaller } = useAddressBookOperations();
 
   const deleteAddressBook = async (address: string, blockchain: string | null): Promise<void> => {
     try {

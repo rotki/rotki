@@ -1,14 +1,13 @@
 <script setup lang="ts">
-import type { AddressBookEntry } from '@/types/eth-names';
 import { isValidEthAddress } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useTemplateRef } from 'vue';
-import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useRefWithDebounce } from '@/composables/ref';
+import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
+import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import TradeAddressDisplay from '@/modules/onchain/send/TradeAddressDisplay.vue';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { uniqueObjects } from '@/utils/data';
 
 const model = defineModel<string>({ required: true });
@@ -39,8 +38,8 @@ const { focused: menuFocusedWithin } = useFocusWithin(menuContainerRef);
 
 const { connected, connectedAddress } = storeToRefs(useWalletStore());
 const { addresses } = useAccountAddresses();
-const { fetchAddressBook, resolveEnsNames } = useAddressesNamesApi();
-const { fetchEnsNames, updateEnsNamesState } = useAddressesNamesStore();
+const { getAddressBook } = useAddressBookOperations();
+const { fetchEnsNames, resolveEnsToAddress } = useEnsOperations();
 
 function isNotConnectedAddress(address: string) {
   const connected = get(connectedAddress);
@@ -71,14 +70,16 @@ function select(address: string) {
   set(searchValue, '');
 }
 
-async function getAddressBookData(name: string): Promise<AddressBookEntry[]> {
-  const data = await fetchAddressBook('private', {
+async function getAddressBookData(name: string): Promise<{ address: string; name: string }[]> {
+  const data = await getAddressBook('private', {
     limit: 10,
     nameSubstring: name,
     offset: 0,
   });
 
-  return data.data.filter(item => isValidEthAddress(item.address));
+  return data.data
+    .filter(item => isValidEthAddress(item.address))
+    .map(item => ({ address: item.address, name: item.name }));
 }
 
 async function fetchAddressBookAddresses(name: string) {
@@ -127,16 +128,12 @@ watch(debouncedSearchValue, async (value) => {
 
   if (value.endsWith('.eth')) {
     set(resolvingEns, true);
-    const address = await resolveEnsNames(value);
+    const address = await resolveEnsToAddress(value);
     set(resolvingEns, false);
-    if (address && isValidEthAddress(address)) {
+    if (address) {
       values.push({
         address,
         name: value,
-      });
-
-      updateEnsNamesState({
-        [address]: value,
       });
     }
   }

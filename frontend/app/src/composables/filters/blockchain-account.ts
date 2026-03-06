@@ -3,8 +3,8 @@ import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
 import { z } from 'zod/v4';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { CommaSeparatedStringSchema, RouterExpandedIdsSchema } from '@/types/route';
 import { arrayify } from '@/utils/array';
 import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/utils/blockchain/accounts/utils';
@@ -27,7 +27,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
   const filters = ref<Filters>({});
 
   const { chainIds, isEvm } = useAccountCategoryHelper(category);
-  const { getAddressName } = useAddressesNamesStore();
+  const { getAddressName } = useAddressNameResolution();
 
   const filterableChains = computed<string[]>(() => {
     const evm = get(isEvm);

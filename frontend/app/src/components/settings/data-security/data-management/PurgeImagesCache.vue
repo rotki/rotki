@@ -6,8 +6,8 @@ import { useAssetIconApi } from '@/composables/api/assets/icon';
 import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-names';
 import { useCacheClear } from '@/composables/session/cache-clear';
 import { SettingsHighlightIds } from '@/composables/settings/types';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAssetIconStore } from '@/store/assets/icon';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { PurgeableImageCache } from '@/types/session/purge';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -28,16 +28,13 @@ const source = ref<PurgeableImageCache>(PurgeableImageCache.ASSET_ICONS);
 const assetToClear = ref<string>('');
 const ensToClear = ref<string[]>([]);
 
-const { ensNames } = storeToRefs(useAddressesNamesStore());
+const { refreshAvatarTimestamp, useEnsNamesList } = useAddressNameResolution();
 
-const ensNamesList = computed<string[]>(
-  () => Object.values(get(ensNames)).filter(value => !!value) as string[],
-);
+const ensNamesList = useEnsNamesList();
 
 const { clearIconCache } = useAssetIconApi();
 const { setLastRefreshedAssetIcon } = useAssetIconStore();
 const { clearEnsAvatarCache } = useAddressesNamesApi();
-const { setLastRefreshedAvatar } = useAddressesNamesStore();
 
 async function purgeSource(source: PurgeableImageCache) {
   if (source === PurgeableImageCache.ASSET_ICONS) {
@@ -49,7 +46,7 @@ async function purgeSource(source: PurgeableImageCache) {
   else {
     const ens = get(ensToClear);
     await clearEnsAvatarCache(ens.length > 0 ? ens : null);
-    setLastRefreshedAvatar();
+    refreshAvatarTimestamp();
     set(ensToClear, []);
   }
 }

@@ -3,7 +3,7 @@ import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAddressBookImport } from '@/composables/address-book/use-address-book-import';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
 
 const mockNotifyError = vi.fn();
 
@@ -13,19 +13,19 @@ vi.mock('@/modules/notifications/use-notifications', () => ({
   })),
 }));
 
-vi.mock('@/store/blockchain/accounts/addresses-names', () => ({
-  useAddressesNamesStore: vi.fn().mockReturnValue({
+vi.mock('@/modules/address-names/use-address-book-operations', () => ({
+  useAddressBookOperations: vi.fn().mockReturnValue({
     addAddressBook: vi.fn().mockReturnValue(true),
   }),
 }));
 
 describe('useAddressBookImport', () => {
-  let addressesNameStore: ReturnType<typeof useAddressesNamesStore>;
+  let addressBookOps: ReturnType<typeof useAddressBookOperations>;
   setActivePinia(createPinia());
   const { parseCSV } = useCsvImportExport();
 
   beforeEach(() => {
-    addressesNameStore = useAddressesNamesStore();
+    addressBookOps = useAddressBookOperations();
     vi.clearAllMocks();
   });
 
@@ -49,7 +49,7 @@ describe('useAddressBookImport', () => {
     await flushPromises();
 
     expect(result).toBe(2);
-    expect(addressesNameStore.addAddressBook).toHaveBeenCalledWith('private', [
+    expect(addressBookOps.addAddressBook).toHaveBeenCalledWith('private', [
       { address: 'address1', blockchain: 'eth', name: 'Name1' },
       { address: 'address2', blockchain: 'btc', name: 'Name2' },
     ], true);
@@ -68,7 +68,7 @@ describe('useAddressBookImport', () => {
     await flushPromises();
 
     expect(result).toBe(0);
-    expect(addressesNameStore.addAddressBook).not.toHaveBeenCalled();
+    expect(addressBookOps.addAddressBook).not.toHaveBeenCalled();
     expect(mockNotifyError).toHaveBeenCalledWith(
       'address_book.import.title',
       expect.stringMatching(/^address_book\.import\.import_error\.message.*/),
@@ -115,10 +115,10 @@ describe('useAddressBookImport', () => {
     await flushPromises();
 
     expect(result).toBe(2);
-    expect(addressesNameStore.addAddressBook).toHaveBeenCalledWith('private', [
+    expect(addressBookOps.addAddressBook).toHaveBeenCalledWith('private', [
       { address: 'address1', blockchain: 'eth', name: 'Name1' },
     ], true);
-    expect(addressesNameStore.addAddressBook).toHaveBeenCalledWith('global', [
+    expect(addressBookOps.addAddressBook).toHaveBeenCalledWith('global', [
       { address: 'address2', blockchain: 'btc', name: 'Name2' },
     ], true);
   });
@@ -136,8 +136,8 @@ describe('useAddressBookImport', () => {
     await flushPromises();
 
     expect(result).toBe(1);
-    expect(addressesNameStore.addAddressBook).toHaveBeenCalledTimes(1);
-    expect(addressesNameStore.addAddressBook).toHaveBeenCalledWith('private', [
+    expect(addressBookOps.addAddressBook).toHaveBeenCalledTimes(1);
+    expect(addressBookOps.addAddressBook).toHaveBeenCalledWith('private', [
       { address: 'address2', blockchain: 'btc', name: 'Name2' },
     ], true);
   });

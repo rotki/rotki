@@ -12,8 +12,8 @@ import AutoCompleteWithSearchSync from '@/components/inputs/AutoCompleteWithSear
 import { useBlockie } from '@/composables/accounts/blockie';
 import { useFormStateWatcher } from '@/composables/form';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { nullDefined, useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
 
@@ -35,10 +35,10 @@ const address = useRefPropVModel(modelValue, 'address');
 const blockchain = useRefPropVModel(modelValue, 'blockchain');
 const blockchainModel = nullDefined(blockchain);
 const { addresses } = useAccountAddresses();
-const addressesNamesStore = useAddressesNamesStore();
-const { getAddressName, getAddressesWithoutNames } = addressesNamesStore;
+const addressNameResolution = useAddressNameResolution();
+const { getAddressName, useAddressesWithoutNames } = addressNameResolution;
 
-const addressSuggestions = getAddressesWithoutNames(blockchain);
+const addressSuggestions = useAddressesWithoutNames(blockchain);
 const locations = computed<SelectOptions<AddressBookLocation>>(() => [
   { key: 'global', label: t('address_book.hint.global') },
   { key: 'private', label: t('address_book.hint.private') },

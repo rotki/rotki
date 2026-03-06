@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 
 const { address, chain, name, readonly, dense } = defineProps<{
   address: string;
@@ -10,9 +10,9 @@ const { address, chain, name, readonly, dense } = defineProps<{
   dense?: boolean;
 }>();
 
-const { addressNameSelector } = useAddressesNamesStore();
+const { useAddressName } = useAddressNameResolution();
 
-const addressName = addressNameSelector(computed<string>(() => address), computed<string>(() => chain ?? ''));
+const addressName = useAddressName(() => address, () => chain ?? '');
 
 const aliasName = computed<string | undefined>(() => {
   if (name) {

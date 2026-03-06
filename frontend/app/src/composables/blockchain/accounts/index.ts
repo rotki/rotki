@@ -13,10 +13,10 @@ import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts'
 import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import { convertBtcAccounts } from '@/utils/blockchain/accounts';
 import { createAccount } from '@/utils/blockchain/accounts/create';
@@ -52,7 +52,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const { runTask } = useTaskHandler();
   const { notifyError } = useNotifications();
 
-  const { resetAddressNamesData } = useAddressesNamesStore();
+  const { resetAddressNamesData } = useAddressNameResolution();
   const { t } = useI18n({ useScope: 'global' });
   const { getChainName, getNativeAsset } = useSupportedChains();
 

@@ -11,14 +11,11 @@ vi.mock('@/composables/accounts/use-account-category-helper', async () => {
   };
 });
 
-vi.mock('@/store/blockchain/accounts/addresses-names', async () => {
-  const { ref } = await import('vue');
-  return {
-    useAddressesNamesStore: (): { addressNameSelector: () => Ref<string> } => ({
-      addressNameSelector: (): Ref<string> => ref<string>(''),
-    }),
-  };
-});
+vi.mock('@/modules/address-names/use-address-name-resolution', () => ({
+  useAddressNameResolution: (): { getAddressName: () => string | undefined } => ({
+    getAddressName: (): string | undefined => undefined,
+  }),
+}));
 
 vi.mock('@/modules/balances/blockchain/use-blockchain-account-data', async () => {
   const { ref } = await import('vue');

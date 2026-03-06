@@ -7,7 +7,7 @@ import LocationIcon from '@/components/history/LocationIcon.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useHistoryStore } from '@/store/history';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
@@ -35,7 +35,7 @@ const { allTxChainsInfo, matchChain } = useSupportedChains();
 const txChainIds = useArrayMap(allTxChainsInfo, x => x.id);
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-const { getAddressName } = useAddressesNamesStore();
+const { getAddressName } = useAddressNameResolution();
 
 const accounts = computed<BlockchainAccount<AddressData>[]>(() =>
   Object.values(get(accountsPerChain))

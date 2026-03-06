@@ -4,7 +4,7 @@ import type { AddressBookPayload } from '@/types/eth-names';
 import { useTemplateRef } from 'vue';
 import AddressBookForm from '@/components/address-book-manager/AddressBookForm.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
@@ -45,8 +45,28 @@ const emptyForm: () => AddressBookPayload = () => ({
   name: '',
 });
 
-const { addAddressBook, updateAddressBook } = useAddressesNamesStore();
+const { addAddressBook, updateAddressBook } = useAddressBookOperations();
 const { setMessage } = useMessageStore();
+
+function handleSaveError(error: unknown, isEdit: boolean, payload: AddressBookPayload): void {
+  const message = getErrorMessage(error);
+  let errors: string | ValidationErrors = message;
+
+  if (error instanceof ApiValidationError)
+    errors = error.getValidationErrors(payload);
+
+  if (typeof errors === 'string') {
+    const key = isEdit ? 'edit' : 'add';
+    setMessage({
+      description: t(`address_book.actions.${key}.error.description`, { message }),
+      success: false,
+      title: t(`address_book.actions.${key}.error.title`),
+    });
+  }
+  else {
+    set(errorMessages, errors);
+  }
+}
 
 async function save(): Promise<boolean> {
   if (!isDefined(modelValue))
@@ -57,8 +77,8 @@ async function save(): Promise<boolean> {
   if (!valid)
     return false;
 
-  const { address, blockchain, location, name } = get(modelValue);
-  let success;
+  const formValue = get(modelValue);
+  const { address, blockchain, location, name } = formValue;
   const isEdit = editMode ?? !!editableItem;
   const payload = {
     address: address.trim(),
@@ -67,36 +87,15 @@ async function save(): Promise<boolean> {
   };
 
   set(loading, true);
+  let success;
   try {
-    if (isEdit)
-      success = await updateAddressBook(location, [payload]);
-    else success = await addAddressBook(location, [payload], root);
+    success = isEdit
+      ? await updateAddressBook(location, [payload])
+      : await addAddressBook(location, [payload], root);
   }
   catch (error: unknown) {
     success = false;
-    const message = getErrorMessage(error);
-    let errors: string | ValidationErrors = message;
-
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors(get(modelValue));
-
-    if (typeof errors === 'string') {
-      const values = { message };
-      const title = isEdit
-        ? t('address_book.actions.edit.error.title')
-        : t('address_book.actions.add.error.title');
-      const description = isEdit
-        ? t('address_book.actions.edit.error.description', values)
-        : t('address_book.actions.add.error.description', values);
-      setMessage({
-        description,
-        success: false,
-        title,
-      });
-    }
-    else {
-      set(errorMessages, errors);
-    }
+    handleSaveError(error, isEdit, formValue);
   }
 
   set(loading, false);

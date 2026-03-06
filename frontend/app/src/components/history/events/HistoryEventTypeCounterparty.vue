@@ -4,7 +4,7 @@ import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useScramble } from '@/composables/scramble';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 const { counterparty, location, address } = defineProps<{
@@ -13,8 +13,12 @@ const { counterparty, location, address } = defineProps<{
   address?: string;
 }>();
 
+defineSlots<{
+  default: () => void;
+}>();
+
 const { getEventCounterpartyData } = useHistoryEventCounterpartyMappings();
-const { getAddressName } = useAddressesNamesStore();
+const { getAddressName } = useAddressNameResolution();
 const { getChain } = useSupportedChains();
 const { scrambleAddress, scrambleData } = useScramble();
 

@@ -3,7 +3,7 @@ import { type Account, Blockchain } from '@rotki/common';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import ChainIcon from '@/components/helper/display/icons/ChainIcon.vue';
 import { useScramble } from '@/composables/scramble';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { truncateAddress } from '@/utils/truncate';
 
 const { account, hideChainIcon = false, noTruncate = false, size = '24px', useAliasName = true } = defineProps<{
@@ -16,8 +16,7 @@ const { account, hideChainIcon = false, noTruncate = false, size = '24px', useAl
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { getAddressName } = useAddressesNamesStore();
-
+const { getAddressName } = useAddressNameResolution();
 const { scrambleAddress, scrambleData, shouldShowAmount } = useScramble();
 
 const address = computed<string>(() => {

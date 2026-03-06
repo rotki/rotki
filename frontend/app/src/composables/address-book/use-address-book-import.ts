@@ -1,8 +1,8 @@
 import { groupBy, omit } from 'es-toolkit';
 import { z } from 'zod/v4';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
+import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { logger } from '@/utils/logging';
 
 const CSVRow = z.object({
@@ -24,7 +24,7 @@ export function useAddressBookImport(): UseAddressBookImport {
   const { parseCSV } = useCsvImportExport();
   const { notifyError } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
-  const { addAddressBook } = useAddressesNamesStore();
+  const { addAddressBook } = useAddressBookOperations();
 
   async function handleAddressBookImport(rows: CSVRow[]): Promise<number> {
     const groupedByLocation = groupBy(rows, item => item.location);

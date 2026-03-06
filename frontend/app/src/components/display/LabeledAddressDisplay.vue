@@ -6,8 +6,8 @@ import type {
 import { consistOfNumbers } from '@rotki/common';
 import EnsAvatar from '@/components/display/EnsAvatar.vue';
 import { useScramble } from '@/composables/scramble';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { getAccountAddress, getAccountLabel, getChain, isXpubAccount } from '@/utils/blockchain/accounts/utils';
 import { findAddressKnownPrefix, truncateAddress } from '@/utils/truncate';
 
@@ -15,7 +15,7 @@ const { account } = defineProps<{
   account: BlockchainAccount | BlockchainAccountBalance;
 }>();
 const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();
-const { getAddressName, getEnsName } = useAddressesNamesStore();
+const { getAddressName, getEnsName } = useAddressNameResolution();
 const { t } = useI18n({ useScope: 'global' });
 
 const accountAddress = computed<string>(() => getAccountAddress(account));

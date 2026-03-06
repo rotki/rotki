@@ -4,8 +4,8 @@ import { type BigNumber, type Blockchain, toSentenceCase } from '@rotki/common';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useAssetBalancesBreakdown } from '@/modules/balances/use-asset-balances-breakdown';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatusStore } from '@/store/status';
 import { isBlockchain } from '@/types/blockchain/chains';
@@ -19,9 +19,13 @@ export interface AssetLocation extends AssetBreakdown {
 export type AssetLocations = AssetLocation[];
 
 interface UseAssetLocationsDataOptions {
+  /** The asset identifier to look up locations for */
   identifier: MaybeRefOrGetter<string>;
+  /** Filter locations by a specific location string */
   locationFilter: Ref<string>;
+  /** Filter locations by matching any of these tags */
   onlyTags: Ref<string[]>;
+  /** Filter locations by matching any of these accounts */
   selectedAccounts: Ref<BlockchainAccount<AddressData>[]>;
 }
 
@@ -40,7 +44,7 @@ export function useAssetLocationsData(options: UseAssetLocationsDataOptions): Us
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { detailsLoading } = storeToRefs(useStatusStore());
   const { getAccountByAddress } = useBlockchainAccountsStore();
-  const { getAddressName } = useAddressesNamesStore();
+  const { getAddressName } = useAddressNameResolution();
 
   const { getAssetPriceInfo } = useAggregatedBalances();
   const { getChainName, matchChain } = useSupportedChains();

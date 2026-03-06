@@ -13,9 +13,9 @@ import type {
 import { startPromise } from '@shared/utils';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
 import { RequestCancelledError } from '@/modules/api/request-queue/errors';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useHistoryStore } from '@/store/history';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { arrayify } from '@/utils/array';
@@ -45,7 +45,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
   } = useHistoryEventsApi();
 
   const { signalEventsModified } = useHistoryStore();
-  const { fetchEnsNames } = useAddressesNamesStore();
+  const { fetchEnsNames } = useEnsOperations();
 
   const { getChain } = useSupportedChains();
 
@@ -70,13 +70,12 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
 
     for (const row of collection.data) {
       const events = arrayify(row);
-      for (const event of events) {
-        const { autoNotes, location, userNotes } = event.entry;
-        extractAddresses(userNotes, addressesNamesPayload, location);
-        extractAddresses(autoNotes, addressesNamesPayload, location);
+      for (const { entry } of events) {
+        extractAddresses(entry.userNotes, addressesNamesPayload, entry.location);
+        extractAddresses(entry.autoNotes, addressesNamesPayload, entry.location);
 
-        if ('address' in event.entry && event.entry.address) {
-          extractAddresses(event.entry.address, addressesNamesPayload, location);
+        if ('address' in entry && entry.address) {
+          extractAddresses(entry.address, addressesNamesPayload, entry.location);
         }
       }
     }

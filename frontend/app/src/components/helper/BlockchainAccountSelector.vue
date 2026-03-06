@@ -5,7 +5,7 @@ import { omit, uniqBy } from 'es-toolkit';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
 import { hasAccountAddress } from '@/utils/blockchain/accounts';
 import { createAccount } from '@/utils/blockchain/accounts/create';
@@ -66,7 +66,7 @@ defineSlots<{
 const { t } = useI18n({ useScope: 'global' });
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-const { getAddressName } = useAddressesNamesStore();
+const { getAddressName } = useAddressNameResolution();
 
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
 

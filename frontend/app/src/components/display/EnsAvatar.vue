@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { useBlockie } from '@/composables/accounts/blockie';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 
 defineOptions({
   inheritAttrs: false,
@@ -15,7 +15,7 @@ const { address, avatar = false, size = '24px' } = defineProps<{
 const success = ref<boolean>(false);
 const failed = ref<boolean>(false);
 
-const { useEnsAvatarUrl } = useAddressesNamesStore();
+const { useEnsAvatarUrl } = useAddressNameResolution();
 
 const avatarUrl = useEnsAvatarUrl(() => address);
 

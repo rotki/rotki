@@ -14,10 +14,10 @@ import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryApi } from '@/composables/api/history';
 import { useReportsApi } from '@/composables/api/reports';
+import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { mapCollectionResponse } from '@/utils/collection';
 import { getEthAddressesFromText } from '@/utils/history';
@@ -73,7 +73,7 @@ export const useReportsStore = defineStore('reports', () => {
   const { notifyError, showErrorMessage, showSuccessMessage } = useNotifications();
   const { t } = useI18n({ useScope: 'global' });
 
-  const { fetchEnsNames } = useAddressesNamesStore();
+  const { fetchEnsNames } = useEnsOperations();
 
   const {
     deleteReport: deleteReportCaller,

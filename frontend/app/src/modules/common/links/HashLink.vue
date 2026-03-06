@@ -6,8 +6,8 @@ import LocationIcon from '@/components/history/LocationIcon.vue';
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useScramble } from '@/composables/scramble';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
 import { isBlockchain } from '@/types/blockchain/chains';
@@ -87,7 +87,7 @@ const tooltip = useTemplateRef<InstanceType<typeof RuiTooltip>>('tooltip');
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { useAccountTags } = useBlockchainAccountData();
-const { getAddressName, getAddressNameSource } = useAddressesNamesStore();
+const { getAddressName, getAddressNameSource } = useAddressNameResolution();
 const { scrambleAddress, scrambleData, scrambleIdentifier, shouldShowAmount } = useScramble();
 const { matchChain } = useSupportedChains();
 

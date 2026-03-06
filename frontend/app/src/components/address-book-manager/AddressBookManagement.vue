@@ -15,8 +15,8 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import { type Filters, type Matcher, useAddressBookFilter } from '@/composables/filters/address-book';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useAddressBookOperations } from '@/modules/address-names/use-address-book-operations';
 import { useCommonTableProps } from '@/modules/table/use-common-table-props';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 
 const { t } = useI18n({ useScope: 'global' });
 
@@ -30,7 +30,7 @@ const location = computed<AddressBookLocation>(() => locations[get(tab)]);
 
 const { editableItem, openDialog } = useCommonTableProps<AddressBookPayload>();
 
-const { getAddressBook } = useAddressesNamesStore();
+const { getAddressBook } = useAddressBookOperations();
 
 const {
   fetchData,
@@ -45,7 +45,7 @@ const {
   AddressBookRequestPayload,
   Filters,
   Matcher
->(filter => getAddressBook(get(location), filter), {
+>(filter => getAddressBook(get(location), get(filter)), {
   defaultSortBy: [{
     column: 'name',
     direction: 'asc',

@@ -7,12 +7,12 @@ import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts'
 import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
+import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { Section } from '@/types/status';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
 import { uniqueStrings } from '@/utils/data';
@@ -35,7 +35,7 @@ interface UseAccountOperationsReturn {
 export function useAccountOperations(): UseAccountOperationsReturn {
   const { fetch } = useBlockchainAccounts();
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
-  const { fetchEnsNames } = useAddressesNamesStore();
+  const { fetchEnsNames } = useEnsOperations();
   const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();
   const { isEvm, supportedChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();

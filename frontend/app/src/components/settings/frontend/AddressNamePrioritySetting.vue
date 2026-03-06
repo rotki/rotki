@@ -3,7 +3,7 @@ import ActionStatusIndicator from '@/components/error/ActionStatusIndicator.vue'
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import EnableEnsNamesSetting from '@/components/settings/frontend/EnableEnsNamesSetting.vue';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { PrioritizedListData, type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import {
@@ -18,7 +18,7 @@ import {
 
 const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());
-const { resetAddressesNames } = useAddressesNamesStore();
+const { resetAddressesNames } = useAddressNameResolution();
 
 function finishEditing() {
   resetCurrentAddressNamePriorities();

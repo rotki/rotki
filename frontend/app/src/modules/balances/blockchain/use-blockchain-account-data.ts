@@ -15,9 +15,9 @@ import { isEmpty } from 'es-toolkit/compat';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import { getAccountBalance, hasTokens, sortAndFilterAccounts } from '@/utils/blockchain/accounts';
 import { createAccountWithBalance } from '@/utils/blockchain/accounts/create-account-with-balance';
 import { getAccountAddress, getAccountLabel, isXpubAccount } from '@/utils/blockchain/accounts/utils';
@@ -70,7 +70,7 @@ function toAssetBalances(
 export function useBlockchainAccountData(): UseBlockchainAccountDataReturn {
   const { balances } = storeToRefs(useBalancesStore());
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
-  const { getAddressName } = useAddressesNamesStore();
+  const { getAddressName } = useAddressNameResolution();
   const { getChainAccountType } = useSupportedChains();
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const resolveAssetIdentifier = useResolveAssetIdentifier();
