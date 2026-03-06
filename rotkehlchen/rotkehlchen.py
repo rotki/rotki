@@ -43,6 +43,8 @@ from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
 from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
+from rotkehlchen.chain.monad.manager import MonadManager
+from rotkehlchen.chain.monad.node_inquirer import MonadInquirer
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
@@ -480,6 +482,16 @@ class Rotkehlchen:
             ),
             binance_sc_manager=BinanceSCManager(
                 node_inquirer=BinanceSCInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                    blockscout=blockscout,
+                    routescan=routescan,
+                ),
+                premium=self.premium,
+            ),
+            monad_manager=MonadManager(
+                node_inquirer=MonadInquirer(
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                     etherscan=etherscan,

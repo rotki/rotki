@@ -22,6 +22,8 @@ from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
 from rotkehlchen.chain.gnosis.decoding.decoder import GnosisTransactionDecoder
 from rotkehlchen.chain.gnosis.transactions import GnosisTransactions
+from rotkehlchen.chain.monad.decoding.decoder import MonadTransactionDecoder
+from rotkehlchen.chain.monad.transactions import MonadTransactions
 from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.polygon_pos.decoding.decoder import PolygonPOSTransactionDecoder
@@ -450,6 +452,7 @@ def get_decoded_events_of_transaction(
         ChainID.GNOSIS: (GnosisTransactions, GnosisTransactionDecoder),
         ChainID.SCROLL: (ScrollTransactions, ScrollTransactionDecoder),
         ChainID.BINANCE_SC: (BinanceSCTransactions, BinanceSCTransactionDecoder),
+        ChainID.MONAD: (MonadTransactions, MonadTransactionDecoder),
     }
     mappings_result = chain_mappings.get(evm_inquirer.chain_id)
     if mappings_result is not None:

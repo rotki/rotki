@@ -14,6 +14,7 @@ export enum Blockchain {
   BASE = 'base',
   GNOSIS = 'gnosis',
   SCROLL = 'scroll',
+  MONAD = 'monad',
   ZKSYNC_LITE = 'zksync_lite',
   HYPERLIQUID = 'hyperliquid',
 }

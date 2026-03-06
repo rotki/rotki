@@ -101,6 +101,7 @@ class CSVExporter(CustomizableDateMixin):
             SupportedBlockchain.SCROLL: ETHERSCAN_EXPLORER_TX_URL.format(base_url='scrollscan.com'),  # noqa: E501
             SupportedBlockchain.BINANCE_SC: ETHERSCAN_EXPLORER_TX_URL.format(base_url='bscscan.com'),  # noqa: E501
             SupportedBlockchain.HYPERLIQUID: 'https://www.hyperscan.com/tx/',
+            SupportedBlockchain.MONAD: ETHERSCAN_EXPLORER_TX_URL.format(base_url='monadscan.com'),
             SupportedBlockchain.ZKSYNC_LITE: 'https://zkscan.io/explorer/transactions/',
         }
         with self.database.conn.read_ctx() as cursor:

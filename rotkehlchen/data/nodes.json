@@ -102,5 +102,37 @@
         "owned": false,
         "active": true,
         "blockchain": "HYPERLIQUID"
+    },
+    {
+        "name": "monad official",
+        "endpoint": "https://rpc.monad.xyz",
+        "weight": 0.30,
+        "owned": false,
+        "active": true,
+        "blockchain": "MONAD"
+    },
+    {
+        "name": "monad drpc",
+        "endpoint": "https://monad-mainnet.drpc.org",
+        "weight": 0.25,
+        "owned": false,
+        "active": true,
+        "blockchain": "MONAD"
+    },
+    {
+        "name": "monad onfinality",
+        "endpoint": "https://monad-mainnet.api.onfinality.io/public",
+        "weight": 0.25,
+        "owned": false,
+        "active": true,
+        "blockchain": "MONAD"
+    },
+    {
+        "name": "monad monadinfra",
+        "endpoint": "https://rpc-mainnet.monadinfra.com",
+        "weight": 0.20,
+        "owned": false,
+        "active": true,
+        "blockchain": "MONAD"
     }
 ]

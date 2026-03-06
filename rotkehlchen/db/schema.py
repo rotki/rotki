@@ -118,6 +118,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('w', 55);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('x', 56);
 /* Hyperliquid */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('y', 57);
+/* Monad */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('z', 58);
 """
 
 # Custom enum table for Balance categories (asset/liability)

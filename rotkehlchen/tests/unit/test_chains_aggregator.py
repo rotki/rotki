@@ -117,6 +117,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
         (SupportedBlockchain.GNOSIS, everywhere_addy, None),
         (SupportedBlockchain.SCROLL, everywhere_addy, None),
         (SupportedBlockchain.BINANCE_SC, everywhere_addy, None),
+        (SupportedBlockchain.MONAD, everywhere_addy, None),
     ]
 
     for chain, addy, label in addies_to_start_with:
@@ -151,6 +152,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
             gnosis_addresses=[everywhere_addy, addy_eoa_3],
             scroll_addresses=[everywhere_addy, addy_eoa_3],
             binance_sc_addresses=[everywhere_addy, addy_eoa_3],
+            monad_addresses=[everywhere_addy, addy_eoa_3],
         )
 
         blockchain.detect_evm_accounts()
@@ -164,6 +166,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
     assert set(blockchain.accounts.gnosis) == {addy_eoa_3, everywhere_addy}
     assert set(blockchain.accounts.scroll) == {addy_eoa_3, everywhere_addy}
     assert set(blockchain.accounts.binance_sc) == {addy_eoa_3, everywhere_addy}
+    assert set(blockchain.accounts.monad) == {addy_eoa_3, everywhere_addy}
 
     # Also check the db
     expected_accounts_data = initial_accounts_data + [
@@ -181,6 +184,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
             (SupportedBlockchain.GNOSIS, addy_eoa_3, label2),
             (SupportedBlockchain.SCROLL, addy_eoa_3, label2),
             (SupportedBlockchain.BINANCE_SC, addy_eoa_3, label2),
+            (SupportedBlockchain.MONAD, addy_eoa_3, label2),
         )
     ]
 
@@ -206,6 +210,7 @@ def test_detect_evm_accounts(blockchain: 'ChainsAggregator') -> None:
             SupportedBlockchain.GNOSIS,
             SupportedBlockchain.SCROLL,
             SupportedBlockchain.BINANCE_SC,
+            SupportedBlockchain.MONAD,
         ) for account in raw_accounts.get(chain)
     ]
 

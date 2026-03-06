@@ -3361,9 +3361,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == {'evm_internal_tx_conflicts'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {
-        'bitcoin_events_addresses',
-    }
+    assert new_tables == {'bitcoin_events_addresses'}
     new_views = views_after_upgrade - views_before
     assert new_views == set()
     db.logout()
@@ -4027,6 +4025,13 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
                 ('BTC', 'Unique balance', '0.5', 'A', 'A'),
             ],
         )
+        # make sure new chain locations not in the old DB
+        assert write_cursor.execute(
+            "SELECT COUNT(*) FROM location WHERE location = 'y' AND seq = 57",
+        ).fetchone()[0] == 0
+        assert write_cursor.execute(
+            "SELECT COUNT(*) FROM location WHERE location = 'z' AND seq = 58",
+        ).fetchone()[0] == 0
 
     db_v51.logout()
     db = _init_db_with_target_version(
@@ -4096,5 +4101,13 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
         ).fetchall()
         assert len(rows) == 4
         assert all(row[0] is not None for row in rows)  # all have an id
+
+        # make sure new chain locations exist
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM location WHERE location = 'y' AND seq = 57",
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            "SELECT COUNT(*) FROM location WHERE location = 'z' AND seq = 58",
+        ).fetchone()[0] == 1
 
     db.logout()
