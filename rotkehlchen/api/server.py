@@ -16,7 +16,8 @@ from marshmallow.exceptions import ValidationError
 from webargs.flaskparser import parser
 from werkzeug.exceptions import NotFound
 
-from rotkehlchen.api.rest import RestAPI, api_response, wrap_in_fail_result
+from rotkehlchen.api.rest import RestAPI, api_response
+from rotkehlchen.api.rest_helpers.results import wrap_in_fail_result
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.resources import (
     AccountingLinkablePropertiesResource,
@@ -49,6 +50,7 @@ from rotkehlchen.api.v1.resources import (
     BinanceUserMarkets,
     BlockchainBalancesResource,
     BlockchainsAccountsResource,
+    BlockchainTransactionsHiddenResource,
     BlockchainTransactionsResource,
     BTCXpubResource,
     CalendarRemindersResource,
@@ -277,6 +279,7 @@ URLS_V1: URLS = [
     ('/history/status/summary', HistoryStatusSummaryResource),
     ('/blockchains/supported', SupportedChainsResource),
     ('/blockchains/transactions', BlockchainTransactionsResource),
+    ('/blockchains/transactions/hidden', BlockchainTransactionsHiddenResource),
     ('/blockchains/transactions/decode', TransactionsDecodingResource),
     ('/blockchains/transactions/refetch', RefetchTransactionsResource),
     ('/blockchains/evm/all', AllEvmChainsResource),

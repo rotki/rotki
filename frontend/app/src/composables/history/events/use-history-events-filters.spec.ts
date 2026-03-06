@@ -6,9 +6,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryEventsFilters } from './use-history-events-filters';
 
 let capturedRequestParams: ComputedRef<Partial<HistoryEventRequestPayload>> | undefined;
+let capturedExtraParams: ComputedRef<Partial<HistoryEventRequestPayload>> | undefined;
 
 vi.mock('@/composables/use-pagination-filter', () => ({
-  usePaginationFilters: vi.fn((_requestFn: unknown, options: { requestParams?: ComputedRef<Partial<HistoryEventRequestPayload>> }) => {
+  usePaginationFilters: vi.fn((_requestFn: unknown, options: {
+    extraParams?: ComputedRef<Partial<HistoryEventRequestPayload>>;
+    requestParams?: ComputedRef<Partial<HistoryEventRequestPayload>>;
+  }) => {
+    capturedExtraParams = options.extraParams;
     capturedRequestParams = options.requestParams;
     return {
       fetchData: vi.fn(),
@@ -68,6 +73,7 @@ function createDefaultOptions(locationValue?: string): DefaultOptions {
   const toggles = ref<HistoryEventsToggles>({
     matchExactEvents: false,
     showIgnoredAssets: false,
+    showHiddenTransactions: false,
     stateMarkers: [],
   });
   return {
@@ -90,6 +96,7 @@ function createDefaultOptions(locationValue?: string): DefaultOptions {
 
 describe('useHistoryEventsFilters', () => {
   beforeEach(() => {
+    capturedExtraParams = undefined;
     capturedRequestParams = undefined;
   });
 
@@ -139,6 +146,31 @@ describe('useHistoryEventsFilters', () => {
       expect(capturedRequestParams).toBeDefined();
       const params = get(capturedRequestParams!);
       expect(params.location).toBe('binanceus');
+    });
+  });
+
+  describe('extraParams hidden transaction filtering', () => {
+    it('should exclude hidden transactions by default', () => {
+      const { options, toggles } = createDefaultOptions('ethereum');
+
+      useHistoryEventsFilters(options, toggles);
+
+      expect(capturedExtraParams).toBeDefined();
+      expect(get(capturedExtraParams!).excludeHiddenTransactions).toBe(true);
+    });
+
+    it('should include hidden transactions when the toggle is enabled', async () => {
+      const { options, toggles } = createDefaultOptions('ethereum');
+
+      useHistoryEventsFilters(options, toggles);
+
+      set(toggles, {
+        ...get(toggles),
+        showHiddenTransactions: true,
+      });
+      await nextTick();
+
+      expect(get(capturedExtraParams!).excludeHiddenTransactions).toBe(false);
     });
   });
 });

@@ -3,6 +3,7 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { ActionStatus } from '@/types/action';
 import type { Collection } from '@/types/collection';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
+import type { EvmTransactionsHiddenPayload } from '@/types/history/events';
 import type {
   AddHistoryEventPayload,
   HistoryEventCollectionRow,
@@ -29,6 +30,7 @@ interface UseHistoryEventsReturn {
   addHistoryEvent: (event: AddHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
   editHistoryEvent: (event: ModifyHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
   deleteHistoryEvent: (eventIds: number[], forceDelete?: boolean) => Promise<ActionStatus>;
+  setEvmTransactionHiddenStatus: (payload: EvmTransactionsHiddenPayload, hidden: boolean) => Promise<ActionStatus>;
   getEarliestEventTimestamp: () => Promise<number | undefined>;
 }
 
@@ -41,6 +43,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     deleteHistoryEvent: deleteHistoryEventCaller,
     editHistoryEvent: editHistoryEventCaller,
     fetchHistoryEvents: fetchHistoryEventsCaller,
+    setEvmTransactionsHiddenStatus,
   } = useHistoryEventsApi();
 
   const { signalEventsModified } = useHistoryStore();
@@ -184,6 +187,24 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     return { message, success };
   };
 
+  const setEvmTransactionHiddenStatus = async (
+    payload: EvmTransactionsHiddenPayload,
+    hidden: boolean,
+  ): Promise<ActionStatus> => {
+    let success = false;
+    let message = '';
+    try {
+      success = await setEvmTransactionsHiddenStatus(payload, hidden);
+      if (success)
+        signalEventsModified();
+    }
+    catch (error: any) {
+      message = error.message;
+    }
+
+    return { message, success };
+  };
+
   const getEarliestEventTimestamp = async (): Promise<number | undefined> => {
     const response = await fetchHistoryEvents({
       aggregateByGroupIds: true,
@@ -208,5 +229,6 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     editHistoryEvent,
     fetchHistoryEvents,
     getEarliestEventTimestamp,
+    setEvmTransactionHiddenStatus,
   };
 }

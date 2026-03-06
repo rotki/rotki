@@ -326,6 +326,7 @@ const HistoryEventMeta = z.object({
   hasDetails: z.boolean().optional(),
   hasIgnoredAssets: z.boolean().optional(),
   hidden: z.boolean().optional(),
+  isHiddenTransaction: z.boolean().optional(),
   states: z.array(HistoryEventStateEnum).optional(),
 });
 

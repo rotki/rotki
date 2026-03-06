@@ -10,7 +10,7 @@ from more_itertools import peekable
 
 from rotkehlchen.api.websockets.typedefs import ProgressUpdateSubType, WSMessageType
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.db.constants import TX_DECODED, TX_SPAM
+from rotkehlchen.db.constants import TX_DECODED
 from rotkehlchen.db.dbtx import DBCommonTx, T_Transaction, T_TxHash, T_TxNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -331,8 +331,9 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
                     customized_handling='delete' if delete_customized else 'preserve_transactions',
                 )
                 write_cursor.execute(
-                    f'DELETE from {self.tx_mappings_table} WHERE tx_id=? AND value IN (?, ?)',
-                    (tx_id, TX_DECODED, TX_SPAM),
+                    # TX_HIDDEN is user-managed visibility metadata and must survive redecodes.
+                    f'DELETE from {self.tx_mappings_table} WHERE tx_id=? AND value=?',
+                    (tx_id, TX_DECODED),
                 )
         else:  # see if events are already decoded and return them
             with self.database.conn.read_ctx() as cursor:

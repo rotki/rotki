@@ -734,8 +734,7 @@ def query_missing_accounting_rules(
             ),
         )
 
-    callbacks = evm_accounting_aggregator.get_accounting_callbacks()
-    with db.conn.read_ctx() as cursor:
+        callbacks = evm_accounting_aggregator.get_accounting_callbacks()
         event_specific_treatments, generic_treatments = _prefetch_accounting_treatments(
             cursor=cursor,
             related_events=related_events,

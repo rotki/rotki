@@ -21,6 +21,7 @@ interface UseHistoryEventsDataOptions {
   groups: Ref<Collection<HistoryEventRow>>;
   pageParams: Ref<HistoryEventRequestPayload | undefined>;
   excludeIgnored: Ref<boolean>;
+  excludeHiddenTransactions: Ref<boolean>;
   groupLoading: Ref<boolean>;
   identifiers?: Ref<string[] | undefined>;
 }
@@ -71,7 +72,14 @@ export function useHistoryEventsData(
   options: UseHistoryEventsDataOptions,
   emit: HistoryEventsTableEmitFn,
 ): UseHistoryEventsDataReturn {
-  const { excludeIgnored, groupLoading, groups, identifiers, pageParams } = options;
+  const {
+    excludeHiddenTransactions,
+    excludeIgnored,
+    groupLoading,
+    groups,
+    identifiers,
+    pageParams,
+  } = options;
 
   const eventsLoading = ref<boolean>(false);
   const events = ref<HistoryEventRow[]>([]);
@@ -112,6 +120,10 @@ export function useHistoryEventsData(
         ...get(pageParams),
         aggregateByGroupIds: false,
         excludeIgnoredAssets: false,
+        // `pageParams` is intentionally only forwarded in exact-match mode.
+        // The hidden-transaction visibility preference still needs to be carried
+        // so subgroup rows remain consistent with the visible group headers.
+        excludeHiddenTransactions: get(excludeHiddenTransactions),
         groupIdentifiers: groupIds,
         identifiers: get(identifiers),
         limit: -1,

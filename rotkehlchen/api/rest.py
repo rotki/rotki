@@ -27,6 +27,7 @@ from rotkehlchen.accounting.export.csv import (
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.api.rest_helpers.downloads import register_post_download_cleanup
+from rotkehlchen.api.rest_helpers.results import wrap_in_fail_result
 from rotkehlchen.api.rest_helpers.wrap import calculate_wrap_score
 from rotkehlchen.api.services.accounting import AccountingService
 from rotkehlchen.api.services.accounts import AccountsService
@@ -237,14 +238,6 @@ def _wrap_in_ok_result(result: Any, status_code: HTTPStatus | None = None) -> di
 
 def _wrap_in_result(result: Any, message: str) -> dict[str, Any]:
     return {'result': result, 'message': message}
-
-
-def wrap_in_fail_result(message: str, status_code: HTTPStatus | None = None) -> dict[str, Any]:
-    result: dict[str, Any] = {'result': None, 'message': message}
-    if status_code:
-        result['status_code'] = status_code
-
-    return result
 
 
 def api_response(
@@ -2084,6 +2077,20 @@ class RestAPI:
     @async_api_call()
     def get_evm_transactions_status(self) -> dict[str, Any]:
         return self.transactions_service.get_evm_transactions_status()
+
+    def update_evm_transactions_hidden_status(
+            self,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
+            tx_refs: list[EVMTxHash],
+            hidden: bool,
+    ) -> Response:
+        return make_response_from_dict(
+            self.transactions_service.update_evm_transactions_hidden_status(
+                blockchain=blockchain,
+                tx_refs=tx_refs,
+                hidden=hidden,
+            ),
+        )
 
     @async_api_call()
     def get_count_transactions_not_decoded(self) -> dict[str, Any]:

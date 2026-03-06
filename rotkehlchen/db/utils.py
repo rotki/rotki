@@ -333,6 +333,7 @@ def table_exists(cursor: 'DBCursor', name: str, schema: str | None = None) -> bo
 DBTupleType = Literal[
     'margin_position',
     'evm_transaction',
+    'evm_transaction_hidden_mapping',
     'evm_internal_transaction',
     'zksynclite_transaction',
     'evm_transactions_authorization',
@@ -367,6 +368,8 @@ def db_tuple_to_str(
         return f'Solana account key at index {data[1]} for transaction {data[0]}'
     if tuple_type == 'solana_instruction_account':
         return f'Solana instruction account at order {data[2]} for instruction {data[1]}'
+    if tuple_type == 'evm_transaction_hidden_mapping':
+        return f'EVM transaction hidden mapping for hash 0x{data[1].hex()} and chain id {data[2]}'
 
     # else can only be evm transaction
     assert tuple_type == 'evm_transaction', 'only DBTupleType possible here is evm_transaction'

@@ -95,6 +95,31 @@ describe('use-history-events-data', () => {
     };
   }
 
+  function createOptions(
+    groups: Ref<Collection<HistoryEventRow>>,
+    overrides: Partial<{
+      excludeHiddenTransactions: Ref<boolean>;
+      excludeIgnored: Ref<boolean>;
+      groupLoading: Ref<boolean>;
+      pageParams: Ref<HistoryEventRequestPayload | undefined>;
+    }> = {},
+  ): {
+    excludeHiddenTransactions: Ref<boolean>;
+    excludeIgnored: Ref<boolean>;
+    groupLoading: Ref<boolean>;
+    groups: Ref<Collection<HistoryEventRow>>;
+    pageParams: Ref<HistoryEventRequestPayload | undefined>;
+  } {
+    return {
+      excludeHiddenTransactions: ref<boolean>(true),
+      excludeIgnored: ref<boolean>(false),
+      groupLoading: ref<boolean>(false),
+      groups,
+      pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
+      ...overrides,
+    };
+  }
+
   beforeEach(() => {
     setActivePinia(createPinia());
     mockFetchHistoryEvents.mockResolvedValue({ data: [] });
@@ -113,12 +138,7 @@ describe('use-history-events-data', () => {
       const event2 = createMockEvent({ groupIdentifier: 'group2', identifier: 2 });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1, event2]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -136,12 +156,7 @@ describe('use-history-events-data', () => {
       const nestedGroup = [event1, event2];
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([nestedGroup]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -156,12 +171,7 @@ describe('use-history-events-data', () => {
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([]));
       const groupLoading = ref<boolean>(true);
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading,
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups, { groupLoading });
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -178,12 +188,7 @@ describe('use-history-events-data', () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -197,12 +202,7 @@ describe('use-history-events-data', () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -217,12 +217,7 @@ describe('use-history-events-data', () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -245,12 +240,7 @@ describe('use-history-events-data', () => {
       };
 
       const groups = ref<Collection<HistoryEventRow>>(collection);
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -288,12 +278,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValue({ data: [event1, event2] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1, event2]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       useHistoryEventsData(options, emit);
@@ -322,12 +307,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValue({ data: [event1, event2, event3] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1, event3]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -348,12 +328,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValue({ data: [visibleEvent, hiddenEvent] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([visibleEvent]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -373,12 +348,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValue({ data: [event1] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -398,12 +368,7 @@ describe('use-history-events-data', () => {
       mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'BTC');
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([ethEvent]));
-      const options = {
-        excludeIgnored: ref<boolean>(true),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups, { excludeIgnored: ref<boolean>(true) });
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -424,12 +389,7 @@ describe('use-history-events-data', () => {
       mockIsAssetIgnored.mockReturnValue(true);
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([btcEvent]));
-      const options = {
-        excludeIgnored: ref<boolean>(true),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups, { excludeIgnored: ref<boolean>(true) });
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -453,12 +413,7 @@ describe('use-history-events-data', () => {
       mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'SPAM_TOKEN');
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([approveEvent]));
-      const options = {
-        excludeIgnored: ref<boolean>(true),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups, { excludeIgnored: ref<boolean>(true) });
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -487,12 +442,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValue({ data: [swapSubgroup] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
-      const options = {
-        excludeIgnored: ref<boolean>(true),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups, { excludeIgnored: ref<boolean>(true) });
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -527,12 +477,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValue({ data: [event1] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       useHistoryEventsData(options, emit);
@@ -559,12 +504,7 @@ describe('use-history-events-data', () => {
         .mockResolvedValueOnce({ data: [event2] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -598,12 +538,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValueOnce({ data: [event1] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -635,12 +570,7 @@ describe('use-history-events-data', () => {
       }));
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -678,12 +608,7 @@ describe('use-history-events-data', () => {
         .mockReturnValueOnce(secondPromise);
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -722,12 +647,7 @@ describe('use-history-events-data', () => {
 
       const groupLoading = ref<boolean>(false);
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading,
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups, { groupLoading });
 
       const emit = vi.fn();
       useHistoryEventsData(options, emit);
@@ -750,12 +670,7 @@ describe('use-history-events-data', () => {
 
       const groupLoading = ref<boolean>(true);
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading,
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups, { groupLoading });
 
       const emit = vi.fn();
       useHistoryEventsData(options, emit);
@@ -778,12 +693,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValueOnce({ data: [event1] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -848,12 +758,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValue({ data: [swapSpend, swapReceive] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -875,12 +780,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValue({ data: [swapEvent] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapEvent]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -902,12 +802,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValue({ data: [event1, event2] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([event1]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -950,12 +845,7 @@ describe('use-history-events-data', () => {
       mockIsAssetIgnored.mockImplementation((asset: string) => asset === 'SPAM_TOKEN');
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
-      const options = {
-        excludeIgnored: ref<boolean>(true),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups, { excludeIgnored: ref<boolean>(true) });
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -978,12 +868,7 @@ describe('use-history-events-data', () => {
       mockFetchHistoryEvents.mockResolvedValue({ data: [swapSubgroup] });
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([swapSpend]));
-      const options = {
-        excludeIgnored: ref<boolean>(true),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups, { excludeIgnored: ref<boolean>(true) });
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);
@@ -1000,12 +885,7 @@ describe('use-history-events-data', () => {
       const { useHistoryEventsData } = await import('./use-history-events-data');
 
       const groups = ref<Collection<HistoryEventRow>>(createMockCollection([]));
-      const options = {
-        excludeIgnored: ref<boolean>(false),
-        groupLoading: ref<boolean>(false),
-        groups,
-        pageParams: ref<HistoryEventRequestPayload | undefined>(undefined),
-      };
+      const options = createOptions(groups);
 
       const emit = vi.fn();
       const result = useHistoryEventsData(options, emit);

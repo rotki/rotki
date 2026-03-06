@@ -19,6 +19,9 @@ TX_DECODED: Final = 0
 TX_SPAM: Final = 1
 # Marks that full parent-hash internal transactions were queried and persisted for this tx.
 TX_INTERNALS_QUERIED: Final = 2
+# User-set transaction hidden marker for UI filtering. This is manual metadata and is
+# independent from ignored/spam assets and from transaction decode state.
+TX_HIDDEN: Final = 3
 
 # -- history_events_mappings values --
 HISTORY_MAPPING_KEY_STATE: Final = 'state'
@@ -89,7 +92,9 @@ HISTORY_BASE_ENTRY_LENGTH: Final = 13
 # Window function to compute if any event in a group has an ignored asset.
 # This is added at the END of the query (after all other fields) in _create_history_events_query.
 GROUP_HAS_IGNORED_ASSETS_FIELD: Final = 'MAX(ignored) OVER (PARTITION BY group_identifier) AS group_has_ignored_assets'  # noqa: E501
-
+EVM_TRANSACTION_GROUP_IDENTIFIER_SQL: Final = (
+    "CAST(evm_transactions.chain_id AS TEXT) || '0x' || lower(hex(evm_transactions.tx_hash))"
+)
 CHAIN_EVENT_FIELDS: Final = 'tx_ref, counterparty, address'
 CHAIN_EVENT_NULL_FIELDS: Final = 'NULL as tx_ref, NULL as counterparty, NULL as address'
 CHAIN_FIELD_LENGTH: Final = 3

@@ -2545,6 +2545,57 @@ Managing blockchain transactions
    :statuscode 500: Internal rotki error.
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
+.. http:put:: /api/(version)/blockchains/transactions/hidden
+
+   Doing a PUT on this endpoint will hide the given EVM transactions from the history events
+   results. This is a manual, user-managed visibility marker and is independent from ignored
+   assets and token spam detection.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/blockchains/transactions/hidden HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "blockchain": "eth",
+        "tx_refs": [
+          "0x65d53653c584cde22e559cec4667a7278f75966360590b725d87055fb17552ba"
+        ]
+      }
+
+   :reqjson str blockchain: The EVM blockchain name of the transactions (for example ``"eth"``, ``"optimism"``, ``"base"``).
+   :reqjson list[string] tx_refs: The transaction hashes to hide.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      { "result": true, "message": "" }
+
+   :statuscode 200: Transactions were hidden.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: One or more transaction hashes are not present in the database for the given chain.
+   :statuscode 500: Internal rotki error.
+
+.. http:delete:: /api/(version)/blockchains/transactions/hidden
+
+   Doing a DELETE on this endpoint will remove the manual hidden marker from the given EVM transactions.
+
+   The request body and response are the same as for :http:put:`/api/(version)/blockchains/transactions/hidden`.
+
+   :statuscode 200: Transactions were unhidden.
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 401: No user is currently logged in.
+   :statuscode 409: One or more transaction hashes are not present in the database for the given chain.
+   :statuscode 500: Internal rotki error.
+
 
 Decode transactions that haven't been decoded yet
 =================================================
@@ -5282,6 +5333,7 @@ Dealing with History Events
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson int offset: This signifies the offset from which to start the return of records per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
    :reqjson object otherargs: Check the documentation of the remaining arguments `here <filter-request-args-label_>`_.
+   :reqjson bool exclude_hidden_transactions: Optional. Defaults to ``true``. If true, history groups backed by manually hidden EVM transactions are excluded.
    :reqjson list[string] state_markers: Optional. A list of state markers to filter events by. Events matching any of the specified markers will be returned. Valid values are ``customized``, ``profit adjustment``, ``matched``, ``imported from csv``. If not provided, no marker filtering is applied.
 
    **Example Response**:
@@ -5600,6 +5652,7 @@ Dealing with History Events
    :resjson bool events[].ignored_in_accounting: Set to true when the user has marked this event as ignored.
    :resjson bool events[].has_ignored_assets: Optional. Set to true when the event group contains ignored assets, indicating that some events may have been excluded by ignored assets filtering.
    :resjson bool events[].has_details: If true, it is possible to call /history/events/details endpoint to retrieve extra information about the event.
+   :resjson bool events[].is_hidden_transaction: Optional. Set to true when the event group belongs to a manually hidden EVM transaction.
    :resjson int events[].grouped_events_num: Optional. Present when ``aggregate_by_group_ids`` is true. The number of events under this group identifier. The consumer has to query this endpoint again with ``aggregate_by_group_ids`` set to false and with the ``group_identifiers`` filter set to the identifier of the events having more than 1 event.
    :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
    :resjson int entries_limit: The limit of entries if free version. -1 for premium.
