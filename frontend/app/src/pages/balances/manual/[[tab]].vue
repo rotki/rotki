@@ -7,10 +7,10 @@ import ManualBalanceTable from '@/components/accounts/manual-balances/ManualBala
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
+import { useSectionStatus } from '@/composables/status';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useHistoryStore } from '@/store/history';
-import { useStatusStore } from '@/store/status';
 import { BalanceType } from '@/types/balances';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
@@ -36,8 +36,7 @@ const route = useRoute('balances-manual');
 
 const { fetchManualBalances } = useManualBalances();
 const { fetchAssociatedLocations } = useHistoryStore();
-const { isLoading } = useStatusStore();
-const loading = isLoading(Section.MANUAL_BALANCES);
+const { isLoading: loading } = useSectionStatus(Section.MANUAL_BALANCES);
 
 function add() {
   set(balance, {

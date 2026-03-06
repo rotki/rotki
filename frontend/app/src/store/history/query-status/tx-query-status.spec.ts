@@ -119,7 +119,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should set originalPeriodEnd from period[1] on STARTED status', () => {
       const store = useTxQueryStatusStore();
-        store.syncing = true;
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -135,7 +135,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should preserve originalPeriodEnd on subsequent updates', () => {
       const store = useTxQueryStatusStore();
-        store.syncing = true;
+      store.syncing = true;
 
       // First: STARTED with period end
       store.setUnifiedTxQueryStatus({
@@ -162,7 +162,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should NOT set originalPeriodStart from STARTED status period[1]', () => {
       const store = useTxQueryStatusStore();
-        store.syncing = true;
+      store.syncing = true;
 
       // STARTED status should only set originalPeriodEnd, not originalPeriodStart
       // This is the fix for the 100% progress bug
@@ -181,7 +181,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should set originalPeriodStart from first QUERYING status with non-zero period[1]', () => {
       const store = useTxQueryStatusStore();
-        store.syncing = true;
+      store.syncing = true;
 
       // STARTED status - should NOT set originalPeriodStart
       store.setUnifiedTxQueryStatus({
@@ -208,7 +208,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should use period[0] as originalPeriodStart when non-zero', () => {
       const store = useTxQueryStatusStore();
-        store.syncing = true;
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -224,7 +224,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should preserve originalPeriodStart on subsequent updates', () => {
       const store = useTxQueryStatusStore();
-        store.syncing = true;
+      store.syncing = true;
 
       // First update sets originalPeriodStart
       store.setUnifiedTxQueryStatus({
