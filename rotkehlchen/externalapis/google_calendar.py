@@ -65,7 +65,7 @@ class GoogleCalendarAPI:
                 self._credentials.refresh_token
             ):
                 log.debug('Refreshing expired Google Calendar credentials')
-                self._credentials.refresh(Request())  # type: ignore
+                self._credentials.refresh(Request())
                 self._store_external_credentials(
                     self._credentials.token or '',
                     self._credentials.refresh_token,
@@ -92,7 +92,7 @@ class GoogleCalendarAPI:
             return False
 
         # Verify we have the correct scope
-        if not credentials.scopes or GOOGLE_CALENDAR_SCOPES[0] not in credentials.scopes:
+        if (scopes := credentials.scopes) is None or GOOGLE_CALENDAR_SCOPES[0] not in scopes:
             log.debug('Google Calendar credentials have wrong scope, need to re-authorize')
             return False
 
