@@ -57,6 +57,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.modules.eth2.eth2 import Eth2
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+    from rotkehlchen.premium.premium import Premium
     from rotkehlchen.types import ChecksumEvmAddress
 
 HOUR_IN_MILLISECONDS: Final = 3600000
@@ -580,8 +581,14 @@ def test_eth_accumulating_validators_performance(
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0fdAe061cAE1Ad4Af83b27A96ba5496ca992139b', '0xF4fEae08C1Fa864B64024238E33Bfb4A3Ea7741d']])  # noqa: E501
 @pytest.mark.freeze_time('2025-10-22 00:00:00 GMT')
-def test_eth_validators_performance_recent(eth2, database, ethereum_accounts):
+def test_eth_validators_performance_recent(
+        eth2: 'Eth2',
+        database: 'DBHandler',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        rotki_premium_object: 'Premium',
+) -> None:
     """Test that performance to recent time also takes into account outstanding consensus pnl"""
+    eth2.premium = rotki_premium_object
     dbevents = DBHistoryEvents(database)
     dbeth2 = DBEth2(database)
     vindex1 = 647202
@@ -1200,8 +1207,10 @@ def test_validator_details_update(
 def test_consolidated_validator_pending_withdrawal_outstanding_rewards(
         eth2: 'Eth2',
         database: 'DBHandler',
+        rotki_premium_object: 'Premium',
 ) -> None:
     """Test that consolidated validators with pending withdrawals don't show negative outstanding rewards"""  # noqa: E501
+    eth2.premium = rotki_premium_object
     with database.user_write() as write_cursor:
         DBEth2(database).add_or_update_validators(write_cursor, [ValidatorDetails(
             validator_index=(validator_index := 999999),

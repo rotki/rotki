@@ -100,6 +100,7 @@ const isCard = computed<boolean>(() => variant === 'card');
         />
 
         <RuiButton
+          data-cy="swap-expand"
           size="sm"
           icon
           color="primary"
@@ -202,6 +203,7 @@ const isCard = computed<boolean>(() => variant === 'card');
 
     <div class="relative -top-2">
       <RuiButton
+        data-cy="swap-expand"
         size="sm"
         icon
         color="primary"

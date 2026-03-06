@@ -147,12 +147,16 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
 interface UseAccountManageReturn {
   pending: Ref<boolean>;
   errorMessages: Ref<ValidationErrors>;
+  saveError: Ref<string>;
+  saveErrorIsPremium: Ref<boolean>;
   save: (state: AccountManageState) => Promise<boolean>;
 }
 
 export function useAccountManage(): UseAccountManageReturn {
   const pending = ref(false);
   const errorMessages = ref<ValidationErrors>({});
+  const saveError = ref<string>('');
+  const saveErrorIsPremium = ref<boolean>(false);
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -256,6 +260,8 @@ export function useAccountManage(): UseAccountManageReturn {
 
   async function saveValidator(state: StakingValidatorManage): Promise<boolean> {
     set(pending, true);
+    set(saveError, '');
+    set(saveErrorIsPremium, false);
 
     const payload = state.data;
     const isEdit = state.mode === 'edit';
@@ -273,25 +279,8 @@ export function useAccountManage(): UseAccountManageReturn {
       }
     }
     else if (typeof result.message === 'string') {
-      let description: string;
-      let title: string;
-
-      if (isEdit) {
-        title = t('actions.edit_eth2_validator.error.title');
-        description = t('actions.edit_eth2_validator.error.description', {
-          id: payload.publicKey || payload.validatorIndex || '',
-          message: result.message,
-        });
-      }
-      else {
-        title = t('actions.add_eth2_validator.error.title');
-        description = t('actions.add_eth2_validator.error.description', {
-          id: payload.publicKey || payload.validatorIndex || '',
-          message: result.message,
-        });
-      }
-
-      showErrorMessage(title, description);
+      set(saveError, result.message);
+      set(saveErrorIsPremium, result.message.includes('limit exceeded'));
     }
     else {
       set(errorMessages, result.message);
@@ -318,5 +307,7 @@ export function useAccountManage(): UseAccountManageReturn {
     errorMessages,
     pending,
     save,
+    saveError,
+    saveErrorIsPremium,
   };
 }

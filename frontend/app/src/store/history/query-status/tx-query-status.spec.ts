@@ -63,8 +63,23 @@ describe('store/history/query-status/tx-query-status', () => {
   });
 
   describe('setUnifiedTxQueryStatus', () => {
+    it('should discard updates when syncing is false', () => {
+      const store = useTxQueryStatusStore();
+
+      store.setUnifiedTxQueryStatus({
+        address: '0x123',
+        chain: 'ETH',
+        period: [0, 1000],
+        status: TransactionsQueryStatus.QUERYING_TRANSACTIONS_STARTED,
+        subtype: 'evm',
+      });
+
+      expect(Object.keys(get(store.queryStatus))).toHaveLength(0);
+    });
+
     it('should ignore ACCOUNT_CHANGE status', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -79,6 +94,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should handle bitcoin transactions with multiple addresses', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         addresses: ['bc1abc', 'bc1def'],
@@ -103,6 +119,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should set originalPeriodEnd from period[1] on STARTED status', () => {
       const store = useTxQueryStatusStore();
+        store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -118,6 +135,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should preserve originalPeriodEnd on subsequent updates', () => {
       const store = useTxQueryStatusStore();
+        store.syncing = true;
 
       // First: STARTED with period end
       store.setUnifiedTxQueryStatus({
@@ -144,6 +162,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should NOT set originalPeriodStart from STARTED status period[1]', () => {
       const store = useTxQueryStatusStore();
+        store.syncing = true;
 
       // STARTED status should only set originalPeriodEnd, not originalPeriodStart
       // This is the fix for the 100% progress bug
@@ -162,6 +181,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should set originalPeriodStart from first QUERYING status with non-zero period[1]', () => {
       const store = useTxQueryStatusStore();
+        store.syncing = true;
 
       // STARTED status - should NOT set originalPeriodStart
       store.setUnifiedTxQueryStatus({
@@ -188,6 +208,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should use period[0] as originalPeriodStart when non-zero', () => {
       const store = useTxQueryStatusStore();
+        store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -203,6 +224,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should preserve originalPeriodStart on subsequent updates', () => {
       const store = useTxQueryStatusStore();
+        store.syncing = true;
 
       // First update sets originalPeriodStart
       store.setUnifiedTxQueryStatus({
@@ -229,6 +251,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should normalize chain to lowercase', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -245,6 +268,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should not overwrite cancelled entries with WS updates', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       // Set initial status
       store.setUnifiedTxQueryStatus({
@@ -273,6 +297,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should not overwrite cancelled bitcoin entries with WS updates', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       // Set initial bitcoin status
       store.setUnifiedTxQueryStatus({
@@ -355,6 +380,7 @@ describe('store/history/query-status/tx-query-status', () => {
   describe('markAddressCancelled', () => {
     it('should set status to CANCELLED', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -372,6 +398,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should preserve other fields when cancelling', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -393,6 +420,7 @@ describe('store/history/query-status/tx-query-status', () => {
   describe('isAddressCancelled', () => {
     it('should return true for cancelled addresses', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -408,6 +436,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should return false for non-cancelled addresses', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -441,6 +470,7 @@ describe('store/history/query-status/tx-query-status', () => {
   describe('isAllFinished', () => {
     it('should return true when all EVM statuses are finished', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -463,6 +493,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should return false when any EVM status is not finished', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',
@@ -485,6 +516,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should use DECODING_FINISHED for bitcoin status', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         addresses: ['bc1abc'],
@@ -508,6 +540,7 @@ describe('store/history/query-status/tx-query-status', () => {
 
     it('should treat CANCELLED as finished', () => {
       const store = useTxQueryStatusStore();
+      store.syncing = true;
 
       store.setUnifiedTxQueryStatus({
         address: '0x123',

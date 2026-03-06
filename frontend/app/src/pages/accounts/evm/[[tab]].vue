@@ -11,6 +11,7 @@ import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
+import { useEthStakingAccess } from '@/modules/staking/eth/composables/use-eth-staking-access';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 import { NoteLocation } from '@/types/notes';
 
@@ -38,8 +39,10 @@ const category = 'evm';
 const { importingAccounts } = storeToRefs(useAccountImportProgressStore());
 const { enabled: isEth2Enabled } = useModuleEnabled(Module.ETH2);
 const { chainIds } = useAccountCategoryHelper(category);
+const { allowed: ethStakingAllowed } = useEthStakingAccess();
 
 const isAccountsTabSelected = computed<boolean>(() => tab === 'accounts');
+const isAddDisabled = computed<boolean>(() => !get(isAccountsTabSelected) && !get(ethStakingAllowed));
 
 const usedChainIds = computed<string[]>(() => {
   if (get(isAccountsTabSelected)) {
@@ -110,6 +113,7 @@ watchImmediate(route, (route) => {
     <template #buttons>
       <EvmAccountPageButtons
         :is-accounts-tab-selected="isAccountsTabSelected"
+        :add-disabled="isAddDisabled"
         @refresh-click="get(table)?.refreshClick()"
         @refresh="get(table)?.refresh()"
         @add-account="createNewBlockchainAccount()"

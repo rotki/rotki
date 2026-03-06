@@ -198,6 +198,7 @@ test.describe.serial('history events', () => {
   });
 
   test('add solana swap event', async () => {
+    await waitForNoRunningTasks(ctx.sharedPage);
     await page.openAddDialog();
     await page.selectEntryType('solana swap event');
     await page.fillSolanaSwapEventForm(solanaSwapEventFixture);
@@ -408,6 +409,7 @@ test.describe.serial('evm history events', () => {
   });
 
   test('add evm multi-asset swap with fees', async () => {
+    await waitForNoRunningTasks(ctx.sharedPage);
     const swapsBefore = await page.getSwapRows();
 
     await page.openAddDialog();
@@ -418,6 +420,39 @@ test.describe.serial('evm history events', () => {
     await expect(async () => {
       const count = await page.getSwapRows();
       expect(count).toBeGreaterThan(swapsBefore);
+    }).toPass({ timeout: 10000 });
+  });
+
+  test('delete extra sub-event from multi-asset swap', async () => {
+    // The multi-asset swap has 2 spend + 2 receive + 2 fee = 6 sub-events.
+    // It was added last so it has the most recent timestamp.
+    // With descending sort it appears first (index 0).
+    const rowsBeforeExpand = await page.getExpandedEventRows();
+    await page.expandSwap(0);
+
+    // Wait for the 6 sub-event rows to appear (on top of any existing event-rows)
+    await expect(async () => {
+      const rows = await page.getExpandedEventRows();
+      expect(rows).toBeGreaterThanOrEqual(rowsBeforeExpand + 6);
+    }).toPass({ timeout: 10000 });
+
+    const rowsBefore = await page.getExpandedEventRows();
+
+    // Delete the last fee sub-event (index 5 within the swap — the 6th expanded row).
+    // The swap sub-events are the first event-rows on the page since this group is first.
+    await page.deleteSubEvent(5);
+
+    await expect(async () => {
+      const rowsAfter = await page.getExpandedEventRows();
+      expect(rowsAfter).toBe(rowsBefore - 1);
+    }).toPass({ timeout: 10000 });
+
+    // The swap group should still exist
+    await expect(async () => {
+      const swaps = await page.getSwapRows();
+      // Swap rows are hidden when expanded, so check sub-events remain
+      const expandedRows = await page.getExpandedEventRows();
+      expect(swaps + expandedRows).toBeGreaterThanOrEqual(1);
     }).toPass({ timeout: 10000 });
   });
 

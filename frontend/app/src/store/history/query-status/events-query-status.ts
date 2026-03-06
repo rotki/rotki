@@ -9,11 +9,12 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
     item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED
     || item.status === HistoryEventsQueryStatus.CANCELLED;
 
-  const { isAllFinished, markCancelled, queryStatus, removeQueryStatus, resetQueryStatus }
+  const { isAllFinished, markCancelled, queryStatus, removeQueryStatus, resetQueryStatus, stopSyncing, syncing }
     = createQueryStatusState<HistoryEventsQueryData>(isStatusFinished, createKey);
 
   const initializeQueryStatus = (data: { location: string; name: string }[]): void => {
     resetQueryStatus();
+    set(syncing, true);
 
     const status = { ...get(queryStatus) };
     const now = millisecondsToSeconds(Date.now());
@@ -31,6 +32,9 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
   };
 
   const setQueryStatus = (data: HistoryEventsQueryData): void => {
+    if (!get(syncing))
+      return;
+
     const status = { ...get(queryStatus) };
     const key = createKey(data);
 
@@ -62,6 +66,8 @@ export const useEventsQueryStatusStore = defineStore('history/events-query-statu
     removeQueryStatus,
     resetQueryStatus,
     setQueryStatus,
+    stopSyncing,
+    syncing,
   };
 });
 

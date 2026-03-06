@@ -14,7 +14,13 @@ Changelog
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
 * :feature:`10712` bitcoin events can now be filtered by address.
 * :feature:`10542` StakeDAO v2 votemarket events will now be properly decoded.
+* :bug:`11784` Users can now delete extra spend, receive, or fee sub-events from multi-asset swaps directly from the event list without opening the full edit form.
+* :feature:`11817` ETH staking validator limits are now checked before submission in the add validator dialog, showing user-friendly messages with upgrade prompts instead of raw backend errors.
+* :bug:`-` Certain cases of ENS registrations with a specific refund ordering will now also be properly understood by rotki.
+* :bug:`-` Gearbox withdrawals should now always have the correct order of events.
+* :bug:`-` Gearbox deposit through some wrapper routes will now be properly decoded.
 * :feature:`9024` rotki now supports yearn in all EVM chains.
+* :bug:`11798` Sync progress panel will no longer appear during idle periods when backend background tasks send WebSocket status messages.
 * :bug:`11797` Adding an ETH account on a fresh instance will no longer trigger unnecessary ETH2 and Uniswap balance queries when no validators exist and no events have been decoded.
 * :bug:`11783` Matched withdrawal from exchange to account will now correctly show the destination address instead of displaying the exchange name for both from and to labels.
 * :bug:`11782` Adding a new EVM account will no longer trigger a redundant initial balance fetch before token detection. Balances are now fetched only once after tokens are detected.
@@ -42,6 +48,11 @@ Changelog
 * :feature:`11702` Zerox Base Swaps through the latest settler  will now be properly decoded.
 * :bug:`-` ZKSynclite batch withdrawal on the ethereum side should now be properly decoded.
 * :bug:`-` Claiming AAVE rewards and immediately restaking them will now be properly decoded.
+* :bug:`-` Kyberswap swaps containing refunds will now be processed properly and deduct refund from original swap amount.
+* :bug:`-` WETH Unwrapping in base will now be properly decoded.
+* :bug:`-` The rare case of balancer v2 swaps with repeated swap logs for a single events is now decoded properly.
+* :feature:`-` ERC4337 fee payments will now be properly understood by rotki
+* :bug:`-` 1inch swaps using Trader Joe Liquidity Book swap should now be properly decoded by rotki.
 
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.

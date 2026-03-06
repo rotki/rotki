@@ -42,6 +42,6 @@ describe('get-premium-button', () => {
 
     const button = wrapper.find('[data-cy=get-premium-button]');
     expect(button.exists()).toBeTruthy();
-    expect(button.text()).toContain('premium_placeholder.upgrade_plan');
+    expect(button.text()).toContain('premium_placeholder.current_plan');
   });
 });

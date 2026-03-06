@@ -99,18 +99,16 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
             ordered_events=[out_event, in_event],
             events_list=context.decoded_events + [in_event],
         )
-        return EvmDecodingOutput(events=[in_event])
+        return EvmDecodingOutput(events=[in_event], matched_counterparty=self.counterparty)
 
     def _decode_withdrawal_event(self, context: DecoderContext) -> EvmDecodingOutput:
-        if not self.base.is_tracked(withdrawer := bytes_to_address(context.tx_log.topics[1])):
-            return DEFAULT_EVM_DECODING_OUTPUT
-
+        withdrawer = bytes_to_address(context.tx_log.topics[1])
         withdrawn_amount_raw = int.from_bytes(context.tx_log.data[:32])
         withdrawn_amount = asset_normalized_value(
             amount=withdrawn_amount_raw,
             asset=self.base_asset,
         )
-        in_event = out_event = None
+        in_event = None
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -124,26 +122,29 @@ class WethDecoderBase(EvmDecoderInterface, ABC):
                 event.notes = f'Receive {withdrawn_amount} {self.base_asset.symbol}'
                 event.counterparty = self.counterparty
 
-        if in_event is None:
-            return DEFAULT_EVM_DECODING_OUTPUT
+        if self.base.is_tracked(withdrawer):
+            if in_event is None:
+                return DEFAULT_EVM_DECODING_OUTPUT
 
-        out_event = self.base.make_event_next_index(
-            tx_ref=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=self.wrapped_token,
-            amount=withdrawn_amount,
-            location_label=withdrawer,
-            counterparty=self.counterparty,
-            notes=f'Unwrap {withdrawn_amount} {self.wrapped_token.symbol}',
-            address=context.transaction.to_address,
-        )
-        maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
-            events_list=context.decoded_events + [out_event],
-        )
-        return EvmDecodingOutput(events=[out_event])
+            out_event = self.base.make_event_next_index(
+                tx_ref=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+                asset=self.wrapped_token,
+                amount=withdrawn_amount,
+                location_label=withdrawer,
+                counterparty=self.counterparty,
+                notes=f'Unwrap {withdrawn_amount} {self.wrapped_token.symbol}',
+                address=context.transaction.to_address,
+            )
+            maybe_reshuffle_events(
+                ordered_events=[out_event, in_event],
+                events_list=context.decoded_events + [out_event],
+            )
+            return EvmDecodingOutput(events=[out_event], matched_counterparty=self.counterparty)
+
+        return EvmDecodingOutput(matched_counterparty=self.counterparty)
 
     # -- DecoderInterface methods
 

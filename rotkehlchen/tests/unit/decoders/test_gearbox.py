@@ -465,6 +465,63 @@ def test_gearbox_deposit_arbitrum_lp(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xE2fb883fDc13BEA0bFa73a329718323f00FBb777']])
+def test_gearbox_deposit_arbitrum_receive_leg_from_farming_wrapper(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
+):
+    """Regression test for wrapper-based Gearbox deposits with farm-token receive."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x78849bf915173b94692a3bc3384582b51f3680938e01162fc53b33a4d6424889')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    assert events == [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1729918139000)),
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            amount=FVal(gas := '0.00000246911'),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burn {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+            asset=A_ETH,
+            amount=FVal(deposit_amount := '0.1188'),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Deposit {deposit_amount} ETH to Gearbox',
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0xC371b6c94ac59757706cE13004e5B23ad37B46f4'),
+        ), EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=29,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0xf3b7994e4dA53E04155057Fd61dc501599d57877'),
+            amount=FVal(farm_token_amount := '0.11502876455851981'),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Receive {farm_token_amount} farmdWETHV3 after depositing in Gearbox',
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0xC371b6c94ac59757706cE13004e5B23ad37B46f4'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3a212d3d7504dC4A39E21C731d0E80b114A2108b']])
 def test_gearbox_withdraw_arbitrum(
         arbitrum_one_inquirer: 'EthereumInquirer',
@@ -495,12 +552,12 @@ def test_gearbox_withdraw_arbitrum(
             sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
-            asset=A_ETH,
-            amount=FVal(withdrawn),
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x6773fF780Dd38175247795545Ee37adD6ab6139a'),
+            amount=FVal(lp_amount),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Withdraw {withdrawn} ETH from Gearbox',
+            notes=f'Return {lp_amount} farmdWETHV3',
             tx_ref=tx_hash,
             counterparty=CPT_GEARBOX,
             address=string_to_evm_address('0x78c1B41b825f89FAE4736878Fa63752F8D789BD6'),
@@ -508,12 +565,12 @@ def test_gearbox_withdraw_arbitrum(
             sequence_index=2,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=Asset('eip155:42161/erc20:0x6773fF780Dd38175247795545Ee37adD6ab6139a'),
-            amount=FVal(lp_amount),
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+            asset=A_ETH,
+            amount=FVal(withdrawn),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Return {lp_amount} farmdWETHV3',
+            notes=f'Withdraw {withdrawn} ETH from Gearbox',
             tx_ref=tx_hash,
             counterparty=CPT_GEARBOX,
             address=string_to_evm_address('0x78c1B41b825f89FAE4736878Fa63752F8D789BD6'),

@@ -31,6 +31,7 @@ export const useHistoryStore = defineStore('history', () => {
   // Separate state for sync progress indicator - only updated by websocket messages,
   // not reset by fetchUndecodedTransactionsBreakdown
   const decodingSyncProgress = shallowRef<Record<string, DecodingStatusEntry>>({});
+  const decodingSyncing = shallowRef<boolean>(false);
 
   const receivingProtocolCacheStatus = ref<boolean>(false);
 
@@ -56,7 +57,10 @@ export const useHistoryStore = defineStore('history', () => {
       ...get(undecodedTransactionsStatus),
       [data.chain]: data,
     });
-    // Also update sync progress state (used by sync progress indicator)
+    // Only update sync progress when a user-initiated sync is active
+    if (!get(decodingSyncing))
+      return;
+
     // Guard: don't overwrite cancelled entries
     const currentSync = get(decodingSyncProgress);
     if (currentSync[data.chain]?.cancelled) {
@@ -73,6 +77,10 @@ export const useHistoryStore = defineStore('history', () => {
       ...get(undecodedTransactionsStatus),
       ...data,
     });
+
+    // Only update sync progress when a user-initiated sync is active
+    if (!get(decodingSyncing))
+      return;
 
     // Also update sync progress, but only if:
     // 1. The chain doesn't exist in sync progress yet (initialization), OR
@@ -152,6 +160,11 @@ export const useHistoryStore = defineStore('history', () => {
 
   const resetDecodingSyncProgress = (): void => {
     set(decodingSyncProgress, {});
+    set(decodingSyncing, true);
+  };
+
+  const stopDecodingSyncProgress = (): void => {
+    set(decodingSyncing, false);
   };
 
   const resetProtocolCacheUpdatesStatus = (): void => {
@@ -233,6 +246,7 @@ export const useHistoryStore = defineStore('history', () => {
     decodingStatus,
     decodingSyncProgress,
     decodingSyncStatus,
+    decodingSyncing,
     eventsModificationCounter,
     fetchAssociatedLocations,
     fetchLocationLabels,
@@ -250,6 +264,7 @@ export const useHistoryStore = defineStore('history', () => {
     setProtocolCacheStatus,
     setUndecodedTransactionsStatus,
     signalEventsModified,
+    stopDecodingSyncProgress,
     transactionStatusSummary,
     undecodedTransactionsStatus,
     updateUndecodedTransactionsStatus,

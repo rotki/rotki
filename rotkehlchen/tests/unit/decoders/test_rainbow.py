@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.decoding.rainbow.constants import (
 )
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH, A_OP, A_POL
+from rotkehlchen.db.constants import TX_INTERNALS_QUERIED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -87,6 +88,15 @@ def test_rainbow_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
         counterparty=CPT_RAINBOW_SWAPS,
         address=RAINBOW_ROUTER_CONTRACT,
     )]
+    with ethereum_inquirer.database.conn.read_ctx() as cursor:
+        assert (
+            cursor.execute(
+                'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id IN ('
+                'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?) '
+                'AND value=?',
+                (tx_hash, ethereum_inquirer.chain_id.serialize_for_db(), TX_INTERNALS_QUERIED),
+            ).fetchone()[0] == 1
+        ), 'Expected TX_INTERNALS_QUERIED mapping to be persisted for this transaction'
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

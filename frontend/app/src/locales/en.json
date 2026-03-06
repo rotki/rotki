@@ -284,10 +284,6 @@
       }
     },
     "add_eth2_validator": {
-      "error": {
-        "description": "There was an error while adding the ETH staking validator {id}: {message}",
-        "title": "Adding ETH staking validator"
-      },
       "task": {
         "description": "Adding ETH staking validator",
         "title": "Adding validator: {id}"
@@ -600,12 +596,6 @@
       },
       "task": {
         "title": "Detecting EVM accounts"
-      }
-    },
-    "edit_eth2_validator": {
-      "error": {
-        "description": "There was an error while editing the ETH staking validator {id}: {message}",
-        "title": "Editing ETH staking validator"
       }
     },
     "eth_block_events_redecoding": {
@@ -1707,7 +1697,9 @@
   },
   "blockchain_balances": {
     "add_account": "Add Account",
+    "add_validator_premium": "Adding ETH staking validators is a premium feature. Upgrade to rotki Premium to add validators.",
     "binance_warning": "Binance Smart Chain accounts can only be detected with a paid Etherscan key.",
+    "eth_staking_limit_error": "Adding this validator would exceed your {currentTier} plan's ETH staking limit of {limit} ETH. Upgrade your plan via {link} or contact us for a custom plan to increase your limit.",
     "evm_detection": {
       "title": "Detect EVM accounts",
       "tooltip": "Detect activities of all registered EVM accounts in other EVM chains, and register them."
@@ -1733,6 +1725,7 @@
     },
     "title": "Blockchain Balances per asset",
     "validator_index_label": "Ethereum validator No. {index}",
+    "validator_limit_reached": "You have reached the ETH staking validator limit ({total}/{limit}). {link} to add more validators.",
     "validators": {
       "auto_detection_info": "rotki will automatically detect validators if you add the depositor address as an Ethereum account. First, ensure the events for that depositor address are fetched and decoded in history events, where any ETH deposit events will be detected. After the events are found, manually hit the refresh button to update the validator list.",
       "consolidated": "Consolidated into:",
@@ -4640,6 +4633,7 @@
     "tooltip": "Feature is only supported with a premium subscription"
   },
   "premium_placeholder": {
+    "current_plan": "{tier} plan",
     "free_description": "This feature requires a minimum of {tier} tier.",
     "premium_description": "This feature requires a minimum of {tier} tier. Your current tier is {currentTier}.",
     "upgrade_plan": "Upgrade plan"
@@ -4658,6 +4652,7 @@
       "statistic": "The statistics view is not available",
       "title": "Graphs are not available"
     },
+    "current_plan_label": "Current plan:",
     "delete_confirmation": {
       "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
       "title": "Delete rotki premium keys?"
@@ -4675,6 +4670,7 @@
       "api_secret": "API Secret"
     },
     "get": "Get premium",
+    "manage_or_upgrade": "Manage or upgrade subscription",
     "premium_active": "@:premium_settings.title is active",
     "subtitle": "@:premium_settings.title is an optional subscription service to gain access to analytics, graphs, and unlock many additional features. For more information on what is available visit the {0} website.",
     "title": "rotki Premium"

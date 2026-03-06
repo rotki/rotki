@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.decoding.curve.constants import TOKEN_EXCHANGE
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import (
     DEFI_PLAZA_SWAPPED,
+    LIQUIDITY_BOOK_SWAP,
     ORDERFILLED_RFQ,
     PANCAKE_SWAP_TOPIC,
     WOMBATV2_SWAPPED,
@@ -60,6 +61,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 TOKEN_EXCHANGE,  # curve is also used by 1inch
                 SWAPPED_TOPIC,
                 DEFI_PLAZA_SWAPPED,
+                LIQUIDITY_BOOK_SWAP,
                 PANCAKE_SWAP_TOPIC,
                 WOMBATV2_SWAPPED,
             ],

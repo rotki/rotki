@@ -1124,7 +1124,7 @@ def test_balancer_gauge_withdrawal(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_balancer_v2_swap_token_to_native(gnosis_inquirer, gnosis_accounts):
-    """This tests a swap from a token to the native token where there are also two swap tx_logs
+    """This tests a swap from a token to the native token where there are also two swap tx_logs.
     So the tokens are swapped/unwrapped as follows (GIV -> GNO -> WXDAI -> xDAI).
     """
     tx_hash = deserialize_evm_tx_hash('0x014d174e4f479e9712f877b0fd7db5011d6669cf7843700384da1997410312cf')  # noqa: E501
@@ -1166,3 +1166,55 @@ def test_balancer_v2_swap_token_to_native(gnosis_inquirer, gnosis_accounts):
         counterparty=CPT_BALANCER_V2,
         address=VAULT_ADDRESS,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_BALANCER_V2]])
+@pytest.mark.parametrize('gnosis_accounts', [['0x6d983700980dd4b559ab8e932d1f1D96Bf677248']])
+def test_balancer_v2_swap_repeated_pair_netted_transfers(gnosis_inquirer, gnosis_accounts, load_global_caches):  # noqa: E501
+    """Regression for a batch swap with repeated pairs and netted transfer events."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x47321dcb43441dfb6295a9e34a2591fba26a15e557977e4d92460a3205f71459')),  # noqa: E501
+        load_global_caches=load_global_caches,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_ref=tx_hash,
+            sequence_index=0,
+            timestamp=(timestamp := TimestampMS(1772032425000)),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            amount=FVal(gas_amount := '0.00200243768173547'),
+            location_label=(user_address := gnosis_accounts[0]),
+            notes=f'Burn {gas_amount} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:100/erc20:0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d'),
+            amount=FVal(spend_amount := '57.062317629971433046'),
+            location_label=user_address,
+            notes=f'Swap {spend_amount} WXDAI via Balancer v2',
+            counterparty=CPT_BALANCER_V2,
+            address=VAULT_ADDRESS,
+        ), EvmSwapEvent(
+            tx_ref=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:100/erc20:0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1'),
+            amount=FVal(receive_amount := '0.028538349974533588'),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} WETH as the result of a swap via Balancer v2',
+            counterparty=CPT_BALANCER_V2,
+            address=VAULT_ADDRESS,
+        ),
+    ]
+    assert events == expected_events

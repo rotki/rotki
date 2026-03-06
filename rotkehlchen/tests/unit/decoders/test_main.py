@@ -74,6 +74,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Efp',
         'Eigenlayer',
         'Ens',
+        'Erc4337',
         'Eth2',
         'FirebirdFinance',
         'Fluence',

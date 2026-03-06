@@ -10,9 +10,11 @@ import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useHistoryStore } from '@/store/history';
+import { useStatusStore } from '@/store/status';
 import { BalanceType } from '@/types/balances';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
+import { Section } from '@/types/status';
 
 definePage({
   meta: {
@@ -34,6 +36,8 @@ const route = useRoute('balances-manual');
 
 const { fetchManualBalances } = useManualBalances();
 const { fetchAssociatedLocations } = useHistoryStore();
+const { isLoading } = useStatusStore();
+const loading = isLoading(Section.MANUAL_BALANCES);
 
 function add() {
   set(balance, {
@@ -83,6 +87,7 @@ onBeforeMount(async () => {
       <RuiButton
         color="primary"
         data-cy="manual-balances-add-button"
+        :disabled="loading"
         @click="add()"
       >
         <template #prepend>

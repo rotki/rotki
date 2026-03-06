@@ -5,7 +5,11 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    SerializableChainIndexerOrder,
+    string_to_evm_address,
+)
 from rotkehlchen.chain.gnosis.modules.wxdai.constants import CPT_WXDAI
 from rotkehlchen.chain.polygon_pos.modules.wmatic.constants import CPT_WMATIC
 from rotkehlchen.constants import ONE
@@ -27,7 +31,12 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 WETH_OP_BASE_ADDRESS = string_to_evm_address('0x4200000000000000000000000000000000000006')
 WMATIC_ADDRESS = string_to_evm_address('0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270')
@@ -799,20 +808,17 @@ def test_weth_withdraw_base(base_inquirer, base_accounts):
 @pytest.mark.parametrize('db_settings', LEGACY_TESTS_INDEXER_ORDER)
 @pytest.mark.parametrize('base_accounts', [['0xf396e7dbb20489D47F2daBfDA013163223B892a0']])
 def test_weth_deposit_base(base_inquirer, base_accounts):
-    tx_hash = deserialize_evm_tx_hash('0x0d418e4a858ca5faf00c36b685561ca0fdac52ebd10364bf2cb6d7b5969e84e5')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
-    timestamp = TimestampMS(1712239899000)
-    amount, gas_fees = '1.2', '0.000000775794575663'
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=(tx_hash := deserialize_evm_tx_hash('0x0d418e4a858ca5faf00c36b685561ca0fdac52ebd10364bf2cb6d7b5969e84e5')))  # noqa: E501
     expected_events = [
         EvmEvent(
             tx_ref=tx_hash,
             sequence_index=0,
-            timestamp=timestamp,
+            timestamp=(timestamp := TimestampMS(1712239899000)),
             location=Location.BASE,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            amount=FVal(gas_fees),
+            amount=FVal(gas_fees := '0.000000775794575663'),
             location_label=base_accounts[0],
             notes=f'Burn {gas_fees} ETH for gas',
             counterparty=CPT_GAS,
@@ -824,7 +830,7 @@ def test_weth_deposit_base(base_inquirer, base_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
             asset=A_ETH,
-            amount=FVal(amount),
+            amount=FVal(amount := '1.2'),
             location_label=base_accounts[0],
             notes=f'Wrap {amount} ETH in WETH',
             counterparty=CPT_WETH,
@@ -845,6 +851,61 @@ def test_weth_deposit_base(base_inquirer, base_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(order={ChainID.BASE: [EvmIndexer.BLOCKSCOUT]})}])  # noqa :E501
+@pytest.mark.parametrize('base_accounts', [['0x398CEf46D335408a3679D900A8711b30593ae0C8']])
+def test_weth_withdraw_base_without_transfer_log(
+        base_inquirer,
+        base_accounts,
+        load_global_caches: list[str],
+):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x21838ade02a845e3cb03b45971e794eaa0cffbc6056d375f394c2e314832757f')),  # noqa: E501
+        relevant_address=(user := base_accounts[0]),
+        load_global_caches=load_global_caches,
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1718769901000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000000329002950171')),
+        location_label=user,
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=A_WETH_BASE,
+        amount=(amount := FVal('0.747282755150069211')),
+        location_label=user,
+        notes=f'Unwrap {amount} WETH',
+        counterparty=CPT_WETH,
+        address=WETH_OP_BASE_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=A_ETH,
+        amount=amount,
+        location_label=user,
+        notes=f'Receive {amount} ETH',
+        counterparty=CPT_WETH,
+        address=string_to_evm_address('0xe61Acb121a2B538dF495A85C4E50dD8581de4ed0'),
+    )]
 
 
 @pytest.mark.vcr

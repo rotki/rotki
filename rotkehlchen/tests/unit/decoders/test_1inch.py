@@ -1151,6 +1151,64 @@ def test_1inch_limit_order_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_acc
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x9A852A967b26Bff2d025DF04CC103a22b4593Fe2']])
+def test_1inch_v5_liquidity_book_swap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts):
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x1756eca9ad24e025cec0f9963c93a7a98f85d8603cd4b16bd0accdf3c20d3ff8')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1696380703000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.0001195154'),
+        location_label=(user_address := arbitrum_one_accounts[0]),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=Asset('eip155:42161/erc20:0x912CE59144191C1204E64559FE8253a0e49E6548'),
+        amount=ZERO,
+        location_label=user_address,
+        notes=f'Revoke ARB spending approval of {user_address} by {ONEINCH_V5_ROUTER}',
+        address=ONEINCH_V5_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:42161/erc20:0x912CE59144191C1204E64559FE8253a0e49E6548'),
+        amount=FVal(spend_amount := '150'),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} ARB in {CPT_ONEINCH_V5}',
+        counterparty=CPT_ONEINCH_V5,
+        address=ONEINCH_V5_ROUTER,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=4,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal(receive_amount := '0.079565712786565097'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} ETH as a result of a {CPT_ONEINCH_V5} swap',
+        counterparty=CPT_ONEINCH_V5,
+        address=ONEINCH_V5_ROUTER,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_limit_order_swap(
         gnosis_inquirer: 'GnosisInquirer',

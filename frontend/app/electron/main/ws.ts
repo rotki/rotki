@@ -35,57 +35,66 @@ export class WalletBridgeWebSocketServer {
   }
 
   /** Start the WebSocket server on the specified port */
-  public start(port: number): void {
+  public async start(port: number): Promise<void> {
     if (this.wsServer) {
-      return; // Already started
+      return;
     }
 
-    this.wsServer = new WebSocketServer({
-      port,
-      path: WEBSOCKET_PATH,
-    });
-
-    this.wsServer.on('connection', (ws) => {
-      const shouldNotifyReconnection = this.connectionManager.shouldNotifyReconnection();
-
-      // Register the new connection
-      const currentConnectionId = this.connectionManager.registerConnection(ws);
-
-      // Handle connection takeover if needed
-      this.connectionManager.handleConnectionTakeover(
-        currentConnectionId,
-        connectionId => this.cancelPendingRequestsForConnection(connectionId),
-      );
-
-      // Notify about connection status
-      this.connectionManager.notifyConnectionStatus(port, shouldNotifyReconnection);
-
-      // Start idle timer when connection is established
-      this.resetIdleTimer();
-
-      ws.on('message', (data) => {
-        const messageString = typeof data === 'string' ? data : data.toString();
-        this.messageHandler.handleMessage(messageString, () => this.resetIdleTimer());
+    return new Promise((resolve, reject) => {
+      const wss = new WebSocketServer({
+        port,
+        path: WEBSOCKET_PATH,
       });
 
-      ws.on('close', () => {
-        this.connectionManager.handleConnectionClose(
-          ws,
+      wss.once('error', reject);
+
+      wss.on('listening', () => {
+        wss.removeListener('error', reject);
+        wss.on('error', (error) => {
+          this.logger.error('WebSocket server error:', error);
+        });
+
+        this.wsServer = wss;
+        this.logger.info(`Wallet bridge WebSocket server started at ws://localhost:${port}${WEBSOCKET_PATH}`);
+        resolve();
+      });
+
+      wss.on('connection', (ws) => {
+        const shouldNotifyReconnection = this.connectionManager.shouldNotifyReconnection();
+
+        // Register the new connection
+        const currentConnectionId = this.connectionManager.registerConnection(ws);
+
+        // Handle connection takeover if needed
+        this.connectionManager.handleConnectionTakeover(
+          currentConnectionId,
           connectionId => this.cancelPendingRequestsForConnection(connectionId),
         );
-        this.clearIdleTimer();
-      });
 
-      ws.on('error', (error) => {
-        this.logger.error('Wallet bridge WebSocket error:', error);
+        // Notify about connection status
+        this.connectionManager.notifyConnectionStatus(port, shouldNotifyReconnection);
+
+        // Start idle timer when connection is established
+        this.resetIdleTimer();
+
+        ws.on('message', (data) => {
+          const messageString = typeof data === 'string' ? data : data.toString();
+          this.messageHandler.handleMessage(messageString, () => this.resetIdleTimer());
+        });
+
+        ws.on('close', () => {
+          this.connectionManager.handleConnectionClose(
+            ws,
+            connectionId => this.cancelPendingRequestsForConnection(connectionId),
+          );
+          this.clearIdleTimer();
+        });
+
+        ws.on('error', (error) => {
+          this.logger.error('Wallet bridge WebSocket error:', error);
+        });
       });
     });
-
-    this.wsServer.on('error', (error) => {
-      this.logger.error('WebSocket server error:', error);
-    });
-
-    this.logger.info(`Wallet bridge WebSocket server started at ws://localhost:${port}${WEBSOCKET_PATH}`);
   }
 
   private resetIdleTimer(): void {
