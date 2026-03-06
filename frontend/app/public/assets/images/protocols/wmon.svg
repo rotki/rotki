@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="100" fill="#836EF9"/>
+  <rect x="52" y="52" width="96" height="96" rx="28" ry="28" transform="rotate(45 100 100)" fill="white"/>
+  <rect x="66" y="66" width="68" height="68" rx="20" ry="20" transform="rotate(45 100 100)" fill="#836EF9"/>
+  <text x="100" y="115" font-family="Arial, sans-serif" font-size="36" font-weight="bold" fill="white" text-anchor="middle">W</text>
+</svg>

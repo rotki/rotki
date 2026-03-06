@@ -17,6 +17,7 @@ A_BSQ: Final = Asset('BSQ')
 A_KFEE: Final = Asset('KFEE')
 A_XDAI: Final = Asset('XDAI')
 A_BSC_BNB: Final = Asset('BNB')
+A_MON: Final = Asset('MON')
 A_SOL: Final = Asset('SOL')
 
 A_OP: Final = Asset('eip155:10/erc20:0x4200000000000000000000000000000000000042')
@@ -238,6 +239,8 @@ A_WETH_POLYGON: Final = Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270
 A_WETH_SCROLL: Final = Asset('eip155:534352/erc20:0x5300000000000000000000000000000000000004')
 # Hyperliquid uses deterministic system addresses; 0x5555...5555 is the canonical WHYPE contract
 A_WHYPE: Final = Asset('eip155:999/erc20:0x5555555555555555555555555555555555555555')
+
+A_WMON: Final = Asset('eip155:143/erc20:0x3bd359C1119dA7Da1D913D1C4D2B7c461115433A')
 
 A_WSOL: Final = Asset('solana/token:So11111111111111111111111111111111111111112')
 

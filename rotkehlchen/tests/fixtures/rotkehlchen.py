@@ -190,6 +190,7 @@ def patch_and_enter_before_unlock(
         scroll_manager_connect_at_start,
         binance_sc_manager_connect_at_start,
         hyperliquid_manager_connect_at_start,
+        monad_manager_connect_at_start,
         kusama_manager_connect_at_start,
         have_decoders,
         use_custom_database,
@@ -221,6 +222,8 @@ def patch_and_enter_before_unlock(
             return binance_sc_manager_connect_at_start
         elif blockchain == SupportedBlockchain.HYPERLIQUID:
             return hyperliquid_manager_connect_at_start
+        elif blockchain == SupportedBlockchain.MONAD:
+            return monad_manager_connect_at_start
 
         raise AssertionError(f'Got to get_rpc_nodes during test with unknown {blockchain=}')
     evm_rpcconnect_patch = patch(
@@ -299,6 +302,7 @@ def patch_no_op_unlock(rotki, stack, should_mock_settings=True) -> None:
         scroll_manager_connect_at_start=[],
         binance_sc_manager_connect_at_start=[],
         hyperliquid_manager_connect_at_start=[],
+        monad_manager_connect_at_start=[],
         kusama_manager_connect_at_start=[],
         have_decoders=False,
         use_custom_database=False,
@@ -336,6 +340,7 @@ def initialize_mock_rotkehlchen_instance(
         scroll_manager_connect_at_start,
         binance_sc_manager_connect_at_start,
         hyperliquid_manager_connect_at_start,
+        monad_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -410,6 +415,7 @@ def initialize_mock_rotkehlchen_instance(
             scroll_manager_connect_at_start=scroll_manager_connect_at_start,
             binance_sc_manager_connect_at_start=binance_sc_manager_connect_at_start,
             hyperliquid_manager_connect_at_start=hyperliquid_manager_connect_at_start,
+            monad_manager_connect_at_start=monad_manager_connect_at_start,
             kusama_manager_connect_at_start=kusama_manager_connect_at_start,
             have_decoders=have_decoders,
             use_custom_database=use_custom_database,
@@ -455,6 +461,7 @@ def initialize_mock_rotkehlchen_instance(
             (SupportedBlockchain.SCROLL, scroll_manager_connect_at_start, rotki.chains_aggregator.scroll),  # noqa: E501
             (SupportedBlockchain.BINANCE_SC, binance_sc_manager_connect_at_start, rotki.chains_aggregator.binance_sc),  # noqa: E501
             (SupportedBlockchain.HYPERLIQUID, hyperliquid_manager_connect_at_start, rotki.chains_aggregator.hyperliquid),  # noqa: E501
+            (SupportedBlockchain.MONAD, monad_manager_connect_at_start, rotki.chains_aggregator.monad),  # noqa: E501
     ):
         actual_nodes = maybe_modify_rpc_nodes(rotki.data.db, blockchain, connect_at_start)
         # since we are past evm inquirer initialization and we just wrote rpc nodes up we need to start the connection  # noqa: E501
@@ -584,6 +591,7 @@ def fixture_rotkehlchen_api_server(
         scroll_manager_connect_at_start,
         binance_sc_manager_connect_at_start,
         hyperliquid_manager_connect_at_start,
+        monad_manager_connect_at_start,
         kusama_manager_connect_at_start,
         solana_nodes_connect_at_start,
         ksm_rpc_endpoint,
@@ -641,6 +649,7 @@ def fixture_rotkehlchen_api_server(
         scroll_manager_connect_at_start=scroll_manager_connect_at_start,
         binance_sc_manager_connect_at_start=binance_sc_manager_connect_at_start,
         hyperliquid_manager_connect_at_start=hyperliquid_manager_connect_at_start,
+        monad_manager_connect_at_start=monad_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
@@ -732,6 +741,7 @@ def rotkehlchen_instance(
         scroll_manager_connect_at_start,
         binance_sc_manager_connect_at_start,
         hyperliquid_manager_connect_at_start,
+        monad_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -779,6 +789,7 @@ def rotkehlchen_instance(
         scroll_manager_connect_at_start=scroll_manager_connect_at_start,
         binance_sc_manager_connect_at_start=binance_sc_manager_connect_at_start,
         hyperliquid_manager_connect_at_start=hyperliquid_manager_connect_at_start,
+        monad_manager_connect_at_start=monad_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
