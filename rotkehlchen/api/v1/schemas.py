@@ -4307,12 +4307,17 @@ def _is_valid_solana(address: str, _chain: SupportedBlockchain) -> bool:
     return is_valid_solana_address(address)
 
 
+def _is_valid_starknet(address: str, _chain: SupportedBlockchain) -> bool:
+    return is_valid_starknet_address(address)
+
+
 ADDRESS_VALIDATORS: Final[dict[ChainType, Callable[[str, SupportedBlockchain], bool]]] = {
     ChainType.BITCOIN: _is_valid_btc,
     ChainType.SUBSTRATE: _is_valid_substrate,
     ChainType.EVM: _is_valid_evm,
     ChainType.EVMLIKE: _is_valid_evm,
     ChainType.SOLANA: _is_valid_solana,
+    ChainType.STARKNET: _is_valid_starknet,
 }
 
 
