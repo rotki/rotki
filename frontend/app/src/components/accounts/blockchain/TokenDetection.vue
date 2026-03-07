@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import DateDisplay from '@/components/display/DateDisplay.vue';
-import { useTokenDetection } from '@/composables/balances/token-detection';
+import { useTokenDetectionUi } from '@/modules/balances/blockchain/use-token-detection-ui';
 
 const { address, loading, chains } = defineProps<{
   address: string;
@@ -8,7 +8,7 @@ const { address, loading, chains } = defineProps<{
   chains: string[];
 }>();
 
-const { detectedTokens, detectingTokens, detectTokens } = useTokenDetection(() => chains, () => address);
+const { detectedTokens, detectingTokens, detectTokens } = useTokenDetectionUi(() => chains, () => address);
 
 const { t } = useI18n({ useScope: 'global' });
 </script>

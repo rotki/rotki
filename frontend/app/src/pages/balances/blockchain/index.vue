@@ -9,14 +9,14 @@ import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import {
   type AccountManageState,
   createNewBlockchainAccount,
 } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAccountLoading } from '@/composables/accounts/loading';
-import { useRefresh } from '@/composables/balances/refresh';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
+import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import SummaryCardRefreshMenu from '@/modules/dashboard/summary/SummaryCardRefreshMenu.vue';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { NoteLocation } from '@/types/notes';
@@ -32,33 +32,34 @@ definePage({
 });
 
 const account = ref<AccountManageState>();
-const search = ref('');
+const search = ref<string>('');
 const chainsFilter = ref<string[]>([]);
 
 const { t } = useI18n({ useScope: 'global' });
+
 const route = useRoute('balances-blockchain');
+
+const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
 
 const { useBlockchainBalances } = useAggregatedBalances();
 const { isBlockchainLoading } = useAccountLoading();
 const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
-
 const { isDetectingTokens, refreshDisabled } = useBlockchainAccountLoading();
-
-const tableType = DashboardTableType.BLOCKCHAIN_ASSET_BALANCES;
+const { handleBlockchainRefresh } = useBalanceRefresh();
 
 const aggregatedBalances = useBlockchainBalances(chainsFilter);
 
 onMounted(() => {
   const { query } = get(route);
 
-  if (query.add) {
-    startPromise(nextTick(() => {
-      set(account, createNewBlockchainAccount());
-    }));
+  if (!query.add) {
+    return;
   }
-});
 
-const { handleBlockchainRefresh } = useRefresh();
+  startPromise(nextTick(() => {
+    set(account, createNewBlockchainAccount());
+  }));
+});
 </script>
 
 <template>

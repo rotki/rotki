@@ -1,8 +1,8 @@
 import type { ComputedRef, Ref } from 'vue';
 import { Blockchain } from '@rotki/common';
 import dayjs from 'dayjs';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSectionStatus, useStatusUpdater } from '@/composables/status';
+import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';

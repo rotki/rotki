@@ -3,9 +3,9 @@ import type {
   BalanceQueryQueueItem,
 } from '@/modules/dashboard/progress/types';
 import { get, set, watchDebounced } from '@vueuse/shared';
+import { BalanceQueueService, type QueueItem, type QueueItemMetadata, type QueueStats } from '@/modules/balances/services/balance-queue';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
 import { TaskType } from '@/modules/tasks/task-type';
-import { BalanceQueueService, type QueueItem, type QueueItemMetadata, type QueueStats } from '@/services/balance-queue';
 
 interface BalanceQueueMetadata extends QueueItemMetadata {
   chain: string;
@@ -123,18 +123,13 @@ function startPolling(): void {
 }
 
 export function useBalanceQueue(): UseBalanceQueueReturn {
+  let timeout: NodeJS.Timeout;
+
   const queue = getBalanceQueue();
   const { anyEventsDecoding } = useHistoryEventsStatus();
 
   // Set up the canProcess callback to block queue processing while decoding
   queue.setCanProcess(() => !get(anyEventsDecoding));
-
-  // Watch for decoding status changes and retry processing when decoding finishes
-  watch(anyEventsDecoding, (isDecoding) => {
-    if (!isDecoding) {
-      queue.retryProcessing();
-    }
-  });
 
   const queueItems = computed<BalanceQueryQueueItem[]>(() => Array.from(get(sharedItems).values()));
 
@@ -226,20 +221,30 @@ export function useBalanceQueue(): UseBalanceQueueReturn {
     updateSharedState();
   };
 
-  watchDebounced(
-    isProcessing,
-    (processing) => {
-      if (!processing && get(completedItems) === get(totalItems) && get(totalItems) > 0) {
-        setTimeout(() => {
-          if (!get(isProcessing)) {
-            queue.clearCompleted();
-            clearQueue();
-          }
-        }, 1000);
+  // Watch for decoding status changes and retry processing when decoding finishes
+  watch(anyEventsDecoding, (isDecoding) => {
+    if (!isDecoding) {
+      queue.retryProcessing();
+    }
+  });
+
+  watchDebounced(isProcessing, (processing) => {
+    if (!(!processing && get(completedItems) === get(totalItems) && get(totalItems) > 0)) {
+      return;
+    }
+    timeout = setTimeout(() => {
+      if (get(isProcessing)) {
+        return;
       }
-    },
-    { debounce: 500 },
-  );
+      queue.clearCompleted();
+      clearQueue();
+    }, 1000);
+  }, { debounce: 500 });
+
+  onScopeDispose(() => {
+    if (timeout)
+      clearTimeout(timeout);
+  });
 
   return {
     clearQueue,

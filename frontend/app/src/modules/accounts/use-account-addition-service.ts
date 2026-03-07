@@ -1,14 +1,14 @@
-import type { RefreshAccountsParams } from '@/composables/blockchain/use-account-operations';
+import type { RefreshAccountsParams } from '@/modules/accounts/use-account-operations';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { Module } from '@/types/modules';
 import { type Account, assert, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
-import { useAccountAdditionNotifications } from '@/composables/blockchain/use-account-addition-notifications';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useAccountAdditionNotifications } from '@/modules/accounts/use-account-addition-notifications';
+import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
+import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useTagStore } from '@/store/session/tags';
 import { useSettingsStore } from '@/store/settings';
 import { isBlockchain } from '@/types/blockchain/chains';
@@ -65,13 +65,6 @@ type EvmCompletionCallback = (params: EvmAccountAdditionParams) => Promise<void>
 
 type ChainCompletionCallback = (params: ChainAccountAdditionParams) => Promise<void>;
 
-function CHAIN_ORDER_COMPARATOR(chains: string[]): (a: Account, b: Account) => number {
-  return (
-    a: Account,
-    b: Account,
-  ): number => chains.indexOf(a.chain) - chains.indexOf(b.chain);
-}
-
 interface UseAccountAdditionServiceReturn {
   addMultipleAccounts: (payload: AccountPayload[], chain: string, modules: Module[] | undefined, onComplete: ChainCompletionCallback) => Promise<void>;
   addMultipleEvmAccounts: (payload: AddAccountsPayload, onComplete: EvmCompletionCallback) => Promise<void>;
@@ -83,11 +76,11 @@ interface UseAccountAdditionServiceReturn {
 
 export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const { addAccount, addEvmAccount } = useBlockchainAccounts();
-  const { fetchDetected } = useBlockchainTokensStore();
+  const { detectTokens: detectTokensForChain } = useTokenDetectionOrchestrator();
   const { trackAddedAddresses } = useBlockchainAccountsStore();
   const { fetchTags } = useTagStore();
   const { enableModule } = useSettingsStore();
-  const { evmChains, supportedChains, supportsTransactions } = useSupportedChains();
+  const { evmChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();
   const {
     createFailureNotification,
@@ -123,35 +116,39 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
     const chainsSupportsTransactions = !chain || supportsTransactions(chain);
     if (chainsSupportsTransactions && onFetchAccounts) {
       // For EVM chains, only load account metadata without fetching balances.
-      // Token detection will run next, and the detectionStatus watcher in the
-      // tokens store will trigger a balance refresh after detection completes.
+      // Token detection runs next and explicitly triggers a balance refresh.
       await onFetchAccounts(chain, true);
     }
     else {
       await onRefreshAccounts({ addresses: addedAccounts.map(item => item.address), blockchain: chain, isXpub });
     }
 
-    const chains = chain ? [chain] : get(supportedChains).map(chain => chain.id);
-    // Sort accounts by chain, so they are called in order
-    const sortedAccounts = addedAccounts.sort(CHAIN_ORDER_COMPARATOR(chains));
+    // Enable modules for ETH accounts
+    if (modulesToEnable) {
+      const ethAccounts = addedAccounts.filter(a => a.chain === Blockchain.ETH);
+      for (const account of ethAccounts) {
+        await enableModule({
+          addresses: [account.address],
+          enable: modulesToEnable,
+        });
+      }
+    }
 
-    await awaitParallelExecution(
-      sortedAccounts,
-      item => item.address + item.chain,
-      async (account) => {
-        const { address, chain }: Account = account;
-        if (chain === Blockchain.ETH && modulesToEnable) {
-          await enableModule({
-            addresses: [address],
-            enable: modulesToEnable,
-          });
-        }
+    // Group accounts by chain for token detection
+    const accountsByChain = new Map<string, string[]>();
+    for (const { address, chain: accountChain } of addedAccounts) {
+      if (!supportsTransactions(accountChain))
+        continue;
 
-        if (supportsTransactions(chain))
-          await fetchDetected(chain, [address]);
-      },
-      2,
-    );
+      const existing = accountsByChain.get(accountChain) ?? [];
+      existing.push(address);
+      accountsByChain.set(accountChain, existing);
+    }
+
+    // Detect tokens per chain — orchestrator handles queuing + balance refresh
+    for (const [accountChain, chainAddresses] of accountsByChain) {
+      await detectTokensForChain(accountChain, chainAddresses);
+    }
   };
 
   const addSingleEvmAddress = async (account: AccountPayload): Promise<EvmAccountAdditionSuccess | EvmAccountAdditionFailure> => {

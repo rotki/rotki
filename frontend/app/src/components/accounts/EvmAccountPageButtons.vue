@@ -3,8 +3,8 @@ import { Blockchain } from '@rotki/common';
 import AccountBalancesExportImport from '@/components/accounts/AccountBalancesExportImport.vue';
 import BlockchainBalanceRefreshBehaviourMenu
   from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { useSectionStatus } from '@/composables/status';
+import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Section } from '@/types/status';

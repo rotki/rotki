@@ -8,10 +8,10 @@ import type {
 import type { Module } from '@/types/modules';
 import { assert, bigNumberify, Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useBlockchains } from '@/composables/blockchain';
-import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
+import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBtcChain } from '@/types/blockchain/chains';
@@ -145,23 +145,23 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
 }
 
 interface UseAccountManageReturn {
-  pending: Ref<boolean>;
+  pending: Readonly<Ref<boolean>>;
   errorMessages: Ref<ValidationErrors>;
-  saveError: Ref<string>;
-  saveErrorIsPremium: Ref<boolean>;
+  saveError: Readonly<Ref<string>>;
+  saveErrorIsPremium: Readonly<Ref<boolean>>;
   save: (state: AccountManageState) => Promise<boolean>;
 }
 
 export function useAccountManage(): UseAccountManageReturn {
-  const pending = ref(false);
+  const pending = shallowRef<boolean>(false);
   const errorMessages = ref<ValidationErrors>({});
-  const saveError = ref<string>('');
-  const saveErrorIsPremium = ref<boolean>(false);
+  const saveError = shallowRef<string>('');
+  const saveErrorIsPremium = shallowRef<boolean>(false);
 
   const { t } = useI18n({ useScope: 'global' });
 
   const { updateAccountData, updateAccounts } = useBlockchainAccountsStore();
-  const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchains();
+  const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchainAccountManagement();
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount, editAgnosticAccount } = useBlockchainAccounts();
   const { showErrorMessage } = useNotifications();
@@ -304,10 +304,11 @@ export function useAccountManage(): UseAccountManageReturn {
   };
 
   return {
+    // eslint-disable-next-line @rotki/composable-return-readonly
     errorMessages,
-    pending,
+    pending: readonly(pending),
     save,
-    saveError,
-    saveErrorIsPremium,
+    saveError: readonly(saveError),
+    saveErrorIsPremium: readonly(saveErrorIsPremium),
   };
 }

@@ -5,9 +5,9 @@ import type {
   BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
 import AccountBalanceDetails from '@/components/accounts/balances/AccountBalanceDetails.vue';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { AccountBalancesTable } from '@/modules/accounts/table';
+import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import DetectEvmAccounts from '@/components/accounts/balances/DetectEvmAccounts.vue';
 import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';
-import { useRefresh } from '@/composables/balances/refresh';
+import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { useConfirmStore } from '@/store/confirm';
 
 defineProps<{
@@ -11,7 +11,7 @@ defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { handleBlockchainRefresh } = useRefresh();
+const { handleBlockchainRefresh } = useBalanceRefresh();
 const { show } = useConfirmStore();
 
 function redetectAllClicked(): void {

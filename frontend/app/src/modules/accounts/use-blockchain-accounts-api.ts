@@ -10,9 +10,9 @@ import type {
 import type { BlockchainBalances } from '@/types/blockchain/balances';
 import { Blockchain } from '@rotki/common';
 import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';

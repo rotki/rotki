@@ -7,10 +7,10 @@ import InternalLink from '@/components/helper/InternalLink.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
-import { useRefresh } from '@/composables/balances/refresh';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import { useBinanceSavings } from '@/modules/balances/exchanges/use-binance-savings';
+import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Routes } from '@/router/routes';
@@ -36,7 +36,7 @@ const { getExchangeBalances } = useAggregatedBalances();
 const { refreshExchangeSavings } = useBinanceSavings();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
-const { refreshBalance, refreshExchangeBalance } = useRefresh();
+const { refreshBalance, refreshExchangeBalance } = useBalanceRefresh();
 
 async function refreshExchangeBalances() {
   await Promise.all([refreshBalance('exchange'), refreshExchangeSavings(true)]);

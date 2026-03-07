@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import ExternalLink from '@/components/helper/ExternalLink.vue';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 
 const { t } = useI18n({ useScope: 'global' });
+
 const { validatorsLimitInfo } = useEthStaking();
 </script>
 

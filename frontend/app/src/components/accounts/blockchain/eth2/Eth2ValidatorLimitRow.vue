@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import UpgradeRow from '@/components/history/UpgradeRow.vue';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
+import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 
 defineProps<{
   colspan: number;
 }>();
 
-const { validatorsLimitInfo } = useEthStaking();
 const { t } = useI18n({ useScope: 'global' });
+
+const { validatorsLimitInfo } = useEthStaking();
 </script>
 
 <template>

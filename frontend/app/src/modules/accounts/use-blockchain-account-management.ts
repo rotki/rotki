@@ -1,9 +1,9 @@
 import type { AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { ChainAddress } from '@/types/history/events';
 import { startPromise } from '@shared/utils';
-import { useAccountAdditionService } from '@/composables/blockchain/use-account-addition-service';
-import { type RefreshAccountsParams, useAccountOperations } from '@/composables/blockchain/use-account-operations';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useAccountAdditionService } from '@/modules/accounts/use-account-addition-service';
+import { type RefreshAccountsParams, useAccountOperations } from '@/modules/accounts/use-account-operations';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
@@ -13,7 +13,7 @@ interface AddAccountsOption {
   wait: boolean;
 }
 
-interface UseBlockchainsReturn {
+interface UseBlockchainAccountManagementReturn {
   addAccounts: (chain: string, data: AddAccountsPayload | XpubAccountPayload, options?: AddAccountsOption) => Promise<void>;
   addEvmAccounts: (payload: AddAccountsPayload, options?: AddAccountsOption) => Promise<void>;
   detectEvmAccounts: () => Promise<void>;
@@ -21,7 +21,7 @@ interface UseBlockchainsReturn {
   refreshAccounts: (params?: RefreshAccountsParams) => Promise<void>;
 }
 
-export function useBlockchains(): UseBlockchainsReturn {
+export function useBlockchainAccountManagement(): UseBlockchainAccountManagementReturn {
   // Use services for complex logic
   const accountAdditionService = useAccountAdditionService();
   const { detectEvmAccounts, fetchAccounts, refreshAccounts } = useAccountOperations();

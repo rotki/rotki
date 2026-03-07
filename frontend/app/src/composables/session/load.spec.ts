@@ -19,8 +19,8 @@ vi.mock('@/composables/session/use-scheduler-state', () => ({
   })),
 }));
 
-vi.mock('@/composables/balances', () => ({
-  useBalances: vi.fn(() => ({
+vi.mock('@/modules/balances/use-balance-fetching', () => ({
+  useBalanceFetching: vi.fn(() => ({
     fetch: mockFetch,
   })),
 }));

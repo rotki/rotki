@@ -5,8 +5,8 @@ import type {
   CommonQueryProgressData,
 } from '@/modules/dashboard/progress/types';
 import { get } from '@vueuse/shared';
-import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useBalanceQueue } from '@/modules/balances/use-balance-queue';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 

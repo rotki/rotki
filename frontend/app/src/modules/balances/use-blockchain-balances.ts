@@ -1,8 +1,8 @@
 import type { BlockchainBalancePayload, FetchBlockchainBalancePayload } from '@/types/blockchain/balances';
-import { useBalanceQueue } from '@/composables/balances/use-balance-queue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { waitUntilIdle } from '@/composables/status';
 import { useValueThreshold } from '@/composables/usd-value-threshold';
+import { useBalanceQueue } from '@/modules/balances/use-balance-queue';
 import { useStatusStore } from '@/store/status';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';

@@ -24,10 +24,10 @@ importers:
         version: 4.3.0(eslint@9.39.3(jiti@2.6.1))(jsonc-eslint-parser@2.4.2)(vue-eslint-parser@10.4.0(eslint@9.39.3(jiti@2.6.1)))(yaml-eslint-parser@1.3.2)
       '@rotki/eslint-config':
         specifier: 5.0.1
-        version: 5.0.1(@intlify/eslint-plugin-vue-i18n@4.3.0(eslint@9.39.3(jiti@2.6.1))(jsonc-eslint-parser@2.4.2)(vue-eslint-parser@10.4.0(eslint@9.39.3(jiti@2.6.1)))(yaml-eslint-parser@1.3.2))(@rotki/eslint-plugin@1.3.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(@vue/compiler-sfc@3.5.29)(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)(vitest@4.0.18)
+        version: 5.0.1(@intlify/eslint-plugin-vue-i18n@4.3.0(eslint@9.39.3(jiti@2.6.1))(jsonc-eslint-parser@2.4.2)(vue-eslint-parser@10.4.0(eslint@9.39.3(jiti@2.6.1)))(yaml-eslint-parser@1.3.2))(@rotki/eslint-plugin@1.3.2(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(@vue/compiler-sfc@3.5.29)(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)(vitest@4.0.18)
       '@rotki/eslint-plugin':
-        specifier: 1.3.1
-        version: 1.3.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
+        specifier: 1.3.2
+        version: 1.3.2(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
       cac:
         specifier: 6.7.14
         version: 6.7.14
@@ -1589,8 +1589,8 @@ packages:
       eslint-plugin-storybook:
         optional: true
 
-  '@rotki/eslint-plugin@1.3.1':
-    resolution: {integrity: sha512-+GpYt4PoG2XucwNVCgwl2kIMSaQHXcfKkJbpejjPYxUF7VHTHqkCERwJvIUQFi5HAYOuMOtLJiavtsSMvcQ+lg==}
+  '@rotki/eslint-plugin@1.3.2':
+    resolution: {integrity: sha512-FYacxOGqNfMSudoy6TMOSgLUBM52WF5/vroNaxGLVd/bJhdcmuNmJgj2TYlCdDcvLxUNyUyg8bNFQBWp/cmh/w==}
     engines: {node: '>=24 <25', pnpm: '>=10 <11'}
     peerDependencies:
       eslint: ^9.20.0
@@ -8245,7 +8245,7 @@ snapshots:
   '@rollup/rollup-win32-x64-msvc@4.59.0':
     optional: true
 
-  '@rotki/eslint-config@5.0.1(@intlify/eslint-plugin-vue-i18n@4.3.0(eslint@9.39.3(jiti@2.6.1))(jsonc-eslint-parser@2.4.2)(vue-eslint-parser@10.4.0(eslint@9.39.3(jiti@2.6.1)))(yaml-eslint-parser@1.3.2))(@rotki/eslint-plugin@1.3.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(@vue/compiler-sfc@3.5.29)(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)(vitest@4.0.18)':
+  '@rotki/eslint-config@5.0.1(@intlify/eslint-plugin-vue-i18n@4.3.0(eslint@9.39.3(jiti@2.6.1))(jsonc-eslint-parser@2.4.2)(vue-eslint-parser@10.4.0(eslint@9.39.3(jiti@2.6.1)))(yaml-eslint-parser@1.3.2))(@rotki/eslint-plugin@1.3.2(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3))(@vue/compiler-sfc@3.5.29)(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)(vitest@4.0.18)':
     dependencies:
       '@antfu/install-pkg': 1.1.0
       '@clack/prompts': 1.0.1
@@ -8285,7 +8285,7 @@ snapshots:
       yaml-eslint-parser: 1.3.2
     optionalDependencies:
       '@intlify/eslint-plugin-vue-i18n': 4.3.0(eslint@9.39.3(jiti@2.6.1))(jsonc-eslint-parser@2.4.2)(vue-eslint-parser@10.4.0(eslint@9.39.3(jiti@2.6.1)))(yaml-eslint-parser@1.3.2)
-      '@rotki/eslint-plugin': 1.3.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
+      '@rotki/eslint-plugin': 1.3.2(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
     transitivePeerDependencies:
       - '@eslint/json'
       - '@types/eslint'
@@ -8294,7 +8294,7 @@ snapshots:
       - typescript
       - vitest
 
-  '@rotki/eslint-plugin@1.3.1(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)':
+  '@rotki/eslint-plugin@1.3.2(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)':
     dependencies:
       '@typescript-eslint/utils': 8.55.0(eslint@9.39.3(jiti@2.6.1))(typescript@5.9.3)
       debug: 4.4.3
@@ -9250,7 +9250,6 @@ snapshots:
     optionalDependencies:
       msw: 2.12.10(@types/node@24.12.0)(typescript@5.9.3)
       vite: 7.3.1(@types/node@24.12.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
-    optional: true
 
   '@vitest/pretty-format@4.0.18':
     dependencies:
@@ -9278,7 +9277,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.18(@types/node@24.12.0)(@vitest/ui@4.0.18)(happy-dom@20.8.3(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@1.21.7)(msw@2.12.10(@types/node@24.12.0)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 4.0.18(@types/node@24.12.0)(@vitest/ui@4.0.18)(happy-dom@20.8.3(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.6.1)(msw@2.12.10(@types/node@24.12.0)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/utils@4.0.18':
     dependencies:
@@ -14211,7 +14210,6 @@ snapshots:
       jiti: 2.6.1
       tsx: 4.21.0
       yaml: 2.8.2
-    optional: true
 
   vitest@4.0.18(@types/node@24.12.0)(@vitest/ui@4.0.18)(happy-dom@20.8.3(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@1.21.7)(msw@2.12.10(@types/node@24.12.0)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
@@ -14290,7 +14288,6 @@ snapshots:
       - terser
       - tsx
       - yaml
-    optional: true
 
   vscode-uri@3.1.0: {}
 

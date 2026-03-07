@@ -3,8 +3,8 @@ import type { StakingValidatorManage } from '@/composables/accounts/blockchain/u
 import type { EthereumValidator } from '@/types/blockchain/accounts';
 import { Blockchain } from '@rotki/common';
 import { useAccountDelete } from '@/composables/accounts/blockchain/use-account-delete';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSectionStatus } from '@/composables/status';
+import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';

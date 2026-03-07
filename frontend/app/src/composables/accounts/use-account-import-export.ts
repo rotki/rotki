@@ -3,10 +3,10 @@ import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/t
 import { Blockchain } from '@rotki/common';
 import { z } from 'zod/v4';
 import { type StakingValidatorManage, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
-import { useBlockchains } from '@/composables/blockchain/index';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useSectionStatus } from '@/composables/status';
+import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
@@ -71,7 +71,7 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   const { isEvmCompatible } = useSupportedChains();
   const { getAccounts } = useBlockchainAccountData();
   const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
-  const { addAccounts, addEvmAccounts } = useBlockchains();
+  const { addAccounts, addEvmAccounts } = useBlockchainAccountManagement();
   const { attemptTagCreation } = useTagStore();
   const { save } = useAccountManage();
   const { notifyError, notifyInfo } = useNotifications();

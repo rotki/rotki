@@ -5,8 +5,8 @@ import { Blockchain } from '@rotki/common';
 import { type Pinia, setActivePinia } from 'pinia';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/composables/blockchain', () => ({
-  useBlockchains: vi.fn(() => ({
+vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
+  useBlockchainAccountManagement: vi.fn(() => ({
     addAccounts: vi.fn(),
     addEvmAccounts: vi.fn(),
     fetchAccounts: vi.fn().mockResolvedValue(undefined),
@@ -14,7 +14,7 @@ vi.mock('@/composables/blockchain', () => ({
   })),
 }));
 
-vi.mock('@/composables/blockchain/accounts', () => ({
+vi.mock('@/modules/accounts/use-blockchain-accounts-api', () => ({
   useBlockchainAccounts: vi.fn(() => ({
     editAccount: vi.fn(),
     editAgnosticAccount: vi.fn(),
@@ -37,7 +37,7 @@ vi.mock('@/store/message', () => ({
 const mockAddEth2Validator = vi.fn<() => Promise<ActionStatus<ValidationErrors | string>>>();
 const mockEditEth2Validator = vi.fn<() => Promise<ActionStatus<ValidationErrors | string>>>();
 
-vi.mock('@/composables/blockchain/accounts/staking', () => ({
+vi.mock('@/modules/accounts/use-eth-staking', () => ({
   useEthStaking: vi.fn(() => ({
     addEth2Validator: mockAddEth2Validator,
     editEth2Validator: mockEditEth2Validator,

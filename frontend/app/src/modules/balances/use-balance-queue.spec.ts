@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComputedRef, nextTick, ref } from 'vue';
-import { BalanceQueueService } from '@/services/balance-queue';
+import { BalanceQueueService } from '@/modules/balances/services/balance-queue';
 
 const mockAnyEventsDecoding = ref<boolean>(false);
 
@@ -10,7 +10,7 @@ vi.mock('@/modules/history/events/use-history-events-status', () => ({
   })),
 }));
 
-const { useBalanceQueue } = await import('@/composables/balances/use-balance-queue');
+const { useBalanceQueue } = await import('@/modules/balances/use-balance-queue');
 
 describe('useBalanceQueue', () => {
   beforeEach(() => {

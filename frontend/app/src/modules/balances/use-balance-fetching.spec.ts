@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useBalances } from './index';
+import { useBalanceFetching } from './use-balance-fetching';
 import '@test/i18n';
 
 vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
@@ -30,8 +30,8 @@ vi.mock('@/modules/balances/manual/use-manual-balances', () => ({
   }),
 }));
 
-vi.mock('@/composables/blockchain', () => ({
-  useBlockchains: vi.fn().mockReturnValue({
+vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
+  useBlockchainAccountManagement: vi.fn().mockReturnValue({
     refreshAccounts: vi.fn().mockResolvedValue({}),
   }),
 }));
@@ -54,28 +54,28 @@ vi.mock('@/modules/prices/use-price-refresh', () => ({
   }),
 }));
 
-describe('useBalances', () => {
+describe('useBalanceFetching', () => {
   beforeEach(() => {
     setActivePinia(createPinia());
   });
 
   describe('fetchBalances', () => {
     it('should handle balance fetching', async () => {
-      const { fetchBalances } = useBalances();
+      const { fetchBalances } = useBalanceFetching();
       await expect(fetchBalances()).resolves.not.toThrow();
     });
   });
 
   describe('fetch', () => {
     it('should coordinate fetching of all balance types', async () => {
-      const { fetch } = useBalances();
+      const { fetch } = useBalanceFetching();
       await expect(fetch()).resolves.not.toThrow();
     });
   });
 
   describe('autoRefresh', () => {
     it('should perform auto refresh of balances and prices', async () => {
-      const { autoRefresh } = useBalances();
+      const { autoRefresh } = useBalanceFetching();
       await expect(autoRefresh()).resolves.not.toThrow();
     });
   });

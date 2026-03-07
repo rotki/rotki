@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import AssetBalances from '@/components/AssetBalances.vue';
-import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 
 const { identifier } = defineProps<{
   identifier: string;
