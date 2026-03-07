@@ -3,9 +3,9 @@ import { useMonitorWatchers } from '@/composables/monitor/use-monitor-watchers';
 import { useAutoLogin } from '@/composables/user/account';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
+import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useMessageHandling } from '@/modules/messaging';
 import { useTaskMonitor } from '@/modules/tasks/use-task-monitor';
-import { useHistoryStore } from '@/store/history';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -36,7 +36,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { consume } = useMessageHandling();
   const { monitor } = useTaskMonitor();
   const { autoRefresh } = useBalanceFetching();
-  const { fetchTransactionStatusSummary } = useHistoryStore();
+  const { fetchTransactionStatusSummary } = useHistoryDataFetching();
 
   const frontendStore = useFrontendSettingsStore();
   const { queryPeriod, refreshPeriod } = storeToRefs(frontendStore);

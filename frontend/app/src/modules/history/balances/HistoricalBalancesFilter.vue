@@ -13,6 +13,7 @@ import {
   type HistoricalBalanceSource,
   HistoricalBalanceSource as Source,
 } from '@/modules/history/balances/types';
+import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useHistoryStore } from '@/store/history';
 import { arrayify } from '@/utils/array';
 
@@ -44,7 +45,7 @@ const assetErrors = computed<string[]>(() => {
 });
 
 const historyStore = useHistoryStore();
-const { fetchLocationLabels } = historyStore;
+const { fetchLocationLabels } = useHistoryDataFetching();
 const { locationLabels: allLocationLabels } = storeToRefs(historyStore);
 
 const { txEvmChains } = useSupportedChains();

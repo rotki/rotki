@@ -1,16 +1,17 @@
 import type { MessageHandler } from '../interfaces';
 import type { ProgressUpdateResultData } from '../types/status-types';
 import { useHistoricalBalancesStore } from '@/modules/history/balances/store';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
+import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { createConditionalHandler } from '@/modules/messaging/utils';
 import { useLiquityStore } from '@/store/defi/liquity';
-import { useHistoryStore } from '@/store/history';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { SocketMessageProgressUpdateSubType } from '../types/base';
 import { createCsvImportResultHandler } from './csv-import-result';
 
 export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']): MessageHandler<ProgressUpdateResultData> {
-  // Capture store methods at handler creation time (in setup context)
-  const { setProtocolCacheStatus, setUndecodedTransactionsStatus } = useHistoryStore();
+  const { setUndecodedTransactionsStatus } = useDecodingStatusStore();
+  const { setProtocolCacheStatus, setReceivingProtocolCacheStatus } = useProtocolCacheStatusStore();
   const { setHistoricalDailyPriceStatus, setHistoricalPriceStatus, setStatsPriceQueryStatus } = useHistoricCachePriceStore();
   const { setStakingQueryStatus } = useLiquityStore();
   const { setProcessingProgress } = useHistoricalBalancesStore();
@@ -25,6 +26,7 @@ export function createProgressUpdateHandler(t: ReturnType<typeof useI18n>['t']):
 
     switch (subtype) {
       case SocketMessageProgressUpdateSubType.UNDECODED_TRANSACTIONS:
+        setReceivingProtocolCacheStatus(false);
         setUndecodedTransactionsStatus(data);
         break;
       case SocketMessageProgressUpdateSubType.PROTOCOL_CACHE_UPDATES:

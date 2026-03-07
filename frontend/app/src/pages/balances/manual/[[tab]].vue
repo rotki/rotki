@@ -10,7 +10,7 @@ import HideSmallBalances from '@/components/settings/HideSmallBalances.vue';
 import { useSectionStatus } from '@/composables/status';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
-import { useHistoryStore } from '@/store/history';
+import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { BalanceType } from '@/types/balances';
 import { NoteLocation } from '@/types/notes';
 import { BalanceSource } from '@/types/settings/frontend-settings';
@@ -35,7 +35,7 @@ const router = useRouter();
 const route = useRoute('balances-manual');
 
 const { fetchManualBalances } = useManualBalances();
-const { fetchAssociatedLocations } = useHistoryStore();
+const { fetchAssociatedLocations } = useHistoryDataFetching();
 const { isLoading: loading } = useSectionStatus(Section.MANUAL_BALANCES);
 
 function add() {

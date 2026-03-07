@@ -1,6 +1,7 @@
 import type { RefreshTransactionsParams } from './types';
 import type { Exchange } from '@/types/exchanges';
 import type { ChainAddress } from '@/types/history/events';
+import { startPromise } from '@shared/utils';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useRefreshHandlers } from '@/composables/history/events/tx/refresh-handlers';
 import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/use-history-transaction-accounts';
@@ -9,7 +10,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { useStatusUpdater } from '@/composables/status';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
-import { useHistoryStore } from '@/store/history';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
@@ -18,11 +19,27 @@ import { Section, Status } from '@/types/status';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 import { logger } from '@/utils/logging';
 
+interface NoveltyDetection {
+  newAccounts: ChainAddress[];
+  newExchanges: Exchange[];
+}
+
+interface RefreshTargets {
+  accounts: ChainAddress[];
+  decodableAccounts: ChainAddress[];
+  exchanges: Exchange[];
+  fullRefresh: boolean;
+  queryExchanges: boolean;
+  shouldShowSyncProgress: boolean;
+  usedExchanges: Exchange[];
+}
+
 interface UseRefreshTransactionsReturn {
   refreshTransactions: (params?: RefreshTransactionsParams) => Promise<void>;
 }
 
 export function useRefreshTransactions(): UseRefreshTransactionsReturn {
+  let timeout: NodeJS.Timeout;
   const queue = new LimitedParallelizationQueue(1);
 
   const { initializeQueryStatus, resetQueryStatus, stopSyncing: stopTxSyncing } = useTxQueryStatusStore();
@@ -30,7 +47,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { getAllAccounts } = useHistoryTransactionAccounts();
   const { fetchDisabled, isFirstLoad, resetStatus, setStatus } = useStatusUpdater(Section.HISTORY);
   const { fetchUndecodedTransactionsBreakdown, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
-  const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, stopDecodingSyncProgress } = useHistoryStore();
+  const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, stopDecodingSyncProgress } = useDecodingStatusStore();
   const { isDecodableChains } = useSupportedChains();
 
   const { syncTransactionsByChains } = useTransactionSync();
@@ -53,129 +70,196 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
 
   const { syncingExchanges, isSameExchange } = useExchangeData();
 
-  const refreshTransactions = async (params: RefreshTransactionsParams = {}): Promise<void> => {
+  function filterSyncingExchanges(exchanges: Exchange[] | undefined): Exchange[] {
+    return exchanges
+      ? exchanges.filter(exchange => get(syncingExchanges).some(syncing => isSameExchange(syncing, exchange)))
+      : get(syncingExchanges);
+  }
+
+  function resolveInputAccounts(accounts: ChainAddress[] | undefined, fullRefresh: boolean, chains: string[]): ChainAddress[] {
+    if (accounts?.length)
+      return accounts;
+    if (fullRefresh)
+      return getAllAccounts(chains);
+    return [];
+  }
+
+  function detectNovelty(allAccounts: ChainAddress[], usedExchanges: Exchange[]): NoveltyDetection {
+    return {
+      newAccounts: getNewAccounts(allAccounts),
+      newExchanges: getNewExchanges(usedExchanges),
+    };
+  }
+
+  function resolveForFullRefresh(novelty: NoveltyDetection, chains: string[], userInitiated: boolean): { accounts: ChainAddress[]; exchanges: Exchange[] } {
+    return {
+      accounts: (novelty.newAccounts.length > 0 || userInitiated) ? getAllAccounts(chains) : [],
+      exchanges: get(syncingExchanges),
+    };
+  }
+
+  function resolveForNovelItems(novelty: NoveltyDetection): { accounts: ChainAddress[]; exchanges: Exchange[] } {
+    return {
+      accounts: novelty.newAccounts.length > 0 ? novelty.newAccounts : [],
+      exchanges: novelty.newExchanges.length > 0 ? novelty.newExchanges : [],
+    };
+  }
+
+  function resolveRefreshTargets(
+    payload: { accounts?: ChainAddress[]; exchanges?: Exchange[] },
+    novelty: NoveltyDetection,
+    opts: { chains: string[]; fullRefresh: boolean; usedExchanges: Exchange[]; userInitiated: boolean },
+  ): RefreshTargets {
+    const { chains, fullRefresh, usedExchanges, userInitiated } = opts;
+    const hasNovelty = novelty.newAccounts.length > 0 || novelty.newExchanges.length > 0;
+
+    let resolved: { accounts: ChainAddress[]; exchanges: Exchange[] };
+
+    if (fullRefresh)
+      resolved = resolveForFullRefresh(novelty, chains, userInitiated);
+    else if (hasNovelty)
+      resolved = resolveForNovelItems(novelty);
+    else
+      resolved = { accounts: payload.accounts || [], exchanges: payload.exchanges || [] };
+
+    return {
+      accounts: resolved.accounts,
+      decodableAccounts: resolved.accounts.filter(account => isDecodableChains(account.chain)),
+      exchanges: resolved.exchanges,
+      fullRefresh,
+      queryExchanges: fullRefresh || !!payload.exchanges,
+      shouldShowSyncProgress: isFirstLoad() || hasNovelty,
+      usedExchanges,
+    };
+  }
+
+  function initializeRefresh(targets: RefreshTargets): void {
+    resetQueryStatus();
+
+    if (!(targets.accounts.length > 0 || targets.exchanges.length > 0)) {
+      return;
+    }
+
+    startRefresh(targets.accounts, targets.exchanges);
+    onHistoryStarted();
+
+    if (!(targets.accounts.length > 0 && targets.shouldShowSyncProgress)) {
+      return;
+    }
+
+    initializeQueryStatus(targets.decodableAccounts);
+    resetUndecodedTransactionsStatus();
+    resetDecodingSyncProgress();
+  }
+
+  function resolveOnlineQueries(
+    targets: RefreshTargets,
+    disableEvmEvents: boolean,
+    queries: OnlineHistoryEventsQueryType[] | undefined,
+  ): OnlineHistoryEventsQueryType[] {
+    if (targets.fullRefresh || disableEvmEvents)
+      return [OnlineHistoryEventsQueryType.ETH_WITHDRAWALS, OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS];
+    return queries || [];
+  }
+
+  async function executeOperations(
+    targets: RefreshTargets,
+    disableEvmEvents: boolean,
+    queries: OnlineHistoryEventsQueryType[] | undefined,
+  ): Promise<void> {
+    if (targets.fullRefresh || targets.decodableAccounts.length > 0)
+      await fetchUndecodedTransactionsStatus();
+
+    const asyncOperations: Promise<void>[] = [];
+
+    if (targets.accounts.length > 0)
+      asyncOperations.push(syncTransactionsByChains(targets.accounts, targets.shouldShowSyncProgress));
+
+    resetExchangesQueryStatus();
+
+    if (targets.queryExchanges) {
+      if (targets.shouldShowSyncProgress)
+        initializeExchangeEventsQueryStatus(targets.usedExchanges);
+      asyncOperations.push(queryAllExchangeEvents(targets.usedExchanges));
+    }
+
+    for (const query of resolveOnlineQueries(targets, disableEvmEvents, queries))
+      asyncOperations.push(queryOnlineEvent(query));
+
+    for (const operation of asyncOperations) {
+      try {
+        await operation;
+      }
+      catch (error: unknown) {
+        logger.error(error);
+      }
+    }
+
+    queue.queue('fetch-undecoded-transactions-breakdown', fetchUndecodedTransactionsBreakdown);
+
+    if (targets.decodableAccounts.length > 0)
+      queue.queue('undecoded-transactions-status-final', fetchUndecodedTransactionsStatus);
+  }
+
+  function drainPending(params: RefreshTransactionsParams): void {
+    if (!get(hasPendingAccounts) && !get(hasPendingExchanges))
+      return;
+
+    const pendingAccounts = getPendingAccountsForRefresh();
+    const pendingExchanges = getPendingExchangesForRefresh();
+
+    timeout = setTimeout(() => {
+      startPromise(refreshTransactions({
+        ...params,
+        payload: {
+          ...params.payload,
+          accounts: pendingAccounts.length > 0 ? pendingAccounts : undefined,
+          exchanges: pendingExchanges.length > 0 ? pendingExchanges : undefined,
+        },
+      }));
+    }, 100);
+  }
+
+  function processNoveltyDetection({ newAccounts, newExchanges }: NoveltyDetection): void {
+    if (newAccounts.length > 0)
+      addPendingAccounts(newAccounts);
+    if (newExchanges.length > 0)
+      addPendingExchanges(newExchanges);
+  }
+
+  function shouldNotRefresh(userInitiated: boolean, { newAccounts, newExchanges }: NoveltyDetection): boolean {
+    return fetchDisabled(userInitiated) && newAccounts.length === 0 && newExchanges.length === 0;
+  }
+
+  async function refreshTransactions(params: RefreshTransactionsParams = {}): Promise<void> {
     const { chains = [], disableEvmEvents = false, payload = {}, userInitiated = false } = params;
-    const { accounts, exchanges, queries } = payload;
     const fullRefresh = Object.keys(payload).length === 0;
 
-    const usedExchanges: Exchange[] = exchanges
-      ? exchanges.filter(exchange => get(syncingExchanges).some(
-          syncing => isSameExchange(syncing, exchange),
-        ))
-      : get(syncingExchanges);
+    const usedExchanges = filterSyncingExchanges(payload.exchanges);
+    const allCurrentAccounts = resolveInputAccounts(payload.accounts, fullRefresh, chains);
+    const novelty = detectNovelty(allCurrentAccounts, usedExchanges);
 
-    // Determine initial accounts to check
-    let allCurrentAccounts: ChainAddress[];
-    if (accounts?.length)
-      allCurrentAccounts = accounts;
-    else if (fullRefresh)
-      allCurrentAccounts = getAllAccounts(chains);
-    else
-      allCurrentAccounts = [];
-
-    const newAccountsList = getNewAccounts(allCurrentAccounts);
-    const hasNewAccounts = newAccountsList.length > 0;
-
-    // Check for new exchanges
-    const newExchangesList = getNewExchanges(usedExchanges);
-    const hasNewExchanges = newExchangesList.length > 0;
-
-    // Skip refresh only if fetchDisabled returns true AND there are no new accounts or exchanges
-    if (fetchDisabled(userInitiated) && !hasNewAccounts && !hasNewExchanges)
+    if (shouldNotRefresh(userInitiated, novelty))
       return;
 
     setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING);
 
-    // If refresh is already running, add new accounts/exchanges to pending
     if (get(isRefreshing)) {
-      if (newAccountsList.length > 0)
-        addPendingAccounts(newAccountsList);
-      if (newExchangesList.length > 0)
-        addPendingExchanges(newExchangesList);
+      processNoveltyDetection(novelty);
       return;
     }
 
-    // Determine final accounts and exchanges to refresh
-    let accountsToRefresh: ChainAddress[] = [];
-    let exchangesToRefresh: Exchange[] = [];
+    const targets = resolveRefreshTargets(payload, novelty, {
+      chains,
+      fullRefresh,
+      usedExchanges,
+      userInitiated,
+    });
 
-    if (fullRefresh) {
-      // Only refresh all accounts if there are new accounts
-      // If only exchanges are new, don't refresh accounts
-      if (hasNewAccounts || userInitiated) {
-        accountsToRefresh = getAllAccounts(chains);
-      }
-      exchangesToRefresh = get(syncingExchanges);
-    }
-    else if (hasNewAccounts || hasNewExchanges) {
-      if (hasNewAccounts)
-        accountsToRefresh = newAccountsList;
-      if (hasNewExchanges)
-        exchangesToRefresh = newExchangesList;
-    }
-    else if (accounts?.length || exchanges) {
-      accountsToRefresh = accounts || [];
-      exchangesToRefresh = exchanges || [];
-    }
-
-    // Get decodable accounts for query status initialization
-    const decodableAccounts = accountsToRefresh.filter(account => isDecodableChains(account.chain));
-
-    // Only show sync progress bar during initial load or when new accounts/exchanges are added
-    // Don't show it for simple user-initiated refreshes when everything is already loaded
-    const shouldShowSyncProgress = isFirstLoad() || hasNewAccounts || hasNewExchanges;
-
-    // Always reset query status to clear stale data
-    resetQueryStatus();
-
-    if (accountsToRefresh.length > 0 || exchangesToRefresh.length > 0) {
-      startRefresh(accountsToRefresh, exchangesToRefresh);
-      onHistoryStarted();
-      if (accountsToRefresh.length > 0 && shouldShowSyncProgress) {
-        initializeQueryStatus(decodableAccounts);
-        resetUndecodedTransactionsStatus();
-        resetDecodingSyncProgress();
-      }
-    }
+    initializeRefresh(targets);
 
     try {
-      if (fullRefresh || decodableAccounts.length > 0)
-        await fetchUndecodedTransactionsStatus();
-
-      const asyncOperations: Promise<void>[] = [];
-
-      // Sync transactions for all accounts (type is derived from chain inside syncTransactionsByChains)
-      if (accountsToRefresh.length > 0)
-        asyncOperations.push(syncTransactionsByChains(accountsToRefresh, shouldShowSyncProgress));
-
-      // Always reset exchanges query status to clear stale data
-      resetExchangesQueryStatus();
-
-      if (fullRefresh || exchanges) {
-        if (shouldShowSyncProgress)
-          initializeExchangeEventsQueryStatus(usedExchanges);
-        asyncOperations.push(queryAllExchangeEvents(usedExchanges));
-      }
-
-      const queriesToExecute: OnlineHistoryEventsQueryType[] | undefined = fullRefresh || disableEvmEvents
-        ? [OnlineHistoryEventsQueryType.ETH_WITHDRAWALS, OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS]
-        : queries;
-
-      queriesToExecute?.forEach(query => asyncOperations.push(queryOnlineEvent(query)));
-
-      for (const operation of asyncOperations) {
-        try {
-          await operation;
-        }
-        catch (error: unknown) {
-          logger.error(error);
-        }
-      }
-
-      queue.queue('fetch-undecoded-transactions-breakdown', fetchUndecodedTransactionsBreakdown);
-
-      if (decodableAccounts.length > 0)
-        queue.queue('undecoded-transactions-status-final', fetchUndecodedTransactionsStatus);
+      await executeOperations(targets, disableEvmEvents, payload.queries);
     }
     catch (error) {
       logger.error(error);
@@ -190,26 +274,13 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       stopDecodingSyncProgress();
     }
 
-    // After refresh is complete, check if there are pending accounts or exchanges to refresh
-    const hasPending = get(hasPendingAccounts) || get(hasPendingExchanges);
-    if (!hasPending)
-      return;
+    drainPending(params);
+  }
 
-    const pendingAccounts = getPendingAccountsForRefresh();
-    const pendingExchanges = getPendingExchangesForRefresh();
-
-    // Recursively call refreshTransactions to handle pending accounts/exchanges
-    setTimeout(() => {
-      refreshTransactions({
-        ...params,
-        payload: {
-          ...params.payload,
-          accounts: pendingAccounts.length > 0 ? pendingAccounts : undefined,
-          exchanges: pendingExchanges.length > 0 ? pendingExchanges : undefined,
-        },
-      }).catch(error => logger.error('Failed to refresh pending accounts/exchanges', error));
-    }, 100);
-  };
+  onScopeDispose(() => {
+    if (timeout)
+      clearTimeout(timeout);
+  });
 
   return {
     refreshTransactions,

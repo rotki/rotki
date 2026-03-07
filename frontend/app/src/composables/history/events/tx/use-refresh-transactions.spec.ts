@@ -1,3 +1,4 @@
+import type { RefreshTransactionsParams } from './types';
 import type { Exchange } from '@/types/exchanges';
 import type { ChainAddress } from '@/types/history/events';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -59,7 +60,7 @@ const mockHistoryTransactionDecoding = {
   fetchUndecodedTransactionsStatus: vi.fn().mockResolvedValue(undefined),
 };
 
-const mockHistoryStore = {
+const mockDecodingStatusStore = {
   resetDecodingSyncProgress: vi.fn(),
   resetUndecodedTransactionsStatus: vi.fn(),
   stopDecodingSyncProgress: vi.fn(),
@@ -95,8 +96,8 @@ vi.mock('./decoding', () => ({
   useHistoryTransactionDecoding: vi.fn(() => mockHistoryTransactionDecoding),
 }));
 
-vi.mock('@/store/history', () => ({
-  useHistoryStore: vi.fn(() => mockHistoryStore),
+vi.mock('@/modules/history/use-decoding-status-store', () => ({
+  useDecodingStatusStore: vi.fn(() => mockDecodingStatusStore),
 }));
 
 vi.mock('./use-transaction-sync', () => ({
@@ -138,6 +139,7 @@ describe('useRefreshTransactions', () => {
 
     // Reset mock return values to defaults
     mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([...mockEvmAccounts, ...mockBitcoinAccounts]);
+    set(mockExchangeData.syncingExchanges, mockExchanges);
   });
 
   describe('basic refresh flow', () => {
@@ -148,7 +150,7 @@ describe('useRefreshTransactions', () => {
 
       expect(mockStatusUpdater.setStatus).toHaveBeenCalledWith(Status.LOADING);
       expect(mockTxQueryStatusStore.initializeQueryStatus).toHaveBeenCalled();
-      expect(mockHistoryStore.resetUndecodedTransactionsStatus).toHaveBeenCalled();
+      expect(mockDecodingStatusStore.resetUndecodedTransactionsStatus).toHaveBeenCalled();
       expect(mockTransactionSync.syncTransactionsByChains).toHaveBeenCalled();
       expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalled();
       expect(mockStatusUpdater.setStatus).toHaveBeenCalledWith(Status.LOADED);
@@ -387,6 +389,30 @@ describe('useRefreshTransactions', () => {
 
       expect(mockHistoryTransactionDecoding.fetchUndecodedTransactionsBreakdown).toHaveBeenCalled();
     });
+
+    it('should call resetStatus when executeOperations throws', async () => {
+      mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus.mockRejectedValueOnce(
+        new Error('Fatal error'),
+      );
+      const { refreshTransactions } = useRefreshTransactions();
+
+      await refreshTransactions();
+
+      expect(mockStatusUpdater.resetStatus).toHaveBeenCalled();
+    });
+
+    it('should still call finishRefresh and cleanup on error', async () => {
+      mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus.mockRejectedValueOnce(
+        new Error('Fatal error'),
+      );
+      const { refreshTransactions } = useRefreshTransactions();
+
+      await refreshTransactions();
+
+      expect(mockTxQueryStatusStore.stopSyncing).toHaveBeenCalled();
+      expect(mockEventsQueryStatusStore.stopSyncing).toHaveBeenCalled();
+      expect(mockDecodingStatusStore.stopDecodingSyncProgress).toHaveBeenCalled();
+    });
   });
 
   describe('transaction chain type sync', () => {
@@ -539,6 +565,142 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions();
 
       expect(callOrder.indexOf('syncTransactionsByChains')).toBeLessThan(callOrder.indexOf('onHistoryFinished'));
+    });
+  });
+
+  describe('exchange filtering', () => {
+    it('should filter out exchanges not in syncingExchanges', async () => {
+      const unknownExchange: Exchange = { location: 'unknown_exchange', name: 'Unknown' };
+      const { refreshTransactions } = useRefreshTransactions();
+
+      await refreshTransactions({
+        payload: { exchanges: [mockExchanges[0], unknownExchange] },
+      });
+
+      // Only the known exchange should be passed (filtered against syncingExchanges)
+      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledWith([mockExchanges[0]]);
+    });
+  });
+
+  describe('pending drain', () => {
+    it('should drain pending exchanges after refresh completes', async () => {
+      vi.useFakeTimers();
+
+      const { refreshTransactions } = useRefreshTransactions();
+      const firstRefresh = refreshTransactions();
+
+      // Queue pending exchanges while first refresh is running
+      await refreshTransactions({
+        payload: { exchanges: mockExchanges },
+      });
+
+      await firstRefresh;
+
+      await vi.advanceTimersByTimeAsync(150);
+
+      // queryAllExchangeEvents called in first refresh + pending drain
+      expect(mockRefreshHandlers.queryAllExchangeEvents).toHaveBeenCalledTimes(2);
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe('sync progress', () => {
+    it('should not initialize query status when not first load and no novel items', async () => {
+      mockStatusUpdater.isFirstLoad.mockReturnValue(false);
+
+      // First refresh to mark all accounts as known
+      const { refreshTransactions } = useRefreshTransactions();
+      await refreshTransactions({ userInitiated: true });
+
+      vi.clearAllMocks();
+      mockStatusUpdater.isFirstLoad.mockReturnValue(false);
+
+      // Second refresh — not first load, no novel items
+      await refreshTransactions({ userInitiated: true });
+
+      expect(mockTxQueryStatusStore.initializeQueryStatus).not.toHaveBeenCalled();
+      expect(mockDecodingStatusStore.resetUndecodedTransactionsStatus).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('full refresh with no new accounts', () => {
+    it('should not refresh accounts when all accounts are already known and not user initiated', async () => {
+      // First refresh to mark all accounts as known
+      const { refreshTransactions } = useRefreshTransactions();
+      await refreshTransactions();
+
+      vi.clearAllMocks();
+      mockStatusUpdater.fetchDisabled.mockReturnValue(false);
+
+      // Second refresh — all accounts known, not user initiated
+      // fetchDisabled returns false so it proceeds, but no new accounts
+      await refreshTransactions();
+
+      // No accounts to sync since none are new and not userInitiated
+      expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('undecoded transactions', () => {
+    it('should queue fetchUndecodedTransactionsBreakdown after operations complete', async () => {
+      const { refreshTransactions } = useRefreshTransactions();
+
+      await refreshTransactions();
+
+      expect(mockHistoryTransactionDecoding.fetchUndecodedTransactionsBreakdown).toHaveBeenCalled();
+    });
+
+    it('should queue fetchUndecodedTransactionsStatus for decodable accounts', async () => {
+      const { refreshTransactions } = useRefreshTransactions();
+
+      await refreshTransactions();
+
+      // Called once during executeOperations + once queued for final status
+      expect(mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus).toHaveBeenCalled();
+    });
+
+    it('should not queue final fetchUndecodedTransactionsStatus when no decodable accounts', async () => {
+      // Return only non-decodable accounts
+      mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue(mockBitcoinAccounts);
+
+      const { refreshTransactions } = useRefreshTransactions();
+
+      await refreshTransactions();
+
+      // fetchUndecodedTransactionsStatus should still be called once for fullRefresh
+      // but NOT queued again for the final status check
+      expect(mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('scope cleanup', () => {
+    it('should clear pending timeout when scope is disposed', async () => {
+      vi.useFakeTimers();
+
+      const scope = effectScope();
+      let refreshFn: ((params?: RefreshTransactionsParams) => Promise<void>) | undefined;
+
+      scope.run(() => {
+        const { refreshTransactions } = useRefreshTransactions();
+        refreshFn = refreshTransactions;
+      });
+
+      // Start a refresh and trigger a concurrent one to create pending items
+      const firstRefresh = refreshFn!();
+      await refreshFn!({ payload: { accounts: [mockEvmAccounts[0]] } });
+      await firstRefresh;
+
+      // Dispose the scope before the timeout fires
+      scope.stop();
+
+      vi.clearAllMocks();
+      await vi.advanceTimersByTimeAsync(150);
+
+      // The pending drain should NOT have fired
+      expect(mockTransactionSync.syncTransactionsByChains).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
     });
   });
 });

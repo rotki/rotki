@@ -28,7 +28,7 @@ const { t } = useI18n({ useScope: 'global' });
 const { navigateToDashboard, navigateToUserCreation } = useAppNavigation();
 const { canRequestData } = storeToRefs(useSessionAuthStore());
 const { backendChanged } = useBackendManagement();
-const { errors, loading, userLogin } = useAccountManagement();
+const { errors, loading, userLogin, clearErrors } = useAccountManagement();
 
 const {
   checkForAssetUpdate,
@@ -52,7 +52,7 @@ const header = computed(() => {
 });
 
 async function handleLogin(credentials: LoginCredentials) {
-  set(errors, []);
+  clearErrors();
   await userLogin(credentials);
 }
 
@@ -109,7 +109,7 @@ onMounted(async () => {
               :loading="loading"
               :is-docker="isDocker"
               :errors="errors"
-              @touched="errors = []"
+              @touched="clearErrors()"
               @login="handleLogin($event)"
               @backend-changed="backendChanged($event)"
               @new-account="navigateToUserCreation()"

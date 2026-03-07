@@ -1,6 +1,7 @@
 import type { ComputedRef } from 'vue';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
+import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/modules/messaging/types';
-import { useHistoryStore } from '@/store/history';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import {
@@ -79,15 +80,14 @@ const PROGRESS_WEIGHTS = {
 export function useSyncProgress(): UseSyncProgressReturn {
   const txStore = useTxQueryStatusStore();
   const eventsStore = useEventsQueryStatusStore();
-  const historyStore = useHistoryStore();
+  const decodingStatusStore = useDecodingStatusStore();
+  const protocolCacheStatusStore = useProtocolCacheStatusStore();
 
   const { queryStatus: txQueryStatus } = storeToRefs(txStore);
   const { queryStatus: eventsQueryStatus } = storeToRefs(eventsStore);
   // Use decodingSyncStatus for sync progress - it's not reset by fetchUndecodedTransactionsBreakdown
-  const {
-    decodingSyncStatus: rawDecodingStatus,
-    protocolCacheStatus: rawProtocolCacheStatus,
-  } = storeToRefs(historyStore);
+  const { decodingSyncStatus: rawDecodingStatus } = storeToRefs(decodingStatusStore);
+  const { protocolCacheStatus: rawProtocolCacheStatus } = storeToRefs(protocolCacheStatusStore);
 
   const chains = useChainProgress(txQueryStatus);
 

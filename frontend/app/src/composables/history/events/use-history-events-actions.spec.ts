@@ -53,11 +53,16 @@ vi.mock('@/store/confirm', () => ({
   })),
 }));
 
-vi.mock('@/store/history', () => ({
-  useHistoryStore: vi.fn(() => ({
+vi.mock('@/modules/history/use-decoding-status-store', () => ({
+  useDecodingStatusStore: vi.fn(() => ({
+    resetUndecodedTransactionsStatus: vi.fn(),
+  })),
+}));
+
+vi.mock('@/modules/history/use-history-data-fetching', () => ({
+  useHistoryDataFetching: vi.fn(() => ({
     fetchAssociatedLocations: vi.fn(),
     fetchLocationLabels: vi.fn(),
-    resetUndecodedTransactionsStatus: vi.fn(),
   })),
 }));
 

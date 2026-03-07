@@ -5,9 +5,9 @@ import DefiIcon from '@/components/defi/DefiIcon.vue';
 import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useDefiMetadata } from '@/composables/defi/metadata';
+import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useHistoryStore } from '@/store/history';
 
 type Data = ProtocolCacheUpdatesData & {
   key: string;
@@ -25,8 +25,8 @@ defineSlots<{
   default: () => any;
 }>();
 
-const historyStore = useHistoryStore();
-const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(historyStore);
+const protocolCacheStatusStore = useProtocolCacheStatusStore();
+const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(protocolCacheStatusStore);
 
 const { useIsTaskRunning } = useTaskStore();
 const taskRunning = useIsTaskRunning(TaskType.REFRESH_GENERAL_CACHE);

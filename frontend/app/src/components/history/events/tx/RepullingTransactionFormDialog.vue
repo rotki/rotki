@@ -8,10 +8,10 @@ import RepullingTransactionForm, { type AccountType } from '@/components/history
 import { type RepullingTransactionResult, useHistoryTransactions } from '@/composables/history/events/tx';
 import { useRepullingTransactionForm } from '@/composables/history/events/tx/use-repulling-transaction-form';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
-import { useHistoryStore } from '@/store/history';
 import { useMessageStore } from '@/store/message';
 import { ApiValidationError } from '@/types/api/errors';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
@@ -41,7 +41,7 @@ const { show } = useConfirmStore();
 const { repullingEthStakingEvents, repullingExchangeEvents, repullingTransactions } = useHistoryTransactions();
 const { useIsTaskRunning } = useTaskStore();
 const { createDefaultFormData, shouldShowConfirmation } = useRepullingTransactionForm();
-const { resetUndecodedTransactionsStatus } = useHistoryStore();
+const { resetUndecodedTransactionsStatus } = useDecodingStatusStore();
 
 const taskRunning = useIsTaskRunning(TaskType.REPULLING_TXS);
 
