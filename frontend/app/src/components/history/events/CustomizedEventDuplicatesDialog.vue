@@ -5,8 +5,8 @@ import CustomizedEventDuplicatesList from '@/components/history/events/Customize
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import { type DuplicateRow, useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { Routes } from '@/router/routes';
-import { useNotificationsStore } from '@/store/notifications';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
@@ -14,7 +14,7 @@ const modelValue = defineModel<boolean>({ default: false });
 
 const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 
 const {
   autoFixCount,

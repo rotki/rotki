@@ -9,8 +9,8 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useGoogleCalendarApi } from '@/composables/api/settings/google-calendar';
 import { useInterop } from '@/composables/electron-interop';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useBackendMessagesStore } from '@/store/backend-messages';
-import { useNotificationsStore } from '@/store/notifications';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
@@ -25,7 +25,7 @@ const autoCreateReminders = ref(true);
 
 // Google Calendar integration
 const googleCalendarApi = useGoogleCalendarApi();
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 const { isPackaged, openUrl } = useInterop();
 const { registerOAuthCallbackHandler, unregisterOAuthCallbackHandler } = useBackendMessagesStore();
 const isConnected = ref(false);

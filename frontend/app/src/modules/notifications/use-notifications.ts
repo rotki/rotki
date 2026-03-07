@@ -1,6 +1,7 @@
 import { type Notification, type NotificationData, Severity } from '@rotki/common';
 import { useMessageStore } from '@/store/message';
 import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationDispatcher } from './use-notification-dispatcher';
 
 export { getErrorMessage } from '@/utils/error-handling';
 
@@ -37,11 +38,12 @@ interface UseNotificationsReturn {
 }
 
 export function useNotifications(): UseNotificationsReturn {
-  const { notify: storeNotify, removeMatching: storeRemoveMatching } = useNotificationsStore();
+  const { removeMatching: storeRemoveMatching } = useNotificationsStore();
+  const { notify: dispatchNotify } = useNotificationDispatcher();
   const { setMessage } = useMessageStore();
 
   function toast(severity: Severity, title: string, message: string, options?: ToastOptions): void {
-    storeNotify({
+    dispatchNotify({
       display: options?.display ?? true,
       message,
       severity,
@@ -50,7 +52,7 @@ export function useNotifications(): UseNotificationsReturn {
   }
 
   function notify(notification: Notification): void {
-    storeNotify(notification);
+    dispatchNotify(notification);
   }
 
   function notifyError(title: string, message: string, options?: ToastOptions): void {

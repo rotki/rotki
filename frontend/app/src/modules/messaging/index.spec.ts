@@ -4,11 +4,20 @@ import { mount } from '@vue/test-utils';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { useMessageHandling } from '@/modules/messaging';
 import { SocketMessageType } from '@/modules/messaging/types';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useSessionAuthStore } from '@/store/session/auth';
 
-vi.mock('@/store/notifications', () => ({
-  useNotificationsStore: vi.fn().mockReturnValue({
+vi.mock('@/store/notifications', async () => {
+  const { shallowRef } = await import('vue');
+  return {
+    useNotificationsStore: vi.fn().mockReturnValue({
+      data: shallowRef([]),
+    }),
+  };
+});
+
+vi.mock('@/modules/notifications/use-notification-dispatcher', () => ({
+  useNotificationDispatcher: vi.fn().mockReturnValue({
     notify: vi.fn(),
   }),
 }));
@@ -88,7 +97,7 @@ describe('useMessageHandling', () => {
     assert(messageHandling);
 
     const { handleMessage } = messageHandling;
-    const { notify } = useNotificationsStore();
+    const { notify } = useNotificationDispatcher();
     const { canRequestData } = storeToRefs(useSessionAuthStore());
     set(canRequestData, true);
     await handleMessage(

@@ -2,6 +2,7 @@ import {
   NotificationCategory,
   type NotificationData,
   type NotificationPayload,
+  type SemiPartial,
   Severity,
 } from '@rotki/common';
 
@@ -9,18 +10,18 @@ export function createNotification(
   id = 0,
   {
     action,
-    category,
+    category = NotificationCategory.DEFAULT,
     display,
     duration,
     extras,
     group,
     groupCount,
     i18nParam,
-    message,
+    message = '',
     priority,
-    severity,
-    title,
-  }: NotificationPayload = {
+    severity = Severity.INFO,
+    title = '',
+  }: SemiPartial<NotificationPayload, 'title' | 'message'> = {
     category: NotificationCategory.DEFAULT,
     message: '',
     severity: Severity.INFO,

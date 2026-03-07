@@ -3,8 +3,8 @@ import type { OAuthResult } from '@shared/ipc';
 import { Severity } from '@rotki/common';
 import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useInterop } from '@/composables/electron-interop';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useBackendMessagesStore } from '@/store/backend-messages';
-import { useNotificationsStore } from '@/store/notifications';
 import { getErrorMessage } from '@/utils/error-handling';
 import { getPublicServiceImagePath } from '@/utils/file';
 import { logger } from '@/utils/logging';
@@ -21,7 +21,7 @@ const manualAccessToken = ref<string>('');
 const manualRefreshToken = ref<string>('');
 
 const { isPackaged, openUrl } = useInterop();
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 const { registerOAuthCallbackHandler, unregisterOAuthCallbackHandler } = useBackendMessagesStore();
 const { authenticated, completeOAuth, disconnect: disconnectOAuth, status } = useMoneriumOAuth();
 

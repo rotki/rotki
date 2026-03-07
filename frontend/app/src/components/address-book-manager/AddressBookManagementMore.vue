@@ -5,7 +5,7 @@ import { externalLinks } from '@shared/external-links';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { useAddressBookImport } from '@/composables/address-book/use-address-book-import';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 
 const emit = defineEmits<{
   refresh: [];
@@ -18,7 +18,7 @@ const loading = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
 const { importAddressBook } = useAddressBookImport();
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 
 async function doImport() {
   if (!isDefined(importFile)) {

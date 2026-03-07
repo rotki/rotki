@@ -10,10 +10,10 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import ExchangeKeysFormDialog from '@/components/settings/api-keys/exchange/ExchangeKeysFormDialog.vue';
 import { useLocations } from '@/composables/locations';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useLocationStore } from '@/store/locations';
-import { useNotificationsStore } from '@/store/notifications';
 import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -36,6 +36,7 @@ const { t } = useI18n({ useScope: 'global' });
 const router = useRouter();
 const route = useRoute('/api-keys/exchanges/');
 const { getExchangeName } = useLocations();
+const { notify } = useNotificationDispatcher();
 
 const cols = computed<DataTableColumn<Exchange>[]>(() => [{
   align: 'center',
@@ -111,7 +112,6 @@ async function toggleSync(exchange: Exchange) {
   });
 
   if (!status.success) {
-    const { notify } = useNotificationsStore();
     notify({
       display: true,
       message: t('exchange_settings.sync.messages.description', {

@@ -10,12 +10,12 @@ import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { usePriceApi } from '@/composables/api/balances/price';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
-import { useNotificationsStore } from '@/store/notifications';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
 import { getErrorMessage } from '@/utils/error-handling';
@@ -86,7 +86,7 @@ const rows = computed<OracleCacheEntry[]>(() => {
 
 const pending = useIsTaskRunning(TaskType.CREATE_PRICE_CACHE);
 
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 const { getAssetField } = useAssetInfoRetrieval();
 
 async function clearCache(entry: OracleCacheMeta) {

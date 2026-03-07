@@ -4,7 +4,7 @@ import CopyButton from '@/components/helper/CopyButton.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useBackupApi } from '@/composables/api/backup';
 import { SettingsHighlightIds } from '@/composables/settings/types';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { size } from '@/utils/data';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
@@ -24,7 +24,7 @@ const { t } = useI18n({ useScope: 'global' });
 const backupInfo = ref<DatabaseInfo>();
 const loading = ref(false);
 
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 const { info } = useBackupApi();
 
 const directory = computed(() => {

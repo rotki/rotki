@@ -20,10 +20,16 @@ vi.mock('@/composables/assets/common', () => ({
   useResolveAssetIdentifier: vi.fn(() => (asset: string): string => asset),
 }));
 
-vi.mock('@/store/notifications', () => ({
-  useNotificationsStore: vi.fn(() => ({
+vi.mock('@/modules/notifications/use-notification-dispatcher', () => ({
+  useNotificationDispatcher: vi.fn(() => ({
     notify: mockNotify,
   })),
+}));
+
+vi.mock('@/store/notifications', () => ({
+  useNotificationsStore: vi.fn().mockReturnValue({
+    removeMatching: vi.fn(),
+  }),
 }));
 
 vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({

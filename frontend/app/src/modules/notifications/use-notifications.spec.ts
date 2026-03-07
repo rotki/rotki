@@ -4,10 +4,17 @@ import { useNotifications } from '@/modules/notifications/use-notifications';
 
 const mockNotify = vi.fn();
 const mockSetMessage = vi.fn();
+const mockRemoveMatching = vi.fn();
+
+vi.mock('@/modules/notifications/use-notification-dispatcher', () => ({
+  useNotificationDispatcher: vi.fn((): { notify: typeof mockNotify } => ({
+    notify: mockNotify,
+  })),
+}));
 
 vi.mock('@/store/notifications', () => ({
-  useNotificationsStore: vi.fn((): { notify: typeof mockNotify } => ({
-    notify: mockNotify,
+  useNotificationsStore: vi.fn((): { removeMatching: typeof mockRemoveMatching } => ({
+    removeMatching: mockRemoveMatching,
   })),
 }));
 

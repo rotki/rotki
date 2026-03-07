@@ -4,11 +4,11 @@ import ListItem from '@/components/common/ListItem.vue';
 import { useAssets } from '@/composables/assets';
 import { useBackendManagement } from '@/composables/backend';
 import { useLogout } from '@/modules/account/use-logout';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useConfirmStore } from '@/store/confirm';
 import { useMainStore } from '@/store/main';
-import { useNotificationsStore } from '@/store/notifications';
 import { DialogType } from '@/types/dialogs';
 
 const { dropdown = false } = defineProps<{
@@ -17,7 +17,7 @@ const { dropdown = false } = defineProps<{
 
 type ResetType = 'soft' | 'hard';
 
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 const { connect, setConnected } = useMainStore();
 const { logout } = useLogout();
 const { restoreAssetsDatabase } = useAssets();

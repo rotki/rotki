@@ -1,45 +1,23 @@
-import {
-  assert,
-  NotificationCategory,
-  type NotificationData,
-  NotificationGroup,
-  type NotificationPayload,
-  Priority,
-  type SemiPartial,
-  Severity,
-} from '@rotki/common';
-import { useSessionStorage } from '@vueuse/core';
+import { type NotificationData, Priority } from '@rotki/common';
 import { orderBy } from 'es-toolkit';
-import { createNotification } from '@/utils/notifications';
+import { useNotificationCooldown } from '@/modules/notifications/use-notification-cooldown';
 
-const DESERIALIZATION_ERROR_PREFIX = 'Could not deserialize';
-const BEACONCHAIN_RATE_LIMITED_PREFIX = 'Beaconcha.in is rate limited';
-const NOTIFICATION_COOLDOWN_MS = 60_000;
 const NOTIFICATION_MAX_SIZE = 200;
 
-interface BeaconchainRateLimitedExtras extends Record<string, unknown> {
-  endpoints: string[];
-  until?: string;
-}
-
-const DEFAULT_NOTIFICATION: NotificationPayload = {
-  category: NotificationCategory.DEFAULT,
-  display: false,
-  message: '',
-  severity: Severity.ERROR,
-  title: '',
-} as const;
-
-function notificationDefaults(): NotificationPayload {
-  return { ...DEFAULT_NOTIFICATION };
+function take(notifications: NotificationData[], n: number = NOTIFICATION_MAX_SIZE): NotificationData[] {
+  return orderBy(notifications, ['date'], ['desc']).slice(0, n);
 }
 
 export const useNotificationsStore = defineStore('notifications', () => {
   const data = shallowRef<NotificationData[]>([]);
-  const lastDisplay: Ref<Record<string, number>> = useSessionStorage('rotki.notification.last_display', {});
-  const messageOverflow = ref(false);
+  const messageOverflow = ref<boolean>(false);
+  const cooldown = useNotificationCooldown();
 
-  const { t } = useI18n({ useScope: 'global' });
+  let nextId = 1;
+
+  function getNextId(): number {
+    return nextId++;
+  }
 
   const prioritized = computed<NotificationData[]>(() => {
     const byDate = orderBy(get(data), ['date'], ['desc']);
@@ -48,25 +26,18 @@ export const useNotificationsStore = defineStore('notifications', () => {
 
   const count = computed<number>(() => get(data).length);
 
-  let nextId = 1;
-
-  function getNextId(): number {
-    return nextId++;
-  }
-
   const queue = computed<NotificationData[]>(() => get(prioritized).filter(notification => notification.display));
 
-  function take(notifications: NotificationData[], n: number = NOTIFICATION_MAX_SIZE): NotificationData[] {
-    return orderBy(notifications, ['date'], ['desc']).slice(0, n);
+  function add(payload: NotificationData[]): void {
+    set(data, take([...get(data), ...payload]));
   }
 
-  function addNotifications(payload: NotificationData[]): void {
-    set(data, take([...get(data), ...payload]));
+  function replace(notifications: NotificationData[]): void {
+    set(data, take(notifications));
   }
 
   function remove(id: number): void {
     const notifications = [...get(data)];
-
     const index = notifications.findIndex(v => v.id === id);
     if (index > -1)
       notifications.splice(index, 1);
@@ -76,199 +47,12 @@ export const useNotificationsStore = defineStore('notifications', () => {
   }
 
   function removeMatching(predicate: (notification: NotificationData) => boolean): void {
-    const notifications = [...get(data)];
-    const match = notifications.find(predicate);
-    if (match !== undefined) {
+    const match = get(data).find(predicate);
+    if (match !== undefined)
       remove(match.id);
-    }
   }
 
-  function setNotifications(notifications: NotificationData[]): void {
-    set(data, take(notifications));
-  }
-
-  function handleDeserializationError(dataList: NotificationData[], newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
-    const index = dataList.findIndex(notification => notification.group === NotificationGroup.DESERIALIZATION_ERROR);
-
-    if (index >= 0) {
-      const existing = dataList[index];
-
-      assert(existing.groupCount !== undefined, 'groupCount should be defined when group is set');
-
-      const groupCount = existing.groupCount + 1;
-
-      dataList[index] = {
-        ...existing,
-        date: new Date(),
-        groupCount,
-        message: t('notification_messages.deserialization_error', { count: groupCount }),
-      };
-
-      set(data, dataList);
-    }
-    else {
-      addNotifications([
-        createNotification(getNextId(), Object.assign(notificationDefaults(), {
-          ...newData,
-          group: NotificationGroup.DESERIALIZATION_ERROR,
-          groupCount: 1,
-          message: t('notification_messages.deserialization_error', { count: 1 }),
-        })),
-      ]);
-    }
-  }
-
-  function extractBeaconchainRateLimitUntil(message: string): string {
-    const match = message.match(/Beaconcha\.in is rate limited until ([^.]+)\./);
-    return match?.[1] ?? '';
-  }
-
-  function formatUntil(until: string | undefined): string {
-    return until ? ` until ${until}` : '';
-  }
-
-  function isBeaconchainRateLimitedExtras(extras: Record<string, unknown>): extras is BeaconchainRateLimitedExtras {
-    return Array.isArray(extras.endpoints) && extras.endpoints.every(item => typeof item === 'string');
-  }
-
-  function handleBeaconchainRateLimitError(dataList: NotificationData[], newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
-    const index = dataList.findIndex(notification => notification.group === NotificationGroup.BEACONCHAIN_RATE_LIMITED);
-    const newUntil = extractBeaconchainRateLimitUntil(newData.message);
-    const endpoint = newData.title;
-
-    if (index >= 0) {
-      const existing = dataList[index];
-
-      assert(existing.groupCount !== undefined, 'groupCount should be defined when group is set');
-      assert(existing.extras !== undefined && isBeaconchainRateLimitedExtras(existing.extras), 'extras should be defined for beaconchain rate limit group');
-
-      const { endpoints: existingEndpoints, until: existingUntil } = existing.extras;
-
-      if (existingEndpoints.includes(endpoint)) {
-        return;
-      }
-
-      const endpoints = [...existingEndpoints, endpoint];
-      const groupCount = endpoints.length;
-      const until = newUntil || existingUntil;
-
-      dataList[index] = {
-        ...existing,
-        date: new Date(),
-        display: true,
-        extras: { endpoints, until },
-        groupCount,
-        message: t('notification_messages.beaconchain_rate_limited.message', { count: groupCount, endpoints: endpoints.map(item => `- ${item}`).join('\n'), until: formatUntil(until) }),
-      };
-
-      set(data, dataList);
-    }
-    else {
-      const endpoints = [endpoint];
-      const extras: BeaconchainRateLimitedExtras = { endpoints, until: newUntil || undefined };
-      addNotifications([
-        createNotification(getNextId(), Object.assign(notificationDefaults(), {
-          ...newData,
-          display: true,
-          extras,
-          group: NotificationGroup.BEACONCHAIN_RATE_LIMITED,
-          groupCount: 1,
-          message: t('notification_messages.beaconchain_rate_limited.message', { count: 1, endpoints: `- ${endpoint}`, until: formatUntil(newUntil) }),
-          title: t('notification_messages.beaconchain_rate_limited.title'),
-        })),
-      ]);
-    }
-  }
-
-  function addNewNotification(newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void {
-    const notification = createNotification(getNextId(), Object.assign(notificationDefaults(), newData));
-    const groupToFind = newData.group;
-
-    if (groupToFind && notification.display) {
-      set(lastDisplay, {
-        ...get(lastDisplay),
-        [groupToFind]: notification.date.getTime(),
-      });
-    }
-
-    addNotifications([notification]);
-  }
-
-  function updateExistingGroupNotification(
-    dataList: NotificationData[],
-    notificationIndex: number,
-    newData: SemiPartial<NotificationPayload, 'title' | 'message'>,
-  ): void {
-    const notification = dataList[notificationIndex];
-    let date = new Date();
-    let display = newData.display ?? false;
-
-    const currentTime = date.getTime();
-    const group = newData.group ?? '';
-    const lastTime = get(lastDisplay)[group] ?? 0;
-
-    if (currentTime - lastTime < NOTIFICATION_COOLDOWN_MS) {
-      date = notification.date;
-      display = false;
-    }
-
-    const newNotification: NotificationData = {
-      ...notification,
-      action: newData.action,
-      date,
-      display,
-      groupCount: newData.groupCount,
-      message: newData.message,
-      priority: newData.priority,
-      severity: newData.severity ?? notification.severity,
-      title: newData.title,
-    };
-
-    dataList.splice(notificationIndex, 1);
-    dataList.unshift(newNotification);
-    set(data, dataList);
-  }
-
-  function isBulkDuplicate(dataList: NotificationData[], newData: SemiPartial<NotificationPayload, 'title' | 'message'>): boolean {
-    if (newData.priority !== Priority.BULK)
-      return false;
-
-    const messages = dataList
-      .filter(notification => notification.priority === Priority.BULK)
-      .map(notification => notification.message);
-
-    return messages.includes(newData.message);
-  }
-
-  const notify = (newData: SemiPartial<NotificationPayload, 'title' | 'message'>): void => {
-    const notifications = [...get(data)];
-    const dataList = take(notifications, NOTIFICATION_MAX_SIZE - 1);
-
-    set(messageOverflow, notifications.length > dataList.length);
-
-    if (isBulkDuplicate(dataList, newData))
-      return;
-
-    if (newData.priority === Priority.BULK && newData.message.startsWith(DESERIALIZATION_ERROR_PREFIX)) {
-      handleDeserializationError(dataList, newData);
-      return;
-    }
-
-    if (newData.message.includes(BEACONCHAIN_RATE_LIMITED_PREFIX)) {
-      handleBeaconchainRateLimitError(dataList, newData);
-      return;
-    }
-
-    const groupToFind = newData.group;
-    const notificationIndex = groupToFind ? dataList.findIndex(({ group }) => group === groupToFind) : -1;
-
-    if (notificationIndex === -1)
-      addNewNotification(newData);
-    else
-      updateExistingGroupNotification(dataList, notificationIndex, newData);
-  };
-
-  const displayed = (ids: number[]): void => {
+  function displayed(ids: number[]): void {
     if (ids.length <= 0)
       return;
 
@@ -279,27 +63,38 @@ export const useNotificationsStore = defineStore('notifications', () => {
         continue;
 
       const notification = notifications[index];
-      if (notification.group) {
-        set(lastDisplay, {
-          ...get(lastDisplay),
-          [notification.group]: Date.now(),
-        });
-      }
+      if (notification.group)
+        cooldown.recordDisplay(notification.group);
+
       notifications[index] = { ...notification, display: false };
     }
-    setNotifications(notifications);
-  };
+    replace(notifications);
+  }
+
+  /**
+   * Return a mutable copy of the current notifications, trimmed to leave room for one new entry.
+   * Used by the dispatcher to provide a working copy to strategies.
+   */
+  function trimmedCopy(): NotificationData[] {
+    const notifications = [...get(data)];
+    const trimmed = take(notifications, NOTIFICATION_MAX_SIZE - 1);
+    set(messageOverflow, notifications.length > trimmed.length);
+    return trimmed;
+  }
 
   return {
+    add,
     count,
     data,
     displayed,
+    getNextId,
     messageOverflow,
-    notify,
     prioritized,
     queue,
     remove,
     removeMatching,
+    replace,
+    trimmedCopy,
   };
 });
 
