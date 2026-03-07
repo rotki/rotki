@@ -3,7 +3,7 @@ import type { CalendarEvent } from '@/types/history/calendar';
 import type { CalendarReminderTemporaryPayload, CalenderReminderPayload } from '@/types/history/calendar/reminder';
 import CalendarReminderEntry from '@/components/calendar/CalendarReminderEntry.vue';
 import { useCalendarReminderApi } from '@/composables/history/calendar/reminder';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
@@ -19,7 +19,7 @@ const showReminders = ref<boolean>(false);
 const temporaryData = ref<CalendarReminderTemporaryPayload[]>([]);
 const newIdCreated = ref<number>(-1);
 
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 
 const {
   addCalendarReminder,

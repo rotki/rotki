@@ -23,9 +23,7 @@ vi.mock('@/store/settings/general', async () => {
 });
 
 vi.mock('@/store/notifications', () => ({
-  useNotificationsStore: vi.fn().mockReturnValue({
-    notify: vi.fn(),
-  }),
+  useNotificationsStore: vi.fn().mockReturnValue({}),
 }));
 
 vi.mock('@/modules/balances/use-balances-store', () => ({

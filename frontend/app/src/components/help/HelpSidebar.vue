@@ -3,7 +3,7 @@ import type { RuiIcons } from '@rotki/ui-library';
 import { externalLinks, TWITTER_URL } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
 import { useReportIssue } from '@/composables/report-issue';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { downloadFileByTextContent } from '@/utils/download';
 import { IndexedDb } from '@/utils/indexed-db';
 
@@ -18,6 +18,7 @@ const { t } = useI18n({ useScope: 'global' });
 const interop = useInterop();
 
 const { show: showReportIssue } = useReportIssue();
+const { notify } = useNotificationDispatcher();
 
 interface Entry {
   readonly icon: RuiIcons;
@@ -69,7 +70,6 @@ async function downloadBrowserLog(): Promise<void> {
 
   await loggerDb.getAll((data: any) => {
     if (data?.length === 0) {
-      const { notify } = useNotificationsStore();
       notify({
         display: true,
         message: t('help_sidebar.browser_log.error.empty.message'),

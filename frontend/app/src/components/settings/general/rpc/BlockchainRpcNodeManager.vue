@@ -7,9 +7,9 @@ import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import BlockchainRpcNodeFormDialog from '@/components/settings/general/rpc/BlockchainRpcNodeFormDialog.vue';
 import { useEvmNodesApi } from '@/composables/api/settings/evm-nodes-api';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { useNotificationsStore } from '@/store/notifications';
 import { usePeriodicStore } from '@/store/session/periodic';
 import {
   type BlockchainRpcNode,
@@ -29,7 +29,7 @@ const nodes = ref<BlockchainRpcNodeList>([]);
 const state = ref<BlockchainRpcNodeManageState>();
 const reconnecting = ref<boolean>(false);
 
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 const { setMessage } = useMessageStore();
 
 const { connectedNodes, failedToConnect } = storeToRefs(usePeriodicStore());

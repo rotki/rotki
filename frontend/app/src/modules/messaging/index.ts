@@ -1,6 +1,7 @@
 import { backoff } from '@shared/utils';
 import { useSessionApi } from '@/composables/api/session';
 import { camelCaseTransformer } from '@/modules/api/transformers';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useNotificationsStore } from '@/store/notifications';
 import { uniqueStrings } from '@/utils/data';
 import { logger } from '@/utils/logging';
@@ -18,9 +19,8 @@ export function useMessageHandling(): UseMessageHandling {
   const { t } = useI18n({ useScope: 'global' });
   const router = useRouter();
   const { consumeMessages } = useSessionApi();
-  const notificationsStore = useNotificationsStore();
-  const { data: notifications } = storeToRefs(notificationsStore);
-  const { notify } = notificationsStore;
+  const { data: notifications } = storeToRefs(useNotificationsStore());
+  const { notify } = useNotificationDispatcher();
 
   // Create registry with all handlers
   const registry = createHandlerRegistry(t, router);

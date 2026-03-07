@@ -3,9 +3,9 @@ import { assert, Severity } from '@rotki/common';
 import FileUpload from '@/components/import/FileUpload.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { useAssets } from '@/composables/assets';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useNotificationsStore } from '@/store/notifications';
 
 const zip = ref<File>();
 const importError = ref<string>('');
@@ -13,7 +13,7 @@ const uploading = ref<boolean>(false);
 const uploaded = ref<boolean>(false);
 
 const { t } = useI18n({ useScope: 'global' });
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 const { useIsTaskRunning } = useTaskStore();
 const { exportCustomAssets, importCustomAssets } = useAssets();
 

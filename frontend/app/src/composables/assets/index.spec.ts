@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetsApi } from '@/composables/api/assets';
 import { useAssets } from '@/composables/assets';
 import { useInterop } from '@/composables/electron-interop';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 
 const runTaskMock = vi.fn();
 
@@ -36,9 +36,15 @@ vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
   }),
 }));
 
+vi.mock('@/modules/notifications/use-notification-dispatcher', () => ({
+  useNotificationDispatcher: vi.fn().mockReturnValue({
+    notify: vi.fn(),
+  }),
+}));
+
 vi.mock('@/store/notifications/index', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
-    notify: vi.fn().mockReturnValue({}),
+    removeMatching: vi.fn(),
   }),
 }));
 
@@ -80,7 +86,7 @@ describe('useAssets', () => {
       const result = await store.checkForUpdate();
 
       expect(api.checkForAssetUpdate).toHaveBeenCalledOnce();
-      expect(useNotificationsStore().notify).not.toHaveBeenCalled();
+      expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
       expect(result).toEqual({
         updateAvailable: true,
         versions,
@@ -99,7 +105,7 @@ describe('useAssets', () => {
       const result = await store.checkForUpdate();
 
       expect(api.checkForAssetUpdate).toHaveBeenCalledOnce();
-      expect(useNotificationsStore().notify).not.toHaveBeenCalled();
+      expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
       expect(result).toEqual({
         updateAvailable: false,
         versions,
@@ -116,7 +122,7 @@ describe('useAssets', () => {
         updateAvailable: false,
       });
 
-      expect(useNotificationsStore().notify).toHaveBeenCalled();
+      expect(useNotificationDispatcher().notify).toHaveBeenCalled();
     });
   });
 
@@ -134,7 +140,7 @@ describe('useAssets', () => {
       const result = await store.applyUpdates(payload);
 
       expect(api.performUpdate).toHaveBeenCalledOnce();
-      expect(useNotificationsStore().notify).not.toHaveBeenCalled();
+      expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
       expect(result).toEqual({
         done: true,
       });
@@ -154,7 +160,7 @@ describe('useAssets', () => {
       const result = await store.applyUpdates(payload);
 
       expect(api.performUpdate).toHaveBeenCalledOnce();
-      expect(useNotificationsStore().notify).not.toHaveBeenCalled();
+      expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
       expect(result).toEqual({
         done: false,
         conflicts,
@@ -171,7 +177,7 @@ describe('useAssets', () => {
         done: false,
       });
 
-      expect(useNotificationsStore().notify).toHaveBeenCalled();
+      expect(useNotificationDispatcher().notify).toHaveBeenCalled();
     });
   });
 

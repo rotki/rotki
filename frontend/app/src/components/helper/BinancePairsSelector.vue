@@ -2,7 +2,7 @@
 import { Severity } from '@rotki/common';
 import { backoff } from '@shared/utils';
 import { useExchangeApi } from '@/composables/api/balances/exchanges';
-import { useNotificationsStore } from '@/store/notifications';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { getErrorMessage } from '@/utils/error-handling';
 import { trimOnPaste } from '@/utils/event';
 
@@ -94,7 +94,7 @@ function onSelectionChange(value: string[]) {
 const { t } = useI18n({ useScope: 'global' });
 const api = useExchangeApi();
 
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 
 async function queryAllMarkets() {
   try {

@@ -63,6 +63,12 @@ vi.mock('@/store/history', () => ({
 
 vi.mock('@/store/notifications', () => ({
   useNotificationsStore: vi.fn(() => ({
+    removeMatching: vi.fn(),
+  })),
+}));
+
+vi.mock('@/modules/notifications/use-notification-dispatcher', () => ({
+  useNotificationDispatcher: vi.fn(() => ({
     notify: mockNotify,
   })),
 }));

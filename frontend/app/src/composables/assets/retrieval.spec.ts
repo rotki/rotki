@@ -2,8 +2,8 @@ import type { ERC20Token } from '@/types/blockchain/accounts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useAssetCacheStore } from '@/store/assets/asset-cache';
-import { useNotificationsStore } from '@/store/notifications';
 import { CUSTOM_ASSET } from '@/types/asset';
 
 const runTaskMock = vi.fn();
@@ -26,9 +26,15 @@ vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
   }),
 }));
 
+vi.mock('@/modules/notifications/use-notification-dispatcher', () => ({
+  useNotificationDispatcher: vi.fn().mockReturnValue({
+    notify: vi.fn(),
+  }),
+}));
+
 vi.mock('@/store/notifications/index', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
-    notify: vi.fn().mockReturnValue({}),
+    removeMatching: vi.fn(),
   }),
 }));
 
@@ -67,7 +73,7 @@ describe('useAssetRetrieval', () => {
 
       expect(result).toEqual(tokenDetail);
 
-      expect(useNotificationsStore().notify).not.toHaveBeenCalled();
+      expect(useNotificationDispatcher().notify).not.toHaveBeenCalled();
     });
 
     it('should handle failure', async () => {
@@ -79,7 +85,7 @@ describe('useAssetRetrieval', () => {
 
       expect(result).toEqual({});
 
-      expect(useNotificationsStore().notify).toHaveBeenCalled();
+      expect(useNotificationDispatcher().notify).toHaveBeenCalled();
     });
   });
 

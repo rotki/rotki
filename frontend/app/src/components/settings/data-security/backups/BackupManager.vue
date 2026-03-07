@@ -4,8 +4,8 @@ import { Severity } from '@rotki/common';
 import DatabaseBackups from '@/components/settings/data-security/backups/DatabaseBackups.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useBackupApi } from '@/composables/api/backup';
+import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useConfirmStore } from '@/store/confirm';
-import { useNotificationsStore } from '@/store/notifications';
 import { getErrorMessage } from '@/utils/error-handling';
 import { getFilepath } from '@/utils/file';
 import { logger } from '@/utils/logging';
@@ -17,7 +17,7 @@ const selected = ref<UserDbBackupWithId[]>([]);
 const loading = ref<boolean>(false);
 const saving = ref<boolean>(false);
 
-const { notify } = useNotificationsStore();
+const { notify } = useNotificationDispatcher();
 const { createBackup, deleteBackup, info } = useBackupApi();
 const { show } = useConfirmStore();
 
