@@ -6,9 +6,9 @@ import SuccessDisplay from '@/components/display/SuccessDisplay.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { useRefWithDebounce } from '@/composables/ref';
+import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useHistoryStore } from '@/store/history';
 
 interface LocationData {
   evmChain: string;
@@ -50,7 +50,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { checkMissingEventsAndRedecode } = useHistoryTransactionDecoding();
 
-const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(useHistoryStore());
+const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(useProtocolCacheStatusStore());
 
 function refresh() {
   if (decodingStatus.length === 0)

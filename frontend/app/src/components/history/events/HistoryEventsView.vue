@@ -161,7 +161,7 @@ const {
 
 const debouncedProcessing = refDebounced(processing, 200);
 const { autoMatchLoading, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
-const { eventsModificationCounter } = storeToRefs(useHistoryStore());
+const historyStore = useHistoryStore();
 useHistoryEventNavigationConsumer(pagination, pageParams, groupLoading);
 const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading);
 
@@ -212,8 +212,8 @@ watch(backgroundLoading, async (isLoading, wasLoading) => {
 });
 
 // Refresh when events are modified (e.g., from pinned sidebar matching)
-watch(eventsModificationCounter, async (current, previous) => {
-  if (mainPage && current > previous)
+watch(() => historyStore.eventsVersion, async () => {
+  if (mainPage)
     await actions.fetch.dataAndLocations();
 });
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import HistoryEventsDecodingStatus from '@/components/history/events/HistoryEventsDecodingStatus.vue';
-import { useHistoryStore } from '@/store/history';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 
 interface Props {
   persistent?: boolean;
@@ -21,7 +21,7 @@ const {
 
 const emit = defineEmits<Emits>();
 
-const { decodingStatus } = storeToRefs(useHistoryStore());
+const { decodingStatus } = storeToRefs(useDecodingStatusStore());
 
 function onRedecodeAllEvents(): void {
   emit('redecode-all-events');

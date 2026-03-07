@@ -1,4 +1,4 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useUpdateChecker } from '@/modules/session/use-update-checker';
 import { useMonitorStore } from '@/store/monitor';
@@ -14,17 +14,17 @@ interface UseLoginInitialChecksReturn {
   upgradeVisible: Ref<boolean>;
 }
 
-export function useLoginInitialChecks(errors: Ref<string[]>): UseLoginInitialChecksReturn {
+export function useLoginInitialChecks(errors: MaybeRefOrGetter<string[]>): UseLoginInitialChecksReturn {
   const { checkForAssetUpdate, upgradeVisible } = storeToRefs(useSessionAuthStore());
   const { checkForUpdate } = useUpdateChecker();
   const { isPackaged } = useInterop();
   const { connect } = useWebsocketStore();
   const { startTaskMonitoring } = useMonitorStore();
 
-  const initialChecksDone = ref<boolean>(false);
-  const performingInitialChecks = ref<boolean>(false);
+  const initialChecksDone = shallowRef<boolean>(false);
+  const performingInitialChecks = shallowRef<boolean>(false);
 
-  const showUpgradeProgress = computed<boolean>(() => get(upgradeVisible) && get(errors).length === 0);
+  const showUpgradeProgress = computed<boolean>(() => get(upgradeVisible) && toValue(errors).length === 0);
 
   async function performInitialChecks(): Promise<void> {
     set(performingInitialChecks, true);

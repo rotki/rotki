@@ -4,12 +4,12 @@ import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useStatusUpdater } from '@/composables/status';
 import { snakeCaseTransformer } from '@/modules/api/transformers';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
 import { EvmUndecodedTransactionResponse } from '@/modules/messaging/types';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useHistoryStore } from '@/store/history';
 import {
   type PullEthBlockEventPayload,
   type PullLocationTransactionPayload,
@@ -39,7 +39,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     resetUndecodedTransactionsStatus,
     getUndecodedTransactionStatus,
     updateUndecodedTransactionsStatus,
-  } = useHistoryStore();
+  } = useDecodingStatusStore();
 
   const { decodableTxChainsInfo, getChain, getChainName, isEvmLikeChains, isSolanaChains } = useSupportedChains();
 

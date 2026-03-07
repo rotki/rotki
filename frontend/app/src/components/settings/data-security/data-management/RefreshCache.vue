@@ -8,13 +8,13 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useCacheClear } from '@/composables/session/cache-clear';
 import { useSessionPurge } from '@/composables/session/purge';
 import { SettingsHighlightIds } from '@/composables/settings/types';
+import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useHistoryStore } from '@/store/history';
 
 const source = ref<string>();
 
-const { protocolCacheStatus } = storeToRefs(useHistoryStore());
+const { protocolCacheStatus } = storeToRefs(useProtocolCacheStatusStore());
 const { useIsTaskRunning } = useTaskStore();
 
 const { getChainName } = useSupportedChains();

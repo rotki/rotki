@@ -1,4 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
+import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
+import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import {
   type EvmUnDecodedTransactionsData,
   type HistoryEventsQueryData,
@@ -7,7 +9,6 @@ import {
   TransactionsQueryStatus,
   type UnifiedTransactionStatusData,
 } from '@/modules/messaging/types';
-import { useHistoryStore } from '@/store/history';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { LocationStatus, SyncPhase } from '../types';
@@ -140,9 +141,9 @@ describe('useSyncProgress', () => {
     });
 
     it('should be true when there is decoding activity', () => {
-      const historyStore = useHistoryStore();
-      historyStore.resetDecodingSyncProgress();
-      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      const decodingStatusStore = useDecodingStatusStore();
+      decodingStatusStore.resetDecodingSyncProgress();
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
 
       const { isActive } = useSyncProgress();
       expect(get(isActive)).toBe(true);
@@ -187,9 +188,9 @@ describe('useSyncProgress', () => {
 
   describe('decoding progress', () => {
     it('should calculate decoding progress correctly', () => {
-      const historyStore = useHistoryStore();
-      historyStore.resetDecodingSyncProgress();
-      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      const decodingStatusStore = useDecodingStatusStore();
+      decodingStatusStore.resetDecodingSyncProgress();
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
 
       const { decoding } = useSyncProgress();
       const decodingValue = get(decoding);
@@ -202,9 +203,9 @@ describe('useSyncProgress', () => {
     });
 
     it('should filter out chains with total 0', () => {
-      const historyStore = useHistoryStore();
-      historyStore.resetDecodingSyncProgress();
-      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 0, 0));
+      const decodingStatusStore = useDecodingStatusStore();
+      decodingStatusStore.resetDecodingSyncProgress();
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 0, 0));
 
       const { decoding } = useSyncProgress();
       const decodingValue = get(decoding);
@@ -216,8 +217,8 @@ describe('useSyncProgress', () => {
 
   describe('protocol cache progress', () => {
     it('should calculate protocol cache progress correctly', () => {
-      const historyStore = useHistoryStore();
-      historyStore.setProtocolCacheStatus(createProtocolCacheStatus('eth', 'uniswap', 200, 100));
+      const protocolCacheStatusStore = useProtocolCacheStatusStore();
+      protocolCacheStatusStore.setProtocolCacheStatus(createProtocolCacheStatus('eth', 'uniswap', 200, 100));
 
       const { protocolCache } = useSyncProgress();
       const protocolCacheValue = get(protocolCache);
@@ -258,9 +259,9 @@ describe('useSyncProgress', () => {
         createEventsStatus('kraken', 'Kraken', HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED),
       ]);
 
-      const historyStore = useHistoryStore();
-      historyStore.resetDecodingSyncProgress();
-      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
+      const decodingStatusStore = useDecodingStatusStore();
+      decodingStatusStore.resetDecodingSyncProgress();
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
 
       const { overallProgress } = useSyncProgress();
       // All activities at 100%
@@ -386,10 +387,10 @@ describe('useSyncProgress', () => {
 
   describe('decoding cancellation handling', () => {
     it('should mark decoding as cancelled', () => {
-      const historyStore = useHistoryStore();
-      historyStore.resetDecodingSyncProgress();
-      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
-      historyStore.markDecodingCancelled('eth');
+      const decodingStatusStore = useDecodingStatusStore();
+      decodingStatusStore.resetDecodingSyncProgress();
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      decodingStatusStore.markDecodingCancelled('eth');
 
       const { decoding } = useSyncProgress();
       const decodingValue = get(decoding);
@@ -403,20 +404,20 @@ describe('useSyncProgress', () => {
         createEvmTxStatus('0x123', 'eth', TransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED),
       ]);
 
-      const historyStore = useHistoryStore();
-      historyStore.resetDecodingSyncProgress();
-      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
-      historyStore.markDecodingCancelled('eth');
+      const decodingStatusStore = useDecodingStatusStore();
+      decodingStatusStore.resetDecodingSyncProgress();
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      decodingStatusStore.markDecodingCancelled('eth');
 
       const { phase } = useSyncProgress();
       expect(get(phase)).toBe(SyncPhase.COMPLETE);
     });
 
     it('should include cancelled decoding in hasCancelled', () => {
-      const historyStore = useHistoryStore();
-      historyStore.resetDecodingSyncProgress();
-      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
-      historyStore.markDecodingCancelled('eth');
+      const decodingStatusStore = useDecodingStatusStore();
+      decodingStatusStore.resetDecodingSyncProgress();
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      decodingStatusStore.markDecodingCancelled('eth');
 
       const { hasCancelled, hasCancelledDecoding } = useSyncProgress();
       expect(get(hasCancelledDecoding)).toBe(true);
@@ -424,10 +425,10 @@ describe('useSyncProgress', () => {
     });
 
     it('should treat cancelled decoding as 100% for overall progress', () => {
-      const historyStore = useHistoryStore();
-      historyStore.resetDecodingSyncProgress();
-      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
-      historyStore.markDecodingCancelled('eth');
+      const decodingStatusStore = useDecodingStatusStore();
+      decodingStatusStore.resetDecodingSyncProgress();
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      decodingStatusStore.markDecodingCancelled('eth');
 
       const { overallProgress } = useSyncProgress();
       // Only decoding activity, cancelled = 100%
@@ -437,9 +438,9 @@ describe('useSyncProgress', () => {
 
   describe('protocol cache cancellation handling', () => {
     it('should mark protocol cache as cancelled', () => {
-      const historyStore = useHistoryStore();
-      historyStore.setProtocolCacheStatus(createProtocolCacheStatus('eth', 'uniswap', 200, 100));
-      historyStore.markAllProtocolCacheCancelled();
+      const protocolCacheStatusStore = useProtocolCacheStatusStore();
+      protocolCacheStatusStore.setProtocolCacheStatus(createProtocolCacheStatus('eth', 'uniswap', 200, 100));
+      protocolCacheStatusStore.markAllProtocolCacheCancelled();
 
       const { protocolCache } = useSyncProgress();
       const protocolCacheValue = get(protocolCache);
@@ -449,9 +450,9 @@ describe('useSyncProgress', () => {
     });
 
     it('should include cancelled protocol cache in hasCancelled', () => {
-      const historyStore = useHistoryStore();
-      historyStore.setProtocolCacheStatus(createProtocolCacheStatus('eth', 'uniswap', 200, 100));
-      historyStore.markAllProtocolCacheCancelled();
+      const protocolCacheStatusStore = useProtocolCacheStatusStore();
+      protocolCacheStatusStore.setProtocolCacheStatus(createProtocolCacheStatus('eth', 'uniswap', 200, 100));
+      protocolCacheStatusStore.markAllProtocolCacheCancelled();
 
       const { hasCancelled, hasCancelledProtocolCache } = useSyncProgress();
       expect(get(hasCancelledProtocolCache)).toBe(true);

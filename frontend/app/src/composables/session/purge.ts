@@ -1,9 +1,9 @@
 import type { TaskMeta } from '@/modules/tasks/types';
 import { useSessionApi } from '@/composables/api/session';
+import { useProtocolCacheStatusStore } from '@/modules/history/use-protocol-cache-status-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useHistoryStore } from '@/store/history';
 import { useStatusStore } from '@/store/status';
 import { Purgeable } from '@/types/session/purge';
 import { Section } from '@/types/status';
@@ -18,7 +18,7 @@ export function useSessionPurge(): UseSessionPurge {
   const { resetStatus } = useStatusStore();
   const { runTask } = useTaskHandler();
   const { notifyError } = useNotifications();
-  const { markAllProtocolCacheCancelled, resetProtocolCacheUpdatesStatus } = useHistoryStore();
+  const { markAllProtocolCacheCancelled, resetProtocolCacheUpdatesStatus } = useProtocolCacheStatusStore();
   const { t } = useI18n({ useScope: 'global' });
 
   const purgeCache = (purgeable: Purgeable): void => {

@@ -9,8 +9,8 @@ import { usePremiumHelper } from '@/composables/premium';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
 import { useRememberSettings } from '@/composables/user/use-remember-settings';
 import { useLogin } from '@/modules/account/use-login';
+import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
-import { useHistoryStore } from '@/store/history';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -18,17 +18,18 @@ import { useWebsocketStore } from '@/store/websocket';
 import { lastLogin } from '@/utils/account-management';
 
 interface UseAccountManagementReturn {
-  loading: Ref<boolean>;
-  error: Ref<string>;
+  loading: Readonly<Ref<boolean>>;
+  error: Readonly<Ref<string>>;
   errors: Ref<string[]>;
   createNewAccount: (payload: CreateAccountPayload) => Promise<void>;
   userLogin: ({ password, resumeFromBackup, syncApproval, username }: LoginCredentials) => Promise<void>;
+  clearErrors: () => void;
 }
 
 export function useAccountManagement(): UseAccountManagementReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const loading = ref<boolean>(false);
-  const error = ref<string>('');
+  const loading = shallowRef<boolean>(false);
+  const error = shallowRef<string>('');
   const errors = ref<string[]>([]);
 
   const { showGetPremiumButton } = usePremiumHelper();
@@ -41,7 +42,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
   const { disconnect: disconnectWallet } = useWalletStore();
-  const { fetchTransactionStatusSummary } = useHistoryStore();
+  const { fetchTransactionStatusSummary } = useHistoryDataFetching();
   const { updateSetting } = useFrontendSettingsStore();
 
   const createNewAccount = async (payload: CreateAccountPayload): Promise<void> => {
@@ -104,11 +105,16 @@ export function useAccountManagement(): UseAccountManagementReturn {
     }
   };
 
+  function clearErrors(): void {
+    set(errors, []);
+  }
+
   return {
     createNewAccount,
-    error,
+    clearErrors,
+    error: readonly(error),
     errors,
-    loading,
+    loading: readonly(loading),
     userLogin,
   };
 }
@@ -122,8 +128,8 @@ interface UseAutoLoginReturn {
 }
 
 export function useAutoLogin(): UseAutoLoginReturn {
-  const autolog = ref<boolean>(false);
-  const isAutoLoginFlow = ref<boolean>(false);
+  const autolog = shallowRef<boolean>(false);
+  const isAutoLoginFlow = shallowRef<boolean>(false);
 
   const { login } = useLogin();
   const { connected } = storeToRefs(useMainStore());

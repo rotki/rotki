@@ -2,25 +2,23 @@ import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { DialogEventHandlers } from '@/components/history/events/dialog-types';
 import type { HistoryRefreshEventData } from '@/modules/history/refresh/types';
 import type { Collection } from '@/types/collection';
-import type { Exchange } from '@/types/exchanges';
 import type {
   LocationAndTxRef,
   PullEthBlockEventPayload,
   PullLocationTransactionPayload,
 } from '@/types/history/events';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
-import { type Blockchain, HistoryEventEntryType, type NotificationAction, Severity } from '@rotki/common';
+import { type Blockchain, HistoryEventEntryType } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useHistoryEventMappings } from '@/composables/history/events/mapping';
-import { type RepullingTransactionResult, useHistoryTransactions } from '@/composables/history/events/tx';
+import { useHistoryTransactions } from '@/composables/history/events/tx';
 import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
 import { HISTORY_EVENT_ACTIONS, type HistoryEventAction } from '@/composables/history/events/types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
+import { useHistoryEventsDialogHandlers } from '@/composables/history/events/use-history-events-dialog-handlers';
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { Routes } from '@/router/routes';
+import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useConfirmStore } from '@/store/confirm';
-import { useHistoryStore } from '@/store/history';
 import {
   isEthBlockEvent,
   isEvmEvent,
@@ -30,12 +28,19 @@ import {
 } from '@/utils/history/events';
 
 interface UseHistoryEventsActionsOptions {
+  /** Blockchain chains to restrict event queries to. */
   onlyChains: MaybeRefOrGetter<Blockchain[]>;
+  /** Entry types to filter on; when set, EVM events may be skipped during refresh. */
   entryTypes?: MaybeRefOrGetter<HistoryEventEntryType[] | undefined>;
+  /** Tracks the current action state (e.g. querying, decoding). */
   currentAction: Ref<HistoryEventAction>;
+  /** Callback to fetch the current page of history events. */
   fetchData: () => Promise<void>;
+  /** The current collection of grouped history event rows. */
   groups: Ref<Collection<HistoryEventRow>>;
+  /** When provided, enables periodic auto-fetching of events. */
   shouldFetchEventsRegularly?: Ref<boolean>;
+  /** Opens a dialog (e.g. decoding status) when redecoding all events. */
   showDialog?: (options: { type: 'decodingStatus'; persistent?: boolean }) => Promise<void>;
 }
 
@@ -72,7 +77,6 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   } = options;
 
   const { t } = useI18n({ useScope: 'global' });
-  const router = useRouter();
   const route = useRoute();
   const { fetchCustomizedEventDuplicates } = useCustomizedEventDuplicates();
 
@@ -83,12 +87,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   }
 
   const { show } = useConfirmStore();
-  const { notify } = useNotifications();
-  const {
-    fetchAssociatedLocations,
-    fetchLocationLabels,
-    resetUndecodedTransactionsStatus,
-  } = useHistoryStore();
+  const { fetchAssociatedLocations, fetchLocationLabels } = useHistoryDataFetching();
   const { refreshTransactions } = useHistoryTransactions();
   const {
     fetchUndecodedTransactionsStatus,
@@ -199,56 +198,13 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
   }
 
-  // Dialog handlers
-  const handleTransactionRedecode = async (txRef: LocationAndTxRef): Promise<void> => {
-    await forceRedecodeEvmEvents({ transactions: [txRef] });
-  };
-
-  const dialogHandlers: DialogEventHandlers = {
-    onHistoryEventSaved: fetchDataAndLocations,
-    onRedecodeAllEvents: redecodeAllEvents,
-    onRedecodeTransaction: handleTransactionRedecode,
-    onRepullExchangeEvents: async (exchanges: Exchange[]): Promise<void> => {
-      await refreshTransactions({
-        disableEvmEvents: true,
-        payload: {
-          exchanges,
-        },
-        userInitiated: true,
-      });
-    },
-    onRepullTransactions: async (result: RepullingTransactionResult): Promise<void> => {
-      await checkMissingEventsAndRedecode();
-
-      const { newTransactions, newTransactionsCount } = result;
-
-      let action: NotificationAction | undefined;
-      if (newTransactionsCount > 0) {
-        const allTxHashes = Object.values(newTransactions).flat();
-        action = {
-          action: async (): Promise<void> => {
-            await router.push({
-              path: Routes.HISTORY_EVENTS.toString(),
-              query: { txRefs: allTxHashes },
-            });
-          },
-          label: t('actions.repulling_transaction.success.action'),
-        };
-      }
-
-      notify({
-        action,
-        display: true,
-        message: newTransactionsCount ? t('actions.repulling_transaction.success.description', { length: newTransactionsCount }) : t('actions.repulling_transaction.success.no_tx_description'),
-        severity: Severity.INFO,
-        title: t('actions.repulling_transaction.task.title'),
-      });
-    },
-    onResetUndecodedTransactions: (): void => {
-      resetUndecodedTransactionsStatus();
-    },
-    onTransactionAdded: handleTransactionRedecode,
-  };
+  const dialogHandlers = useHistoryEventsDialogHandlers({
+    checkMissingEventsAndRedecode,
+    fetchDataAndLocations,
+    forceRedecodeEvmEvents,
+    redecodeAllEvents,
+    refreshTransactions,
+  });
 
   return {
     dialogHandlers,
