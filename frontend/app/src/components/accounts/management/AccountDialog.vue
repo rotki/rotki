@@ -7,9 +7,9 @@ import BigDialog from '@/components/dialogs/BigDialog.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { type AccountManageState, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAccountLoading } from '@/composables/accounts/loading';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { usePremiumHelper } from '@/composables/premium';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const model = defineModel<AccountManageState | undefined>({ required: true });

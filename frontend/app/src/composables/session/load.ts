@@ -1,8 +1,8 @@
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
-import { useBalances } from '@/composables/balances';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { useStatusUpdater } from '@/composables/status';
+import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
@@ -22,7 +22,7 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { fetchWhitelistedAssets } = useWhitelistedAssetsStore();
   const { fetchNetValue } = useStatisticsStore();
   const { fetchAllTradeLocations } = useLocationStore();
-  const { fetch } = useBalances();
+  const { fetch } = useBalanceFetching();
   const { refreshPrices } = usePriceRefresh();
   const { setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
 

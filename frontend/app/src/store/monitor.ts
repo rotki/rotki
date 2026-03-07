@@ -1,7 +1,8 @@
 import { startPromise } from '@shared/utils';
-import { useBalances } from '@/composables/balances';
 import { useMonitorWatchers } from '@/composables/monitor/use-monitor-watchers';
 import { useAutoLogin } from '@/composables/user/account';
+import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
+import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { useMessageHandling } from '@/modules/messaging';
 import { useTaskMonitor } from '@/modules/tasks/use-task-monitor';
 import { useHistoryStore } from '@/store/history';
@@ -34,7 +35,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { check } = usePeriodicStore();
   const { consume } = useMessageHandling();
   const { monitor } = useTaskMonitor();
-  const { autoRefresh } = useBalances();
+  const { autoRefresh } = useBalanceFetching();
   const { fetchTransactionStatusSummary } = useHistoryStore();
 
   const frontendStore = useFrontendSettingsStore();
@@ -45,6 +46,8 @@ export const useMonitorStore = defineStore('monitor', () => {
   const { connect, disconnect } = ws;
 
   useMonitorWatchers();
+  // Initialize token detection orchestrator (monitoredAddresses watcher + detection pipeline)
+  useTokenDetectionOrchestrator();
 
   const fetch = (): void => {
     if (get(canRequestData))

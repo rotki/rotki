@@ -107,7 +107,7 @@ vi.mock('@/composables/info/chains', async () => {
   });
 });
 
-vi.mock('@/composables/balances/use-balance-queue', () => ({
+vi.mock('@/modules/balances/use-balance-queue', () => ({
   useBalanceQueue: vi.fn().mockReturnValue({
     queueBalanceQueries: vi.fn().mockImplementation(async (chains, fn) => {
       // Execute the functions immediately for testing

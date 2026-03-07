@@ -6,8 +6,8 @@ import AccountBalancesExportImport from '@/components/accounts/AccountBalancesEx
 import AccountImportProgress from '@/components/accounts/AccountImportProgress.vue';
 import AccountDialog from '@/components/accounts/management/AccountDialog.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 
 const { category, title } = defineProps<{

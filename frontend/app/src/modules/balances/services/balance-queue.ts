@@ -59,13 +59,13 @@ export class BalanceQueueService<T extends QueueItemMetadata = QueueItemMetadata
     if (!this.instance) {
       this.instance = new BalanceQueueService<T>(maxConcurrency);
     }
-    return this.instance as BalanceQueueService<T>;
+    return this.instance;
   }
 
   static resetInstance(): void {
     if (this.instance) {
       this.instance.clear();
-      this.instance = undefined as any;
+      this.instance = undefined!;
     }
   }
 

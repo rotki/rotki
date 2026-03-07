@@ -4,10 +4,10 @@ import DynamicMessageDisplay from '@/components/dashboard/DynamicMessageDisplay.
 import NftBalanceTable from '@/components/dashboard/NftBalanceTable.vue';
 import OverallBalances from '@/components/dashboard/OverallBalances.vue';
 import PriceRefresh from '@/components/helper/PriceRefresh.vue';
-import { useBalancesLoading } from '@/composables/balances/loading';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useDynamicMessages } from '@/composables/dynamic-messages';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import DashboardProgressIndicator from '@/modules/dashboard/progress/DashboardProgressIndicator.vue';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
 import PoolTable from './liquidity-pools/PoolTable.vue';

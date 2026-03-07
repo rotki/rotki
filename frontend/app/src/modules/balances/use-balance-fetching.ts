@@ -1,7 +1,7 @@
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 import { startPromise } from '@shared/utils';
 import { useBalancesApi } from '@/composables/api/balances';
-import { useBlockchains } from '@/composables/blockchain';
+import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useNotifications } from '@/modules/notifications/use-notifications';
@@ -11,10 +11,10 @@ import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useStatisticsStore } from '@/store/statistics';
 
-export const useBalances = createSharedComposable(() => {
+export const useBalanceFetching = createSharedComposable(() => {
   const { fetchManualBalances } = useManualBalances();
   const { fetchConnectedExchangeBalances } = useExchanges();
-  const { refreshAccounts } = useBlockchains();
+  const { refreshAccounts } = useBlockchainAccountManagement();
   const { queryBalancesAsync } = useBalancesApi();
   const { fetchExchangeRates } = usePriceTaskManager();
   const { refreshPrices } = usePriceRefresh();

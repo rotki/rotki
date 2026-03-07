@@ -4,10 +4,10 @@ import type {
   XpubData,
 } from '@/types/blockchain/accounts';
 import { Blockchain } from '@rotki/common';
-import { useBlockchainAccounts } from '@/composables/blockchain/accounts';
-import { useEthStaking } from '@/composables/blockchain/accounts/staking';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useEthStaking } from '@/modules/accounts/use-eth-staking';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useConfirmStore } from '@/store/confirm';
 import { isBlockchain } from '@/types/blockchain/chains';

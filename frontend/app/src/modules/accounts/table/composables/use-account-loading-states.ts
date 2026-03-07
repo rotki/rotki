@@ -1,7 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { AccountDataRow } from '../types';
 import type { BlockchainAccountBalance } from '@/types/blockchain/accounts';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
+import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useStatusStore } from '@/store/status';

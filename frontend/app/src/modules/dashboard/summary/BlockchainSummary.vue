@@ -1,8 +1,8 @@
 <script lang="ts" setup>
 import BlockchainBalanceRefreshBehaviourMenu
   from '@/components/dashboard/blockchain-balance/BlockchainBalanceRefreshBehaviourMenu.vue';
-import { useRefresh } from '@/composables/balances/refresh';
 import { useBlockchainTotalSummary } from '@/modules/balances/blockchain/use-blockchain-total-summary';
+import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
@@ -12,7 +12,7 @@ import BlockchainSummaryCardCreateButton from './BlockchainSummaryCardCreateButt
 
 const { blockchainTotals } = useBlockchainTotalSummary();
 const { useIsTaskRunning } = useTaskStore();
-const { refreshBalance } = useRefresh();
+const { refreshBalance } = useBalanceRefresh();
 const { t } = useI18n({ useScope: 'global' });
 
 const isTokenDetecting = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS);

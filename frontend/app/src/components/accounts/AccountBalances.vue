@@ -8,12 +8,12 @@ import AccountAssetSelectionActions from '@/components/accounts/AccountAssetSele
 import AccountBalancesFilterBar from '@/components/accounts/AccountBalancesFilterBar.vue';
 import AccountExpandedRowContent from '@/components/accounts/AccountExpandedRowContent.vue';
 import AccountTokenDetectionControls from '@/components/accounts/AccountTokenDetectionControls.vue';
-import { useBlockchainAccountLoading } from '@/composables/accounts/blockchain/use-account-loading';
 import { useAccountAssetSelection } from '@/composables/accounts/use-account-asset-selection';
 import { useAccountBalancesPagination } from '@/composables/accounts/use-account-balances-pagination';
-import { useAccountBalancesRefresh } from '@/composables/accounts/use-account-balances-refresh';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
 import { AccountBalancesTable } from '@/modules/accounts/table';
+import { useAccountBalancesRefresh } from '@/modules/accounts/use-account-balances-refresh';
+import { useBlockchainAccountLoading } from '@/modules/accounts/use-account-loading';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { getGroupId } from '@/utils/blockchain/accounts/utils';

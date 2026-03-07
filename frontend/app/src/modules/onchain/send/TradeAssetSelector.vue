@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import type { TradableAsset } from '@/modules/onchain/types';
 import { type BigNumber, Blockchain } from '@rotki/common';
+import { startPromise } from '@shared/utils';
 import ChainSelect from '@/components/accounts/blockchain/ChainSelect.vue';
-import { useTokenDetection } from '@/composables/balances/token-detection';
+import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import TradeAssetDisplay from '@/modules/onchain/send/TradeAssetDisplay.vue';
 import { useBalanceQueries } from '@/modules/onchain/send/use-balance-queries';
 import { useInjectedTradableAsset } from '@/modules/onchain/use-tradable-asset';
@@ -99,12 +100,14 @@ watchImmediate(chain, (chain) => {
   set(internalChain, chain);
 });
 
-function redetectTokens() {
+const { detectTokens: orchestratorDetect } = useTokenDetectionOrchestrator();
+
+function redetectTokens(): void {
   const chain = get(internalChain);
   const addressVal = address;
 
   if (addressVal && chain) {
-    useTokenDetection(chain, addressVal).detectTokens();
+    startPromise(orchestratorDetect(chain, [addressVal]));
   }
 }
 </script>

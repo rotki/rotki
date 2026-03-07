@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { useAccountImportExport } from '@/composables/accounts/use-account-import-export';
 import { useTagsApi } from '@/composables/api/tags';
-import { useBlockchainAccounts } from '@/composables/blockchain/accounts/index';
+import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-accounts-api';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { createAccount, createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { downloadFileByTextContent } from '@/utils/download';
@@ -55,7 +55,7 @@ function mockAddAccount(failOnAddress?: string[]): (_chain: string, payload: Acc
   };
 }
 
-vi.mock('@/composables/blockchain/accounts/index', () => {
+vi.mock('@/modules/accounts/use-blockchain-accounts-api', () => {
   const mock = {
     addAccount: vi.fn().mockImplementation(mockAddAccount()),
     addEvmAccount: vi.fn().mockImplementation(async address => Promise.resolve({
@@ -80,7 +80,7 @@ vi.mock('@/composables/accounts/blockchain/use-account-manage', () => {
   };
 });
 
-vi.mock('@/composables/blockchain/use-account-addition-notifications', () => ({
+vi.mock('@/modules/accounts/use-account-addition-notifications', () => ({
   useAccountAdditionNotifications: vi.fn(() => ({
     createFailureNotification: vi.fn(),
     notifyUser: vi.fn(),

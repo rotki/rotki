@@ -1,10 +1,6 @@
 <script setup lang="ts">
-import { getTextToken } from '@rotki/common';
 import DetectTokensChainsSelectionItem from '@/components/accounts/balances/DetectTokensChainsSelectionItem.vue';
-import { useRefresh } from '@/composables/balances/refresh';
-import { useSupportedChains } from '@/composables/info/chains';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { useDetectTokenChainsSelection } from '@/components/accounts/balances/use-detect-token-chains-selection';
 
 const emit = defineEmits<{
   'redetect:all': [];
@@ -14,77 +10,35 @@ const { t } = useI18n({ useScope: 'global' });
 
 const open = ref<boolean>(false);
 const search = ref<string>('');
-const selectedChains = ref<string[]>([]);
 
-const { isTaskRunning, useIsTaskRunning } = useTaskStore();
-const { txEvmChains } = useSupportedChains();
-const { massDetectTokens } = useRefresh();
+const {
+  detectChains,
+  filtered,
+  hasSelection,
+  isAllSelected,
+  isDetectingTokens,
+  isSelected,
+  reset,
+  selectedCount,
+  toggle,
+} = useDetectTokenChainsSelection(search);
 
-const filtered = computed(() => {
-  const chains = [...get(txEvmChains)];
-  const query = getTextToken(get(search));
-  if (!query)
-    return chains;
-
-  return chains.filter(item => getTextToken(item.evmChainName).includes(query) || getTextToken(item.name).includes(query));
-});
-
-function chainIndex(chain: string) {
-  return get(selectedChains).indexOf(chain);
-}
-
-function toggleChain(chain: string) {
-  if (isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, { chain }))
-    return;
-  const chains = [...get(selectedChains)];
-  const index = chainIndex(chain);
-  if (index === -1)
-    chains.push(chain);
-  else
-    chains.splice(index, 1);
-
-  set(selectedChains, chains);
-}
-
-function toggleSelectAll() {
-  if (isTaskRunning(TaskType.FETCH_DETECTED_TOKENS))
-    return;
-  const filteredVal = get(filtered);
-  if (get(selectedChains).length < filteredVal.length) {
-    const evmChains = filteredVal.map(item => item.id);
-    set(selectedChains, evmChains);
+async function detectClick(chain?: string): Promise<void> {
+  const isAll = await detectChains(chain);
+  if (isAll) {
+    emit('redetect:all');
   }
-  else { reset(); }
-}
-
-async function detectClick(chain?: string) {
-  if (chain) {
-    await massDetectTokens([chain]);
-  }
-  else {
+  if (!chain) {
     set(open, false);
-    const selected = get(selectedChains);
-    if (selected.length === get(txEvmChains).length) {
-      emit('redetect:all');
-    }
-    else {
-      await massDetectTokens(selected);
-    }
   }
 }
-
-function reset() {
-  set(selectedChains, []);
-}
-
-const isDetectingTokens = useIsTaskRunning(TaskType.FETCH_DETECTED_TOKENS);
 
 watch(search, () => {
   reset();
 });
 
-watch(open, (open) => {
-  if (!open)
+watch(open, (isOpen) => {
+  if (!isOpen)
     reset();
 });
 </script>
@@ -129,14 +83,14 @@ watch(open, (open) => {
           v-for="item in filtered"
           :key="item.id"
           class="flex items-center px-4 py-1 pr-2 cursor-pointer hover:bg-rui-grey-100 hover:dark:bg-rui-grey-900 transition"
-          @click="toggleChain(item.id)"
+          @click="toggle(item.id)"
         >
           <DetectTokensChainsSelectionItem
             :item="item"
-            :allow-redetect="selectedChains.length === 0"
+            :allow-redetect="!hasSelection"
             :detecting="isDetectingTokens"
-            :enabled="chainIndex(item.id) > -1"
-            @toggle="toggleChain(item.id)"
+            :enabled="isSelected(item.id)"
+            @toggle="toggle(item.id)"
             @detect="detectClick(item.id)"
           />
         </div>
@@ -145,17 +99,17 @@ watch(open, (open) => {
         <RuiCheckbox
           color="primary"
           :disabled="isDetectingTokens"
-          :indeterminate="selectedChains.length > 0 && selectedChains.length < filtered.length"
-          :model-value="selectedChains.length > 0 && selectedChains.length === filtered.length"
+          :indeterminate="hasSelection && !isAllSelected"
+          :model-value="isAllSelected"
           size="sm"
           hide-details
-          @click.prevent="toggleSelectAll()"
+          @click.prevent="toggle()"
         >
           {{ t('account_balances.detect_tokens.selection.select_all') }}
         </RuiCheckbox>
         <div class="flex items-center gap-2">
           <RuiButton
-            v-if="selectedChains.length > 0"
+            v-if="hasSelection"
             variant="text"
             @click="reset()"
           >
@@ -163,13 +117,13 @@ watch(open, (open) => {
           </RuiButton>
           <RuiButton
             color="primary"
-            :disabled="selectedChains.length === 0"
+            :disabled="!hasSelection"
             :loading="isDetectingTokens"
             @click="detectClick()"
           >
             {{
               t('account_balances.detect_tokens.selection.redetect_selected', {
-                length: selectedChains.length,
+                length: selectedCount,
               })
             }}
           </RuiButton>

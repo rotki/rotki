@@ -1,0 +1,128 @@
+import type { ComputedRef, MaybeRefOrGetter } from 'vue';
+import { assert } from '@rotki/common';
+import { isEqual } from 'es-toolkit';
+import { useSupportedChains } from '@/composables/info/chains';
+import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { useTokenDetectionApi } from '@/modules/balances/blockchain/use-token-detection-api';
+import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
+import { useBalanceQueue } from '@/modules/balances/use-balance-queue';
+import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
+import { TaskType } from '@/modules/tasks/task-type';
+import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { arrayify } from '@/utils/array';
+
+interface DetectOptions {
+  refreshBalancesAfter?: boolean;
+}
+
+interface UseTokenDetectionOrchestratorReturn {
+  detectTokens: (chain: string | string[], addresses: string[], options?: DetectOptions) => Promise<void>;
+  detectAllTokens: (chains?: string | string[], options?: DetectOptions) => Promise<void>;
+  useIsDetecting: (chain: MaybeRefOrGetter<string | string[]>, address?: MaybeRefOrGetter<string | null>) => ComputedRef<boolean>;
+}
+
+export const useTokenDetectionOrchestrator = createSharedComposable((): UseTokenDetectionOrchestratorReturn => {
+  const { fetchDetectedTokens } = useTokenDetectionApi();
+  const { setMassDetecting } = useTokenDetectionStore();
+  const { addresses } = useAccountAddresses();
+  const { supportsTransactions, txEvmChains } = useSupportedChains();
+  const { fetchBlockchainBalances } = useBlockchainBalances();
+  const { queueTokenDetection } = useBalanceQueue();
+  const { isTaskRunning } = useTaskStore();
+
+  function isDetectingTokens(blockchain: string, address: string | null): boolean {
+    return isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, {
+      chain: blockchain,
+      ...(address ? { address } : {}),
+    });
+  }
+
+  const queueDetectionForChain = async (chain: string, addrs: string[]): Promise<void> => {
+    assert(supportsTransactions(chain));
+    const filteredAddresses = addrs.filter(addr => !isDetectingTokens(chain, addr));
+    if (filteredAddresses.length > 0)
+      await queueTokenDetection(chain, filteredAddresses, async addr => fetchDetectedTokens(chain, addr));
+  };
+
+  const refreshBalancesForChains = async (chains: string[]): Promise<void> => {
+    await Promise.allSettled(chains.map(async chain =>
+      fetchBlockchainBalances({
+        blockchain: chain,
+        ignoreCache: true,
+      }),
+    ));
+  };
+
+  const detectTokens = async (
+    chain: string | string[],
+    addrs: string[],
+    options: DetectOptions = {},
+  ): Promise<void> => {
+    const { refreshBalancesAfter = true } = options;
+    const chains = arrayify(chain);
+
+    await Promise.all(chains.map(async c => queueDetectionForChain(c, addrs)));
+
+    if (refreshBalancesAfter)
+      await refreshBalancesForChains(chains);
+  };
+
+  const detectAllTokens = async (
+    chain?: string | string[],
+    options: DetectOptions = {},
+  ): Promise<void> => {
+    const { refreshBalancesAfter = true } = options;
+    const chains = chain ? arrayify(chain) : get(txEvmChains).map(c => c.id);
+
+    setMassDetecting(chains.join(',') || 'all');
+
+    try {
+      const addressesValue = get(addresses);
+      await Promise.allSettled(chains.map(async (c) => {
+        if (!supportsTransactions(c))
+          return;
+
+        const tokenAddresses = addressesValue[c] ?? [];
+        if (tokenAddresses.length > 0)
+          await queueDetectionForChain(c, tokenAddresses);
+      }));
+
+      if (refreshBalancesAfter)
+        await refreshBalancesForChains(chains);
+    }
+    finally {
+      setMassDetecting(undefined);
+    }
+  };
+
+  const useIsDetecting = (
+    chain: MaybeRefOrGetter<string | string[]>,
+    address: MaybeRefOrGetter<string | null> = null,
+  ): ComputedRef<boolean> => computed<boolean>(() => {
+    const addr = toValue(address);
+    return arrayify(toValue(chain)).some(blockchain => isDetectingTokens(blockchain, addr));
+  });
+
+  // Watcher: sync cached detection data when monitored addresses change
+  const monitoredAddresses = computed<Record<string, string[]>>(() => {
+    const addressesPerChain = get(addresses);
+    return Object.fromEntries(get(txEvmChains).map(c => [c.id, addressesPerChain[c.id] ?? []]));
+  });
+
+  watch(monitoredAddresses, async (curr, prev) => {
+    for (const c in curr) {
+      const addrs = curr[c];
+      if (!addrs || addrs.length === 0 || isEqual(addrs, prev[c]))
+        continue;
+
+      // Fetch cached detections only — no balance refresh
+      await fetchDetectedTokens(c);
+    }
+  });
+
+  return {
+    detectAllTokens,
+    detectTokens,
+    useIsDetecting,
+  };
+});

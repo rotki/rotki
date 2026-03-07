@@ -1,8 +1,7 @@
 import type { EvmChainInfo } from '@/types/api/chains';
-import { assert, Blockchain } from '@rotki/common';
+import { assert, type Blockchain } from '@rotki/common';
 import { mount } from '@vue/test-utils';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { useTokenDetection } from '@/composables/balances/token-detection';
 import { useMessageHandling } from '@/modules/messaging';
 import { SocketMessageType } from '@/modules/messaging/types';
 import { useNotificationsStore } from '@/store/notifications';
@@ -14,19 +13,27 @@ vi.mock('@/store/notifications', () => ({
   }),
 }));
 
-vi.mock('@/composables/balances/token-detection', () => ({
-  useTokenDetection: vi.fn().mockReturnValue({
-    detectTokens: vi.fn(),
-  }),
+const { mockDetectTokens } = vi.hoisted((): { mockDetectTokens: ReturnType<typeof vi.fn> } => ({
+  mockDetectTokens: vi.fn(),
 }));
+vi.mock('@/modules/balances/blockchain/use-token-detection-orchestrator', async () => {
+  const { computed } = await import('vue');
+  return {
+    useTokenDetectionOrchestrator: vi.fn().mockReturnValue({
+      detectTokens: mockDetectTokens,
+      detectAllTokens: vi.fn(),
+      useIsDetecting: vi.fn().mockReturnValue(computed(() => false)),
+    }),
+  };
+});
 
-vi.mock('@/composables/blockchain/index', () => ({
-  useBlockchains: vi.fn().mockReturnValue({
+vi.mock('@/modules/accounts/use-blockchain-account-management', () => ({
+  useBlockchainAccountManagement: vi.fn().mockReturnValue({
     fetchAccounts: vi.fn(),
   }),
 }));
 
-vi.mock('@/composables/blockchain/accounts', () => ({
+vi.mock('@/modules/accounts/use-blockchain-accounts-api', () => ({
   useBlockchainAccounts: vi.fn().mockReturnValue({
     fetchBlockchainAccounts: vi.fn().mockResolvedValue([]),
     fetchAccounts: vi.fn().mockResolvedValue([]),
@@ -83,7 +90,6 @@ describe('useMessageHandling', () => {
     const { handleMessage } = messageHandling;
     const { notify } = useNotificationsStore();
     const { canRequestData } = storeToRefs(useSessionAuthStore());
-    const { detectTokens } = useTokenDetection(Blockchain.OPTIMISM);
     set(canRequestData, true);
     await handleMessage(
       JSON.stringify({
@@ -97,8 +103,8 @@ describe('useMessageHandling', () => {
       }),
     );
 
-    expect(detectTokens).toHaveBeenCalledTimes(1);
-    expect(detectTokens).toHaveBeenCalledWith(['0xdead']);
+    expect(mockDetectTokens).toHaveBeenCalledTimes(1);
+    expect(mockDetectTokens).toHaveBeenCalledWith('optimism', ['0xdead']);
     expect(notify).toHaveBeenCalledTimes(1);
   });
 });

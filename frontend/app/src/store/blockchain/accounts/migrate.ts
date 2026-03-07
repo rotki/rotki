@@ -3,10 +3,10 @@ import type { MigratedAddresses } from '@/modules/messaging/types';
 import { assert, type Notification, NotificationCategory, Severity } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useSessionStorage } from '@vueuse/core';
-import { useTokenDetection } from '@/composables/balances/token-detection';
-import { useBlockchains } from '@/composables/blockchain';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
+import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
+import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useSessionAuthStore } from '@/store/session/auth';
 
@@ -19,7 +19,8 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
 
   const { canRequestData } = storeToRefs(useSessionAuthStore());
   const { evmAndEvmLikeTxChainsInfo, getChainName, isEvm } = useSupportedChains();
-  const { fetchAccounts } = useBlockchains();
+  const { fetchAccounts } = useBlockchainAccountManagement();
+  const { detectTokens } = useTokenDetectionOrchestrator();
   const loggedUserIdentifier = useLoggedUserIdentifier();
 
   const { t } = useI18n({ useScope: 'global' });
@@ -51,7 +52,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
       const chainName = getChainName(chain);
       promises.push(fetchAccounts(chain));
       if (isEvm(chain))
-        promises.push(useTokenDetection(chain).detectTokens(chainAddresses));
+        promises.push(detectTokens(chain, chainAddresses));
 
       notifications.push({
         category: NotificationCategory.ADDRESS_MIGRATION,

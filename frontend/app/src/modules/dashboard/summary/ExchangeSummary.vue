@@ -1,6 +1,6 @@
 <script lang="ts" setup>
-import { useRefresh } from '@/composables/balances/refresh';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
+import { useBalanceRefresh } from '@/modules/balances/use-balance-refresh';
 import SummaryCard from '@/modules/dashboard/summary/SummaryCard.vue';
 import SummaryCardCreateButton from '@/modules/dashboard/summary/SummaryCardCreateButton.vue';
 import { TaskType } from '@/modules/tasks/task-type';
@@ -8,10 +8,11 @@ import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { Routes } from '@/router/routes';
 import ExchangeBox from './ExchangeBox.vue';
 
-const { exchanges } = useExchangeData();
-const { useIsTaskRunning } = useTaskStore();
-const { refreshBalance } = useRefresh();
 const { t } = useI18n({ useScope: 'global' });
+
+const { useIsTaskRunning } = useTaskStore();
+const { refreshBalance } = useBalanceRefresh();
+const { exchanges } = useExchangeData();
 
 const isExchangeLoading = useIsTaskRunning(TaskType.QUERY_EXCHANGE_BALANCES);
 </script>

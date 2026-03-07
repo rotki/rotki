@@ -8,12 +8,12 @@ import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { sortDesc } from '@/utils/bignumbers';
 import { useWalletStore } from './use-wallet-store';
 
-interface UseTradableAssetReturn {
+interface UseInjectedTradableAssetReturn {
   allOwnedAssets: ComputedRef<TradableAsset[]>;
   getAssetDetail: (asset: MaybeRefOrGetter<string>, chain: MaybeRefOrGetter<string>) => ComputedRef<TradableAsset | undefined>;
 }
 
-export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>): UseTradableAssetReturn {
+export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>): UseInjectedTradableAssetReturn {
   const { balances } = storeToRefs(useBalancesStore());
   const { supportedChainsForConnectedAccount } = storeToRefs(useWalletStore());
   const { getAssetPrice } = usePriceUtils();
@@ -112,15 +112,15 @@ export function useTradableAsset(address: MaybeRefOrGetter<string | undefined>):
   }
 
   return {
-    // eslint-disable-next-line @rotki/composable-return-readonly -- ComputedRef is inherently readonly; wrapping with readonly() creates DeepReadonly which breaks BigNumber
+
     allOwnedAssets,
     getAssetDetail,
   };
 }
 
-export const TradableAssetKey: InjectionKey<UseTradableAssetReturn> = Symbol('tradable-asset');
+export const TradableAssetKey: InjectionKey<UseInjectedTradableAssetReturn> = Symbol('tradable-asset');
 
-export function useInjectedTradableAsset(): UseTradableAssetReturn {
+export function useInjectedTradableAsset(): UseInjectedTradableAssetReturn {
   const injected = inject(TradableAssetKey);
   if (!injected)
     throw new Error('useTradableAsset must be provided by a parent component');

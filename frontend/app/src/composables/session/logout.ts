@@ -1,5 +1,5 @@
 import { useSync } from '@/composables/session/sync';
-import { BalanceQueueService } from '@/services/balance-queue';
+import { BalanceQueueService } from '@/modules/balances/services/balance-queue';
 import { useMonitorStore } from '@/store/monitor';
 import { resetState } from '@/store/plugins';
 import { useSessionAuthStore } from '@/store/session/auth';

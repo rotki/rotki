@@ -1,8 +1,8 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useAccountCategoryHelper } from '@/composables/accounts/use-account-category-helper';
+import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useBlockchainTokensStore } from '@/store/blockchain/tokens';
 import { useStatusStore } from '@/store/status';
 import { Section } from '@/types/status';
 
@@ -17,7 +17,7 @@ interface UseBlockchainAccountLoadingReturn {
 
 export function useBlockchainAccountLoading(category: MaybeRefOrGetter<string> = ''): UseBlockchainAccountLoadingReturn {
   const { isTaskRunning, useIsTaskRunning } = useTaskStore();
-  const { massDetecting } = storeToRefs(useBlockchainTokensStore());
+  const { massDetecting } = storeToRefs(useTokenDetectionStore());
   const { getIsLoading } = useStatusStore();
 
   const { chainIds, isEvm } = useAccountCategoryHelper(category);

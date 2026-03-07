@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useBalancesLoading } from '@/composables/balances/loading';
 import { usePremium } from '@/composables/premium';
 import { useSync } from '@/composables/session/sync';
+import { useBalancesLoading } from '@/modules/balances/use-balance-loading';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 
 defineProps<{ pending: boolean }>();

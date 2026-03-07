@@ -1,4 +1,4 @@
-import type { ComputedRef } from 'vue';
+import type { Ref } from 'vue';
 import type { TaskMeta } from '@/modules/tasks/types';
 import type { ActionStatus } from '@/types/action';
 import type { Eth2Validator } from '@/types/balances';
@@ -16,7 +16,7 @@ import { Section } from '@/types/status';
 import { logger } from '@/utils/logging';
 
 interface UseEthStakingReturn {
-  validatorsLimitInfo: ComputedRef<{ showWarning: boolean; limit: number; total: number }>;
+  validatorsLimitInfo: Readonly<Ref<{ showWarning: boolean; limit: number; total: number }>>;
   fetchEthStakingValidators: (payload?: EthValidatorFilter) => Promise<void>;
   addEth2Validator: (payload: Eth2Validator) => Promise<ActionStatus<ValidationErrors | string>>;
   editEth2Validator: (payload: Eth2Validator) => Promise<ActionStatus<ValidationErrors | string>>;

@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { useBlockchains } from '@/composables/blockchain';
+import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 
+const { t } = useI18n({ useScope: 'global' });
+
 const { useIsTaskRunning } = useTaskStore();
 const isEvmAccountsDetecting = useIsTaskRunning(TaskType.DETECT_EVM_ACCOUNTS);
-const { detectEvmAccounts } = useBlockchains();
-
-const { t } = useI18n({ useScope: 'global' });
+const { detectEvmAccounts } = useBlockchainAccountManagement();
 </script>
 
 <template>
