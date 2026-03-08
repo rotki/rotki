@@ -8,6 +8,7 @@ import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { useEthValidatorFetching } from '@/modules/staking/eth/composables/use-eth-validator-fetching';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
@@ -34,7 +35,8 @@ export function useEthStaking(): UseEthStakingReturn {
 
   const blockchainValidatorsStore = useBlockchainValidatorsStore();
   const { ethStakingValidators, stakingValidatorsLimits } = storeToRefs(blockchainValidatorsStore);
-  const { fetchEthStakingValidators, isEth2Enabled, updateEthStakingOwnership } = blockchainValidatorsStore;
+  const { isEth2Enabled, updateEthStakingOwnership } = blockchainValidatorsStore;
+  const { fetchEthStakingValidators } = useEthValidatorFetching();
 
   const premium = usePremium();
   const { runTask } = useTaskHandler();
