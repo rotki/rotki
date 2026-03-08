@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`11068` rotki now also counts staked solana balances.
+* :feature:`7492` Added an event direction column (in/out/neutral) to the PnL CSV export.
 * :feature:`11816` Support importing events from Coinledger CSV.
 * :feature:`-` Crosscurve events will now be properly decoded.
 * :feature:`-` Transactions involving stkGHO will now be decoded properly.
