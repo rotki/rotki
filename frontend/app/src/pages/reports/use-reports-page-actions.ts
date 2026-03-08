@@ -1,4 +1,4 @@
-import type { Ref } from 'vue';
+import type { DeepReadonly, Ref } from 'vue';
 import type { TaskMeta } from '@/modules/tasks/types';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 import { Priority, Severity } from '@rotki/common';
@@ -6,16 +6,20 @@ import { useReportsApi } from '@/composables/api/reports';
 import { useInterop } from '@/composables/electron-interop';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
+import { useReportGeneration } from '@/modules/reports/use-report-generation';
+import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useReportsStore } from '@/store/reports';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { downloadFileByTextContent } from '@/utils/download';
 
 interface UseReportsPageActionsOptions {
+  /** Resolves a local file path from a File object (Electron only) */
   getPath: (file: File) => string | undefined;
+  /** Callback to navigate to a specific report after generation */
   onNavigateToReport: (reportId: number) => void;
+  /** The selected debug data file for import */
   reportDebugData: Ref<File | undefined>;
 }
 
@@ -23,7 +27,7 @@ interface UseReportsPageActionsReturn {
   exportData: (period: ProfitLossReportPeriod) => Promise<void>;
   generate: (period: ProfitLossReportPeriod) => Promise<void>;
   importData: () => Promise<void>;
-  importDataLoading: Ref<boolean>;
+  importDataLoading: DeepReadonly<Ref<boolean>>;
 }
 
 export function useReportsPageActions(options: UseReportsPageActionsOptions): UseReportsPageActionsReturn {
@@ -32,8 +36,8 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
   const { t } = useI18n({ useScope: 'global' });
 
   const { runTask } = useTaskHandler();
-  const reportsStore = useReportsStore();
-  const { exportReportData, fetchReports, generateReport } = reportsStore;
+  const { exportReportData, generateReport } = useReportGeneration();
+  const { fetchReports } = useReportOperations();
   const { pinned } = storeToRefs(useAreaVisibilityStore());
   const { notify, showErrorMessage, showSuccessMessage } = useNotifications();
   const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
@@ -139,6 +143,6 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
     exportData,
     generate,
     importData,
-    importDataLoading,
+    importDataLoading: readonly(importDataLoading),
   };
 }

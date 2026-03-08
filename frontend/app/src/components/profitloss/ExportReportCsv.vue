@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useReportsApi } from '@/composables/api/reports';
 import { useInterop } from '@/composables/electron-interop';
+import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { useMessageStore } from '@/store/message';
-import { useReportsStore } from '@/store/reports';
 import { getErrorMessage } from '@/utils/error-handling';
 
 const { list = false, reportId } = defineProps<{
@@ -10,7 +10,7 @@ const { list = false, reportId } = defineProps<{
   reportId: number;
 }>();
 
-const { createCsv } = useReportsStore();
+const { createCsv } = useReportOperations();
 const { setMessage } = useMessageStore();
 
 const { t } = useI18n({ useScope: 'global' });
