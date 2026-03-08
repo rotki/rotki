@@ -1,10 +1,10 @@
 import type { StateHandler } from '../interfaces';
+import { useAccountMigration } from '@/modules/accounts/use-account-migration';
 import { createStateHandler } from '@/modules/messaging/utils';
-import { useAccountMigrationStore } from '@/store/blockchain/accounts/migrate';
 
 export function createEvmAccountsHandler(): StateHandler {
-  // Capture store method at handler creation time (in setup context)
-  const { setUpgradedAddresses } = useAccountMigrationStore();
+  // Capture composable method at handler creation time (in setup context)
+  const { setUpgradedAddresses } = useAccountMigration();
 
   return createStateHandler((data) => {
     setUpgradedAddresses(data);

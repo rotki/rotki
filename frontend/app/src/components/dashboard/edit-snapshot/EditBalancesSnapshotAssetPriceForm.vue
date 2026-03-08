@@ -7,10 +7,10 @@ import AmountInput from '@/components/inputs/AmountInput.vue';
 import AssetSelect from '@/components/inputs/AssetSelect.vue';
 import TwoFieldsAmountInput from '@/components/inputs/TwoFieldsAmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberifyFromRef } from '@/utils/bignumbers';
@@ -38,7 +38,7 @@ const fiatValueFocused = ref<boolean>(false);
 const fetchedAssetToUsdPrice = ref<string>('');
 const fetchedAssetToFiatPrice = ref<string>('');
 
-const { resetHistoricalPricesData } = useHistoricCachePriceStore();
+const { resetHistoricalPricesData } = useHistoricPriceCache();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { useIsTaskRunning } = useTaskStore();
 

@@ -19,10 +19,10 @@ import {
   OnchainHistoricalBalanceResponse,
   HistoricalBalanceSource as Source,
 } from '@/modules/history/balances/types';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
@@ -81,7 +81,7 @@ export function useHistoricalBalances(): UseHistoricalBalancesReturn {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { getCollectionId, getCollectionMainAsset } = useCollectionInfo();
   const { runTask } = useTaskHandler();
-  const { getHistoricPrice } = useHistoricCachePriceStore();
+  const { getHistoricPrice } = useHistoricPriceCache();
   const { dateDisplayFormat } = storeToRefs(useGeneralSettingsStore());
 
   const balances = computed<AssetBalanceWithPrice[]>(() => {

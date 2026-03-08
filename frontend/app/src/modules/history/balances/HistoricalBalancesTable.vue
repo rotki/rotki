@@ -6,7 +6,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import { useAssetSelectInfo } from '@/composables/assets/asset-select-info';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display';
 import HistoricalAssetRowDetails from '@/modules/history/balances/HistoricalAssetRowDetails.vue';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { sortAssetBalances } from '@/utils/balances';
 
@@ -27,7 +27,7 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 
 const { getAssetInfo } = useAssetSelectInfo();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { createKey, getIsPending } = useHistoricCachePriceStore();
+const { createKey, getIsPending } = useHistoricPriceCache();
 
 function isPriceLoading(asset: string): boolean {
   if (!timestamp)

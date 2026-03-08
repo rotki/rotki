@@ -9,6 +9,7 @@ import AutomaticSyncSetting from '@/components/status/sync/AutomaticSyncSetting.
 import { useInterop } from '@/composables/electron-interop';
 import { usePremiumHelper } from '@/composables/premium';
 import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
+import { usePremiumOperations } from '@/modules/premium/use-premium-operations';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -27,9 +28,8 @@ const edit = ref<boolean>(true);
 const error = ref<string>();
 
 const { username } = storeToRefs(useSessionAuthStore());
-const store = usePremiumStore();
-const { premium } = storeToRefs(store);
-const { deletePremium, setup } = store;
+const { premium } = storeToRefs(usePremiumStore());
+const { deletePremium, setup } = usePremiumOperations();
 const { show } = useConfirmStore();
 const { setMessage } = useMessageStore();
 

@@ -1,0 +1,68 @@
+import type { ActionStatus } from '@/types/action';
+import type { PremiumCredentialsPayload } from '@/types/session';
+import { usePremiumCredentialsApi } from '@/composables/api/session/premium-credentials';
+import { usePremiumStore } from '@/store/session/premium';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
+import { getErrorMessage } from '@/utils/error-handling';
+
+interface UsePremiumOperationsReturn {
+  deletePremium: () => Promise<ActionStatus>;
+  setup: (payload: PremiumCredentialsPayload) => Promise<ActionStatus<string | ValidationErrors>>;
+}
+
+export function usePremiumOperations(): UsePremiumOperationsReturn {
+  const api = usePremiumCredentialsApi();
+  const { capabilities, premium } = storeToRefs(usePremiumStore());
+
+  async function setup({
+    apiKey,
+    apiSecret,
+    username,
+  }: PremiumCredentialsPayload): Promise<ActionStatus<string | ValidationErrors>> {
+    try {
+      const success = await api.setPremiumCredentials(username, apiKey, apiSecret);
+
+      if (success)
+        set(premium, true);
+
+      return { success };
+    }
+    catch (error: unknown) {
+      let errors: string | ValidationErrors = getErrorMessage(error);
+      if (error instanceof ApiValidationError) {
+        errors = error.getValidationErrors({
+          apiKey,
+          apiSecret,
+        });
+      }
+
+      return {
+        message: errors,
+        success: false,
+      };
+    }
+  }
+
+  async function deletePremium(): Promise<ActionStatus> {
+    try {
+      const success = await api.deletePremiumCredentials();
+      if (success) {
+        set(premium, false);
+        set(capabilities, undefined);
+      }
+
+      return { success };
+    }
+    catch (error: unknown) {
+      return {
+        message: getErrorMessage(error),
+        success: false,
+      };
+    }
+  }
+
+  return {
+    deletePremium,
+    setup,
+  };
+}

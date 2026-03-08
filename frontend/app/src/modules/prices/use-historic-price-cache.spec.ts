@@ -1,8 +1,7 @@
 import { bigNumberify } from '@rotki/common';
 import flushPromises from 'flush-promises';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { usePriceApi } from '@/composables/api/balances/price';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
 
 const runTaskMock = vi.fn();
 
@@ -18,17 +17,29 @@ vi.mock('@/modules/tasks/use-task-handler', async importOriginal => ({
   }),
 }));
 
+vi.mock('@/modules/notifications/use-notifications', () => ({
+  useNotifications: vi.fn(() => ({
+    notifyError: vi.fn(),
+  })),
+}));
+
 /** Exceeds CACHE_EXPIRY (10 min) from item-cache.ts to ensure cache invalidation */
 const PAST_CACHE_EXPIRY_MS = 1000 * 60 * 11;
 
-describe('useHistoricPricesStore', () => {
-  let store: ReturnType<typeof useHistoricCachePriceStore>;
+describe('useHistoricPriceCache', () => {
+  let useHistoricPriceCache: typeof import('@/modules/prices/use-historic-price-cache').useHistoricPriceCache;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.useFakeTimers();
+    vi.resetModules();
     setActivePinia(createPinia());
-    store = useHistoricCachePriceStore();
+    const mod = await import('@/modules/prices/use-historic-price-cache');
+    useHistoricPriceCache = mod.useHistoricPriceCache;
     vi.mocked(usePriceApi().queryHistoricalRates).mockClear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   const mockAsset = 'ETH';
@@ -36,7 +47,7 @@ describe('useHistoricPricesStore', () => {
   const mockPrice = 1000;
 
   it('should cache price', async () => {
-    const { createKey } = store;
+    const { createKey, resolve } = useHistoricPriceCache();
     const key = createKey(mockAsset, mockTimestamp);
     const mockPricesResponse = {
       targetAsset: 'USD',
@@ -47,12 +58,12 @@ describe('useHistoricPricesStore', () => {
       },
     };
     runTaskMock.mockResolvedValue({ success: true, result: mockPricesResponse });
-    store.resolve(key);
-    store.resolve(key);
+    resolve(key);
+    resolve(key);
     vi.advanceTimersByTime(2500);
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
-    expect(store.resolve(key)).toEqual(bigNumberify(mockPrice));
+    expect(resolve(key)).toEqual(bigNumberify(mockPrice));
   });
 
   it('should not request failed assets twice unless they expire', async () => {
@@ -63,24 +74,24 @@ describe('useHistoricPricesStore', () => {
         assets: {},
       },
     });
-    const { createKey } = store;
+    const { createKey, resolve } = useHistoricPriceCache();
     const key = createKey(mockAsset, mockTimestamp);
-    store.resolve(key);
-    store.resolve(key);
+    resolve(key);
+    resolve(key);
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
-    expect(store.resolve(key)).toBeNull();
+    expect(resolve(key)).toBeNull();
     vi.advanceTimersByTime(PAST_CACHE_EXPIRY_MS);
-    store.resolve(key);
+    resolve(key);
     vi.advanceTimersToNextTimer();
     await flushPromises();
-    expect(store.resolve(key)).toBeNull();
+    expect(resolve(key)).toBeNull();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledTimes(2);
   });
 
   it('should only re-request asset if cache entry expires', async () => {
-    const { createKey } = store;
+    const { createKey, resolve } = useHistoricPriceCache();
     const key = createKey(mockAsset, mockTimestamp);
     const mockPricesResponse = {
       targetAsset: 'USD',
@@ -92,27 +103,26 @@ describe('useHistoricPricesStore', () => {
     };
     runTaskMock.mockResolvedValue({ success: true, result: mockPricesResponse });
 
-    store.resolve(key);
+    resolve(key);
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledOnce();
-    expect(store.resolve(key)).toEqual(bigNumberify(mockPrice));
+    expect(resolve(key)).toEqual(bigNumberify(mockPrice));
     vi.advanceTimersByTime(PAST_CACHE_EXPIRY_MS);
-    store.resolve(key);
+    resolve(key);
     vi.advanceTimersToNextTimer();
     await flushPromises();
     expect(usePriceApi().queryHistoricalRates).toHaveBeenCalledTimes(2);
-    expect(store.resolve(key)).toEqual(bigNumberify(mockPrice));
+    expect(resolve(key)).toEqual(bigNumberify(mockPrice));
   });
 
   it('should reset historical prices data', async () => {
-    const { cache } = storeToRefs(store);
-    const { createKey, resetHistoricalPricesData, resolve } = store;
-    const key = createKey(mockAsset, mockTimestamp);
+    const { cache, createKey, resetHistoricalPricesData, resolve } = useHistoricPriceCache();
 
     // Under range (should be removed alongside with the targeted timestamp)
     const mockTimestamp1 = mockTimestamp - (59 * 60);
     const mockTimestamp2 = mockTimestamp + (59 * 60);
+    const key = createKey(mockAsset, mockTimestamp);
     const key1 = createKey(mockAsset, mockTimestamp1);
     const key2 = createKey(mockAsset, mockTimestamp2);
 
