@@ -7,9 +7,9 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { ApiValidationError } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
 
@@ -30,7 +30,7 @@ const refreshing = ref<boolean>(false);
 const refreshedHistoricalPrices = ref<Record<string, BigNumber>>({});
 const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
 
-const { resetHistoricalPricesData } = useHistoricCachePriceStore();
+const { resetHistoricalPricesData } = useHistoricPriceCache();
 const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
 const { getHistoricPrice } = usePriceTaskManager();
 

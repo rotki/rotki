@@ -5,7 +5,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { FiatDisplay } from '@/modules/amount-display/components';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 import { bigNumberSum } from '@/utils/calculation';
@@ -23,11 +23,11 @@ const emit = defineEmits<{
   'update:step': [step: number];
 }>();
 
+const total = ref<string>('');
+
 const { t } = useI18n({ useScope: 'global' });
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { createKey, getHistoricPrice, isPending } = useHistoricCachePriceStore();
-
-const total = ref<string>('');
+const { createKey, getHistoricPrice, isPending } = useHistoricPriceCache();
 
 const isCurrencyCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);
 

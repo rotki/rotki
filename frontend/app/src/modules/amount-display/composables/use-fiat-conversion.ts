@@ -2,8 +2,8 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { type BigNumber, One, Zero } from '@rotki/common';
 import { useAmountDisplaySettings } from '@/modules/amount-display/composables/use-amount-display-settings';
 import { normalizeTimestamp, type Timestamp } from '@/modules/amount-display/types';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { CURRENCY_USD } from '@/types/currencies';
 
 export interface UseFiatConversionOptions {
@@ -39,7 +39,7 @@ export function useFiatConversion(options: UseFiatConversionOptions): UseFiatCon
 
   const { currencySymbol } = useAmountDisplaySettings();
   const { getExchangeRate } = usePriceUtils();
-  const { createKey, getHistoricPrice, getIsPending } = useHistoricCachePriceStore();
+  const { createKey, getHistoricPrice, getIsPending } = useHistoricPriceCache();
 
   const timestampToUse = computed<number>(() => {
     const ts = normalizeTimestamp(toValue(timestamp));

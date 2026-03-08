@@ -3,7 +3,7 @@ import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } 
 import { startPromise } from '@shared/utils';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseHistoricPricesReturn {
@@ -22,7 +22,7 @@ export function useHistoricPrices(
   const items = ref<HistoricalPrice[]>([]);
 
   const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
-  const { resetHistoricalPricesData } = useHistoricCachePriceStore();
+  const { resetHistoricalPricesData } = useHistoricPriceCache();
   const { notifyError, showErrorMessage } = useNotifications();
 
   const fetchPrices = async (payload?: Partial<ManualPricePayload>): Promise<void> => {

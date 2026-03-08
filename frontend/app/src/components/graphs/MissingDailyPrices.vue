@@ -7,7 +7,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { useAssetPricesApi } from '@/composables/api/assets/prices';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { ApiValidationError } from '@/types/api/errors';
 import { getErrorMessage } from '@/utils/error-handling';
@@ -30,9 +30,7 @@ const sort = ref<DataTableSortData<EditableMissingPrice>>([]);
 const tab = ref(0);
 
 const { useAssetField } = useAssetInfoRetrieval();
-const store = useHistoricCachePriceStore();
-const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(store);
-const { resetHistoricalPricesData } = store;
+const { failedDailyPrices, resetHistoricalPricesData, resolvedFailedDailyPrices } = useHistoricPriceCache();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { addHistoricalPrice, deleteHistoricalPrice, editHistoricalPrice, fetchHistoricalPrices } = useAssetPricesApi();
 

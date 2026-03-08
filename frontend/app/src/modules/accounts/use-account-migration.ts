@@ -14,7 +14,11 @@ function setupMigrationSessionCache(identifier: string): Ref<MigratedAddresses> 
   return useSessionStorage(`rotki.migrated_addresses.${identifier}`, []);
 }
 
-export const useAccountMigrationStore = defineStore('blockchain/accounts/migration', () => {
+interface UseAccountMigrationReturn {
+  setUpgradedAddresses: (data: MigratedAddresses) => void;
+}
+
+export function useAccountMigration(): UseAccountMigrationReturn {
   let migratedAddresses = ref<MigratedAddresses>([]);
 
   const { canRequestData } = storeToRefs(useSessionAuthStore());
@@ -26,7 +30,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
   const { t } = useI18n({ useScope: 'global' });
   const { notify } = useNotifications();
 
-  const handleMigratedAccounts = (): void => {
+  function handleMigratedAccounts(): void {
     const txEvmChainsVal = get(evmAndEvmLikeTxChainsInfo);
     assert(txEvmChainsVal.length > 0, 'Supported chains is empty');
     const tokenChains: string[] = txEvmChainsVal.map(x => x.id);
@@ -75,18 +79,18 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
     set(migratedAddresses, []);
 
     notifications.forEach(notify);
-  };
+  }
 
-  const runMigrationIfPossible = (canRequestData: MaybeRef<boolean>): void => {
+  function runMigrationIfPossible(canRequest: MaybeRef<boolean>): void {
     const migrated = get(migratedAddresses);
-    if (get(canRequestData) && migrated.length > 0)
+    if (get(canRequest) && migrated.length > 0)
       handleMigratedAccounts();
-  };
+  }
 
-  const upgradeMigratedAddresses = (data: MigratedAddresses): void => {
+  function setUpgradedAddresses(data: MigratedAddresses): void {
     set(migratedAddresses, data);
     runMigrationIfPossible(canRequestData);
-  };
+  }
 
   watch(canRequestData, runMigrationIfPossible);
 
@@ -98,10 +102,6 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
   }, { immediate: true });
 
   return {
-    migratedAddresses,
-    setUpgradedAddresses: upgradeMigratedAddresses,
+    setUpgradedAddresses,
   };
-});
-
-if (import.meta.hot)
-  import.meta.hot.accept(acceptHMRUpdate(useAccountMigrationStore, import.meta.hot));
+}

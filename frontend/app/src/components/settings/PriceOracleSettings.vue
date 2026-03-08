@@ -3,7 +3,7 @@ import PriceRefresh from '@/components/helper/PriceRefresh.vue';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { PrioritizedListData, type PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import {
@@ -38,7 +38,7 @@ function availableOracles(): PrioritizedListData<PrioritizedListId> {
   return new PrioritizedListData([...baseAvailableOraclesTyped]);
 }
 
-const { reset: resetCachedHistoricalPrices } = useHistoricCachePriceStore();
+const { reset: resetCachedHistoricalPrices } = useHistoricPriceCache();
 
 function resetHistoricalPriceOracles(resetPrices: boolean = false) {
   set(historicOracles, get(historicalPriceOracles));

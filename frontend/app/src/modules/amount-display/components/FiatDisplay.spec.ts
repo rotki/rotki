@@ -6,8 +6,8 @@ import { type ComponentMountingOptions, mount, type VueWrapper } from '@vue/test
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import FiatDisplay from '@/modules/amount-display/components/FiatDisplay.vue';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useCurrencies } from '@/types/currencies';
 
@@ -135,9 +135,10 @@ describe('modules/amount-display/components/FiatDisplay', () => {
 
   describe('historic prices', () => {
     it('should use historic rate when timestamp is provided', async () => {
-      const getPrice = vi.spyOn(useHistoricCachePriceStore(), 'getHistoricPrice');
+      const cache = useHistoricPriceCache();
+      const getPrice = vi.spyOn(cache, 'getHistoricPrice');
       getPrice.mockReturnValue(bigNumberify(1.2));
-      vi.spyOn(useHistoricCachePriceStore(), 'getIsPending').mockReturnValue(false);
+      vi.spyOn(cache, 'getIsPending').mockReturnValue(false);
 
       wrapper = createWrapper({
         from: 'USD',
@@ -153,9 +154,10 @@ describe('modules/amount-display/components/FiatDisplay', () => {
     });
 
     it('should use historic rate when timestamp with ms is provided', async () => {
-      const getPrice = vi.spyOn(useHistoricCachePriceStore(), 'getHistoricPrice');
+      const cache = useHistoricPriceCache();
+      const getPrice = vi.spyOn(cache, 'getHistoricPrice');
       getPrice.mockReturnValue(bigNumberify(1.2));
-      vi.spyOn(useHistoricCachePriceStore(), 'getIsPending').mockReturnValue(false);
+      vi.spyOn(cache, 'getIsPending').mockReturnValue(false);
 
       wrapper = createWrapper({
         from: 'USD',

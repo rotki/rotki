@@ -18,6 +18,7 @@ import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useHistoricalPriceFetcher } from '@/modules/prices/use-historical-price-fetcher';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
@@ -25,7 +26,6 @@ import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
@@ -53,7 +53,7 @@ export function statisticsApi(): StatisticsApi {
   const { useNetValue } = useStatisticsStore();
   const { fetchNetValue } = useStatisticsDataFetching();
   const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
-  const { failedDailyPrices, historicalDailyPriceStatus } = storeToRefs(useHistoricCachePriceStore());
+  const { failedDailyPrices, historicalDailyPriceStatus } = useHistoricPriceCache();
   const {
     queryLatestAssetValueDistribution,
     queryLatestLocationValueDistribution,
@@ -137,7 +137,7 @@ export function userSettings(): UserSettingsApi {
 export function balancesApi(): BalancesApi {
   const { getAssetPrice, getExchangeRate } = usePriceUtils();
   const { balancesByLocation, useBalances } = useAggregatedBalances();
-  const { createKey, isPending } = useHistoricCachePriceStore();
+  const { createKey, isPending } = useHistoricPriceCache();
   const { queryOnlyCacheHistoricalRates } = usePriceApi();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 

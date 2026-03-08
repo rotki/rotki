@@ -3,9 +3,9 @@ import { type HistoricalAssetPricePayload, HistoricalAssetPriceResponse } from '
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { logger } from '@/utils/logging';
 
 interface UseHistoricalPriceFetcherReturn {
@@ -19,7 +19,7 @@ export function useHistoricalPriceFetcher(): UseHistoricalPriceFetcherReturn {
   const { runTask } = useTaskHandler();
   const { getAssetField } = useAssetInfoRetrieval();
   const { notifyError } = useNotifications();
-  const { failedDailyPrices, resolvedFailedDailyPrices } = storeToRefs(useHistoricCachePriceStore());
+  const { failedDailyPrices, resolvedFailedDailyPrices } = useHistoricPriceCache();
 
   const resetFailedStates = (asset: string, parsed: HistoricalAssetPriceResponse, excludeTimestamps: number[]): void => {
     const { noPricesTimestamps, rateLimitedPricesTimestamps } = parsed;

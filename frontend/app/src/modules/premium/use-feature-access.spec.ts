@@ -7,6 +7,7 @@ import { useSessionAuthStore } from '@/store/session/auth';
 import { usePremiumStore } from '@/store/session/premium';
 import { type PremiumCapabilities, PremiumFeature, type PremiumFeatureCapability } from '@/types/session';
 import { useFeatureAccess } from './use-feature-access';
+import { usePremiumWatchers } from './use-premium-watchers';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 
@@ -182,6 +183,7 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities(mockCapabilities));
+      usePremiumWatchers();
 
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);
@@ -199,6 +201,7 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities<Partial<PremiumCapabilities>>(partialCapabilities));
+      usePremiumWatchers();
 
       const store = usePremiumStore();
       const { premium } = storeToRefs(store);
@@ -225,6 +228,7 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities(allFalseCapabilities));
+      usePremiumWatchers();
 
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);
@@ -250,6 +254,7 @@ describe('modules/premium/use-feature-access', () => {
       server.use(
         http.get(`${backendUrl}/api/1/premium/capabilities`, apiCallSpy),
       );
+      usePremiumWatchers();
 
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);
@@ -272,6 +277,7 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities(mockCapabilities));
+      usePremiumWatchers();
 
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);
@@ -303,6 +309,7 @@ describe('modules/premium/use-feature-access', () => {
       server.use(
         http.get(`${backendUrl}/api/1/premium/capabilities`, apiCallSpy),
       );
+      usePremiumWatchers();
 
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);
@@ -330,6 +337,7 @@ describe('modules/premium/use-feature-access', () => {
       };
 
       server.use(mockPremiumCapabilities(mockCapabilities));
+      usePremiumWatchers();
 
       const store = usePremiumStore();
       const { premium } = storeToRefs(store);
