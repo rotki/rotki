@@ -1,20 +1,12 @@
-import type { TaskMeta } from '@/modules/tasks/types';
-import type { OnError } from '@/types/fetch';
-import {
-  type CommonQueryStatusData,
+import type {
+  CommonQueryStatusData,
   LiquityBalancesWithCollateralInfo,
   LiquityPoolDetails,
   LiquityStakingDetails,
   LiquityStatistics,
 } from '@rotki/common';
-import { useLiquityApi } from '@/composables/api/defi/liquity';
-import { usePremium } from '@/composables/premium';
 import { useStatusUpdater } from '@/composables/status';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import { fetchDataAsync } from '@/utils/fetch-async';
 
 const defaultBalances = (): LiquityBalancesWithCollateralInfo => ({ balances: {}, totalCollateralRatio: null });
 
@@ -25,150 +17,6 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const statistics = ref<LiquityStatistics | null>(null);
 
   const stakingQueryStatus = ref<CommonQueryStatusData>();
-
-  const isPremium = usePremium();
-  const { activeModules } = storeToRefs(useGeneralSettingsStore());
-  const { t } = useI18n({ useScope: 'global' });
-  const {
-    fetchLiquityBalances,
-    fetchLiquityStaking,
-    fetchLiquityStakingPools,
-    fetchLiquityStatistics,
-  } = useLiquityApi();
-
-  const fetchPools = async (refresh = false): Promise<void> => {
-    const meta: TaskMeta = {
-      title: t('actions.defi.liquity_pools.task.title'),
-    };
-
-    const onError: OnError = {
-      error: message =>
-        t('actions.defi.liquity_pools.error.description', {
-          message,
-        }),
-      title: t('actions.defi.liquity_pools.error.title'),
-    };
-
-    await fetchDataAsync({
-      refresh,
-      requires: {
-        module: Module.LIQUITY,
-        premium: true,
-      },
-      state: {
-        activeModules,
-        isPremium,
-      },
-      task: {
-        meta,
-        onError,
-        parser: result => LiquityPoolDetails.parse(result),
-        query: async () => fetchLiquityStakingPools(),
-        section: Section.DEFI_LIQUITY_STAKING_POOLS,
-        type: TaskType.LIQUITY_STAKING_POOLS,
-      },
-    }, stakingPools);
-  };
-
-  const fetchBalances = async (refresh = false): Promise<void> => {
-    const meta: TaskMeta = {
-      title: t('actions.defi.liquity.task.title'),
-    };
-
-    const onError: OnError = {
-      error: message => t('actions.defi.liquity_balances.error.description', {
-        message,
-      }),
-      title: t('actions.defi.liquity_balances.error.title'),
-    };
-
-    await fetchDataAsync({
-      refresh,
-      requires: {
-        module: Module.LIQUITY,
-        premium: false,
-      },
-      state: {
-        activeModules,
-        isPremium,
-      },
-      task: {
-        meta,
-        onError,
-        parser: result => LiquityBalancesWithCollateralInfo.parse(result),
-        query: async () => fetchLiquityBalances(),
-        section: Section.DEFI_LIQUITY_BALANCES,
-        type: TaskType.LIQUITY_BALANCES,
-      },
-    }, balances);
-  };
-
-  const fetchStaking = async (refresh = false): Promise<void> => {
-    const meta: TaskMeta = {
-      title: t('actions.defi.liquity_staking.task.title'),
-    };
-
-    const onError: OnError = {
-      error: message => t('actions.defi.liquity_staking.error.description', {
-        message,
-      }),
-      title: t('actions.defi.liquity_staking.error.title'),
-    };
-
-    await fetchDataAsync({
-      refresh,
-      requires: {
-        module: Module.LIQUITY,
-        premium: true,
-      },
-      state: {
-        activeModules,
-        isPremium,
-      },
-      task: {
-        meta,
-        onError,
-        parser: result => LiquityStakingDetails.parse(result),
-        query: async () => fetchLiquityStaking(),
-        section: Section.DEFI_LIQUITY_STAKING,
-        type: TaskType.LIQUITY_STAKING,
-      },
-    }, staking);
-  };
-
-  const fetchStatistics = async (refresh = false): Promise<void> => {
-    const meta: TaskMeta = {
-      title: t('actions.defi.liquity_statistics.task.title'),
-    };
-
-    const onError: OnError = {
-      error: message =>
-        t('actions.defi.liquity_statistics.error.description', {
-          message,
-        }),
-      title: t('actions.defi.liquity_statistics.error.title'),
-    };
-
-    await fetchDataAsync({
-      refresh,
-      requires: {
-        module: Module.LIQUITY,
-        premium: true,
-      },
-      state: {
-        activeModules,
-        isPremium,
-      },
-      task: {
-        meta,
-        onError,
-        parser: result => LiquityStatistics.parse(result),
-        query: async () => fetchLiquityStatistics(),
-        section: Section.DEFI_LIQUITY_STATISTICS,
-        type: TaskType.LIQUITY_STATISTICS,
-      },
-    }, statistics);
-  };
 
   const reset = (): void => {
     const { resetStatus } = useStatusUpdater(Section.DEFI_LIQUITY_BALANCES);
@@ -188,10 +36,6 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   return {
     balances,
-    fetchBalances,
-    fetchPools,
-    fetchStaking,
-    fetchStatistics,
     reset,
     setStakingQueryStatus,
     staking,

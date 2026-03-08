@@ -11,6 +11,7 @@ import KrakenStakingPagePlaceholder from '@/components/staking/kraken/KrakenStak
 import { usePremium } from '@/composables/premium';
 import { useSectionStatus } from '@/composables/status';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
+import { useKrakenStakingOperations } from '@/modules/staking/kraken/use-kraken-staking-operations';
 import { Routes } from '@/router/routes';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -21,8 +22,8 @@ import { getPublicProtocolImagePath } from '@/utils/file';
 const filters = ref<KrakenStakingDateFilter>({});
 
 const store = useKrakenStakingStore();
-const { $reset, load } = store;
 const { events } = toRefs(store);
+const { fetchEvents: load } = useKrakenStakingOperations();
 const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 
@@ -60,7 +61,7 @@ watchImmediate([filters, isKrakenConnected], async ([_, isKrakenConnected]) => {
 });
 
 onUnmounted(() => {
-  $reset();
+  store.$reset();
 });
 </script>
 

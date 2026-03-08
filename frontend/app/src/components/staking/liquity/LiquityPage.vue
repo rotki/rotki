@@ -5,6 +5,7 @@ import LiquityStakingDetails from '@/components/staking/liquity/LiquityStakingDe
 import LiquityStakingPagePlaceholder from '@/components/staking/liquity/LiquityStakingPagePlaceholder.vue';
 import { usePremium } from '@/composables/premium';
 import { Module, useModuleEnabled } from '@/composables/session/modules';
+import { useLiquityDataFetching } from '@/modules/defi/liquity/use-liquity-data-fetching';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
 import { useLiquityStore } from '@/store/defi/liquity';
 import { useHistoricCachePriceStore } from '@/store/prices/historic';
@@ -14,7 +15,8 @@ import { Section } from '@/types/status';
 
 const modules = [Module.LIQUITY];
 const { enabled: moduleEnabled } = useModuleEnabled(modules[0]);
-const { fetchPools, fetchStaking, fetchStatistics, setStakingQueryStatus } = useLiquityStore();
+const { setStakingQueryStatus } = useLiquityStore();
+const { fetchPools, fetchStaking, fetchStatistics } = useLiquityDataFetching();
 const { resetProtocolStatsPriceQueryStatus } = useHistoricCachePriceStore();
 const { useShouldShowLoadingScreen } = useStatusStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
