@@ -1,149 +1,44 @@
-import type { Eth2Validator } from '@/types/balances';
-import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
+import type { AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import { Blockchain } from '@rotki/common';
-import { z } from 'zod/v4';
 import { type StakingValidatorManage, useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { CSVMissingHeadersError, useCsvImportExport } from '@/composables/common/use-csv-import-export';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useSectionStatus } from '@/composables/status';
+import { createValidatorAction, type CSVRow, CSVSchema, csvToAccount, doesAccountExist, getChainType } from '@/modules/accounts/import-export/account-csv-schema';
 import { useBlockchainAccountManagement } from '@/modules/accounts/use-blockchain-account-management';
 import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-blockchain-account-data';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
 import { useTagStore } from '@/store/session/tags';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 import { Section } from '@/types/status';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
-import { getAccountAddress, getXpubId, isXpubAccount } from '@/utils/blockchain/accounts/utils';
-import { downloadFileByTextContent } from '@/utils/download';
+import { getAccountAddress, getXpubId } from '@/utils/blockchain/accounts/utils';
 import { logger } from '@/utils/logging';
 import { getKeyType, guessPrefix, isPrefixed } from '@/utils/xpub';
 
-const CSVRow = z.object({
-  address: z.string(),
-  addressExtras: z.string().transform(value => serializedStringToRecord(value)),
-  chain: z.string(),
-  label: z.string().optional(),
-  tags: z.string().optional().transform(value => value ? value.split(';') : []),
-});
-
-const CSVSchema = z.array(CSVRow);
-
-type CSVRow = z.infer<typeof CSVRow>;
-
-interface UseAccountImportExportReturn {
-  exportAccounts: () => void;
+interface UseAccountImportReturn {
   importAccounts: (file: File) => Promise<void>;
 }
 
-function serializedStringToRecord(serialized: string): Record<string, string> {
-  const record: Record<string, string> = {};
-  serialized.split('&').forEach((pair) => {
-    const [key, value] = pair.split('=');
-    if (key) {
-      record[key] = value || '';
-    }
-  });
-
-  return record;
-}
-
-function serializeRecordToString(record: Record<string, string>): string {
-  return Object.entries(record)
-    .map(([key, value]) => `${key}=${value}`)
-    .join('&');
-}
-
-function createValidatorAction(mode: 'add' | 'edit', data: Eth2Validator): StakingValidatorManage {
-  return {
-    chain: Blockchain.ETH2,
-    data,
-    mode,
-    type: 'validator',
-  };
-}
-
-function doesAccountExist(row: CSVRow, accounts: { address: string; chain: string }[]): boolean {
-  return accounts.some(account => account.chain === row.chain && account.address === row.address);
-}
-
-export function useAccountImportExport(): UseAccountImportExportReturn {
+export function useAccountImport(): UseAccountImportReturn {
   const { isEvmCompatible } = useSupportedChains();
   const { getAccounts } = useBlockchainAccountData();
   const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
   const { addAccounts, addEvmAccounts } = useBlockchainAccountManagement();
-  const { attemptTagCreation } = useTagStore();
+  const { attemptTagCreation } = useTagOperations();
   const { save } = useAccountManage();
   const { notifyError, notifyInfo } = useNotifications();
-  const { generateCSV, parseCSV } = useCsvImportExport();
+  const { parseCSV } = useCsvImportExport();
   const { t } = useI18n({ useScope: 'global' });
-  const { allTags } = useTagStore();
+  const { allTags } = storeToRefs(useTagStore());
   const progressStore = useAccountImportProgressStore();
   const { increment, setTotal, skip } = progressStore;
   const { progress } = storeToRefs(progressStore);
 
   const { isLoading: blockchainLoading } = useSectionStatus(Section.BLOCKCHAIN);
   const doneLoading = refDebounced(logicNot(blockchainLoading), 2000);
-
-  const csvToAccount = (acc: CSVRow): AccountPayload => ({
-    address: acc.address,
-    label: acc.label,
-    tags: acc.tags || null,
-  });
-
-  function getChainType(chains: string[]): string {
-    const EVM_CHAIN_TYPE = 'evm';
-    const hasEvmSupport = (chain: string): boolean => isEvmCompatible(chain);
-
-    if (chains.length > 1 && chains.some(hasEvmSupport)) {
-      return EVM_CHAIN_TYPE;
-    }
-    else {
-      return chains[0];
-    }
-  }
-
-  function exportAccounts(): void {
-    const rows: CSVRow[] = [];
-
-    for (const account of getAccounts()) {
-      const addressExtras: Record<string, string> = isXpubAccount(account) && account.data.derivationPath
-        ? { derivationPath: account.data.derivationPath }
-        : {};
-
-      rows.push({
-        address: getAccountAddress(account),
-        addressExtras,
-        chain: getChainType(account.chains),
-        label: account.label,
-        tags: account.tags ?? [],
-      });
-    }
-
-    for (const validator of get(ethStakingValidators)) {
-      const ownershipPercentage = validator.ownershipPercentage;
-      rows.push({
-        address: validator.publicKey,
-        addressExtras: ownershipPercentage ? { ownershipPercentage } : {},
-        chain: Blockchain.ETH2,
-        label: t('blockchain_balances.validator_index_label', { index: validator.index }),
-        tags: [],
-      });
-    }
-
-    const csvContent = generateCSV(rows, {
-      serializers: {
-        addressExtras: (value: Record<string, string>) => serializeRecordToString(value),
-        tags: (value: string[]) => value.join(';'),
-      },
-    });
-
-    downloadFileByTextContent(
-      csvContent,
-      'blockchain-accounts.csv',
-      'text/csv',
-    );
-  }
 
   async function importValidators(validators: CSVRow[]): Promise<void> {
     const validatorActions: StakingValidatorManage[] = [];
@@ -175,10 +70,10 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
     const evmAccounts: AddAccountsPayload[] = [];
     const accounts: [string, string, AddAccountsPayload | XpubAccountPayload][] = [];
 
-    const knownTags = Object.keys(allTags);
+    const knownTags = Object.keys(get(allTags));
     const knownAccounts = getAccounts().map(group => ({
       address: getAccountAddress(group),
-      chain: getChainType(group.chains),
+      chain: getChainType(group.chains, isEvmCompatible),
     })).concat(get(ethStakingValidators).map(validator => ({
       address: validator.publicKey,
       chain: Blockchain.ETH2,
@@ -295,7 +190,6 @@ export function useAccountImportExport(): UseAccountImportExportReturn {
   }
 
   return {
-    exportAccounts,
     importAccounts,
   };
 }
