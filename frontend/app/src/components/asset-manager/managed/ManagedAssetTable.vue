@@ -13,8 +13,8 @@ import RowActions from '@/components/helper/RowActions.vue';
 import { useAssetDisplayHelpers } from '@/composables/asset-manager/use-asset-display-helpers';
 import { useManagedAssetOperations } from '@/composables/asset-manager/use-managed-asset-operations';
 import { useManagedAssetTable } from '@/composables/asset-manager/use-managed-asset-table';
+import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { EVM_TOKEN, type IgnoredAssetsHandlingType, isSpammableAssetType, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 
 interface IgnoredFilter {
@@ -76,7 +76,7 @@ const { canBeEdited, canBeIgnored, disabledRows, formatType, getAsset } = useAss
   isAssetWhitelisted,
 );
 
-const { fetchIgnoredAssets } = useIgnoredAssetsStore();
+const { fetchIgnoredAssets } = useIgnoredAssetOperations();
 
 const spamDisabled = computed<boolean>(() => {
   const selectedIds = get(selected);

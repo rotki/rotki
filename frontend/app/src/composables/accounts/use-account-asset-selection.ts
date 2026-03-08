@@ -1,14 +1,14 @@
-import type { Ref } from 'vue';
+import type { DeepReadonly, Ref } from 'vue';
 import { get } from '@vueuse/core';
 import { useSpamAsset } from '@/composables/assets/spam';
+import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 
 interface UseAccountAssetSelectionReturn {
   handleIgnoreSelected: (ignored: boolean) => Promise<void>;
   handleMarkSelectedAsSpam: () => Promise<void>;
   selectedAssets: Ref<string[] | undefined>;
-  selectionMode: Ref<boolean>;
+  selectionMode: DeepReadonly<Ref<boolean>>;
   toggleSelectionMode: () => void;
 }
 
@@ -17,10 +17,10 @@ export function useAccountAssetSelection(
 ): UseAccountAssetSelectionReturn {
   const { t } = useI18n({ useScope: 'global' });
 
-  const selectionMode = ref<boolean>(false);
+  const selectionMode = shallowRef<boolean>(false);
   const selectedAssets = ref<string[]>([]);
 
-  const { ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
+  const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
   const { markAssetsAsSpam } = useSpamAsset();
   const { showErrorMessage } = useNotifications();
 
@@ -85,7 +85,7 @@ export function useAccountAssetSelection(
     handleIgnoreSelected,
     handleMarkSelectedAsSpam,
     selectedAssets: computedSelectedAssets,
-    selectionMode,
+    selectionMode: readonly(selectionMode),
     toggleSelectionMode,
   };
 }

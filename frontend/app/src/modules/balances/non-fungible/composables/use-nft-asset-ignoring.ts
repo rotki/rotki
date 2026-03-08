@@ -1,8 +1,10 @@
-import type { Ref } from 'vue';
+import type { MaybeRefOrGetter, Ref } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { NonFungibleBalance } from '@/types/nfbalances';
 import { startPromise } from '@shared/utils';
+import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
+import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { uniqueStrings } from '@/utils/data';
@@ -16,16 +18,18 @@ interface UseNftAssetIgnoringReturn {
 
 export function useNftAssetIgnoring(
   fetchData: () => Promise<void>,
-  ignoredAssetsHandling: Ref<IgnoredAssetsHandlingType>,
+  ignoredAssetsHandling: MaybeRefOrGetter<IgnoredAssetsHandlingType>,
 ): UseNftAssetIgnoringReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { showErrorMessage } = useNotifications();
-  const { ignoreAsset, ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
+  const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
+  const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
+  const { isAssetIgnored } = useIgnoredAssetsStore();
 
   const selected = ref<string[]>([]);
 
   function refreshCallback(): void {
-    if (get(ignoredAssetsHandling) !== 'none') {
+    if (toValue(ignoredAssetsHandling) !== 'none') {
       startPromise(fetchData());
     }
   }
@@ -65,7 +69,7 @@ export function useNftAssetIgnoring(
 
     if (status.success) {
       set(selected, []);
-      if (get(ignoredAssetsHandling) !== 'none')
+      if (toValue(ignoredAssetsHandling) !== 'none')
         await fetchData();
     }
   }

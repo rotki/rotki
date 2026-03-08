@@ -25,14 +25,14 @@ vi.mock('@/modules/balances/use-balance-fetching', () => ({
   })),
 }));
 
-vi.mock('@/store/assets/ignored', () => ({
-  useIgnoredAssetsStore: vi.fn(() => ({
+vi.mock('@/modules/assets/use-ignored-asset-operations', () => ({
+  useIgnoredAssetOperations: vi.fn(() => ({
     fetchIgnoredAssets: mockFetchIgnoredAssets,
   })),
 }));
 
-vi.mock('@/store/assets/whitelisted', () => ({
-  useWhitelistedAssetsStore: vi.fn(() => ({
+vi.mock('@/modules/assets/use-whitelisted-asset-operations', () => ({
+  useWhitelistedAssetOperations: vi.fn(() => ({
     fetchWhitelistedAssets: mockFetchWhitelistedAssets,
   })),
 }));

@@ -1,9 +1,12 @@
 import type { SupportedAsset } from '@rotki/common';
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
+import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
+import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
@@ -18,9 +21,9 @@ interface IgnoredFilter {
 interface UseManagedAssetOperationsReturn {
   isAssetWhitelisted: (identifier: string) => boolean;
   useIsAssetWhitelisted: (identifier: string) => ComputedRef<boolean>;
-  loadingIgnore: Ref<string | undefined>;
-  loadingSpam: Ref<string | undefined>;
-  loadingWhitelist: Ref<string | undefined>;
+  loadingIgnore: DeepReadonly<Ref<string | undefined>>;
+  loadingSpam: DeepReadonly<Ref<string | undefined>>;
+  loadingWhitelist: DeepReadonly<Ref<string | undefined>>;
   massIgnore: (ignored: boolean) => Promise<void>;
   massSpam: () => Promise<void>;
   toggleIgnoreAsset: (asset: SupportedAsset) => Promise<void>;
@@ -36,8 +39,11 @@ export function useManagedAssetOperations(
   const { t } = useI18n({ useScope: 'global' });
 
   const { showErrorMessage } = useNotifications();
-  const { ignoreAsset, ignoreAssetWithConfirmation, isAssetIgnored, unignoreAsset } = useIgnoredAssetsStore();
-  const { isAssetWhitelisted, unWhitelistAsset, useIsAssetWhitelisted, whitelistAsset } = useWhitelistedAssetsStore();
+  const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
+  const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
+  const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { isAssetWhitelisted, useIsAssetWhitelisted } = useWhitelistedAssetsStore();
+  const { unWhitelistAsset, whitelistAsset } = useWhitelistedAssetOperations();
   const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
   const { refetchAssetInfo } = useAssetInfoRetrieval();
 
@@ -147,9 +153,9 @@ export function useManagedAssetOperations(
 
   return {
     isAssetWhitelisted,
-    loadingIgnore,
-    loadingSpam,
-    loadingWhitelist,
+    loadingIgnore: readonly(loadingIgnore),
+    loadingSpam: readonly(loadingSpam),
+    loadingWhitelist: readonly(loadingWhitelist),
     massIgnore,
     massSpam,
     toggleIgnoreAsset,
