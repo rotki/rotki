@@ -9,7 +9,7 @@ import { useBlockchainAccounts } from '@/modules/accounts/use-blockchain-account
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
-import { useTagStore } from '@/store/session/tags';
+import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { useSettingsStore } from '@/store/settings';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
@@ -78,7 +78,7 @@ export function useAccountAdditionService(): UseAccountAdditionServiceReturn {
   const { addAccount, addEvmAccount } = useBlockchainAccounts();
   const { detectTokens: detectTokensForChain } = useTokenDetectionOrchestrator();
   const { trackAddedAddresses } = useBlockchainAccountsStore();
-  const { fetchTags } = useTagStore();
+  const { fetchTags } = useTagOperations();
   const { enableModule } = useSettingsStore();
   const { evmChains, supportsTransactions } = useSupportedChains();
   const { getAddresses } = useAccountAddresses();

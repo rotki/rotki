@@ -4,6 +4,7 @@ import RowActions from '@/components/helper/RowActions.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import TagFormDialog from '@/components/tags/TagFormDialog.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useTagStore } from '@/store/session/tags';
@@ -19,9 +20,8 @@ const originalName = ref<string>('');
 const route = useRoute();
 const router = useRouter();
 
-const store = useTagStore();
-const { deleteTag } = store;
-const { tags } = storeToRefs(store);
+const { tags } = storeToRefs(useTagStore());
+const { deleteTag } = useTagOperations();
 const { show } = useConfirmStore();
 
 const sort = ref<DataTableSortData<Tag>>({

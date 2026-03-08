@@ -49,8 +49,8 @@ vi.mock('@/modules/prices/use-price-refresh', () => ({
   })),
 }));
 
-vi.mock('@/store/session/tags', () => ({
-  useTagStore: vi.fn(() => ({
+vi.mock('@/modules/session/use-tag-operations', () => ({
+  useTagOperations: vi.fn(() => ({
     fetchTags: mockFetchTags,
   })),
 }));
