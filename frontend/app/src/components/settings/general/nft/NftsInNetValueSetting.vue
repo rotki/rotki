@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
+import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useStatisticsStore } from '@/store/statistics';
 
 const includeNfts = ref<boolean>(true);
-const { fetchNetValue } = useStatisticsStore();
+const { fetchNetValue } = useStatisticsDataFetching();
 const { nftsInNetValue: enabled } = storeToRefs(useFrontendSettingsStore());
 
 onMounted(() => {

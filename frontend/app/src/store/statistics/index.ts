@@ -2,14 +2,10 @@ import type { MaybeRef } from 'vue';
 import type { NetValueChartData } from '@/modules/dashboard/graph/types';
 import { type AssetBalanceWithPriceAndChains, type BigNumber, type NetValue, One, type TimeFramePeriod, timeframes, TimeUnit, Zero } from '@rotki/common';
 import dayjs from 'dayjs';
-import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
-import { usePremium } from '@/composables/premium';
 import { useNumberScrambler } from '@/composables/utils/useNumberScrambler';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
-import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -35,28 +31,13 @@ interface Overall {
 export const useStatisticsStore = defineStore('statistics', () => {
   const netValue = ref<NetValue>(defaultNetValue());
 
-  const { t } = useI18n({ useScope: 'global' });
-
-  const { nftsInNetValue, scrambleData, scrambleMultiplier: scrambleMultiplierRef, shouldShowAmount, valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
-  const { notifyError } = useNotifications();
+  const { nftsInNetValue, scrambleData, scrambleMultiplier, shouldShowAmount, valueRoundingMode } = storeToRefs(useFrontendSettingsStore());
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
   const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { getExchangeRate } = usePriceUtils();
 
-  const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? 1);
-
-  watchEffect(() => {
-    const newValue = get(scrambleMultiplierRef);
-    if (newValue !== undefined)
-      set(scrambleMultiplier, newValue);
-  });
-
-  const premium = usePremium();
-
-  const api = useStatisticsApi();
   const { getBalances, getLiabilities } = useAggregatedBalances();
-  const { logged } = storeToRefs(useSessionAuthStore());
 
   /**
    * Calculates the sum of balances using the `value` field (already in main currency)
@@ -184,24 +165,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     return computed<NetValueChartData>(() => getNetValue(startingDate));
   }
 
-  const fetchNetValue = async (): Promise<void> => {
-    try {
-      set(netValue, await api.queryNetValueData(get(nftsInNetValue)));
-    }
-    catch (error: unknown) {
-      notifyError(t('actions.statistics.net_value.error.title'), t('actions.statistics.net_value.error.message', {
-        message: getErrorMessage(error),
-      }), { display: false });
-    }
-  };
-
-  watch(premium, async () => {
-    if (get(logged))
-      await fetchNetValue();
-  });
-
   return {
-    fetchNetValue,
     getNetValue,
     netValue,
     useNetValue,

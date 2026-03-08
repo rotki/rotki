@@ -6,9 +6,9 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
 import { useInterop } from '@/composables/electron-interop';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { useStatisticsStore } from '@/store/statistics';
 import { downloadFileByBlob } from '@/utils/download';
 import { getErrorMessage } from '@/utils/error-handling';
 
@@ -84,7 +84,7 @@ async function exportSnapshot() {
   else await downloadSnapshot();
 }
 
-const { fetchNetValue } = useStatisticsStore();
+const { fetchNetValue } = useStatisticsDataFetching();
 
 async function deleteSnapshot() {
   let message: Message | null;

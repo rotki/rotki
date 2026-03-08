@@ -42,8 +42,8 @@ vi.mock('@/modules/balances/exchanges/use-exchanges', () => ({
   }),
 }));
 
-vi.mock('@/store/statistics', () => ({
-  useStatisticsStore: vi.fn().mockReturnValue({
+vi.mock('@/modules/statistics/use-statistics-data-fetching', () => ({
+  useStatisticsDataFetching: vi.fn().mockReturnValue({
     fetchNetValue: vi.fn().mockResolvedValue({}),
   }),
 }));
