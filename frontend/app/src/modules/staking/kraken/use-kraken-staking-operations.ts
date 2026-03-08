@@ -10,6 +10,7 @@ import { getErrorMessage, useNotifications } from '@/modules/notifications/use-n
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
+import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useKrakenStakingStore } from '@/store/staking/kraken';
 import { Section, Status } from '@/types/status';
 import { logger } from '@/utils/logging';
@@ -27,6 +28,11 @@ export function useKrakenStakingOperations(): UseKrakenStakingOperationsReturn {
   const { isFirstLoad, loading, setStatus } = useStatusUpdater(Section.STAKING_KRAKEN);
   const { t } = useI18n({ useScope: 'global' });
   const { pagination, rawEvents } = storeToRefs(useKrakenStakingStore());
+  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+
+  watchImmediate(itemsPerPage, (newValue: number) => {
+    set(pagination, { ...get(pagination), limit: newValue });
+  });
 
   async function refreshEvents(): Promise<void> {
     await runTask<unknown, TaskMeta>(

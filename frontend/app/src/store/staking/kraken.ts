@@ -4,13 +4,12 @@ import type {
 } from '@/types/staking';
 import { type AssetBalance, Zero } from '@rotki/common';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { balanceSum } from '@/utils/calculation';
 
-function defaultPagination(itemsPerPage: number): KrakenStakingPagination {
+function defaultPagination(): KrakenStakingPagination {
   return {
     ascending: [false],
-    limit: itemsPerPage,
+    limit: 10,
     offset: 0,
     orderByAttributes: ['timestamp'],
   };
@@ -28,13 +27,8 @@ function defaultEventState(): KrakenStakingEvents {
 }
 
 export const useKrakenStakingStore = defineStore('staking/kraken', () => {
-  const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
-  const pagination = ref<KrakenStakingPagination>(defaultPagination(get(itemsPerPage)));
+  const pagination = ref<KrakenStakingPagination>(defaultPagination());
   const rawEvents = ref<KrakenStakingEvents>(defaultEventState());
-
-  watch(itemsPerPage, (newValue: number) => {
-    set(pagination, { ...get(pagination), limit: newValue });
-  });
 
   const resolveAssetIdentifier = useResolveAssetIdentifier();
 
