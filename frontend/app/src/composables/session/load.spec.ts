@@ -37,8 +37,8 @@ vi.mock('@/store/assets/whitelisted', () => ({
   })),
 }));
 
-vi.mock('@/store/statistics', () => ({
-  useStatisticsStore: vi.fn(() => ({
+vi.mock('@/modules/statistics/use-statistics-data-fetching', () => ({
+  useStatisticsDataFetching: vi.fn(() => ({
     fetchNetValue: mockFetchNetValue,
   })),
 }));

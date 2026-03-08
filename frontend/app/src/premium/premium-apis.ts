@@ -20,6 +20,7 @@ import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
 import { useHistoricalPriceFetcher } from '@/modules/prices/use-historical-price-fetcher';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
+import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
@@ -49,7 +50,8 @@ export function assetsApi(): AssetsApi {
 export function statisticsApi(): StatisticsApi {
   const { isAssetIgnored } = useIgnoredAssetsStore();
 
-  const { fetchNetValue, useNetValue } = useStatisticsStore();
+  const { useNetValue } = useStatisticsStore();
+  const { fetchNetValue } = useStatisticsDataFetching();
   const { fetchHistoricalAssetPrice } = useHistoricalPriceFetcher();
   const { failedDailyPrices, historicalDailyPriceStatus } = storeToRefs(useHistoricCachePriceStore());
   const {
@@ -102,7 +104,7 @@ export function userSettings(): UserSettingsApi {
     graphZeroBased,
     privacyMode,
     scrambleData,
-    scrambleMultiplier: scrambleMultiplierRef,
+    scrambleMultiplier,
     selectedTheme,
     shouldShowAmount,
     shouldShowPercentage,
@@ -112,14 +114,6 @@ export function userSettings(): UserSettingsApi {
     useHistoricalAssetBalances,
   } = storeToRefs(useFrontendSettingsStore());
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
-
-  const scrambleMultiplier = ref<number>(get(scrambleMultiplierRef) ?? 1);
-
-  watchEffect(() => {
-    const newValue = get(scrambleMultiplierRef);
-    if (newValue !== undefined)
-      set(scrambleMultiplier, newValue);
-  });
 
   return {
     currencySymbol,

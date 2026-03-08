@@ -7,9 +7,9 @@ import { useManualBalances } from '@/modules/balances/manual/use-manual-balances
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useStatisticsStore } from '@/store/statistics';
 
 export const useBalanceFetching = createSharedComposable(() => {
   const { fetchManualBalances } = useManualBalances();
@@ -21,7 +21,7 @@ export const useBalanceFetching = createSharedComposable(() => {
   const { notifyError } = useNotifications();
   const { runTask } = useTaskHandler();
   const { t } = useI18n({ useScope: 'global' });
-  const { fetchNetValue } = useStatisticsStore();
+  const { fetchNetValue } = useStatisticsDataFetching();
 
   const fetchBalances = async (payload: Partial<AllBalancePayload> = {}): Promise<void> => {
     const outcome = await runTask(

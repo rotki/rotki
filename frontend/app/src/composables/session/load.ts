@@ -4,12 +4,12 @@ import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { useStatusUpdater } from '@/composables/status';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
+import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { useLocationStore } from '@/store/locations';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useTagStore } from '@/store/session/tags';
-import { useStatisticsStore } from '@/store/statistics';
 import { Section, Status } from '@/types/status';
 import { logger } from '@/utils/logging';
 
@@ -20,7 +20,7 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { fetchTags } = useTagStore();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
   const { fetchWhitelistedAssets } = useWhitelistedAssetsStore();
-  const { fetchNetValue } = useStatisticsStore();
+  const { fetchNetValue } = useStatisticsDataFetching();
   const { fetchAllTradeLocations } = useLocationStore();
   const { fetch } = useBalanceFetching();
   const { refreshPrices } = usePriceRefresh();

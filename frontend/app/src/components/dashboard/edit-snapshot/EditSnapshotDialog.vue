@@ -6,7 +6,7 @@ import EditSnapshotTotal from '@/components/dashboard/edit-snapshot/EditSnapshot
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import { useSnapshotApi } from '@/composables/api/settings/snapshot-api';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useStatisticsStore } from '@/store/statistics';
+import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { sortDesc } from '@/utils/bignumbers';
 
 const { timestamp } = defineProps<{
@@ -18,9 +18,10 @@ const emit = defineEmits<{
   finish: [];
 }>();
 
-const snapshotData = ref<Snapshot | null>(null);
+const snapshotData = ref<Snapshot>();
 const step = ref<number>(1);
-const { fetchNetValue } = useStatisticsStore();
+
+const { fetchNetValue } = useStatisticsDataFetching();
 
 const api = useSnapshotApi();
 
@@ -28,12 +29,12 @@ const { t } = useI18n({ useScope: 'global' });
 
 const balancesSnapshot = computed<BalanceSnapshot[]>(() => {
   const data = get(snapshotData);
-  return !data ? [] : (data.balancesSnapshot as BalanceSnapshot[]);
+  return data?.balancesSnapshot ?? [];
 });
 
 const locationDataSnapshot = computed<LocationDataSnapshot[]>(() => {
   const data = get(snapshotData);
-  return !data ? [] : (data.locationDataSnapshot as LocationDataSnapshot[]);
+  return data?.locationDataSnapshot ?? [];
 });
 
 async function fetchSnapshotData() {
@@ -138,7 +139,7 @@ function updateAndComplete(event: LocationDataSnapshot[]) {
   finish();
 }
 
-const steps = computed(() => [
+const steps = computed<{ title: string }[]>(() => [
   {
     title: t('dashboard.snapshot.edit.dialog.balances.title'),
   },
