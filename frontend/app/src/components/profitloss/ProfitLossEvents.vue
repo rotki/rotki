@@ -14,8 +14,8 @@ import ReportProfitLossEventAction from '@/components/profitloss/ReportProfitLos
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
+import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useReportsStore } from '@/store/reports';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { isTransactionEvent } from '@/utils/report';
 
@@ -43,7 +43,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const expanded = ref<PnLItem[]>([]);
 
-const { fetchReportEvents } = useReportsStore();
+const { fetchReportEvents } = useReportOperations();
 
 const {
   fetchData,
@@ -154,14 +154,14 @@ const items = computed<PnLItem[]>(() => {
   }));
 });
 
-function checkGroupLine(entries: ProfitLossEvents, index: number) {
-  const current = entries[index];
-  const prev = index - 1 >= 0 ? entries[index - 1] : null;
-  const next = index + 1 < entries.length ? entries[index + 1] : null;
+function checkGroupLine(entries: ProfitLossEvents, index: number): GroupLine {
+  const groupId = entries[index]?.groupId;
+  if (!groupId)
+    return { bottom: false, top: false };
 
   return {
-    bottom: !!(current?.groupId && next && current?.groupId === next?.groupId),
-    top: !!(current?.groupId && prev && current?.groupId === prev?.groupId),
+    bottom: index + 1 < entries.length && groupId === entries[index + 1]?.groupId,
+    top: index > 0 && groupId === entries[index - 1]?.groupId,
   };
 }
 

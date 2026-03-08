@@ -7,6 +7,7 @@ import ProfitLossEvents from '@/components/profitloss/ProfitLossEvents.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportActionable from '@/components/profitloss/ReportActionable.vue';
 import ReportHeader from '@/components/profitloss/ReportHeader.vue';
+import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { defaultReportEvents, useReportsStore } from '@/store/reports';
 import { NoteLocation } from '@/types/notes';
 
@@ -29,12 +30,13 @@ const initialOpenReportActionable = ref<boolean>(false);
 
 const reportsStore = useReportsStore();
 const { reports } = storeToRefs(reportsStore);
-const { fetchReports, getActionableItems, isLatestReport } = reportsStore;
+const { isLatestReport } = reportsStore;
+const { fetchReports, getActionableItems } = useReportOperations();
 
 const router = useRouter();
 const route = useRoute<'/reports/[id]'>();
 const currentRoute = get(route);
-const reportId = Number(currentRoute.params.id as string);
+const reportId = Number(String(currentRoute.params.id));
 const latest = isLatestReport(reportId);
 
 const selectedReport = computed<Report>(() => get(reports).entries.find(item => item.identifier === reportId)!);

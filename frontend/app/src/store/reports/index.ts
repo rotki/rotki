@@ -1,28 +1,10 @@
-import type { TaskMeta } from '@/modules/tasks/types';
-import type { Collection, CollectionResponse } from '@/types/collection';
-import type { AddressBookSimplePayload } from '@/types/eth-names';
+import type { Collection } from '@/types/collection';
 import type {
   ProfitLossEvent,
-  ProfitLossEventsPayload,
-  ProfitLossReportDebugPayload,
-  ProfitLossReportPeriod,
   ReportActionableItem,
   ReportError,
   Reports,
 } from '@/types/reports';
-import { Blockchain } from '@rotki/common';
-import { startPromise } from '@shared/utils';
-import { useHistoryApi } from '@/composables/api/history';
-import { useReportsApi } from '@/composables/api/reports';
-import { useEnsOperations } from '@/modules/address-names/use-ens-operations';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { isBlockchain } from '@/types/blockchain/chains';
-import { mapCollectionResponse } from '@/utils/collection';
-import { getEthAddressesFromText } from '@/utils/history';
-import { logger } from '@/utils/logging';
-import { isTransactionEvent } from '@/utils/report';
 
 function emptyError(): ReportError {
   return {
@@ -70,197 +52,7 @@ export const useReportsStore = defineStore('reports', () => {
     missingPrices: [],
   });
 
-  const { notifyError, showErrorMessage, showSuccessMessage } = useNotifications();
-  const { t } = useI18n({ useScope: 'global' });
-
-  const { fetchEnsNames } = useEnsOperations();
-
-  const {
-    deleteReport: deleteReportCaller,
-    exportReportCSV,
-    exportReportData: exportReportDataCaller,
-    fetchActionableItems,
-    fetchReportEvents: fetchReportEventsCaller,
-    fetchReports: fetchReportsCaller,
-    generateReport: generateReportCaller,
-  } = useReportsApi();
-
-  const { runTask } = useTaskHandler();
-  const { getProgress } = useHistoryApi();
-
   const isLatestReport = (reportId: number): ComputedRef<boolean> => computed<boolean>(() => get(lastGeneratedReport) === reportId);
-
-  const checkProgress = (): NodeJS.Timeout => {
-    const interval = setInterval(() => {
-      getProgress()
-        .then(progress => set(reportProgress, progress))
-        .catch(() => {
-          // if the request fails (e.g. user logged out) it stops the interval
-          clearInterval(interval);
-        });
-    }, 2000);
-    return interval;
-  };
-
-  const createCsv = async (reportId: number, path: string): Promise<void> => {
-    try {
-      const success = await exportReportCSV(reportId, path);
-      if (success)
-        showSuccessMessage(t('actions.reports.csv_export.title'), t('actions.reports.csv_export.message.success'));
-      else
-        showErrorMessage(t('actions.reports.csv_export.title'), t('actions.reports.csv_export.message.failure'));
-    }
-    catch (error: unknown) {
-      showErrorMessage(t('actions.reports.csv_export.title'), getErrorMessage(error));
-    }
-  };
-
-  const fetchReports = async (): Promise<void> => {
-    try {
-      set(reports, await fetchReportsCaller());
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      notifyError(t('actions.reports.fetch.error.title'), t('actions.reports.fetch.error.description'));
-    }
-  };
-
-  const deleteReport = async (reportId: number): Promise<void> => {
-    try {
-      await deleteReportCaller(reportId);
-      await fetchReports();
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      notifyError(t('actions.reports.delete.error.title'), t('actions.reports.delete.error.description'));
-    }
-  };
-
-  function fetchEnsNamesFromTransactions(events: Collection<ProfitLossEvent>): void {
-    const addressesNamesPayload: AddressBookSimplePayload[] = [];
-    events.data
-      .filter(event => isTransactionEvent(event))
-      .forEach((event) => {
-        const blockchain = event.location || Blockchain.ETH;
-        if (!event.notes || !isBlockchain(blockchain))
-          return;
-
-        const addresses = getEthAddressesFromText(event.notes);
-        addressesNamesPayload.push(
-          ...addresses.map(address => ({
-            address,
-            blockchain,
-          })),
-        );
-      });
-
-    if (addressesNamesPayload.length > 0)
-      startPromise(fetchEnsNames(addressesNamesPayload));
-  }
-
-  const fetchReportEvents = async (payload: MaybeRef<ProfitLossEventsPayload>): Promise<Collection<ProfitLossEvent>> => {
-    try {
-      const response = await fetchReportEventsCaller(get(payload));
-      const events = mapCollectionResponse<ProfitLossEvent, CollectionResponse<ProfitLossEvent>>(response);
-      fetchEnsNamesFromTransactions(events);
-      return events;
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      notifyError(t('actions.report_events.fetch.error.title'), t('actions.report_events.fetch.error.description', { error }));
-      return defaultReportEvents();
-    }
-  };
-
-  const getActionableItems = async (): Promise<void> => {
-    const actionable = await fetchActionableItems();
-    set(actionableItems, actionable);
-  };
-
-  const generateReport = async (period: ProfitLossReportPeriod): Promise<number> => {
-    set(reportProgress, {
-      processingState: '',
-      totalProgress: '0',
-    });
-    set(reportError, emptyError());
-
-    const intervalId = checkProgress();
-
-    try {
-      const outcome = await runTask<number, TaskMeta>(
-        async () => generateReportCaller(period),
-        { type: TaskType.TRADE_HISTORY, meta: { title: t('actions.reports.generate.task.title') } },
-      );
-
-      if (outcome.success) {
-        if (outcome.result) {
-          set(lastGeneratedReport, outcome.result);
-          await fetchReports();
-        }
-        else {
-          set(reportError, {
-            error: '',
-            message: t('actions.reports.generate.error.description', {
-              error: '',
-            }),
-          });
-        }
-        return outcome.result;
-      }
-      else if (isActionableFailure(outcome)) {
-        set(reportError, {
-          error: outcome.message,
-          message: t('actions.reports.generate.error.description'),
-        });
-      }
-      return -1;
-    }
-    finally {
-      clearInterval(intervalId);
-
-      set(reportProgress, {
-        processingState: '',
-        totalProgress: '0',
-      });
-    }
-  };
-
-  const exportReportData = async (payload: ProfitLossReportDebugPayload): Promise<boolean | object> => {
-    set(reportProgress, {
-      processingState: '',
-      totalProgress: '0',
-    });
-    set(reportError, emptyError());
-
-    const intervalId = checkProgress();
-
-    try {
-      const outcome = await runTask<boolean | object, TaskMeta>(
-        async () => exportReportDataCaller(payload),
-        { type: TaskType.TRADE_HISTORY, meta: { title: t('actions.reports.generate.task.title') } },
-      );
-
-      if (outcome.success) {
-        return outcome.result;
-      }
-      else if (isActionableFailure(outcome)) {
-        set(reportError, {
-          error: outcome.message,
-          message: t('actions.reports.generate.error.description'),
-        });
-      }
-
-      return {};
-    }
-    finally {
-      clearInterval(intervalId);
-
-      set(reportProgress, {
-        processingState: '',
-        totalProgress: '0',
-      });
-    }
-  };
 
   const progress = computed<string>(() => get(reportProgress).totalProgress);
   const processingState = computed<string>(() => get(reportProgress).processingState);
@@ -277,17 +69,12 @@ export const useReportsStore = defineStore('reports', () => {
   return {
     actionableItems,
     clearError,
-    createCsv,
-    deleteReport,
-    exportReportData,
-    fetchReportEvents,
-    fetchReports,
-    generateReport,
-    getActionableItems,
     isLatestReport,
+    lastGeneratedReport,
     processingState,
     progress,
     reportError,
+    reportProgress,
     reports,
     reset,
   };

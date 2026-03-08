@@ -8,6 +8,7 @@ import UpgradeRow from '@/components/history/UpgradeRow.vue';
 import ProfitLossOverview from '@/components/profitloss/ProfitLossOverview.vue';
 import ReportsTableMoreAction from '@/components/profitloss/ReportsTableMoreAction.vue';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { useReportOperations } from '@/modules/reports/use-report-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useReportsStore } from '@/store/reports';
 import { calculateTotalProfitLoss } from '@/utils/report';
@@ -18,9 +19,8 @@ interface ReportData extends Report {
 }
 
 const expanded = ref<ReportData[]>([]);
-const reportStore = useReportsStore();
-const { deleteReport, fetchReports } = reportStore;
-const { reports } = storeToRefs(reportStore);
+const { reports } = storeToRefs(useReportsStore());
+const { deleteReport, fetchReports } = useReportOperations();
 const { t } = useI18n({ useScope: 'global' });
 
 const items = computed<(ReportData & { id: number })[]>(() =>
