@@ -94,6 +94,7 @@ class DBCursor:
             # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
             logger.debug(f'{statement} with {bindings} failed due to {e!s}. Probably https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
             self._cursor.execute(statement, *bindings)
+
         if __debug__:
             logger.trace(f'FINISH EXECUTE {statement} with bindings {bindings} for cursor {id(self)}')  # noqa: E501
         return self
