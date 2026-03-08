@@ -6,6 +6,7 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import { ValueDisplay } from '@/modules/amount-display/components';
+import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { Routes } from '@/router/routes';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
@@ -35,7 +36,8 @@ defineSlots<{
 }>();
 
 const router = useRouter();
-const { ignoreAsset, isAssetIgnored } = useIgnoredAssetsStore();
+const { ignoreAsset } = useIgnoredAssetOperations();
+const { isAssetIgnored } = useIgnoredAssetsStore();
 
 const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
   const grouped: GroupedItems = {};

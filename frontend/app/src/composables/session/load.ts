@@ -2,12 +2,12 @@ import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { useStatusUpdater } from '@/composables/status';
+import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { useLocationStore } from '@/store/locations';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { Section, Status } from '@/types/status';
@@ -18,8 +18,8 @@ interface UseDataLoaderReturn { load: () => void }
 export function useDataLoader(): UseDataLoaderReturn {
   const { shouldFetchData } = storeToRefs(useSessionAuthStore());
   const { fetchTags } = useTagOperations();
-  const { fetchIgnoredAssets } = useIgnoredAssetsStore();
-  const { fetchWhitelistedAssets } = useWhitelistedAssetsStore();
+  const { fetchIgnoredAssets } = useIgnoredAssetOperations();
+  const { fetchWhitelistedAssets } = useWhitelistedAssetOperations();
   const { fetchNetValue } = useStatisticsDataFetching();
   const { fetchAllTradeLocations } = useLocationStore();
   const { fetch } = useBalanceFetching();

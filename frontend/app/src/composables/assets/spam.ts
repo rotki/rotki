@@ -1,10 +1,10 @@
 import type { ActionStatus } from '@/types/action';
 import { useAssetSpamApi } from '@/composables/api/assets/spam';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseSpamAssetReturn {
@@ -21,8 +21,8 @@ export function useSpamAsset(): UseSpamAssetReturn {
     removeAssetFromSpamList: removeAssetFromSpamListCaller,
   } = useAssetSpamApi();
 
-  const { fetchWhitelistedAssets } = useWhitelistedAssetsStore();
-  const { fetchIgnoredAssets } = useIgnoredAssetsStore();
+  const { fetchWhitelistedAssets } = useWhitelistedAssetOperations();
+  const { fetchIgnoredAssets } = useIgnoredAssetOperations();
 
   const { getAssetField } = useAssetInfoRetrieval();
   const { manualBalancesAssets } = useManualBalanceData();

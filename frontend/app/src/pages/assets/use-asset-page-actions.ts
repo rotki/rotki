@@ -1,5 +1,8 @@
-import type { ComputedRef, Ref } from 'vue';
+import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import { useSpamAsset } from '@/composables/assets/spam';
+import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
+import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
+import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 
@@ -11,17 +14,20 @@ interface AssetWithSpamStatus {
 }
 
 interface UseAssetPageActionsOptions {
+  /** The resolved asset data, including spam status */
   asset: ComputedRef<AssetWithSpamStatus | null>;
+  /** The asset identifier */
   identifier: Ref<string>;
+  /** Callback to refresh asset info after an action */
   refetchAssetInfo: (id: string) => void;
 }
 
 interface UseAssetPageActionsReturn {
   isIgnored: ComputedRef<boolean>;
   isSpam: ComputedRef<boolean>;
-  loadingIgnore: Ref<boolean>;
-  loadingSpam: Ref<boolean>;
-  loadingWhitelist: Ref<boolean>;
+  loadingIgnore: DeepReadonly<Ref<boolean>>;
+  loadingSpam: DeepReadonly<Ref<boolean>>;
+  loadingWhitelist: DeepReadonly<Ref<boolean>>;
   toggleIgnoreAsset: () => Promise<void>;
   toggleSpam: () => Promise<void>;
   toggleWhitelistAsset: () => Promise<void>;
@@ -30,17 +36,20 @@ interface UseAssetPageActionsReturn {
 export function useAssetPageActions(options: UseAssetPageActionsOptions): UseAssetPageActionsReturn {
   const { asset, identifier, refetchAssetInfo } = options;
 
-  const { ignoreAssetWithConfirmation, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
-  const { useIsAssetWhitelisted, unWhitelistAsset, whitelistAsset } = useWhitelistedAssetsStore();
+  const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
+  const { unignoreAsset } = useIgnoredAssetOperations();
+  const { useIsAssetIgnored } = useIgnoredAssetsStore();
+  const { useIsAssetWhitelisted } = useWhitelistedAssetsStore();
+  const { unWhitelistAsset, whitelistAsset } = useWhitelistedAssetOperations();
   const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
   const isIgnored = useIsAssetIgnored(identifier);
   const isWhitelisted = useIsAssetWhitelisted(identifier);
   const isSpam = computed<boolean>(() => get(asset)?.isSpam || false);
 
-  const loadingIgnore = ref<boolean>(false);
-  const loadingWhitelist = ref<boolean>(false);
-  const loadingSpam = ref<boolean>(false);
+  const loadingIgnore = shallowRef<boolean>(false);
+  const loadingWhitelist = shallowRef<boolean>(false);
+  const loadingSpam = shallowRef<boolean>(false);
 
   async function toggleSpam(): Promise<void> {
     set(loadingSpam, true);
@@ -94,9 +103,9 @@ export function useAssetPageActions(options: UseAssetPageActionsOptions): UseAss
   return {
     isIgnored,
     isSpam,
-    loadingIgnore,
-    loadingSpam,
-    loadingWhitelist,
+    loadingIgnore: readonly(loadingIgnore),
+    loadingSpam: readonly(loadingSpam),
+    loadingWhitelist: readonly(loadingWhitelist),
     toggleIgnoreAsset,
     toggleSpam,
     toggleWhitelistAsset,
