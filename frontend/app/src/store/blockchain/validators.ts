@@ -5,25 +5,15 @@ import type {
 } from '@/types/blockchain/accounts';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import type { Collection } from '@/types/collection';
-import { type Balance, type BigNumber, bigNumberify, Blockchain, Eth2Validators, type EthValidatorFilter, Zero } from '@rotki/common';
-import { useBlockchainAccountsApi } from '@/composables/api/blockchain/accounts';
-import { useSupportedChains } from '@/composables/info/chains';
-import { usePremium } from '@/composables/premium';
+import { type Balance, type BigNumber, bigNumberify, Blockchain, Zero } from '@rotki/common';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { useNotifications } from '@/modules/notifications/use-notifications';
-import { TaskType } from '@/modules/tasks/task-type';
-import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module } from '@/types/modules';
-import { createValidatorAccount } from '@/utils/blockchain/accounts/create';
 import { isValidatorAccount } from '@/utils/blockchain/accounts/utils';
 import { sortAndFilterValidators } from '@/utils/blockchain/accounts/validator';
-import { logger } from '@/utils/logging';
 
 export const useBlockchainValidatorsStore = defineStore('blockchain/validators', () => {
-  const { fetchBlockchainBalances } = useBlockchainBalances();
   const blockchainAccountsStore = useBlockchainAccountsStore();
   const { accounts } = storeToRefs(blockchainAccountsStore);
   const { updateAccounts } = blockchainAccountsStore;
@@ -31,13 +21,9 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
   const { balances } = storeToRefs(balancesStore);
   const { updateBalances } = balancesStore;
 
-  const { getEth2Validators } = useBlockchainAccountsApi();
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
   const isEth2Enabled = (): boolean => get(activeModules).includes(Module.ETH2);
-  const { getNativeAsset } = useSupportedChains();
-  const { notifyError } = useNotifications();
-  const { t } = useI18n({ useScope: 'global' });
 
   const stakingValidatorsLimits = ref<{
     limit: number;
@@ -73,56 +59,6 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
       ));
     },
   );
-
-  const { runTask } = useTaskHandler();
-
-  const fetchEthStakingValidators = async (payload?: EthValidatorFilter): Promise<void> => {
-    if (!isEth2Enabled())
-      return;
-
-    const outcome = await runTask<Eth2Validators, { title: string }>(
-      async () => getEth2Validators(payload),
-      { type: TaskType.FETCH_ETH2_VALIDATORS, meta: { title: t('actions.get_accounts.task.title', { blockchain: Blockchain.ETH2 }) } },
-    );
-
-    if (outcome.success) {
-      const validators = Eth2Validators.parse(outcome.result);
-      updateAccounts(
-        Blockchain.ETH2,
-        validators.entries.map(validator =>
-          createValidatorAccount(validator, {
-            chain: Blockchain.ETH2,
-            nativeAsset: getNativeAsset(Blockchain.ETH2),
-          }),
-        ),
-      );
-      set(stakingValidatorsLimits, { limit: validators.entriesLimit, total: validators.entriesFound });
-    }
-    else if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
-      notifyError(
-        t('actions.get_accounts.error.title'),
-        t('actions.get_accounts.error.description', {
-          blockchain: Blockchain.ETH2,
-          message: outcome.message,
-        }),
-      );
-    }
-  };
-
-  const premium = usePremium();
-
-  watch(premium, async () => {
-    if (isEth2Enabled()) {
-      await fetchEthStakingValidators({
-        ignoreCache: true,
-      });
-      await fetchBlockchainBalances({
-        blockchain: Blockchain.ETH2,
-        ignoreCache: true,
-      });
-    }
-  });
 
   /**
    * Adjusts the balances for an ethereum staking validator based on the percentage of ownership.
@@ -194,7 +130,6 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
 
   return {
     ethStakingValidators,
-    fetchEthStakingValidators,
     fetchValidators,
     isEth2Enabled,
     stakingValidatorsLimits,
