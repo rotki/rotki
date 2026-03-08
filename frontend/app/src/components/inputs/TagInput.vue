@@ -3,6 +3,7 @@ import { invertColor, randomColor } from '@rotki/common';
 import ListItem from '@/components/common/ListItem.vue';
 import TagFormDialog from '@/components/tags/TagFormDialog.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
+import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { useTagStore } from '@/store/session/tags';
 import { defaultTag, type Tag } from '@/types/tags';
 import { renameTagInList } from '@/utils/tags';
@@ -15,8 +16,8 @@ const { disabled, label = 'Tags' } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const store = useTagStore();
-const { tags } = storeToRefs(store);
+const { tags } = storeToRefs(useTagStore());
+const { attemptTagCreation: attemptTag } = useTagOperations();
 
 const search = ref<string>('');
 
@@ -32,8 +33,8 @@ function remove(tag: string) {
   onUpdateModelValue([...tags.slice(0, index), ...tags.slice(index + 1)]);
 }
 
-function attemptTagCreation(element: string) {
-  store.attemptTagCreation(element, get(newTagBackground))
+function attemptTagCreation(element: string): void {
+  attemptTag(element, get(newTagBackground))
     .then((success) => {
       if (!success)
         remove(element);

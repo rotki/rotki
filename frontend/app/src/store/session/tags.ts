@@ -1,107 +1,12 @@
-import type { ActionStatus } from '@/types/action';
-import type { Tag, Tags } from '@/types/tags';
-import { invertColor, randomColor } from '@rotki/common';
-import { useTagsApi } from '@/composables/api/tags';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { logger } from '@/utils/logging';
+import type { Tags } from '@/types/tags';
 
 export const useTagStore = defineStore('session/tags', () => {
   const allTags = ref<Tags>({});
 
   const tags = computed(() => Object.values(get(allTags)));
 
-  const { t } = useI18n({ useScope: 'global' });
-  const { removeTag, renameTag } = useBlockchainAccountsStore();
-  const { showErrorMessage } = useNotifications();
-  const { queryAddTag, queryDeleteTag, queryEditTag, queryTags } = useTagsApi();
-
-  const addTag = async (tag: Tag): Promise<ActionStatus> => {
-    try {
-      set(allTags, await queryAddTag(tag));
-      return { success: true };
-    }
-    catch (error: unknown) {
-      const message = getErrorMessage(error);
-      showErrorMessage(t('actions.session.tag_add.error.title'), message);
-      return {
-        message,
-        success: false,
-      };
-    }
-  };
-
-  const editTag = async (tag: Tag, originalName: string): Promise<ActionStatus> => {
-    try {
-      set(allTags, await queryEditTag(tag, originalName));
-      if (originalName !== tag.name)
-        renameTag(originalName, tag.name);
-      return { success: true };
-    }
-    catch (error: unknown) {
-      const message = getErrorMessage(error);
-      showErrorMessage(t('actions.session.tag_edit.error.title'), message);
-      return {
-        message,
-        success: false,
-      };
-    }
-  };
-
-  const deleteTag = async (name: string): Promise<void> => {
-    try {
-      set(allTags, await queryDeleteTag(name));
-      removeTag(name);
-    }
-    catch (error: unknown) {
-      showErrorMessage(t('actions.session.tag_delete.error.title'), getErrorMessage(error));
-    }
-  };
-
-  const fetchTags = async (): Promise<void> => {
-    try {
-      set(allTags, await queryTags());
-    }
-    catch (error: unknown) {
-      logger.error('Tags fetch failed', error);
-    }
-  };
-
-  function tagExists(tagName: string): boolean {
-    return get(tags).some(({ name }) => name === tagName);
-  }
-
-  async function attemptTagCreation(tag: string, backgroundColor?: string): Promise<boolean> {
-    if (tagExists(tag))
-      return true;
-
-    const bgColor = backgroundColor || randomColor();
-    const fgColor = invertColor(bgColor);
-
-    const newTag: Tag = {
-      backgroundColor: bgColor,
-      description: '',
-      foregroundColor: fgColor,
-      name: tag,
-    };
-
-    try {
-      const { success } = await addTag(newTag);
-      return success;
-    }
-    catch (error) {
-      logger.error(error);
-      return false;
-    }
-  };
-
   return {
-    addTag,
     allTags,
-    attemptTagCreation,
-    deleteTag,
-    editTag,
-    fetchTags,
     tags,
   };
 });

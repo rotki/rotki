@@ -3,7 +3,7 @@ import type { ComponentExposed } from 'vue-component-type-helpers';
 import type { Tag } from '@/types/tags';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import TagForm from '@/components/tags/TagForm.vue';
-import { useTagStore } from '@/store/session/tags';
+import { useTagOperations } from '@/modules/session/use-tag-operations';
 
 const modelValue = defineModel<Tag | undefined>({ required: true });
 
@@ -16,7 +16,7 @@ const emit = defineEmits<{
   saved: [{ tag: Tag; originalName: string }];
 }>();
 
-const { addTag, editTag } = useTagStore();
+const { addTag, editTag } = useTagOperations();
 
 const submitting = ref<boolean>(false);
 const stateUpdated = ref<boolean>(false);
