@@ -1,23 +1,13 @@
 import type { ComputedRef } from 'vue';
-import type { TaskMeta } from '@/modules/tasks/types';
-import type { OnError } from '@/types/fetch';
-import { type BigNumber, Blockchain, createEvmIdentifierFromAddress, type Writeable } from '@rotki/common';
-import { cloneDeep, isEqual } from 'es-toolkit';
+import { type BigNumber, createEvmIdentifierFromAddress, type Writeable } from '@rotki/common';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
-import { usePremium } from '@/composables/premium';
 import { useSectionStatus } from '@/composables/status';
-import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
-import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useGeneralSettingsStore } from '@/store/settings/general';
-import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { sortDesc } from '@/utils/bignumbers';
 import { balanceSum, bigNumberSum } from '@/utils/calculation';
-import { fetchDataAsync } from '@/utils/fetch-async';
-import { type PoolBalance, PoolBalances, type PoolLiquidityBalance, PoolType } from './types';
-import { usePoolApi } from './use-pool-api';
+import { type PoolBalance, type PoolBalances, type PoolLiquidityBalance, PoolType } from './types';
 import { usePoolBalancesStore } from './use-pool-balances-store';
+import { usePoolDataFetching } from './use-pool-data-fetching';
 
 function updateExistingBalance(existingBalance: Writeable<PoolBalance>, newBalance: PoolBalance): void {
   existingBalance.userBalance = balanceSum(
@@ -25,7 +15,7 @@ function updateExistingBalance(existingBalance: Writeable<PoolBalance>, newBalan
     newBalance.userBalance,
   );
 
-  newBalance.assets.forEach((newAsset) => {
+  for (const newAsset of newBalance.assets) {
     const existingAssetIndex = existingBalance.assets.findIndex(item => item.asset === newAsset.asset);
 
     if (existingAssetIndex > -1) {
@@ -38,18 +28,14 @@ function updateExistingBalance(existingBalance: Writeable<PoolBalance>, newBalan
     else {
       existingBalance.assets.push(newAsset);
     }
-  });
+  }
 }
 
 function createNewBalance(account: string, poolBalance: PoolBalance): Writeable<PoolBalance> {
   return {
+    ...poolBalance,
     account,
-    address: poolBalance.address,
-    assets: poolBalance.assets,
-    nftId: poolBalance.nftId,
-    priceRange: poolBalance.priceRange,
-    totalSupply: poolBalance.totalSupply,
-    userBalance: poolBalance.userBalance,
+    assets: [...poolBalance.assets],
   };
 }
 
@@ -62,44 +48,51 @@ interface UsePoolBalancesReturn {
 }
 
 export function usePoolBalances(): UsePoolBalancesReturn {
-  const { addresses } = useAccountAddresses();
-  const ethAddresses = computed<string[]>(() => get(addresses)[Blockchain.ETH] ?? []);
-
   const { sushiswapPoolBalances, uniswapPoolBalances } = storeToRefs(usePoolBalancesStore());
-  const { recentlyAddedAddresses } = storeToRefs(useBlockchainAccountsStore());
-  const { activeModules } = storeToRefs(useGeneralSettingsStore());
-
-  const premium = usePremium();
-  const { t } = useI18n({ useScope: 'global' });
-
-  const { getSushiswapBalances, getUniswapV2Balances } = usePoolApi();
   const { getAssetField } = useAssetInfoRetrieval();
+  const { fetch } = usePoolDataFetching();
 
   const { isLoading: uniswapLoading } = useSectionStatus(Section.POOLS_UNISWAP_V2);
   const { isLoading: sushiswapLoading } = useSectionStatus(Section.POOLS_SUSHISWAP);
   const loading = logicOr(uniswapLoading, sushiswapLoading);
 
+  function toArray(poolBalances: PoolBalances): PoolBalance[] {
+    const aggregatedBalances = new Map<string, Writeable<PoolBalance>>();
+
+    for (const account in poolBalances) {
+      const accountBalances = poolBalances[account];
+      if (!accountBalances || accountBalances.length === 0)
+        continue;
+
+      for (const poolBalance of accountBalances) {
+        const key = poolBalance.address.toLowerCase();
+        const existing = aggregatedBalances.get(key);
+
+        if (existing) {
+          updateExistingBalance(existing, poolBalance);
+        }
+        else {
+          aggregatedBalances.set(key, createNewBalance(account, poolBalance));
+        }
+      }
+    }
+    return [...aggregatedBalances.values()];
+  }
+
+  function mapPoolBalances(items: PoolBalance[], type: PoolType, premiumOnly: boolean): PoolLiquidityBalance[] {
+    return items.map((item, index) => ({
+      asset: createEvmIdentifierFromAddress(item.address),
+      assets: item.assets,
+      id: index,
+      premiumOnly,
+      type,
+      value: item.userBalance.value,
+    }));
+  }
+
   const balances = computed<PoolLiquidityBalance[]>(() => {
-    const uniswap = toArray(get(uniswapPoolBalances));
-    const sushiswap = toArray(get(sushiswapPoolBalances));
-
-    const uniswapBalances = uniswap.map((item, index) => ({
-      asset: createEvmIdentifierFromAddress(item.address),
-      assets: item.assets,
-      id: index,
-      premiumOnly: false,
-      type: PoolType.UNISWAP_V2,
-      value: item.userBalance.value,
-    }) satisfies PoolLiquidityBalance);
-
-    const sushiswapBalances = sushiswap.map((item, index) => ({
-      asset: createEvmIdentifierFromAddress(item.address),
-      assets: item.assets,
-      id: index,
-      premiumOnly: true,
-      type: PoolType.SUSHISWAP,
-      value: item.userBalance.value,
-    }) satisfies PoolLiquidityBalance);
+    const uniswapBalances = mapPoolBalances(toArray(get(uniswapPoolBalances)), PoolType.UNISWAP_V2, false);
+    const sushiswapBalances = mapPoolBalances(toArray(get(sushiswapPoolBalances)), PoolType.SUSHISWAP, true);
 
     return [
       ...uniswapBalances,
@@ -109,141 +102,18 @@ export function usePoolBalances(): UsePoolBalancesReturn {
 
   const total = computed<BigNumber>(() => bigNumberSum(get(balances).map(item => item.value)));
 
-  const getPoolName = (type: PoolType, assets: string[]): string => {
-    const concatAssets = (assets: string[]): string => assets.map(asset => getAssetField(asset, 'symbol')).join('-');
+  function getPoolName(type: PoolType, assets: string[]): string {
+    const concatAssets = (items: string[]): string => items.map(asset => getAssetField(asset, 'symbol')).join('-');
 
-    const data = [{
-      identifier: PoolType.UNISWAP_V2,
-      name: (assets: string[]): string => `UNI-V2 ${concatAssets(assets)}`,
-    }, {
-      identifier: PoolType.SUSHISWAP,
-      name: (assets: string[]): string => `SLP ${concatAssets(assets)}`,
-    }] as const;
-
-    const selected = data.find(({ identifier }) => identifier === get(type));
-
-    if (!selected)
-      return concatAssets(assets);
-
-    return selected.name(get(assets));
-  };
-
-  function toArray(poolBalances: PoolBalances): PoolBalance[] {
-    const aggregatedBalances: Record<string, Writeable<PoolBalance>> = {};
-
-    for (const account in poolBalances) {
-      const accountBalances = cloneDeep(poolBalances)[account];
-      if (!accountBalances || accountBalances.length === 0)
-        continue;
-
-      for (const poolBalance of accountBalances) {
-        const { address } = poolBalance;
-
-        const existingAddress = Object.keys(aggregatedBalances).find(key => key.toLowerCase() === address.toLowerCase());
-
-        if (existingAddress) {
-          updateExistingBalance(aggregatedBalances[existingAddress], poolBalance);
-        }
-        else {
-          aggregatedBalances[address] = createNewBalance(account, poolBalance);
-        }
-      }
-    }
-    return Object.values(aggregatedBalances);
-  }
-
-  const retrieveSushiswapBalances = async (refresh = false): Promise<void> => {
-    const protocol = 'Sushiswap';
-    const title = t('modules.dashboard.liquidity_pools.task.title', { protocol });
-    const meta: TaskMeta = { title };
-
-    const onError: OnError = {
-      error: message => t('modules.dashboard.liquidity_pools.task.error_message', { message, protocol }),
-      title,
+    const prefixes: Record<string, string> = {
+      [PoolType.UNISWAP_V2]: 'UNI-V2',
+      [PoolType.SUSHISWAP]: 'SLP',
     };
 
-    await fetchDataAsync({
-      refresh,
-      requires: {
-        module: Module.SUSHISWAP,
-        premium: false,
-      },
-      state: {
-        activeModules,
-        isPremium: premium,
-      },
-      task: {
-        meta,
-        onError,
-        parser: data => PoolBalances.parse(data),
-        query: async () => getSushiswapBalances(),
-        section: Section.POOLS_SUSHISWAP,
-        type: TaskType.SUSHISWAP_BALANCES,
-      },
-    }, sushiswapPoolBalances);
-  };
-
-  const retrieveUniswapV2Balances = async (refresh = false): Promise<void> => {
-    const protocol = 'Uniswap V2';
-    const title = t('modules.dashboard.liquidity_pools.task.title', { protocol });
-    const meta: TaskMeta = { title };
-
-    const onError: OnError = {
-      error: message => t('modules.dashboard.liquidity_pools.task.error_message', { message, protocol }),
-      title,
-    };
-
-    await fetchDataAsync({
-      refresh,
-      requires: {
-        module: Module.UNISWAP,
-        premium: false,
-      },
-      state: {
-        activeModules,
-        isPremium: premium,
-      },
-      task: {
-        meta,
-        onError,
-        parser: data => PoolBalances.parse(data),
-        query: async () => getUniswapV2Balances(),
-        section: Section.POOLS_UNISWAP_V2,
-        type: TaskType.UNISWAP_V2_BALANCES,
-      },
-    }, uniswapPoolBalances);
-  };
-
-  async function fetch(refresh = false): Promise<void> {
-    if (get(ethAddresses).length <= 0) {
-      return;
-    }
-
-    await retrieveUniswapV2Balances(refresh);
-    if (!get(premium)) {
-      return;
-    }
-    await retrieveSushiswapBalances(refresh);
+    const prefix = prefixes[type];
+    const joined = concatAssets(assets);
+    return prefix ? `${prefix} ${joined}` : joined;
   }
-
-  watch(ethAddresses, async (current, previous) => {
-    if (isEqual(current, previous))
-      return;
-
-    const added = current.filter(a => !previous.includes(a));
-    const removed = previous.filter(a => !current.includes(a));
-    const recent = get(recentlyAddedAddresses);
-
-    if (removed.length === 0 && added.length > 0 && added.every(a => recent.has(a)))
-      return;
-
-    await fetch(true);
-  });
-
-  watch(premium, async (isActive, wasActive) => {
-    if (wasActive !== isActive)
-      await fetch(true);
-  });
 
   return {
     balances,

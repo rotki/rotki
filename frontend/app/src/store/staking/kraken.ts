@@ -1,22 +1,11 @@
-import type { TaskMeta } from '@/modules/tasks/types';
 import type {
-  KrakenStakingDateFilter,
   KrakenStakingEvents,
   KrakenStakingPagination,
 } from '@/types/staking';
 import { type AssetBalance, Zero } from '@rotki/common';
-import { omit } from 'es-toolkit';
-import { useKrakenApi } from '@/composables/api/staking/kraken';
 import { useResolveAssetIdentifier } from '@/composables/assets/common';
-import { useStatusUpdater } from '@/composables/status';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { TaskType } from '@/modules/tasks/task-type';
-import { useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { Section, Status } from '@/types/status';
 import { balanceSum } from '@/utils/calculation';
-import { logger } from '@/utils/logging';
 
 function defaultPagination(itemsPerPage: number): KrakenStakingPagination {
   return {
@@ -47,10 +36,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     set(pagination, { ...get(pagination), limit: newValue });
   });
 
-  const api = useKrakenApi();
-
   const resolveAssetIdentifier = useResolveAssetIdentifier();
-  const { t } = useI18n({ useScope: 'global' });
 
   const events = computed<KrakenStakingEvents>(() => {
     const eventsValue = get(rawEvents);
@@ -58,20 +44,14 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
 
     const receivedAssets: Record<string, AssetBalance> = {};
 
-    received.forEach((item: AssetBalance) => {
+    for (const item of received) {
       const associatedAsset: string = resolveAssetIdentifier(item.asset);
+      const existing = receivedAssets[associatedAsset];
 
-      const receivedAsset = receivedAssets[associatedAsset];
-
-      receivedAssets[associatedAsset] = !receivedAsset
-        ? {
-            ...item,
-          }
-        : {
-            ...item,
-            ...balanceSum(receivedAsset, item),
-          };
-    });
+      receivedAssets[associatedAsset] = existing
+        ? { ...item, ...balanceSum(existing, item) }
+        : { ...item };
+    }
 
     return {
       ...eventsValue,
@@ -80,69 +60,9 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     };
   });
 
-  const { runTask } = useTaskHandler();
-  const { isTaskRunning } = useTaskStore();
-  const { notifyError } = useNotifications();
-  const { isFirstLoad, loading, setStatus } = useStatusUpdater(Section.STAKING_KRAKEN);
-
-  const refreshEvents = async (): Promise<void> => {
-    await runTask<KrakenStakingEvents, TaskMeta>(
-      async () => api.refreshKrakenStaking(),
-      { type: TaskType.STAKING_KRAKEN, meta: { title: t('actions.kraken_staking.task.title') }, unique: false },
-    );
-  };
-
-  const fetchEvents = async (
-    refresh = false,
-    dateFilter?: KrakenStakingDateFilter,
-  ): Promise<void> => {
-    const taskType = TaskType.STAKING_KRAKEN;
-    try {
-      const firstLoad = isFirstLoad();
-      if (isTaskRunning(taskType) || (loading() && refresh))
-        return;
-
-      setStatus(firstLoad ? Status.LOADING : Status.REFRESHING);
-
-      if (refresh || firstLoad) {
-        if (firstLoad) {
-          set(rawEvents, await api.fetchKrakenStakingEvents({
-            ...omit(get(pagination), ['fromTimestamp', 'toTimestamp']),
-            ...dateFilter,
-          }));
-        }
-
-        setStatus(Status.REFRESHING);
-        await refreshEvents();
-      }
-      set(rawEvents, await api.fetchKrakenStakingEvents({
-        ...omit(get(pagination), ['fromTimestamp', 'toTimestamp']),
-        ...dateFilter,
-      }));
-
-      setStatus(isTaskRunning(taskType) ? Status.REFRESHING : Status.LOADED);
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      setStatus(Status.LOADED);
-      notifyError(
-        t('actions.kraken_staking.error.title'),
-        t('actions.kraken_staking.error.message', {
-          message: getErrorMessage(error),
-        }),
-      );
-    }
-  };
-
-  const updatePagination = async (data: KrakenStakingPagination): Promise<void> => {
-    set(pagination, data);
-    await fetchEvents();
-  };
-
   return {
     events,
-    load: fetchEvents,
     pagination,
-    updatePagination,
+    rawEvents,
   };
 });
