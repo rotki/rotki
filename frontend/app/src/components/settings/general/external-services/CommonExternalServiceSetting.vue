@@ -3,7 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
-import { useMonitorStore } from '@/store/monitor';
+import { useMonitorService } from '@/modules/app/use-monitor-service';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toMessages } from '@/utils/validation';
 
@@ -43,7 +43,7 @@ function resetValue() {
 const v$ = useVuelidate(rules, { inputValue }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const { restart } = useMonitorStore();
+const { restart } = useMonitorService();
 
 function transform(value: string) {
   return value ? Number.parseInt(value) : value;

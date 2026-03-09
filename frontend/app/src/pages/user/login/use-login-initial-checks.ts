@@ -1,9 +1,9 @@
 import type { ComputedRef, MaybeRefOrGetter, Ref } from 'vue';
 import { useInterop } from '@/composables/electron-interop';
+import { useMonitorService } from '@/modules/app/use-monitor-service';
+import { useWebsocketConnection } from '@/modules/app/use-websocket-connection';
 import { useUpdateChecker } from '@/modules/session/use-update-checker';
-import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { useWebsocketStore } from '@/store/websocket';
 
 interface UseLoginInitialChecksReturn {
   checkForAssetUpdate: Ref<boolean>;
@@ -18,8 +18,8 @@ export function useLoginInitialChecks(errors: MaybeRefOrGetter<string[]>): UseLo
   const { checkForAssetUpdate, upgradeVisible } = storeToRefs(useSessionAuthStore());
   const { checkForUpdate } = useUpdateChecker();
   const { isPackaged } = useInterop();
-  const { connect } = useWebsocketStore();
-  const { startTaskMonitoring } = useMonitorStore();
+  const { connect } = useWebsocketConnection();
+  const { startTaskMonitoring } = useMonitorService();
 
   const initialChecksDone = shallowRef<boolean>(false);
   const performingInitialChecks = shallowRef<boolean>(false);

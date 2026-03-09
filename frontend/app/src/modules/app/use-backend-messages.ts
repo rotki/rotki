@@ -1,32 +1,41 @@
+import type { Ref } from 'vue';
 import { BackendCode, type OAuthResult } from '@shared/ipc';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
 import { useBackendConnection } from '@/modules/app/use-backend-connection';
 import { useMainStore } from '@/store/main';
-import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
-import { useWebsocketStore } from '@/store/websocket';
 import { logger } from '@/utils/logging';
+import { useMonitorService } from './use-monitor-service';
+import { useWebsocketConnection } from './use-websocket-connection';
 
 type OAuthCallback = (oAuthResult: OAuthResult) => void;
 
-export const useBackendMessagesStore = defineStore('backendMessages', () => {
-  const startupErrorMessage = ref('');
-  const isMacOsVersionUnsupported = ref(false);
-  const isWinVersionUnsupported = ref(false);
+interface UseBackendMessagesInternalReturn {
+  isMacOsVersionUnsupported: Readonly<Ref<boolean>>;
+  isWinVersionUnsupported: Readonly<Ref<boolean>>;
+  registerOAuthCallbackHandler: (handler: OAuthCallback) => void;
+  startupErrorMessage: Readonly<Ref<string>>;
+  unregisterOAuthCallbackHandler: (handler: OAuthCallback) => void;
+}
+
+function useBackendMessagesInternal(): UseBackendMessagesInternalReturn {
+  const startupErrorMessage = shallowRef<string>('');
+  const isMacOsVersionUnsupported = shallowRef<boolean>(false);
+  const isWinVersionUnsupported = shallowRef<boolean>(false);
 
   const isDevelopment = checkIfDevelopment();
   const { getStartupError, setupListeners } = useInterop();
   const { restartBackend } = useBackendManagement();
   const { t } = useI18n({ useScope: 'global' });
-  const { start: startMonitoring, stop: stopMonitoring } = useMonitorStore();
+  const { start: startMonitoring, stop: stopMonitoring } = useMonitorService();
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
   const { logged } = storeToRefs(useSessionAuthStore());
 
   const oauthCallbackHandlers = ref<Array<OAuthCallback>>([]);
-  const { setConnectionEnabled: setWsConnectionEnabled } = useWebsocketStore();
+  const { setConnectionEnabled: setWsConnectionEnabled } = useWebsocketConnection();
   const { stopConnectionAttempts } = useBackendConnection();
   const { connectionEnabled } = storeToRefs(useMainStore());
 
@@ -116,13 +125,12 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   });
 
   return {
-    isMacOsVersionUnsupported,
-    isWinVersionUnsupported,
+    isMacOsVersionUnsupported: readonly(isMacOsVersionUnsupported),
+    isWinVersionUnsupported: readonly(isWinVersionUnsupported),
     registerOAuthCallbackHandler,
-    startupErrorMessage,
+    startupErrorMessage: readonly(startupErrorMessage),
     unregisterOAuthCallbackHandler,
   };
-});
+}
 
-if (import.meta.hot)
-  import.meta.hot.accept(acceptHMRUpdate(useBackendMessagesStore, import.meta.hot));
+export const useBackendMessages = createGlobalState(useBackendMessagesInternal);

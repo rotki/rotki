@@ -3,19 +3,17 @@ import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 import { wait } from '@shared/utils';
 import dayjs from 'dayjs';
 import { useBackendManagement } from '@/composables/backend';
-import { useInterop } from '@/composables/electron-interop';
 import { useAppNavigation } from '@/composables/navigation';
 import { usePremiumHelper } from '@/composables/premium';
 import { useLoggedUserIdentifier } from '@/composables/user/use-logged-user-identifier';
-import { useRememberSettings } from '@/composables/user/use-remember-settings';
 import { useLogin } from '@/modules/account/use-login';
+import { usePasswordConfirmation } from '@/modules/account/use-password-confirmation';
+import { useWebsocketConnection } from '@/modules/app/use-websocket-connection';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
-import { useWebsocketStore } from '@/store/websocket';
 import { lastLogin } from '@/utils/account-management';
 
 interface UseAccountManagementReturn {
@@ -36,7 +34,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const { showGetPremiumButton } = usePremiumHelper();
   const { navigateToDashboard } = useAppNavigation();
   const { createAccount, login } = useLogin();
-  const { connect } = useWebsocketStore();
+  const { connect } = useWebsocketConnection();
   const authStore = useSessionAuthStore();
   const { canRequestData, logged, upgradeVisible } = storeToRefs(authStore);
   const { clearUpgradeMessages } = authStore;
@@ -135,63 +133,10 @@ export function useAutoLogin(): UseAutoLoginReturn {
   const { login } = useLogin();
   const { connected } = storeToRefs(useMainStore());
   const authStore = useSessionAuthStore();
-  const { canRequestData, logged, needsPasswordConfirmation, username } = storeToRefs(authStore);
+  const { canRequestData, logged, username } = storeToRefs(authStore);
   const { resetSessionBackend } = useBackendManagement();
   const { showGetPremiumButton } = usePremiumHelper();
-  const { getPassword, isPackaged } = useInterop();
-  const frontendSettingsStore = useFrontendSettingsStore();
-  const { updateFrontendSetting } = useSettingsOperations();
-  const { enablePasswordConfirmation, lastPasswordConfirmed, passwordConfirmationInterval } = storeToRefs(frontendSettingsStore);
-
-  // Check if rememberPassword is enabled in localStorage
-  const { savedRememberPassword } = useRememberSettings();
-
-  const checkIfPasswordConfirmationNeeded = async (usernameToCheck: string): Promise<void> => {
-    if (!get(enablePasswordConfirmation) || !isPackaged)
-      return;
-
-    // Check if rememberPassword setting is enabled
-    if (!get(savedRememberPassword))
-      return;
-
-    const lastConfirmed = get(lastPasswordConfirmed);
-
-    // If lastPasswordConfirmed is 0, this is the first time using the feature
-    // (new account or existing user with new feature) - initialize the timer
-    const now = dayjs().unix();
-
-    if (lastConfirmed === 0) {
-      await updateFrontendSetting({ lastPasswordConfirmed: now });
-      return;
-    }
-
-    if ((now - lastConfirmed) <= get(passwordConfirmationInterval))
-      return;
-
-    // Check if user has stored password (remember password enabled)
-    const storedPassword = await getPassword(usernameToCheck);
-    if (!storedPassword)
-      return;
-
-    set(needsPasswordConfirmation, true);
-  };
-
-  const confirmPassword = async (password: string): Promise<boolean> => {
-    // Verify password by comparing with stored password
-    const storedPassword = await getPassword(get(username));
-
-    if (password === storedPassword) {
-      // Password correct - close dialog and update timestamp
-      set(needsPasswordConfirmation, false);
-      const now = dayjs().unix();
-      await updateFrontendSetting({ lastPasswordConfirmed: now });
-
-      return true;
-    }
-
-    // Password incorrect - dialog stays open
-    return false;
-  };
+  const { checkIfPasswordConfirmationNeeded, confirmPassword, needsPasswordConfirmation } = usePasswordConfirmation();
 
   watch(connected, async (connected) => {
     if (!connected)

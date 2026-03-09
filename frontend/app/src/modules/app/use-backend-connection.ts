@@ -6,8 +6,6 @@ import { api } from '@/modules/api/rotki-api';
 import { useMainStore } from '@/store/main';
 import { logger, setLevel } from '@/utils/logging';
 
-let intervalId: NodeJS.Timeout | undefined;
-
 interface UseBackendConnectionReturn {
   cancelConnectionAttempts: () => void;
   connect: (payload?: string | null) => void;
@@ -17,6 +15,8 @@ interface UseBackendConnectionReturn {
 }
 
 export function useBackendConnection(): UseBackendConnectionReturn {
+  let intervalId: NodeJS.Timeout | undefined;
+
   const store = useMainStore();
   const {
     connected,
@@ -98,8 +98,6 @@ export function useBackendConnection(): UseBackendConnectionReturn {
 
     const attemptConnect = async (): Promise<void> => {
       try {
-        updateApi(payload);
-
         const isConnected = await ping();
         if (isConnected) {
           clearInterval(intervalId);
@@ -120,6 +118,7 @@ export function useBackendConnection(): UseBackendConnectionReturn {
         }
       }
     };
+    updateApi(payload);
     intervalId = setInterval(() => startPromise(attemptConnect()), 2000);
     set(connectionFailure, false);
   };

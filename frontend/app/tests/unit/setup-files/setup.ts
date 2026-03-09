@@ -106,11 +106,31 @@ beforeAll(() => {
     };
   });
 
-  vi.mock('@/store/websocket', () => ({
-    useWebsocketStore: () => ({
+  vi.mock('@/modules/app/use-websocket-connection', () => ({
+    useWebsocketConnection: () => ({
       connected: ref(false),
       connect: vi.fn(),
       disconnect: vi.fn(),
+      setConnectionEnabled: vi.fn(),
+    }),
+  }));
+
+  vi.mock('@/modules/app/use-monitor-service', () => ({
+    useMonitorService: () => ({
+      restart: vi.fn(),
+      start: vi.fn(),
+      startTaskMonitoring: vi.fn(),
+      stop: vi.fn(),
+    }),
+  }));
+
+  vi.mock('@/modules/app/use-backend-messages', () => ({
+    useBackendMessages: () => ({
+      isMacOsVersionUnsupported: ref(false),
+      isWinVersionUnsupported: ref(false),
+      registerOAuthCallbackHandler: vi.fn(),
+      startupErrorMessage: ref(''),
+      unregisterOAuthCallbackHandler: vi.fn(),
     }),
   }));
 
