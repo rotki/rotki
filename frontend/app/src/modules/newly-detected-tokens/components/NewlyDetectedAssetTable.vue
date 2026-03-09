@@ -9,11 +9,11 @@ import { useSpamAsset } from '@/composables/assets/spam';
 import { useSupportedChains } from '@/composables/info/chains';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { FiatDisplay } from '@/modules/amount-display/components';
+import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
 import { type NewDetectedToken, NewDetectedTokenKind } from '../types';
@@ -43,7 +43,7 @@ const { t } = useI18n({ useScope: 'global' });
 const selected = ref<string[]>([]);
 const tokenKindFilter = ref<NewDetectedTokenKind>();
 
-const { cache } = storeToRefs(useAssetCacheStore());
+const { cache } = useAssetInfoCache();
 
 const { getAllIdentifiers, getData, isReady, removeNewDetectedTokens } = useNewlyDetectedTokens();
 const { getChain, isSolanaChains } = useSupportedChains();

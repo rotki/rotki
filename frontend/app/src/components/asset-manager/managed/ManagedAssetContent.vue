@@ -9,8 +9,8 @@ import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { type Filters, type Matcher, useAssetFilter } from '@/composables/filters/assets';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
+import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useCommonTableProps } from '@/modules/table/use-common-table-props';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
@@ -59,7 +59,7 @@ const { show } = useConfirmStore();
 const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
 const { getAssetTypes } = useAssetManagementApi();
 
-const { deleteCacheKey } = useAssetCacheStore();
+const { deleteCacheKey } = useAssetInfoCache();
 
 async function confirmDelete(toDeleteAsset: SupportedAsset) {
   await deleteAssetHandler(toDeleteAsset.identifier);

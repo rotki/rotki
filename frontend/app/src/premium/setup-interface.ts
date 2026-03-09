@@ -10,6 +10,7 @@ import type { DateFormat } from '@/types/date-format';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import dayjs from 'dayjs';
 import { useGraph } from '@/composables/graphs';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { assetsApi, balancesApi, statisticsApi, userSettings, utilsApi } from '@/premium/premium-apis';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -41,6 +42,7 @@ export function createPremiumApi(): PremiumApi {
     // eslint-disable-next-line @typescript-eslint/unbound-method
     const { t, te } = useI18n({ useScope: 'global' });
     const frontendStore = useFrontendSettingsStore();
+    const { updateFrontendSetting } = useSettingsOperations();
     return {
       defaultThemes(): Themes {
         return {
@@ -60,7 +62,7 @@ export function createPremiumApi(): PremiumApi {
         };
       },
       async update(settings: FrontendSettingsPayload): Promise<void> {
-        await frontendStore.updateSetting(settings);
+        await updateFrontendSetting(settings);
       },
       user: userSettings(),
     };

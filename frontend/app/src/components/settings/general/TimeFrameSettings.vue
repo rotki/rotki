@@ -2,7 +2,7 @@
 import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
 import { usePremium } from '@/composables/premium';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { isPeriodAllowed } from '@/utils/settings';
 
@@ -63,11 +63,11 @@ async function updateVisibleTimeframes(newTimeFrames: TimeFramePeriod[], replace
   newTimeFrames.sort((a: TimeFramePeriod, b: TimeFramePeriod) => timeframes.indexOf(a) - timeframes.indexOf(b));
 
   if (replaceCurrentSessionTimeframe) {
-    const { updateSetting } = useFrontendSettingsStore();
+    const { updateFrontendSetting } = useSettingsOperations();
     const { update } = useSessionSettingsStore();
     const value = newTimeFrames[0];
     update({ timeframe: value });
-    await updateSetting({ lastKnownTimeframe: value });
+    await updateFrontendSetting({ lastKnownTimeframe: value });
   }
 
   visibleTimeframesChange(newTimeFrames);

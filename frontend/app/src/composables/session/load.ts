@@ -1,5 +1,6 @@
 import { Blockchain } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { useHistoryApi } from '@/composables/api/history';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { useStatusUpdater } from '@/composables/status';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
@@ -21,7 +22,8 @@ export function useDataLoader(): UseDataLoaderReturn {
   const { fetchIgnoredAssets } = useIgnoredAssetOperations();
   const { fetchWhitelistedAssets } = useWhitelistedAssetOperations();
   const { fetchNetValue } = useStatisticsDataFetching();
-  const { fetchAllTradeLocations } = useLocationStore();
+  const { allLocations } = storeToRefs(useLocationStore());
+  const { fetchAllLocations } = useHistoryApi();
   const { fetch } = useBalanceFetching();
   const { refreshPrices } = usePriceRefresh();
   const { setStatus } = useStatusUpdater(Section.BLOCKCHAIN);
@@ -43,7 +45,9 @@ export function useDataLoader(): UseDataLoaderReturn {
 
   const load = (): void => {
     startPromise(fetchTags());
-    startPromise(fetchAllTradeLocations());
+    startPromise(fetchAllLocations().then(({ locations }) => {
+      set(allLocations, locations);
+    }));
 
     if (get(shouldFetchData)) {
       startPromise(refreshData());

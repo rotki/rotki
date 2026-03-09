@@ -1,6 +1,7 @@
 import type { RuiIcons } from '@rotki/ui-library';
 import type { ComputedRef } from 'vue';
 import type { PrivacyMode } from '@/types/session';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 interface UsePrivacyModeReturn {
@@ -13,6 +14,7 @@ interface UsePrivacyModeReturn {
 export function usePrivacyMode(): UsePrivacyModeReturn {
   const store = useFrontendSettingsStore();
   const { privacyMode } = storeToRefs(store);
+  const { updateFrontendSetting } = useSettingsOperations();
 
   const privacyModeIcon = computed<RuiIcons>(() => {
     const icons = ['lu-eye', 'lu-eye-off', 'lu-eye-closed'] as const;
@@ -20,12 +22,12 @@ export function usePrivacyMode(): UsePrivacyModeReturn {
   });
 
   const changePrivacyMode = async (mode: PrivacyMode): Promise<void> => {
-    await store.updateSetting({ privacyMode: mode });
+    await updateFrontendSetting({ privacyMode: mode });
   };
 
   const togglePrivacyMode = async (): Promise<void> => {
     const newPrivacyMode = (get(privacyMode) + 1) % 3;
-    await store.updateSetting({ privacyMode: newPrivacyMode });
+    await updateFrontendSetting({ privacyMode: newPrivacyMode });
   };
 
   return {

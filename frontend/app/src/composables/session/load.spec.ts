@@ -9,7 +9,7 @@ const mockFetchWhitelistedAssets = vi.fn();
 const mockFetchNetValue = vi.fn();
 const mockRefreshPrices = vi.fn();
 const mockFetchTags = vi.fn();
-const mockFetchAllTradeLocations = vi.fn();
+const mockFetchAllLocations = vi.fn();
 const mockSetStatus = vi.fn();
 const mockShouldFetchData = ref<boolean>(true);
 
@@ -55,9 +55,15 @@ vi.mock('@/modules/session/use-tag-operations', () => ({
   })),
 }));
 
+vi.mock('@/composables/api/history', () => ({
+  useHistoryApi: vi.fn(() => ({
+    fetchAllLocations: mockFetchAllLocations,
+  })),
+}));
+
 vi.mock('@/store/locations', () => ({
   useLocationStore: vi.fn(() => ({
-    fetchAllTradeLocations: mockFetchAllTradeLocations,
+    allLocations: ref({}),
   })),
 }));
 
@@ -92,7 +98,7 @@ describe('composables::session::load', () => {
     mockFetchNetValue.mockResolvedValue(undefined);
     mockRefreshPrices.mockResolvedValue(undefined);
     mockFetchTags.mockResolvedValue(undefined);
-    mockFetchAllTradeLocations.mockResolvedValue(undefined);
+    mockFetchAllLocations.mockResolvedValue({ locations: {} });
   });
 
   afterEach(() => {

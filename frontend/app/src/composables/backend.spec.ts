@@ -9,6 +9,16 @@ import { useInterop } from '@/composables/electron-interop';
 import { useMainStore } from '@/store/main';
 import { getBackendUrl } from '@/utils/account-management';
 
+const mockConnect = vi.fn();
+
+vi.mock('@/modules/app/use-backend-connection', () => ({
+  useBackendConnection: vi.fn().mockReturnValue({
+    connect: (...args: unknown[]): void => mockConnect(...args),
+    getInfo: vi.fn(),
+    getVersion: vi.fn(),
+  }),
+}));
+
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({
     isPackaged: true,
@@ -350,7 +360,7 @@ describe('composables::backend', () => {
       await backendChanged(url);
 
       expect(useInterop().restartBackend).toBeCalled();
-      expect(useMainStore().connect).toHaveBeenCalledWith(url);
+      expect(mockConnect).toHaveBeenCalledWith(url);
     });
 
     it('should not backend if the url is set', async () => {
@@ -373,7 +383,7 @@ describe('composables::backend', () => {
       await backendChanged(url);
 
       expect(useInterop().restartBackend).not.toBeCalled();
-      expect(useMainStore().connect).toHaveBeenCalledWith(url);
+      expect(mockConnect).toHaveBeenCalledWith(url);
     });
 
     it('should not do anything on setupBackend, if connected=true', async () => {
@@ -423,7 +433,7 @@ describe('composables::backend', () => {
       await setupBackend();
 
       expect(useInterop().restartBackend).toBeCalled();
-      expect(store.connect).toHaveBeenCalledWith();
+      expect(mockConnect).toHaveBeenCalledWith();
     });
 
     it('should not restart backend, if connected=false and url is set', async () => {
@@ -456,7 +466,7 @@ describe('composables::backend', () => {
       await setupBackend();
 
       expect(useInterop().restartBackend).not.toBeCalled();
-      expect(store.connect).toHaveBeenCalledWith(url);
+      expect(mockConnect).toHaveBeenCalledWith(url);
     });
   });
 });

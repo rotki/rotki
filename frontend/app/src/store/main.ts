@@ -1,20 +1,13 @@
-import type { Nullable } from '@rotki/common';
 import type { LogLevel } from '@shared/log-level';
 import type { Version } from '@/types/action';
 import type { DefaultBackendArguments } from '@/types/backend';
-import { checkIfDevelopment, startPromise } from '@shared/utils';
-import { useInfoApi } from '@/composables/api/info';
-import { apiUrls, defaultApiUrls } from '@/modules/api/api-urls';
-import { api } from '@/modules/api/rotki-api';
-import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
-
-let intervalId: any = null;
+import { checkIfDevelopment } from '@shared/utils';
+import { getDefaultLogLevel } from '@/utils/logging';
 
 export const useMainStore = defineStore('main', () => {
   const version = ref<Version>(defaultVersion());
   const connected = ref<boolean>(false);
   const connectionFailure = ref<boolean>(false);
-  /** When false, connection attempts are blocked (e.g., backend failed to start) */
   const connectionEnabled = ref<boolean>(true);
   const dataDirectory = ref<string>('');
   const logLevel = ref<LogLevel>(getDefaultLogLevel());
@@ -24,8 +17,6 @@ export const useMainStore = defineStore('main', () => {
     maxSizeInMbAllLogs: 0,
     sqliteInstructions: 0,
   });
-
-  const { info, ping } = useInfoApi();
 
   const updateNeeded = computed(() => {
     const { downloadUrl, version: appVersion } = get(version);
@@ -47,85 +38,6 @@ export const useMainStore = defineStore('main', () => {
     return appVersion.includes('dev') || get(dataDirectory).includes('develop_data');
   });
 
-  const getVersion = async (): Promise<void> => {
-    const { version: appVersion } = await info(true);
-    if (appVersion) {
-      set(version, {
-        downloadUrl: appVersion.downloadUrl ?? '',
-        latestVersion: appVersion.latestVersion ?? '',
-        version: appVersion.ourVersion ?? '',
-      });
-    }
-  };
-
-  const getInfo = async (): Promise<void> => {
-    const {
-      acceptDockerRisk,
-      backendDefaultArguments,
-      dataDirectory: appDataDirectory,
-      logLevel: level,
-    } = await info(false);
-
-    set(dataDirectory, appDataDirectory);
-    set(logLevel, level);
-    set(dockerRiskAccepted, acceptDockerRisk);
-    setLevel(level);
-    set(defaultBackendArguments, backendDefaultArguments);
-  };
-
-  const connect = (payload?: string | null): void => {
-    if (!get(connectionEnabled)) {
-      logger.debug('Connection skipped - connection disabled');
-      return;
-    }
-
-    let count = 0;
-    if (intervalId)
-      clearInterval(intervalId);
-
-    const updateApi = (payload?: Nullable<string>): void => {
-      const updatedUrls = window.interop?.apiUrls();
-      let backendUrl = defaultApiUrls.coreApiUrl;
-      if (payload) {
-        backendUrl = payload;
-      }
-      else if (updatedUrls) {
-        backendUrl = updatedUrls.coreApiUrl;
-        apiUrls.coreApiUrl = updatedUrls.coreApiUrl;
-        apiUrls.colibriApiUrl = updatedUrls.colibriApiUrl;
-      }
-
-      api.setup(backendUrl);
-    };
-
-    const attemptConnect = async (): Promise<void> => {
-      try {
-        updateApi(payload);
-
-        const isConnected = !!(await ping());
-        if (isConnected) {
-          clearInterval(intervalId);
-          set(connected, isConnected);
-
-          await getInfo();
-          await getVersion();
-        }
-      }
-      catch (error: unknown) {
-        logger.error(error);
-      }
-      finally {
-        count++;
-        if (count > 20) {
-          clearInterval(intervalId);
-          set(connectionFailure, true);
-        }
-      }
-    };
-    intervalId = setInterval(() => startPromise(attemptConnect()), 2000);
-    set(connectionFailure, false);
-  };
-
   const setConnected = (isConnected: boolean): void => {
     set(connected, isConnected);
   };
@@ -134,56 +46,18 @@ export const useMainStore = defineStore('main', () => {
     set(connectionFailure, failed);
   };
 
-  /**
-   * Cancel any ongoing connection attempts (ping loop) without disabling future connections.
-   * Use this for temporary stops like page navigation or intentional disconnect.
-   */
-  const cancelConnectionAttempts = (): void => {
-    if (intervalId) {
-      clearInterval(intervalId);
-      intervalId = null;
-      logger.debug('Connection attempts cancelled');
-    }
-  };
-
-  /**
-   * Stop all connection attempts and disable future connections.
-   * Use this when the backend is known to be unavailable (e.g., startup error).
-   */
-  const stopConnectionAttempts = (): void => {
-    set(connectionEnabled, false);
-    cancelConnectionAttempts();
-    logger.debug('Connection attempts stopped and disabled');
-  };
-
-  /**
-   * Enable or disable connection attempts.
-   * When disabled, connect() and reconnection attempts will not start.
-   */
-  const setConnectionEnabled = (enabled: boolean): void => {
-    set(connectionEnabled, enabled);
-    if (!enabled) {
-      cancelConnectionAttempts();
-    }
-    logger.debug(`Connection attempts ${enabled ? 'enabled' : 'disabled'}`);
-  };
-
   return {
     appVersion,
-    cancelConnectionAttempts,
-    connect,
     connected,
+    connectionEnabled,
     connectionFailure,
     dataDirectory,
     defaultBackendArguments,
     dockerRiskAccepted,
-    getInfo,
-    getVersion,
     isDevelop,
+    logLevel,
     setConnected,
-    setConnectionEnabled,
     setConnectionFailure,
-    stopConnectionAttempts,
     updateNeeded,
     version,
   };

@@ -1,5 +1,6 @@
 import { ThemeColors } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { CURRENT_DEFAULT_THEME_VERSION, DARK_COLORS, DEFAULT_THEME_HISTORIES, LIGHT_COLORS } from '@/plugins/theme';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
@@ -8,7 +9,7 @@ interface UseThemeMigrationReturn { checkDefaultThemeVersion: () => void }
 export function useThemeMigration(): UseThemeMigrationReturn {
   const store = useFrontendSettingsStore();
   const { darkTheme, defaultThemeVersion, lightTheme } = storeToRefs(store);
-  const { updateSetting } = store;
+  const { updateFrontendSetting } = useSettingsOperations();
 
   function checkDefaultThemeVersion(): void {
     const defaultThemeVersionSetting = get(defaultThemeVersion);
@@ -41,7 +42,7 @@ export function useThemeMigration(): UseThemeMigrationReturn {
     });
 
     startPromise(
-      updateSetting({
+      updateFrontendSetting({
         darkTheme: newDarkTheme,
         defaultThemeVersion: CURRENT_DEFAULT_THEME_VERSION,
         lightTheme: newLightTheme,

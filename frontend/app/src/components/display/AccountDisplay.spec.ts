@@ -51,7 +51,7 @@ describe('account-display', () => {
   });
 
   it('should blur address on privacy mode', async () => {
-    await useFrontendSettingsStore().updateSetting({ privacyMode: PrivacyMode.SEMI_PRIVATE });
+    useFrontendSettingsStore().update({ privacyMode: PrivacyMode.SEMI_PRIVATE });
     await nextTick();
     expect(wrapper.find('.blur').exists()).toBe(true);
   });

@@ -2,6 +2,7 @@ import { BackendCode, type OAuthResult } from '@shared/ipc';
 import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
+import { useBackendConnection } from '@/modules/app/use-backend-connection';
 import { useMainStore } from '@/store/main';
 import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -26,7 +27,8 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
 
   const oauthCallbackHandlers = ref<Array<OAuthCallback>>([]);
   const { setConnectionEnabled: setWsConnectionEnabled } = useWebsocketStore();
-  const { setConnectionEnabled: setMainConnectionEnabled, stopConnectionAttempts } = useMainStore();
+  const { stopConnectionAttempts } = useBackendConnection();
+  const { connectionEnabled } = storeToRefs(useMainStore());
 
   /**
    * Handle a startup error by logging it and updating the appropriate state.
@@ -103,7 +105,7 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
       onRestart: () => {
         set(startupErrorMessage, '');
         // Re-enable connections for the restart attempt
-        setMainConnectionEnabled(true);
+        set(connectionEnabled, true);
         setWsConnectionEnabled(true);
         startPromise(restartBackend());
       },

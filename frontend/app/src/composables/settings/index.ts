@@ -5,8 +5,7 @@ import type { SessionSettings } from '@/types/session';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import type { SettingsUpdate } from '@/types/user';
 import { promiseTimeout } from '@vueuse/core';
-import { useSettingsStore } from '@/store/settings';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { logger } from '@/utils/logging';
 
@@ -59,8 +58,7 @@ interface UseSettingsReturn {
 }
 
 export function useSettings(): UseSettingsReturn {
-  const { update: updateSettings } = useSettingsStore();
-  const { updateSetting: updateFrontendSettings } = useFrontendSettingsStore();
+  const { update: updateSettings, updateFrontendSetting: updateFrontendSettings } = useSettingsOperations();
   const { update: updateSessionSettings } = useSessionSettingsStore();
 
   const updateSetting = async <T extends keyof SettingsUpdate | keyof FrontendSettingsPayload | keyof SessionSettings>(
@@ -96,8 +94,8 @@ interface UseClearableMessagesReturn {
 }
 
 export function useClearableMessages(): UseClearableMessagesReturn {
-  const error = ref('');
-  const success = ref('');
+  const error = shallowRef<string>('');
+  const success = shallowRef<string>('');
   const { t } = useI18n({ useScope: 'global' });
 
   const clear = (): void => {

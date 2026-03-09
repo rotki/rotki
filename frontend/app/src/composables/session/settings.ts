@@ -3,6 +3,7 @@ import type { UserSettingsModel } from '@/types/user';
 import { BigNumber, TimeFramePersist } from '@rotki/common';
 import { useThemeMigration } from '@/composables/settings/theme';
 import { getBnFormat } from '@/data/amount-formatter';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { usePremiumStore } from '@/store/session/premium';
 import { useAccountingSettingsStore } from '@/store/settings/accounting';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -16,7 +17,8 @@ interface UseSessionSettingsReturn {
 
 export function useSessionSettings(): UseSessionSettingsReturn {
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
-  const { update: updateFrontendSettings, updateSetting } = useFrontendSettingsStore();
+  const { update: updateFrontendSettings } = useFrontendSettingsStore();
+  const { updateFrontendSetting } = useSettingsOperations();
   const { update: updateAccountingSettings } = useAccountingSettingsStore();
   const { update: updateGeneralSettings } = useGeneralSettingsStore();
   const { setConnectedExchanges, update: updateSessionSettings } = useSessionSettingsStore();
@@ -27,7 +29,7 @@ export function useSessionSettings(): UseSessionSettingsReturn {
     exchanges: Exchange[],
   ): Promise<void> => {
     if (frontendSettings) {
-      const { lastKnownTimeframe, timeframeSetting } = frontendSettings;
+      const { lastKnownTimeframe, persistPrivacySettings, timeframeSetting } = frontendSettings;
       const { decimalSeparator, thousandSeparator } = frontendSettings;
       const timeframe = timeframeSetting !== TimeFramePersist.REMEMBER ? timeframeSetting : lastKnownTimeframe;
 
@@ -39,8 +41,8 @@ export function useSessionSettings(): UseSessionSettingsReturn {
       });
       checkDefaultThemeVersion();
 
-      if (!frontendSettings.persistPrivacySettings) {
-        await updateSetting({
+      if (!persistPrivacySettings) {
+        await updateFrontendSetting({
           privacyMode: PrivacyMode.NORMAL,
           scrambleData: false,
         });

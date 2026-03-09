@@ -2,8 +2,8 @@ import type { ERC20Token } from '@/types/blockchain/accounts';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { CUSTOM_ASSET } from '@/types/asset';
 
 const runTaskMock = vi.fn();
@@ -40,14 +40,14 @@ vi.mock('@/store/notifications/index', () => ({
 
 describe('useAssetRetrieval', () => {
   let assetInfoRetrieval: ReturnType<typeof useAssetInfoRetrieval>;
-  let assetCacheStore: ReturnType<typeof useAssetCacheStore>;
+  let assetInfoCache: ReturnType<typeof useAssetInfoCache>;
   let api: ReturnType<typeof useAssetInfoApi>;
 
   beforeEach(() => {
     setActivePinia(createPinia());
-    assetCacheStore = useAssetCacheStore();
-    vi.spyOn(assetCacheStore, 'isPending');
-    vi.spyOn(assetCacheStore, 'resolve');
+    assetInfoCache = useAssetInfoCache();
+    vi.spyOn(assetInfoCache, 'isPending');
+    vi.spyOn(assetInfoCache, 'resolve');
     assetInfoRetrieval = useAssetInfoRetrieval();
     api = useAssetInfoApi();
   });
@@ -101,14 +101,14 @@ describe('useAssetRetrieval', () => {
       const identifier = 'ASSET_ID';
       const assetName = 'ASSET_NAME';
 
-      vi.mocked(assetCacheStore.resolve).mockReturnValue(({
+      vi.mocked(assetInfoCache.resolve).mockReturnValue(({
         name: assetName,
         isCustomAsset: true,
       }));
 
       const result = assetInfoRetrieval.getAssetInfo(identifier);
 
-      expect(assetCacheStore.resolve).toHaveBeenCalledWith(identifier);
+      expect(assetInfoCache.resolve).toHaveBeenCalledWith(identifier);
 
       expect(result).toMatchObject({
         name: assetName,
@@ -124,14 +124,14 @@ describe('useAssetRetrieval', () => {
       const identifier = 'ASSET_ID';
       const assetName = 'ASSET_NAME';
 
-      vi.mocked(assetCacheStore.resolve).mockReturnValue(({
+      vi.mocked(assetInfoCache.resolve).mockReturnValue(({
         name: assetName,
         assetType: CUSTOM_ASSET,
       }));
 
       const result = assetInfoRetrieval.getAssetInfo(identifier);
 
-      expect(assetCacheStore.resolve).toHaveBeenCalledWith(identifier);
+      expect(assetInfoCache.resolve).toHaveBeenCalledWith(identifier);
 
       expect(result).toMatchObject({
         name: assetName,
@@ -150,9 +150,7 @@ describe('useAssetRetrieval', () => {
       const assetSymbol = 'USDC';
       const collectionName = 'USDC Generic Name';
 
-      const { fetchedAssetCollections } = storeToRefs(assetCacheStore);
-
-      set(fetchedAssetCollections, {
+      set(assetInfoCache.fetchedAssetCollections, {
         [collectionId]: {
           name: collectionName,
           symbol: assetSymbol,
@@ -160,7 +158,7 @@ describe('useAssetRetrieval', () => {
         },
       });
 
-      vi.mocked(assetCacheStore.resolve).mockReturnValue(({
+      vi.mocked(assetInfoCache.resolve).mockReturnValue(({
         name: assetName,
         symbol: assetSymbol,
         collectionId,
@@ -184,9 +182,7 @@ describe('useAssetRetrieval', () => {
       const assetSymbol = 'USDC';
       const collectionName = 'USDC Generic Name';
 
-      const { fetchedAssetCollections } = storeToRefs(assetCacheStore);
-
-      set(fetchedAssetCollections, {
+      set(assetInfoCache.fetchedAssetCollections, {
         [collectionId]: {
           name: collectionName,
           symbol: assetSymbol,
@@ -194,7 +190,7 @@ describe('useAssetRetrieval', () => {
         },
       });
 
-      vi.mocked(assetCacheStore.resolve).mockReturnValue(({
+      vi.mocked(assetInfoCache.resolve).mockReturnValue(({
         name: assetName,
         symbol: assetSymbol,
         collectionId,
@@ -214,7 +210,7 @@ describe('useAssetRetrieval', () => {
     it('should use fallback for asset name and symbol', () => {
       const address = '0x12BB890508c125661E03b09EC06E404bc9289040';
       const identifier = `eip155:1/erc20:${address}`;
-      vi.mocked(assetCacheStore.resolve).mockReturnValue(null);
+      vi.mocked(assetInfoCache.resolve).mockReturnValue(null);
 
       const result = assetInfoRetrieval.getAssetInfo(identifier);
       const fallbackName = `EVM Token: ${address}`;

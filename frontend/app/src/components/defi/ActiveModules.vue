@@ -2,9 +2,9 @@
 import { assert, type Nullable } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
+import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useConfirmStore } from '@/store/confirm';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 
@@ -21,8 +21,8 @@ const confirmEnable = ref<Nullable<Module>>(null);
 
 const supportedModules = SUPPORTED_MODULES;
 
-const { fetchQueriedAddresses } = useQueriedAddressesStore();
-const { update } = useSettingsStore();
+const { fetchQueriedAddresses } = useQueriedAddressOperations();
+const { update } = useSettingsOperations();
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 
 const moduleStatus = computed(() => {

@@ -6,6 +6,7 @@ import { helpers, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import DateTimeRangePicker from '@/components/inputs/DateTimeRangePicker.vue';
 import ReportPeriodSelector from '@/components/profitloss/ReportPeriodSelector.vue';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useRefPropVModel } from '@/utils/model';
 import { toMessages } from '@/utils/validation';
@@ -18,6 +19,7 @@ const emit = defineEmits<{
 
 const store = useFrontendSettingsStore();
 const { profitLossReportPeriod } = storeToRefs(store);
+const { updateFrontendSetting } = useSettingsOperations();
 
 const year = computed<string>(() => get(profitLossReportPeriod).year);
 const quarter = computed<Quarter>(() => get(profitLossReportPeriod).quarter);
@@ -35,7 +37,7 @@ function updateValid(valid: boolean): void {
 }
 
 async function onChanged(event: SelectionChangedEvent): Promise<void> {
-  await store.updateSetting({
+  await updateFrontendSetting({
     profitLossReportPeriod: event,
   });
 

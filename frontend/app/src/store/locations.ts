@@ -1,13 +1,11 @@
 import type { TradeLocationData } from '@/types/history/trade/location';
 import type { AllLocation } from '@/types/location';
 import { toSentenceCase } from '@rotki/common';
-import { useHistoryApi } from '@/composables/api/history';
 import { getPublicProtocolImagePath } from '@/utils/file';
 
 export const useLocationStore = defineStore('locations', () => {
   const allLocations = ref<AllLocation>({});
 
-  const { fetchAllLocations } = useHistoryApi();
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const { t, te } = useI18n({ useScope: 'global' });
 
@@ -38,11 +36,6 @@ export const useLocationStore = defineStore('locations', () => {
     });
 
   const tradeLocations = computed(() => toTradeLocationData(get(allLocations)));
-
-  const fetchAllTradeLocations = async (): Promise<void> => {
-    const { locations } = await fetchAllLocations();
-    set(allLocations, locations);
-  };
 
   const allExchanges = computed<string[]>(() => {
     const locations = get(allLocations);
@@ -83,7 +76,6 @@ export const useLocationStore = defineStore('locations', () => {
     exchangesWithoutApiSecret,
     exchangesWithPassphrase,
     experimentalExchanges,
-    fetchAllTradeLocations,
     tradeLocations,
     useIsExperimentalExchange,
   };

@@ -8,9 +8,9 @@ import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balan
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useSettingsStore } from '@/store/settings';
+import { useGeneralSettingsStore } from '@/store/settings/general';
 import { BalanceType } from '@/types/balances';
-import { CURRENCY_USD } from '@/types/currencies';
+import { Currency, CURRENCY_USD } from '@/types/currencies';
 
 const runTaskMock = vi.fn();
 
@@ -98,8 +98,11 @@ describe('store::balances/manual', () => {
     setActivePinia(createPinia());
     store = useBalancesStore();
     const { exchangeRates, prices } = storeToRefs(useBalancePricesStore());
-    const { update: updateSettings } = useSettingsStore();
-    await updateSettings({ mainCurrency: CURRENCY_USD });
+    const generalSettingsStore = useGeneralSettingsStore();
+    generalSettingsStore.update({
+      ...generalSettingsStore.settings,
+      mainCurrency: new Currency('US Dollar', CURRENCY_USD, '$'),
+    });
     set(exchangeRates, { USD: bigNumberify(1) });
     set(prices, {
       ETH: ethPrice,

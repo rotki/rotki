@@ -8,6 +8,7 @@ import { usePremium } from '@/composables/premium';
 import { useSectionStatus } from '@/composables/status';
 import { FiatDisplay } from '@/modules/amount-display/components';
 import NetWorthChart from '@/modules/dashboard/graph/NetWorthChart.vue';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { useStatisticsStore } from '@/store/statistics';
@@ -24,6 +25,7 @@ const { getNetValue } = statistics;
 const { totalNetWorth } = storeToRefs(statistics);
 const frontendStore = useFrontendSettingsStore();
 const { visibleTimeframes } = storeToRefs(frontendStore);
+const { updateFrontendSetting } = useSettingsOperations();
 
 const { isInitialLoading, isLoading: sectionLoading } = useSectionStatus(Section.BLOCKCHAIN);
 
@@ -86,7 +88,7 @@ const balanceClass = computed(() => {
 async function setTimeframe(value: TimeFrameSetting) {
   assert(value !== TimeFramePersist.REMEMBER);
   sessionStore.update({ timeframe: value });
-  await frontendStore.updateSetting({ lastKnownTimeframe: value });
+  await updateFrontendSetting({ lastKnownTimeframe: value });
 }
 
 onMounted(() => {

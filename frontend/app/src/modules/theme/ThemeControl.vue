@@ -2,11 +2,16 @@
 import { Theme } from '@rotki/common';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useInterop } from '@/composables/electron-interop';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const { darkModeEnabled, menu = false } = defineProps<{
   darkModeEnabled: boolean;
   menu?: boolean;
+}>();
+
+defineSlots<{
+  default: () => any;
 }>();
 
 const automaticSymbol = 'A';
@@ -15,18 +20,18 @@ const { t } = useI18n({ useScope: 'global' });
 const { isPackaged, setSelectedTheme } = useInterop();
 
 const frontendSettingsStore = useFrontendSettingsStore();
-const { updateSetting } = frontendSettingsStore;
+const { updateFrontendSetting } = useSettingsOperations();
 const { selectedTheme } = storeToRefs(frontendSettingsStore);
 
 const isAutomatic = computed<boolean>(() => get(selectedTheme) === Theme.AUTO);
 
-const labels = computed(() => [
+const labels = computed<string[]>(() => [
   t('theme_switch.dark'),
   t('theme_switch.auto'),
   t('theme_switch.light'),
 ]);
 
-const tooltip = computed(() => {
+const tooltip = computed<string>(() => {
   const mode = darkModeEnabled
     ? t('theme_switch.light')
     : t('theme_switch.dark');
@@ -39,7 +44,7 @@ async function toggleSelectedTheme() {
 }
 
 async function changeSelectedTheme(selectedTheme: Theme) {
-  await updateSetting({ selectedTheme });
+  await updateFrontendSetting({ selectedTheme });
   if (isPackaged) {
     await setSelectedTheme(selectedTheme);
   }

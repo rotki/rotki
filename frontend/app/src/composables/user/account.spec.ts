@@ -168,7 +168,7 @@ describe('useAccount', () => {
 
       set(needsPasswordConfirmation, false);
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: now - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 100,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -191,7 +191,7 @@ describe('useAccount', () => {
 
       set(needsPasswordConfirmation, false);
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: now - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 100,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -213,7 +213,7 @@ describe('useAccount', () => {
 
       set(needsPasswordConfirmation, false);
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: now - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 100,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -234,7 +234,7 @@ describe('useAccount', () => {
       set(needsPasswordConfirmation, false);
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: false,
         lastPasswordConfirmed: 0,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -256,7 +256,7 @@ describe('useAccount', () => {
 
       // Set lastPasswordConfirmed to an old timestamp so interval has elapsed
       const oldTimestamp = dayjs().unix() - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 1;
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: oldTimestamp,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -277,7 +277,7 @@ describe('useAccount', () => {
       set(needsPasswordConfirmation, false);
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: dayjs().unix(), // Just now
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -300,7 +300,7 @@ describe('useAccount', () => {
       set(needsPasswordConfirmation, false);
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: now - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 100,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -322,7 +322,7 @@ describe('useAccount', () => {
       set(needsPasswordConfirmation, false);
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: now - interval - 1, // Exactly 1 second past
         passwordConfirmationInterval: interval,
@@ -344,7 +344,7 @@ describe('useAccount', () => {
       set(needsPasswordConfirmation, false);
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: now - interval, // Exactly at boundary
         passwordConfirmationInterval: interval,
@@ -366,7 +366,7 @@ describe('useAccount', () => {
       set(needsPasswordConfirmation, false);
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: now - sevenDaysInSeconds - 1,
         passwordConfirmationInterval: sevenDaysInSeconds,
@@ -387,7 +387,7 @@ describe('useAccount', () => {
       set(needsPasswordConfirmation, false);
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: now - Constraints.PASSWORD_CONFIRMATION_MAX_SECONDS - 1,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MAX_SECONDS,
@@ -408,7 +408,7 @@ describe('useAccount', () => {
       set(needsPasswordConfirmation, false);
       vi.mocked(mockInterop.getPassword).mockResolvedValue('storedPassword');
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: false, // Disabled
         lastPasswordConfirmed: now - Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS - 1000,
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,
@@ -430,7 +430,7 @@ describe('useAccount', () => {
 
       const beforeTime = dayjs().unix();
 
-      await frontendStore.updateSetting({
+      frontendStore.update({
         enablePasswordConfirmation: true,
         lastPasswordConfirmed: 0, // First time use
         passwordConfirmationInterval: Constraints.PASSWORD_CONFIRMATION_MIN_SECONDS,

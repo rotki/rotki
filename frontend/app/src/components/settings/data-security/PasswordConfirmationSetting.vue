@@ -4,13 +4,14 @@ import { between, helpers, required } from '@vuelidate/validators';
 import ConfirmDialog from '@/components/dialogs/ConfirmDialog.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import { Constraints } from '@/data/constraints';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { toMessages } from '@/utils/validation';
 
 const { t } = useI18n({ useScope: 'global' });
 
 const frontendSettingsStore = useFrontendSettingsStore();
-const { updateSetting } = frontendSettingsStore;
+const { updateFrontendSetting } = useSettingsOperations();
 const { enablePasswordConfirmation, passwordConfirmationInterval } = storeToRefs(frontendSettingsStore);
 
 const passwordConfirmationIntervalDays = ref<string>('7');
@@ -73,7 +74,7 @@ async function saveSettings(): Promise<void> {
   set(loading, true);
   const days = Number.parseFloat(get(passwordConfirmationIntervalDays));
   const intervalInSeconds = Math.round(days * Constraints.SECONDS_PER_DAY);
-  await updateSetting({
+  await updateFrontendSetting({
     enablePasswordConfirmation: isEnabled,
     passwordConfirmationInterval: intervalInSeconds,
   });

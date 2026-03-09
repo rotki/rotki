@@ -3,6 +3,7 @@ import type { LogLevel } from '@shared/log-level';
 import type { ComputedRef, Ref } from 'vue';
 import { BackendOptions } from '@shared/ipc';
 import { useInterop } from '@/composables/electron-interop';
+import { useBackendConnection } from '@/modules/app/use-backend-connection';
 import { useMainStore } from '@/store/main';
 import { deleteBackendUrl, getBackendUrl } from '@/utils/account-management';
 import { getDefaultLogLevel, logger, setLevel } from '@/utils/logging';
@@ -55,13 +56,14 @@ export function useBackendManagement(loaded: () => void = () => {}): UseBackendM
   const interop = useInterop();
   const store = useMainStore();
   const { connected } = storeToRefs(store);
-  const { connect, setConnected } = store;
+  const { setConnected } = store;
+  const { connect } = useBackendConnection();
 
   const defaultLogLevel = computed<LogLevel>(() => getDefaultLogLevel());
   const logLevel = ref<LogLevel>(get(defaultLogLevel));
   const userOptions = ref<Partial<BackendOptions>>({});
   const fileConfig = ref<Partial<BackendOptions>>({});
-  const defaultLogDirectory = ref('');
+  const defaultLogDirectory = shallowRef<string>('');
   const options = computed<Partial<BackendOptions>>(() => ({
     ...get(userOptions),
     ...get(fileConfig),

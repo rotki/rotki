@@ -3,13 +3,13 @@ import { LogLevel } from '@shared/log-level';
 import { useBackendManagement } from '@/composables/backend';
 import { useInterop } from '@/composables/electron-interop';
 import { api } from '@/modules/api/rotki-api';
-import { useMainStore } from '@/store/main';
+import { useBackendConnection } from '@/modules/app/use-backend-connection';
 
 const restarting = ref(false);
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { connect } = useMainStore();
+const { connect } = useBackendConnection();
 const { restartBackend, saveOptions } = useBackendManagement();
 const interop = useInterop();
 

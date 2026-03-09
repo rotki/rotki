@@ -5,6 +5,7 @@ import AssetDetails from '@/components/helper/AssetDetails.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import ExplorerInput from '@/components/settings/explorers/ExplorerInput.vue';
 import { useValueOrDefault } from '@/composables/utils/useValueOrDefault';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
 
@@ -27,6 +28,7 @@ const token = ref<string>('');
 
 const store = useFrontendSettingsStore();
 const { explorers } = storeToRefs(store);
+const { updateFrontendSetting } = useSettingsOperations();
 const { t } = useI18n({ useScope: 'global' });
 
 const [CreateSelection, ReuseSelection] = createReusableTemplate<{ item: SupportedExplorers }>();
@@ -78,7 +80,7 @@ async function save(type: keyof ExplorerUrls, newValue?: string) {
   if (!newValue)
     delete updated[type];
 
-  await store.updateSetting({
+  await updateFrontendSetting({
     explorers: {
       ...get(explorers),
       [get(selection)]: updated,

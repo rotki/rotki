@@ -2,7 +2,7 @@ import type { useAssetIconApi } from '@/composables/api/assets/icon';
 import { flushPromises, mount, type VueWrapper } from '@vue/test-utils';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
-import { useMainStore } from '@/store/main';
+import { useBackendConnection } from '@/modules/app/use-backend-connection';
 
 vi.mock('@/composables/electron-interop', (): Record<string, unknown> => ({
   useInterop: vi.fn().mockReturnValue({
@@ -81,7 +81,7 @@ describe('onboarding-settings', () => {
   async function createWrapper(): Promise<VueWrapper<InstanceType<typeof OnboardingSettings>>> {
     const pinia = createPinia();
     setActivePinia(pinia);
-    await useMainStore().getInfo();
+    await useBackendConnection().getInfo();
 
     return mount(OnboardingSettings, {
       global: {

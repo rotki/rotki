@@ -34,7 +34,7 @@ describe('useScramble', () => {
 
   describe('when scramble is enabled', () => {
     beforeAll(async () => {
-      await store.updateSetting({ scrambleData: true, scrambleMultiplier: 7 });
+      store.update({ scrambleData: true, scrambleMultiplier: 7 });
     });
 
     it('should scramble hex address', () => {

@@ -4,9 +4,9 @@ import { type NotificationAction, NotificationCategory, Priority, Severity, toHu
 import { externalLinks } from '@shared/external-links';
 import { useInterop } from '@/composables/electron-interop';
 import { createNotificationHandler } from '@/modules/messaging/utils';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { Routes } from '@/router/routes';
 import { useConfirmStore } from '@/store/confirm';
-import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { SUPPRESSIBLE_SERVICES, SuppressibleMissingKeyService } from '@/types/user';
 import { getServiceRegisterUrl } from '@/utils/url';
@@ -18,7 +18,7 @@ function isSuppressibleService(service: string): service is SuppressibleMissingK
 export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], router: ReturnType<typeof useRouter>): NotificationHandler<MissingApiKey> {
   // Capture interop functions at handler creation time (in setup context)
   const { openUrl } = useInterop();
-  const { update } = useSettingsStore();
+  const { update } = useSettingsOperations();
   const { suppressMissingKeyMsgServices } = storeToRefs(useGeneralSettingsStore());
   const { show } = useConfirmStore();
 

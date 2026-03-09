@@ -1,5 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import { startPromise } from '@shared/utils';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { generateRandomScrambleMultiplier } from '@/utils/session';
 
@@ -20,10 +21,11 @@ export function useScrambleSetting(): UseScrambleSettingReturn {
 
   const frontendStore = useFrontendSettingsStore();
   const { scrambleData: enabled, scrambleMultiplier: multiplier } = storeToRefs(frontendStore);
+  const { updateFrontendSetting } = useSettingsOperations();
 
   // Debounced backend update
   const debouncedBackendUpdate = useDebounceFn(async (value: number) => {
-    await frontendStore.updateSetting({ scrambleMultiplier: value });
+    await updateFrontendSetting({ scrambleMultiplier: value });
   }, 500);
 
   function randomMultiplier(): string {

@@ -42,7 +42,6 @@ describe('evm-chains-to-ignore-settings', () => {
 
     const mainStore = useMainStore();
     vi.spyOn(mainStore, 'setConnected').mockReturnValue(undefined);
-    vi.spyOn(mainStore, 'connect').mockReturnValue(undefined);
     mainStore.connected = true;
 
     return mount(EvmChainsToIgnoreSettings, {
