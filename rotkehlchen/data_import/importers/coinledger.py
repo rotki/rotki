@@ -20,7 +20,7 @@ from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
-    deserialize_fval_force_positive,
+    deserialize_fval,
     deserialize_timestamp_from_date,
 )
 from rotkehlchen.types import Location
@@ -34,15 +34,73 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+COINLEDGER_TYPE_MAPPINGS: dict[str, tuple[HistoryEventType, HistoryEventSubType]] = {
+    'Airdrop': (HistoryEventType.RECEIVE, HistoryEventSubType.AIRDROP),
+    'Gift Received': (HistoryEventType.RECEIVE, HistoryEventSubType.DONATE),
+    'Gift Sent': (HistoryEventType.SPEND, HistoryEventSubType.DONATE),
+    'Hard Fork': (HistoryEventType.RECEIVE, HistoryEventSubType.NONE),
+    'Interest': (HistoryEventType.RECEIVE, HistoryEventSubType.INTEREST),
+    'Interest Payment': (HistoryEventType.RECEIVE, HistoryEventSubType.INTEREST),
+    'Investment Loss': (HistoryEventType.LOSS, HistoryEventSubType.NONE),
+    'Merchant Payment': (HistoryEventType.SPEND, HistoryEventSubType.PAYMENT),
+    'Mining': (HistoryEventType.RECEIVE, HistoryEventSubType.REWARD),
+    'Network Fee': (HistoryEventType.SPEND, HistoryEventSubType.FEE),
+    'Staking': (HistoryEventType.STAKING, HistoryEventSubType.REWARD),
+    'Theft Loss': (HistoryEventType.LOSS, HistoryEventSubType.HACK),
+}
+
+COINLEDGER_POSITIVE_ONLY_TYPES = {
+    'Airdrop',
+    'Gift Received',
+    'Hard Fork',
+    'Mining',
+    'Staking',
+}
+COINLEDGER_NEGATIVE_ONLY_TYPES = {
+    'Gift Sent',
+    'Investment Loss',
+    'Merchant Payment',
+    'Network Fee',
+    'Theft Loss',
+}
+
+FEE_RECORD_TYPES = {'Network Fee', 'Platform Fee'}
+
+
 def platform_row_to_location(entry: str) -> Location:
     """Takes the Platform value from CoinLedger and returns a location."""
     try:
         return Location.deserialize(entry)
     except DeserializationError:
-        if entry == 'Binance Smart Chain':
-            return Location.BINANCE_SC
+        pass
 
-    log.warning(f'Coinledger Location "{entry}" unrecognized and imported as external')
+    # Map common exchange names to rotki locations
+    if entry == 'Binance Smart Chain':
+        return Location.BINANCE_SC
+    if entry == 'Binance':
+        return Location.BINANCE
+    if entry == 'Kraken':
+        return Location.KRAKEN
+    if entry == 'Poloniex':
+        return Location.POLONIEX
+    if entry == 'Bittrex':
+        return Location.BITTREX
+    if entry == 'Bitmex':
+        return Location.BITMEX
+    if entry == 'Coinbase':
+        return Location.COINBASE
+    if entry in {'CoinbasePro', 'GDAX'}:
+        return Location.COINBASEPRO
+    if entry == 'Gemini':
+        return Location.GEMINI
+    if entry == 'Bitstamp':
+        return Location.BITSTAMP
+    if entry == 'Bitfinex':
+        return Location.BITFINEX
+    if entry == 'KuCoin':
+        return Location.KUCOIN
+
+    log.warning(f'Coinledger location "{entry}" unrecognized and imported as external')
     return Location.EXTERNAL
 
 
@@ -79,7 +137,8 @@ class CoinledgerImporter(BaseExchangeImporter):
         location = platform_row_to_location(csv_row['Platform'])
         asset_resolver = LOCATION_TO_ASSET_MAPPING.get(location, symbol_to_asset_or_token)
         asset = asset_resolver(csv_row['Asset'])
-        amount = deserialize_fval_force_positive(csv_row['Amount'])
+        raw_amount = deserialize_fval(csv_row['Amount'])
+        amount = abs(raw_amount)
         row_type = csv_row['Type']
         record_type = csv_row['Record Type']
         internal_id = csv_row['Internal Id']
@@ -113,19 +172,39 @@ class CoinledgerImporter(BaseExchangeImporter):
             )])
             return
 
-        if record_type == 'Credit':
+        if row_type in COINLEDGER_TYPE_MAPPINGS:
+            if row_type in {'Interest', 'Interest Payment'} and raw_amount < 0:
+                event_type = HistoryEventType.SPEND
+                event_subtype = HistoryEventSubType.NONE
+            else:
+                if row_type in COINLEDGER_POSITIVE_ONLY_TYPES and raw_amount < 0:
+                    raise UnsupportedCSVEntry(
+                        f'Contradictory amount sign for "{row_type}" in coinledger data import. '
+                        f'Expected non-negative amount but got {raw_amount}. Ignoring entry',
+                    )
+                if row_type in COINLEDGER_NEGATIVE_ONLY_TYPES and raw_amount > 0:
+                    raise UnsupportedCSVEntry(
+                        f'Contradictory amount sign for "{row_type}" in coinledger data import. '
+                        f'Expected non-positive amount but got {raw_amount}. Ignoring entry',
+                    )
+                event_type, event_subtype = COINLEDGER_TYPE_MAPPINGS[row_type]
+        elif record_type == 'Credit':
             event_type = HistoryEventType.RECEIVE
             event_subtype = HistoryEventSubType.NONE
-        elif record_type in {'Debit', 'Platform Fee'}:
+        elif record_type in {'Debit', *FEE_RECORD_TYPES}:
             event_type = HistoryEventType.SPEND
             event_subtype = (
                 HistoryEventSubType.FEE
-                if record_type == 'Platform Fee'
+                if record_type in FEE_RECORD_TYPES
                 else HistoryEventSubType.NONE
             )
         elif record_type == 'Margin Gain':
-            event_type = HistoryEventType.RECEIVE
-            event_subtype = HistoryEventSubType.NONE
+            if raw_amount < 0:
+                event_type = HistoryEventType.LOSS
+                event_subtype = HistoryEventSubType.NONE
+            else:
+                event_type = HistoryEventType.RECEIVE
+                event_subtype = HistoryEventSubType.NONE
         else:
             raise UnsupportedCSVEntry(
                 f'Unknown record type "{record_type}" encountered during coinledger data import. '
