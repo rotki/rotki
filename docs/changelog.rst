@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Morpho bundles deposits of ETH in multiple pools won't get mixed with WETH and appear multiple times or with negative values.
 * :bug:`11784` Users can now delete extra spend, receive, or fee sub-events from multi-asset swaps directly from the event list without opening the full edit form.
 * :feature:`11817` ETH staking validator limits are now checked before submission in the add validator dialog, showing user-friendly messages with upgrade prompts instead of raw backend errors.
 * :bug:`-` Certain cases of ENS registrations with a specific refund ordering will now also be properly understood by rotki.
