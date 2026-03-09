@@ -3,7 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { between, helpers, required } from '@vuelidate/validators';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
-import { useMonitorStore } from '@/store/monitor';
+import { useMonitorService } from '@/modules/app/use-monitor-service';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { toMessages } from '@/utils/validation';
 
@@ -35,7 +35,7 @@ function resetQueryPeriod() {
 const v$ = useVuelidate(rules, { queryPeriod }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-const { restart } = useMonitorStore();
+const { restart } = useMonitorService();
 
 const transform = (value: string) => (value ? Number.parseInt(value) : value);
 

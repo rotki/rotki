@@ -7,9 +7,9 @@ import { useUsersApi } from '@/composables/api/session/users';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useSessionSettings } from '@/composables/session/settings';
 import { api } from '@/modules/api/rotki-api';
+import { useMonitorService } from '@/modules/app/use-monitor-service';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
 import {
   type CreateAccountPayload,
@@ -40,7 +40,6 @@ export function useLogin(): UseLoginReturn {
     username,
   } = storeToRefs(authStore);
   const { runTask } = useTaskHandler();
-  const { start } = useMonitorStore();
 
   const { initialize } = useSessionSettings();
   const { checkIfLogged, colibriLogin, createAccount: callCreatAccount, login: callLogin } = useUsersApi();
@@ -88,7 +87,7 @@ export function useLogin(): UseLoginReturn {
   };
 
   const createAccount = async (payload: CreateAccountPayload): Promise<ActionStatus> => {
-    start();
+    useMonitorService().start();
     const outcome = await runTask<UserAccount, TaskMeta>(
       async () => callCreatAccount(payload),
       { type: TaskType.CREATE_ACCOUNT, meta: { title: 'creating account' } },
@@ -148,7 +147,7 @@ export function useLogin(): UseLoginReturn {
 
         authStore.resetSyncConflict();
         authStore.resetIncompleteUpgradeConflict();
-        start();
+        useMonitorService().start();
         const outcome = await runTask<{
           settings: SettingsUpdate;
           exchanges: Exchange[];

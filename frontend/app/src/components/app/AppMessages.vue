@@ -10,7 +10,7 @@ import ReportIssueDialog from '@/components/help/ReportIssueDialog.vue';
 import { useAddressBookForm } from '@/composables/address-book/form';
 import { useReportIssue } from '@/composables/report-issue';
 import { useAutoLogin } from '@/composables/user/account';
-import { useBackendMessagesStore } from '@/store/backend-messages';
+import { useBackendMessages } from '@/modules/app/use-backend-messages';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 
@@ -19,7 +19,7 @@ defineSlots<{
 }>();
 
 const { isMacOsVersionUnsupported, isWinVersionUnsupported, startupErrorMessage }
-  = storeToRefs(useBackendMessagesStore());
+  = useBackendMessages();
 const store = useMessageStore();
 const { message } = storeToRefs(store);
 const { setMessage } = store;
