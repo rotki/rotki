@@ -1,61 +1,10 @@
-import { backoff } from '@shared/utils';
-import { useSessionApi } from '@/composables/api/session';
-import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-
 export const usePeriodicStore = defineStore('session/periodic', () => {
-  const lastBalanceSave = ref(0);
-  const lastDataUpload = ref(0);
+  const lastBalanceSave = ref<number>(0);
+  const lastDataUpload = ref<number>(0);
   const connectedNodes = shallowRef<Record<string, string[]>>({});
   const failedToConnect = shallowRef<Record<string, string[]>>({});
-  const periodicRunning = ref(false);
-
-  const { notifyError } = useNotifications();
-  const { t } = useI18n({ useScope: 'global' });
-  const { fetchPeriodicData } = useSessionApi();
-
-  const check = async (): Promise<void> => {
-    if (get(periodicRunning))
-      return;
-
-    set(periodicRunning, true);
-    try {
-      const result = await backoff(3, async () => fetchPeriodicData(), 10000);
-      if (Object.keys(result).length === 0) {
-        // an empty object means user is not logged in yet
-        return;
-      }
-
-      const {
-        connectedNodes: connected,
-        failedToConnect: failed,
-        lastBalanceSave: balance,
-        lastDataUploadTs: upload,
-      } = result;
-
-      if (get(lastBalanceSave) !== balance)
-        set(lastBalanceSave, balance);
-
-      if (get(lastDataUpload) !== upload)
-        set(lastDataUpload, upload);
-
-      set(connectedNodes, connected);
-      set(failedToConnect, failed);
-    }
-    catch (error: unknown) {
-      notifyError(
-        t('actions.session.periodic_query.error.title'),
-        t('actions.session.periodic_query.error.message', {
-          message: getErrorMessage(error),
-        }),
-      );
-    }
-    finally {
-      set(periodicRunning, false);
-    }
-  };
 
   return {
-    check,
     connectedNodes,
     failedToConnect,
     lastBalanceSave,

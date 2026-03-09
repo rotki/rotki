@@ -1,102 +1,26 @@
-import { assert, BigNumber, Blockchain, Theme, TimeFramePeriod, TimeFramePersist } from '@rotki/common';
+import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
 import { createPinia, type Pinia } from 'pinia';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { useSettingsApi } from '@/composables/api/settings/settings-api';
-import { Defaults } from '@/data/defaults';
-import { camelCaseTransformer } from '@/modules/api/transformers';
-import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import { PrivacyMode } from '@/types/session';
-import {
-  BalanceSource,
-  BlockchainRefreshButtonBehaviour,
-  DashboardTableType,
-  FrontendSettings,
-  Quarter,
-  SupportedLanguage,
-} from '@/types/settings/frontend-settings';
+import { BalanceSource, BlockchainRefreshButtonBehaviour, DashboardTableType, type FrontendSettings, Quarter, SupportedLanguage } from '@/types/settings/frontend-settings';
 import { TableColumn } from '@/types/table-column';
-
-vi.mock('@/composables/api/settings/settings-api', () => ({
-  useSettingsApi: vi.fn().mockReturnValue({
-    setSettings: vi.fn().mockResolvedValue({ other: { frontendSettings: {} } }),
-  }),
-}));
 
 describe('useFrontendSettingsStore', () => {
   let pinia: Pinia;
-  let api: ReturnType<typeof useSettingsApi>;
 
   beforeEach(() => {
     pinia = createPinia();
-    api = useSettingsApi();
   });
 
-  it('should update settings on valid payload', async () => {
-    expect.assertions(2);
+  it('should update store state via update()', () => {
     const store = useFrontendSettingsStore(pinia);
-    await store.updateSetting({ defiSetupDone: true, language: SupportedLanguage.GR });
+    store.update({ defiSetupDone: true, language: SupportedLanguage.GR });
 
-    expect(api.setSettings).toHaveBeenCalledOnce();
-    const payload = vi.mocked(api.setSettings).mock.calls[0][0];
-    assert(payload.frontendSettings);
-    const parsedSettings = FrontendSettings.parse(camelCaseTransformer(JSON.parse(payload.frontendSettings)));
-
-    expect(parsedSettings).toMatchObject({
-      defiSetupDone: true,
-      language: SupportedLanguage.GR,
-      timeframeSetting: TimeFramePersist.REMEMBER,
-      visibleTimeframes: Defaults.DEFAULT_VISIBLE_TIMEFRAMES,
-      lastKnownTimeframe: TimeFramePeriod.ALL,
-      queryPeriod: 15,
-      profitLossReportPeriod: {
-        year: new Date().getFullYear().toString(),
-        quarter: Quarter.ALL,
-      },
-      thousandSeparator: Defaults.DEFAULT_THOUSAND_SEPARATOR,
-      decimalSeparator: Defaults.DEFAULT_DECIMAL_SEPARATOR,
-      currencyLocation: Defaults.DEFAULT_CURRENCY_LOCATION,
-      abbreviateNumber: false,
-      minimumDigitToBeAbbreviated: 4,
-      refreshPeriod: -1,
-      explorers: {},
-      itemsPerPage: 10,
-      amountRoundingMode: BigNumber.ROUND_UP,
-      valueRoundingMode: BigNumber.ROUND_DOWN,
-      selectedTheme: Theme.AUTO,
-      lightTheme: LIGHT_COLORS,
-      darkTheme: DARK_COLORS,
-      defaultThemeVersion: 1,
-      graphZeroBased: false,
-      ignoreSnapshotError: false,
-      showGraphRangeSelector: true,
-      nftsInNetValue: true,
-      persistTableSorting: false,
-      renderAllNftImages: true,
-      whitelistedDomainsForNftImages: [],
-      dashboardTablesVisibleColumns: {
-        [DashboardTableType.ASSETS]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-        [DashboardTableType.LIABILITIES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-        [DashboardTableType.NFT]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-        [DashboardTableType.LIQUIDITY_POSITION]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-        [DashboardTableType.BLOCKCHAIN_ASSET_BALANCES]: Defaults.DEFAULT_DASHBOARD_TABLE_VISIBLE_COLUMNS,
-      },
-      dateInputFormat: DateFormat.DateMonthYearHourMinuteSecond,
-      versionUpdateCheckFrequency: Defaults.DEFAULT_VERSION_UPDATE_CHECK_FREQUENCY,
-      enableAliasNames: true,
-      blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
-      savedFilters: {},
-      balanceValueThreshold: {},
-      persistPrivacySettings: false,
-    });
-  });
-
-  it('should not update settings on missing payload', async () => {
-    expect.assertions(1);
-    const store = useFrontendSettingsStore(pinia);
-    await expect(store.updateSetting({})).rejects.toBeInstanceOf(Error);
+    expect(store.defiSetupDone).toBe(true);
+    expect(store.language).toBe(SupportedLanguage.GR);
   });
 
   it('should restore settings', () => {

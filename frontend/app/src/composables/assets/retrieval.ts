@@ -16,10 +16,10 @@ import {
 import { type AssetSearchParams, useAssetInfoApi } from '@/composables/api/assets/info';
 import { processAssetInfo, useResolveAssetIdentifier } from '@/composables/assets/common';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { type AssetsWithId, EVM_TOKEN, SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { isAbortError } from '@/utils';
 
@@ -67,9 +67,7 @@ interface UseAssetInfoRetrievalReturn {
 export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { t } = useI18n({ useScope: 'global' });
   const { assetSearch: assetSearchCaller, erc20details } = useAssetInfoApi();
-  const assetCacheStore = useAssetCacheStore();
-  const { queueIdentifier, resolve: resolveAsset } = assetCacheStore;
-  const { fetchedAssetCollections } = storeToRefs(assetCacheStore);
+  const { fetchedAssetCollections, queueIdentifier, resolve: resolveAsset } = useAssetInfoCache();
   const { notify, notifyError } = useNotifications();
   const { runTask } = useTaskHandler();
 

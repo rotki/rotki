@@ -7,9 +7,10 @@ import QueriedAddressDialog from '@/components/defi/QueriedAddressDialog.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import { useStatusUpdater } from '@/composables/status';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
+import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
-import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
 import { Section } from '@/types/status';
@@ -23,10 +24,10 @@ const loading = ref(false);
 const search = ref('');
 const manageModule = ref<Module>();
 
-const queriedAddressStore = useQueriedAddressesStore();
+const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
+const { fetchQueriedAddresses } = useQueriedAddressOperations();
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
-const { queriedAddresses } = storeToRefs(queriedAddressStore);
-const { update: updateSettings } = useSettingsStore();
+const { update: updateSettings } = useSettingsOperations();
 
 const { nonFungibleTotalValue } = storeToRefs(useBalancesStore());
 const { resetStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
@@ -126,7 +127,7 @@ function selected(identifier: Module) {
 }
 
 onMounted(async () => {
-  await queriedAddressStore.fetchQueriedAddresses();
+  await fetchQueriedAddresses();
 });
 </script>
 

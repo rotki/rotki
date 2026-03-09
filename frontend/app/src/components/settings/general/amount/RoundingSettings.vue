@@ -3,21 +3,23 @@ import type { RoundingMode } from '@/types/settings/frontend-settings';
 import { type BigNumber, bigNumberify } from '@rotki/common';
 import RoundingSelector from '@/components/settings/general/amount/RoundingSelector.vue';
 import { FiatDisplay, ValueDisplay } from '@/modules/amount-display/components';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const frontendSettingsStore = useFrontendSettingsStore();
 const { amountRoundingMode, valueRoundingMode } = storeToRefs(frontendSettingsStore);
+const { updateFrontendSetting } = useSettingsOperations();
 
 const numberExample: BigNumber = bigNumberify(0.0815);
 
-async function setAmountRoundingMode(mode: RoundingMode) {
-  await frontendSettingsStore.updateSetting({
+async function setAmountRoundingMode(mode: RoundingMode): Promise<void> {
+  await updateFrontendSetting({
     amountRoundingMode: mode,
   });
 }
 
-async function setValueRoundingMode(mode: RoundingMode) {
-  await frontendSettingsStore.updateSetting({
+async function setValueRoundingMode(mode: RoundingMode): Promise<void> {
+  await updateFrontendSetting({
     valueRoundingMode: mode,
   });
 }

@@ -2,11 +2,11 @@
 import ListItem from '@/components/common/ListItem.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useCurrencyUpdate } from '@/composables/use-currency-update';
-import { useSettingsStore } from '@/store/settings';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Currency, useCurrencies } from '@/types/currencies';
 
-const { update } = useSettingsStore();
+const { update } = useSettingsOperations();
 const { currency } = storeToRefs(useGeneralSettingsStore());
 
 const filter = ref<string>('');

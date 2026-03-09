@@ -11,10 +11,10 @@ import ExchangeKeysFormDialog from '@/components/settings/api-keys/exchange/Exch
 import { useLocations } from '@/composables/locations';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
 import { useLocationStore } from '@/store/locations';
-import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
@@ -29,7 +29,7 @@ const { exchangesWithKey } = storeToRefs(useLocationStore());
 const { removeExchange } = useExchanges();
 const { connectedExchanges: rows } = storeToRefs(useSessionSettingsStore());
 const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
-const { update } = useSettingsStore();
+const { update } = useSettingsOperations();
 const { show } = useConfirmStore();
 
 const { t } = useI18n({ useScope: 'global' });

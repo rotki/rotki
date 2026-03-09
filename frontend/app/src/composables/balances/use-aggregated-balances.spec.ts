@@ -18,8 +18,8 @@ import { sortBy } from 'es-toolkit';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
+import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionSettingsStore } from '@/store/settings/session';
@@ -567,7 +567,7 @@ describe('useAggregatedBalances', () => {
       updateBalances('eth', testEthereumBalances);
       updateAccounts('eth', testAccounts);
 
-      const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
+      const { fetchedAssetCollections } = useAssetInfoCache();
       const { useLocationBreakdown } = useAggregatedBalances();
       set(fetchedAssetCollections, {
         GNO: {

@@ -226,7 +226,7 @@ describe('hash-link', () => {
 
   describe('scramble data', () => {
     beforeEach(async () => {
-      await useFrontendSettingsStore().updateSetting({ scrambleData: true });
+      useFrontendSettingsStore().update({ scrambleData: true });
     });
 
     it('should scramble address when scrambleData is enabled', () => {
@@ -246,7 +246,7 @@ describe('hash-link', () => {
     it('should apply blur class when privacy mode is semi-private or higher', async () => {
       const frontendStore = useFrontendSettingsStore();
       // PrivacyMode.SEMI_PRIVATE = 1 means shouldShowAmount is false
-      await frontendStore.updateSetting({
+      frontendStore.update({
         privacyMode: 1,
       });
       await nextTick();

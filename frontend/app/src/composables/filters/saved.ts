@@ -1,6 +1,7 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { ActionStatus } from '@/types/action';
 import type { BaseSuggestion, SavedFilterLocation, Suggestion } from '@/types/filtering';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const LIMIT_PER_LOCATION = 10;
@@ -17,7 +18,7 @@ export function useSavedFilter(
   isAsset: (key: string) => boolean,
 ): UseSavedFilterReturn {
   const frontendStore = useFrontendSettingsStore();
-  const { updateSetting } = frontendStore;
+  const { updateFrontendSetting } = useSettingsOperations();
 
   const { savedFilters: allSavedFilters } = storeToRefs(frontendStore);
 
@@ -39,7 +40,7 @@ export function useSavedFilter(
   const saveFilters = async (filters: BaseSuggestion[][]): Promise<ActionStatus> => {
     const allSaved = { ...get(allSavedFilters) };
     allSaved[toValue(location)] = filters;
-    return updateSetting({
+    return updateFrontendSetting({
       savedFilters: allSaved,
     });
   };

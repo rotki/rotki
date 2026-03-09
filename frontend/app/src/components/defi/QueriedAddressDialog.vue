@@ -8,6 +8,7 @@ import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSele
 import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
+import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
@@ -19,8 +20,7 @@ const emit = defineEmits<{ close: [] }>();
 const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const ETH = Blockchain.ETH;
 
-const store = useQueriedAddressesStore();
-const { addQueriedAddress, deleteQueriedAddress } = store;
+const { addQueriedAddress, deleteQueriedAddress } = useQueriedAddressOperations();
 const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
 const { getAccounts } = useBlockchainAccountsStore();
 const { getAddresses } = useAccountAddresses();
@@ -36,7 +36,7 @@ const currentModule = computed(() => {
   return SUPPORTED_MODULES.find(({ identifier }) => identifier === module);
 });
 
-const addresses = computed(() => {
+const addresses = computed<string[]>(() => {
   if (!module)
     return [];
 

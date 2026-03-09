@@ -6,8 +6,8 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import SettingCategoryHeader from '@/components/settings/SettingCategoryHeader.vue';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { Routes } from '@/router/routes';
-import { useSettingsStore } from '@/store/settings';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { EvmIndexer } from '@/types/settings/evm-indexer';
 import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
@@ -40,7 +40,7 @@ const DEFAULT_TAB = 'default';
 
 const { getChain, getChainName, getEvmChainName, txEvmChains } = useSupportedChains();
 const { defaultEvmIndexerOrder, evmIndexersOrder } = storeToRefs(useGeneralSettingsStore());
-const { update: updateSettings } = useSettingsStore();
+const { update: updateSettings } = useSettingsOperations();
 const { getApiKey, useApiKey } = useExternalApiKeys();
 
 const etherscanApiKey = useApiKey('etherscan');

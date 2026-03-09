@@ -3,6 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { minValue, required } from '@vuelidate/validators';
 import { omit } from 'es-toolkit';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -24,6 +25,7 @@ const applyToAllBalances = ref<boolean>(true);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const frontendStore = useFrontendSettingsStore();
 const { balanceValueThreshold } = storeToRefs(frontendStore);
+const { updateFrontendSetting } = useSettingsOperations();
 
 const { useIsTaskRunning } = useTaskStore();
 const isManualBalancesLoading = useIsTaskRunning(TaskType.MANUAL_BALANCES);
@@ -90,7 +92,7 @@ async function applyChanges(): Promise<void> {
     };
   }
 
-  frontendStore.updateSetting({ balanceValueThreshold: newState });
+  updateFrontendSetting({ balanceValueThreshold: newState });
 }
 
 watchImmediate([balanceValueThreshold, open], ([balanceValueThreshold]) => {

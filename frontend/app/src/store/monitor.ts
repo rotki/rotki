@@ -5,9 +5,9 @@ import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useMessageHandling } from '@/modules/messaging';
+import { usePeriodicDataFetcher } from '@/modules/session/use-periodic-data-fetcher';
 import { useTaskMonitor } from '@/modules/tasks/use-task-monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
-import { usePeriodicStore } from '@/store/session/periodic';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useWebsocketStore } from '@/store/websocket';
 import { logger } from '@/utils/logging';
@@ -32,7 +32,7 @@ export const useMonitorStore = defineStore('monitor', () => {
   const authStore = useSessionAuthStore();
   const { canRequestData, logged, username } = storeToRefs(authStore);
   const { checkIfPasswordConfirmationNeeded } = useAutoLogin();
-  const { check } = usePeriodicStore();
+  const { check } = usePeriodicDataFetcher();
   const { consume } = useMessageHandling();
   const { monitor } = useTaskMonitor();
   const { autoRefresh } = useBalanceFetching();

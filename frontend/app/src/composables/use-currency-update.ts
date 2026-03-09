@@ -3,15 +3,15 @@ import { One } from '@rotki/common';
 import { startPromise } from '@shared/utils';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { usePriceTaskManager } from '@/modules/prices/use-price-task-manager';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useBalancePricesStore } from '@/store/balances/prices';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { CURRENCY_USD } from '@/types/currencies';
 
 interface UseCurrencyUpdateReturn { onCurrencyUpdate: () => Promise<void> }
 
 export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
-  const { updateSetting } = useFrontendSettingsStore();
+  const { updateFrontendSetting } = useSettingsOperations();
   const { adjustPrices, refreshPrices } = usePriceRefresh();
   const { fetchExchangeRates } = usePriceTaskManager();
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -59,7 +59,7 @@ export function useCurrencyUpdate(): UseCurrencyUpdateReturn {
     startPromise(refreshPrices(true));
 
     // Clear hide small balances state, if the currency is changed
-    startPromise(updateSetting({
+    startPromise(updateFrontendSetting({
       balanceValueThreshold: {},
     }));
   }

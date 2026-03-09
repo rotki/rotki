@@ -3,6 +3,7 @@ import type { CamelCase } from '@/types/common';
 import { transformCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import { useAccountLoading } from '@/composables/accounts/loading';
+import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
 import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
@@ -13,8 +14,8 @@ const emit = defineEmits<{
 
 const enabledModules = ref<Module[]>([]);
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
-const queriedAddressesStore = useQueriedAddressesStore();
-const { queriedAddresses } = storeToRefs(queriedAddressesStore);
+const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
+const { fetchQueriedAddresses } = useQueriedAddressOperations();
 
 function updateSelection(modules: Module[]) {
   emit('update:selection', modules);
@@ -38,7 +39,7 @@ const visibleModules = computed(() =>
   }),
 );
 
-onMounted(async () => await queriedAddressesStore.fetchQueriedAddresses());
+onMounted(async () => await fetchQueriedAddresses());
 
 const { t } = useI18n({ useScope: 'global' });
 const { isAccountOperationRunning } = useAccountLoading();

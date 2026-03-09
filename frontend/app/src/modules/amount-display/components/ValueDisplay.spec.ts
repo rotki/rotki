@@ -86,7 +86,7 @@ describe('modules/amount-display/components/ValueDisplay', () => {
 
   describe('scramble data', () => {
     beforeEach(async () => {
-      await useFrontendSettingsStore().updateSetting({ scrambleData: true });
+      useFrontendSettingsStore().update({ scrambleData: true });
     });
 
     it('should scramble the value', async () => {

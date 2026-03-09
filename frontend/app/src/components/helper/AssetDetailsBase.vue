@@ -7,7 +7,7 @@ import ListItem from '@/components/common/ListItem.vue';
 import AssetDetailsMenuContent from '@/components/helper/AssetDetailsMenuContent.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 
 defineOptions({
   inheritAttrs: false,
@@ -48,7 +48,7 @@ const emit = defineEmits<{
 const menuOpened = ref<boolean>(false);
 const menuContentRef = useTemplateRef<InstanceType<typeof AssetDetailsMenuContent>>('menuContentRef');
 
-const { isPending } = useAssetCacheStore();
+const { isPending } = useAssetInfoCache();
 const { navigateToDetails } = useAssetPageNavigation(() => asset.identifier, () => isCollectionParent);
 const loading = isPending(() => asset.identifier);
 

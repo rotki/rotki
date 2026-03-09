@@ -450,7 +450,7 @@ describe('useHistoryEventNotes', () => {
   });
 
   it('should scramble IBAN', async () => {
-    await store.updateSetting({ scrambleData: false });
+    store.update({ scrambleData: false });
     const iban = 'DE88 5678 9012 1234 345 67';
     const notes = `Send 8,325.00 EURe via bank transfer to Rotki Solutions GmbH (${iban}) with memo "for salaries and insurance"`;
 
@@ -463,7 +463,7 @@ describe('useHistoryEventNotes', () => {
 
     expect(notesToString).toContain(iban);
 
-    await store.updateSetting({ scrambleData: true });
+    store.update({ scrambleData: true });
     formatted = get(notesData);
     notesToString = formatted
       .filter(item => item.type === NoteType.WORD)

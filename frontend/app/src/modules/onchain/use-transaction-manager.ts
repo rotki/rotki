@@ -3,8 +3,8 @@ import type { Ref } from 'vue';
 import type { RecentTransaction, TransactionParams } from '@/modules/onchain/types';
 import { bigNumberify } from '@rotki/common';
 import { startPromise } from '@shared/utils';
+import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import { useWalletHelper } from '@/modules/onchain/use-wallet-helper';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
 
 /**
  * Composable for managing transaction state and history
@@ -17,7 +17,7 @@ export function useTransactionManager(): {
   updateTransactionStatus: (hash: string, status: 'completed' | 'failed') => void;
 } {
   const recentTransactions = ref<RecentTransaction[]>([]);
-  const { getAssetMappingHandler } = useAssetCacheStore();
+  const { getAssetMappingHandler } = useAssetInfoCache();
   const { updateStatePostTransaction } = useWalletHelper();
 
   const generateTransactionContext = async (

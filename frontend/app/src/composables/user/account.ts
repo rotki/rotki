@@ -11,6 +11,7 @@ import { useRememberSettings } from '@/composables/user/use-remember-settings';
 import { useLogin } from '@/modules/account/use-login';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
@@ -43,7 +44,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
   const loggedUserIdentifier = useLoggedUserIdentifier();
   const { disconnect: disconnectWallet } = useWalletStore();
   const { fetchTransactionStatusSummary } = useHistoryDataFetching();
-  const { updateSetting } = useFrontendSettingsStore();
+  const { updateFrontendSetting } = useSettingsOperations();
 
   const createNewAccount = async (payload: CreateAccountPayload): Promise<void> => {
     set(loading, true);
@@ -98,7 +99,7 @@ export function useAccountManagement(): UseAccountManagementReturn {
       clearUpgradeMessages();
       set(lastLogin, username);
       // Manual login counts as password confirmation
-      await updateSetting({ lastPasswordConfirmed: dayjs().unix() });
+      await updateFrontendSetting({ lastPasswordConfirmed: dayjs().unix() });
       showGetPremiumButton();
       await fetchTransactionStatusSummary();
       await disconnectWallet();
@@ -139,7 +140,7 @@ export function useAutoLogin(): UseAutoLoginReturn {
   const { showGetPremiumButton } = usePremiumHelper();
   const { getPassword, isPackaged } = useInterop();
   const frontendSettingsStore = useFrontendSettingsStore();
-  const { updateSetting } = frontendSettingsStore;
+  const { updateFrontendSetting } = useSettingsOperations();
   const { enablePasswordConfirmation, lastPasswordConfirmed, passwordConfirmationInterval } = storeToRefs(frontendSettingsStore);
 
   // Check if rememberPassword is enabled in localStorage
@@ -160,7 +161,7 @@ export function useAutoLogin(): UseAutoLoginReturn {
     const now = dayjs().unix();
 
     if (lastConfirmed === 0) {
-      await updateSetting({ lastPasswordConfirmed: now });
+      await updateFrontendSetting({ lastPasswordConfirmed: now });
       return;
     }
 
@@ -183,7 +184,7 @@ export function useAutoLogin(): UseAutoLoginReturn {
       // Password correct - close dialog and update timestamp
       set(needsPasswordConfirmation, false);
       const now = dayjs().unix();
-      await updateSetting({ lastPasswordConfirmed: now });
+      await updateFrontendSetting({ lastPasswordConfirmed: now });
 
       return true;
     }

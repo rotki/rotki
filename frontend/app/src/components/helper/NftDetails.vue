@@ -3,8 +3,9 @@ import type { StyleValue } from 'vue';
 import AppImage from '@/components/common/AppImage.vue';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useNftImage } from '@/composables/nft-image';
+import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { useAssetCacheStore } from '@/store/assets/asset-cache';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useConfirmStore } from '@/store/confirm';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { uniqueStrings } from '@/utils/data';
@@ -21,7 +22,7 @@ const { useAssetInfo } = useAssetInfoRetrieval();
 const frontendStore = useFrontendSettingsStore();
 
 const { whitelistedDomainsForNftImages } = storeToRefs(frontendStore);
-const { updateSetting } = frontendStore;
+const { updateFrontendSetting } = useSettingsOperations();
 
 const balanceData = useAssetInfo(() => identifier);
 
@@ -59,7 +60,7 @@ function allowDomain() {
 
   const newWhitelisted = [...get(whitelistedDomainsForNftImages), domainVal].filter(uniqueStrings);
 
-  updateSetting({ whitelistedDomainsForNftImages: newWhitelisted });
+  updateFrontendSetting({ whitelistedDomainsForNftImages: newWhitelisted });
 }
 
 const collectionName = computed<string | null>(() => {
@@ -76,7 +77,7 @@ const name = computed<string | null>(() => {
   return data?.name || get(collectionName);
 });
 
-const { isPending } = useAssetCacheStore();
+const { isPending } = useAssetInfoCache();
 const isNftDetailLoading = isPending(() => identifier);
 
 const fallbackData = computed(() => {

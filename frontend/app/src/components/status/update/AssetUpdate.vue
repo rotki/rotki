@@ -9,6 +9,7 @@ import { useAssets } from '@/composables/assets';
 import { useBackendManagement } from '@/composables/backend';
 import { useRestartingStatus } from '@/composables/user/account';
 import { useLogout } from '@/modules/account/use-logout';
+import { useBackendConnection } from '@/modules/app/use-backend-connection';
 import { useConfirmStore } from '@/store/confirm';
 import { useMainStore } from '@/store/main';
 import { useMessageStore } from '@/store/message';
@@ -46,7 +47,8 @@ const status = computed(() => {
 
 const { logout } = useLogout();
 const { applyUpdates, checkForUpdate } = useAssets();
-const { connect, setConnected } = useMainStore();
+const { setConnected } = useMainStore();
+const { connect } = useBackendConnection();
 const { restartBackend } = useBackendManagement();
 const { logged } = storeToRefs(useSessionAuthStore());
 

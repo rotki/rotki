@@ -74,7 +74,7 @@ describe('amount-input', () => {
   it('should works with different thousandSeparator and decimalSeparator', async () => {
     store = useFrontendSettingsStore(pinia);
 
-    await store.updateSetting({
+    store.update({
       thousandSeparator: '.',
       decimalSeparator: ',',
     });

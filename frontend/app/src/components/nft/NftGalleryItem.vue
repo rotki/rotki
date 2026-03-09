@@ -6,6 +6,7 @@ import AppImage from '@/components/common/AppImage.vue';
 import ExternalLink from '@/components/helper/ExternalLink.vue';
 import { useNftImage } from '@/composables/nft-image';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useConfirmStore } from '@/store/confirm';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { uniqueStrings } from '@/utils/data';
@@ -18,7 +19,7 @@ const { item } = defineProps<{
 const frontendStore = useFrontendSettingsStore();
 
 const { whitelistedDomainsForNftImages } = storeToRefs(frontendStore);
-const { updateSetting } = frontendStore;
+const { updateFrontendSetting } = useSettingsOperations();
 
 const imageUrlSource = computed<string | null>(() => item.imageUrl);
 
@@ -56,7 +57,7 @@ function allowDomain() {
 
   const newWhitelisted = [...get(whitelistedDomainsForNftImages), domainVal].filter(uniqueStrings);
 
-  updateSetting({ whitelistedDomainsForNftImages: newWhitelisted });
+  updateFrontendSetting({ whitelistedDomainsForNftImages: newWhitelisted });
 }
 
 const mediaStyle = computed<StyleValue>(() => {

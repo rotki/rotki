@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { DashboardTableType, FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
+import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { TableColumn } from '@/types/table-column';
 
@@ -26,6 +27,7 @@ const availableColumns = computed(() => [
 
 const store = useFrontendSettingsStore();
 const { dashboardTablesVisibleColumns } = storeToRefs(store);
+const { updateFrontendSetting } = useSettingsOperations();
 
 const currentVisibleColumns = computed(() => get(dashboardTablesVisibleColumns)[group]);
 
@@ -37,7 +39,7 @@ async function onVisibleColumnsChange(visibleColumns: TableColumn[]) {
     },
   };
 
-  await store.updateSetting(payload);
+  await updateFrontendSetting(payload);
 }
 
 function active(value: TableColumn) {

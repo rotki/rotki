@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { startPromise } from '@shared/utils';
 import { useInterop } from '@/composables/electron-interop';
+import { useBackendConnection } from '@/modules/app/use-backend-connection';
 import { useUpdateChecker } from '@/modules/session/use-update-checker';
 import { useMainStore } from '@/store/main';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 
 const mainStore = useMainStore();
 const { updateNeeded, version } = storeToRefs(mainStore);
-const { getVersion } = mainStore;
+const { getVersion } = useBackendConnection();
 const { isPackaged, openUrl } = useInterop();
 const { versionUpdateCheckFrequency } = storeToRefs(useFrontendSettingsStore());
 const { showUpdatePopup } = useUpdateChecker();

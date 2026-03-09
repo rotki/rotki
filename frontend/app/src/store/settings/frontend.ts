@@ -1,18 +1,10 @@
-import type { ActionStatus } from '@/types/action';
-import { assert, BigNumber } from '@rotki/common';
-import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useItemsPerPage } from '@/composables/session/use-items-per-page';
 import { useComputedRef } from '@/composables/utils/useComputedRef';
-import { getBnFormat } from '@/data/amount-formatter';
-import { snakeCaseTransformer } from '@/modules/api/transformers';
 import { PrivacyMode } from '@/types/session';
 import {
   type FrontendSettings,
-  type FrontendSettingsPayload,
   getDefaultFrontendSettings,
 } from '@/types/settings/frontend-settings';
-import { getErrorMessage } from '@/utils/error-handling';
-import { logger } from '@/utils/logging';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const settings = ref<FrontendSettings>(markRaw(getDefaultFrontendSettings()));
@@ -72,8 +64,6 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
 
   const globalItemsPerPage = useItemsPerPage();
 
-  const api = useSettingsApi();
-
   function update(update: Partial<FrontendSettings>): void {
     set(settings, {
       ...get(settings),
@@ -83,48 +73,6 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     if (itemsPerPage !== get(globalItemsPerPage))
       set(globalItemsPerPage, itemsPerPage);
   }
-
-  async function updateSetting(payload: FrontendSettingsPayload): Promise<ActionStatus> {
-    const props = Object.keys(payload);
-    assert(props.length > 0, 'Payload must be not-empty');
-    try {
-      const updatedSettings = { ...get(settings), ...payload };
-      const { other } = await api.setSettings({
-        frontendSettings: JSON.stringify(snakeCaseTransformer(updatedSettings)),
-      });
-
-      update(updatedSettings);
-
-      if (payload.thousandSeparator || payload.decimalSeparator) {
-        BigNumber.config({
-          FORMAT: getBnFormat(other.frontendSettings.thousandSeparator, other.frontendSettings.decimalSeparator),
-        });
-      }
-
-      return {
-        success: true,
-      };
-    }
-    catch (error: unknown) {
-      logger.error(error);
-      return {
-        message: getErrorMessage(error),
-        success: false,
-      };
-    }
-  }
-
-  watchDebounced(globalItemsPerPage, async (value, oldValue) => {
-    if (oldValue === undefined || value === oldValue)
-      return;
-
-    try {
-      await updateSetting({ itemsPerPage: value });
-    }
-    catch (error: unknown) {
-      logger.error(error);
-    }
-  }, { debounce: 800, maxWait: 1200 });
 
   return {
     abbreviateNumber,
@@ -175,7 +123,6 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     thousandSeparator,
     timeframeSetting,
     update,
-    updateSetting,
     useHistoricalAssetBalances,
     valueRoundingMode,
     versionUpdateCheckFrequency,

@@ -4,6 +4,7 @@ import ListItem from '@/components/common/ListItem.vue';
 import { useAssets } from '@/composables/assets';
 import { useBackendManagement } from '@/composables/backend';
 import { useLogout } from '@/modules/account/use-logout';
+import { useBackendConnection } from '@/modules/app/use-backend-connection';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
@@ -18,7 +19,8 @@ const { dropdown = false } = defineProps<{
 type ResetType = 'soft' | 'hard';
 
 const { notify } = useNotificationDispatcher();
-const { connect, setConnected } = useMainStore();
+const { setConnected } = useMainStore();
+const { connect } = useBackendConnection();
 const { logout } = useLogout();
 const { restoreAssetsDatabase } = useAssets();
 
