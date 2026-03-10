@@ -62,6 +62,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Compoundv2',
         'Compoundv3',
         'Cowswap',
+        'Crosscurve',
         'Curve',
         'Curvelend',
         'Curvecrvusd',
@@ -265,6 +266,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'rotki',
         'superfluid',
         'woo-fi',
+        'crosscurve',
     }
 
 
