@@ -10,8 +10,8 @@ import { useAssetManagementApi } from '@/composables/api/assets/management';
 import { type Filters, type Matcher, useAssetFilter } from '@/composables/filters/assets';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useCommonTableProps } from '@/modules/table/use-common-table-props';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { type AssetRequestPayload, EVM_TOKEN, type IgnoredAssetsHandlingType } from '@/types/asset';
@@ -56,7 +56,7 @@ const route = useRoute();
 const { deleteAsset, queryAllAssets } = useAssetManagementApi();
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
-const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
+const { ignoredAssets } = storeToRefs(useAssetsStore());
 const { getAssetTypes } = useAssetManagementApi();
 
 const { deleteCacheKey } = useAssetInfoCache();

@@ -6,8 +6,8 @@ import { type NewDetectedTokenInput, NewDetectedTokenKind, type NewDetectedToken
 const mockIgnoredAssets = ref<string[]>([]);
 const mockAddIgnoredAsset = vi.fn();
 
-vi.mock('@/store/assets/ignored', () => ({
-  useIgnoredAssetsStore: vi.fn(() => ({
+vi.mock('@/modules/assets/use-assets-store', () => ({
+  useAssetsStore: vi.fn(() => ({
     ignoredAssets: mockIgnoredAssets,
     addIgnoredAsset: mockAddIgnoredAsset,
   })),

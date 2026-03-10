@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { isSpammableAssetType } from '@/types/asset';
 
 interface AssetForIgnoreSwitch {
@@ -23,8 +22,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { useIsAssetIgnored } = useIgnoredAssetsStore();
-const { useIsAssetWhitelisted } = useWhitelistedAssetsStore();
+const { useIsAssetIgnored, useIsAssetWhitelisted } = useAssetsStore();
 
 const identifier = computed<string>(() => asset.identifier);
 const isSpam = computed<boolean>(() => asset.protocol === 'spam');

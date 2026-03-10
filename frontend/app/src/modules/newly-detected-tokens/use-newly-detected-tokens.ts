@@ -1,7 +1,7 @@
 import type { MaybeRef, Ref } from 'vue';
 import type { NewDetectedToken, NewDetectedTokenInput, NewDetectedTokenKind, NewDetectedTokensRequestPayload } from './types';
 import type { Collection } from '@/types/collection';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useNewlyDetectedTokensDb } from './use-newly-detected-tokens-db';
 
@@ -16,9 +16,9 @@ interface UseNewlyDetectedTokensReturn {
 }
 
 export const useNewlyDetectedTokens = createSharedComposable((): UseNewlyDetectedTokensReturn => {
-  const ignoredAssetStore = useIgnoredAssetsStore();
-  const { ignoredAssets } = storeToRefs(ignoredAssetStore);
-  const { addIgnoredAsset } = ignoredAssetStore;
+  const assetsStore = useAssetsStore();
+  const { ignoredAssets } = storeToRefs(assetsStore);
+  const { addIgnoredAsset } = assetsStore;
 
   const settingsStore = useFrontendSettingsStore();
   const { notifyNewNfts } = storeToRefs(settingsStore);

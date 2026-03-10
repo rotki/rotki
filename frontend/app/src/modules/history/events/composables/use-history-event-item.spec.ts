@@ -21,8 +21,8 @@ vi.mock('@/composables/assets/retrieval', () => ({
   })),
 }));
 
-vi.mock('@/store/assets/ignored', () => ({
-  useIgnoredAssetsStore: vi.fn(() => ({
+vi.mock('@/modules/assets/use-assets-store', () => ({
+  useAssetsStore: vi.fn(() => ({
     useIsAssetIgnored: vi.fn(() => ref(false)),
   })),
 }));

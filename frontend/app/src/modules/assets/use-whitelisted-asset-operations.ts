@@ -1,8 +1,8 @@
 import type { ActionStatus } from '@/types/action';
 import { useAssetWhitelistApi } from '@/composables/api/assets/whitelist';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { getErrorMessage } from '@/utils/error-handling';
 
 interface UseWhitelistedAssetOperationsReturn {
@@ -16,7 +16,7 @@ export function useWhitelistedAssetOperations(): UseWhitelistedAssetOperationsRe
   const { t } = useI18n({ useScope: 'global' });
   const { addAssetToWhitelist, getWhitelistedAssets, removeAssetFromWhitelist } = useAssetWhitelistApi();
   const { fetchIgnoredAssets } = useIgnoredAssetOperations();
-  const { whitelistedAssets } = storeToRefs(useWhitelistedAssetsStore());
+  const { whitelistedAssets } = storeToRefs(useAssetsStore());
 
   async function fetchWhitelistedAssets(): Promise<void> {
     try {

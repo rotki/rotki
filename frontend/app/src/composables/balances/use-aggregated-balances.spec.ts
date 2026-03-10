@@ -19,8 +19,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TRADE_LOCATION_BANKS } from '@/data/defaults';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAssetInfoCache } from '@/modules/assets/use-asset-info-cache';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useBalancePricesStore } from '@/store/balances/prices';
 import { useSessionSettingsStore } from '@/store/settings/session';
 import { BalanceType } from '@/types/balances';
@@ -175,7 +175,7 @@ describe('useAggregatedBalances', () => {
         },
       });
 
-      const ignoredStore = useIgnoredAssetsStore();
+      const ignoredStore = useAssetsStore();
       ignoredStore.ignoredAssets.push('BTC');
       const hidden = getBalances(true);
       const visible = getBalances(false);

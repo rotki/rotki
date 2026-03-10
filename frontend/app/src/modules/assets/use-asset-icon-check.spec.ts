@@ -25,6 +25,7 @@ describe('modules/assets/use-asset-icon-check', () => {
     vi.useFakeTimers();
     vi.resetModules();
     mockCheckAsset.mockReset();
+    setActivePinia(createPinia());
   });
 
   afterEach(() => {
@@ -34,13 +35,18 @@ describe('modules/assets/use-asset-icon-check', () => {
 
   async function createCheck(): Promise<{
     checkIfAssetExists: (id: string, opts: { abortController?: AbortController }) => Promise<boolean>;
-    clearCache: () => void;
-    lastRefreshed: Ref<number>;
+    clearIconCache: () => void;
+    setLastRefreshedAssetIcon: () => void;
   }> {
     const { useAssetIconCheck } = await import('./use-asset-icon-check');
-    const lastRefreshed = ref<number>(0);
-    const result = useAssetIconCheck(lastRefreshed);
-    return { ...result, lastRefreshed };
+    const { useAssetsStore } = await import('./use-assets-store');
+    const store = useAssetsStore();
+    const { checkIfAssetExists } = useAssetIconCheck();
+    return {
+      checkIfAssetExists,
+      clearIconCache: store.clearIconCache,
+      setLastRefreshedAssetIcon: store.setLastRefreshedAssetIcon,
+    };
   }
 
   it('should return cached result when within TTL', async () => {
@@ -165,13 +171,13 @@ describe('modules/assets/use-asset-icon-check', () => {
   });
 
   it('should clear cache when lastRefreshed changes', async () => {
-    const { checkIfAssetExists, lastRefreshed } = await createCheck();
+    const { checkIfAssetExists, setLastRefreshedAssetIcon } = await createCheck();
 
     mockCheckAsset.mockResolvedValueOnce(200);
     await checkIfAssetExists('ETH', {});
     expect(mockCheckAsset).toHaveBeenCalledTimes(1);
 
-    set(lastRefreshed, Date.now());
+    setLastRefreshedAssetIcon();
     await nextTick();
 
     mockCheckAsset.mockResolvedValueOnce(200);

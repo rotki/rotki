@@ -18,6 +18,7 @@ import { usePriceApi } from '@/composables/api/balances/price';
 import { useStatisticsApi } from '@/composables/api/statistics/statistics-api';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useHistoricPriceCache } from '@/modules/prices/use-historic-price-cache';
 import { useHistoricalPriceFetcher } from '@/modules/prices/use-historical-price-fetcher';
 import { usePriceUtils } from '@/modules/prices/use-price-utils';
@@ -25,7 +26,6 @@ import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-d
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { useStatisticsStore } from '@/store/statistics';
@@ -48,7 +48,7 @@ export function assetsApi(): AssetsApi {
 }
 
 export function statisticsApi(): StatisticsApi {
-  const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { isAssetIgnored } = useAssetsStore();
 
   const { useNetValue } = useStatisticsStore();
   const { fetchNetValue } = useStatisticsDataFetching();

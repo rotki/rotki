@@ -3,10 +3,10 @@ import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { NonFungibleBalance } from '@/types/nfbalances';
 import { startPromise } from '@shared/utils';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { uniqueStrings } from '@/utils/data';
 
 interface UseNftAssetIgnoringReturn {
@@ -24,7 +24,7 @@ export function useNftAssetIgnoring(
   const { showErrorMessage } = useNotifications();
   const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
   const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
-  const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { isAssetIgnored } = useAssetsStore();
 
   const selected = ref<string[]>([]);
 

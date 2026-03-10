@@ -44,8 +44,8 @@ vi.mock('@/modules/balances/use-balances-store', () => ({
   }),
 }));
 
-vi.mock('@/store/assets/ignored', () => ({
-  useIgnoredAssetsStore: vi.fn().mockReturnValue({
+vi.mock('@/modules/assets/use-assets-store', () => ({
+  useAssetsStore: vi.fn().mockReturnValue({
     ignoredAssets: mockIgnoredAssets,
   }),
 }));

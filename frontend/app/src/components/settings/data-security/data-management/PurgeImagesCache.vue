@@ -7,7 +7,7 @@ import { useAddressesNamesApi } from '@/composables/api/blockchain/addresses-nam
 import { useCacheClear } from '@/composables/session/cache-clear';
 import { SettingsHighlightIds } from '@/composables/settings/types';
 import { useAddressNameResolution } from '@/modules/address-names/use-address-name-resolution';
-import { useAssetIconStore } from '@/store/assets/icon';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { PurgeableImageCache } from '@/types/session/purge';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -33,7 +33,7 @@ const { refreshAvatarTimestamp, useEnsNamesList } = useAddressNameResolution();
 const ensNamesList = useEnsNamesList();
 
 const { clearIconCache } = useAssetIconApi();
-const { setLastRefreshedAssetIcon } = useAssetIconStore();
+const { setLastRefreshedAssetIcon } = useAssetsStore();
 const { clearEnsAvatarCache } = useAddressesNamesApi();
 
 async function purgeSource(source: PurgeableImageCache) {

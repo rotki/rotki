@@ -6,10 +6,10 @@ import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import { ValueDisplay } from '@/modules/amount-display/components';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { Routes } from '@/router/routes';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { bigNumberSum } from '@/utils/calculation';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
@@ -37,7 +37,7 @@ defineSlots<{
 
 const router = useRouter();
 const { ignoreAsset } = useIgnoredAssetOperations();
-const { isAssetIgnored } = useIgnoredAssetsStore();
+const { isAssetIgnored } = useAssetsStore();
 
 const groupedMissingAcquisitions = computed<MappedGroupedItems[]>(() => {
   const grouped: GroupedItems = {};

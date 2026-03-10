@@ -35,8 +35,8 @@ vi.mock('@/modules/history/events/use-history-events-status', () => ({
   })),
 }));
 
-vi.mock('@/store/assets/ignored', () => ({
-  useIgnoredAssetsStore: vi.fn(() => ({
+vi.mock('@/modules/assets/use-assets-store', () => ({
+  useAssetsStore: vi.fn(() => ({
     isAssetIgnored: mockIsAssetIgnored,
   })),
 }));

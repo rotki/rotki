@@ -6,7 +6,8 @@ import GeneratedIcon from '@/components/helper/display/icons/GeneratedIcon.vue';
 import CounterpartyDisplay from '@/components/history/CounterpartyDisplay.vue';
 import { type AssetResolutionOptions, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useCopy } from '@/composables/copy';
-import { useAssetIconStore } from '@/store/assets/icon';
+import { useAssetIconCheck } from '@/modules/assets/use-asset-icon-check';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { SOLANA_CHAIN, SOLANA_TOKEN } from '@/types/asset';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { useCurrencies } from '@/types/currencies';
@@ -51,7 +52,8 @@ const error = ref<boolean>(false);
 const pending = ref<boolean>(true);
 const abortController = ref<AbortController>();
 
-const { checkIfAssetExists, getAssetImageUrl } = useAssetIconStore();
+const { getAssetIconUrl } = useAssetsStore();
+const { checkIfAssetExists } = useAssetIconCheck();
 const { currencies } = useCurrencies();
 const { useAssetInfo } = useAssetInfoRetrieval();
 
@@ -67,7 +69,7 @@ const currency = computed<string | undefined>(() => {
 });
 
 const asset = useAssetInfo(mappedIdentifier, () => resolutionOptions);
-const url = reactify(getAssetImageUrl)(mappedIdentifier);
+const url = reactify(getAssetIconUrl)(mappedIdentifier);
 
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);
 

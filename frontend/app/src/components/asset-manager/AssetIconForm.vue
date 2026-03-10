@@ -4,8 +4,8 @@ import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import FileUpload from '@/components/import/FileUpload.vue';
 import { useAssetIconApi } from '@/composables/api/assets/icon';
 import { useInterop } from '@/composables/electron-interop';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useAssetIconStore } from '@/store/assets/icon';
 import { getErrorMessage } from '@/utils/error-handling';
 
 const { identifier, refreshable = false } = defineProps<{
@@ -24,7 +24,7 @@ const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { setLastRefreshedAssetIcon } = useAssetIconStore();
+const { setLastRefreshedAssetIcon } = useAssetsStore();
 
 async function refreshIcon() {
   if (get(refreshIconLoading))

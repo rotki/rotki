@@ -3,9 +3,9 @@ import type { NftAsset } from '@/types/nfts';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import HashLink from '@/modules/common/links/HashLink.vue';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { isSpammableAssetType } from '@/types/asset';
 
 type ConfirmType = 'ignore' | 'mark_as_spam';
@@ -28,7 +28,7 @@ const confirmType = ref<ConfirmType>('ignore');
 
 const { navigateToDetails } = useAssetPageNavigation(() => asset.identifier, () => isCollectionParent);
 const { ignoreAsset } = useIgnoredAssetOperations();
-const { useIsAssetIgnored } = useIgnoredAssetsStore();
+const { useIsAssetIgnored } = useAssetsStore();
 const { markAssetsAsSpam } = useSpamAsset();
 
 const isIgnoredAsset = useIsAssetIgnored(() => asset.identifier);
