@@ -2,7 +2,7 @@ import type { ActionStatus } from '@/types/action';
 import type { Tag, Tags } from '@/types/tags';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useTagStore } from '@/store/session/tags';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import '@test/i18n';
 
 const mockQueryTags = vi.fn();
@@ -75,7 +75,7 @@ describe('useTagOperations', () => {
       const { fetchTags } = useTagOperations();
       await fetchTags();
 
-      const store = useTagStore();
+      const store = useSessionMetadataStore();
       expect(get(store.allTags)).toEqual(tags);
     });
 
@@ -100,7 +100,7 @@ describe('useTagOperations', () => {
       const result: ActionStatus = await addTag(tag);
 
       expect(result.success).toBe(true);
-      expect(get(useTagStore().allTags)).toEqual(updatedTags);
+      expect(get(useSessionMetadataStore().allTags)).toEqual(updatedTags);
     });
 
     it('should show error on failure', async () => {
@@ -162,7 +162,7 @@ describe('useTagOperations', () => {
       const { deleteTag } = useTagOperations();
       await deleteTag('tag2');
 
-      expect(get(useTagStore().allTags)).toEqual(remaining);
+      expect(get(useSessionMetadataStore().allTags)).toEqual(remaining);
       expect(mockRemoveTag).toHaveBeenCalledWith('tag2');
     });
 

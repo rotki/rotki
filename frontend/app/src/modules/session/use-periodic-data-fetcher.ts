@@ -1,7 +1,7 @@
 import { backoff } from '@shared/utils';
 import { useSessionApi } from '@/composables/api/session';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { usePeriodicStore } from '@/store/session/periodic';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 
 interface UsePeriodicDataFetcherReturn {
   check: () => Promise<void>;
@@ -12,7 +12,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
 
   const { t } = useI18n({ useScope: 'global' });
 
-  const store = usePeriodicStore();
+  const store = useSessionMetadataStore();
   const { connectedNodes, failedToConnect, lastBalanceSave, lastDataUpload } = storeToRefs(store);
 
   const { notifyError } = useNotifications();

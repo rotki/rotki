@@ -10,7 +10,7 @@ import { useBlockchainAccountData } from '@/modules/balances/blockchain/use-bloc
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { useBlockchainValidatorsStore } from '@/store/blockchain/validators';
-import { useTagStore } from '@/store/session/tags';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { useAccountImportProgressStore } from '@/store/use-account-import-progress-store';
 import { Section } from '@/types/status';
 import { awaitParallelExecution } from '@/utils/await-parallel-execution';
@@ -32,7 +32,7 @@ export function useAccountImport(): UseAccountImportReturn {
   const { notifyError, notifyInfo } = useNotifications();
   const { parseCSV } = useCsvImportExport();
   const { t } = useI18n({ useScope: 'global' });
-  const { allTags } = storeToRefs(useTagStore());
+  const { allTags } = storeToRefs(useSessionMetadataStore());
   const progressStore = useAccountImportProgressStore();
   const { increment, setTotal, skip } = progressStore;
   const { progress } = storeToRefs(progressStore);

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Tag } from '@/types/tags';
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { useTagStore } from '@/store/session/tags';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 
 const model = defineModel<string[]>({ required: true });
 
@@ -12,7 +12,7 @@ const { disabled = false, hideDetails = false } = defineProps<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { allTags } = storeToRefs(useTagStore());
+const { allTags } = storeToRefs(useSessionMetadataStore());
 
 const availableTagsList = computed<Tag[]>(() => {
   const tags = get(allTags);

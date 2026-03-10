@@ -11,7 +11,7 @@ import { useLogout } from '@/modules/account/use-logout';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
-import { usePeriodicStore } from '@/store/session/periodic';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { usePremiumStore } from '@/store/session/premium';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 
@@ -22,7 +22,7 @@ const visible = ref<boolean>(false);
 const { t } = useI18n({ useScope: 'global' });
 
 const { premium, premiumSync } = storeToRefs(usePremiumStore());
-const { lastDataUpload } = storeToRefs(usePeriodicStore());
+const { lastDataUpload } = storeToRefs(useSessionMetadataStore());
 
 const {
   cancelSync,

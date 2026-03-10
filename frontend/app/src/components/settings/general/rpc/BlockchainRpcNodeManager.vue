@@ -10,7 +10,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
-import { usePeriodicStore } from '@/store/session/periodic';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import {
   type BlockchainRpcNode,
   type BlockchainRpcNodeList,
@@ -32,7 +32,7 @@ const reconnecting = ref<boolean>(false);
 const { notify } = useNotificationDispatcher();
 const { setMessage } = useMessageStore();
 
-const { connectedNodes, failedToConnect } = storeToRefs(usePeriodicStore());
+const { connectedNodes, failedToConnect } = storeToRefs(useSessionMetadataStore());
 const { show } = useConfirmStore();
 const { useChainName } = useSupportedChains();
 const api = useEvmNodesApi(() => chain);

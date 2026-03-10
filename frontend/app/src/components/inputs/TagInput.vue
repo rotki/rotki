@@ -4,7 +4,7 @@ import ListItem from '@/components/common/ListItem.vue';
 import TagFormDialog from '@/components/tags/TagFormDialog.vue';
 import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
-import { useTagStore } from '@/store/session/tags';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { defaultTag, type Tag } from '@/types/tags';
 import { renameTagInList } from '@/utils/tags';
 
@@ -16,7 +16,7 @@ const { disabled, label = 'Tags' } = defineProps<{
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { tags } = storeToRefs(useTagStore());
+const { tags } = storeToRefs(useSessionMetadataStore());
 const { attemptTagCreation: attemptTag } = useTagOperations();
 
 const search = ref<string>('');

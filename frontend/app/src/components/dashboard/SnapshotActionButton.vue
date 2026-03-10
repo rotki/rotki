@@ -13,7 +13,7 @@ import { useLogout } from '@/modules/account/use-logout';
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useMessageStore } from '@/store/message';
-import { usePeriodicStore } from '@/store/session/periodic';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { getErrorMessage } from '@/utils/error-handling';
 
@@ -27,7 +27,7 @@ const importSnapshotDialog = ref<boolean>(false);
 const { t } = useI18n({ useScope: 'global' });
 const premium = usePremium();
 const { logout } = useLogout();
-const { lastBalanceSave } = storeToRefs(usePeriodicStore());
+const { lastBalanceSave } = storeToRefs(useSessionMetadataStore());
 const { fetchBalances } = useBalanceFetching();
 const { getPath } = useInterop();
 const { fetchNetValue } = useStatisticsDataFetching();

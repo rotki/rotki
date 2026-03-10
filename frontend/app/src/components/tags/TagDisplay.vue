@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import TagIcon from '@/components/tags/TagIcon.vue';
-import { useTagStore } from '@/store/session/tags';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 
 const { tags = [], small = false, wrapperClass = '' } = defineProps<{
   tags?: string[];
@@ -8,7 +8,7 @@ const { tags = [], small = false, wrapperClass = '' } = defineProps<{
   wrapperClass?: string;
 }>();
 
-const { allTags } = storeToRefs(useTagStore());
+const { allTags } = storeToRefs(useSessionMetadataStore());
 </script>
 
 <template>

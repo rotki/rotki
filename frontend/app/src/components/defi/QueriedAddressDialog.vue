@@ -9,7 +9,7 @@ import TagDisplay from '@/components/tags/TagDisplay.vue';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useAccountAddresses } from '@/modules/balances/blockchain/use-account-addresses';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import { getAccountAddress } from '@/utils/blockchain/accounts/utils';
 
@@ -21,7 +21,7 @@ const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const ETH = Blockchain.ETH;
 
 const { addQueriedAddress, deleteQueriedAddress } = useQueriedAddressOperations();
-const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
+const { queriedAddresses } = storeToRefs(useSessionMetadataStore());
 const { getAccounts } = useBlockchainAccountsStore();
 const { getAddresses } = useAccountAddresses();
 
