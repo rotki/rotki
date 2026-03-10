@@ -97,6 +97,77 @@ describe('useHistoryEventsFilters', () => {
     vi.clearAllMocks();
   });
 
+  describe('usedLocationLabels', () => {
+    it('should use local locationLabels when useExternalAccountFilter is undefined', () => {
+      const { options, toggles } = createDefaultOptions();
+      const { onLocationLabelsChanged, usedLocationLabels } = useHistoryEventsFilters(options, toggles);
+
+      onLocationLabelsChanged(['0xABC']);
+
+      expect(get(usedLocationLabels)).toEqual(['0xABC']);
+    });
+
+    it('should use local locationLabels when useExternalAccountFilter is false', () => {
+      const { options, toggles } = createDefaultOptions();
+      set(options.useExternalAccountFilter, false);
+      const { onLocationLabelsChanged, usedLocationLabels } = useHistoryEventsFilters(options, toggles);
+
+      onLocationLabelsChanged(['0xABC']);
+
+      expect(get(usedLocationLabels)).toEqual(['0xABC']);
+    });
+
+    it('should use external account filter when useExternalAccountFilter is true', () => {
+      const { options, toggles } = createDefaultOptions();
+      set(options.useExternalAccountFilter, true);
+      set(options.externalAccountFilter, [{ address: '0xDEF', chain: 'eth' }]);
+      const { usedLocationLabels } = useHistoryEventsFilters(options, toggles);
+
+      expect(get(usedLocationLabels)).toEqual(['0xDEF']);
+    });
+
+    it('should reactively update when locationLabels change', async () => {
+      const { options, toggles } = createDefaultOptions();
+      const { onLocationLabelsChanged, usedLocationLabels } = useHistoryEventsFilters(options, toggles);
+
+      expect(get(usedLocationLabels)).toEqual([]);
+
+      onLocationLabelsChanged(['0xABC']);
+      await nextTick();
+
+      expect(get(usedLocationLabels)).toEqual(['0xABC']);
+
+      onLocationLabelsChanged(['0xABC', '0xDEF']);
+      await nextTick();
+
+      expect(get(usedLocationLabels)).toEqual(['0xABC', '0xDEF']);
+
+      onLocationLabelsChanged([]);
+      await nextTick();
+
+      expect(get(usedLocationLabels)).toEqual([]);
+    });
+
+    it('should include locationLabels in requestParams when set', async () => {
+      const { options, toggles } = createDefaultOptions();
+      const { onLocationLabelsChanged } = useHistoryEventsFilters(options, toggles);
+
+      onLocationLabelsChanged(['0xABC']);
+      await nextTick();
+
+      expect(capturedRequestParams).toBeDefined();
+      expect(get(capturedRequestParams!).locationLabels).toEqual(['0xABC']);
+    });
+
+    it('should not include locationLabels in requestParams when empty', () => {
+      const { options, toggles } = createDefaultOptions();
+      useHistoryEventsFilters(options, toggles);
+
+      expect(capturedRequestParams).toBeDefined();
+      expect(get(capturedRequestParams!).locationLabels).toBeUndefined();
+    });
+  });
+
   describe('requestParams location', () => {
     it('should include location in requestParams when location prop is set', () => {
       const { options, toggles } = createDefaultOptions('ethereum');
