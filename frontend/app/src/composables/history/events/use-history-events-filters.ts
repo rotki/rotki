@@ -132,7 +132,7 @@ export function useHistoryEventsFilters(
   });
 
   const usedLocationLabels = computed<string[]>(() => {
-    if (toValue(useExternalAccountFilter) !== undefined)
+    if (toValue(useExternalAccountFilter))
       return toValue(externalAccountFilter).map(account => account.address);
 
     return get(locationLabels);
