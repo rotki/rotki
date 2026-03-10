@@ -1200,7 +1200,7 @@ def test_balancer_v2_swap_repeated_pair_netted_transfers(gnosis_inquirer, gnosis
             asset=Asset('eip155:100/erc20:0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d'),
             amount=FVal(spend_amount := '57.062317629971433046'),
             location_label=user_address,
-            notes=f'Swap {spend_amount} WXDAI via Balancer v2',
+            notes=f'Swap {spend_amount} WXDAI in Balancer v2',
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ), EvmSwapEvent(
@@ -1212,7 +1212,7 @@ def test_balancer_v2_swap_repeated_pair_netted_transfers(gnosis_inquirer, gnosis
             asset=Asset('eip155:100/erc20:0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1'),
             amount=FVal(receive_amount := '0.028538349974533588'),
             location_label=user_address,
-            notes=f'Receive {receive_amount} WETH as the result of a swap via Balancer v2',
+            notes=f'Receive {receive_amount} WETH as the result of a swap in Balancer v2',
             counterparty=CPT_BALANCER_V2,
             address=VAULT_ADDRESS,
         ),

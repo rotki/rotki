@@ -5,6 +5,7 @@ from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
+from rotkehlchen.chain.evm.decoding.woo_fi.constants import CPT_WOO_FI
 from rotkehlchen.chain.evm.types import (
     EvmIndexer,
     SerializableChainIndexerOrder,
@@ -884,26 +885,13 @@ def test_weth_withdraw_base_without_transfer_log(
         sequence_index=1,
         timestamp=timestamp,
         location=Location.BASE,
-        event_type=HistoryEventType.SPEND,
-        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-        asset=A_WETH_BASE,
-        amount=(amount := FVal('0.747282755150069211')),
-        location_label=user,
-        notes=f'Unwrap {amount} WETH',
-        counterparty=CPT_WETH,
-        address=WETH_OP_BASE_ADDRESS,
-    ), EvmEvent(
-        tx_ref=tx_hash,
-        sequence_index=2,
-        timestamp=timestamp,
-        location=Location.BASE,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
         asset=A_ETH,
-        amount=amount,
+        amount=(amount := FVal('0.747282755150069211')),
         location_label=user,
-        notes=f'Receive {amount} ETH',
-        counterparty=CPT_WETH,
+        notes=f'Withdraw {amount} ETH from WOOFi supercharger vault',
+        counterparty=CPT_WOO_FI,
         address=string_to_evm_address('0xe61Acb121a2B538dF495A85C4E50dD8581de4ed0'),
     )]
 
