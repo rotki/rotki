@@ -35,255 +35,237 @@ def test_coinledger_importer(database) -> None:
     with database.conn.read_ctx() as cursor:
         events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
+            filter_query=HistoryEventFilterQuery.make(order_by_rules=[
+                ('timestamp', True),
+                ('history_events_identifier', True),
+            ]),
         )
 
     assert len(events) == 27
-    assert any(
-        isinstance(event, AssetMovement) and
-        event.timestamp == _coinledger_ts('2025-03-02T16:24:08.000') and
-        event.location == Location.BINANCE and
-        event.event_subtype == HistoryEventSubType.RECEIVE and
-        event.asset == Asset('DOGE') and
-        event.amount == FVal('111.5') and
-        event.extra_data == {
-            'transaction_id': '11165cb38fa8b31eb910d03d4c2afb8ebb0abc0a967485ee7b07d026722714f6',
-        } and
-        event.location_label == 'Binance' and
-        event.notes == 'Deposit (Credit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, AssetMovement) and
-        event.timestamp == _coinledger_ts('2025-08-12T05:33:18.000') and
-        event.location == Location.BINANCE and
-        event.event_subtype == HistoryEventSubType.SPEND and
-        event.asset == Asset('DOGE') and
-        event.amount == FVal('55') and
-        event.extra_data == {
-            'transaction_id': 'b1923e958f1110a8ef9fbd8b8f1592211ed7bf2256c07501a76168830a651bce',
-        } and
-        event.location_label == 'Binance' and
-        event.notes == 'Withdrawal (Debit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-08-06T07:16:26.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.SPEND and
-        event.event_subtype == HistoryEventSubType.NONE and
-        event.asset == Asset('EUR') and
-        event.amount == FVal('15.6') and
-        event.extra_data == {'transaction_id': 'b7f960bd8e194d3991ab50111013ce58'} and
-        event.location_label == 'Binance' and
-        event.notes == 'Buy (Debit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-03-06T00:00:00.000') and
-        event.location == Location.EXTERNAL and
-        event.event_type == HistoryEventType.SPEND and
-        event.event_subtype == HistoryEventSubType.FEE and
-        event.asset.symbol_or_name() == 'TRX' and
-        event.amount == FVal('0.14195') and
-        event.location_label == 'Pionex' and
-        event.notes == 'Trade (Platform Fee) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-09-22T07:58:00.000') and
-        event.location == Location.EXTERNAL and
-        event.event_type == HistoryEventType.RECEIVE and
-        event.event_subtype == HistoryEventSubType.NONE and
-        event.asset.symbol_or_name() == 'USDT' and
-        event.amount == FVal('111') and
-        event.location_label == 'Pionex' and
-        event.notes == 'Margin Gain (Margin Gain) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T10:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.SPEND and
-        event.event_subtype == HistoryEventSubType.FEE and
-        event.asset.symbol_or_name() == 'ETH' and
-        event.amount == FVal('0.002') and
-        event.location_label == 'Binance' and
-        event.notes == 'Network Fee (Debit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T11:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.RECEIVE and
-        event.event_subtype == HistoryEventSubType.INTEREST and
-        event.asset.symbol_or_name() == 'USDT' and
-        event.amount == FVal('1.5') and
-        event.location_label == 'Binance' and
-        event.notes == 'Interest (Credit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T12:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.RECEIVE and
-        event.event_subtype == HistoryEventSubType.REWARD and
-        event.asset.symbol_or_name() == 'BTC' and
-        event.amount == FVal('0.01') and
-        event.location_label == 'Binance' and
-        event.notes == 'Mining (Credit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T13:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.STAKING and
-        event.event_subtype == HistoryEventSubType.REWARD and
-        event.asset.symbol_or_name() == 'ETH' and
-        event.amount == FVal('0.2') and
-        event.location_label == 'Binance' and
-        event.notes == 'Staking (Credit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T14:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.RECEIVE and
-        event.event_subtype == HistoryEventSubType.AIRDROP and
-        event.asset.symbol_or_name() == 'DOGE' and
-        event.amount == FVal('5') and
-        event.location_label == 'Binance' and
-        event.notes == 'Airdrop (Credit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T15:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.RECEIVE and
-        event.event_subtype == HistoryEventSubType.DONATE and
-        event.asset.symbol_or_name() == 'BTC' and
-        event.amount == FVal('0.001') and
-        event.location_label == 'Binance' and
-        event.notes == 'Gift Received (Credit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T16:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.SPEND and
-        event.event_subtype == HistoryEventSubType.DONATE and
-        event.asset.symbol_or_name() == 'BTC' and
-        event.amount == FVal('0.0005') and
-        event.location_label == 'Binance' and
-        event.notes == 'Gift Sent (Debit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T17:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.RECEIVE and
-        event.event_subtype == HistoryEventSubType.INTEREST and
-        event.asset.symbol_or_name() == 'USDT' and
-        event.amount == FVal('0.5') and
-        event.location_label == 'Binance' and
-        event.notes == 'Interest Payment (Credit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T18:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.LOSS and
-        event.event_subtype == HistoryEventSubType.NONE and
-        event.asset.symbol_or_name() == 'USDT' and
-        event.amount == FVal('12') and
-        event.location_label == 'Binance' and
-        event.notes == 'Investment Loss (Debit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T19:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.LOSS and
-        event.event_subtype == HistoryEventSubType.HACK and
-        event.asset.symbol_or_name() == 'ETH' and
-        event.amount == FVal('0.03') and
-        event.location_label == 'Binance' and
-        event.notes == 'Theft Loss (Debit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T20:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.SPEND and
-        event.event_subtype == HistoryEventSubType.PAYMENT and
-        event.asset.symbol_or_name() == 'USDT' and
-        event.amount == FVal('4') and
-        event.location_label == 'Binance' and
-        event.notes == 'Merchant Payment (Debit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T21:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.RECEIVE and
-        event.event_subtype == HistoryEventSubType.NONE and
-        event.asset.symbol_or_name() == 'BCH' and
-        event.amount == FVal('0.7') and
-        event.location_label == 'Binance' and
-        event.notes == 'Hard Fork (Credit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T22:00:00.000') and
-        event.location == Location.KRAKEN and
-        event.event_type == HistoryEventType.RECEIVE and
-        event.event_subtype == HistoryEventSubType.INTEREST and
-        event.asset.symbol_or_name() == 'EUR' and
-        event.amount == FVal('2.5') and
-        event.location_label == 'Kraken' and
-        event.notes == 'Interest (Credit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-01T23:00:00.000') and
-        event.location == Location.COINBASE and
-        event.event_type == HistoryEventType.STAKING and
-        event.event_subtype == HistoryEventSubType.REWARD and
-        event.asset.symbol_or_name() == 'ETH' and
-        event.amount == FVal('0.5') and
-        event.location_label == 'Coinbase' and
-        event.notes == 'Staking (Credit) from CoinLedger'
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-02T00:00:00.000') and
-        event.location == Location.BINANCE and
-        event.event_type == HistoryEventType.LOSS and
-        event.event_subtype == HistoryEventSubType.NONE and
-        event.asset.symbol_or_name() == 'USDT' and
-        event.amount == FVal('5.8') and
-        event.location_label == 'Binance' and
-        event.notes == 'Margin Gain (Margin Gain) from CoinLedger'
-        for event in events
-    )
+    event = events[3]
+    assert isinstance(event, AssetMovement)
+    assert event.timestamp == _coinledger_ts('2025-03-02T16:24:08.000')
+    assert event.location == Location.BINANCE
+    assert event.event_subtype == HistoryEventSubType.RECEIVE
+    assert event.asset == Asset('DOGE')
+    assert event.amount == FVal('111.5')
+    assert event.extra_data == {
+        'transaction_id': '11165cb38fa8b31eb910d03d4c2afb8ebb0abc0a967485ee7b07d026722714f6',
+    }
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Deposit (Credit) from CoinLedger'
+
+    event = events[10]
+    assert isinstance(event, AssetMovement)
+    assert event.timestamp == _coinledger_ts('2025-08-12T05:33:18.000')
+    assert event.location == Location.BINANCE
+    assert event.event_subtype == HistoryEventSubType.SPEND
+    assert event.asset == Asset('DOGE')
+    assert event.amount == FVal('55')
+    assert event.extra_data == {
+        'transaction_id': 'b1923e958f1110a8ef9fbd8b8f1592211ed7bf2256c07501a76168830a651bce',
+    }
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Withdrawal (Debit) from CoinLedger'
+
+    event = events[8]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-08-06T07:16:26.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.SPEND
+    assert event.event_subtype == HistoryEventSubType.NONE
+    assert event.asset == Asset('EUR')
+    assert event.amount == FVal('15.6')
+    assert event.extra_data == {'transaction_id': 'b7f960bd8e194d3991ab50111013ce58'}
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Buy (Debit) from CoinLedger'
+
+    event = events[6]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-03-06T00:00:00.000')
+    assert event.location == Location.EXTERNAL
+    assert event.event_type == HistoryEventType.SPEND
+    assert event.event_subtype == HistoryEventSubType.FEE
+    assert event.asset.symbol_or_name() == 'TRX'
+    assert event.amount == FVal('0.14195')
+    assert event.location_label == 'Pionex'
+    assert event.notes == 'Trade (Platform Fee) from CoinLedger'
+
+    event = events[11]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-09-22T07:58:00.000')
+    assert event.location == Location.EXTERNAL
+    assert event.event_type == HistoryEventType.RECEIVE
+    assert event.event_subtype == HistoryEventSubType.NONE
+    assert event.asset.symbol_or_name() == 'USDT'
+    assert event.amount == FVal('111')
+    assert event.location_label == 'Pionex'
+    assert event.notes == 'Margin Gain (Margin Gain) from CoinLedger'
+
+    event = events[12]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T10:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.SPEND
+    assert event.event_subtype == HistoryEventSubType.FEE
+    assert event.asset.symbol_or_name() == 'ETH'
+    assert event.amount == FVal('0.002')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Network Fee (Debit) from CoinLedger'
+
+    event = events[13]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T11:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.RECEIVE
+    assert event.event_subtype == HistoryEventSubType.INTEREST
+    assert event.asset.symbol_or_name() == 'USDT'
+    assert event.amount == FVal('1.5')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Interest (Credit) from CoinLedger'
+
+    event = events[14]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T12:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.RECEIVE
+    assert event.event_subtype == HistoryEventSubType.REWARD
+    assert event.asset.symbol_or_name() == 'BTC'
+    assert event.amount == FVal('0.01')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Mining (Credit) from CoinLedger'
+
+    event = events[15]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T13:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.STAKING
+    assert event.event_subtype == HistoryEventSubType.REWARD
+    assert event.asset.symbol_or_name() == 'ETH'
+    assert event.amount == FVal('0.2')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Staking (Credit) from CoinLedger'
+
+    event = events[16]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T14:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.RECEIVE
+    assert event.event_subtype == HistoryEventSubType.AIRDROP
+    assert event.asset.symbol_or_name() == 'DOGE'
+    assert event.amount == FVal('5')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Airdrop (Credit) from CoinLedger'
+
+    event = events[17]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T15:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.RECEIVE
+    assert event.event_subtype == HistoryEventSubType.DONATE
+    assert event.asset.symbol_or_name() == 'BTC'
+    assert event.amount == FVal('0.001')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Gift Received (Credit) from CoinLedger'
+
+    event = events[18]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T16:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.SPEND
+    assert event.event_subtype == HistoryEventSubType.DONATE
+    assert event.asset.symbol_or_name() == 'BTC'
+    assert event.amount == FVal('0.0005')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Gift Sent (Debit) from CoinLedger'
+
+    event = events[19]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T17:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.RECEIVE
+    assert event.event_subtype == HistoryEventSubType.INTEREST
+    assert event.asset.symbol_or_name() == 'USDT'
+    assert event.amount == FVal('0.5')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Interest Payment (Credit) from CoinLedger'
+
+    event = events[20]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T18:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.LOSS
+    assert event.event_subtype == HistoryEventSubType.NONE
+    assert event.asset.symbol_or_name() == 'USDT'
+    assert event.amount == FVal('12')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Investment Loss (Debit) from CoinLedger'
+
+    event = events[21]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T19:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.LOSS
+    assert event.event_subtype == HistoryEventSubType.HACK
+    assert event.asset.symbol_or_name() == 'ETH'
+    assert event.amount == FVal('0.03')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Theft Loss (Debit) from CoinLedger'
+
+    event = events[22]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T20:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.SPEND
+    assert event.event_subtype == HistoryEventSubType.PAYMENT
+    assert event.asset.symbol_or_name() == 'USDT'
+    assert event.amount == FVal('4')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Merchant Payment (Debit) from CoinLedger'
+
+    event = events[23]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T21:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.RECEIVE
+    assert event.event_subtype == HistoryEventSubType.NONE
+    assert event.asset.symbol_or_name() == 'BCH'
+    assert event.amount == FVal('0.7')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Hard Fork (Credit) from CoinLedger'
+
+    event = events[24]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T22:00:00.000')
+    assert event.location == Location.KRAKEN
+    assert event.event_type == HistoryEventType.RECEIVE
+    assert event.event_subtype == HistoryEventSubType.INTEREST
+    assert event.asset.symbol_or_name() == 'EUR'
+    assert event.amount == FVal('2.5')
+    assert event.location_label == 'Kraken'
+    assert event.notes == 'Interest (Credit) from CoinLedger'
+
+    event = events[25]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-01T23:00:00.000')
+    assert event.location == Location.COINBASE
+    assert event.event_type == HistoryEventType.STAKING
+    assert event.event_subtype == HistoryEventSubType.REWARD
+    assert event.asset.symbol_or_name() == 'ETH'
+    assert event.amount == FVal('0.5')
+    assert event.location_label == 'Coinbase'
+    assert event.notes == 'Staking (Credit) from CoinLedger'
+
+    event = events[26]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-02T00:00:00.000')
+    assert event.location == Location.BINANCE
+    assert event.event_type == HistoryEventType.LOSS
+    assert event.event_subtype == HistoryEventSubType.NONE
+    assert event.asset.symbol_or_name() == 'USDT'
+    assert event.amount == FVal('5.8')
+    assert event.location_label == 'Binance'
+    assert event.notes == 'Margin Gain (Margin Gain) from CoinLedger'
 
 
 def test_coinledger_importer_rejects_contradictory_signs(database, tmp_path) -> None:
@@ -312,25 +294,25 @@ def test_coinledger_importer_rejects_contradictory_signs(database, tmp_path) -> 
     with database.conn.read_ctx() as cursor:
         events = DBHistoryEvents(database).get_history_events_internal(
             cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(order_by_rules=[('timestamp', True)]),
+            filter_query=HistoryEventFilterQuery.make(order_by_rules=[
+                ('timestamp', True),
+                ('history_events_identifier', True),
+            ]),
         )
 
     assert len(events) == 2
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-05T10:00:00.000') and
-        event.event_type == HistoryEventType.SPEND and
-        event.event_subtype == HistoryEventSubType.NONE and
-        event.asset.symbol_or_name() == 'USDT' and
-        event.amount == FVal('1.25')
-        for event in events
-    )
-    assert any(
-        isinstance(event, HistoryEvent) and
-        event.timestamp == _coinledger_ts('2025-10-05T10:02:00.000') and
-        event.event_type == HistoryEventType.RECEIVE and
-        event.event_subtype == HistoryEventSubType.INTEREST and
-        event.asset.symbol_or_name() == 'USDT' and
-        event.amount == FVal('0.8')
-        for event in events
-    )
+    event = events[0]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-05T10:00:00.000')
+    assert event.event_type == HistoryEventType.SPEND
+    assert event.event_subtype == HistoryEventSubType.NONE
+    assert event.asset.symbol_or_name() == 'USDT'
+    assert event.amount == FVal('1.25')
+
+    event = events[1]
+    assert isinstance(event, HistoryEvent)
+    assert event.timestamp == _coinledger_ts('2025-10-05T10:02:00.000')
+    assert event.event_type == HistoryEventType.RECEIVE
+    assert event.event_subtype == HistoryEventSubType.INTEREST
+    assert event.asset.symbol_or_name() == 'USDT'
+    assert event.amount == FVal('0.8')

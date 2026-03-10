@@ -74,31 +74,11 @@ def platform_row_to_location(entry: str) -> Location:
     except DeserializationError:
         pass
 
-    # Map common exchange names to rotki locations
+    # Map aliases that differ from rotki location names
     if entry == 'Binance Smart Chain':
         return Location.BINANCE_SC
-    if entry == 'Binance':
-        return Location.BINANCE
-    if entry == 'Kraken':
-        return Location.KRAKEN
-    if entry == 'Poloniex':
-        return Location.POLONIEX
-    if entry == 'Bittrex':
-        return Location.BITTREX
-    if entry == 'Bitmex':
-        return Location.BITMEX
-    if entry == 'Coinbase':
-        return Location.COINBASE
     if entry in {'CoinbasePro', 'GDAX'}:
         return Location.COINBASEPRO
-    if entry == 'Gemini':
-        return Location.GEMINI
-    if entry == 'Bitstamp':
-        return Location.BITSTAMP
-    if entry == 'Bitfinex':
-        return Location.BITFINEX
-    if entry == 'KuCoin':
-        return Location.KUCOIN
 
     log.warning(f'Coinledger location "{entry}" unrecognized and imported as external')
     return Location.EXTERNAL
