@@ -59,7 +59,7 @@ class ProcessedAccountingEvent:
     pnl: PNL
     cost_basis: CostBasisInfo | None
     index: int
-    direction: EventDirection | None = None
+    direction: EventDirection = EventDirection.NEUTRAL
 
     # This is set only for some events to remember extra data that can be used later
     # such as the transaction hash of an event
@@ -133,7 +133,7 @@ class ProcessedAccountingEvent:
             'price': str(self.price),
             'pnl_taxable': str(self.pnl.taxable),
             'pnl_free': str(self.pnl.free),
-            'direction': self.direction.serialize() if self.direction is not None else None,
+            'direction': self.direction.serialize(),
         }
         tx_hash = self.extra_data.get('tx_hash', None)
         if export_type == AccountingEventExportType.CSV:
@@ -265,7 +265,7 @@ class ProcessedAccountingEvent:
             direction = (
                 EventDirection.deserialize(direction_raw)
                 if direction_raw is not None
-                else None
+                else EventDirection.NEUTRAL
             )
             event = cls(
                 event_type=AccountingEventType.deserialize(data['type']),

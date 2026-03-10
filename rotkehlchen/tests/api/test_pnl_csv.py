@@ -96,7 +96,7 @@ def assert_csv_export_response(
             assert row['price'] is not None
             assert row['pnl_taxable'] is not None
             assert row['cost_basis_taxable'] is not None
-            assert row['direction'] in {'in', 'out', 'neutral', ''}
+            assert row['direction'] in {'in', 'out', 'neutral'}
             assert row['pnl_free'] is not None
             assert row['cost_basis_free'] is not None
             count += 1

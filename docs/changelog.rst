@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7492` Added an event direction column (in/out/neutral) to the PnL CSV export.
 * :feature:`11816` Support importing events from Coinledger CSV.
 * :feature:`-` Transactions involving stkGHO will now be decoded properly.
 * :feature:`8145` WOOFi swaps, staking, and vault transactions will now be properly decoded on all supported EVM chains with associated balances properly detected.
