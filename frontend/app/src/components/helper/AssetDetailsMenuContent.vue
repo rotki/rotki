@@ -3,12 +3,13 @@ import type { NftAsset } from '@/types/nfts';
 import { useAssetPageNavigation } from '@/composables/assets/navigation';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
-import { useRefMap } from '@/composables/utils/useRefMap';
 import HashLink from '@/modules/common/links/HashLink.vue';
 import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { isSpammableAssetType } from '@/types/asset';
 
-const props = defineProps<{
+type ConfirmType = 'ignore' | 'mark_as_spam' | 'unignore' | 'unmark_spam';
+
+const { asset, hideActions, isCollectionParent, iconOnly } = defineProps<{
   asset: NftAsset;
   hideActions?: boolean;
   isCollectionParent?: boolean;
@@ -16,45 +17,55 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  hideActions: false;
-  isCollectionParent: false;
   refresh: [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
 
-const { asset, isCollectionParent } = toRefs(props);
-
-const symbol = useRefMap(asset, asset => asset.symbol ?? '');
-const name = useRefMap(asset, asset => asset.name ?? '');
-const identifier = useRefMap(asset, asset => asset.identifier);
-
-const { navigateToDetails } = useAssetPageNavigation(identifier, isCollectionParent);
-
-type ConfirmType = 'ignore' | 'mark_as_spam';
 const confirm = ref(false);
 const confirmType = ref<ConfirmType>('ignore');
 
-const { ignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
-const isSpamAsset = computed<boolean>(() => get(asset).isSpam);
-const isIgnoredAsset = useIsAssetIgnored(identifier);
-const { markAssetsAsSpam } = useSpamAsset();
-const { assetContractInfo, refetchAssetInfo } = useAssetInfoRetrieval();
+const { navigateToDetails } = useAssetPageNavigation(computed(() => asset.identifier), computed(() => isCollectionParent));
+const { ignoreAsset, unignoreAsset, useIsAssetIgnored } = useIgnoredAssetsStore();
+const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
-const contractInfo = assetContractInfo(identifier);
+const isIgnoredAsset = useIsAssetIgnored(computed(() => asset.identifier));
+const { refetchAssetInfo, assetContractInfo } = useAssetInfoRetrieval();
 
-function actionClick(action: ConfirmType) {
+const contractInfo = assetContractInfo(computed(() => asset.identifier));
+
+function actionClick(action: ConfirmType): void {
   set(confirm, true);
   set(confirmType, action);
 }
 
-async function confirmAction() {
-  const id = get(identifier);
-  if (get(confirmType) === 'ignore') {
+function confirmMessage(): string {
+  const type = get(confirmType);
+  if (type === 'ignore')
+    return t('assets.action.confirm.ignore');
+  else if (type === 'mark_as_spam')
+    return t('assets.action.confirm.mark_as_spam');
+  else if (type === 'unignore')
+    return t('assets.action.confirm.unignore');
+  else
+    return t('assets.action.confirm.unmark_as_spam');
+}
+
+async function confirmAction(): Promise<void> {
+  const id = asset.identifier;
+  const type = get(confirmType);
+
+  if (type === 'ignore') {
     await ignoreAsset(id);
   }
-  else {
+  else if (type === 'mark_as_spam') {
     await markAssetsAsSpam([id]);
+  }
+  else if (type === 'unignore') {
+    await unignoreAsset(id);
+  }
+  else {
+    await removeAssetFromSpamList(id);
   }
 
   refetchAssetInfo(id);
@@ -62,7 +73,7 @@ async function confirmAction() {
   set(confirm, false);
 }
 
-function setConfirm(value: boolean) {
+function setConfirm(value: boolean): void {
   set(confirm, value);
 }
 
@@ -89,9 +100,7 @@ defineExpose({
           class="w-full flex items-center gap-2 justify-between text-rui-text-secondary pl-1 py-[1px]"
         >
           <div class="text-rui-warning text-xs leading-[1]">
-            {{ confirmType === 'ignore'
-              ? t('assets.action.confirm.ignore')
-              : t('assets.action.confirm.mark_as_spam') }}
+            {{ confirmMessage() }}
           </div>
           <div class="flex gap-1">
             <RuiButton
@@ -141,70 +150,110 @@ defineExpose({
               />
             </template>
           </RuiButton>
-          <template v-if="!hideActions">
-            <div
-              v-if="isIgnoredAsset || isSpamAsset"
-              class="text-xs text-rui-info bg-rui-info-lighter/[0.1] px-1 py-1 rounded-md flex items-center gap-1"
+          <template v-if="!hideActions && (isIgnoredAsset || asset.isSpam)">
+            <RuiDivider
+              vertical
+              class="h-6"
+            />
+            <RuiTooltip
+              v-if="asset.isSpam"
+              :open-delay="200"
+              :popper="{ placement: 'top' }"
             >
-              <RuiIcon
-                name="lu-info"
-                size="16"
-              />
-              {{ isSpamAsset ? t('assets.action.info.mark_as_spam') : t('assets.action.info.ignore') }}
+              <template #activator>
+                <RuiButton
+                  variant="text"
+                  color="warning"
+                  class="!py-0.5"
+                  size="sm"
+                  @click="actionClick('unmark_spam')"
+                >
+                  <template #append>
+                    <RuiIcon
+                      name="lu-shield-off"
+                      size="18"
+                    />
+                  </template>
+                </RuiButton>
+              </template>
+              {{ t('assets.action.unmark_as_spam') }}
+            </RuiTooltip>
+            <RuiTooltip
+              v-else
+              :open-delay="200"
+              :popper="{ placement: 'top' }"
+            >
+              <template #activator>
+                <RuiButton
+                  variant="text"
+                  color="warning"
+                  class="!py-0.5"
+                  size="sm"
+                  @click="actionClick('unignore')"
+                >
+                  <template #append>
+                    <RuiIcon
+                      name="lu-eye"
+                      size="18"
+                    />
+                  </template>
+                </RuiButton>
+              </template>
+              {{ t('assets.action.unignore') }}
+            </RuiTooltip>
+          </template>
+          <template v-else-if="!hideActions">
+            <RuiDivider
+              vertical
+              class="h-6"
+            />
+            <div class="w-full flex items-center gap-1">
+              <RuiTooltip
+                :open-delay="200"
+                :popper="{ placement: 'top' }"
+              >
+                <template #activator>
+                  <RuiButton
+                    variant="text"
+                    color="error"
+                    class="!py-0.5"
+                    size="sm"
+                    @click="actionClick('ignore')"
+                  >
+                    <template #append>
+                      <RuiIcon
+                        name="lu-eye-off"
+                        size="18"
+                      />
+                    </template>
+                  </RuiButton>
+                </template>
+                {{ t('assets.action.ignore') }}
+              </RuiTooltip>
+              <RuiTooltip
+                v-if="isSpammableAssetType(asset.assetType)"
+                :open-delay="200"
+                :popper="{ placement: 'top' }"
+              >
+                <template #activator>
+                  <RuiButton
+                    variant="text"
+                    color="error"
+                    class="!py-0.5"
+                    size="sm"
+                    @click="actionClick('mark_as_spam')"
+                  >
+                    <template #append>
+                      <RuiIcon
+                        name="lu-ban"
+                        size="18"
+                      />
+                    </template>
+                  </RuiButton>
+                </template>
+                {{ t('assets.action.mark_as_spam') }}
+              </RuiTooltip>
             </div>
-            <template v-else>
-              <RuiDivider
-                vertical
-                class="h-6"
-              />
-              <div class="w-full flex items-center gap-1">
-                <RuiTooltip
-                  :open-delay="200"
-                  :popper="{ placement: 'top' }"
-                >
-                  <template #activator>
-                    <RuiButton
-                      variant="text"
-                      color="error"
-                      class="!py-0.5"
-                      size="sm"
-                      @click="actionClick('ignore')"
-                    >
-                      <template #append>
-                        <RuiIcon
-                          name="lu-eye-off"
-                          size="18"
-                        />
-                      </template>
-                    </RuiButton>
-                  </template>
-                  {{ t('assets.action.ignore') }}
-                </RuiTooltip>
-                <RuiTooltip
-                  v-if="isSpammableAssetType(asset.assetType)"
-                  :open-delay="200"
-                  :popper="{ placement: 'top' }"
-                >
-                  <template #activator>
-                    <RuiButton
-                      variant="text"
-                      color="error"
-                      class="!py-0.5"
-                      size="sm"
-                      @click="actionClick('mark_as_spam')"
-                    >
-                      <template #append>
-                        <RuiIcon
-                          name="lu-ban"
-                          size="18"
-                        />
-                      </template>
-                    </RuiButton>
-                  </template>
-                  {{ t('assets.action.mark_as_spam') }}
-                </RuiTooltip>
-              </div>
-            </template>
           </template>
         </div>
       </Transition>
@@ -248,9 +297,9 @@ defineExpose({
       </div>
 
       <div class="text-xs py-0.5">
-        {{ name }}
-        <template v-if="name !== symbol">
-          {{ t('assets.asset_symbol', { symbol }) }}
+        {{ asset.name }}
+        <template v-if="asset.name !== asset.symbol">
+          {{ t('assets.asset_symbol', { symbol: asset.symbol }) }}
         </template>
       </div>
     </div>
