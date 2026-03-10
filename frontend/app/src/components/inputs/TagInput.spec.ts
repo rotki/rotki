@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import TagInput from '@/components/inputs/TagInput.vue';
 import TagForm from '@/components/tags/TagForm.vue';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
-import { useTagStore } from '@/store/session/tags';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 
 function createTag(name: string): { name: string; description: string; backgroundColor: string; foregroundColor: string } {
   return {
@@ -41,7 +41,7 @@ describe('tag-input', () => {
 
   afterEach((): void => {
     wrapper.unmount();
-    useTagStore().$reset();
+    useSessionMetadataStore().$reset();
     vi.useRealTimers();
   });
 

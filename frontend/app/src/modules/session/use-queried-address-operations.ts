@@ -1,7 +1,7 @@
 import type { QueriedAddressPayload } from '@/types/session';
 import { useQueriedAddressApi } from '@/composables/api/session/queried-addresses';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 
 interface UseQueriedAddressOperationsReturn {
   addQueriedAddress: (payload: QueriedAddressPayload) => Promise<void>;
@@ -10,7 +10,7 @@ interface UseQueriedAddressOperationsReturn {
 }
 
 export function useQueriedAddressOperations(): UseQueriedAddressOperationsReturn {
-  const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
+  const { queriedAddresses } = storeToRefs(useSessionMetadataStore());
   const { showErrorMessage } = useNotifications();
   const api = useQueriedAddressApi();
   const { t } = useI18n({ useScope: 'global' });

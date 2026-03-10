@@ -4,7 +4,7 @@ import { transformCase } from '@rotki/common';
 import AppImage from '@/components/common/AppImage.vue';
 import { useAccountLoading } from '@/composables/accounts/loading';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 
@@ -14,7 +14,7 @@ const emit = defineEmits<{
 
 const enabledModules = ref<Module[]>([]);
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
-const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
+const { queriedAddresses } = storeToRefs(useSessionMetadataStore());
 const { fetchQueriedAddresses } = useQueriedAddressOperations();
 
 function updateSelection(modules: Module[]) {

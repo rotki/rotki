@@ -1,7 +1,7 @@
 import type { QueriedAddresses, QueriedAddressPayload } from '@/types/session';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { Module } from '@/types/modules';
 import '@test/i18n';
 
@@ -50,7 +50,7 @@ describe('useQueriedAddressOperations', () => {
       const { fetchQueriedAddresses } = useQueriedAddressOperations();
       await fetchQueriedAddresses();
 
-      const store = useQueriedAddressesStore();
+      const store = useSessionMetadataStore();
       expect(mockQueriedAddresses).toHaveBeenCalledOnce();
       expect(get(store.queriedAddresses)).toMatchObject(response);
     });
@@ -62,7 +62,7 @@ describe('useQueriedAddressOperations', () => {
       const { fetchQueriedAddresses } = useQueriedAddressOperations();
       await fetchQueriedAddresses();
 
-      const store = useQueriedAddressesStore();
+      const store = useSessionMetadataStore();
       expect(mockQueriedAddresses).toHaveBeenCalledOnce();
       expect(get(store.queriedAddresses)).toMatchObject({});
       expect(mockShowErrorMessage).toHaveBeenCalledOnce();
@@ -84,7 +84,7 @@ describe('useQueriedAddressOperations', () => {
       const { addQueriedAddress } = useQueriedAddressOperations();
       await addQueriedAddress(payload);
 
-      const store = useQueriedAddressesStore();
+      const store = useSessionMetadataStore();
       expect(mockAddQueriedAddress).toHaveBeenCalledWith(payload);
       expect(get(store.queriedAddresses)).toMatchObject(response);
     });
@@ -100,7 +100,7 @@ describe('useQueriedAddressOperations', () => {
       const { addQueriedAddress } = useQueriedAddressOperations();
       await addQueriedAddress(payload);
 
-      const store = useQueriedAddressesStore();
+      const store = useSessionMetadataStore();
       expect(mockAddQueriedAddress).toHaveBeenCalledWith(payload);
       expect(get(store.queriedAddresses)).toMatchObject({});
       expect(mockShowErrorMessage).toHaveBeenCalledOnce();
@@ -109,7 +109,7 @@ describe('useQueriedAddressOperations', () => {
 
   describe('deleteQueriedAddress', () => {
     it('should delete queried address and update store', async () => {
-      const store = useQueriedAddressesStore();
+      const store = useSessionMetadataStore();
       const { queriedAddresses } = storeToRefs(store);
       set(queriedAddresses, {
         makerdaoDsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],
@@ -130,7 +130,7 @@ describe('useQueriedAddressOperations', () => {
     });
 
     it('should show error on delete failure', async () => {
-      const store = useQueriedAddressesStore();
+      const store = useSessionMetadataStore();
       const { queriedAddresses } = storeToRefs(store);
       const originalState: QueriedAddresses = {
         makerdaoDsr: ['0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5'],

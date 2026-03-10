@@ -7,7 +7,7 @@ import TagIcon from '@/components/tags/TagIcon.vue';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
 import { useConfirmStore } from '@/store/confirm';
-import { useTagStore } from '@/store/session/tags';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { defaultTag, isReservedTag, type Tag } from '@/types/tags';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -20,7 +20,7 @@ const originalName = ref<string>('');
 const route = useRoute();
 const router = useRouter();
 
-const { tags } = storeToRefs(useTagStore());
+const { tags } = storeToRefs(useSessionMetadataStore());
 const { deleteTag } = useTagOperations();
 const { show } = useConfirmStore();
 

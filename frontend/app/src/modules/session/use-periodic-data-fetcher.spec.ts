@@ -1,7 +1,7 @@
 import type { PeriodicClientQueryResult } from '@/types/session';
 import { createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { usePeriodicStore } from '@/store/session/periodic';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import '@test/i18n';
 
 const mockFetchPeriodicData = vi.fn();
@@ -51,7 +51,7 @@ describe('usePeriodicDataFetcher', () => {
     const { check } = usePeriodicDataFetcher();
     await check();
 
-    const store = usePeriodicStore();
+    const store = useSessionMetadataStore();
     expect(get(store.lastBalanceSave)).toBe(1234);
     expect(get(store.lastDataUpload)).toBe(5678);
     expect(get(store.connectedNodes)).toEqual({ eth: ['node1'] });
@@ -65,13 +65,13 @@ describe('usePeriodicDataFetcher', () => {
     const { check } = usePeriodicDataFetcher();
     await check();
 
-    const store = usePeriodicStore();
+    const store = useSessionMetadataStore();
     expect(get(store.lastBalanceSave)).toBe(0);
     expect(get(store.lastDataUpload)).toBe(0);
   });
 
   it('should only update lastBalanceSave when value changes', async () => {
-    const store = usePeriodicStore();
+    const store = useSessionMetadataStore();
     const { lastBalanceSave } = storeToRefs(store);
     set(lastBalanceSave, 1234);
 

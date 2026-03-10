@@ -4,7 +4,7 @@ import { invertColor, randomColor } from '@rotki/common';
 import { useTagsApi } from '@/composables/api/tags';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { getErrorMessage, useNotifications } from '@/modules/notifications/use-notifications';
-import { useTagStore } from '@/store/session/tags';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { logger } from '@/utils/logging';
 
 interface UseTagOperationsReturn {
@@ -20,7 +20,7 @@ export function useTagOperations(): UseTagOperationsReturn {
   const { queryAddTag, queryDeleteTag, queryEditTag, queryTags } = useTagsApi();
   const { removeTag, renameTag } = useBlockchainAccountsStore();
   const { showErrorMessage } = useNotifications();
-  const { allTags, tags } = storeToRefs(useTagStore());
+  const { allTags, tags } = storeToRefs(useSessionMetadataStore());
 
   async function addTag(tag: Tag): Promise<ActionStatus> {
     try {

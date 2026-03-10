@@ -10,7 +10,7 @@ import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useQueriedAddressOperations } from '@/modules/session/use-queried-address-operations';
 import { useSettingsOperations } from '@/modules/settings/use-settings-operations';
 import { TableId, useRememberTableSorting } from '@/modules/table/use-remember-table-sorting';
-import { useQueriedAddressesStore } from '@/store/session/queried-addresses';
+import { useSessionMetadataStore } from '@/store/session/metadata';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
 import { Section } from '@/types/status';
@@ -24,7 +24,7 @@ const loading = ref(false);
 const search = ref('');
 const manageModule = ref<Module>();
 
-const { queriedAddresses } = storeToRefs(useQueriedAddressesStore());
+const { queriedAddresses } = storeToRefs(useSessionMetadataStore());
 const { fetchQueriedAddresses } = useQueriedAddressOperations();
 const { activeModules } = storeToRefs(useGeneralSettingsStore());
 const { update: updateSettings } = useSettingsOperations();
