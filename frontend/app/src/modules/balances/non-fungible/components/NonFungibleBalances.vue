@@ -8,7 +8,7 @@ import RowAppend from '@/components/helper/RowAppend.vue';
 import TablePageLayout from '@/components/layout/TablePageLayout.vue';
 import LatestPriceFormDialog from '@/components/price-manager/latest/LatestPriceFormDialog.vue';
 import { AssetAmountDisplay, FiatDisplay } from '@/modules/amount-display/components';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useNftAssetIgnoring } from '../composables/use-nft-asset-ignoring';
 import { useNftData } from '../composables/use-nft-data';
 import { useNftPriceManagement } from '../composables/use-nft-price-management';
@@ -17,7 +17,7 @@ import NonFungibleBalancesActions from './NonFungibleBalancesActions.vue';
 defineProps<{ modules: Module[] }>();
 
 const { t } = useI18n({ useScope: 'global' });
-const { useIsAssetIgnored } = useIgnoredAssetsStore();
+const { useIsAssetIgnored } = useAssetsStore();
 
 // Data management
 const {

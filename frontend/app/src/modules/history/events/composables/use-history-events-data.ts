@@ -10,8 +10,8 @@ import { useHistoryEvents } from '@/composables/history/events';
 import { useRefWithDebounce } from '@/composables/ref';
 import { RequestCancelledError } from '@/modules/api/request-queue/errors';
 import { api } from '@/modules/api/rotki-api';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { getCollectionData, setupEntryLimit } from '@/utils/collection';
 import { logger } from '@/utils/logging';
@@ -82,7 +82,7 @@ export function useHistoryEventsData(
   const { data, entriesFoundTotal, found, limit, total } = getCollectionData(groups);
   const { showUpgradeRow } = setupEntryLimit(limit, found, total, entriesFoundTotal);
   const { fetchHistoryEvents } = useHistoryEvents();
-  const ignoredAssetsStore = useIgnoredAssetsStore();
+  const ignoredAssetsStore = useAssetsStore();
   const { isAssetIgnored } = ignoredAssetsStore;
   const { ignoredAssets } = storeToRefs(ignoredAssetsStore);
   const { sectionLoading } = useHistoryEventsStatus();

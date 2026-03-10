@@ -4,12 +4,11 @@ import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSpamAsset } from '@/composables/assets/spam';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 import { uniqueStrings } from '@/utils/data';
 
 interface IgnoredFilter {
@@ -41,8 +40,7 @@ export function useManagedAssetOperations(
   const { showErrorMessage } = useNotifications();
   const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
   const { ignoreAsset, unignoreAsset } = useIgnoredAssetOperations();
-  const { isAssetIgnored } = useIgnoredAssetsStore();
-  const { isAssetWhitelisted, useIsAssetWhitelisted } = useWhitelistedAssetsStore();
+  const { isAssetIgnored, isAssetWhitelisted, useIsAssetWhitelisted } = useAssetsStore();
   const { unWhitelistAsset, whitelistAsset } = useWhitelistedAssetOperations();
   const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
   const { refetchAssetInfo } = useAssetInfoRetrieval();

@@ -1,10 +1,10 @@
 import { startPromise } from '@shared/utils';
 import { isEqual } from 'es-toolkit';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useExchanges } from '@/modules/balances/exchanges/use-exchanges';
 import { useManualBalances } from '@/modules/balances/manual/use-manual-balances';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 import { useBlockchainBalances } from '@/modules/balances/use-blockchain-balances';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { BalanceSource } from '@/types/settings/frontend-settings';
 
@@ -15,7 +15,7 @@ export function useBalanceWatchers(): void {
   const { removeIgnoredAssets } = useBalancesStore();
 
   const { balanceValueThreshold } = storeToRefs(useFrontendSettingsStore());
-  const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
+  const { ignoredAssets } = storeToRefs(useAssetsStore());
 
   watch(balanceValueThreshold, (current, old) => {
     if (!isEqual(current[BalanceSource.MANUAL], old[BalanceSource.MANUAL])) {

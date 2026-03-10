@@ -2,10 +2,10 @@ import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import type { EthDetectedTokensInfo, EvmTokensRecord } from '@/types/balances';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
 import { useSupportedChains } from '@/composables/info/chains';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useTokenDetectionOrchestrator } from '@/modules/balances/blockchain/use-token-detection-orchestrator';
 import { useTokenDetectionStore } from '@/modules/balances/blockchain/use-token-detection-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { arrayify } from '@/utils/array';
 
 function noTokens(): EthDetectedTokensInfo {
@@ -63,7 +63,7 @@ export function useTokenDetectionUi(
 ): UseTokenDetectionUiReturn {
   const { tokensState } = storeToRefs(useTokenDetectionStore());
   const { balances } = storeToRefs(useBalancesStore());
-  const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { isAssetIgnored } = useAssetsStore();
   const { supportsTransactions } = useSupportedChains();
   const { detectAllTokens, detectTokens: orchestratorDetect, useIsDetecting } = useTokenDetectionOrchestrator();
 

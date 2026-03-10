@@ -4,7 +4,7 @@ import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/even
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { isEventMissingAccountingRule } from '@/utils/history/events';
 
 export interface UseHistoryEventItemProps {
@@ -39,7 +39,7 @@ export function useHistoryEventItem(
   const { event, selection } = props;
   const { getChain } = useSupportedChains();
   const { useAssetInfo } = useAssetInfoRetrieval();
-  const { useIsAssetIgnored } = useIgnoredAssetsStore();
+  const { useIsAssetIgnored } = useAssetsStore();
 
   const eventAsset = computed<string>(() => toValue(event).asset);
   const isIgnoredAsset = useIsAssetIgnored(eventAsset);

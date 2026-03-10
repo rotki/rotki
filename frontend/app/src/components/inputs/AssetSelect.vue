@@ -10,7 +10,7 @@ import AssetDetailsBase from '@/components/helper/AssetDetailsBase.vue';
 import NftDetails from '@/components/helper/NftDetails.vue';
 import { useAssetInfoApi } from '@/composables/api/assets/info';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { isAbortError } from '@/utils';
 import { getAssetSearchTypeParams, getSanitizedChain, parseAssetSearchKeyword } from '@/utils/assets';
 import { uniqueObjects } from '@/utils/data';
@@ -61,7 +61,7 @@ const emit = defineEmits<{
 defineSlots<{
   prepend: () => any;
 }>();
-const { isAssetIgnored } = useIgnoredAssetsStore();
+const { isAssetIgnored } = useAssetsStore();
 const { getEvmChainName, matchChain } = useSupportedChains();
 
 const search = ref<string>('');

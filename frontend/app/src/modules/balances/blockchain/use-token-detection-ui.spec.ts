@@ -7,8 +7,8 @@ vi.mock('@/composables/info/chains', () => ({
   }),
 }));
 
-vi.mock('@/store/assets/ignored', () => ({
-  useIgnoredAssetsStore: vi.fn().mockReturnValue({
+vi.mock('@/modules/assets/use-assets-store', () => ({
+  useAssetsStore: vi.fn().mockReturnValue({
     isAssetIgnored: (id: string): boolean => id === 'IGNORED_TOKEN',
   }),
 }));

@@ -5,14 +5,9 @@ import { type Pinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ManagedAssetIgnoreSwitch from './ManagedAssetIgnoreSwitch.vue';
 
-vi.mock('@/store/assets/ignored', () => ({
-  useIgnoredAssetsStore: vi.fn().mockReturnValue({
+vi.mock('@/modules/assets/use-assets-store', () => ({
+  useAssetsStore: vi.fn().mockReturnValue({
     useIsAssetIgnored: (): Ref<boolean> => ref(false),
-  }),
-}));
-
-vi.mock('@/store/assets/whitelisted', () => ({
-  useWhitelistedAssetsStore: vi.fn().mockReturnValue({
     useIsAssetWhitelisted: (): Ref<boolean> => ref(false),
   }),
 }));

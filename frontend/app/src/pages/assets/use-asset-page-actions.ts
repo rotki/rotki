@@ -1,10 +1,9 @@
 import type { ComputedRef, DeepReadonly, Ref } from 'vue';
 import { useSpamAsset } from '@/composables/assets/spam';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useIgnoredAssetConfirmation } from '@/modules/assets/use-ignored-asset-confirmation';
 import { useIgnoredAssetOperations } from '@/modules/assets/use-ignored-asset-operations';
 import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-asset-operations';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
-import { useWhitelistedAssetsStore } from '@/store/assets/whitelisted';
 
 interface AssetWithSpamStatus {
   isSpam?: boolean;
@@ -38,8 +37,7 @@ export function useAssetPageActions(options: UseAssetPageActionsOptions): UseAss
 
   const { ignoreAssetWithConfirmation } = useIgnoredAssetConfirmation();
   const { unignoreAsset } = useIgnoredAssetOperations();
-  const { useIsAssetIgnored } = useIgnoredAssetsStore();
-  const { useIsAssetWhitelisted } = useWhitelistedAssetsStore();
+  const { useIsAssetIgnored, useIsAssetWhitelisted } = useAssetsStore();
   const { unWhitelistAsset, whitelistAsset } = useWhitelistedAssetOperations();
   const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 

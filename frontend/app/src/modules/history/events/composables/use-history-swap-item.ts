@@ -4,7 +4,7 @@ import type { UseHistoryEventsSelectionModeReturn } from '@/modules/history/even
 import type { HistoryEventEntry } from '@/types/history/events/schemas';
 import { NO_COLLECTION_RESOLVE, useAssetInfoRetrieval } from '@/composables/assets/retrieval';
 import { useSupportedChains } from '@/composables/info/chains';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { isEventMissingAccountingRule } from '@/utils/history/events';
 
 export interface UseHistorySwapItemProps {
@@ -46,7 +46,7 @@ export function useHistorySwapItem(
   const { t } = useI18n({ useScope: 'global' });
   const { getChain } = useSupportedChains();
   const { getAssetField, useAssetInfo } = useAssetInfoRetrieval();
-  const { isAssetIgnored } = useIgnoredAssetsStore();
+  const { isAssetIgnored } = useAssetsStore();
 
   const primaryEvent = computed<HistoryEventEntry>(() => get(events)[0]);
 

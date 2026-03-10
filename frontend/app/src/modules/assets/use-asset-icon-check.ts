@@ -1,38 +1,25 @@
-import type { MaybeRefOrGetter } from 'vue';
 import { wait } from '@shared/utils';
 import { useAssetIconApi } from '@/composables/api/assets/icon';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { logger } from '@/utils/logging';
 
 export interface AssetCheckOptions {
   abortController?: AbortController;
 }
 
-interface CachedAssetResult {
-  exists: boolean;
-  timestamp: number;
-}
-
 const CACHE_TTL = 5 * 60 * 1000;
 
 interface UseAssetIconCheckReturn {
   checkIfAssetExists: (identifier: string, options: AssetCheckOptions) => Promise<boolean>;
-  clearCache: () => void;
 }
 
-export function useAssetIconCheck(lastRefreshed: MaybeRefOrGetter<number>): UseAssetIconCheckReturn {
-  const assetExistsCache = shallowRef<Map<string, CachedAssetResult>>(new Map());
-  const pendingRequests = shallowRef<Map<string, Promise<boolean>>>(new Map());
-
+export function useAssetIconCheck(): UseAssetIconCheckReturn {
+  const { assetExistsCache, pendingIconRequests } = storeToRefs(useAssetsStore());
   const { checkAsset } = useAssetIconApi();
-
-  const clearCache = (): void => {
-    get(assetExistsCache).clear();
-    get(pendingRequests).clear();
-  };
 
   const checkIfAssetExists = async (identifier: string, options: AssetCheckOptions): Promise<boolean> => {
     const cache = get(assetExistsCache);
-    const pending = get(pendingRequests);
+    const pending = get(pendingIconRequests);
     const now = Date.now();
 
     const cached = cache.get(identifier);
@@ -82,12 +69,7 @@ export function useAssetIconCheck(lastRefreshed: MaybeRefOrGetter<number>): UseA
     return request;
   };
 
-  watch(() => toValue(lastRefreshed), () => {
-    clearCache();
-  });
-
   return {
     checkIfAssetExists,
-    clearCache,
   };
 }

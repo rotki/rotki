@@ -1,9 +1,9 @@
 import type { ActionStatus } from '@/types/action';
 import { useAssetIgnoreApi } from '@/composables/api/assets/ignore';
 import { useAssetInfoRetrieval } from '@/composables/assets/retrieval';
+import { useAssetsStore } from '@/modules/assets/use-assets-store';
 import { useManualBalanceData } from '@/modules/balances/manual/use-manual-balance-data';
 import { useNotifications } from '@/modules/notifications/use-notifications';
-import { useIgnoredAssetsStore } from '@/store/assets/ignored';
 import { arrayify } from '@/utils/array';
 import { uniqueStrings } from '@/utils/data';
 import { getErrorMessage } from '@/utils/error-handling';
@@ -20,7 +20,7 @@ export function useIgnoredAssetOperations(): UseIgnoredAssetOperationsReturn {
   const { addIgnoredAssets, getIgnoredAssets, removeIgnoredAssets } = useAssetIgnoreApi();
   const { getAssetField } = useAssetInfoRetrieval();
   const { manualBalancesAssets } = useManualBalanceData();
-  const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
+  const { ignoredAssets } = storeToRefs(useAssetsStore());
 
   async function fetchIgnoredAssets(): Promise<void> {
     try {

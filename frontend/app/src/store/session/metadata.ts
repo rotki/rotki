@@ -1,5 +1,5 @@
-import type { Tag, Tags } from '@/types/tags';
 import type { QueriedAddresses } from '@/types/session';
+import type { Tag, Tags } from '@/types/tags';
 
 export const useSessionMetadataStore = defineStore('session/metadata', () => {
   // Periodic data
