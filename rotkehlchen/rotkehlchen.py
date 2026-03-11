@@ -1219,8 +1219,8 @@ class Rotkehlchen:
                 assets_total_balance[asset] += balance
                 total_value_per_location[location] += balance.value
 
-        net_value = sum((balance.value for _, balance in assets_total_balance.items()), ZERO)
-        liabilities_total_value = sum((liability.value for _, liability in liabilities.items()), ZERO)  # noqa: E501
+        net_value = sum((balance.value for balance in assets_total_balance.values()), ZERO)
+        liabilities_total_value = sum((liability.value for liability in liabilities.values()), ZERO)  # noqa: E501
         net_value -= liabilities_total_value
 
         # Calculate location stats

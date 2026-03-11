@@ -77,7 +77,7 @@ class HopCommonDecoder(EvmDecoderInterface):
         # this maps each saddle swap address to its corresponding asset identifier
         self.swaps_to_asset = {
             value.saddle_swap: value.identifier
-            for _, value in bridges.items()
+            for value in bridges.values()
             if value.saddle_swap is not None
         }
         self.reward_contracts = reward_contracts

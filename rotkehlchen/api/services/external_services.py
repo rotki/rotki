@@ -13,7 +13,7 @@ class ExternalServicesService:
     def _build_payload(self) -> dict[str, Any]:
         credentials_list = self.rotkehlchen.data.db.get_all_external_service_credentials()
         response_dict: dict[str, Any] = {}
-        response_dict['blockscout'] = {chain_id.to_name(): None for _, chain_id in BLOCKSCOUT_TO_CHAINID.items()}  # noqa: E501
+        response_dict['blockscout'] = {chain_id.to_name(): None for chain_id in BLOCKSCOUT_TO_CHAINID.values()}  # noqa: E501
         for credential in credentials_list:
             name, key_info = credential.serialize_for_api()
             if (chain := credential.service.get_chain_for_blockscout()) is not None:

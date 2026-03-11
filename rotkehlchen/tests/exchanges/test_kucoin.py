@@ -90,11 +90,10 @@ def test_kucoin_exchange_assets_are_known(mock_kucoin, globaldb):
 def test_api_query_retries_request(mock_kucoin):
 
     def get_response():
-        results = [
+        yield from [
             """{"code":400007,"msg":"unknown error"}""",
             """{"code":400007,"msg":"unknown error"}""",
         ]
-        yield from results
 
     def mock_api_query_response(url, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, next(get_response))
@@ -675,12 +674,11 @@ def test_query_trades(mock_kucoin: Kucoin):
     }"""
 
     def get_endpoints_response() -> Generator[str, None, None]:
-        results = [
+        yield from [
             f'{trades_response_1}',
             f'{trades_response_2}',
             f'{trades_response_3}',
         ]
-        yield from results
 
     def mock_api_query_response(case, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, (
@@ -1081,7 +1079,7 @@ def test_query_asset_movements(
     )]
 
     def get_endpoints_response() -> Generator[str, None, None]:
-        results = [
+        yield from [
             f'{deposits_response_1}',
             f'{deposits_response_2}',
             f'{withdrawals_response_1}',
@@ -1090,7 +1088,6 @@ def test_query_asset_movements(
             # the response below won't be processed
             f'{withdrawals_response_3}',
         ]
-        yield from results
 
     def mock_api_query_response(case, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, (

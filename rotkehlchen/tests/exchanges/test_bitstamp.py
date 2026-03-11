@@ -775,12 +775,11 @@ def test_api_query_paginated_trades_pagination(mock_bitstamp):
     ]
 
     def get_paginated_response():
-        results = [
+        yield from [
             f'[{user_transaction_1},{user_transaction_2}]',
             f'[{user_transaction_3},{user_transaction_4}]',
             f'[{user_transaction_5},{user_transaction_6}]',
         ]
-        yield from results
 
     def mock_api_query_response(endpoint, method, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, next(get_response))
