@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`11854` Users can now unmark assets as spam or unignore them directly from the history events context menu, instead of having to navigate to the asset manager.
+* :bug:`-` Curve withdrawals with dynamic amount of assets will now be properly decoded.
 * :bug:`-` Morpho bundles deposits of ETH in multiple pools won't get mixed with WETH and appear multiple times or with negative values.
 * :bug:`11784` Users can now delete extra spend, receive, or fee sub-events from multi-asset swaps directly from the event list without opening the full edit form.
 * :feature:`11817` ETH staking validator limits are now checked before submission in the add validator dialog, showing user-friendly messages with upgrade prompts instead of raw backend errors.
