@@ -109,7 +109,7 @@ lint = [
     "mypy-extensions==1.1.0",
     "pylint==4.0.5",
     "astroid==4.0.2",  # engine of pylint, upgrade them together
-    "ruff==0.15.0",
+    "ruff==0.15.5",
     "double-indent-rotki==0.1.7",  # our fork of double indent
     "pyright==1.1.408",
     # type packages used by mypy
@@ -430,6 +430,7 @@ ignore = [
     "TRY004",  # Prefer TypeError for wrong type. May be okay but would need to invetigate all usages of suggested changes
     "TRY301",  # Abstract raise to an inner function -- not sure what this? Use exception for control flow?
     "TRY400",  # logging.exception instead of logging.error. Not sure I understood this one
+    "RUF069",  # https://github.com/astral-sh/ruff/issues/23281
 ]
 
 [tool.ruff.lint.flake8-quotes]

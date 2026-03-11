@@ -788,32 +788,28 @@ def test_binance_query_deposits_withdrawals_gte_89_days(function_scope_binance):
     binance = function_scope_binance
 
     def get_time_delta_deposit_result():
-        results = [
+        yield from [
             BINANCE_DEPOSITS_HISTORY_RESPONSE,
             '[]',
         ]
-        yield from results
 
     def get_time_delta_withdraw_result():
-        results = [
+        yield from [
             '[]',
             BINANCE_WITHDRAWALS_HISTORY_RESPONSE,
         ]
-        yield from results
 
     def get_fiat_deposit_result():
-        results = [
+        yield from [
             '[]',
             BINANCE_FIATDEPOSITS_RESPONSE,
         ]
-        yield from results
 
     def get_fiat_withdraw_result():
-        results = [
+        yield from [
             BINANCE_FIATWITHDRAWS_RESPONSE,
             '[]',
         ]
-        yield from results
 
     def mock_get_history_events(url, params, **kwargs):  # pylint: disable=unused-argument
         if 'capital/deposit' in url:
@@ -981,8 +977,7 @@ def test_api_query_retry_on_status_code_429(function_scope_binance):
     ] * 3
 
     def get_mocked_response():
-        responses = [MockResponse(429, '[]'), MockResponse(418, '[]'), MockResponse(418, '[]')]
-        yield from responses
+        yield from [MockResponse(429, '[]'), MockResponse(418, '[]'), MockResponse(418, '[]')]
 
     def mock_response(url, timeout, *args, **kwargs):  # pylint: disable=unused-argument
         return next(get_response)

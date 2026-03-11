@@ -397,11 +397,10 @@ def test_api_query_paginated_retries_request(mock_bitfinex: 'Bitfinex') -> None:
     works as expected.
     """
     def get_paginated_response() -> Generator[str, None, None]:
-        results = [
+        yield from [
             f'{{"error":"{API_RATE_LIMITS_ERROR_MESSAGE}"}}',
             '["error", 10000, "unknown error"]',
         ]
-        yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.INTERNAL_SERVER_ERROR, next(get_response))
@@ -690,12 +689,11 @@ def test_query_online_trade_history_case_1(mock_bitfinex: 'Bitfinex') -> None:
     ]
 
     def get_paginated_response() -> Generator[str, None, None]:
-        results = [
+        yield from [
             f'[{TRADE_1},{TRADE_2}]',
             f'[{TRADE_3},{trade_4}]',
             f'[{trade_5}]',
         ]
-        yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         if endpoint == 'trades':
@@ -913,13 +911,12 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     """
 
     def get_paginated_response():
-        results = [
+        yield from [
             f'[{trade_1},{TRADE_2}]',
             f'[{trade_1},{TRADE_2}]',  # repeated line
             f'[{TRADE_2},{TRADE_3}]',  # contains repeated
             f'[{trade_4}]',
         ]
-        yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         if endpoint == 'trades':
@@ -1375,12 +1372,11 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex: 'Bitfinex') -> 
     ]
 
     def get_paginated_response() -> Generator[str, None, None]:
-        results = [
+        yield from [
             f'[{movement_2},{movement_1}]',
             f'[{movement_4},{movement_3}]',
             f'[{movement_5}]',
         ]
-        yield from results
 
     def mock_api_query_response(endpoint: str, options: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
         if endpoint == 'movements':
@@ -1606,13 +1602,12 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex: 'Bitfinex') -> 
     """
 
     def get_paginated_response() -> Generator[str, None, None]:
-        results = [
+        yield from [
             f'[{movement_2},{movement_1}]',
             f'[{movement_2},{movement_1}]',
             f'[{movement_3},{movement_2}]',
             f'[{movement_4}]',
         ]
-        yield from results
 
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         if endpoint == 'movements':
@@ -1769,12 +1764,11 @@ def test_partial_query_online_history_events(mock_bitfinex: 'Bitfinex') -> None:
     ]
 
     def get_paginated_response() -> Generator[tuple[HTTPStatus, str], None, None]:
-        results = [
+        yield from [
             (HTTPStatus.OK, f'[{MOVEMENT_1}]'),
             (HTTPStatus.OK, f'[{TRADE_1},{TRADE_2}]'),
             (HTTPStatus.INTERNAL_SERVER_ERROR, 'xxxxxxx'),
         ]
-        yield from results
 
     def mock_api_query_response(endpoint: str, options: dict[str, Any]) -> MockResponse:  # pylint: disable=unused-argument
         status, text = next(get_response)
