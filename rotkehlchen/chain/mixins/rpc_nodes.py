@@ -4,7 +4,9 @@ import random
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from contextlib import suppress
-from typing import TYPE_CHECKING, Any, Generic, TypeVar
+from dataclasses import dataclass
+from enum import StrEnum
+from typing import TYPE_CHECKING, Any, Final, Generic, Literal, TypeVar
 from urllib.parse import urlparse
 
 import requests
@@ -26,7 +28,6 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.tests.utils.globaldb import Literal
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
@@ -34,7 +35,9 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
     SupportedBlockchain,
+    Timestamp,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -43,6 +46,63 @@ if TYPE_CHECKING:
 WEB3_NODE_TYPE = TypeVar('WEB3_NODE_TYPE', Web3, Client)
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+RATE_LIMIT_COOLDOWN_SECS: Final = 300  # 5 minutes before retrying a rate-limited node
+# Patterns indicating a rate-limit response in a provider's error message
+RATE_LIMIT_PATTERNS: Final = ('rate limit', 'too many requests', 'rate_limit', '429')
+
+
+class NodeStatus(StrEnum):
+    READY = 'ready'
+    COOLING_DOWN = 'cooling_down'
+
+
+def _normalize_endpoint(endpoint: str) -> str:
+    """Normalize an RPC endpoint URL to a stable identity key.
+
+    Two endpoints that differ only by scheme casing, trailing slash, or default port
+    will produce the same key, so they share runtime state.
+
+    TODO: Normalize/canonicalize endpoints before persisting them in DB.
+    We currently store raw endpoint strings, so canonical-equivalent endpoints can be
+    saved as separate rows and need runtime normalization.
+    """
+    if '://' not in endpoint:
+        endpoint = f'http://{endpoint}'
+    parsed = urlparse(endpoint)
+    host = (parsed.hostname or '').lower()
+    port = parsed.port
+    path = parsed.path.rstrip('/')
+    # Omit port when it is the default for the scheme
+    if port and not (
+        (parsed.scheme == 'https' and port == 443) or
+        (parsed.scheme == 'http' and port == 80)
+    ):
+        return f'{parsed.scheme}://{host}:{port}{path}'
+    return f'{parsed.scheme}://{host}{path}'
+
+
+@dataclass
+class NodeRuntimeState:
+    """In-memory runtime health state for a single RPC endpoint.
+
+    This is keyed by normalized endpoint URL and reset on restart.
+    It is separate from DB configuration state (WeightedNode).
+    """
+    status: NodeStatus
+    cooldown_until: Timestamp | None = None
+    last_success_ts: Timestamp | None = None
+    last_error_ts: Timestamp | None = None
+    last_error_kind: str | None = None
+    consecutive_failures: int = 0
+
+
+def _is_rate_limit_error(exc: Exception) -> bool:
+    """Returns True when exc indicates the provider is rate-limiting us."""
+    if isinstance(exc, requests.exceptions.HTTPError) and exc.response is not None:
+        return exc.response.status_code in (429, 403)
+    err = str(exc).lower()
+    return any(p in err for p in RATE_LIMIT_PATTERNS)
 
 
 class RPCNode(NamedTuple, Generic[WEB3_NODE_TYPE]):
@@ -81,6 +141,12 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
         # moment of writing this we don't remove entries from the set after some time.
         # To force the app to retry a node a restart is needed.
         self.failed_to_connect_nodes: set[str] = set()
+        # Per-endpoint runtime health: keyed by _normalize_endpoint(endpoint).
+        # Reset on restart; never persisted.
+        self._node_runtime_state: dict[str, NodeRuntimeState] = {}
+        # Cached list of active configured nodes for this chain.
+        # None means the cache is stale and must be reloaded from DB on next access.
+        self._configured_nodes_cache: list[WeightedNode] | None = None
 
     def connected_to_any_node(self) -> bool:
         """Check if there are any currently connected nodes.
@@ -108,6 +174,97 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
         """Get all currently connected nodes"""
         return list(self.rpc_mapping.keys())
 
+    def _get_configured_nodes(self) -> list['WeightedNode']:
+        """Return the cached list of active configured nodes, loading from DB if needed."""
+        if self._configured_nodes_cache is None:
+            self._configured_nodes_cache = list(
+                self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True),
+            )
+        return self._configured_nodes_cache
+
+    def invalidate_nodes_cache(self) -> None:
+        """Mark the configured-node cache as stale.
+
+        Must be called after any RPC configuration change (add / edit / delete / enable).
+        """
+        self._configured_nodes_cache = None
+
+    def _endpoint_key(self, node: 'NodeName') -> str:
+        return _normalize_endpoint(node.endpoint)
+
+    def mark_node_success(self, node: 'NodeName') -> None:
+        """Record a successful query."""
+        key = self._endpoint_key(node)
+        now = ts_now()
+        existing = self._node_runtime_state.get(key)
+        if existing is not None:
+            # Mutate in-place — avoids object allocation on the hot path
+            existing.status = NodeStatus.READY
+            existing.cooldown_until = None
+            existing.consecutive_failures = 0
+            existing.last_success_ts = now
+        else:
+            self._node_runtime_state[key] = NodeRuntimeState(
+                status=NodeStatus.READY,
+                last_success_ts=now,
+            )
+
+    def mark_node_rate_limited(self, node: 'NodeName', error: str) -> None:
+        """Put a node into cooldown after a rate-limit response (HTTP 429 / 403 / message)."""
+        key = self._endpoint_key(node)
+        now = ts_now()
+        existing = self._node_runtime_state.get(key)
+        consecutive_failures = (existing.consecutive_failures if existing else 0) + 1
+        self._node_runtime_state[key] = NodeRuntimeState(
+            status=NodeStatus.COOLING_DOWN,
+            cooldown_until=Timestamp(now + RATE_LIMIT_COOLDOWN_SECS),
+            last_success_ts=existing.last_success_ts if existing else None,
+            last_error_ts=now,
+            last_error_kind='rate_limited',
+            consecutive_failures=consecutive_failures,
+        )
+        log.warning(
+            f'Node {node.name} ({key}) is rate-limited. '
+            f'Cooling down for {RATE_LIMIT_COOLDOWN_SECS}s. Error: {error}',
+        )
+
+    def mark_node_failure(self, node: 'NodeName', error: str) -> None:
+        """Record a non-rate-limit failure for a node."""
+        key = self._endpoint_key(node)
+        now = ts_now()
+        existing = self._node_runtime_state.get(key)
+        consecutive_failures = (existing.consecutive_failures if existing else 0) + 1
+        self._node_runtime_state[key] = NodeRuntimeState(
+            # Ordinary failure: stay ready so the node is tried again later.
+            status=NodeStatus.READY,
+            cooldown_until=existing.cooldown_until if existing else None,
+            last_success_ts=existing.last_success_ts if existing else None,
+            last_error_ts=now,
+            last_error_kind='failure',
+            consecutive_failures=consecutive_failures,
+        )
+
+    def is_node_in_cooldown(self, node: 'NodeName') -> bool:
+        """Return True if the node is currently in the rate-limit cooldown window."""
+        key = self._endpoint_key(node)
+        state = self._node_runtime_state.get(key)
+        if state is None or state.status != NodeStatus.COOLING_DOWN:
+            return False
+        if state.cooldown_until is not None and ts_now() >= state.cooldown_until:
+            # Cooldown window has expired — transition back to ready
+            state.status = NodeStatus.READY
+            state.cooldown_until = None
+            return False
+        return True
+
+    def get_runtime_state(self, node: 'NodeName') -> NodeRuntimeState | None:
+        """Return the current runtime state for a node, or None if not yet tracked."""
+        return self._node_runtime_state.get(self._endpoint_key(node))
+
+    def clear_runtime_state(self, node: 'NodeName') -> None:
+        """Remove all runtime state for a node (call when a node is deleted from config)."""
+        self._node_runtime_state.pop(self._endpoint_key(node), None)
+
     def maybe_connect_to_nodes(self, when_tracked_accounts: bool) -> None:
         """Start async connect to the saved nodes for the given blockchain if needed.
 
@@ -130,8 +287,10 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
                 when_tracked_accounts is False or self.blockchain == SupportedBlockchain.ETHEREUM
             ))
         ):
-            rpc_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
-            self.connect_to_multiple_nodes(rpc_nodes)
+            # Re-read configured nodes at connect time. This avoids using stale cache
+            # entries when node configuration changed before first connection attempt.
+            self.invalidate_nodes_cache()
+            self.connect_to_multiple_nodes(self._get_configured_nodes())
 
     @abstractmethod
     def attempt_connect(
@@ -154,22 +313,23 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
             )
 
     def default_call_order(self) -> list['WeightedNode']:
-        """Default call order for RPCx nodes
+        """Default call order for RPC nodes.
 
-        Own node always has preference. Then all other node types are randomly queried
-        in sequence depending on a weighted probability.
+        Builds the order from the in-memory configured-node cache (no DB hit).
+        Ready owned nodes always come first. Nodes currently in cooldown are excluded.
+        Remaining public nodes are ordered by weighted random selection.
         """
         selection, owned_nodes = [], []
-        for wnode in self.database.get_rpc_nodes(
-            blockchain=self.blockchain,
-            only_active=True,
-        ):
+        for wnode in self._get_configured_nodes():
+            if self.is_node_in_cooldown(wnode.node_info):
+                continue
+
             if wnode.node_info.owned is False:
                 selection.append(wnode)
             else:
                 owned_nodes.append(wnode.node_info)
 
-        ordered_list = []
+        ordered_list: list[WeightedNode] = []
         while len(selection) != 0:
             weights = [float(entry.weight) for entry in selection]
             node = random.choices(selection, weights, k=1)

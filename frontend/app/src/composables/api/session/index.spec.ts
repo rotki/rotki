@@ -76,6 +76,9 @@ describe('composables/api/session/index', () => {
                 ethereum: ['node1', 'node2'],
                 optimism: ['op_node1'],
               },
+              cooling_down_nodes: {
+                ethereum: ['node3'],
+              },
               failed_to_connect: {
                 arbitrum: ['arb_node1'],
               },
@@ -91,6 +94,7 @@ describe('composables/api/session/index', () => {
 
       expect(result.connectedNodes.ethereum).toEqual(['node1', 'node2']);
       expect(result.connectedNodes.optimism).toEqual(['op_node1']);
+      expect(result.coolingDownNodes?.ethereum).toEqual(['node3']);
       expect(result.failedToConnect?.arbitrum).toEqual(['arb_node1']);
       expect(result.lastBalanceSave).toBe(1700000000);
       expect(result.lastDataUploadTs).toBe(1700100000);

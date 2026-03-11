@@ -38,7 +38,7 @@ from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2_CHAINIDS_WITH_L1_FEES
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import EvmIndexer, RemoteDataQueryStatus, WeightedNode
-from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin
+from rotkehlchen.chain.mixins.rpc_nodes import EVMRPCMixin, _is_rate_limit_error
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
@@ -524,6 +524,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                     f'Timed out while querying {node_info.name} for '
                     f'{method.__name__}: {e!s}. Skipping this node in future queries.',
                 )
+                self.mark_node_failure(node_info, str(e))
                 self.failed_to_connect_nodes.add(node_info.name)
                 self.rpc_mapping.pop(node_info, None)
                 continue
@@ -543,9 +544,14 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 )
                 if any(x in str(e).lower() for x in ('out of gas', 'exceeds block gas limit')):
                     gas_limit_error_seen = True
+                elif _is_rate_limit_error(e):
+                    self.mark_node_rate_limited(node_info, str(e))
+                else:
+                    self.mark_node_failure(node_info, str(e))
                 # Catch all possible errors here and just try next node call
                 continue
 
+            self.mark_node_success(node_info)
             return result
 
         # no node in the call order list was successfully queried

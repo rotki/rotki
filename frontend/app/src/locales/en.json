@@ -2543,11 +2543,13 @@
       "title": "Delete {chain} RPC Node"
     },
     "connected": {
+      "cooling_down": "Rate limited",
       "failure": "Failed",
       "false": "Ready",
       "true": "Connected"
     },
     "connectivity": "Connectivity",
+    "cooldown_until": "Rate limited until:",
     "delete_error": {
       "title": "Deleting {chain} RPC Node"
     },
