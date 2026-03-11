@@ -14,6 +14,8 @@ import { useSessionAuthStore } from '@/store/session/auth';
 import { Section, Status } from '@/types/status';
 import { logger } from '@/utils/logging';
 
+const isAutoFetchDisabled = import.meta.env.VITE_NO_AUTO_FETCH === 'true';
+
 interface UseDataLoaderReturn { load: () => void }
 
 export function useDataLoader(): UseDataLoaderReturn {
@@ -49,7 +51,12 @@ export function useDataLoader(): UseDataLoaderReturn {
       set(allLocations, locations);
     }));
 
-    if (get(shouldFetchData)) {
+    if (isAutoFetchDisabled) {
+      logger.warn('Auto-fetch disabled by VITE_NO_AUTO_FETCH');
+      setStatus(Status.LOADED, { subsection: Blockchain.ETH });
+      setStatus(Status.LOADED, { subsection: Blockchain.BTC });
+    }
+    else if (get(shouldFetchData)) {
       startPromise(refreshData());
     }
     else {

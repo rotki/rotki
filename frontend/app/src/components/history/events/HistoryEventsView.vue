@@ -219,7 +219,10 @@ watch(() => historyStore.eventsVersion, async () => {
 
 // Wait until the route doesn't change anymore to give time for the persisted filter to be set.
 watchDebounced(route, async () => {
-  await actions.refresh.all();
+  if (import.meta.env.VITE_NO_AUTO_FETCH === 'true')
+    await actions.fetch.dataAndLocations();
+  else
+    await actions.refresh.all();
 }, { debounce: 500, immediate: true, once: true });
 </script>
 

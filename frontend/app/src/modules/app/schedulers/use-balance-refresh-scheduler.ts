@@ -27,6 +27,9 @@ export function useBalanceRefreshScheduler(): UseBalanceRefreshSchedulerReturn {
   });
 
   function start(): void {
+    if (import.meta.env.VITE_NO_AUTO_FETCH === 'true')
+      return;
+
     if (period > 0)
       scheduler.start();
   }
