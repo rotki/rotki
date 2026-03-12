@@ -7,6 +7,7 @@ import { useUsersApi } from '@/composables/api/session/users';
 import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useSessionSettings } from '@/composables/session/settings';
 import { api } from '@/modules/api/rotki-api';
+import { sigilBus } from '@/modules/sigil/event-bus';
 import { useMonitorStore } from '@/store/monitor';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { useTaskStore } from '@/store/tasks';
@@ -77,6 +78,8 @@ export function useLogin(): UseLoginReturn {
       set(logged, true);
       if (fetchData)
         set(shouldFetchData, true);
+
+      sigilBus.emit('session:ready');
 
       return { success: true };
     }

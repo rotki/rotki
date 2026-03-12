@@ -1,5 +1,17 @@
+allowUnusedPatches: true
+onlyBuiltDependencies:
+  - '@parcel/watcher'
+  - bufferutil
+  - electron
+  - electron-winstaller
+  - esbuild
+  - keccak
+  - utf-8-validate
+  - vue-demi
 packages:
   - app
   - common
   - dev-proxy
   - 'eslint/*'
+patchedDependencies:
+  bignumber.js@9.3.1: patches/bignumber.js@9.3.1.patch

@@ -9,6 +9,7 @@ import { useSupportedChains } from '@/composables/info/chains';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
 import { useStatusUpdater } from '@/composables/status';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
+import { sigilBus } from '@/modules/sigil/event-bus';
 import { useHistoryStore } from '@/store/history';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
@@ -186,6 +187,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       stopTxSyncing();
       stopEventsSyncing();
       stopDecodingSyncProgress();
+      sigilBus.emit('history:ready');
     }
 
     // After refresh is complete, check if there are pending accounts or exchanges to refresh
