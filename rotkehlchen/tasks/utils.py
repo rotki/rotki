@@ -30,6 +30,7 @@ def should_run_periodic_task(
             DBCacheStatic.LAST_SPARK_ASSETS_UPDATE,
             DBCacheStatic.LAST_HISTORICAL_BALANCE_PROCESSING_TS,
             DBCacheStatic.LAST_ETH2_EVENTS_PROCESSING_TS,
+            DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS,
         ],
         refresh_period: int,
 ) -> bool:

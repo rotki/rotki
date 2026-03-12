@@ -75,6 +75,7 @@ thie = "thie"  # frontend regex check for thief
 Realised = "Realised"  # bitmex import
 daa = "daa"  # iconomi test
 ede = "ede"  # coinbase test json payload
+eit = "eit"
 datas = "datas"  # used in packaging
 
 requeried = "requeried"

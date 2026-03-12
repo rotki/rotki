@@ -4700,6 +4700,12 @@ class RefetchTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
                         )
 
 
+class InternalTxConflictsSchema(AsyncQueryArgumentSchema, DBPaginationSchema):
+    tx_hash = EVMTransactionHashField(load_default=None)
+    fixed = fields.Boolean(load_default=False)
+    failed = fields.Boolean(load_default=False)
+
+
 class AddressesInteraction(Schema):
     from_address = EvmAddressField(required=True)
     to_address = EvmAddressField(required=True)

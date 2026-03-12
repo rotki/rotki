@@ -21,8 +21,14 @@ from rotkehlchen.db.filtering import (
     SolanaTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.internal_tx_conflicts import (
+    count_pending_internal_tx_repull_conflicts,
+    get_pending_internal_tx_repull_conflicts,
+    set_internal_tx_conflict_fixed,
+)
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
+from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import PremiumApiError
 from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.errors.misc import AlreadyExists, DataIntegrityError, InputError, RemoteError
@@ -565,6 +571,56 @@ class TransactionsService:
 
         return {'result': tx_info, 'message': '', 'status_code': HTTPStatus.OK}
 
+    def get_pending_internal_tx_repull_conflicts(
+            self,
+            tx_hash: EVMTxHash | None = None,
+            fixed: bool = False,
+            failed: bool = False,
+            limit: int | None = None,
+            offset: int | None = None,
+    ) -> dict[str, Any]:
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            if not table_exists(cursor, 'evm_internal_tx_conflicts'):
+                entries = []
+                entries_total = 0
+            else:
+                entries = get_pending_internal_tx_repull_conflicts(
+                    cursor=cursor,
+                    tx_hash=tx_hash,
+                    fixed=fixed,
+                    failed=failed,
+                    limit=limit,
+                    offset=offset,
+                )
+                entries_total = count_pending_internal_tx_repull_conflicts(
+                    cursor=cursor,
+                    tx_hash=tx_hash,
+                    fixed=fixed,
+                    failed=failed,
+                )
+
+        return {
+            'result': {
+                'entries': [
+                    {
+                        'chain': chain_id.to_name(),
+                        'tx_hash': str(row_tx_hash),
+                        'action': action,
+                        'repull_reason': repull_reason,
+                        'redecode_reason': redecode_reason,
+                        'last_retry_ts': last_retry_ts,
+                        'last_error': last_error,
+                    }
+                    for chain_id, row_tx_hash, action, repull_reason, redecode_reason, last_retry_ts, last_error in entries  # noqa: E501
+                ],
+                'entries_found': len(entries),
+                'entries_total': entries_total,
+                'entries_limit': -1 if limit is None else limit,
+            },
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
+
     def force_refetch_transactions(
             self,
             from_timestamp: Timestamp,
@@ -876,6 +932,13 @@ class TransactionsService:
             chain=chain,
             events=events,
         )
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            if table_exists(write_cursor, 'evm_internal_tx_conflicts'):
+                set_internal_tx_conflict_fixed(
+                    write_cursor=write_cursor,
+                    tx_hash=tx_ref,
+                    chain_id=chain_manager.node_inquirer.chain_id,
+                )
 
     def _maybe_notify_missing_credentials_after_decode(
             self,
