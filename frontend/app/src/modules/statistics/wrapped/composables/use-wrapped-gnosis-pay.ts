@@ -2,9 +2,10 @@ import type { BigNumber } from '@rotki/common';
 import type { ComputedRef, Ref } from 'vue';
 import type { WrapStatisticsResult } from '@/composables/api/statistics/wrap';
 import { get } from '@vueuse/shared';
-import { usePremium } from '@/composables/premium';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
+import { useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useCurrencies } from '@/types/currencies';
+import { PremiumFeature } from '@/types/session';
 
 interface GnosisPayResult {
   amount: BigNumber;
@@ -21,12 +22,12 @@ interface UseWrappedGnosisPayReturn {
 
 export function useWrappedGnosisPay(summary: Ref<WrapStatisticsResult | null | undefined>): UseWrappedGnosisPayReturn {
   const { t } = useI18n({ useScope: 'global' });
-  const premium = usePremium();
+  const { allowed } = useFeatureAccess(PremiumFeature.GNOSIS_PAY);
   const { apiKey } = useExternalApiKeys(t);
   const { findCurrency } = useCurrencies();
 
   const gnosisPayKey = computed<string | null>(() => get(apiKey('gnosis_pay')));
-  const showGnosisData = computed<boolean>(() => get(premium) && !!get(gnosisPayKey));
+  const showGnosisData = computed<boolean>(() => get(allowed) && !!get(gnosisPayKey));
 
   const gnosisPayResult = computed<GnosisPayResult[]>(() => {
     const gnosisMaxPaymentsByCurrency = get(summary)?.gnosisMaxPaymentsByCurrency;

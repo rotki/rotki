@@ -4,6 +4,7 @@ import { get, set } from '@vueuse/core';
 import { isEqual } from 'es-toolkit';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 
 const modelValue = defineModel<OnlineHistoryEventsQueryType[]>({ required: true });
@@ -24,6 +25,8 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { apiKey } = useExternalApiKeys(t);
 const { authenticated: moneriumAuthenticated } = useMoneriumOAuth();
+const { allowed: gnosisPayAllowed } = useFeatureAccess(PremiumFeature.GNOSIS_PAY);
+const { allowed: moneriumAllowed } = useFeatureAccess(PremiumFeature.MONERIUM);
 
 interface QueryConfig {
   enabled: boolean;
@@ -31,8 +34,8 @@ interface QueryConfig {
 }
 
 const queryConfigs = computed<Record<OnlineHistoryEventsQueryType, QueryConfig>>(() => {
-  const gnosisPayEnabled = !!get(apiKey('gnosis_pay'));
-  const moneriumEnabled = get(moneriumAuthenticated);
+  const gnosisPayEnabled = get(gnosisPayAllowed) && !!get(apiKey('gnosis_pay'));
+  const moneriumEnabled = get(moneriumAllowed) && get(moneriumAuthenticated);
 
   return {
     [OnlineHistoryEventsQueryType.GNOSIS_PAY]: {

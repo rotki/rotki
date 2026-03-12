@@ -59,6 +59,8 @@ export enum PremiumFeature {
   EVENT_ANALYSIS_VIEW = 'eventAnalysisView',
   GRAPHS_VIEW = 'graphsView',
   ASSET_MOVEMENT_MATCHING = 'assetMovementMatching',
+  GNOSIS_PAY = 'gnosispay',
+  MONERIUM = 'monerium',
 }
 
 export const PremiumFeatureCapability = z.object({
@@ -74,10 +76,12 @@ export const PremiumCapabilities = z.object({
   ethStakedLimit: z.number().optional(),
   ethStakingView: PremiumFeatureCapability.optional(),
   eventAnalysisView: PremiumFeatureCapability.optional(),
+  gnosispay: PremiumFeatureCapability.optional(),
   graphsView: PremiumFeatureCapability.optional(),
   historyEventsLimit: z.number().optional(),
   limitOfDevices: z.number().optional(),
   maxBackupSizeMb: z.number().optional(),
+  monerium: PremiumFeatureCapability.optional(),
   pnlEventsLimit: z.number().optional(),
   reportsLookupLimit: z.number().optional(),
 });
