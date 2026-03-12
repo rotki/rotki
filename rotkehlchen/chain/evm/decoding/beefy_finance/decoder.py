@@ -75,6 +75,13 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         self.vaults: dict[ChecksumEvmAddress, tuple[ChecksumEvmAddress, bool]] = {}
         self.zap_contract_address = SUPPORTED_BEEFY_CHAINS[self.node_inquirer.chain_id]
 
+    def _is_beefy_reward_pool_token(self, address: ChecksumEvmAddress) -> bool:
+        """Helper method to check if an address is a beefy reward pool token"""
+        return (
+            (vault_info := self.vaults.get(address)) is not None and
+            self.vaults.get(vault_info[0]) is not None
+        )
+
     def _ensure_vault_tokens(self, all_logs: list[EvmTxReceiptLog]) -> None:
         """Ensure vault/underlying tokens exist before decoding Beefy events.
         Uses fallback metadata for legacy reward vaults that aren't ERC20 conformant.
@@ -142,36 +149,79 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         """
         spend_events, unmatched_receive_events = [], []
         receive_events, other_receive_events = [], []
-        is_withdrawal = False
 
-        # process spend events and determine transaction type
         for event in events:
             if (
                     event.event_type == HistoryEventType.SPEND and
                     event.event_subtype == HistoryEventSubType.NONE and
                     (from_address is None or event.address == from_address)
             ):
-                # determine if withdrawal by checking if vault tokens are being spent
-                spend_asset = event.asset.resolve_to_crypto_asset()
-                if spend_asset.is_evm_token():
-                    is_withdrawal = spend_asset.evm_address in self.vaults  # type: ignore[attr-defined]  # this is an evm token
-
-                event.counterparty = CPT_BEEFY_FINANCE
-                if is_withdrawal:
-                    event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
-                    event.notes = f'Return {event.amount} {spend_asset.symbol} to a Beefy vault'
-                else:
-                    event.event_type = HistoryEventType.DEPOSIT
-                    event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
-                    event.notes = f'Deposit {event.amount} {spend_asset.symbol} in a Beefy vault'
-
                 spend_events.append(event)
-
             elif (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE
             ):
                 unmatched_receive_events.append(event)
+
+        spend_asset_addresses = []
+        is_withdrawal = True
+        for event in spend_events:
+            spend_asset = event.asset.resolve_to_crypto_asset()
+            if spend_asset.is_evm_token() is False:
+                is_withdrawal = False
+                break
+
+            if self.vaults.get(spend_address := spend_asset.evm_address) is None:  # type: ignore[attr-defined]  # this is an evm token
+                is_withdrawal = False
+                break
+
+            spend_asset_addresses.append(spend_address)
+
+        is_reward_pool_stake = is_reward_pool_unstake = False
+        if is_withdrawal is True:
+            # Staking a moo/cow token into a Beefy reward pool mints an rmoo/rcow token.
+            is_reward_pool_stake = any(
+                self._is_beefy_reward_pool_token(
+                    address=received_asset.evm_address,  # type: ignore[attr-defined]  # this is an evm token
+                ) and
+                (received_info := self.vaults.get(received_asset.evm_address)) is not None and  # type: ignore[attr-defined]  # this is an evm token
+                received_info[0] in spend_asset_addresses
+                for event in unmatched_receive_events
+                if (received_asset := event.asset.resolve_to_crypto_asset()).is_evm_token()
+            )
+            # Unstaking burns the rmoo/rcow token and returns the underlying moo/cow token.
+            spend_underlying_addresses = {
+                vault_info[0]
+                for spend_address in spend_asset_addresses
+                if (vault_info := self.vaults.get(spend_address)) is not None
+            }
+            is_reward_pool_unstake = all(
+                self._is_beefy_reward_pool_token(address=spend_address)
+                for spend_address in spend_asset_addresses
+            ) and any(
+                received_asset.evm_address in spend_underlying_addresses  # type: ignore[attr-defined]  # this is an evm token
+                for event in unmatched_receive_events
+                if (received_asset := event.asset.resolve_to_crypto_asset()).is_evm_token()
+            )
+
+        for event in spend_events:
+            spend_asset = event.asset.resolve_to_crypto_asset()
+            event.counterparty = CPT_BEEFY_FINANCE
+            if is_reward_pool_stake:
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                event.notes = f'Stake {event.amount} {spend_asset.symbol} in Beefy'
+            elif is_withdrawal:
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.notes = (
+                    f'Return {event.amount} {spend_asset.symbol} to Beefy staking'
+                    if is_reward_pool_unstake else
+                    f'Return {event.amount} {spend_asset.symbol} to a Beefy vault'
+                )
+            else:
+                event.event_type = HistoryEventType.DEPOSIT
+                event.event_subtype = HistoryEventSubType.DEPOSIT_FOR_WRAPPED
+                event.notes = f'Deposit {event.amount} {spend_asset.symbol} in a Beefy vault'
 
         for event in unmatched_receive_events:
             if expected_amounts_and_assets is not None:
@@ -181,7 +231,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                     other_receive_events.append(event)
                 continue
 
-            if is_withdrawal is True:
+            if is_withdrawal is True and is_reward_pool_stake is False:
                 receive_events.append(event)
                 continue
 
@@ -189,6 +239,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 (
                     evm_received_asset := received_asset.resolve_to_evm_token()
                 ).evm_address in self.vaults or
+                self.vaults.get(evm_received_asset.evm_address) is not None or
                 evm_received_asset.evm_address == transaction.to_address or
                 evm_received_asset.protocol == CPT_BEEFY_FINANCE or
                 (
@@ -209,7 +260,14 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         for event in receive_events:
             event.counterparty = CPT_BEEFY_FINANCE
             asset_symbol = event.asset.resolve_to_asset_with_symbol().symbol
-            if is_withdrawal:
+            if is_reward_pool_stake:
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.notes = f'Receive {event.amount} {asset_symbol} after staking in Beefy'
+            elif is_reward_pool_unstake:
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
+                event.notes = f'Receive {event.amount} {asset_symbol} after unstaking from Beefy'
+            elif is_withdrawal:
                 event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.REDEEM_WRAPPED
                 event.notes = f'Withdraw {event.amount} {asset_symbol} from a Beefy vault'
