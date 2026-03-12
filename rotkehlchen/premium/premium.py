@@ -58,6 +58,8 @@ CONTAINER_FALLBACK_ID_FILE: Final = Path('/opt/rotki/.container-id')
 DOCKER_ENTRYPOINT_PATH: Final = '/opt/rotki/entrypoint.py'
 UNKNOWN_CONTAINER_FALLBACK_ID_PREFIX: Final = 'unknown-container'
 ASSET_MOVEMENT_MATCHING_CAPABILITY: Final = 'asset_movement_matching'
+GNOSIS_PAY_CAPABILITY: Final = 'gnosispay'
+MONERIUM_CAPABILITY: Final = 'monerium'
 
 
 class RemoteMetadata(NamedTuple):
@@ -92,6 +94,8 @@ class UserLimits(TypedDict):
     graphs_view: bool
     event_analysis_view: bool
     asset_movement_matching: bool
+    gnosispay: bool
+    monerium: bool
     # minimum tier required to unlock each capability
     unlocks: dict[str, str]
 
@@ -114,6 +118,8 @@ class PremiumCapabilities(TypedDict):
     graphs_view: PremiumFeatureCapability
     event_analysis_view: PremiumFeatureCapability
     asset_movement_matching: PremiumFeatureCapability
+    gnosispay: PremiumFeatureCapability
+    monerium: PremiumFeatureCapability
 
 
 class CapabilityUnlocks(TypedDict):
@@ -126,11 +132,15 @@ PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this
     'graphs_view',
     'event_analysis_view',
     'asset_movement_matching',
+    'gnosispay',
+    'monerium',
 ], ...]] = (
     'eth_staking_view',
     'graphs_view',
     'event_analysis_view',
     'asset_movement_matching',
+    'gnosispay',
+    'monerium',
 )
 PREMIUM_LIMITS_KEYS: Final[tuple[Literal[
     'limit_of_devices',
@@ -288,6 +298,14 @@ def get_free_capabilities() -> PremiumCapabilities:
         asset_movement_matching=PremiumFeatureCapability(
             enabled=False,
             minimum_tier=unlocks.get('asset_movement_matching'),
+        ),
+        gnosispay=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get(GNOSIS_PAY_CAPABILITY),
+        ),
+        monerium=PremiumFeatureCapability(
+            enabled=False,
+            minimum_tier=unlocks.get(MONERIUM_CAPABILITY),
         ),
     )
 
@@ -1058,6 +1076,14 @@ class Premium:
             asset_movement_matching=PremiumFeatureCapability(
                 enabled=limits.get('asset_movement_matching', False),
                 minimum_tier=unlocks.get('asset_movement_matching'),
+            ),
+            gnosispay=PremiumFeatureCapability(
+                enabled=limits.get(GNOSIS_PAY_CAPABILITY, False),
+                minimum_tier=unlocks.get(GNOSIS_PAY_CAPABILITY),
+            ),
+            monerium=PremiumFeatureCapability(
+                enabled=limits.get(MONERIUM_CAPABILITY, False),
+                minimum_tier=unlocks.get(MONERIUM_CAPABILITY),
             ),
         )
 

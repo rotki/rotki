@@ -245,6 +245,10 @@ def test_complete_monerium_oauth_triggers_background_refresh(
 ) -> None:
     with (
         patch(
+            'rotkehlchen.api.v1.resources.has_premium_capability',
+            return_value=True,
+        ),
+        patch(
             'rotkehlchen.externalapis.monerium.MoneriumOAuthClient.complete_oauth',
             return_value={
                 'success': True,
@@ -275,6 +279,31 @@ def test_complete_monerium_oauth_triggers_background_refresh(
     spawn_mock.assert_called_once()
     spawned_fn = spawn_mock.call_args.args[0]
     assert spawned_fn.__name__ == 'get_and_process_orders'
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_complete_monerium_oauth_requires_capability(
+        rotkehlchen_api_server: 'APIServer',
+        start_with_valid_premium: bool,  # pylint: disable=unused-argument
+) -> None:
+    with patch(
+        'rotkehlchen.api.v1.resources.has_premium_capability',
+        return_value=False,
+    ):
+        response = requests.put(
+            api_url_for(rotkehlchen_api_server, 'moneriumoauthresource'),
+            json={
+                'access_token': 'mock-access-token',
+                'refresh_token': 'mock-refresh-token',
+                'expires_in': 3600,
+            },
+        )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='Monerium is not available for your current subscription tier',
+        status_code=HTTPStatus.FORBIDDEN,
+    )
 
 
 def test_remove_external_services_errors(rotkehlchen_api_server: 'APIServer') -> None:

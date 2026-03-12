@@ -29,7 +29,11 @@ from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import has_premium_check
+from rotkehlchen.premium.premium import (
+    GNOSIS_PAY_CAPABILITY,
+    MONERIUM_CAPABILITY,
+    has_premium_capability,
+)
 from rotkehlchen.types import (
     CHAINS_WITH_NODES,
     CHAINS_WITH_TRANSACTION_DECODERS,
@@ -874,9 +878,6 @@ class TransactionsService:
             chain: SUPPORTED_EVM_CHAINS_TYPE,
             events: list[Any],
     ) -> None:
-        if not has_premium_check(self.rotkehlchen.premium):
-            return
-
         has_gnosis_pay, has_monerium = False, False
         for event in events:
             if chain == SupportedBlockchain.GNOSIS and event.counterparty == CPT_GNOSIS_PAY:
@@ -890,12 +891,17 @@ class TransactionsService:
 
         if (
             has_gnosis_pay and
+            has_premium_capability(self.rotkehlchen.premium, GNOSIS_PAY_CAPABILITY) and
             self.rotkehlchen.data.db.get_external_service_credentials(
                 service_name=ExternalService.GNOSIS_PAY,
             ) is None
         ):
             self.rotkehlchen.msg_aggregator.add_missing_key_message(ExternalService.GNOSIS_PAY)
-        elif has_monerium and init_monerium(self.rotkehlchen.data.db) is None:
+        elif (
+            has_monerium and
+            has_premium_capability(self.rotkehlchen.premium, MONERIUM_CAPABILITY) and
+            init_monerium(self.rotkehlchen.data.db) is None
+        ):
             self.rotkehlchen.msg_aggregator.add_missing_key_message(ExternalService.MONERIUM)
 
     def _decode_given_evmlike_tx(self, tx_ref: EVMTxHash, delete_custom: bool) -> None:

@@ -1,10 +1,13 @@
+from http import HTTPStatus
 from typing import TYPE_CHECKING
+from unittest.mock import patch
 
 import pytest
 import requests
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
+    assert_error_response,
     assert_ok_async_response,
     assert_proper_sync_response_with_result,
     wait_for_async_task,
@@ -24,32 +27,61 @@ def test_gnosis_pay_safe_admins_success(
         rotkehlchen_api_server: 'APIServer',
         gnosis_accounts: list[str],
 ) -> None:
-    for async_query in (False, True):
-        response = requests.get(
-            api_url_for(rotkehlchen_api_server, 'gnosispaysafeadminsresource'),
-            json={'async_query': async_query},
-        )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-            assert outcome['message'] == ''
-            result = outcome['result']
-        else:
-            result = assert_proper_sync_response_with_result(response)
+    with patch(
+        'rotkehlchen.api.v1.resources.has_premium_capability',
+        return_value=True,
+    ):
+        for async_query in (False, True):
+            response = requests.get(
+                api_url_for(rotkehlchen_api_server, 'gnosispaysafeadminsresource'),
+                json={'async_query': async_query},
+            )
+            if async_query:
+                task_id = assert_ok_async_response(response)
+                outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
+                assert outcome['message'] == ''
+                result = outcome['result']
+            else:
+                result = assert_proper_sync_response_with_result(response)
 
-        assert result == {
-            gnosis_accounts[0]: [
-                '0x37f18A82493cdF80675fF01e58c1A1b39637cf50',
-                '0xc37b40ABdB939635068d3c5f13E7faF686F03B65',
-            ],
-        }
+            assert result == {
+                gnosis_accounts[0]: [
+                    '0x37f18A82493cdF80675fF01e58c1A1b39637cf50',
+                    '0xc37b40ABdB939635068d3c5f13E7faF686F03B65',
+                ],
+            }
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 def test_gnosis_pay_safe_admins_no_accounts(rotkehlchen_api_server: 'APIServer') -> None:
-    response = requests.get(api_url_for(
-        rotkehlchen_api_server,
-        'gnosispaysafeadminsresource',
-    ))
-    result = assert_proper_sync_response_with_result(response)
-    assert result == {}
+    with patch(
+        'rotkehlchen.api.v1.resources.has_premium_capability',
+        return_value=True,
+    ):
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            'gnosispaysafeadminsresource',
+        ))
+        result = assert_proper_sync_response_with_result(response)
+        assert result == {}
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+def test_gnosis_pay_safe_admins_requires_capability(
+        rotkehlchen_api_server: 'APIServer',
+        start_with_valid_premium: bool,  # pylint: disable=unused-argument
+) -> None:
+    with patch(
+        'rotkehlchen.api.v1.resources.has_premium_capability',
+        return_value=False,
+    ):
+        response = requests.get(api_url_for(
+            rotkehlchen_api_server,
+            'gnosispaysafeadminsresource',
+        ))
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='Gnosis Pay is not available for your current subscription tier',
+        status_code=HTTPStatus.FORBIDDEN,
+    )

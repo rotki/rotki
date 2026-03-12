@@ -38,6 +38,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.premium.premium import GNOSIS_PAY_CAPABILITY, MONERIUM_CAPABILITY
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -1948,6 +1949,7 @@ def test_notify_missing_credentials_on_redecode(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     for counterparty, service_name in [(CPT_GNOSIS_PAY, 'gnosis pay'), (CPT_MONERIUM, 'monerium')]:
         websocket_connection.messages.clear()
+        capability_name = GNOSIS_PAY_CAPABILITY if counterparty == CPT_GNOSIS_PAY else MONERIUM_CAPABILITY  # noqa: E501
         event = EvmEvent(
             tx_ref=make_evm_tx_hash(),
             sequence_index=0,
@@ -1989,6 +1991,10 @@ def test_notify_missing_credentials_on_redecode(
                 target=rotki.chains_aggregator.gnosis.transactions_decoder,
                 attribute='decode_and_get_transaction_hashes',
                 return_value=[event],
+            ),
+            patch(
+                'rotkehlchen.api.services.transactions.has_premium_capability',
+                side_effect=lambda premium, capability, capability_name=capability_name: capability == capability_name,  # noqa: E501
             ),
         ):
             assert_proper_response(requests.put(
