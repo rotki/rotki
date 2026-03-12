@@ -19,15 +19,28 @@ from rotkehlchen.data_migrations.manager import (
     DataMigrationManager,
     MigrationRecord,
 )
-from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX, TX_INTERNALS_QUERIED, UpdateType
+from rotkehlchen.db.constants import (
+    EXTRAINTERNALTXPREFIX,
+    HISTORY_MAPPING_KEY_STATE,
+    TX_DECODED,
+    TX_INTERNALS_QUERIED,
+    HistoryMappingState,
+    UpdateType,
+)
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.internal_tx_conflicts import (
+    INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE,
+    INTERNAL_TX_CONFLICT_ACTION_REPULL,
+)
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.cache import globaldb_delete_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.icons import IconManager
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
@@ -859,3 +872,163 @@ def test_migration_23(database: DBHandler) -> None:
             'SELECT tx_id, value FROM evm_tx_mappings WHERE value=?',
             (TX_INTERNALS_QUERIED,),
         ).fetchall()) == {(tx_1_id, TX_INTERNALS_QUERIED), (tx_2_id, TX_INTERNALS_QUERIED)}
+
+
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('data_migration_version', [23])
+def test_migration_24(database: DBHandler) -> None:
+    """Test migration 24 internal tx conflict detection and fixing behavior."""
+    rotki = MockRotkiForMigrations(database)
+    dbevmtx = DBEvmTx(database)
+    tx_1 = EvmTransaction(
+        tx_hash=(tx_hash_1 := make_evm_tx_hash()),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000000),
+        block_number=1,
+        from_address=(tx_1_sender := make_evm_address()),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    )
+    tx_2 = EvmTransaction(
+        tx_hash=(tx_hash_2 := make_evm_tx_hash()),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000001),
+        block_number=2,
+        from_address=(tx_2_sender := make_evm_address()),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=2,
+    )
+    tx_3 = EvmTransaction(
+        tx_hash=(tx_hash_3 := make_evm_tx_hash()),
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000002),
+        block_number=3,
+        from_address=(tx_3_sender := make_evm_address()),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=3,
+    )
+
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[tx_1, tx_2, tx_3],
+            relevant_address=tx_1_sender,
+        )
+        tx_1_id = write_cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash_1, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+        tx_2_id = write_cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash_2, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+        tx_3_id = write_cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash_3, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+        write_cursor.executemany(
+            'INSERT INTO evm_internal_transactions('
+            'parent_tx, trace_id, from_address, to_address, value, gas, gas_used'
+            ') '
+            'VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [
+                (tx_1_id, 0, tx_1_sender, (tx_1_to := make_evm_address()), '5', '0', '0'),
+                (tx_1_id, 1, tx_1_sender, tx_1_to, '5', '21000', '55'),
+                (tx_1_id, 2, tx_1_sender, tx_1_to, '5', '21000', '55'),
+                (tx_2_id, 0, tx_2_sender, (tx_2_to := make_evm_address()), '7', '69640', '0'),
+                (tx_2_id, 1, tx_2_sender, tx_2_to, '7', '69640', '0'),
+                (tx_3_id, 0, tx_3_sender, (tx_3_to := make_evm_address()), '9', '0', '0'),
+                (tx_3_id, 1, tx_3_sender, tx_3_to, '9', '12345', '99'),
+            ],
+        )
+        write_cursor.executemany(
+            'INSERT INTO evm_tx_mappings(tx_id, value) VALUES (?, ?)',
+            [(tx_1_id, TX_DECODED), (tx_3_id, TX_DECODED)],
+        )
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'identifier, entry_type, group_identifier, sequence_index, timestamp, '
+            'location, location_label, asset, amount, notes, type, subtype, extra_data, ignored) '
+            'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                999999,
+                HistoryBaseEntryType.EVM_EVENT.serialize_for_db(),
+                f'10{tx_hash_3!s}',
+                0,
+                1700000002,
+                Location.ETHEREUM.serialize_for_db(),
+                tx_3_sender,
+                A_ETH.identifier,
+                '1',
+                'customized event',
+                HistoryEventType.TRADE.serialize(),
+                HistoryEventSubType.SPEND.serialize(),
+                None,
+                0,
+            ),
+        )
+        write_cursor.execute(
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) '
+            'VALUES(?, ?, ?, ?)',
+            (999999, tx_hash_3, None, None),
+        )
+        write_cursor.execute(
+            'INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES(?, ?, ?)',
+            (999999, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),
+        )
+
+    with patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[next(
+            migration for migration in MIGRATION_LIST if migration.version == 24
+        )],
+    ):
+        migration_manager = DataMigrationManager(rotki)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
+
+    with database.conn.read_ctx() as cursor:
+        assert set(cursor.execute(
+            'SELECT chain, transaction_hash, action, fixed FROM evm_internal_tx_conflicts '
+            'ORDER BY transaction_hash',
+        ).fetchall()) == {
+            (ChainID.ETHEREUM.serialize_for_db(), bytes(tx_hash_1), INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE, 1),  # noqa: E501
+            (
+                ChainID.ETHEREUM.serialize_for_db(),
+                bytes(tx_hash_2),
+                INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                0,
+            ),
+            (ChainID.ETHEREUM.serialize_for_db(), bytes(tx_hash_3), INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE, 0),  # noqa: E501
+        }
+        assert cursor.execute(
+            'SELECT trace_id, gas, gas_used FROM evm_internal_transactions WHERE parent_tx=?',
+            (tx_1_id,),
+        ).fetchall() == [(1, '21000', '55')]
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_1_id, TX_DECODED),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT trace_id, gas, gas_used FROM evm_internal_transactions WHERE parent_tx=? ORDER BY trace_id',  # noqa: E501
+            (tx_3_id,),
+        ).fetchall() == [(0, '0', '0'), (1, '12345', '99')]
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+            (tx_3_id, TX_DECODED),
+        ).fetchone()[0] == 1

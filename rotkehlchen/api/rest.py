@@ -3378,6 +3378,10 @@ class RestAPI:
             address=address,
         )
 
+    @async_api_call()
+    def get_pending_internal_tx_repull_conflicts(self) -> dict[str, Any]:
+        return self.transactions_service.get_pending_internal_tx_repull_conflicts()
+
     def addresses_interacted_before(
             self,
             from_address: ChecksumEvmAddress,

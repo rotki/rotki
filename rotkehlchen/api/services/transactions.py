@@ -21,6 +21,10 @@ from rotkehlchen.db.filtering import (
     SolanaTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.internal_tx_conflicts import (
+    INTERNAL_TX_CONFLICT_ACTION_REPULL,
+    get_internal_tx_conflicts,
+)
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.errors.api import PremiumApiError
@@ -564,6 +568,26 @@ class TransactionsService:
                 ).fetchone()[0]
 
         return {'result': tx_info, 'message': '', 'status_code': HTTPStatus.OK}
+
+    def get_pending_internal_tx_repull_conflicts(self) -> dict[str, Any]:
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            entries = get_internal_tx_conflicts(
+                cursor=cursor,
+                action=INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                fixed=False,
+            )
+
+        return {
+            'result': [
+                {
+                    'chain': chain_id.to_name(),
+                    'tx_hash': str(tx_hash),
+                }
+                for chain_id, tx_hash in entries
+            ],
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
 
     def force_refetch_transactions(
             self,
