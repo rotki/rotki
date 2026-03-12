@@ -180,7 +180,11 @@ async fn query_icon_from_payload(
     query_icon(state, payload.asset_id, path).await
 }
 
-async fn query_icon(state: Arc<AppState>, asset_id: String, path: std::path::PathBuf) -> StatusCode {
+async fn query_icon(
+    state: Arc<AppState>,
+    asset_id: String,
+    path: std::path::PathBuf,
+) -> StatusCode {
     let task_name = format!("{}_{}", QUERY_ICONS_TASK_PREFIX, asset_id);
     let mut tasks_guard = state.active_tasks.lock().await;
     if !tasks_guard.insert(task_name.clone()) {
@@ -270,7 +274,11 @@ async fn find_usable_icon(
 ) -> Option<std::path::PathBuf> {
     let found = icons::find_icon(state.data_dir.as_path(), path, asset_id).await?;
     let meta = fs::metadata(&found).await.ok()?;
-    if meta.len() > 0 { Some(found) } else { None }
+    if meta.len() > 0 {
+        Some(found)
+    } else {
+        None
+    }
 }
 
 async fn check_icon_for_asset_id(
@@ -279,7 +287,8 @@ async fn check_icon_for_asset_id(
     path: std::path::PathBuf,
     force_refresh: Option<bool>,
 ) -> StatusCode {
-    let Some(found_path) = icons::find_icon(state.data_dir.as_path(), &path, &asset_id).await else {
+    let Some(found_path) = icons::find_icon(state.data_dir.as_path(), &path, &asset_id).await
+    else {
         return query_icon(state, asset_id, path).await;
     };
     let metadata = match fs::metadata(found_path.clone()).await {

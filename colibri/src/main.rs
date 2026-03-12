@@ -1,8 +1,12 @@
 use crate::blockchain::EvmInquirerManager;
+use axum::http::{
+    header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+    request::Parts as RequestParts,
+    HeaderValue,
+};
 use axum::{http::Request, routing, Router};
 use database::DBHandler;
 use glob::Pattern;
-use axum::http::{header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE}, request::Parts as RequestParts, HeaderValue};
 use log::{error, info};
 use std::collections::HashSet;
 use std::net::SocketAddr;
@@ -29,9 +33,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let parsed_args = args::parse_args();
     logging::config_logging(parsed_args.clone());
 
-    info!("Starting colibri version {} with data folder {:?}", args::get_version(), parsed_args.data_directory);
+    info!(
+        "Starting colibri version {} with data folder {:?}",
+        args::get_version(),
+        parsed_args.data_directory
+    );
     let globaldb =
-        match globaldb::GlobalDB::new(parsed_args.data_directory.join("global").join("global.db")).await {
+        match globaldb::GlobalDB::new(parsed_args.data_directory.join("global").join("global.db"))
+            .await
+        {
             Err(e) => {
                 error!("Unable to open globaldb due to {}", e);
                 std::process::exit(1);
@@ -64,6 +74,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .route(
             "/assets/mappings",
             routing::post(api::assets::get_assets_mappings),
+        )
+        .route(
+            "/assets/search/levenshtein",
+            routing::post(api::assets::search_assets_levenshtein),
         )
         .route("/user", routing::post(api::database::unlock_user))
         .route("/user/logout", routing::post(api::database::logout_user))
