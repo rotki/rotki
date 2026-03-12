@@ -160,6 +160,34 @@ impl ChainID {
         }
     }
 
+    /// Deserializes from the lowercase name used by the API, matching Python's
+    /// `ChainID.to_name()` / `ChainID.name.lower()` format.
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "ethereum" => Some(ChainID::Ethereum),
+            "optimism" => Some(ChainID::Optimism),
+            "binance_sc" => Some(ChainID::BinanceSc),
+            "gnosis" => Some(ChainID::Gnosis),
+            "polygon_pos" => Some(ChainID::PolygonPos),
+            "fantom" => Some(ChainID::Fantom),
+            "base" => Some(ChainID::Base),
+            "arbitrum_one" => Some(ChainID::ArbitrumOne),
+            "avalanche" => Some(ChainID::Avalanche),
+            "celo" => Some(ChainID::Celo),
+            "arbitrum_nova" => Some(ChainID::ArbitrumNova),
+            "cronos" => Some(ChainID::Cronos),
+            "boba" => Some(ChainID::Boba),
+            "evmos" => Some(ChainID::Evmos),
+            "polygon_zkevm" => Some(ChainID::PolygonZkevm),
+            "zksync_era" => Some(ChainID::ZksyncEra),
+            "pulsechain" => Some(ChainID::Pulsechain),
+            "scroll" => Some(ChainID::Scroll),
+            "sonic" => Some(ChainID::Sonic),
+            "linea" => Some(ChainID::Linea),
+            _ => None,
+        }
+    }
+
     pub fn to_name(self) -> String {
         match self {
             ChainID::Ethereum => "ethereum".to_string(),
