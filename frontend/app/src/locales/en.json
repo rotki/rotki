@@ -2841,6 +2841,7 @@
       "website_url_missing": "Monerium OAuth website URL is not configured."
     },
     "need_premium": "Upgrade to premium to use this feature.",
+    "need_tier": "Requires {tier} tier or higher.",
     "no_services_found": "No services found",
     "opensea": {
       "description": "Used to query NFT information and balances from OpenSea.",
