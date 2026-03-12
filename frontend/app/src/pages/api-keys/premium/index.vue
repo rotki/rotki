@@ -9,6 +9,7 @@ import AutomaticSyncSetting from '@/components/status/sync/AutomaticSyncSetting.
 import { useInterop } from '@/composables/electron-interop';
 import { usePremiumHelper } from '@/composables/premium';
 import PremiumDeviceList from '@/modules/premium/devices/components/PremiumDeviceList.vue';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useConfirmStore } from '@/store/confirm';
 import { useMessageStore } from '@/store/message';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -35,6 +36,7 @@ const { setMessage } = useMessageStore();
 
 const { currentTier } = usePremiumHelper();
 const { openUrl, premiumUserLoggedIn } = useInterop();
+const { allowed: cloudBackupAllowed } = useFeatureAccess(PremiumFeature.CLOUD_BACKUP);
 
 const mainActionText = computed<string>(() => {
   if (!get(premium))
@@ -231,8 +233,28 @@ onMounted(() => {
 
       <AutomaticSyncSetting
         class="mt-6"
-        :disabled="!premium || edit"
+        :disabled="!premium || edit || !cloudBackupAllowed"
       />
+
+      <RuiAlert
+        v-if="premium && !cloudBackupAllowed"
+        type="info"
+        class="mt-4"
+      >
+        <i18n-t
+          scope="global"
+          tag="span"
+          keypath="premium_settings.cloud_backup_unavailable"
+        >
+          <template #link>
+            <ExternalLink
+              :url="externalLinks.manageSubscriptions"
+              :text="t('premium_settings.cloud_backup_upgrade_link')"
+              color="primary"
+            />
+          </template>
+        </i18n-t>
+      </RuiAlert>
 
       <template #footer>
         <div class="flex flex-row gap-2">

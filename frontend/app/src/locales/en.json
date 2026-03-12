@@ -4638,6 +4638,8 @@
       "statistic": "The statistics view is not available",
       "title": "Graphs are not available"
     },
+    "cloud_backup_unavailable": "Cloud backup is not available for your current plan. {link} to enable cloud sync.",
+    "cloud_backup_upgrade_link": "Upgrade your subscription",
     "current_plan_label": "Current plan:",
     "delete_confirmation": {
       "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
@@ -5096,6 +5098,8 @@
     "upload_tooltip": "Push your local database to the server and replace all data there"
   },
   "sync_indicator": {
+    "cloud_backup_unavailable": "Cloud backup is not available for your current plan. Upgrade to enable cloud sync.",
+    "cloud_backup_upgrade": "Upgrade plan",
     "db_upload_result": {
       "message": "We could not complete the upload because {reason}",
       "title": "Database sync attempt unsuccessful"

@@ -4,6 +4,10 @@ import AutomaticSyncSetting from '@/components/status/sync/AutomaticSyncSetting.
 
 const model = defineModel<boolean>({ required: true });
 
+const { disabled = false } = defineProps<{
+  disabled?: boolean;
+}>();
+
 const { t } = useI18n({ useScope: 'global' });
 const { isMdAndUp } = useBreakpoint();
 </script>
@@ -38,6 +42,7 @@ const { isMdAndUp } = useBreakpoint();
           class="mt-2"
           size="sm"
           dense
+          :disabled="disabled"
         />
       </div>
 
