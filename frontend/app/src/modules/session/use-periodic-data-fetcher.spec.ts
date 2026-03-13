@@ -41,6 +41,7 @@ describe('usePeriodicDataFetcher', () => {
   it('should update store with fetched periodic data', async () => {
     const result: PeriodicClientQueryResult = {
       connectedNodes: { eth: ['node1'] },
+      coolingDownNodes: { eth: ['node3'] },
       failedToConnect: { bsc: ['node2'] },
       lastBalanceSave: 1234,
       lastDataUploadTs: 5678,
@@ -55,6 +56,7 @@ describe('usePeriodicDataFetcher', () => {
     expect(get(store.lastBalanceSave)).toBe(1234);
     expect(get(store.lastDataUpload)).toBe(5678);
     expect(get(store.connectedNodes)).toEqual({ eth: ['node1'] });
+    expect(get(store.coolingDownNodes)).toEqual({ eth: ['node3'] });
     expect(get(store.failedToConnect)).toEqual({ bsc: ['node2'] });
   });
 
@@ -70,14 +72,14 @@ describe('usePeriodicDataFetcher', () => {
     expect(get(store.lastDataUpload)).toBe(0);
   });
 
-  it('should only update lastBalanceSave when value changes', async () => {
+  it('should clear optional node state maps when backend omits them', async () => {
     const store = useSessionMetadataStore();
-    const { lastBalanceSave } = storeToRefs(store);
-    set(lastBalanceSave, 1234);
+    const { coolingDownNodes, failedToConnect } = storeToRefs(store);
+    set(coolingDownNodes, { eth: ['cooling'] });
+    set(failedToConnect, { eth: ['failed'] });
 
     const result: PeriodicClientQueryResult = {
       connectedNodes: {},
-      failedToConnect: {},
       lastBalanceSave: 1234,
       lastDataUploadTs: 9999,
     };
@@ -87,8 +89,8 @@ describe('usePeriodicDataFetcher', () => {
     const { check } = usePeriodicDataFetcher();
     await check();
 
-    expect(get(store.lastBalanceSave)).toBe(1234);
-    expect(get(store.lastDataUpload)).toBe(9999);
+    expect(get(store.coolingDownNodes)).toEqual({});
+    expect(get(store.failedToConnect)).toEqual({});
   });
 
   it('should notify error on fetch failure', async () => {
@@ -116,7 +118,6 @@ describe('usePeriodicDataFetcher', () => {
 
     resolveFirst!({
       connectedNodes: {},
-      failedToConnect: {},
       lastBalanceSave: 100,
       lastDataUploadTs: 200,
     });

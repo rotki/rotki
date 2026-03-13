@@ -6,6 +6,7 @@ export const useSessionMetadataStore = defineStore('session/metadata', () => {
   const lastBalanceSave = ref<number>(0);
   const lastDataUpload = ref<number>(0);
   const connectedNodes = shallowRef<Record<string, string[]>>({});
+  const coolingDownNodes = shallowRef<Record<string, string[]>>({});
   const failedToConnect = shallowRef<Record<string, string[]>>({});
 
   // Tags
@@ -18,6 +19,7 @@ export const useSessionMetadataStore = defineStore('session/metadata', () => {
   return {
     allTags,
     connectedNodes,
+    coolingDownNodes,
     failedToConnect,
     lastBalanceSave,
     lastDataUpload,

@@ -456,6 +456,38 @@ def test_rpc_nodes_is_archive_field(rotkehlchen_api_server: 'APIServer') -> None
             assert 'is_archive' not in node
 
 
+def test_rpc_nodes_runtime_status_fields(rotkehlchen_api_server: 'APIServer') -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    node = WeightedNode(
+        identifier=100,
+        node_info=NodeName(
+            name='rate_limited_node',
+            endpoint='https://rate-limited.example.com',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        weight=FVal('0.3'),
+        active=True,
+    )
+    rotki.data.db.add_rpc_node(node)
+
+    inquirer = rotki.chains_aggregator.ethereum.node_inquirer
+    inquirer.mark_node_rate_limited(node.node_info, '429')
+
+    result = assert_proper_sync_response_with_result(requests.get(api_url_for(
+        api_server=rotkehlchen_api_server,
+        endpoint='rpcnodesresource',
+        blockchain=SupportedBlockchain.ETHEREUM.serialize(),
+    )))
+    serialized_node = next(entry for entry in result if entry['name'] == node.node_info.name)
+    assert serialized_node['runtime_status'] == 'cooling_down'
+    assert serialized_node['ready'] is False
+    assert serialized_node['cooldown_until'] is not None
+    assert serialized_node['last_error'] is not None
+    assert serialized_node['last_error_kind'] == 'rate_limited'
+    assert 'last_success_timestamp' in serialized_node
+
+
 @pytest.mark.parametrize('max_size_in_mb_all_logs', [659])
 def test_configuration(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that the configuration endpoint returns the expected information"""

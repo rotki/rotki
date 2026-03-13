@@ -4,11 +4,13 @@ import { z } from 'zod/v4';
 const BlockchainRpcNode = z.object({
   active: z.boolean(),
   blockchain: z.string().min(1),
+  cooldownUntil: z.number().nullable().optional(),
   endpoint: z.string(),
   identifier: z.number(),
   isArchive: z.boolean().optional(),
   name: z.string().min(1),
   owned: z.boolean(),
+  runtimeStatus: z.enum(['ready', 'cooling_down']).optional(),
   weight: z.preprocess(weight => Number.parseFloat(weight as string), z.number().nonnegative().max(100)),
 });
 

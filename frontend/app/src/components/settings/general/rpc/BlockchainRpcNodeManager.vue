@@ -2,6 +2,7 @@
 import type { Blockchain } from '@rotki/common';
 import { camelCase } from 'es-toolkit';
 import SimpleTable from '@/components/common/SimpleTable.vue';
+import DateDisplay from '@/components/display/DateDisplay.vue';
 import RowActions from '@/components/helper/RowActions.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import BlockchainRpcNodeFormDialog from '@/components/settings/general/rpc/BlockchainRpcNodeFormDialog.vue';
@@ -32,7 +33,7 @@ const reconnecting = ref<boolean>(false);
 const { notify } = useNotificationDispatcher();
 const { setMessage } = useMessageStore();
 
-const { connectedNodes, failedToConnect } = storeToRefs(useSessionMetadataStore());
+const { connectedNodes, coolingDownNodes, failedToConnect } = storeToRefs(useSessionMetadataStore());
 const { show } = useConfirmStore();
 const { useChainName } = useSupportedChains();
 const api = useEvmNodesApi(() => chain);
@@ -114,6 +115,7 @@ function isNodeInDataset(dataset: Record<string, string[]>, item: BlockchainRpcN
 
 const NODE_STATUS = {
   CONNECTED: 'connected',
+  COOLING_DOWN: 'cooling_down',
   FAILED: 'failed',
   READY: 'ready',
 } as const;
@@ -125,6 +127,10 @@ function isNodeConnected(item: BlockchainRpcNode): boolean {
 }
 
 function getNodeStatus(item: BlockchainRpcNode): NodeStatus {
+  if (isNodeInDataset(get(coolingDownNodes), item)) {
+    return NODE_STATUS.COOLING_DOWN;
+  }
+
   if (isNodeConnected(item)) {
     return NODE_STATUS.CONNECTED;
   }
@@ -315,6 +321,29 @@ defineExpose({
                 {{ t('evm_rpc_node_manager.connected.true') }}
               </span>
             </BadgeDisplay>
+            <RuiTooltip
+              v-else-if="getNodeStatus(item) === NODE_STATUS.COOLING_DOWN"
+              :open-delay="400"
+            >
+              <template #activator>
+                <BadgeDisplay
+                  color="orange"
+                  class="items-center gap-2 !leading-6"
+                >
+                  <RuiIcon
+                    size="16"
+                    name="lu-clock"
+                  />
+                  <span>
+                    {{ t('evm_rpc_node_manager.connected.cooling_down') }}
+                  </span>
+                </BadgeDisplay>
+              </template>
+              <span v-if="item.cooldownUntil">
+                {{ t('evm_rpc_node_manager.cooldown_until') }}
+                <DateDisplay :timestamp="item.cooldownUntil" />
+              </span>
+            </RuiTooltip>
             <BadgeDisplay
               v-else-if="getNodeStatus(item) === NODE_STATUS.FAILED"
               color="red"

@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.types import NodeName
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
+from rotkehlchen.chain.mixins.rpc_nodes import NodeStatus
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.eth2 import DBEth2
@@ -122,10 +123,12 @@ class TransactionsService:
     def get_rpc_nodes(self, blockchain: SupportedBlockchain) -> dict[str, Any]:
         nodes = self.rotkehlchen.data.db.get_rpc_nodes(blockchain=blockchain)
 
+        inquirer = None
         archive_status: dict[str, bool] = {}
         if blockchain in CHAINS_WITH_NODES:
             manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain=blockchain)  # type: ignore[call-overload]
-            for node_info, rpc_node in manager.node_inquirer.rpc_mapping.items():
+            inquirer = manager.node_inquirer
+            for node_info, rpc_node in inquirer.rpc_mapping.items():
                 archive_status[node_info.endpoint] = rpc_node.is_archive
 
         result = []
@@ -133,6 +136,19 @@ class TransactionsService:
             serialized = node.serialize()
             if (is_archive := archive_status.get(node.node_info.endpoint)) is not None:
                 serialized['is_archive'] = is_archive
+
+            if inquirer is not None:
+                # is_node_in_cooldown() handles auto-expiry of elapsed windows
+                in_cooldown = inquirer.is_node_in_cooldown(node.node_info)
+                runtime = inquirer.get_runtime_state(node.node_info)
+                runtime_status = NodeStatus.COOLING_DOWN if in_cooldown else NodeStatus.READY
+                serialized['runtime_status'] = runtime_status
+                serialized['ready'] = not in_cooldown
+                serialized['cooldown_until'] = runtime.cooldown_until if runtime else None
+                serialized['last_error'] = runtime.last_error_ts if runtime else None
+                serialized['last_error_kind'] = runtime.last_error_kind if runtime else None
+                serialized['last_success_timestamp'] = runtime.last_success_ts if runtime else None
+
             result.append(serialized)
 
         return {
@@ -146,6 +162,12 @@ class TransactionsService:
             self.rotkehlchen.data.db.add_rpc_node(node)
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.CONFLICT}
+
+        if node.node_info.blockchain in CHAINS_WITH_NODES:
+            manager = self.rotkehlchen.chains_aggregator.get_chain_manager(
+                blockchain=node.node_info.blockchain,
+            )
+            manager.node_inquirer.invalidate_nodes_cache()  # type: ignore[attr-defined]
 
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
@@ -187,10 +209,26 @@ class TransactionsService:
                 f'Failed to find node with endpoint {old_endpoint} in web3 mappings. Skipping',
             )
 
+        manager.node_inquirer.invalidate_nodes_cache()
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
     def delete_rpc_node(self, identifier: int, blockchain: SupportedBlockchain) -> dict[str, Any]:
+        # Fetch the endpoint before deletion so we can clean up runtime state
+        deleted_node_info: NodeName | None = None
+        if blockchain in CHAINS_WITH_NODES:
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                if (row := cursor.execute(
+                    'SELECT name, endpoint, owned FROM rpc_nodes WHERE identifier=?',
+                    (identifier,),
+                ).fetchone()) is not None:
+                    deleted_node_info = NodeName(
+                        name=row[0],
+                        endpoint=row[1],
+                        owned=bool(row[2]),
+                        blockchain=blockchain,  # type: ignore[arg-type]
+                    )
+
         try:
             self.rotkehlchen.data.db.delete_rpc_node(
                 identifier=identifier,
@@ -204,6 +242,9 @@ class TransactionsService:
             only_active=True,
         )
         manager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)  # type: ignore
+        if deleted_node_info is not None:
+            manager.node_inquirer.clear_runtime_state(deleted_node_info)
+        manager.node_inquirer.invalidate_nodes_cache()
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 

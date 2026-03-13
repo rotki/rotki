@@ -2,14 +2,16 @@ import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import Location
+from rotkehlchen.types import Location, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
 
@@ -46,7 +48,26 @@ def test_query_periodic(rotkehlchen_api_server_with_exchanges: APIServer) -> Non
     # Non -1 value tests for these exist in test_history.py::test_query_history_timerange
     assert result[DBCacheStatic.LAST_DATA_UPLOAD_TS.value] == 0
 
+    rotki.data.db.add_rpc_node(WeightedNode(
+        identifier=100,
+        node_info=NodeName(
+            name='rate_limited_node',
+            endpoint='https://rate-limited.example.com',
+            owned=False,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        weight=FVal('0.3'),
+        active=True,
+    ))
+    rotki.chains_aggregator.ethereum.node_inquirer.invalidate_nodes_cache()
     rotki.chains_aggregator.ethereum.node_inquirer.failed_to_connect_nodes.add('custom node')
+    rotki.chains_aggregator.ethereum.node_inquirer.mark_node_rate_limited(
+        next(
+            iter(rotki.chains_aggregator.ethereum.node_inquirer._get_configured_nodes()),
+        ).node_info,
+        '429',
+    )
     response = requests.get(periodic_url)
     result = assert_proper_sync_response_with_result(response)
     assert result['failed_to_connect'] == {'eth': ['custom node']}
+    assert len(result['cooling_down_nodes']['eth']) == 1

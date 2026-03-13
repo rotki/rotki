@@ -1446,17 +1446,32 @@ class Rotkehlchen:
         if self.user_is_logged_in:
             with self.data.db.conn.read_ctx() as cursor:
                 result[DBCacheStatic.LAST_BALANCE_SAVE.value] = self.data.db.get_last_balance_save_time(cursor)  # noqa: E501
-                connected_nodes, failed_to_connect = {}, {}
+                connected_nodes: dict[str, list[str]] = {}
+                failed_to_connect: dict[str, list[str]] = {}
+                cooling_down_nodes: dict[str, list[str]] = {}
                 for chain_manager in self.chains_aggregator.iterate_chain_managers_with_nodes():
-                    connected_nodes[serialized_chain := chain_manager.node_inquirer.blockchain.serialize()] = [  # noqa: E501
-                        node.name for node in chain_manager.node_inquirer.get_connected_nodes()
+                    inquirer = chain_manager.node_inquirer
+                    serialized_chain = inquirer.blockchain.serialize()
+                    connected_nodes[serialized_chain] = [
+                        node.name for node in inquirer.get_connected_nodes()
                     ]
-                    if len(chain_manager.node_inquirer.failed_to_connect_nodes) != 0:
-                        failed_to_connect[serialized_chain] = list(chain_manager.node_inquirer.failed_to_connect_nodes)  # noqa: E501
+                    if len(inquirer.failed_to_connect_nodes) != 0:
+                        failed_to_connect[serialized_chain] = list(
+                            inquirer.failed_to_connect_nodes,
+                        )
+                    cooling = [
+                        wnode.node_info.name
+                        for wnode in inquirer._get_configured_nodes()
+                        if inquirer.is_node_in_cooldown(wnode.node_info)
+                    ]
+                    if cooling:
+                        cooling_down_nodes[serialized_chain] = cooling
 
                 result['connected_nodes'] = connected_nodes
                 if len(failed_to_connect) != 0:
                     result['failed_to_connect'] = failed_to_connect
+                if len(cooling_down_nodes) != 0:
+                    result['cooling_down_nodes'] = cooling_down_nodes
 
                 result[DBCacheStatic.LAST_DATA_UPLOAD_TS.value] = Timestamp(self.premium_sync_manager.last_remote_data_upload_ts)  # noqa: E501
         return result

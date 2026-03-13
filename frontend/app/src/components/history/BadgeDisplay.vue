@@ -1,5 +1,5 @@
 <script setup lang="ts">
-type Color = 'grey' | 'red' | 'green';
+type Color = 'grey' | 'red' | 'green' | 'orange';
 const {
   color = 'grey',
 } = defineProps<{
@@ -9,6 +9,7 @@ const {
 const colorVariants: Record<Color, string> = {
   green: 'text-rui-green-700 bg-rui-green-100',
   grey: 'text-rui-grey-700 bg-rui-grey-100 dark:text-rui-grey-400 dark:bg-rui-grey-800',
+  orange: 'text-rui-orange-700 bg-rui-orange-100',
   red: 'text-rui-red-700 bg-rui-red-100',
 };
 </script>

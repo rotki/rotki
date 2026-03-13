@@ -13,7 +13,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
   const { t } = useI18n({ useScope: 'global' });
 
   const store = useSessionMetadataStore();
-  const { connectedNodes, failedToConnect, lastBalanceSave, lastDataUpload } = storeToRefs(store);
+  const { connectedNodes, coolingDownNodes, failedToConnect, lastBalanceSave, lastDataUpload } = storeToRefs(store);
 
   const { notifyError } = useNotifications();
   const { fetchPeriodicData } = useSessionApi();
@@ -32,6 +32,7 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
 
       const {
         connectedNodes: connected,
+        coolingDownNodes: cooling,
         failedToConnect: failed,
         lastBalanceSave: balance,
         lastDataUploadTs: upload,
@@ -44,7 +45,8 @@ export function usePeriodicDataFetcher(): UsePeriodicDataFetcherReturn {
         set(lastDataUpload, upload);
 
       set(connectedNodes, connected);
-      set(failedToConnect, failed);
+      set(coolingDownNodes, cooling ?? {});
+      set(failedToConnect, failed ?? {});
     }
     catch (error: unknown) {
       notifyError(

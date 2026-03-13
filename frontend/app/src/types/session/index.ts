@@ -4,6 +4,7 @@ import { z } from 'zod/v4';
 
 export const PeriodicClientQueryResultSchema = z.object({
   connectedNodes: z.record(z.string(), z.array(z.string())),
+  coolingDownNodes: z.record(z.string(), z.array(z.string())).optional(),
   failedToConnect: z.record(z.string(), z.array(z.string())).optional(),
   lastBalanceSave: z.number(),
   lastDataUploadTs: z.number(),
