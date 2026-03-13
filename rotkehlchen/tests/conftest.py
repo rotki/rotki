@@ -280,6 +280,28 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
 
         return r1.uri == r2.uri and b1 == b2
 
+    def solana_rpc_matcher(r1, r2):
+        """Match Solana JSON-RPC calls by method/params while ignoring request id."""
+        if 'solana' not in r1.uri and 'solana' not in r2.uri:
+            return etherscan_matcher(r1, r2)
+        if r1.uri != r2.uri or r1.method != r2.method:
+            return False
+
+        def strip_jsonrpc_id(payload: Any) -> Any:
+            if isinstance(payload, dict):
+                return {k: strip_jsonrpc_id(v) for k, v in payload.items() if k != 'id'}
+            if isinstance(payload, list):
+                return [strip_jsonrpc_id(item) for item in payload]
+            return payload
+
+        try:
+            b1 = strip_jsonrpc_id(json.loads(r1.body))
+            b2 = strip_jsonrpc_id(json.loads(r2.body))
+        except (TypeError, json.JSONDecodeError):
+            return r1.body == r2.body
+
+        return b1 == b2
+
     def etherscan_matcher(r1, r2):
         """Match Etherscan API calls with case-insensitive query parameters.
         This allows old VCR cassettes to still work after refactoring some of the etherscan
@@ -310,6 +332,7 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
     vcr.register_matcher('beaconchain_matcher', beaconchain_matcher)
     vcr.register_matcher('github_branch_matcher', github_branch_matcher)
     vcr.register_matcher('match_rpc_calls', match_rpc_calls)
+    vcr.register_matcher('solana_rpc_matcher', solana_rpc_matcher)
     vcr.register_matcher('etherscan_matcher', etherscan_matcher)
     return vcr
 

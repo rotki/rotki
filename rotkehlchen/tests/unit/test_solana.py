@@ -1,6 +1,7 @@
 from collections.abc import Callable
 from contextlib import suppress
 from functools import partial
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
@@ -35,15 +36,15 @@ def identifier_to_address(identifier: str) -> SolanaAddress:
 @pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [[
     SolanaAddress('updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'),
-    SolanaAddress('EfxpFpET4tvP4jjFEbWLCfkzQ6LozJjsPQD4FbpRk6KX'),
+    SolanaAddress('FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa'),
 ]])
 def test_solana_balances(
         solana_manager: 'SolanaManager',
         solana_accounts: list['SolanaAddress'],
 ) -> None:
     assert solana_manager.get_multi_balance(accounts=solana_accounts) == {
-        solana_accounts[0]: FVal('3.432027149'),
-        solana_accounts[1]: FVal('1.437765205'),
+        solana_accounts[0]: FVal('3.063908962'),
+        solana_accounts[1]: FVal('0.564503502'),
     }
 
 
@@ -133,7 +134,7 @@ def test_is_nft_via_offchain_metadata() -> None:
     """
     for uri, is_nft in (
         ('https://gateway.pinit.io/ipfs/QmSTAhtdaqJmm9FTxWEdjQwKqvvjf99uGvN3vQaxzhRGqP/1089.json', True),  # Pixie Willie NFT  # noqa: E501
-        ('https://bafkreib5jykd5ehlvmi7f253jdjzzknj6eqlnqhzenfmdc6okrwksqfu6a.ipfs.nftstorage.link', False),  # catwifhat token  # noqa: E501
+        ('https://bafkreib5jykd5ehlvmi7f253jdjzzknj6eqlnqhzenfmdc6okrwksqfu6a.ipfs.dweb.link/', False),  # catwifhat token  # noqa: E501
     ):
         assert is_solana_token_nft(
             token_address=SolanaAddress('Cg4noWpzmDHhPZZXDwmCLJns43PJpLmd6E8aYL1pRcRJ'),
@@ -203,15 +204,14 @@ def test_query_signatures_for_address(solana_inquirer: 'SolanaInquirer') -> None
     signatures = solana_inquirer.query_tx_signatures_for_address(
         address=SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY'),
     )
-    assert len(signatures) == 64
-    assert signatures[0] == deserialize_tx_signature('4awgHCjCD2Da2UbaKitSfUWExW2eVSA1x5PBrdHBi61NdCpWWxG1JbCDRbKUsQYSPZfPzMKLGrJw2XhajUUvz2Tc')  # noqa: E501
-    assert signatures[63] == deserialize_tx_signature('Ars2bdNxYNVRDmWsGCwr9j8jHgRkb6gq7giaritpLw9yj6kiefwEUZpqz4Hr6SxRnJLTLtNnQaVNjuX6jjMAL7T')  # noqa: E501
+    assert len(signatures) == 312
+    assert signatures[0] == deserialize_tx_signature('5gJFZweW8EsTQCNWH2EyjJA3vm2VcT91vQtrNAcx7YXeq4zHmqXzSqxxnhb9GxiLvecWJJZv8xxW6opHSnJME643')  # noqa: E501
+    assert signatures[63] == deserialize_tx_signature('63u9VxkLKDSBs2nH7Knv4MwX7dU9BKx8WEMGXquWkzVkCm9McGrDcbhhfw8TRm7LgRzXDvutdX74pNMRmo7L2TbL')  # noqa: E501
 
 
-@pytest.mark.vcr
 @pytest.mark.parametrize('solana_accounts', [[SolanaAddress('7T8ckKtdc5DH7ACS5AnCny7rVXYJPEsaAbdBri1FhPxY')]])  # noqa: E501
 @pytest.mark.parametrize('solana_nodes_connect_at_start', [(
-    WeightedNode(node_info=NodeName(name='therpc', endpoint='https://solana.therpc.io', blockchain=SupportedBlockchain.SOLANA, owned=False), weight=ONE, active=True),  # noqa: E501
+    WeightedNode(node_info=NodeName(name='therpc', endpoint='https://solana-rpc.publicnode.com/', blockchain=SupportedBlockchain.SOLANA, owned=False), weight=ONE, active=True),  # noqa: E501
     WeightedNode(node_info=NodeName(name='solana.com', endpoint='https://api.mainnet-beta.solana.com', blockchain=SupportedBlockchain.SOLANA, owned=False), weight=ONE, active=True),  # noqa: E501
 )])
 def test_only_archive_nodes(
@@ -222,28 +222,40 @@ def test_only_archive_nodes(
     solana_nodes_connect_at_start sets the call order to be first a non-archive node and then an
     archive node, so it always tries the non-archive node first unless explicitly skipped.
     """
-    client_to_endpoint = {}
+    client_to_endpoint: dict[int, str] = {}
     original_query = solana_manager.node_inquirer.query
 
     def mock_client_creation(endpoint: str, timeout: int) -> Client:
-        client_to_endpoint[client := Client(endpoint=endpoint, timeout=timeout)] = endpoint
+        client = MagicMock(spec=Client)
+        client.is_connected.return_value = True
+        client.get_signatures_for_address.return_value = SimpleNamespace(value=[SimpleNamespace(
+            signature=deserialize_tx_signature('5gJFZweW8EsTQCNWH2EyjJA3vm2VcT91vQtrNAcx7YXeq4zHmqXzSqxxnhb9GxiLvecWJJZv8xxW6opHSnJME643'),
+        )])
+        client.get_multiple_accounts.return_value = SimpleNamespace(
+            value=[SimpleNamespace(lamports=1_000_000_000)],
+        )
+        client_to_endpoint[id(client)] = endpoint
         return client
 
     def check_client(client: Client, method: Callable, expected_endpoint: str) -> Any:
-        assert client_to_endpoint[client] == expected_endpoint
+        assert client_to_endpoint[id(client)] == expected_endpoint
         return method(client)
 
     for query_func, expected_endpoint, expected_result_len in ((
         lambda: solana_manager.node_inquirer.query_tx_signatures_for_address(address=solana_accounts[0]),  # noqa: E501
         'https://api.mainnet-beta.solana.com',  # archive node
-        64,
+        1,
     ), (
         lambda: solana_manager.get_multi_balance(accounts=solana_accounts),
-        'https://solana.therpc.io',  # non-archive node
+        'https://solana-rpc.publicnode.com/',  # non-archive node
         1,
     )):
         with (
             patch('rotkehlchen.chain.mixins.rpc_nodes.Client', side_effect=mock_client_creation),
+            patch(
+                'rotkehlchen.chain.mixins.rpc_nodes.SolanaRPCMixin._is_archive',
+                side_effect=lambda client: client_to_endpoint[id(client)] == 'https://api.mainnet-beta.solana.com',
+            ),
             patch.object(
                 target=solana_manager.node_inquirer,
                 attribute='query',
