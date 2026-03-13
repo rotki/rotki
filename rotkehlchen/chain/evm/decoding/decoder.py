@@ -26,6 +26,7 @@ from rotkehlchen.chain.decoding.utils import decode_safely, maybe_reshuffle_even
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.balancer.v3.constants import BALANCER_V3_SUPPORTED_CHAINS
 from rotkehlchen.chain.evm.decoding.balancer.v3.decoder import Balancerv3CommonDecoder
+from rotkehlchen.chain.evm.decoding.beefy_finance.constants import SUPPORTED_BEEFY_CHAINS
 from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCommonDecoder
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_SUPPORTED_CHAINS_WITHOUT_VCOW
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
@@ -45,6 +46,7 @@ from rotkehlchen.chain.evm.decoding.stakedao.constants import (
     STAKEDAO_SUPPORTED_CHAINS_WITHOUT_CLAIMS,
 )
 from rotkehlchen.chain.evm.decoding.stakedao.decoder import StakedaoCommonDecoder
+from rotkehlchen.chain.evm.decoding.superfluid.constants import CFA_V1_ADDRESSES
 from rotkehlchen.chain.evm.decoding.superfluid.decoder import SuperfluidCommonDecoder
 from rotkehlchen.chain.evm.decoding.weth.constants import (
     CHAINS_WITH_SPECIAL_WETH,
@@ -252,9 +254,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         self._add_single_decoder(class_name='Oneinchv5', decoder_class=Oneinchv5Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Oneinchv6', decoder_class=Oneinchv6Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
-        self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
+        if self.evm_inquirer.chain_id in SUPPORTED_BEEFY_CHAINS:
+            self._add_single_decoder(class_name='BeefyFinance', decoder_class=BeefyFinanceCommonDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Merkl', decoder_class=MerklDecoder, rules=rules)
-        self._add_single_decoder(class_name='Superfluid', decoder_class=SuperfluidCommonDecoder, rules=rules)  # noqa: E501
+        if self.evm_inquirer.chain_id in CFA_V1_ADDRESSES:
+            self._add_single_decoder(class_name='Superfluid', decoder_class=SuperfluidCommonDecoder, rules=rules)  # noqa: E501
 
         # Excluding Gnosis and Polygon PoS because they dont have ETH as native token
         # Also arb and scroll because they don't follow the weth9 design

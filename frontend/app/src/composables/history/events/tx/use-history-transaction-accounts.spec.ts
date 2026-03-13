@@ -7,7 +7,7 @@ vi.mock('@/composables/info/chains', () => ({
     isEvmLikeChains: vi.fn((chain: string) => chain === 'zksync_lite'),
     isSolanaChains: vi.fn(() => false),
     supportsTransactions: vi.fn((chain: string) =>
-      ['eth', 'optimism', 'polygon_pos', 'arbitrum_one', 'avax', 'base', 'gnosis', 'scroll', 'binance_sc'].includes(chain),
+      ['eth', 'optimism', 'polygon_pos', 'arbitrum_one', 'avax', 'base', 'gnosis', 'scroll', 'binance_sc', 'monad'].includes(chain),
     ),
   })),
 }));

@@ -84,6 +84,12 @@ export const explorerUrls: AssetExplorerUrls = {
     token: 'https://polygonscan.com/token/',
     transaction: 'https://polygonscan.com/tx/',
   },
+  [Blockchain.MONAD]: {
+    address: 'https://monadscan.com/address/',
+    block: 'https://monadscan.com/block/',
+    token: 'https://monadscan.com/token/',
+    transaction: 'https://monadscan.com/tx/',
+  },
   [Blockchain.SCROLL]: {
     address: 'https://scrollscan.com/address/',
     block: 'https://scrollscan.com/block/',

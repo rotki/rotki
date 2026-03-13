@@ -29,6 +29,7 @@ from rotkehlchen.constants.assets import (
     A_WETH_BASE,
     A_WETH_OPT,
     A_WETH_SCROLL,
+    A_WMON,
     A_WPOL,
     A_WXDAI,
     A_XDAI,
@@ -757,4 +758,5 @@ CHAIN_TO_WRAPPED_TOKEN: Final = {
     SupportedBlockchain.POLYGON_POS: A_WPOL,
     SupportedBlockchain.BINANCE_SC: A_WBNB,
     SupportedBlockchain.SCROLL: A_WETH_SCROLL,
+    SupportedBlockchain.MONAD: A_WMON,
 }
