@@ -13,7 +13,7 @@ from rotkehlchen.assets.utils import (
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.constants import REWARD_PAID_TOPIC, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -231,6 +231,18 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                     other_receive_events.append(event)
                 continue
 
+            if is_reward_pool_unstake is True:
+                if (
+                        (
+                            received_asset := event.asset.resolve_to_crypto_asset()
+                        ).is_evm_token() and
+                        received_asset.evm_address in spend_underlying_addresses  # type: ignore[attr-defined]  # this is an evm token
+                ):
+                    receive_events.append(event)
+                else:
+                    other_receive_events.append(event)
+                continue
+
             if is_withdrawal is True and is_reward_pool_stake is False:
                 receive_events.append(event)
                 continue
@@ -309,6 +321,29 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                         log.error(f'Failed to find beefy strategy harvest call reward event in transaction {transaction}')  # noqa: E501
 
                     break
+                if tx_log.topics[0] == REWARD_PAID_TOPIC:
+                    reward_token = bytes_to_address(tx_log.topics[2])
+                    reward_amount = int.from_bytes(tx_log.data[:32])
+                    for event in other_receive_events:
+                        if (
+                            event.location_label == bytes_to_address(tx_log.topics[1]) and
+                            (
+                                resolved_asset := event.asset.resolve_to_crypto_asset()
+                            ).is_evm_token() and
+                            resolved_asset.evm_address == reward_token and  # type: ignore[attr-defined]  # this is an evm token
+                            event.amount == asset_normalized_value(
+                                amount=reward_amount,
+                                asset=resolved_asset,
+                            )
+                        ):
+                            event.counterparty = CPT_BEEFY_FINANCE
+                            event.event_subtype = HistoryEventSubType.REWARD
+                            event.notes = f'Receive {event.amount} {resolved_asset.symbol} as Beefy staking reward'  # noqa: E501
+                            receive_events.append(event)
+                            reward_event_indices.add(event.sequence_index)
+                            break
+                    else:
+                        log.error(f'Failed to find Beefy reward pool reward event in transaction {transaction}')  # noqa: E501
 
             for event in other_receive_events:
                 if (

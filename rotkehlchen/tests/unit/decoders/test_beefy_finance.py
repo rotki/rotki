@@ -1043,6 +1043,109 @@ def test_unstake_beefy_reward_pool(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x65ACBB194E56De9796900863E5730348a4598039']])
+def test_unstake_beefy_reward_pool_with_reward(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    moo_token = get_or_create_evm_token(
+        userdb=arbitrum_one_inquirer.database,
+        evm_address=string_to_evm_address('0xe6EFe71fc3442343037B72776e02daFA2ee9aF1A'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        token_kind=TokenKind.ERC20,
+        symbol='mooStargateV2WETH',
+        name='Moo StargateV2 WETH',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+        underlying_tokens=[UnderlyingToken(
+            address=A_WETH_ARB.resolve_to_evm_token().evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    rmoo_token = get_or_create_evm_token(
+        userdb=arbitrum_one_inquirer.database,
+        evm_address=string_to_evm_address('0x38C21401B42eC072d1C74bF550fc7370AC8Ec9E5'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        token_kind=TokenKind.ERC20,
+        symbol='rmooStargateV2WETH',
+        name='Reward Moo StargateV2 WETH',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+        underlying_tokens=[UnderlyingToken(
+            address=moo_token.evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    _set_beefy_cache(
+        chain_id=ChainID.ARBITRUM_ONE,
+        entries=[
+            (moo_token.evm_address, A_WETH_ARB.resolve_to_evm_token().evm_address, False),
+            (rmoo_token.evm_address, moo_token.evm_address, False),
+        ],
+    )
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xe64a7677446843e5ede6937dc38e1eaa44c0da6df477713a9e453b7ddac4c179')),  # noqa: E501
+        relevant_address=arbitrum_one_accounts[0],
+        load_global_caches=[CPT_BEEFY_FINANCE],
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1733515506000)),
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.00000335894'),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+        location_label=(user_address := arbitrum_one_accounts[0]),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        asset=rmoo_token,
+        amount=FVal(return_amount := '22.273268736156637848'),
+        location_label=user_address,
+        notes=f'Return {return_amount} rmooStargateV2WETH to Beefy staking',
+        counterparty=CPT_BEEFY_FINANCE,
+        address=ZERO_ADDRESS,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        asset=moo_token,
+        amount=FVal(receive_amount := '22.273268736156637848'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} mooStargateV2WETH after unstaking from Beefy',
+        counterparty=CPT_BEEFY_FINANCE,
+        address=rmoo_token.evm_address,
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.ARBITRUM_ONE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
+        amount=FVal(reward_amount := '4.023916'),
+        location_label=user_address,
+        notes=f'Receive {reward_amount} USDC.e as Beefy staking reward',
+        counterparty=CPT_BEEFY_FINANCE,
+        address=rmoo_token.evm_address,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x356a14285c8D2d351682D6E6fEF0213ddEd8Abad']])
 def test_legacy_boost_exit(ethereum_inquirer, ethereum_accounts, beefy_cache):
     tx_hash = deserialize_evm_tx_hash('0x79be37675ed545796804fcb146cb7ba08915d6c032fe99cb8005a877dc9974b4')  # noqa: E501
