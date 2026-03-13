@@ -24,7 +24,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.misc import InputError, NotERC20Conformant, NotERC721Conformant
 from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -137,6 +136,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             self,
             events: list['EvmEvent'],
             transaction: 'EvmTransaction',
+            all_logs: list[EvmTxReceiptLog],
             from_address: ChecksumEvmAddress | None = None,
             expected_amounts_and_assets: list[tuple['FVal', 'CryptoAsset']] | None = None,
     ) -> list['EvmEvent']:
@@ -162,6 +162,37 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                     event.event_subtype == HistoryEventSubType.NONE
             ):
                 unmatched_receive_events.append(event)
+
+        if len(spend_events) == 0:
+            if len(unmatched_receive_events) == 0:
+                return events
+
+            for tx_log in all_logs:
+                if tx_log.topics[0] != REWARD_PAID_TOPIC:
+                    continue
+
+                reward_token = bytes_to_address(tx_log.topics[2])
+                reward_amount = int.from_bytes(tx_log.data[:32])
+                for event in unmatched_receive_events:
+                    if (
+                        event.location_label == bytes_to_address(tx_log.topics[1]) and
+                        (
+                            resolved_asset := event.asset.resolve_to_crypto_asset()
+                        ).is_evm_token() and
+                        resolved_asset.evm_address == reward_token and  # type: ignore[attr-defined]  # this is an evm token
+                        event.amount == asset_normalized_value(
+                            amount=reward_amount,
+                            asset=resolved_asset,
+                        )
+                    ):
+                        event.counterparty = CPT_BEEFY_FINANCE
+                        event.event_subtype = HistoryEventSubType.REWARD
+                        event.notes = f'Receive {event.amount} {resolved_asset.symbol} as Beefy staking reward'  # noqa: E501
+                        break
+                else:
+                    log.error(f'Failed to find Beefy reward pool reward event in transaction {transaction}')  # noqa: E501
+
+            return events
 
         spend_asset_addresses = []
         is_withdrawal = True
@@ -291,14 +322,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         # See https://docs.beefy.finance/developer-documentation/strategy-contract#chargefees
         if len(other_receive_events) > 0:
             reward_event_indices = set()
-            with self.base.database.conn.read_ctx() as cursor:
-                tx_logs = tx_receipt.logs if (tx_receipt := DBEvmTx(self.base.database).get_receipt(  # noqa: E501
-                    cursor=cursor,
-                    tx_hash=transaction.tx_hash,
-                    chain_id=self.node_inquirer.chain_id,
-                )) is not None else []
-
-            for tx_log in tx_logs:
+            for tx_log in all_logs:
                 if tx_log.topics[0] == CHARGED_FEES_TOPIC:
                     raw_call_fee_amount = int.from_bytes(
                         bytes=tx_log.topics[1] if len(tx_log.topics) > 1 else tx_log.data[:32],
@@ -381,6 +405,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         return self._process_beefy_events(
             events=decoded_events,
             transaction=transaction,
+            all_logs=all_logs,
         )
 
     def _decode_zap_deposits_and_withdrawals(self, context: DecoderContext) -> EvmDecodingOutput:
@@ -412,6 +437,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         self._process_beefy_events(
             events=context.decoded_events,
             transaction=context.transaction,
+            all_logs=context.all_logs,
             from_address=self.zap_contract_address,
             expected_amounts_and_assets=amounts_and_assets,
         )
