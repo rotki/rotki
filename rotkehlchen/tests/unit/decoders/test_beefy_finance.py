@@ -16,7 +16,14 @@ from rotkehlchen.chain.evm.types import (
     string_to_evm_address,
 )
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH, A_GMX, A_USDC, A_WETH_ARB, A_WETH_BASE
+from rotkehlchen.constants.assets import (
+    A_ETH,
+    A_GMX,
+    A_OP,
+    A_USDC,
+    A_WETH_ARB,
+    A_WETH_BASE,
+)
 from rotkehlchen.globaldb.cache import (
     globaldb_set_general_cache_values,
 )
@@ -939,6 +946,83 @@ def test_stake_beefy_vault_token_in_reward_pool(
         notes=f'Receive {receive_amount} rmooCompoundOptimismWETH after staking in Beefy',
         counterparty=CPT_BEEFY_FINANCE,
         address=ZERO_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x4C3fa36a3C10FD7a8Cd3530a4a9aC6cb7AA341cC']])
+def test_claim_beefy_reward_pool_reward(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    moo_token = get_or_create_evm_token(
+        userdb=optimism_inquirer.database,
+        evm_address=string_to_evm_address('0xdAFdaD30D21DEB0235F549C2E2D5e39486D088D0'),
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC20,
+        symbol='mooCompoundOptimismWETH',
+        name='Moo Compound Optimism WETH',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+        underlying_tokens=[UnderlyingToken(
+            address=optimism_inquirer.wrapped_native_token.evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    rmoo_token = get_or_create_evm_token(
+        userdb=optimism_inquirer.database,
+        evm_address=string_to_evm_address('0xdBf55813B8993AA987253f0e2d0203E87Da76407'),
+        chain_id=ChainID.OPTIMISM,
+        token_kind=TokenKind.ERC20,
+        symbol='rmooCompoundOptimismWETH',
+        name='Reward Moo Compound Optimism WETH',
+        decimals=18,
+        protocol=CPT_BEEFY_FINANCE,
+        underlying_tokens=[UnderlyingToken(
+            address=moo_token.evm_address,
+            token_kind=TokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    _set_beefy_cache(
+        chain_id=ChainID.OPTIMISM,
+        entries=[
+            (moo_token.evm_address, optimism_inquirer.wrapped_native_token.evm_address, False),
+            (rmoo_token.evm_address, moo_token.evm_address, False),
+        ],
+    )
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xd3c97377da03117ba7b7e245acd544d4626c09d0ca3399dea6fd8f5c755c627b')),  # noqa: E501
+        relevant_address=optimism_accounts[0],
+        load_global_caches=[CPT_BEEFY_FINANCE],
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1735342349000)),
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_amount := '0.000000357031815625'),
+        notes=f'Burn {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+        location_label=(user_address := optimism_accounts[0]),
+    ), EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=28,
+        timestamp=timestamp,
+        location=Location.OPTIMISM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_OP,
+        amount=FVal(reward_amount := '0.481311049948273338'),
+        location_label=user_address,
+        notes=f'Receive {reward_amount} OP as Beefy staking reward',
+        counterparty=CPT_BEEFY_FINANCE,
+        address=rmoo_token.evm_address,
     )]
 
 
