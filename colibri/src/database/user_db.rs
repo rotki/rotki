@@ -16,6 +16,13 @@ pub struct NftData {
     pub image_url: Option<String>,
 }
 
+#[derive(Debug)]
+pub struct NftSearchData {
+    pub identifier: String,
+    pub name: Option<String>,
+    pub collection_name: Option<String>,
+}
+
 #[derive(Clone)]
 pub struct DBHandler {
     pub client: Option<Arc<Client>>,
@@ -92,8 +99,40 @@ impl DBHandler {
         }
     }
 
+    pub async fn get_setting_bool(
+        &self,
+        setting_name: &str,
+        default_value: bool,
+    ) -> Result<bool, DBError> {
+        let client = match &self.client {
+            Some(client) => client,
+            None => return Ok(default_value),
+        };
+        let setting_name = setting_name.to_string();
+        match client
+            .conn(move |conn| {
+                let mut stmt = conn.prepare("SELECT value FROM settings WHERE name = ?")?;
+                let mut rows = stmt.query([setting_name.as_str()])?;
+                if let Some(row) = rows.next()? {
+                    let value: String = row.get(0)?;
+                    let lowered = value.to_lowercase();
+                    return Ok(lowered == "true" || lowered == "1");
+                }
+
+                Ok(default_value)
+            })
+            .await
+        {
+            Ok(value) => Ok(value),
+            Err(e) => Err(DBError::QueryError(e.to_string())),
+        }
+    }
+
     // Get NFT mappings from the user database
-    pub async fn get_nft_mappings(&self, identifiers: Vec<String>) -> Result<HashMap<String, NftData>, DBError> {
+    pub async fn get_nft_mappings(
+        &self,
+        identifiers: Vec<String>,
+    ) -> Result<HashMap<String, NftData>, DBError> {
         if identifiers.is_empty() {
             return Ok(HashMap::new());
         }
@@ -139,6 +178,41 @@ impl DBHandler {
             Err(e) => Err(DBError::QueryError(e.to_string())),
         }
     }
+
+    pub async fn search_nfts_for_levenshtein(
+        &self,
+        substring_search: String,
+    ) -> Result<Vec<NftSearchData>, DBError> {
+        let client = match &self.client {
+            Some(client) => client,
+            None => return Ok(Vec::new()),
+        };
+
+        match client
+            .conn(move |conn| {
+                let mut results = Vec::new();
+                let like_pattern = format!("%{}%", substring_search.to_lowercase());
+                let mut stmt = conn.prepare(
+                    "SELECT identifier, name, collection_name FROM nfts WHERE (LOWER(name) LIKE ? OR LOWER(collection_name) LIKE ?)",
+                )?;
+                let mut rows = stmt.query([like_pattern.as_str(), like_pattern.as_str()])?;
+
+                while let Some(row) = rows.next()? {
+                    results.push(NftSearchData {
+                        identifier: row.get(0)?,
+                        name: row.get(1)?,
+                        collection_name: row.get(2)?,
+                    });
+                }
+
+                Ok(results)
+            })
+            .await
+        {
+            Ok(results) => Ok(results),
+            Err(e) => Err(DBError::QueryError(e.to_string())),
+        }
+    }
 }
 
 /// Macro that creates a test user database using the actual Python schema
@@ -147,11 +221,11 @@ impl DBHandler {
 macro_rules! create_test_userdb {
     () => {{
         use crate::database::user_db::DBHandler;
-        use std::sync::Arc;
-        use std::path::PathBuf;
-        use std::time::SystemTime;
         use rand::{rngs::StdRng, SeedableRng};
         use regex::Regex;
+        use std::path::PathBuf;
+        use std::sync::Arc;
+        use std::time::SystemTime;
 
         let timestamp = SystemTime::now()
             .duration_since(SystemTime::UNIX_EPOCH)
@@ -170,8 +244,8 @@ macro_rules! create_test_userdb {
             .join("db")
             .join("schema.py");
 
-        let schema_content = std::fs::read_to_string(&schema_path)
-            .expect("Failed to read schema.py");
+        let schema_content =
+            std::fs::read_to_string(&schema_path).expect("Failed to read schema.py");
 
         let sql_block_regex = Regex::new(r#"(?s)DB_CREATE_\w+\s*=\s*"""(.*?)""""#).unwrap();
 
@@ -179,10 +253,7 @@ macro_rules! create_test_userdb {
             let sql = &cap[1];
 
             // Split on semicolons but preserve them for execution
-            let statements: Vec<&str> = sql
-                .split(';')
-                .filter(|s| !s.trim().is_empty())
-                .collect();
+            let statements: Vec<&str> = sql.split(';').filter(|s| !s.trim().is_empty()).collect();
 
             for statement in statements {
                 let statement = format!("{};", statement.trim());
@@ -253,11 +324,17 @@ mod tests {
         assert_eq!(nft1.name, "Test NFT");
         assert_eq!(nft1.asset_type, "nft");
         assert_eq!(nft1.collection_name, Some("Test Collection".to_string()));
-        assert_eq!(nft1.image_url, Some("https://example.com/image.png".to_string()));
+        assert_eq!(
+            nft1.image_url,
+            Some("https://example.com/image.png".to_string())
+        );
 
         // NFT with NULL collection_name and image_url
         let identifiers_with_nulls = vec!["_nft_0x789".to_string()];
-        let nft_mappings_nulls = db_handler.get_nft_mappings(identifiers_with_nulls).await.unwrap();
+        let nft_mappings_nulls = db_handler
+            .get_nft_mappings(identifiers_with_nulls)
+            .await
+            .unwrap();
 
         let nft3 = nft_mappings_nulls.get("_nft_0x789").unwrap();
         assert_eq!(nft3.name, "NFT without metadata");
