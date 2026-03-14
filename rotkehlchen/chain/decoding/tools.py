@@ -38,7 +38,8 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
         self.blockchain = blockchain
         self.address_is_exchange = address_is_exchange_fn
         with self.database.conn.read_ctx() as cursor:
-            self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
+            tracked_accounts = self.database.get_blockchain_accounts(cursor)
+        self._tracked_addresses_for_chain: frozenset[A] = frozenset(tracked_accounts.get(self.blockchain))  # type: ignore[arg-type]  # noqa: E501
         self.sequence_counter = 0
         self.sequence_offset = 0
 
@@ -77,15 +78,17 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
 
     def refresh_tracked_accounts(self, cursor: 'DBCursor') -> None:
         """Refresh tracked accounts from the database"""
-        self.tracked_accounts = self.database.get_blockchain_accounts(cursor)
+        self._tracked_addresses_for_chain = frozenset(
+            self.database.get_blockchain_accounts(cursor).get(self.blockchain),    # type: ignore[arg-type]
+        )
 
     def is_tracked(self, address: A) -> bool:
         """Check if an address is tracked"""
-        return address in self.tracked_accounts.get(self.blockchain)
+        return address in self._tracked_addresses_for_chain
 
     def any_tracked(self, addresses: Sequence[A]) -> bool:
         """Check if any of the addresses are tracked"""
-        return set(addresses).isdisjoint(self.tracked_accounts.get(self.blockchain)) is False
+        return not self._tracked_addresses_for_chain.isdisjoint(addresses)
 
     def decode_direction(
             self,
@@ -93,11 +96,11 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
             to_address: A | None,
     ) -> tuple[HistoryEventType, HistoryEventSubType, str | None, A, str, str] | None:
         """Decode the direction of a transfer"""
-        return decode_transfer_direction(  # type: ignore[type-var, return-value]
+        return decode_transfer_direction(  # type: ignore[type-var]
             from_address=from_address,
             to_address=to_address,
-            tracked_accounts=self.tracked_accounts.get(self.blockchain),
-            maybe_get_exchange_fn=self.address_is_exchange,  # type: ignore[arg-type]
+            tracked_accounts=self._tracked_addresses_for_chain,
+            maybe_get_exchange_fn=self.address_is_exchange,
         )
 
     @abstractmethod
