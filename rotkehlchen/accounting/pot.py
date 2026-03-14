@@ -201,6 +201,7 @@ class AccountingPot(CustomizableDateMixin):
             pnl=PNL(),  # filled out later
             cost_basis=None,
             index=len(self.processed_events),
+            direction=EventDirection.IN,
         )
         if extra_data:
             event.extra_data = extra_data
@@ -310,6 +311,7 @@ class AccountingPot(CustomizableDateMixin):
             pnl=PNL(),  # filled out later
             cost_basis=spend_cost,
             index=len(self.processed_events),
+            direction=EventDirection.OUT,
         )
         if extra_data:
             spend_event.extra_data = extra_data

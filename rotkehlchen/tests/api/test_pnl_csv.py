@@ -69,7 +69,7 @@ def assert_csv_export_response(
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
-            assert len(row) == 13
+            assert len(row) == 14
             assert row['location'] in {
                 'kraken',
                 'bittrex',
@@ -96,6 +96,7 @@ def assert_csv_export_response(
             assert row['price'] is not None
             assert row['pnl_taxable'] is not None
             assert row['cost_basis_taxable'] is not None
+            assert row['direction'] in {'in', 'out', 'neutral'}
             assert row['pnl_free'] is not None
             assert row['cost_basis_free'] is not None
             count += 1
@@ -247,6 +248,7 @@ def test_history_export_download_csv(
         json={'directory_path': str(csv_dir)},
     )
     rows = assert_csv_export_response(response, csv_dir, expected_num_of_events=1)
+    assert rows[0]['direction'] == 'in'
     assert rows[0]['notes'] == f'Test note to check if label is added with {ETH_ADDRESS1} [ETH_ADDRESS1] address'  # noqa: E501
     # Repeat same label test as above but with zksync which is an evmlike chain
     tx_hash = make_evm_tx_hash()
@@ -349,6 +351,7 @@ def test_report_export_uses_transient_db(
         rows = list(csv.DictReader(csvfile))
     assert len(rows) == 1
     assert rows[0]['notes'] == expected_notes
+    assert rows[0]['direction'] == 'in'
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{'ETH': {'EUR': {1569924574: 1}}}])
