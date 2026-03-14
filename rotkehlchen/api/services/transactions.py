@@ -20,10 +20,12 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
     SolanaTransactionsNotDecodedFilterQuery,
+    StarknetTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
+from rotkehlchen.db.starknettx import DBStarknetTx
 from rotkehlchen.errors.api import PremiumApiError
 from rotkehlchen.errors.asset import WrongAssetType
 from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
@@ -91,6 +93,10 @@ class TransactionsService:
                 chain_manager.transactions.get_or_create_transaction(  # type: ignore[attr-defined]
                     signature=tx_ref,
                     relevant_address=associated_address,
+                )
+            elif blockchain == SupportedBlockchain.STARKNET:
+                chain_manager.transactions.get_or_create_transaction(  # type: ignore[attr-defined]
+                    tx_hash=str(tx_ref),
                 )
             else:
                 chain_manager.transactions.add_transaction_by_hash(  # type: ignore[attr-defined]
@@ -477,6 +483,10 @@ class TransactionsService:
                 evmlike_tx_refs = cast('list[EVMTxHash]', tx_refs)
                 for evmlike_tx_ref in evmlike_tx_refs:
                     self._decode_given_evmlike_tx(evmlike_tx_ref, delete_custom)
+            elif chain == SupportedBlockchain.STARKNET:
+                starknet_tx_refs = cast('list[str]', tx_refs)
+                for starknet_tx_ref in starknet_tx_refs:
+                    self._decode_given_starknet_tx(starknet_tx_ref, delete_custom)
             else:
                 solana_tx_refs = cast('list[Signature]', tx_refs)
                 for solana_tx_ref in solana_tx_refs:
@@ -528,10 +538,16 @@ class TransactionsService:
                         chain_id=chain.to_chain_id(),
                     ),
                 )
-            else:
+            elif chain == SupportedBlockchain.SOLANA:
                 decoded_count = DBSolanaTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
                     filter_query=SolanaTransactionsNotDecodedFilterQuery.make(),
                 )
+            elif chain == SupportedBlockchain.STARKNET:
+                decoded_count = DBStarknetTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
+                    filter_query=StarknetTransactionsNotDecodedFilterQuery.make(),
+                )
+            else:
+                decoded_count = 0
 
             if decoded_count > 0:
                 chain_manager.transactions_decoder.get_and_decode_undecoded_transactions(  # type: ignore[attr-defined]
@@ -600,6 +616,15 @@ class TransactionsService:
                     'SELECT COUNT(*) FROM solana_transactions',
                 ).fetchone()[0]
 
+        if (undecoded_count := DBStarknetTx(self.rotkehlchen.data.db).count_hashes_not_decoded(
+            filter_query=StarknetTransactionsNotDecodedFilterQuery.make(),
+        )) != 0:
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                tx_info[chain_name := SupportedBlockchain.STARKNET.name.lower()]['undecoded'] = undecoded_count  # noqa: E501
+                tx_info[chain_name]['total'] = cursor.execute(
+                    'SELECT COUNT(*) FROM starknet_transactions',
+                ).fetchone()[0]
+
         return {'result': tx_info, 'message': '', 'status_code': HTTPStatus.OK}
 
     def force_refetch_transactions(
@@ -651,6 +676,8 @@ class TransactionsService:
                         ) or []
                     ),
                 )
+            elif query_chain == SupportedBlockchain.STARKNET:
+                continue  # Starknet does not support range-based refetch yet
             else:
                 new_transactions |= self._query_txs_for_range(
                     from_timestamp=from_timestamp,
@@ -973,6 +1000,20 @@ class TransactionsService:
             )
 
         self.rotkehlchen.chains_aggregator.solana.transactions_decoder.decode_and_get_transaction_hashes(
+            tx_hashes=[tx_ref],
+            send_ws_notifications=True,
+            ignore_cache=True,
+            delete_customized=delete_custom,
+        )
+
+    def _decode_given_starknet_tx(self, tx_ref: str, delete_custom: bool) -> None:
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM starknet_transactions WHERE transaction_hash=?',
+                (tx_ref,),
+            )
+
+        self.rotkehlchen.chains_aggregator.starknet.transactions_decoder.decode_and_get_transaction_hashes(
             tx_hashes=[tx_ref],
             send_ws_notifications=True,
             ignore_cache=True,

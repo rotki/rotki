@@ -13,6 +13,7 @@ export const AddressSubtype = {
   EVM: 'evm',
   EVMLIKE: 'evmlike',
   SOLANA: 'solana',
+  STARKNET: 'starknet',
 } as const;
 
 export type AddressSubtype = (typeof AddressSubtype)[keyof typeof AddressSubtype];

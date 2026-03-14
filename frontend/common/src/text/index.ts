@@ -340,8 +340,16 @@ export function isValidSolanaAddress(address?: string): boolean {
   }
 }
 
+export function isValidStarknetAddress(address?: string): boolean {
+  if (!address)
+    return false;
+
+  // Starknet addresses are hex strings starting with 0x, up to 66 chars (0x + up to 64 hex digits)
+  return /^0x[\dA-Fa-f]{1,64}$/.test(address);
+}
+
 export function isValidAddress(address?: string): boolean {
-  return isValidEthAddress(address) || isValidBtcAddress(address) || isValidBchAddress(address) || isValidSolanaAddress(address);
+  return isValidEthAddress(address) || isValidBtcAddress(address) || isValidBchAddress(address) || isValidSolanaAddress(address) || isValidStarknetAddress(address);
 }
 
 export function isValidEvmTxHash(address?: string): boolean {
@@ -373,8 +381,16 @@ export function isValidSolanaSignature(signature?: string): boolean {
   }
 }
 
+export function isValidStarknetTxHash(txHash?: string): boolean {
+  if (!txHash)
+    return false;
+
+  // Starknet tx hashes are hex strings starting with 0x, up to 66 chars (0x + up to 64 hex digits)
+  return /^0x[\dA-Fa-f]{1,64}$/.test(txHash);
+}
+
 export function isValidTxHashOrSignature(txHash?: string): boolean {
-  return isValidEvmTxHash(txHash) || isValidBtcTxHash(txHash) || isValidSolanaSignature(txHash);
+  return isValidEvmTxHash(txHash) || isValidBtcTxHash(txHash) || isValidSolanaSignature(txHash) || isValidStarknetTxHash(txHash);
 }
 
 export function consistOfNumbers(text?: string): boolean {

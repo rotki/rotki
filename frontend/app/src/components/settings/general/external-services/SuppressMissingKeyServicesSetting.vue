@@ -16,6 +16,7 @@ const SERVICE_ICONS: Record<SuppressibleMissingKeyService, string> = {
   [SuppressibleMissingKeyService.ETHERSCAN]: getPublicServiceImagePath('etherscan.svg'),
   [SuppressibleMissingKeyService.HELIUS]: getPublicServiceImagePath('helius.svg'),
   [SuppressibleMissingKeyService.THEGRAPH]: getPublicServiceImagePath('thegraph.svg'),
+  [SuppressibleMissingKeyService.VOYAGER]: getPublicServiceImagePath('voyager.svg'),
 };
 
 interface ServiceOption {

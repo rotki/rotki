@@ -39,7 +39,14 @@ interface SolanaTxQueryStatusData extends BaseTxQueryStatusData {
   originalPeriodStart?: number;
 }
 
-export type TxQueryStatusData = EvmTxQueryStatusData | EvmlikeTxQueryStatusData | BitcoinTxQueryStatusData | SolanaTxQueryStatusData;
+interface StarknetTxQueryStatusData extends BaseTxQueryStatusData {
+  subtype: 'starknet';
+  period: [number, number];
+  originalPeriodEnd?: number;
+  originalPeriodStart?: number;
+}
+
+export type TxQueryStatusData = EvmTxQueryStatusData | EvmlikeTxQueryStatusData | BitcoinTxQueryStatusData | SolanaTxQueryStatusData | StarknetTxQueryStatusData;
 
 export function isBitcoinTxQueryStatusData(data: TxQueryStatusData): data is BitcoinTxQueryStatusData {
   return data.subtype === 'bitcoin';

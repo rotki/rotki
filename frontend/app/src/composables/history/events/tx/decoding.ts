@@ -41,7 +41,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     updateUndecodedTransactionsStatus,
   } = useDecodingStatusStore();
 
-  const { decodableTxChainsInfo, getChain, getChainName, isEvmLikeChains, isSolanaChains } = useSupportedChains();
+  const { decodableTxChainsInfo, getChain, getChainName, isEvmLikeChains, isSolanaChains, isStarknetChains } = useSupportedChains();
 
   const { resetStatus } = useStatusUpdater(Section.HISTORY);
 
@@ -229,6 +229,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       evm: new Map<string, string[]>(),
       evmLike: new Map<string, string[]>(),
       solana: new Map<string, string[]>(),
+      starknet: new Map<string, string[]>(),
     };
 
     transactions.forEach((item) => {
@@ -240,6 +241,9 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       }
       else if (isSolanaChains(chain)) {
         targetMap = chainMaps.solana;
+      }
+      else if (isStarknetChains(chain)) {
+        targetMap = chainMaps.starknet;
       }
       else {
         targetMap = chainMaps.evm;
@@ -272,6 +276,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
     await processChainMap(chainMaps.evm, true);
     await processChainMap(chainMaps.solana, false);
+    await processChainMap(chainMaps.starknet, false);
     await processChainMap(chainMaps.evmLike, false);
   };
 

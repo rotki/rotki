@@ -49,6 +49,8 @@ from rotkehlchen.chain.scroll.manager import ScrollManager
 from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.solana.manager import SolanaManager
 from rotkehlchen.chain.solana.node_inquirer import SolanaInquirer
+from rotkehlchen.chain.starknet.manager import StarknetManager
+from rotkehlchen.chain.starknet.node_inquirer import StarknetInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
@@ -87,6 +89,7 @@ from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.externalapis.helius import Helius
 from rotkehlchen.externalapis.routescan import Routescan
+from rotkehlchen.externalapis.voyager import Voyager
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.asset_updates.manager import AssetsUpdater
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -507,6 +510,14 @@ class Rotkehlchen:
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                     helius=Helius(database=self.data.db),
+                ),
+                premium=self.premium,
+            ),
+            starknet_manager=StarknetManager(
+                node_inquirer=StarknetInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    voyager=Voyager(database=self.data.db),
                 ),
                 premium=self.premium,
             ),

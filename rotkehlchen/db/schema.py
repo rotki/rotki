@@ -116,6 +116,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('v', 54);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('w', 55);
 /* Avalanche */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('x', 56);
+/* Starknet */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('y', 57);
 """
 
 # Custom enum table for Balance categories (asset/liability)
@@ -867,6 +869,40 @@ CREATE TABLE IF NOT EXISTS solana_ata_address_mappings (
 );
 """  # noqa: E501
 
+DB_CREATE_STARKNET_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS starknet_transactions (
+    identifier INTEGER PRIMARY KEY NOT NULL,
+    transaction_hash TEXT NOT NULL UNIQUE,
+    block_number INTEGER NOT NULL,
+    block_timestamp INTEGER NOT NULL,
+    from_address TEXT NOT NULL,
+    to_address TEXT,
+    selector TEXT,
+    max_fee TEXT NOT NULL,
+    actual_fee TEXT NOT NULL,
+    status TEXT NOT NULL,
+    transaction_type TEXT NOT NULL
+);
+"""
+
+DB_CREATE_STARKNET_TX_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS starknet_tx_mappings (
+    tx_id INTEGER NOT NULL,
+    value INTEGER NOT NULL,
+    FOREIGN KEY(tx_id) REFERENCES starknet_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    PRIMARY KEY (tx_id, value)
+);
+"""  # noqa: E501
+
+DB_CREATE_STARKNET_ADDRESS_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS starknettx_address_mappings (
+    tx_id INTEGER NOT NULL,
+    address TEXT NOT NULL,
+    PRIMARY KEY(tx_id, address),
+    FOREIGN KEY(tx_id) REFERENCES starknet_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
+);
+"""  # noqa: E501
+
 # Lido CSM tracking tables. All columns are consumed by DBLidoCsm for enforcing the
 # FK to tracked Ethereum accounts and persisting cached metrics snapshots.
 DB_CREATE_LIDO_CSM_NODE_OPERATORS = """
@@ -1042,6 +1078,9 @@ BEGIN TRANSACTION;
 {DB_CREATE_SOLANA_ADDRESS_MAPPINGS}
 {DB_CREATE_SOLANA_TX_MAPPINGS}
 {DB_CREATE_SOLANA_ATA_ADDRESS_MAPPINGS}
+{DB_CREATE_STARKNET_TRANSACTIONS}
+{DB_CREATE_STARKNET_TX_MAPPINGS}
+{DB_CREATE_STARKNET_ADDRESS_MAPPINGS}
 {DB_CREATE_LIDO_CSM_NODE_OPERATORS}
 {DB_CREATE_LIDO_CSM_NODE_OPERATOR_METRICS}
 {DB_CREATE_HISTORICAL_BALANCE_CACHE}

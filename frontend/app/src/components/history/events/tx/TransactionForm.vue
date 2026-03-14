@@ -27,16 +27,17 @@ const blockchain = useRefPropVModel(modelValue, 'blockchain');
 const associatedAddress = useRefPropVModel(modelValue, 'associatedAddress');
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainAccountsStore());
-const { evmAndEvmLikeTxChainsInfo, getChain, solanaChainsData } = useSupportedChains();
+const { evmAndEvmLikeTxChainsInfo, getChain, solanaChainsData, starknetChainsData } = useSupportedChains();
 const txChains = useArrayMap(evmAndEvmLikeTxChainsInfo, x => x.id);
 const solanaChains = useArrayMap(solanaChainsData, x => x.id);
+const starknetChains = useArrayMap(starknetChainsData, x => x.id);
 
 const chainOptions = computed(() => {
   const accountChains = Object.entries(get(accountsPerChain))
     .filter(([_, accounts]) => accounts.length > 0)
     .map(([chain]) => chain);
 
-  return [...get(txChains), ...get(solanaChains)].filter(chain => accountChains.includes(chain));
+  return [...get(txChains), ...get(solanaChains), ...get(starknetChains)].filter(chain => accountChains.includes(chain));
 });
 
 const usableChains = computed<string[]>(() => {

@@ -96,6 +96,11 @@ export const explorerUrls: AssetExplorerUrls = {
     token: 'https://solscan.io/token/',
     transaction: 'https://solscan.io/tx/',
   },
+  [Blockchain.STARKNET]: {
+    address: 'https://voyager.online/contract/',
+    block: 'https://voyager.online/block/',
+    transaction: 'https://voyager.online/tx/',
+  },
   [Blockchain.ZKSYNC_LITE]: {
     address: 'https://zkscan.io/explorer/accounts/',
     block: 'https://zkscan.io/explorer/blocks/',

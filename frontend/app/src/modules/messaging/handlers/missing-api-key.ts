@@ -109,6 +109,11 @@ export function createMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t'], r
         messageKey: 'notification_messages.missing_api_key.thegraph.message',
         titleKey: 'notification_messages.missing_api_key.thegraph.title',
       },
+      [SuppressibleMissingKeyService.VOYAGER]: {
+        category: NotificationCategory.VOYAGER,
+        messageKey: 'notification_messages.missing_api_key.voyager.message',
+        titleKey: 'notification_messages.missing_api_key.voyager.title',
+      },
     };
 
     const config = serviceConfig[service] || serviceConfig[SuppressibleMissingKeyService.ETHERSCAN];

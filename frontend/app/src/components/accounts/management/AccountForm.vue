@@ -44,7 +44,7 @@ const form = useTemplateRef<
 
 const chain = useRefPropVModel(modelValue, 'chain');
 
-const { isEvm, isSolanaChains, txEvmChains } = useSupportedChains();
+const { isEvm, isSolanaChains, isStarknetChains, txEvmChains } = useSupportedChains();
 const { t } = useI18n({ useScope: 'global' });
 const { getApiKey } = useExternalApiKeys();
 
@@ -78,7 +78,7 @@ function shouldShowEtherscanWarning(selectedChain: string): boolean {
   return isEtherscanTopPriority(selectedChain);
 }
 
-const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | undefined>(() => {
+const missingApiKeyService = computed<'etherscan' | 'helius' | 'voyager' | 'beaconchain' | 'consensusRpc' | undefined>(() => {
   const selectedChain = get(chain);
   const currentModelValue = get(modelValue);
 
@@ -98,6 +98,9 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
 
   if (isSolanaChains(selectedChain) && !getApiKey('helius'))
     return 'helius';
+
+  if (isStarknetChains(selectedChain) && !getApiKey('voyager'))
+    return 'voyager';
 
   return undefined;
 });
@@ -122,7 +125,7 @@ type WarningType = 'solana' | 'apiKey' | 'binance';
 
 interface WarningItem {
   type: WarningType;
-  service?: 'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc';
+  service?: 'etherscan' | 'helius' | 'voyager' | 'beaconchain' | 'consensusRpc';
 }
 
 const warnings = computed<WarningItem[]>(() => {

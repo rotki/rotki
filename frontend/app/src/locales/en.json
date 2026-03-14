@@ -2139,6 +2139,7 @@
         "bitcoin": "Bitcoin Address",
         "evm": "EVM Address",
         "solana": "Solana Address",
+        "starknet": "Starknet Address",
         "substrate": "Substrate Address"
       },
       "title": "blockchain"
@@ -2875,6 +2876,12 @@
       "description": "rotki uses the Graph to obtain a variety of information such as balancer balances and ENS data",
       "hint": "Enter your The Graph API key",
       "title": "The Graph"
+    },
+    "voyager": {
+      "api_key_message": "Voyager API key is needed to query historical Starknet transactions.",
+      "description": "Recommended for Starknet to query transaction data without the heavy rate limits of public RPCs.",
+      "hint": "Enter your Voyager API key",
+      "title": "Voyager"
     }
   },
   "file_upload": {
@@ -4001,6 +4008,7 @@
       "bitcoin": "Bitcoin @:navigation_menu.accounts",
       "evm": "EVM @:navigation_menu.accounts",
       "solana": "Solana @:navigation_menu.accounts",
+      "starknet": "Starknet @:navigation_menu.accounts",
       "substrate": "Substrate @:navigation_menu.accounts"
     },
     "api_keys": "API Keys",
@@ -4202,6 +4210,10 @@
       "thegraph": {
         "message": "rotki cannot query {location} data because you don't have {service} API key configured, or the API key you are using isn't authorized for {location}. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app. Read the docs {docs} for more information.",
         "title": "{service} API key for {location}"
+      },
+      "voyager": {
+        "message": "Transaction queries for Starknet will be slow because you don't have a Voyager API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
+        "title": "{service} API key for Starknet"
       }
     },
     "monerium_session_key_expired": {
