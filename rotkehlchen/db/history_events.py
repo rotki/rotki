@@ -23,11 +23,13 @@ from rotkehlchen.db.constants import (
     ETH_STAKING_EVENT_FIELDS,
     ETH_STAKING_EVENT_NULL_FIELDS,
     ETH_STAKING_FIELD_LENGTH,
+    EVM_TRANSACTION_GROUP_IDENTIFIER_SQL,
     GROUP_HAS_IGNORED_ASSETS_FIELD,
     HISTORY_BASE_ENTRY_FIELDS,
     HISTORY_BASE_ENTRY_LENGTH,
     HISTORY_MAPPING_KEY_STATE,
     TX_DECODED,
+    TX_HIDDEN,
     HistoryEventLinkType,
     HistoryMappingState,
 )
@@ -148,6 +150,7 @@ HistoryEventsReturnType: TypeAlias = list[HistoryBaseEntry] | list[tuple[int, Hi
 class HistoryEventsResult:
     events: HistoryEventsReturnType
     ignored_group_identifiers: set[str]
+    hidden_group_identifiers: set[str]
 
 
 @dataclass(frozen=True)
@@ -908,10 +911,13 @@ class DBHistoryEvents:
         chain_fields, staking_fields, join_clause = DBHistoryEvents._build_events_query_parts(
             filter_query=filter_query,
         )
-        # group_has_ignored_assets is added at the END so existing slicing logic is not affected.
-        # It's computed via a window function to detect groups with ignored assets even when
-        # those rows are filtered out by exclude_ignored_assets.
-        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {chain_fields}, {staking_fields}, {GROUP_HAS_IGNORED_ASSETS_FIELD} {join_clause}'  # noqa: E501
+        # group_has_ignored_assets is appended at the end of the select list so the
+        # existing event field slicing remains stable.
+        base_suffix = (
+            f'{HISTORY_BASE_ENTRY_FIELDS}, {chain_fields}, {staking_fields}, '
+            f'{GROUP_HAS_IGNORED_ASSETS_FIELD} '
+            f'{join_clause}'
+        )
         if aggregate_by_group_ids:
             exclusion_sql, exclusion_bindings = _build_matched_movement_exclusion(filter_query)
             filters, query_bindings = filter_query.prepare(
@@ -1280,11 +1286,12 @@ class DBHistoryEvents:
         output_grouped: list[tuple[int, HistoryBaseEntry]] = []
         output_flat: list[HistoryBaseEntry] = []
         ignored_group_identifiers: set[str] = set()
+        hidden_group_identifiers: set[str] = set()
         type_idx = 1 if aggregate_by_group_ids else 0
         data_start_idx = type_idx + 1
         failed_to_deserialize = False
-        # Fixed position of group_has_ignored_assets (after entry_type, base, chain, staking).
-        # JOINs like state_markers may add columns at the end, so we use fixed index.
+        # Fixed positions for the appended group annotations. JOINs like state_markers may add
+        # columns at the end, so we use explicit indexes instead of relying on tail slicing.
         group_has_ignored_assets_idx = (
             type_idx + 1 + HISTORY_BASE_ENTRY_LENGTH +
             CHAIN_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH
@@ -1371,15 +1378,53 @@ class DBHistoryEvents:
                 'Try redecoding the event(s) or check the logs for more details.',
             )
 
+        if filter_query.exclude_hidden_transactions is False:
+            hidden_group_identifiers = self._query_hidden_group_identifiers(
+                cursor=cursor,
+                group_identifiers=ignored_group_identifiers | {
+                    event.group_identifier
+                    for event in (
+                        [event for _, event in output_grouped]
+                        if aggregate_by_group_ids is True else
+                        output_flat
+                    )
+                },
+            )
+
         if aggregate_by_group_ids is True:
             return HistoryEventsResult(
                 events=output_grouped,
                 ignored_group_identifiers=ignored_group_identifiers,
+                hidden_group_identifiers=hidden_group_identifiers,
             )
         return HistoryEventsResult(
             events=output_flat,
             ignored_group_identifiers=ignored_group_identifiers,
+            hidden_group_identifiers=hidden_group_identifiers,
         )
+
+    @staticmethod
+    def _query_hidden_group_identifiers(
+            cursor: 'DBCursor',
+            group_identifiers: set[str],
+    ) -> set[str]:
+        if len(group_identifiers) == 0:
+            return set()
+
+        hidden_group_identifiers: set[str] = set()
+        for chunk, placeholders in get_query_chunks(list(group_identifiers)):
+            hidden_group_identifiers.update(
+                row[0] for row in cursor.execute(
+                    f'SELECT DISTINCT {EVM_TRANSACTION_GROUP_IDENTIFIER_SQL} AS group_identifier '
+                    'FROM evm_transactions '
+                    'INNER JOIN evm_tx_mappings ON evm_transactions.identifier=evm_tx_mappings.tx_id '  # noqa: E501
+                    f'WHERE {EVM_TRANSACTION_GROUP_IDENTIFIER_SQL} IN ({placeholders}) '
+                    'AND evm_tx_mappings.value=?',
+                    [*chunk, TX_HIDDEN],
+                )
+            )
+
+        return hidden_group_identifiers
 
     @overload
     def get_history_events_internal(
@@ -1627,6 +1672,7 @@ class DBHistoryEvents:
             entries_found=count_without_limit,
             entries_with_limit=count_with_limit,
             ignored_group_identifiers=events_result.ignored_group_identifiers,
+            hidden_group_identifiers=events_result.hidden_group_identifiers,
         )
 
     def rows_missing_prices_in_base_entries(
@@ -2051,12 +2097,15 @@ class DBHistoryEvents:
             entries_with_limit: int,
             entries_total: int,
             ignored_group_identifiers: set[str],
+            hidden_group_identifiers: set[str],
+            exclude_hidden_transactions: bool,
     ) -> tuple[
         list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry],
         dict[str, str],
         int,
         int,
         int,
+        set[str],
         set[str],
     ]:
         """Process the events_result joining asset movements with the group of their matched event.
@@ -2083,6 +2132,7 @@ class DBHistoryEvents:
                 entries_with_limit,
                 entries_total,
                 ignored_group_identifiers,
+                hidden_group_identifiers,
             )
 
         if aggregate_by_group_ids:
@@ -2092,7 +2142,7 @@ class DBHistoryEvents:
 
         result_group_ids = {event.group_identifier for event in events_list}
         group_ids_to_count: set[str] = set()
-        matched_rows: list[tuple[int, int, str, str, int, int]] = []
+        matched_rows: list[tuple[int, int, str, str, int, int, bool, bool]] = []
         for chunk, placeholders in get_query_chunks(list(result_group_ids)):
             # First, find the ids of all movements associated with the provided events in a cte,
             # then load the info for these movements and all events that may be matched with them.
@@ -2105,14 +2155,23 @@ class DBHistoryEvents:
                     '(history_event_links.right_event_id, history_event_links.left_event_id) '
                     'WHERE history_event_links.link_type = ? '
                     f'AND history_events.group_identifier IN ({placeholders})'
+                '), hidden_groups AS ('
+                    f'SELECT DISTINCT {EVM_TRANSACTION_GROUP_IDENTIFIER_SQL} AS group_identifier '
+                    'FROM evm_transactions '
+                    'INNER JOIN evm_tx_mappings ON evm_transactions.identifier=evm_tx_mappings.tx_id '  # noqa: E501
+                    f'WHERE evm_tx_mappings.value = {TX_HIDDEN}'
                 ') SELECT history_event_links.left_event_id, history_event_links.right_event_id, '
                 'movement_events_join.group_identifier, match_events_join.group_identifier, '
-                'movement_events_join.entry_type, match_events_join.entry_type '
+                'movement_events_join.entry_type, match_events_join.entry_type, '
+                'movement_hidden.group_identifier IS NOT NULL, '
+                'match_hidden.group_identifier IS NOT NULL '
                 'FROM history_event_links '
                 'JOIN history_events movement_events_join ON '
                 'movement_events_join.identifier = history_event_links.left_event_id '
                 'JOIN history_events match_events_join ON '
                 'match_events_join.identifier = history_event_links.right_event_id '
+                'LEFT JOIN hidden_groups movement_hidden ON movement_hidden.group_identifier = movement_events_join.group_identifier '  # noqa: E501
+                'LEFT JOIN hidden_groups match_hidden ON match_hidden.group_identifier = match_events_join.group_identifier '  # noqa: E501
                 'WHERE history_event_links.link_type = ? AND '
                 'history_event_links.left_event_id IN movement_ids',
                 (
@@ -2128,6 +2187,8 @@ class DBHistoryEvents:
                     (match_group_identifier := row[3]),
                     int(row[4]),  # movement entry type
                     int(row[5]),  # match entry type
+                    bool(row[6]),  # movement hidden state
+                    bool(row[7]),  # matched group hidden state
                 ))
                 group_ids_to_count.add(movement_group_identifier)
                 group_ids_to_count.add(match_group_identifier)
@@ -2140,6 +2201,7 @@ class DBHistoryEvents:
                 entries_with_limit,
                 entries_total,
                 ignored_group_identifiers,
+                hidden_group_identifiers,
             )
 
         group_counts: dict[str, int] = {}
@@ -2159,6 +2221,8 @@ class DBHistoryEvents:
             match_group_identifier,
             movement_entry_type,
             match_entry_type,
+            movement_group_is_hidden,
+            match_group_is_hidden,
         ) in matched_rows:
             movement_group_count = group_counts.get(movement_group_identifier, 0)
             match_group_count = group_counts.get(match_group_identifier, 0)
@@ -2177,6 +2241,11 @@ class DBHistoryEvents:
                 joined_group_ids[movement_group_identifier] = movement_group_identifier
                 joined_group_ids[match_group_identifier] = movement_group_identifier
 
+            if movement_group_is_hidden:
+                hidden_group_identifiers.add(movement_group_identifier)
+            if match_group_is_hidden:
+                hidden_group_identifiers.add(match_group_identifier)
+
             movement_group_to_match_info[movement_group_identifier].append((
                 match_id,
                 match_group_identifier,
@@ -2191,6 +2260,11 @@ class DBHistoryEvents:
                 # another movement, and this logic will run twice for one joined group.
                 entries_total -= 1
 
+        hidden_group_identifiers = {
+            joined_group_ids.get(group_identifier, group_identifier)
+            for group_identifier in hidden_group_identifiers
+        }
+
         processed_events_result: list[tuple[int, HistoryBaseEntry]] | list[HistoryBaseEntry] = []
         if aggregate_by_group_ids:
             # Aggregating by group. Need to ensure that for each movement/match group there is
@@ -2199,9 +2273,25 @@ class DBHistoryEvents:
             # - adjust grouped_events_num to include the events from the other side of the movement
             # - skip the event if we have already processed an event from that movement/match group
             already_processed_matches: set[str] = set()
+            skipped_hidden_groups: set[str] = set()
             events_to_replace, processed_result_idx = {}, 0
             movement_events_in_result = {}
             for grouped_events_num, event in cast('list[tuple[int, HistoryBaseEntry]]', events_result):  # noqa: E501
+                canonical_group_identifier = joined_group_ids.get(
+                    event.group_identifier,
+                    event.group_identifier,
+                )
+                if (
+                    exclude_hidden_transactions is True and
+                    canonical_group_identifier in hidden_group_identifiers
+                ):
+                    if canonical_group_identifier not in skipped_hidden_groups:
+                        entries_found -= 1
+                        entries_with_limit -= 1
+                        entries_total -= 1
+                        skipped_hidden_groups.add(canonical_group_identifier)
+                    continue
+
                 if (
                     event.entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT and
                     event.event_subtype != HistoryEventSubType.FEE
@@ -2288,21 +2378,61 @@ class DBHistoryEvents:
             # Collect any group ids that are associated with some of the current events, but that
             # are not already present in the current event list.
             needed_group_ids: set[str] = set()
-            for group_identifier in events_by_group:
+            for group_identifier, events in events_by_group.items():
+                canonical_group_identifier = joined_group_ids.get(
+                    group_identifier,
+                    group_identifier,
+                )
+                if (
+                    exclude_hidden_transactions is True and
+                    canonical_group_identifier in hidden_group_identifiers
+                ):
+                    entries_found -= len(events)
+                    entries_with_limit -= len(events)
+                    entries_total -= group_counts.get(group_identifier, len(events))
+                    continue
+
                 if (match_info_list := movement_group_to_match_info.get(group_identifier)) is not None:  # noqa: E501
                     needed_group_ids.update(
                         group_id for _, group_id, _ in match_info_list
-                        if group_id not in events_by_group
+                        if (
+                            group_id not in events_by_group and
+                            (
+                                exclude_hidden_transactions is False or
+                                joined_group_ids.get(
+                                    group_id,
+                                    group_id,
+                                ) not in hidden_group_identifiers
+                            )
+                        )
                     )
                 if (movement_info := match_group_to_movement_info.get(group_identifier)) is not None:  # noqa: E501
-                    if (movement_group_id := movement_info[0]) not in events_by_group:
+                    if (
+                        (movement_group_id := movement_info[0]) not in events_by_group and
+                        (
+                            exclude_hidden_transactions is False or
+                            joined_group_ids.get(
+                                movement_group_id,
+                                movement_group_id,
+                            ) not in hidden_group_identifiers
+                        )
+                    ):
                         needed_group_ids.add(movement_group_id)
 
                     # also include group ids of any other events matched with this movement.
                     if (match_info_list := movement_group_to_match_info.get(movement_group_id)) is not None:  # noqa: E501
                         needed_group_ids.update(
                             group_id for _, group_id, _ in match_info_list
-                            if group_id not in events_by_group
+                            if (
+                                group_id not in events_by_group and
+                                (
+                                    exclude_hidden_transactions is False or
+                                    joined_group_ids.get(
+                                        group_id,
+                                        group_id,
+                                    ) not in hidden_group_identifiers
+                                )
+                            )
                         )
 
             # Load the actual events for these associated groups
@@ -2320,9 +2450,22 @@ class DBHistoryEvents:
                 ignored_group_identifiers.update(
                     joined_events_result.ignored_group_identifiers,
                 )
+                hidden_group_identifiers.update({
+                    joined_group_ids.get(group_identifier, group_identifier)
+                    for group_identifier in joined_events_result.hidden_group_identifiers
+                })
 
             # Include the newly loaded events with their associated groups.
             for group_identifier, events in events_by_group.items():
+                if (
+                    exclude_hidden_transactions is True and
+                    joined_group_ids.get(
+                        group_identifier,
+                        group_identifier,
+                    ) in hidden_group_identifiers
+                ):
+                    continue
+
                 if (match_info_list := movement_group_to_match_info.get(group_identifier)) is not None:  # noqa: E501
                     for _, matched_group_id, _ in match_info_list:
                         events.extend(joined_events_by_group[matched_group_id])
@@ -2343,4 +2486,5 @@ class DBHistoryEvents:
             entries_with_limit,
             entries_total,
             ignored_group_identifiers,
+            hidden_group_identifiers,
         )

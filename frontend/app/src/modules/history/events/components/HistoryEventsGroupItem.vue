@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import type { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import type { LocationAndTxRef, PullEventPayload } from '@/types/history/events';
-import type { HistoryEventEntry, StandaloneEditableEvents } from '@/types/history/events/schemas';
+import type {
+  HistoryEventEntry,
+  StandaloneEditableEvents,
+} from '@/types/history/events/schemas';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import HistoryEventAccount from '@/components/history/events/HistoryEventAccount.vue';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
@@ -26,6 +29,7 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'add-event': [event: StandaloneEditableEvents];
   'toggle-ignore': [event: HistoryEventEntry];
+  'toggle-hidden-transaction': [event: HistoryEventEntry];
   'toggle-show-ignored-assets': [];
   'redecode': [event: PullEventPayload];
   'redecode-with-options': [event: PullEventPayload];
@@ -111,6 +115,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
         class="shrink-0"
         @add-event="emit('add-event', $event)"
         @toggle-ignore="emit('toggle-ignore', $event)"
+        @toggle-hidden-transaction="emit('toggle-hidden-transaction', $event)"
         @redecode="emit('redecode', $event)"
         @redecode-with-options="emit('redecode-with-options', $event)"
         @delete-tx="emit('delete-tx', $event)"
@@ -216,6 +221,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
       class="shrink-0"
       @add-event="emit('add-event', $event)"
       @toggle-ignore="emit('toggle-ignore', $event)"
+      @toggle-hidden-transaction="emit('toggle-hidden-transaction', $event)"
       @redecode="emit('redecode', $event)"
       @redecode-with-options="emit('redecode-with-options', $event)"
       @delete-tx="emit('delete-tx', $event)"

@@ -197,6 +197,7 @@ class OnchainEvent(HistoryBaseEntry, Generic[T_TxRef, T_Address]):
             event_accounting_rule_status: EventAccountingRuleStatus,
             grouped_events_num: int | None = None,
             has_ignored_assets: bool = False,
+            is_hidden_transaction: bool = False,
     ) -> dict[str, Any]:
         result = super().serialize_for_api(
             mapping_states=mapping_states,
@@ -205,6 +206,7 @@ class OnchainEvent(HistoryBaseEntry, Generic[T_TxRef, T_Address]):
             event_accounting_rule_status=event_accounting_rule_status,
             grouped_events_num=grouped_events_num,
             has_ignored_assets=has_ignored_assets,
+            is_hidden_transaction=is_hidden_transaction,
         )
         if self.has_details():
             result['has_details'] = True

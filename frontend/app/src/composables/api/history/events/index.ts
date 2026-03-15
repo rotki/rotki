@@ -12,6 +12,7 @@ import {
 import { type ActionDataEntry, ActionDataEntryArraySchema, type ActionStatus } from '@/types/action';
 import {
   type AddTransactionHashPayload,
+  type EvmTransactionsHiddenPayload,
   HistoryEventDetail,
   type PullEthBlockEventPayload,
   type PullTransactionPayload,
@@ -45,6 +46,7 @@ export type TransactionStatus = z.infer<typeof TransactionStatusSchema>;
 interface UseHistoryEventsApiReturn {
   fetchTransactionsTask: (payload: TransactionRequestPayload) => Promise<PendingTask>;
   deleteTransactions: (chain: string, txRef?: string) => Promise<boolean>;
+  setEvmTransactionsHiddenStatus: (payload: EvmTransactionsHiddenPayload, hidden: boolean) => Promise<boolean>;
   pullAndRecodeTransactionRequest: (payload: PullTransactionPayload) => Promise<PendingTask>;
   getUndecodedTransactionsBreakdown: () => Promise<PendingTask>;
   decodeTransactions: (chains: string, ignoreCache?: boolean) => Promise<PendingTask>;
@@ -98,6 +100,19 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   const deleteTransactions = async (chain: string, txRef?: string): Promise<boolean> => api.delete<boolean>('/blockchains/transactions', {
     body: chain ? { chain, txRef } : null,
   });
+
+  const setEvmTransactionsHiddenStatus = async (
+    payload: EvmTransactionsHiddenPayload,
+    hidden: boolean,
+  ): Promise<boolean> => {
+    if (hidden) {
+      return api.put<boolean>('/blockchains/transactions/hidden', payload);
+    }
+
+    return api.delete<boolean>('/blockchains/transactions/hidden', {
+      body: payload,
+    });
+  };
 
   const pullAndRecodeTransactionRequest = async (
     payload: PullTransactionPayload,
@@ -345,5 +360,6 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     repullingEthStakingEvents,
     repullingExchangeEvents,
     repullingTransactions,
+    setEvmTransactionsHiddenStatus,
   };
 }

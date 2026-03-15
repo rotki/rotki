@@ -20,9 +20,11 @@ from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.db.constants import (
     CHAIN_EVENT_FIELDS,
     ETH_STAKING_EVENT_FIELDS,
+    EVM_TRANSACTION_GROUP_IDENTIFIER_SQL,
     HISTORY_BASE_ENTRY_FIELDS,
     HISTORY_MAPPING_KEY_STATE,
     TX_DECODED,
+    TX_HIDDEN,
     HistoryEventLinkType,
     HistoryMappingState,
 )
@@ -792,6 +794,7 @@ class HistoryEventStateMarkersJoinsFilter(DBFilter):
 
 
 class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation, ABC):
+    exclude_hidden_transactions: bool = False
 
     @classmethod
     def make(
@@ -816,6 +819,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_hidden_transactions: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
     ) -> Self:
@@ -940,6 +944,11 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
                 column='ignored',
                 value=0,
             ))
+        if exclude_hidden_transactions is True:
+            filters.append(DBEvmTransactionsHiddenFilter(
+                and_op=True,
+                operator='NOT IN',
+            ))
         if identifiers is not None:
             filters.append(
                 DBMultiIntegerFilter(
@@ -965,6 +974,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
         )
         filters.append(filter_query.timestamp_filter)
         filter_query.filters = filters
+        filter_query.exclude_hidden_transactions = exclude_hidden_transactions
         return filter_query
 
     @staticmethod
@@ -1030,6 +1040,7 @@ class AssetMovementMatchFilterQuery(HistoryEventFilterQuery):
             group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_hidden_transactions: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
             asset_timestamp_ranges: list[tuple[tuple[Asset, ...], TimestampMS, TimestampMS]] | None = None,  # noqa: E501
@@ -1064,6 +1075,7 @@ class AssetMovementMatchFilterQuery(HistoryEventFilterQuery):
                 operator='NOT IN',
             ),
             exclude_ignored_assets=exclude_ignored_assets,
+            exclude_hidden_transactions=exclude_hidden_transactions,
             state_markers=state_markers,
             notes_substring=notes_substring,
         )
@@ -1100,6 +1112,7 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
             group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_hidden_transactions: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
             tx_refs: list[EVMTxHash | BTCTxId | Signature] | None = None,
@@ -1134,6 +1147,7 @@ class HistoryEventWithTxRefFilterQuery(HistoryBaseEntryFilterQuery):
             group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
+            exclude_hidden_transactions=exclude_hidden_transactions,
             state_markers=state_markers,
             notes_substring=notes_substring,
         )
@@ -1227,6 +1241,7 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_hidden_transactions: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
             tx_refs: list[EVMTxHash | BTCTxId | Signature] | None = None,
@@ -1262,6 +1277,7 @@ class HistoryEventWithCounterpartyFilterQuery(HistoryEventWithTxRefFilterQuery):
             group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
+            exclude_hidden_transactions=exclude_hidden_transactions,
             state_markers=state_markers,
             notes_substring=notes_substring,
             tx_refs=tx_refs,
@@ -1309,6 +1325,7 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_hidden_transactions: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
             signatures: list[Signature] | None = None,
@@ -1342,6 +1359,7 @@ class SolanaEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
+            exclude_hidden_transactions=exclude_hidden_transactions,
             state_markers=state_markers,
             notes_substring=notes_substring,
             counterparties=counterparties,
@@ -1418,6 +1436,7 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_hidden_transactions: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
             tx_hashes: list[EVMTxHash] | None = None,
@@ -1449,6 +1468,7 @@ class EvmEventFilterQuery(HistoryEventWithCounterpartyFilterQuery):
             group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
+            exclude_hidden_transactions=exclude_hidden_transactions,
             state_markers=state_markers,
             notes_substring=notes_substring,
             counterparties=counterparties,
@@ -1535,6 +1555,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_hidden_transactions: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
             validator_indices: list[int] | None = None,
@@ -1564,6 +1585,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
+            exclude_hidden_transactions=exclude_hidden_transactions,
             state_markers=state_markers,
             notes_substring=notes_substring,
         )
@@ -1617,6 +1639,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_hidden_transactions: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             notes_substring: str | None = None,
             validator_indices: list[int] | None = None,
@@ -1647,6 +1670,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
+            exclude_hidden_transactions=exclude_hidden_transactions,
             state_markers=state_markers,
             notes_substring=notes_substring,
             validator_indices=validator_indices,
@@ -1697,6 +1721,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             group_identifiers: list[str] | None = None,
             entry_types: IncludeExcludeFilterData | None = None,
             exclude_ignored_assets: bool = False,
+            exclude_hidden_transactions: bool = False,
             state_markers: list[HistoryMappingState] | None = None,
             tx_hashes: list[EVMTxHash] | None = None,
             validator_indices: list[int] | None = None,
@@ -1726,6 +1751,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             group_identifiers=group_identifiers,
             entry_types=entry_types,
             exclude_ignored_assets=exclude_ignored_assets,
+            exclude_hidden_transactions=exclude_hidden_transactions,
             tx_hashes=tx_hashes,
             state_markers=state_markers,
         )
@@ -1774,6 +1800,21 @@ class DBIgnoredAssetsFilter(DBSubtableSelectFilter):
     select_value: str = field(default='value', init=False)
     select_table: str = field(default='multisettings', init=False)
     select_condition: str = field(default="name='ignored_asset'", init=False)
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBEvmTransactionsHiddenFilter(DBSubtableSelectFilter):
+    """Filter groups backed by EVM transactions hidden by the user."""
+    asset_key: str = field(default='group_identifier', init=False)
+    select_value: str = field(default=EVM_TRANSACTION_GROUP_IDENTIFIER_SQL, init=False)
+    select_table: str = field(
+        default=(
+            'evm_transactions '
+            'INNER JOIN evm_tx_mappings ON evm_transactions.identifier=evm_tx_mappings.tx_id'
+        ),
+        init=False,
+    )
+    select_condition: str = field(default=f'evm_tx_mappings.value={TX_HIDDEN}', init=False)
 
 
 class UserNotesFilterQuery(DBFilterQuery, FilterWithTimestamp):

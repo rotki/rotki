@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any, Literal, cast
 
 from sqlcipher3 import dbapi2 as sqlcipher
 
+from rotkehlchen.api.rest_helpers.results import wrap_in_fail_result
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
@@ -531,6 +532,39 @@ class TransactionsService:
             'message': '',
             'status_code': HTTPStatus.OK,
         }
+
+    def update_evm_transactions_hidden_status(
+            self,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
+            tx_refs: list[EVMTxHash],
+            hidden: bool,
+    ) -> dict[str, Any]:
+        dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
+        chain_id = blockchain.to_chain_id()
+        unique_tx_refs = set(tx_refs)
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            known_txs = dbevmtx.count_known_transaction_hashes(
+                cursor=write_cursor,
+                tx_hashes=list(unique_tx_refs),
+                chain_id=chain_id,
+            )
+            if known_txs != len(unique_tx_refs):
+                return wrap_in_fail_result(
+                    message=(
+                        f'Failed to update hidden status for {blockchain} transactions because '
+                        'one or more transaction references were not found in the database'
+                    ),
+                    status_code=HTTPStatus.CONFLICT,
+                )
+
+            dbevmtx.set_transaction_hidden_state(
+                write_cursor=write_cursor,
+                tx_hashes=list(unique_tx_refs),
+                chain_id=chain_id,
+                is_hidden=hidden,
+            )
+
+        return {'result': True, 'message': '', 'status_code': HTTPStatus.OK}
 
     def get_count_transactions_not_decoded(self) -> dict[str, Any]:
         tx_info: dict[str, dict[str, int]] = defaultdict(dict)

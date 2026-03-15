@@ -5330,9 +5330,11 @@
       "add_event": "Add new event",
       "add_event_here": "Add new event here",
       "delete_transaction": "Delete transaction & events",
+      "hide_transaction": "Hide transaction",
       "redecode_events": "Redecode events",
       "redecode_page": "Redecode page",
-      "redecode_with_options": "Redecode with options"
+      "redecode_with_options": "Redecode with options",
+      "unhide_transaction": "Unhide transaction"
     },
     "alerts": {
       "button": "Actions needed",
@@ -5683,6 +5685,7 @@
       "match_exact_filter_hint": "If enabled, it will show only the events that match the filter, excluding the other events in the same group.",
       "notes": "filter by notes content",
       "protocol": "filter by the protocol of the events",
+      "show_hidden_transactions": "Show hidden transactions",
       "show_ignored_assets": "Show entries with ignored assets",
       "start_date": "filter by the start date of the transaction period",
       "state_markers": "Filter by state",

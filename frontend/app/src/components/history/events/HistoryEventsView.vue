@@ -317,6 +317,7 @@ watchDebounced(route, async () => {
             :groups="groups"
             :page-params="toggles.matchExactEvents ? pageParams : undefined"
             :exclude-ignored="!toggles.showIgnoredAssets"
+            :exclude-hidden-transactions="!toggles.showHiddenTransactions"
             :has-active-filters="hasActiveFilters"
             :identifiers="identifiers"
             :highlighted-identifiers="highlightedIdentifiers"

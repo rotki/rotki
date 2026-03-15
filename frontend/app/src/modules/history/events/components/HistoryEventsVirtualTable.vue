@@ -27,6 +27,7 @@ const props = defineProps<{
   groups: Collection<HistoryEventRow>;
   pageParams: HistoryEventRequestPayload | undefined;
   excludeIgnored: boolean;
+  excludeHiddenTransactions: boolean;
   groupLoading: boolean;
   hasActiveFilters?: boolean;
   tableHeightOffset?: number;
@@ -79,6 +80,7 @@ const {
   total,
 } = useHistoryEventsData({
   excludeIgnored: toRef(props, 'excludeIgnored'),
+  excludeHiddenTransactions: toRef(props, 'excludeHiddenTransactions'),
   groupLoading,
   groups: rawGroups,
   identifiers: toRef(props, 'identifiers'),
@@ -131,6 +133,7 @@ const {
   showRedecodeConfirmation,
   suggestNextSequenceId,
   toggle,
+  toggleHiddenTransaction,
 } = useHistoryEventsOperations({
   completeEventsMapped,
   flattenedEvents: events,
@@ -278,6 +281,7 @@ function isShowingIgnoredAssets(groupId: string): boolean {
             :variant="itemVariant"
             @add-event="addEvent($event, row.data)"
             @toggle-ignore="toggle($event)"
+            @toggle-hidden-transaction="toggleHiddenTransaction($event)"
             @toggle-show-ignored-assets="toggleShowIgnoredAssets(row.groupId)"
             @redecode="redecode($event, row.data.groupIdentifier)"
             @redecode-with-options="redecodeWithOptions($event, row.data.groupIdentifier)"

@@ -21,8 +21,8 @@ from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.db.constants import (
     EXTRAINTERNALTXPREFIX,
     TX_DECODED,
+    TX_HIDDEN,
     TX_INTERNALS_QUERIED,
-    TX_SPAM,
 )
 from rotkehlchen.db.dbtx import DBCommonTx
 from rotkehlchen.db.filtering import (
@@ -64,6 +64,59 @@ if TYPE_CHECKING:
 class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTransactionsFilterQuery, EvmTransactionsNotDecodedFilterQuery]):  # noqa: E501
     # Index in the SQL result tuple where authorization fields (nonce, delegated_address) begin  # noqa: E501
     AUTHORIZATION_DATA_START_INDEX: ClassVar[int] = 13
+
+    def set_transaction_hidden_state(
+            self,
+            write_cursor: 'DBCursor',
+            tx_hashes: list[EVMTxHash],
+            chain_id: ChainID,
+            is_hidden: bool,
+    ) -> None:
+        """Set or clear the user-managed hidden marker for the given EVM transactions."""
+        if len(tx_hashes) == 0:
+            return
+
+        if is_hidden:
+            query = (
+                'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) '
+                'SELECT identifier, ? FROM evm_transactions WHERE tx_hash=? AND chain_id=?'
+            )
+            tuples = [
+                (TX_HIDDEN, tx_hash, chain_id.serialize_for_db())
+                for tx_hash in tx_hashes
+            ]
+            self.db.write_tuples(
+                write_cursor=write_cursor,
+                tuple_type='evm_transaction_hidden_mapping',
+                query=query,
+                tuples=tuples,
+            )
+        else:
+            # Remove the user-set hidden marker from the matching transactions.
+            for chunk, placeholders in get_query_chunks(tx_hashes):
+                write_cursor.execute(
+                    'DELETE FROM evm_tx_mappings WHERE value=? AND tx_id IN ('
+                    'SELECT identifier FROM evm_transactions WHERE '
+                    f'tx_hash IN ({placeholders}) AND chain_id=?)',
+                    [TX_HIDDEN, *chunk, chain_id.serialize_for_db()],
+                )
+
+    def count_known_transaction_hashes(
+            self,
+            cursor: 'DBCursor',
+            tx_hashes: list[EVMTxHash],
+            chain_id: ChainID,
+    ) -> int:
+        """Count how many of the provided transaction hashes exist for the given chain."""
+        known_hashes = 0
+        for chunk, placeholders in get_query_chunks(tx_hashes):
+            known_hashes += cursor.execute(
+                'SELECT COUNT(*) FROM evm_transactions WHERE '
+                f'tx_hash IN ({placeholders}) AND chain_id=?',
+                [*chunk, chain_id.serialize_for_db()],
+            ).fetchone()[0]
+
+        return known_hashes
 
     def add_transactions(
             self,
@@ -561,7 +614,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         # Delete all remaining evm_tx_mappings so decoding can happen again
         write_cursor.executemany(
             'DELETE FROM evm_tx_mappings WHERE tx_id=? AND value IN (?, ?, ?)',
-            [(x, TX_DECODED, TX_SPAM, TX_INTERNALS_QUERIED) for x in tx_ids],
+            [(x, TX_DECODED, TX_HIDDEN, TX_INTERNALS_QUERIED) for x in tx_ids],
         )
         # Delete any key_value_cache entries
         write_cursor.executemany(

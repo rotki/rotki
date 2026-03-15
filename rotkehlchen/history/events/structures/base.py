@@ -415,6 +415,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             event_accounting_rule_status: EventAccountingRuleStatus,
             grouped_events_num: int | None = None,
             has_ignored_assets: bool = False,
+            is_hidden_transaction: bool = False,
     ) -> dict[str, Any]:
         """Serialize event and extra flags for api"""
         result: dict[str, Any] = {'entry': self.serialize()}
@@ -431,6 +432,8 @@ class HistoryBaseEntry(AccountingEventMixin, ABC, Generic[ExtraDataType]):
             result['grouped_events_num'] = grouped_events_num
         if has_ignored_assets:
             result['has_ignored_assets'] = True
+        if is_hidden_transaction:
+            result['is_hidden_transaction'] = True
 
         result['event_accounting_rule_status'] = event_accounting_rule_status.serialize()
 

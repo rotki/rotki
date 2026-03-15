@@ -41,6 +41,7 @@ export type DialogShowOptions =
 export interface HistoryEventsToggles {
   matchExactEvents: boolean;
   showIgnoredAssets: boolean;
+  showHiddenTransactions: boolean;
   stateMarkers: HistoryEventState[];
 }
 

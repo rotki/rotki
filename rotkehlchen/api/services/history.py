@@ -102,6 +102,21 @@ def _sort_matched_group(matched_events_group: list[dict[str, Any]]) -> list[dict
 class HistoryService:
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
+        self._dummy_accounting_pot: AccountingPot | None = None
+
+    @property
+    def dummy_accounting_pot(self) -> AccountingPot:
+        if self._dummy_accounting_pot is None:
+            self._dummy_accounting_pot = AccountingPot(
+                database=self.rotkehlchen.data.db,
+                evm_accounting_aggregators=EVMAccountingAggregators([
+                    self.rotkehlchen.chains_aggregator.get_evm_manager(x).accounting_aggregator
+                    for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS
+                ]),
+                msg_aggregator=self.rotkehlchen.msg_aggregator,
+                is_dummy_pot=True,
+            )
+        return self._dummy_accounting_pot
 
     def process_history(
             self,
@@ -361,7 +376,7 @@ class HistoryService:
             )
             hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
             ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor=cursor)
-            _, processed_events_result, joined_group_ids, entries_found, entries_with_limit, entries_total, ignored_group_identifiers = self._query_history_events_with_matched_processing(  # noqa: E501
+            _, processed_events_result, joined_group_ids, entries_found, entries_with_limit, entries_total, ignored_group_identifiers, hidden_group_identifiers = self._query_history_events_with_matched_processing(  # noqa: E501
                 cursor=cursor,
                 dbevents=dbevents,
                 filter_query=filter_query,
@@ -374,16 +389,12 @@ class HistoryService:
                 joined_group_ids.get(group_identifier, group_identifier)
                 for group_identifier in ignored_group_identifiers
             }
+            hidden_transaction_group_identifiers = {
+                joined_group_ids.get(group_identifier, group_identifier)
+                for group_identifier in hidden_group_identifiers
+            }
 
-        accountant_pot = AccountingPot(
-            database=self.rotkehlchen.data.db,
-            evm_accounting_aggregators=EVMAccountingAggregators([
-                self.rotkehlchen.chains_aggregator.get_evm_manager(x).accounting_aggregator
-                for x in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-            ]),
-            msg_aggregator=self.rotkehlchen.msg_aggregator,
-            is_dummy_pot=True,
-        )
+        accountant_pot = self.dummy_accounting_pot
         grouped_events_nums: list[int | None]
         events: list[HistoryBaseEntry]
         grouped_events_nums, events = (
@@ -408,6 +419,7 @@ class HistoryService:
                 hidden_event_ids=hidden_event_ids,
                 joined_group_ids=joined_group_ids,
                 group_has_ignored_assets=group_has_ignored_assets,
+                hidden_transaction_group_identifiers=hidden_transaction_group_identifiers,
             ),
             'entries_found': entries_with_limit,
             'entries_limit': entries_limit,
@@ -674,6 +686,7 @@ class HistoryService:
         int,
         int,
         set[str],
+        set[str],
     ]:
         """Fetch events and apply matched-asset-movement post-processing."""
         events_result_info = dbevents.get_history_events_and_limit_info(
@@ -690,6 +703,7 @@ class HistoryService:
             entries_with_limit,
             entries_total,
             ignored_group_identifiers,
+            hidden_group_identifiers,
         ) = dbevents.process_matched_asset_movements(
             cursor=cursor,
             aggregate_by_group_ids=aggregate_by_group_ids,
@@ -698,6 +712,8 @@ class HistoryService:
             entries_with_limit=events_result_info.entries_with_limit,
             entries_total=entries_total,
             ignored_group_identifiers=set(events_result_info.ignored_group_identifiers),
+            hidden_group_identifiers=set(events_result_info.hidden_group_identifiers),
+            exclude_hidden_transactions=filter_query.exclude_hidden_transactions,
         )
         return (
             events_result_info,
@@ -707,6 +723,7 @@ class HistoryService:
             entries_with_limit,
             entries_total,
             ignored_group_identifiers,
+            hidden_group_identifiers,
         )
 
     @staticmethod
@@ -720,6 +737,7 @@ class HistoryService:
             hidden_event_ids: list[int],
             joined_group_ids: dict[str, str],
             group_has_ignored_assets: set[str],
+            hidden_transaction_group_identifiers: set[str],
     ) -> list[dict[str, Any] | list[dict[str, Any]]]:
         """Serialize and group history events for the api.
         Groups onchain swaps, multi trades, and matched asset movement events into sub-lists.
@@ -763,6 +781,10 @@ class HistoryService:
                 grouped_events_num=grouped_events_num,
                 has_ignored_assets=(
                     (replacement_group_id or event.group_identifier) in group_has_ignored_assets
+                ),
+                is_hidden_transaction=(
+                    (replacement_group_id or event.group_identifier) in
+                    hidden_transaction_group_identifiers
                 ),
             )
             if replacement_group_id is not None:

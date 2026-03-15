@@ -17,6 +17,7 @@ export interface HistoryEventRequestPayload extends PaginationRequestPayload<{ t
   readonly txHashes?: string | string[];
   readonly validatorIndices?: string | string[];
   readonly excludeIgnoredAssets?: boolean;
+  readonly excludeHiddenTransactions?: boolean;
   readonly identifiers?: string[];
   readonly notesSubstring?: string;
   readonly stateMarkers?: string[];

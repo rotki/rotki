@@ -475,6 +475,22 @@ class PendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     chain = BlockchainField(required=True, allow_only=CHAINS_WITH_TX_DECODING)
 
 
+class EvmTransactionsHiddenSchema(Schema):
+    blockchain = BlockchainField(required=True, allow_only=EVM_CHAINS_WITH_TRANSACTIONS)
+    tx_refs = fields.List(
+        NonEmptyStringField(required=True),
+        required=True,
+        validate=webargs.validate.Length(min=1),
+    )
+
+    @validates_schema
+    def validate_tx_refs(self, data: dict[str, Any], **_kwargs: Any) -> None:
+        data['tx_refs'] = [
+            EVMTransactionHashField.deserialize_string_value(tx_ref)
+            for tx_ref in data['tx_refs']
+        ]
+
+
 class BaseStakingQuerySchema(
         AsyncQueryArgumentSchema,
         TimestampRangeSchema,
@@ -613,6 +629,7 @@ class HistoryEventFilterSchema(
 ):
     """Base schema for filtering history events. Contains common filter fields and methods."""
     exclude_ignored_assets = fields.Boolean(load_default=True)
+    exclude_hidden_transactions = fields.Boolean(load_default=True)
     group_identifiers = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
     location = SerializableEnumField(Location, load_default=None)
     location_labels = DelimitedOrNormalList(EmptyAsNoneStringField(), load_default=None)
@@ -690,6 +707,7 @@ class HistoryEventFilterSchema(
             'from_ts': data['from_timestamp'],
             'to_ts': data['to_timestamp'],
             'exclude_ignored_assets': data['exclude_ignored_assets'],
+            'exclude_hidden_transactions': data['exclude_hidden_transactions'],
             'group_identifiers': data['group_identifiers'],
             'location_labels': location_labels,
             'assets': [data['asset']] if data['asset'] is not None else None,
@@ -3381,11 +3399,13 @@ class HistoryEventsDeletionSchema(HistoryEventFilterSchema):
     """
     force_delete = fields.Boolean(load_default=False)
     exclude_ignored_assets = fields.Boolean(load_default=False)  # we should be able to delete events with ignored assets  # noqa: E501
+    exclude_hidden_transactions = fields.Boolean(load_default=False)
 
     # Fields that are not considered filters for deletion validation
     _NON_FILTER_FIELDS: Final = frozenset((
         'force_delete',  # deletion flag, not a filter
         'exclude_ignored_assets',  # display preference, not a filter
+        'exclude_hidden_transactions',  # display preference, not a filter
     ))
 
     def generate_fields_post_validation(self, data: dict[str, Any]) -> dict[str, Any]:

@@ -44,6 +44,7 @@ interface UseHistoryEventsOperationsReturn {
   redecodeWithOptions: (payload: PullEventPayload, groupIdentifier: string) => void;
   confirmRedecode: (event: { payload: PullEventPayload; deleteCustom: boolean; customIndexersOrder?: string[] }) => void;
   toggle: (event: HistoryEventEntry) => Promise<void>;
+  toggleHiddenTransaction: (event: HistoryEventEntry) => Promise<void>;
 }
 
 export function useHistoryEventsOperations(
@@ -68,7 +69,7 @@ export function useHistoryEventsOperations(
   const { deleteTransactions } = useHistoryEventsApi();
   const { unlinkAssetMovement } = useAssetMovementMatchingApi();
   const { refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
-  const { deleteHistoryEvent } = useHistoryEvents();
+  const { deleteHistoryEvent, setEvmTransactionHiddenStatus } = useHistoryEvents();
   const { ignoreSingle, toggle } = useIgnore<HistoryEventEntry>({
     toData: (item: HistoryEventEntry) => item.groupIdentifier,
   }, selected, () => {
@@ -245,6 +246,18 @@ export function useHistoryEventsOperations(
     set(redecodePayload, undefined);
   }
 
+  async function toggleHiddenTransaction(event: HistoryEventEntry): Promise<void> {
+    if (!('txRef' in event) || !event.txRef)
+      return;
+
+    const { success } = await setEvmTransactionHiddenStatus({
+      blockchain: event.location,
+      txRefs: [event.txRef],
+    }, !(event.isHiddenTransaction ?? false));
+    if (success)
+      emit('refresh');
+  }
+
   return {
     confirmDelete,
     confirmRedecode,
@@ -260,5 +273,6 @@ export function useHistoryEventsOperations(
     showRedecodeConfirmation,
     suggestNextSequenceId,
     toggle,
+    toggleHiddenTransaction,
   };
 }

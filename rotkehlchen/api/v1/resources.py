@@ -19,8 +19,8 @@ from rotkehlchen.api.rest import (
     RestAPI,
     api_response,
     make_response_from_dict,
-    wrap_in_fail_result,
 )
+from rotkehlchen.api.rest_helpers.results import wrap_in_fail_result
 from rotkehlchen.api.v1.common_resources import BaseMethodView
 from rotkehlchen.api.v1.parser import ignore_kwarg_parser, resource_parser
 from rotkehlchen.api.v1.schemas import (
@@ -95,6 +95,7 @@ from rotkehlchen.api.v1.schemas import (
     EventGroupPositionSchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
+    EvmTransactionsHiddenSchema,
     ExchangeBalanceQuerySchema,
     ExchangeEventsQuerySchema,
     ExchangeEventsRangeQuerySchema,
@@ -736,6 +737,36 @@ class EvmTransactionsStatusResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_evm_transactions_status(async_query=async_query)
+
+
+class BlockchainTransactionsHiddenResource(BaseMethodView):
+    modify_schema = EvmTransactionsHiddenSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(modify_schema, location='json')
+    def put(
+            self,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
+            tx_refs: list[EVMTxHash],
+    ) -> Response:
+        return self.rest_api.update_evm_transactions_hidden_status(
+            blockchain=blockchain,
+            tx_refs=tx_refs,
+            hidden=True,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(modify_schema, location='json')
+    def delete(
+            self,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
+            tx_refs: list[EVMTxHash],
+    ) -> Response:
+        return self.rest_api.update_evm_transactions_hidden_status(
+            blockchain=blockchain,
+            tx_refs=tx_refs,
+            hidden=False,
+        )
 
 
 class HistoryStatusSummaryResource(BaseMethodView):

@@ -51,6 +51,11 @@ export interface PullTransactionPayload extends ChainAndTxRefs {
   readonly customIndexersOrder?: string[];
 }
 
+export interface EvmTransactionsHiddenPayload {
+  readonly blockchain: string;
+  readonly txRefs: string[];
+}
+
 export interface LocationAndTxRef {
   readonly location: string;
   readonly txRef: string;

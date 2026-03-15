@@ -24,7 +24,7 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_EUR, A_MKR, A_USDT, A_WETH
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.db.cache import DBCacheDynamic
-from rotkehlchen.db.constants import HistoryMappingState
+from rotkehlchen.db.constants import TX_HIDDEN, HistoryMappingState
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     EvmEventFilterQuery,
@@ -1267,6 +1267,95 @@ def test_ignored_assets(
     # event1's group has ignored BTC asset, event3's group has no ignored assets
     expected = generate_events_response([event1, event3], has_ignored_assets=[True, False])
     assert returned_events == expected
+
+
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+def test_hidden_transaction_filter(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Manual tx hidden filtering is independent from ignored asset filtering."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    db = rotki.data.db
+    dbevmtx = DBEvmTx(db)
+    dbevents = DBHistoryEvents(db)
+    tx1 = make_ethereum_transaction(tx_hash=make_evm_tx_hash(), timestamp=Timestamp(1))
+    tx2 = make_ethereum_transaction(tx_hash=make_evm_tx_hash(), timestamp=Timestamp(2))
+    event1 = make_ethereum_event(
+        tx_ref=tx1.tx_hash,
+        index=1,
+        asset=A_ETH,
+        timestamp=TimestampMS(1),
+    )
+    event2 = make_ethereum_event(
+        tx_ref=tx2.tx_hash,
+        index=2,
+        asset=A_MKR,
+        timestamp=TimestampMS(2),
+    )
+    with db.user_write() as cursor:
+        dbevmtx.add_transactions(cursor, [tx1, tx2], relevant_address=ethereum_accounts[0])
+        dbevents.add_history_events(cursor, [event1, event2])
+
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'blockchaintransactionshiddenresource'),
+        json={'blockchain': 'eth', 'tx_refs': [str(tx2.tx_hash)]},
+    )
+    assert_simple_ok_response(response)
+    with db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings '
+            'JOIN evm_transactions ON evm_transactions.identifier=evm_tx_mappings.tx_id '
+            'WHERE evm_transactions.tx_hash=? AND evm_tx_mappings.value=?',
+            (tx2.tx_hash, TX_HIDDEN),
+        ).fetchone()[0] == 1
+
+    returned_events = query_events(
+        rotkehlchen_api_server,
+        json={'location': 'ethereum'},
+        expected_num_with_grouping=1,
+        expected_totals_with_grouping=2,
+        entries_limit=1000,
+    )
+    assert returned_events == generate_events_response([event1])
+
+    returned_events = query_events(
+        rotkehlchen_api_server,
+        json={
+            'exclude_hidden_transactions': False,
+            'location': 'ethereum',
+        },
+        expected_num_with_grouping=2,
+        expected_totals_with_grouping=2,
+        entries_limit=1000,
+    )
+    assert returned_events == generate_events_response(
+        [event2, event1],
+        is_hidden_transaction=[True, False],
+    )
+
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'blockchaintransactionshiddenresource'),
+        json={'blockchain': 'eth', 'tx_refs': [str(tx2.tx_hash)]},
+    )
+    assert_simple_ok_response(response)
+    with db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings '
+            'JOIN evm_transactions ON evm_transactions.identifier=evm_tx_mappings.tx_id '
+            'WHERE evm_transactions.tx_hash=? AND evm_tx_mappings.value=?',
+            (tx2.tx_hash, TX_HIDDEN),
+        ).fetchone()[0] == 0
+
+    returned_events = query_events(
+        rotkehlchen_api_server,
+        json={'location': 'ethereum'},
+        expected_num_with_grouping=2,
+        expected_totals_with_grouping=2,
+        entries_limit=1000,
+    )
+    assert returned_events == generate_events_response([event2, event1])
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
