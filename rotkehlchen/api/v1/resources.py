@@ -3712,6 +3712,15 @@ class RefetchTransactionsResource(BaseMethodView):
         )
 
 
+class InternalTxConflictsResource(BaseMethodView):
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_pending_internal_tx_repull_conflicts(async_query=async_query)
+
+
 class SolanaTokenMigrationResource(BaseMethodView):
     """This is a temporary endpoint to correct custom user
     input solana tokens input before release 1.40.

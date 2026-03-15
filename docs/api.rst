@@ -2672,6 +2672,45 @@ Decode transactions that haven't been decoded yet
    :statuscode 500: Internal rotki error
 
 
+.. http:get:: /api/(version)/blockchains/transactions/internal/conflicts
+
+   Doing a GET on the internal transaction conflicts endpoint returns unresolved EVM transactions
+   that are queued for repull due to detected internal transaction conflicts.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/transactions/internal/conflicts HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": [
+              {
+                  "chain": "ethereum",
+                  "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742"
+              }
+          ],
+          "message": ""
+      }
+
+   :resjson list[object] result: The list of unresolved internal transaction conflicts queued for repull.
+   :resjson string result.chain: Chain name.
+   :resjson string result.tx_hash: Transaction hash in hex format.
+   :statuscode 200: Conflicts successfully returned.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Other error. Check error message for details.
+   :statuscode 500: Internal rotki error
+
+
 Purging locally saved data for ethereum modules
 ====================================================
 
