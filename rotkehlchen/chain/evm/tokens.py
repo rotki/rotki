@@ -1,6 +1,6 @@
 import logging
 from abc import ABC
-from collections import defaultdict
+from collections import defaultdict, deque
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, TypeVar, cast
 
@@ -275,9 +275,9 @@ class EvmTokens(ABC):  # noqa: B024
         Uses Asset objects directly instead of EvmToken to minimize database queries.
         """
         total_token_balances: dict[Asset, FVal] = defaultdict(FVal)
-        chunks_to_process = list(get_chunks(tokens, n=chunk_size))
+        chunks_to_process = deque(get_chunks(tokens, n=chunk_size))
         while len(chunks_to_process) > 0:
-            chunk = chunks_to_process.pop(0)
+            chunk = chunks_to_process.popleft()
             try:
                 new_token_balances = self.get_token_balances(
                     address=address,
@@ -299,9 +299,9 @@ class EvmTokens(ABC):  # noqa: B024
                     f'for address {address}. Retrying by splitting {len(chunk)} '
                     f'tokens into chunks of {smaller_chunk_size}.',
                 )
-                chunks_to_process = (
-                    list(get_chunks(chunk, n=smaller_chunk_size)) + chunks_to_process
-                )
+                smaller_chunks = list(get_chunks(chunk, n=smaller_chunk_size))
+                for item in reversed(smaller_chunks):
+                    chunks_to_process.appendleft(item)
                 continue
 
             total_token_balances = combine_dicts(total_token_balances, new_token_balances)
