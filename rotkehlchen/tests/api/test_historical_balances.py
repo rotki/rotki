@@ -124,7 +124,6 @@ def fixture_setup_historical_data(rotkehlchen_api_server: 'APIServer') -> None:
     # When re-enabled, call process_historical_balances here to populate event_metrics.
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance(
@@ -140,7 +139,7 @@ def test_get_historical_balance(
     )
 
     result = assert_proper_sync_response_with_result(response)
-    assert result['processing_required'] is False
+    assert 'last_group_identifier' not in result
     assert result['entries']['BTC'] == '2.5'  # 2 - 0.5 + 1 (deposit to exchange, withdrawal not yet)  # noqa: E501
     assert result['entries']['ETH'] == '10.5'  # 10 + 0.5 (deposit into account)
 
@@ -162,12 +161,11 @@ def test_get_historical_balance(
         task_id,
     )
     # Balances(amount) should be same as day 1
-    assert outcome['result']['processing_required'] is False
+    assert 'last_group_identifier' not in outcome['result']
     assert outcome['result']['entries']['BTC'] == '2'
     assert outcome['result']['entries']['ETH'] == '10'
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_asset_balance(
@@ -190,7 +188,6 @@ def test_get_historical_asset_balance(
             ),
         )
 
-    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -203,11 +200,10 @@ def test_get_historical_asset_balance(
     )
 
     result = assert_proper_sync_response_with_result(response)
-    assert result['processing_required'] is False
+    assert 'last_group_identifier' not in result
     assert result['entries']['BTC'] == '2.7'  # 2 - 0.5 + 1 (exchange deposit) + 0.2 (swap)
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance_with_filters(
@@ -302,8 +298,6 @@ def test_get_historical_balance_with_filters(
             )],
         )
 
-    process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
-
     for filters, expected_eth in (
         # Location filters
         ({'timestamp': START_TS, 'location': 'ethereum'}, '19'),  # 5 + 4 + 10 (aave)
@@ -328,7 +322,7 @@ def test_get_historical_balance_with_filters(
             api_url_for(rotkehlchen_api_server, 'timestamphistoricalbalanceresource'),
             json=filters,
         ))
-        assert result['processing_required'] is False, f'Failed for filters: {filters}'
+        assert 'last_group_identifier' not in result, f'Failed for filters: {filters}'
         assert result['entries']['ETH'] == expected_eth, f'Failed for filters: {filters}'
 
     for filters, error_msg in (  # test validation errors
@@ -490,7 +484,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount(
     assert result['times'][1] == START_TS + DAY_IN_SECONDS * 2  # First spend and exchange receive
     assert result['times'][2] == START_TS + DAY_IN_SECONDS * 2 + 1  # Exchange transfer spend
     assert result['values'][0] == '2'  # Initial balance
-    assert result['values'][1] == '1.5'  # Balance after first spend
+    assert result['values'][1] == '2.5'  # Balance after exchange receive (+1) and spend (-0.5)
     assert result['values'][2] == '1.5'  # Balance after exchange transfer spend
 
 
@@ -629,15 +623,13 @@ def test_get_historical_assets_in_collection_amounts_over_time(
     assert result['values'][2] == '1.5'  # Balance after withdrawal
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('have_decoders', [True])
 def test_get_historical_balance_before_first_event(
         rotkehlchen_api_server: 'APIServer',
         setup_historical_data: None,
 ) -> None:
-    """Test getting historical balances before any events returns processing_required=False
-    since no events exist before the requested timestamp."""
+    """Test getting historical balances before any events returns no entries."""
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -646,7 +638,7 @@ def test_get_historical_balance_before_first_event(
         json={'timestamp': START_TS - DAY_IN_SECONDS},  # Day before first event
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result['processing_required'] is False
+    assert 'last_group_identifier' not in result
     assert 'entries' not in result
 
 

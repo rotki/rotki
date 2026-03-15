@@ -14489,9 +14489,8 @@ Historical Balance Queries
     Gets historical balance data at a specific timestamp, calculated from processing of historical events.
     If asset is provided, returns balance for that specific asset. Otherwise returns balances for all assets.
 
-    The response includes a ``processing_required`` flag that indicates whether historical events exist but haven't
-    been processed yet. If ``processing_required`` is true, call ``POST /tasks/trigger`` to trigger
-    processing, then retry this endpoint.
+    If replay reveals a negative total balance amount at any point, the response includes balances
+    up to the event that caused the negative balance. No balances after this point are returned.
 
     .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``.
@@ -14574,7 +14573,6 @@ Historical Balance Queries
         {
           "message": "",
           "result": {
-            "processing_required": false,
             "entries": {
               "BTC": "2.0",
               "ETH": "10.0"
@@ -14593,7 +14591,6 @@ Historical Balance Queries
       {
         "message": "",
         "result": {
-          "processing_required": false,
           "entries": {
             "BTC": "2.0"
           }
@@ -14601,7 +14598,7 @@ Historical Balance Queries
         "status_code": 200
       }
 
-    **Example Response (processing required):**
+    **Example Response (negative balance detected during replay):**
 
       .. sourcecode:: http
 
@@ -14611,13 +14608,16 @@ Historical Balance Queries
       {
         "message": "",
         "result": {
-          "processing_required": true
+          "entries": {
+            "BTC": "1.5"
+          },
+          "last_group_identifier": "tradeid"
         },
         "status_code": 200
       }
 
-      :resjson bool processing_required: Whether historical events exist but need processing. If true, call the processing endpoint and retry.
       :resjson object entries: (Only present when data is available) A mapping of asset identifiers to their amount as string.
+      :resjson string[optional] last_group_identifier: Group identifier of the event that caused replay to stop due to a negative balance.
       :statuscode 200: Historical balances returned
       :statuscode 400: Malformed query
       :statuscode 403: User does not have premium access
