@@ -55,6 +55,7 @@ export interface QueriedAddressPayload {
 }
 
 export enum PremiumFeature {
+  CLOUD_BACKUP = 'cloudBackup',
   ETH_STAKING_VIEW = 'ethStakingView',
   EVENT_ANALYSIS_VIEW = 'eventAnalysisView',
   GRAPHS_VIEW = 'graphsView',
