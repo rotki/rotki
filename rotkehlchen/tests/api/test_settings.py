@@ -1,6 +1,7 @@
 import dataclasses
 from dataclasses import fields
 from http import HTTPStatus
+from operator import itemgetter
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
@@ -779,7 +780,7 @@ def test_excluded_exchanges_settings(rotkehlchen_api_server: 'APIServer') -> Non
         json=exchanges_input,
     )
     response = requests.get(api_url_for(rotkehlchen_api_server, 'settingsresource')).json()
-    assert response['result']['non_syncing_exchanges'] == exchanges_expected
+    assert sorted(response['result']['non_syncing_exchanges'], key=itemgetter('name')) == sorted(exchanges_expected, key=itemgetter('name'))  # noqa: E501
 
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'settingsresource'),
