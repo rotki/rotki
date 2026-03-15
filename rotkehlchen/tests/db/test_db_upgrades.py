@@ -4011,6 +4011,23 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
                 HistoryEventSubType.FEE.serialize(),
             ),
         )
+        assert (sample_internal_tx := write_cursor.execute(
+            'SELECT parent_tx, from_address, to_address, value '
+            'FROM evm_internal_transactions LIMIT 1',
+        ).fetchone()) is not None
+        legacy_parent_tx, legacy_from_address, legacy_to_address, legacy_value = sample_internal_tx
+        legacy_trace_ids = (910001, 910002)
+        corrected_trace_id = 910003
+        write_cursor.executemany(
+            'INSERT INTO evm_internal_transactions('
+            'parent_tx, trace_id, from_address, to_address, value, gas, gas_used'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [
+                (legacy_parent_tx, legacy_trace_ids[0], legacy_from_address, legacy_to_address, legacy_value, '0', '0'),  # noqa: E501
+                (legacy_parent_tx, legacy_trace_ids[1], legacy_from_address, legacy_to_address, legacy_value, '0', '0'),  # noqa: E501
+                (legacy_parent_tx, corrected_trace_id, legacy_from_address, legacy_to_address, legacy_value, '34567', '0'),  # noqa: E501
+            ],
+        )
 
     db_v51.logout()
     db = _init_db_with_target_version(
@@ -4047,5 +4064,34 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
             ')',
             ('BTC_NOTE_TEST_2',),
         ).fetchone()[0] == 0
+        assert cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM evm_internal_transactions AS legacy
+            WHERE legacy.parent_tx = ?
+              AND legacy.from_address = ?
+              AND legacy.to_address IS ?
+              AND legacy.value = ?
+              AND legacy.gas = '0'
+              AND legacy.gas_used = '0'
+              AND EXISTS (
+                  SELECT 1
+                  FROM evm_internal_transactions AS corrected
+                  WHERE corrected.parent_tx = legacy.parent_tx
+                    AND corrected.from_address = legacy.from_address
+                    AND corrected.to_address IS legacy.to_address
+                    AND corrected.value = legacy.value
+                    AND (corrected.gas != '0' OR corrected.gas_used != '0')
+              )
+            """,
+            (legacy_parent_tx, legacy_from_address, legacy_to_address, legacy_value),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT trace_id, gas, gas_used FROM evm_internal_transactions '
+            'WHERE parent_tx=? AND trace_id IN (?, ?, ?) ORDER BY trace_id',
+            (legacy_parent_tx, *legacy_trace_ids, corrected_trace_id),
+        ).fetchall() == [
+            (corrected_trace_id, '34567', '0'),
+        ]
 
     db.logout()
