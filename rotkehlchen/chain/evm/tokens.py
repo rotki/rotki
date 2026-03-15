@@ -230,14 +230,17 @@ class EvmTokens(ABC):  # noqa: B024
         - RemoteError if no result is queried in multicall
         """
         calls: list[tuple[ChecksumEvmAddress, str]] = []
+        encode_arguments: list[list] = []
         for address, tokens in chunk:
             tokens_addrs = [token.evm_address for token in tokens]
+            args = [address, tokens_addrs]
+            encode_arguments.append(args)
             calls.append(
                 (
                     self.evm_inquirer.contract_scan.address,
                     self.evm_inquirer.contract_scan.encode(
                         method_name='tokens_balance',
-                        arguments=[address, tokens_addrs],
+                        arguments=args,
                     ),
                 ),
             )
@@ -246,11 +249,11 @@ class EvmTokens(ABC):  # noqa: B024
             call_order=call_order,
         )
         balances: dict[ChecksumEvmAddress, dict[EvmToken, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
-        for (address, tokens), result in zip(chunk, results, strict=True):
+        for (address, tokens), result, args in zip(chunk, results, encode_arguments, strict=True):
             decoded_result = self.evm_inquirer.contract_scan.decode(
                 result=result,
                 method_name='tokens_balance',
-                arguments=[address, [token.evm_address for token in tokens]],
+                arguments=args,
             )[0]
             for token, token_balance in zip(tokens, decoded_result, strict=True):
                 if token_balance == 0:
