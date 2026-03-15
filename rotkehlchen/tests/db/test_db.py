@@ -255,7 +255,7 @@ def test_add_remove_exchange(database: DBHandler) -> None:
 
         # check that we have the coinbase exchange in the list of exchanges to not sync
         settings = database.get_settings(cursor=cursor)
-        assert settings.non_syncing_exchanges[0].location == Location.COINBASE
+        assert next(iter(settings.non_syncing_exchanges)).location == Location.COINBASE
 
     assert len(credentials) == 2
     assert len(credentials[Location.KRAKEN]) == 2
@@ -529,7 +529,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'pnl_csv_have_summary': DEFAULT_PNL_CSV_HAVE_SUMMARY,
         'ssf_graph_multiplier': DEFAULT_SSF_GRAPH_MULTIPLIER,
         'last_data_migration': DEFAULT_LAST_DATA_MIGRATION,
-        'non_syncing_exchanges': [],
+        'non_syncing_exchanges': frozenset(),
         'evmchains_to_skip_detection': [],
         'cost_basis_method': CostBasisMethod.FIFO,
         'treat_eth2_as_eth': DEFAULT_TREAT_ETH2_AS_ETH,
@@ -1906,9 +1906,9 @@ def test_startup_check_settings(database: 'DBHandler') -> None:
     with database.conn.read_ctx() as cursor:
         settings: DBSettings = database.get_settings(cursor)
 
-    assert settings.non_syncing_exchanges == [
+    assert settings.non_syncing_exchanges == frozenset({
         ExchangeLocationID(name='Coinbase', location=Location.COINBASE),
-    ]
+    })
 
 
 def test_address_book_primary_key(database: DBHandler):

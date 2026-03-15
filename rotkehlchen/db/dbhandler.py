@@ -214,7 +214,7 @@ class DBHandler:
             'main_currency': (Asset, A_USD),
             'ongoing_upgrade_from_version': (int, None),
             'last_data_migration': (int, DEFAULT_LAST_DATA_MIGRATION),
-            'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
+            'non_syncing_exchanges': (lambda data: frozenset(ExchangeLocationID.deserialize(x) for x in json.loads(data)), frozenset()),  # noqa: E501
             'beacon_rpc_endpoint': (str, None),
             'btc_mempool_api': (str, None),
             'ask_user_upon_size_discrepancy': (str_to_bool, DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY),  # noqa: E501
@@ -412,7 +412,7 @@ class DBHandler:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['non_syncing_exchanges']) -> list['ExchangeLocationID']:  # noqa: E501
+    def get_setting(self, cursor: 'DBCursor', name: Literal['non_syncing_exchanges']) -> frozenset['ExchangeLocationID']:  # noqa: E501
         ...
 
     @overload
@@ -438,7 +438,7 @@ class DBHandler:
                 'btc_mempool_api',
                 'ask_user_upon_size_discrepancy',
             ],
-    ) -> int | Timestamp | bool | Asset | list['ExchangeLocationID'] | str | None:
+    ) -> int | Timestamp | bool | Asset | frozenset['ExchangeLocationID'] | str | None:
         deserializer, default_value = self.setting_to_default_type[name]
         if (result := cursor.execute('SELECT value FROM settings WHERE name=?;', (name,)).fetchone()) is not None:  # noqa: E501
             return deserializer(result[0])  # type: ignore
