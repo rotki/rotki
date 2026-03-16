@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -561,28 +561,36 @@ def test_all_indexers_get_same_tx_results(
     """Test that all indexers return the same results for the same tx queries."""
     txlist_results: list[list[EvmTransaction]] = []
     txlistinteral_results: list[list[EvmInternalTransaction]] = []
+    period = TimestampOrBlockRange(
+        range_type='timestamps',
+        from_value=Timestamp(1720000000),
+        to_value=Timestamp(1735000000),
+    )
     for indexer in (
         ethereum_inquirer.etherscan,
         ethereum_inquirer.blockscout,
         ethereum_inquirer.routescan,
     ):
-        for action, result_list in (
-            ('txlist', txlist_results),
-            ('txlistinternal', txlistinteral_results),
-        ):
-            # get_transactions returns an iterator of lists. Consume the iterator, check that
-            # only one list was returned, and append that list to the result_list.
-            assert len(result := list(indexer.get_transactions(  # type: ignore[call-overload]  # mypy doesn't understand that action will be a valid literal
-                chain_id=ethereum_inquirer.chain_id,
-                account=ethereum_accounts[0],
-                action=action,
-                period_or_hash=TimestampOrBlockRange(
-                    range_type='timestamps',
-                    from_value=Timestamp(1720000000),
-                    to_value=Timestamp(1735000000),
-                ),
-            ))) == 1
-            result_list.append(result[0])
+        # get_transactions returns an iterator of lists. Consume the iterator, check that only
+        # one list was returned, and append that list to the result lists.
+        assert len(txlist_result := cast('list[list[EvmTransaction]]', list(indexer.get_transactions(  # noqa: E501
+            chain_id=ethereum_inquirer.chain_id,
+            account=ethereum_accounts[0],
+            action='txlist',
+            period_or_hash=period,
+        )))) == 1
+        txlist_results.append(txlist_result[0])
+
+        assert len(txlistinternal_result := cast(
+            'list[list[EvmInternalTransaction]]',
+            list(indexer.get_transactions(
+            chain_id=ethereum_inquirer.chain_id,
+            account=ethereum_accounts[0],
+            action='txlistinternal',
+            period_or_hash=period,
+            )),
+        )) == 1
+        txlistinteral_results.append(txlistinternal_result[0])
 
     # Check that there are 6 txs and 1 internal tx for the requested range and that the results
     # from each indexer all match. trace_id is excluded since it varies between indexers.

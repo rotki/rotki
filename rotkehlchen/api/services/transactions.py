@@ -838,6 +838,7 @@ class TransactionsService:
                 address=None,
                 return_queried_hashes=False,
                 known_parent_timestamps={tx_ref: transaction.timestamp},
+                tx_timestamp=transaction.timestamp,
             )
 
         with self.rotkehlchen.data.db.user_write() as write_cursor:

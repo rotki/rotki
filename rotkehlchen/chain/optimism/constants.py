@@ -6,6 +6,7 @@ from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
 OPTIMISM_GENESIS: Final = Timestamp(1636666246)
 OP_BEDROCK_UPGRADE: Final = Timestamp(1686081600)
+OP_BEDROCK_BLOCK: Final = 105235063  # block number at the Bedrock upgrade
 CPT_OPTIMISM: Final = 'optimism'
 
 ARCHIVE_NODE_CHECK_ADDRESS: Final = string_to_evm_address('0x76a05Df20bFEF5EcE3eB16afF9cb10134199A921')  # noqa: E501
