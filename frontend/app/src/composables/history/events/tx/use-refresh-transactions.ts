@@ -8,14 +8,14 @@ import { useHistoryTransactionAccounts } from '@/composables/history/events/tx/u
 import { useTransactionSync } from '@/composables/history/events/tx/use-transaction-sync';
 import { useSupportedChains } from '@/composables/info/chains';
 import { useSchedulerState } from '@/composables/session/use-scheduler-state';
-import { useStatusUpdater } from '@/composables/status';
+import { Section, Status, useStatusUpdater } from '@/composables/status';
 import { useExchangeData } from '@/modules/balances/exchanges/use-exchange-data';
 import { useDecodingStatusStore } from '@/modules/history/use-decoding-status-store';
+import { sigilBus } from '@/modules/sigil/event-bus';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
 import { useTxQueryStatusStore } from '@/store/history/query-status/tx-query-status';
 import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
-import { Section, Status } from '@/types/status';
 import { LimitedParallelizationQueue } from '@/utils/limited-parallelization-queue';
 import { logger } from '@/utils/logging';
 
@@ -272,6 +272,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
       stopTxSyncing();
       stopEventsSyncing();
       stopDecodingSyncProgress();
+      sigilBus.emit('history:ready');
     }
 
     drainPending(params);

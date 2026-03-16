@@ -1,6 +1,6 @@
 import logging
 import traceback
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 from typing import TYPE_CHECKING, Any, Optional, overload
 
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -19,7 +19,7 @@ log = RotkehlchenLogsAdapter(logger)
 def decode_transfer_direction(
         from_address: AnyBlockchainAddress | None,
         to_address: AnyBlockchainAddress | None,
-        tracked_accounts: Sequence[AnyBlockchainAddress],
+        tracked_accounts: Collection[AnyBlockchainAddress],
         maybe_get_exchange_fn: Callable[[AnyBlockchainAddress], str | None],
 ) -> tuple[HistoryEventType, HistoryEventSubType, str | None, AnyBlockchainAddress | None, str, str] | None:  # noqa: E501
     """Determine how to classify a transfer event depending on if the addresses are tracked,

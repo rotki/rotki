@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { gnosis } from '@reown/appkit/networks';
-import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKeyCard, { type FeatureGate } from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import ProviderSelectionDialog from '@/components/wallets/ProviderSelectionDialog.vue';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useWalletStore } from '@/modules/onchain/use-wallet-store';
 import { useUnifiedProviders } from '@/modules/onchain/wallet-providers/use-unified-providers';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useMessageStore } from '@/store/message';
 import { getErrorMessage } from '@/utils/error-handling';
 import { getPublicServiceImagePath } from '@/utils/file';
@@ -23,6 +24,16 @@ const { t } = useI18n({ useScope: 'global' });
 const name = 'gnosis_pay';
 const { useApiKey, confirmDelete, load, loading } = useExternalApiKeys();
 const key = useApiKey(name);
+
+const { allowed, minimumTier, premium } = useFeatureAccess(PremiumFeature.GNOSIS_PAY);
+const featureGate = computed<FeatureGate>(() => {
+  const tier = get(minimumTier);
+  const message = !get(premium)
+    ? t('external_services.need_premium')
+    : t('external_services.need_tier', { tier });
+
+  return { allowed: get(allowed), message };
+});
 
 const serviceKeyCard = useTemplateRef<InstanceType<typeof ServiceKeyCard>>('serviceKeyCard');
 
@@ -239,7 +250,7 @@ watch(() => isStepComplete(AuthStep.SIGN_MESSAGE), (complete) => {
   <div>
     <ServiceKeyCard
       ref="serviceKeyCard"
-      need-premium
+      :feature-gate="featureGate"
       rounded-icon
       :name="name"
       :add-button-text="t('external_services.actions.authenticate')"

@@ -1,6 +1,7 @@
 import logging
 from collections import deque
 from enum import StrEnum
+from itertools import pairwise
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Final, Literal, Optional, overload
 
@@ -52,7 +53,7 @@ from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import HistoricalPriceOracleWithCoinListInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, Price, Timestamp
-from rotkehlchen.utils.misc import pairwise, set_user_agent, ts_now
+from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
 from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -191,8 +192,7 @@ def _check_hourly_data_sanity(
 
     If not then a RemoteError is raised
     """
-    index = 0
-    for n1, n2 in pairwise(data):
+    for index, (n1, n2) in enumerate(pairwise(data)):
         diff = n2['TIMESTAMP'] - n1['TIMESTAMP']
         if diff != 3600:
             raise RemoteError(
@@ -200,8 +200,6 @@ def _check_hourly_data_sanity(
                 f'Problem at indices {index} and {index + 1} of '
                 f'{from_asset.symbol}_to_{to_asset.symbol} prices. Time difference is: {diff}',
             )
-
-        index += 2
 
 
 class Cryptocompare(
@@ -542,10 +540,9 @@ class Cryptocompare(
             # Begin next chunk if adding cc_symbol to the current chunk will make it longer than MAX_FSYMS_CHARS  # noqa: E501
             if len(current_chunk) + len(cc_symbol) > MAX_FSYMS_CHARS:
                 fsyms_chunks.append(current_chunk.rstrip(','))
-                current_chunk = ''
-                continue
-
-            current_chunk += f'{cc_symbol},'  # else, add to the existing chunk
+                current_chunk = f'{cc_symbol},'
+            else:
+                current_chunk += f'{cc_symbol},'
 
         if len(current_chunk) != 0:
             fsyms_chunks.append(current_chunk.rstrip(','))

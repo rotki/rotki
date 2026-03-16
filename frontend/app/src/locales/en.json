@@ -1450,14 +1450,14 @@
     "action": {
       "confirm": {
         "ignore": "Are you sure to ignore this asset?",
-        "mark_as_spam": "Are you sure to mark this asset as spam?"
+        "mark_as_spam": "Are you sure to mark this asset as spam?",
+        "unignore": "Are you sure to unignore this asset?",
+        "unmark_as_spam": "Are you sure to unmark this asset as spam?"
       },
       "ignore": "Ignore Asset",
-      "info": {
-        "ignore": "Asset is ignored",
-        "mark_as_spam": "Marked as spam"
-      },
-      "mark_as_spam": "Mark as spam"
+      "mark_as_spam": "Mark as spam",
+      "unignore": "Unignore Asset",
+      "unmark_as_spam": "Unmark as spam"
     },
     "amount": "Total Owned",
     "asset_symbol": "[{symbol}]",
@@ -2855,6 +2855,7 @@
       "website_url_missing": "Monerium OAuth website URL is not configured."
     },
     "need_premium": "Upgrade to premium to use this feature.",
+    "need_tier": "Requires {tier} tier or higher.",
     "no_services_found": "No services found",
     "opensea": {
       "description": "Used to query NFT information and balances from OpenSea.",

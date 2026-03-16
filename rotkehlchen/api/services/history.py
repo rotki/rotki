@@ -44,7 +44,14 @@ from rotkehlchen.history.events.utils import (
 )
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import UserLimitType, get_user_limit, has_premium_check
+from rotkehlchen.premium.premium import (
+    GNOSIS_PAY_CAPABILITY,
+    MONERIUM_CAPABILITY,
+    UserLimitType,
+    get_user_limit,
+    has_premium_capability,
+    has_premium_check,
+)
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -277,10 +284,11 @@ class HistoryService:
         try:
             if query_type in (HistoryEventQueryType.GNOSIS_PAY, HistoryEventQueryType.MONERIUM):
                 pretty_name = query_type.name.replace('_', ' ').title()
-                if not has_premium_check(self.rotkehlchen.premium):
+                capability_name = GNOSIS_PAY_CAPABILITY if query_type == HistoryEventQueryType.GNOSIS_PAY else MONERIUM_CAPABILITY  # noqa: E501
+                if has_premium_capability(self.rotkehlchen.premium, capability_name) is False:
                     return {
                         'result': None,
-                        'message': f'You can only use {pretty_name} with rotki premium',
+                        'message': f'{pretty_name} is not available for your current subscription tier',  # noqa: E501
                         'status_code': HTTPStatus.FORBIDDEN,
                     }
 

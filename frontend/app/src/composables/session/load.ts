@@ -8,6 +8,7 @@ import { useWhitelistedAssetOperations } from '@/modules/assets/use-whitelisted-
 import { useBalanceFetching } from '@/modules/balances/use-balance-fetching';
 import { usePriceRefresh } from '@/modules/prices/use-price-refresh';
 import { useTagOperations } from '@/modules/session/use-tag-operations';
+import { sigilBus } from '@/modules/sigil/event-bus';
 import { useStatisticsDataFetching } from '@/modules/statistics/use-statistics-data-fetching';
 import { useLocationStore } from '@/store/locations';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -43,6 +44,7 @@ export function useDataLoader(): UseDataLoaderReturn {
     ]);
     await refreshPrices();
     onBalancesLoaded();
+    sigilBus.emit('balances:loaded');
   };
 
   const load = (): void => {

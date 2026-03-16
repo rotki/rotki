@@ -652,7 +652,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             # avoid duplications. In the case of this exception handling, v2 events exist only
             # for the case of interacting with the v1 tokens since interacting
             # with v2 doesn't emit v1 transfers.
-            replacement_assets = self.base.exceptions_mappings.values()
+            replacement_assets = frozenset(self.base.exceptions_mappings.values())
             potential_duplicates_map = defaultdict(list)
             for event in events:
                 if (replacement := self.base.exceptions_mappings.get(event.asset.identifier)) is not None:  # noqa: E501

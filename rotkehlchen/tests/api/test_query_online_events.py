@@ -7,6 +7,7 @@ import requests
 
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.premium.premium import GNOSIS_PAY_CAPABILITY, MONERIUM_CAPABILITY
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_async_response,
@@ -28,27 +29,37 @@ def test_refresh_gnosis_pay_and_monerium(
 ) -> None:
     """Test that refreshing gnosis pay and monerium data via the online events endpoint works."""
     async_query = random.choice([False, True])
-    for query_type, patch_path, service, error_msg, expected_call in ((
+    for query_type, patch_path, service, error_msg, expected_call, capability_name in ((
         'gnosis_pay',
         'rotkehlchen.externalapis.gnosispay.GnosisPay.get_and_process_transactions',
         ExternalService.GNOSIS_PAY,
         'Unable to refresh Gnosis Pay data due to missing credentials',
         call(after_ts=Timestamp(0)),
+        GNOSIS_PAY_CAPABILITY,
     ), (
         'monerium',
         'rotkehlchen.externalapis.monerium.Monerium.get_and_process_orders',
         None,
         'Unable to refresh Monerium data due to missing credentials',
         call(),
+        MONERIUM_CAPABILITY,
     )):
-        with patch(patch_path) as mock_query_service:
+        with (
+            patch(
+                'rotkehlchen.api.services.history.has_premium_capability',
+                side_effect=lambda premium, capability, expected=capability_name: (
+                    capability == expected and start_with_valid_premium
+                ),
+            ),
+            patch(patch_path) as mock_query_service,
+        ):
             response = requests.post(
                 api_url_for(rotkehlchen_api_server, 'eventsonlinequeryresource'),
                 json={'async_query': async_query, 'query_type': query_type},
             )
             if not start_with_valid_premium:  # Check the error message without premium
                 pretty_name = 'Gnosis Pay' if query_type == 'gnosis_pay' else 'Monerium'
-                contained_in_msg = f'You can only use {pretty_name} with rotki premium'
+                contained_in_msg = f'{pretty_name} is not available for your current subscription tier'  # noqa: E501
                 status_code = HTTPStatus.FORBIDDEN
                 if async_query:
                     task_id = assert_ok_async_response(response)
@@ -72,11 +83,15 @@ def test_refresh_gnosis_pay_and_monerium(
                     'DELETE FROM key_value_cache WHERE name=?',
                     (DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS.value,),
                 )
-        assert_error_response(
-            response=requests.post(
-                api_url_for(rotkehlchen_api_server, 'eventsonlinequeryresource'),
-                json={'async_query': False, 'query_type': query_type},
-            ),
-            contained_in_msg=error_msg,
-            status_code=HTTPStatus.CONFLICT,
-        )
+        with patch(
+            'rotkehlchen.api.services.history.has_premium_capability',
+            return_value=start_with_valid_premium,
+        ):
+            assert_error_response(
+                response=requests.post(
+                    api_url_for(rotkehlchen_api_server, 'eventsonlinequeryresource'),
+                    json={'async_query': False, 'query_type': query_type},
+                ),
+                contained_in_msg=error_msg,
+                status_code=HTTPStatus.CONFLICT,
+            )

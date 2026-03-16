@@ -358,5 +358,33 @@ describe('modules/premium/use-feature-access', () => {
         expect(get(eventAnalysisAllowed)).toBe(false);
       });
     });
+
+    it('should handle gnosis pay and monerium capabilities', async () => {
+      const mockCapabilities: PremiumCapabilities = {
+        [PremiumFeature.GNOSIS_PAY]: cap(true, 'Advanced'),
+        [PremiumFeature.MONERIUM]: cap(false, 'Advanced'),
+      };
+
+      server.use(mockPremiumCapabilities(mockCapabilities));
+      usePremiumWatchers();
+
+      const store = usePremiumStore();
+      const { premium } = storeToRefs(store);
+
+      const { allowed: gnosisPayAllowed, minimumTier: gnosisPayTier } = useFeatureAccess(PremiumFeature.GNOSIS_PAY);
+      const { allowed: moneriumAllowed, minimumTier: moneriumTier } = useFeatureAccess(PremiumFeature.MONERIUM);
+
+      expect(get(gnosisPayAllowed)).toBe(false);
+      expect(get(moneriumAllowed)).toBe(false);
+
+      set(premium, true);
+
+      await vi.waitFor(() => {
+        expect(get(gnosisPayAllowed)).toBe(true);
+        expect(get(moneriumAllowed)).toBe(false);
+        expect(get(gnosisPayTier)).toBe('Advanced');
+        expect(get(moneriumTier)).toBe('Advanced');
+      });
+    });
   });
 });

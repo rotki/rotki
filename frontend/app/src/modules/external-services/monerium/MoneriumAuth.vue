@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import type { OAuthResult } from '@shared/ipc';
 import { Severity } from '@rotki/common';
-import ServiceKeyCard from '@/components/settings/api-keys/ServiceKeyCard.vue';
+import ServiceKeyCard, { type FeatureGate } from '@/components/settings/api-keys/ServiceKeyCard.vue';
 import { useInterop } from '@/composables/electron-interop';
 import { useBackendMessages } from '@/modules/app/use-backend-messages';
 import { useNotificationDispatcher } from '@/modules/notifications/use-notification-dispatcher';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { getErrorMessage } from '@/utils/error-handling';
 import { getPublicServiceImagePath } from '@/utils/file';
 import { logger } from '@/utils/logging';
@@ -12,6 +13,16 @@ import { useMoneriumOAuth } from './use-monerium-auth';
 
 const { t } = useI18n({ useScope: 'global' });
 const name = 'monerium';
+
+const { allowed, minimumTier, premium } = useFeatureAccess(PremiumFeature.MONERIUM);
+const featureGate = computed<FeatureGate>(() => {
+  const tier = get(minimumTier);
+  const message = !get(premium)
+    ? t('external_services.need_premium')
+    : t('external_services.need_tier', { tier });
+
+  return { allowed: get(allowed), message };
+});
 
 const websiteUrl = import.meta.env.VITE_ROTKI_WEBSITE_URL as string | undefined;
 
@@ -168,7 +179,7 @@ onUnmounted(() => {
 <template>
   <ServiceKeyCard
     :name="name"
-    need-premium
+    :feature-gate="featureGate"
     :key-set="authenticated"
     :title="t('external_services.monerium.title')"
     :subtitle="t('external_services.monerium.description')"

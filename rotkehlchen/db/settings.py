@@ -242,7 +242,7 @@ class DBSettings:
     pnl_csv_have_summary: bool = DEFAULT_PNL_CSV_HAVE_SUMMARY
     ssf_graph_multiplier: int = DEFAULT_SSF_GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
-    non_syncing_exchanges: Sequence[ExchangeLocationID] = field(default_factory=list)
+    non_syncing_exchanges: frozenset[ExchangeLocationID] = field(default_factory=frozenset)
     evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = field(default_factory=list)  # Both EVM and EVMLike chains # noqa: E501
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
@@ -428,7 +428,7 @@ def db_settings_from_dict(
             specified_args[key] = [EvmIndexer.deserialize(entry) for entry in json.loads(value)]
         elif key == 'non_syncing_exchanges':
             values = json.loads(value)
-            specified_args[key] = [ExchangeLocationID.deserialize(x) for x in values]
+            specified_args[key] = frozenset(ExchangeLocationID.deserialize(x) for x in values)
         elif key == 'evmchains_to_skip_detection':
             values = json.loads(value)
             specified_args[key] = [SupportedBlockchain.deserialize(x) for x in values]

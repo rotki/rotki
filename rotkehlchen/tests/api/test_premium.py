@@ -316,11 +316,15 @@ def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
             'graphs_view': True,
             'event_analysis_view': False,
             'asset_movement_matching': True,
+            'gnosispay': True,
+            'monerium': False,
             'unlocks': {
                 'eth_staking_view': 'Basic',
                 'graphs_view': 'Basic',
                 'event_analysis_view': 'Basic',
                 'asset_movement_matching': 'Basic',
+                'gnosispay': 'Advanced',
+                'monerium': 'Advanced',
             },
         },
     ):
@@ -353,6 +357,14 @@ def test_get_premium_capabilities(rotkehlchen_api_server: APIServer) -> None:
             'asset_movement_matching': {
                 'enabled': True,
                 'minimum_tier': 'Basic',
+            },
+            'gnosispay': {
+                'enabled': True,
+                'minimum_tier': 'Advanced',
+            },
+            'monerium': {
+                'enabled': False,
+                'minimum_tier': 'Advanced',
             },
         }
 
@@ -388,6 +400,14 @@ def test_get_free_user_capabilities(rotkehlchen_api_server: APIServer) -> None:
                 'enabled': False,
                 'minimum_tier': 'Basic',
             },
+            'gnosispay': {
+                'enabled': False,
+                'minimum_tier': 'Advanced',
+            },
+            'monerium': {
+                'enabled': False,
+                'minimum_tier': 'Advanced',
+            },
         },
     ):
         response = requests.get(api_url_for(
@@ -419,5 +439,13 @@ def test_get_free_user_capabilities(rotkehlchen_api_server: APIServer) -> None:
             'asset_movement_matching': {
                 'enabled': False,
                 'minimum_tier': 'Basic',
+            },
+            'gnosispay': {
+                'enabled': False,
+                'minimum_tier': 'Advanced',
+            },
+            'monerium': {
+                'enabled': False,
+                'minimum_tier': 'Advanced',
             },
         }

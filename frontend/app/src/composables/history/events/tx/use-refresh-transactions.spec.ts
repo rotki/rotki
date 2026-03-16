@@ -88,9 +88,13 @@ vi.mock('./use-history-transaction-accounts', () => ({
   useHistoryTransactionAccounts: vi.fn(() => mockHistoryTransactionAccounts),
 }));
 
-vi.mock('@/composables/status', () => ({
-  useStatusUpdater: vi.fn(() => mockStatusUpdater),
-}));
+vi.mock(import('@/composables/status'), async (importOriginal) => {
+  const actual = await importOriginal();
+  return {
+    ...actual,
+    useStatusUpdater: vi.fn(() => mockStatusUpdater),
+  };
+});
 
 vi.mock('./decoding', () => ({
   useHistoryTransactionDecoding: vi.fn(() => mockHistoryTransactionDecoding),

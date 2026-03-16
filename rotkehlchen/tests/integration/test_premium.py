@@ -743,6 +743,26 @@ def test_upload_data_error(rotkehlchen_instance: 'Rotkehlchen') -> None:
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('premium_limits_override', [{'max_backup_size_mb': 0}])
+def test_upload_skipped_when_backup_limit_is_zero(rotkehlchen_instance: 'Rotkehlchen') -> None:
+    """Test that upload is disabled when the premium tier does not allow backups."""
+    assert rotkehlchen_instance.task_manager is not None
+    with patch.object(
+        rotkehlchen_instance.premium_sync_manager,
+        'maybe_upload_data_to_server',
+    ) as upload_mock:
+        assert rotkehlchen_instance.task_manager._maybe_schedule_db_upload() is None
+        success, message = rotkehlchen_instance.premium_sync_manager.sync_data(
+            action='upload',
+            perform_migrations=False,
+        )
+
+    assert success is False
+    assert message == 'Upload failed.'
+    upload_mock.assert_not_called()
+
+
+@pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('device_limit', [1, 2])
 def test_device_limits(rotkehlchen_instance: 'Rotkehlchen', device_limit: int) -> None:
     """

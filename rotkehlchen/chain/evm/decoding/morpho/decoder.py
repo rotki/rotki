@@ -149,21 +149,30 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             return [], None
 
         vault_token, underlying_token, shares_amount, assets_amount = tokens_and_amounts
-        spend_events, spent_amount, receive_event, is_wrapped_native_vault = [], ZERO, None, False
+        spend_events, spent_amount, receive_event = [], ZERO, None
+        is_wrapped_native_vault = underlying_token == self.node_inquirer.wrapped_native_token
         for event in context.decoded_events:
+            is_direct_native_bundler_spend = (
+                is_wrapped_native_vault and
+                event.asset == self.node_inquirer.native_token and
+                event.address in self.bundlers
+            )
+            is_wrapped_native_spend = (
+                is_wrapped_native_vault and
+                event.asset == underlying_token and
+                event.address in self.bundlers
+            )
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
                 (
                     event.asset == underlying_token or
-                    (is_wrapped_native_vault := (
-                        event.asset == self.node_inquirer.native_token and
-                        underlying_token == self.node_inquirer.wrapped_native_token
-                    ))  # wrapped native vaults can have a native token send event
+                    is_direct_native_bundler_spend  # wrapped native vaults can have a native token send event  # noqa: E501
                 ) and
                 (
                     event.amount == assets_amount or
-                    (is_wrapped_native_vault and event.address in self.bundlers)
+                    is_direct_native_bundler_spend or
+                    is_wrapped_native_spend
                 ) and
                 self.base.is_tracked(bytes_to_address(context.tx_log.topics[2]))  # owner address should be tracked  # noqa: E501
             ):
@@ -191,8 +200,21 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
 
         if (
             receive_event is not None and
-            (len(spend_events) == 0 or (is_wrapped_native_vault and spent_amount != assets_amount))
+            (len(spend_events) == 0 or (is_wrapped_native_vault and spent_amount < assets_amount))
         ):  # Create a deposit event for funds moved from another vault if the spend events don't cover the deposited amount.  # noqa: E501
+            if (
+                len(spend_events) == 0 and
+                is_wrapped_native_vault and
+                any(
+                    event.event_type == HistoryEventType.DEPOSIT and
+                    event.event_subtype == HistoryEventSubType.DEPOSIT_FOR_WRAPPED and
+                    event.counterparty == CPT_MORPHO and
+                    event.location_label == receive_event.location_label
+                    for event in context.decoded_events
+                )
+            ):
+                return [], receive_event
+
             deposit_event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
@@ -299,8 +321,10 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         else:
             return DEFAULT_EVM_DECODING_OUTPUT
 
-        if len(out_events) == 0 or in_event is None:
+        if in_event is None:
             log.error(f'Failed to find both out and in events for Morpho vault transaction {context.transaction}')  # noqa: E501
+            return DEFAULT_EVM_DECODING_OUTPUT
+        if len(out_events) == 0:
             return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events(

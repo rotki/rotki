@@ -1,6 +1,8 @@
 import type { ComputedRef, MaybeRefOrGetter } from 'vue';
 import { useStatusStore } from '@/store/status';
-import { type Section, Status } from '@/types/status';
+import { Section, Status } from '@/types/status';
+
+export { Section, Status };
 
 interface UseSectionStatusReturn {
   isInitialLoading: ComputedRef<boolean>;

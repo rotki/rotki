@@ -8,6 +8,7 @@ import { useSettingsApi } from '@/composables/api/settings/settings-api';
 import { useSessionSettings } from '@/composables/session/settings';
 import { api } from '@/modules/api/rotki-api';
 import { useMonitorService } from '@/modules/app/use-monitor-service';
+import { sigilBus } from '@/modules/sigil/event-bus';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -77,6 +78,8 @@ export function useLogin(): UseLoginReturn {
       set(logged, true);
       if (fetchData)
         set(shouldFetchData, true);
+
+      sigilBus.emit('session:ready');
 
       return { success: true };
     }

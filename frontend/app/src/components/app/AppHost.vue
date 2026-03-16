@@ -3,10 +3,12 @@ import { checkIfDevelopment, startPromise } from '@shared/utils';
 import { useBackendManagement } from '@/composables/backend';
 import { useSessionStateCleaner } from '@/composables/session/logout';
 import { useLocale } from '@/composables/session/use-locale';
+import { useSigil } from '@/modules/sigil/use-sigil';
 import { useThemeChecker } from '@/modules/theme/use-theme-checker';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 useThemeChecker();
+useSigil();
 
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));
 

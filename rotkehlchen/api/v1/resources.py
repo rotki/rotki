@@ -250,6 +250,11 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.types import HistoricalPriceOracle
+from rotkehlchen.premium.premium import (
+    GNOSIS_PAY_CAPABILITY,
+    MONERIUM_CAPABILITY,
+    has_premium_capability,
+)
 from rotkehlchen.serialization.schemas import (
     AssetSchema,
     BaseCustomAssetSchema,
@@ -487,6 +492,29 @@ def require_premium_user(active_check: bool) -> Callable:
 
         return wrapper
     return _require_premium_user
+
+
+def require_premium_capability(capability_name: str, pretty_name: str) -> Callable:
+    """Decorator for endpoints gated by a premium capability."""
+    def _require_premium_capability(f: Callable) -> Callable:
+        @wraps(f)
+        def wrapper(*args: Any, **kwargs: Any) -> Any:
+            view_class = args[0]
+            rest_api = view_class.rest_api
+            if rest_api.rotkehlchen.user_is_logged_in is False:
+                result_dict = wrap_in_fail_result('No user is currently logged in')
+                return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
+
+            if has_premium_capability(rest_api.rotkehlchen.premium, capability_name):
+                return f(*args, **kwargs)
+
+            result_dict = wrap_in_fail_result(
+                f'{pretty_name} is not available for your current subscription tier',
+            )
+            return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
+
+        return wrapper
+    return _require_premium_capability
 
 
 def create_blueprint(url_prefix: str) -> Blueprint:
@@ -1773,7 +1801,7 @@ class GnosisPayNonceResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
-    @require_premium_user(active_check=False)
+    @require_premium_capability(capability_name=GNOSIS_PAY_CAPABILITY, pretty_name='Gnosis Pay')
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.fetch_gnosis_pay_nonce(async_query=async_query)
@@ -1783,7 +1811,7 @@ class GnosisPayTokenResource(BaseMethodView):
 
     post_schema = GnosisPaySiweChallengeSchema()
 
-    @require_premium_user(active_check=False)
+    @require_premium_capability(capability_name=GNOSIS_PAY_CAPABILITY, pretty_name='Gnosis Pay')
     @use_kwargs(post_schema, location='json')
     def post(self, message: str, signature: str, async_query: bool) -> Response:
         return self.rest_api.verify_gnosis_pay_siwe_signature(
@@ -1797,7 +1825,7 @@ class GnosisPaySafeAdminsResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
 
-    @require_premium_user(active_check=False)
+    @require_premium_capability(capability_name=GNOSIS_PAY_CAPABILITY, pretty_name='Gnosis Pay')
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_gnosis_pay_safe_admin_addresses(async_query=async_query)
@@ -3504,11 +3532,11 @@ class MoneriumOAuthResource(BaseMethodView):
 
     put_schema = MoneriumOAuthCredentialsSchema()
 
-    @require_loggedin_user()
+    @require_premium_capability(capability_name=MONERIUM_CAPABILITY, pretty_name='Monerium')
     def get(self) -> Response:
         return self.rest_api.get_monerium_status()
 
-    @require_premium_user(active_check=False)
+    @require_premium_capability(capability_name=MONERIUM_CAPABILITY, pretty_name='Monerium')
     @use_kwargs(put_schema, location='json')
     def put(self, access_token: str, refresh_token: str, expires_in: int) -> Response:
         return self.rest_api.complete_monerium_oauth(
@@ -3517,7 +3545,7 @@ class MoneriumOAuthResource(BaseMethodView):
             expires_in=expires_in,
         )
 
-    @require_loggedin_user()
+    @require_premium_capability(capability_name=MONERIUM_CAPABILITY, pretty_name='Monerium')
     def delete(self) -> Response:
         return self.rest_api.disconnect_monerium()
 

@@ -15,6 +15,9 @@ Changelog
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
 * :feature:`10712` bitcoin events can now be filtered by address.
 * :feature:`10542` StakeDAO v2 votemarket events will now be properly decoded.
+* :bug:`11854` Users can now unmark assets as spam or unignore them directly from the history events context menu, instead of having to navigate to the asset manager.
+* :bug:`-` Curve withdrawals with dynamic amount of assets will now be properly decoded.
+* :bug:`-` Morpho bundles deposits of ETH in multiple pools won't get mixed with WETH and appear multiple times or with negative values.
 * :bug:`11784` Users can now delete extra spend, receive, or fee sub-events from multi-asset swaps directly from the event list without opening the full edit form.
 * :feature:`11817` ETH staking validator limits are now checked before submission in the add validator dialog, showing user-friendly messages with upgrade prompts instead of raw backend errors.
 * :bug:`-` Certain cases of ENS registrations with a specific refund ordering will now also be properly understood by rotki.
@@ -32,6 +35,7 @@ Changelog
 * :bug:`11766` Value distribution graphs will now work correctly by fixing the schema types to match the backend response.
 * :feature:`-` SAFE claims from GnosisDAO Safe Token distribution are now decoded properly by rotki.
 * :bug:`-` Beefy Finance harvest call rewards will now be properly decoded as part of the beefy side of a transaction.
+* :bug:`-` Beefy Finance staking and unstaking of vault tokens will now be properly decoded by rotki along with any potential rewards.
 * :bug:`-` Depositing via Pendle v3 router should be now properly decoded by rotki.
 * :bug:`-` Bridging ETH from mainnet to Optimism will no longer duplicate the event under some weird circumstances.
 * :bug:`-` Historic event values will no longer incorrectly fallback to the current price when the historic price is not available.

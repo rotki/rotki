@@ -5,6 +5,7 @@ import { Module, useModuleEnabled } from '@/composables/session/modules';
 import { useExternalApiKeys } from '@/composables/settings/api-keys/external';
 import { useMoneriumOAuth } from '@/modules/external-services/monerium/use-monerium-auth';
 import { useNotifications } from '@/modules/notifications/use-notifications';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { TaskType } from '@/modules/tasks/task-type';
 import { isActionableFailure, useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useEventsQueryStatusStore } from '@/store/history/query-status/events-query-status';
@@ -27,6 +28,8 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
   const { enabled: isEth2Enabled } = useModuleEnabled(Module.ETH2);
   const { getApiKey } = useExternalApiKeys();
   const { authenticated: moneriumAuthenticated, refreshStatus } = useMoneriumOAuth();
+  const { allowed: gnosisPayAllowed } = useFeatureAccess(PremiumFeature.GNOSIS_PAY);
+  const { allowed: moneriumAllowed } = useFeatureAccess(PremiumFeature.MONERIUM);
 
   const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
     const eth2QueryTypes: OnlineHistoryEventsQueryType[] = [
@@ -37,11 +40,14 @@ export function useRefreshHandlers(): UseRefreshHandlersReturn {
     if (!get(isEth2Enabled) && eth2QueryTypes.includes(queryType))
       return;
 
-    if (!getApiKey('gnosis_pay') && queryType === OnlineHistoryEventsQueryType.GNOSIS_PAY) {
+    if (queryType === OnlineHistoryEventsQueryType.GNOSIS_PAY && (!get(gnosisPayAllowed) || !getApiKey('gnosis_pay'))) {
       return;
     }
 
     if (queryType === OnlineHistoryEventsQueryType.MONERIUM) {
+      if (!get(moneriumAllowed))
+        return;
+
       await refreshStatus();
       if (!get(moneriumAuthenticated)) {
         return;

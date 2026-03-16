@@ -2,14 +2,31 @@
 import AppImage from '@/components/common/AppImage.vue';
 import BigDialog from '@/components/dialogs/BigDialog.vue';
 import PremiumLock from '@/components/premium/PremiumLock.vue';
-import { usePremium } from '@/composables/premium';
 
-const { name, title, subtitle = '', imageSrc, needPremium = false, roundedIcon = false, keySet = false, hideAction = false, primaryAction = '', actionDisabled = false, addButtonText, editButtonText } = defineProps<{
+export interface FeatureGate {
+  allowed: boolean;
+  message: string;
+}
+
+const {
+  name,
+  title,
+  subtitle = '',
+  imageSrc,
+  featureGate,
+  roundedIcon = false,
+  keySet = false,
+  hideAction = false,
+  primaryAction = '',
+  actionDisabled = false,
+  addButtonText,
+  editButtonText,
+} = defineProps<{
   name?: string;
   title: string;
   subtitle?: string;
   imageSrc: string;
-  needPremium?: boolean;
+  featureGate?: FeatureGate;
   roundedIcon?: boolean;
   keySet?: boolean;
   hideAction?: boolean;
@@ -32,9 +49,9 @@ const { t } = useI18n({ useScope: 'global' });
 
 const openDialog = ref<boolean>(false);
 
-const premium = usePremium();
+const featureBlocked = computed<boolean>(() => !!featureGate && !featureGate.allowed);
 
-function setOpen(value: boolean) {
+function setOpen(value: boolean): void {
   set(openDialog, value);
 }
 
@@ -98,11 +115,11 @@ defineExpose({
       </RuiCardHeader>
     </div>
     <div
-      v-if="needPremium && !premium"
+      v-if="featureBlocked"
       class="py-2.5 px-6 -ml-4 flex items-center gap-2 text-body-2 border-t border-default text-rui-text-secondary"
     >
       <PremiumLock />
-      {{ t('external_services.need_premium') }}
+      {{ featureGate?.message }}
     </div>
     <div
       v-else
