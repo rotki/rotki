@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Sushiswap swaps should now be decoded on all EVM chains
 * :bug:`11854` Users can now unmark assets as spam or unignore them directly from the history events context menu, instead of having to navigate to the asset manager.
 * :bug:`-` Curve withdrawals with dynamic amount of assets will now be properly decoded.
 * :bug:`-` Morpho bundles deposits of ETH in multiple pools won't get mixed with WETH and appear multiple times or with negative values.
