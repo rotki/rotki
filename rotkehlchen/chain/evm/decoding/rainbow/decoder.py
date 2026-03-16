@@ -192,7 +192,7 @@ class RainbowDecoder(EvmDecoderInterface):
             # check the event logs for the transfers made by the router to find if the fee was
             # taken from the asset sent or the asset received
             for log_event in all_logs:
-                if len(log_event.topics) != 3 or log_event.topics[0] == ERC20_OR_ERC721_TRANSFER:
+                if len(log_event.topics) != 3 or log_event.topics[0] != ERC20_OR_ERC721_TRANSFER:
                     continue  # we only look for transfers
 
                 if (
