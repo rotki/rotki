@@ -7,6 +7,8 @@ import gevent
 import requests
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2ChainIdsWithL1FeesType
+from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
@@ -33,7 +35,10 @@ from rotkehlchen.utils.network import create_session
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
+    from collections.abc import Iterator
+
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.types import EvmInternalTransaction, EvmTransaction
 
 # Blockscout returns a maximum of 10000 transactions per request.
 # https://docs.blockscout.com/devs/apis/rpc/account#get-transactions-by-address
@@ -477,6 +482,52 @@ class Blockscout(EtherscanLikeApi):
                 )
 
         return touched_indices - tracked_indices
+
+    def get_transactions(  # type: ignore[override]
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress | None,
+            action: Literal['txlist', 'txlistinternal'],
+            period_or_hash: 'TimestampOrBlockRange | EVMTxHash | None' = None,
+            tx_timestamp: Timestamp | None = None,
+    ) -> 'Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]':
+        """Extends the base implementation to skip internal transaction queries on Optimism
+        for periods that predate the Bedrock upgrade (block {OP_BEDROCK_BLOCK} /
+        timestamp {OP_BEDROCK_UPGRADE}). Blockscout does not properly index internal
+        transactions for that period on Optimism; other indexers may still provide them.
+
+        For block-range queries the period has already been converted from timestamps to block
+        numbers by the caller, so we compare directly against OP_BEDROCK_BLOCK.
+
+        For hash-based queries, tx_timestamp carries the timestamp of the parent transaction.
+        Callers always query and obtain the parent transaction object before querying its
+        internal transactions, so the timestamp is available in memory and passed here directly
+        to avoid an extra DB round-trip.
+        """
+        if chain_id == ChainID.OPTIMISM and action == 'txlistinternal':
+            if isinstance(period_or_hash, TimestampOrBlockRange):
+                threshold = OP_BEDROCK_BLOCK if period_or_hash.range_type == 'blocks' else OP_BEDROCK_UPGRADE  # noqa: E501
+                if period_or_hash.from_value < threshold:
+                    raise RemoteError(
+                        f'Skipping Optimism internal transactions range query '
+                        f'({period_or_hash.from_value} - {period_or_hash.to_value}): '
+                        f'range starts before Bedrock {period_or_hash.range_type[:-1]} '
+                        f'{threshold}. Other indexers may have this data.',
+                    )
+            elif tx_timestamp is not None and tx_timestamp < OP_BEDROCK_UPGRADE:
+                raise RemoteError(
+                    f'Skipping Optimism internal transactions query for '
+                    f'{period_or_hash!s}: tx timestamp {tx_timestamp} < {OP_BEDROCK_UPGRADE}. '
+                    f'Other indexers may have this data.',
+                )
+
+        yield from super().get_transactions(
+            chain_id=chain_id,
+            account=account,
+            action=action,
+            period_or_hash=period_or_hash,
+            tx_timestamp=tx_timestamp,
+        )
 
     def get_blocknumber_by_time(
             self,

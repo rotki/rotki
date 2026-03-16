@@ -82,12 +82,14 @@ class OdosCommonDecoderBase(EvmDecoderInterface):
                 internal_native_ins = self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
                     chain_id=self.base.evm_inquirer.chain_id,
                     tx_hash=context.transaction.tx_hash,
+                    tx_timestamp=context.transaction.timestamp,
                     to_address=self.router_address,
                     user_address=sender,
                 )
                 internal_native_outs = self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
                     chain_id=self.base.evm_inquirer.chain_id,
                     tx_hash=context.transaction.tx_hash,
+                    tx_timestamp=context.transaction.timestamp,
                     from_address=self.router_address,
                     to_address=sender,
                     user_address=sender,

@@ -1537,6 +1537,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             account: ChecksumEvmAddress | None,
             action: Literal['txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmInternalTransaction]]:
         ...
 
@@ -1546,6 +1547,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             account: ChecksumEvmAddress | None,
             action: Literal['txlist'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmTransaction]]:
         ...
 
@@ -1554,15 +1556,21 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             account: ChecksumEvmAddress | None,
             action: Literal['txlist', 'txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]:
         """Returns an iterator of transaction lists for a given account, action, and period/hash.
         Tries etherscan first, then blockscout. Raises RemoteError if both fail.
+
+        tx_timestamp is the timestamp of the parent transaction for hash-based internal
+        transaction queries. Passed through to indexers so they can gate queries without
+        an extra DB round-trip.
         """
         yield from self._try_indexers_iterable(func=lambda indexer: indexer.get_transactions(  # type: ignore[misc]
             chain_id=self.chain_id,
             account=account,
             period_or_hash=period_or_hash,
             action=action,
+            tx_timestamp=tx_timestamp,
         ))
 
     def get_token_transaction_hashes(

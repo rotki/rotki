@@ -151,6 +151,7 @@ class RainbowDecoder(EvmDecoderInterface):
             for internal_tx in self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
                 tx_hash=transaction.tx_hash,
                 chain_id=self.base.evm_inquirer.chain_id,
+                tx_timestamp=transaction.timestamp,
                 user_address=string_to_evm_address(out_event.location_label),  # type: ignore[arg-type]  # location_label should always be set
             ):
                 if ((

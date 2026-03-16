@@ -487,6 +487,7 @@ class EtherscanLikeApi(ABC):
             account: ChecksumEvmAddress | None,
             action: Literal['txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmInternalTransaction]]:
         ...
 
@@ -497,6 +498,7 @@ class EtherscanLikeApi(ABC):
             account: ChecksumEvmAddress | None,
             action: Literal['txlist'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmTransaction]]:
         ...
 
@@ -506,6 +508,7 @@ class EtherscanLikeApi(ABC):
             account: ChecksumEvmAddress | None,
             action: Literal['txlist', 'txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]:
         """Gets a list of transactions (either normal or internal) for an account.
 

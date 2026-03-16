@@ -126,6 +126,7 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
                 internal_fee_txs = self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
                     tx_hash=context.transaction.tx_hash,
                     chain_id=self.base.evm_inquirer.chain_id,
+                    tx_timestamp=context.transaction.timestamp,
                     from_address=self.router_address,
                     to_address=self.fee_receiver_address,
                     user_address=sender,
