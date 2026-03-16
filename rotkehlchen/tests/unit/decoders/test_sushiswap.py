@@ -5,7 +5,11 @@ import pytest
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.decoding.constants import CPT_GAS
 from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP, CPT_SUSHISWAP_V2
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    SerializableChainIndexerOrder,
+    string_to_evm_address,
+)
 from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -24,6 +28,7 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 ADDY_1 = string_to_evm_address('0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF')
@@ -361,4 +366,59 @@ def test_sushiswap_redsnwap_token_to_eth(
         notes=f'Spend {fee_amount} ETH as Sushiswap swap fee',
         counterparty=CPT_SUSHISWAP,
         address=string_to_evm_address('0xd2b37aDE14708bf18904047b1E31F8166d39612b'),
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(order={ChainID.BASE: [EvmIndexer.BLOCKSCOUT]})}])  # noqa: E501
+@pytest.mark.parametrize('base_accounts', [['0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c']])
+def test_sushiswap_swap_eth_to_token(
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that a Sushiswap Route Processor swap of ETH to TYBG on Base is decoded properly."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0xcd776ba46aff70b3cc1284b954d6e0a10a4d69dc43891787d77c964c467329c8')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := TimestampMS(1706129931000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=(gas_amount := FVal('0.000041550789090959')),
+        location_label=(user_address := base_accounts[0]),
+        counterparty=CPT_GAS,
+        notes=f'Burn {gas_amount} ETH for gas',
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=(spend_amount := FVal('0.009832891503659921')),
+        location_label=user_address,
+        notes=f'Swap {spend_amount} ETH in Sushiswap',
+        counterparty=CPT_SUSHISWAP,
+        address=string_to_evm_address('0x83eC81Ae54dD8dca17C3Dd4703141599090751D1'),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset(evm_address_to_identifier(
+            address='0x0d97F261b1e88845184f678e2d1e7a98D9FD38dE',
+            chain_id=ChainID.BASE,
+            token_type=TokenKind.ERC20,
+        )),
+        amount=(receive_amount := FVal('2812320.686082273676574334')),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} TYBG from Sushiswap swap',
+        counterparty=CPT_SUSHISWAP,
+        address=string_to_evm_address('0x83eC81Ae54dD8dca17C3Dd4703141599090751D1'),
     )]
