@@ -44,6 +44,7 @@ Changelog
 * :bug:`-` ZKSynclite batch withdrawal on the ethereum side should now be properly decoded.
 * :bug:`-` Claiming AAVE rewards and immediately restaking them will now be properly decoded.
 * :bug:`-` Kyberswap swaps containing refunds will now be processed properly and deduct refund from original swap amount.
+* :bug:`-` Specific cases of rainbow swaps with fees will now also be properly decoded.
 * :bug:`-` WETH Unwrapping in base will now be properly decoded.
 * :bug:`-` The rare case of balancer v2 swaps with repeated swap logs for a single events is now decoded properly.
 * :feature:`-` ERC4337 fee payments will now be properly understood by rotki
