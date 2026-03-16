@@ -40,7 +40,7 @@ dependencies = [
     "py-sr25519-bindings==0.2.2",
     "py-ed25519-zebra-bindings==1.2.0",
     "py-bip39-bindings==0.2.0",
-    "substrate-interface==1.7.11",
+    "substrate-interface==1.8.1",
     "beautifulsoup4==4.14.2",
     "maxminddb==2.6.3",
     "pywin32==306; sys_platform == 'win32'",
@@ -55,7 +55,7 @@ dependencies = [
     # For the rest api
     "flask-cors==6.0.1",
     "flask==3.1.3",
-    "marshmallow==4.1.0",
+    "marshmallow==4.2.2",
     "webargs==8.7.0",
     "werkzeug==3.1.6",
     # for icon validation
@@ -64,14 +64,14 @@ dependencies = [
     "polyleven==0.9",
     # We used to only use this for packaging, but now use it for the version comparison functionality
     "packaging==25.0",
-    "bip-utils==2.9.3",
+    "bip-utils==2.12.1",
     # For Google Calendar integration
     "google-api-python-client==2.192.0",
-    "google-auth==2.48.0",
+    "google-auth==2.49.1",
     #constraints
     "pycparser<=2.17", # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
     # To build JWT for coinbase exchange key validation
-    "PyJWT==2.10.1",
+    "PyJWT==2.12.0",
     # solana
     "solana==0.36.9",
     "solders==0.26.0"
