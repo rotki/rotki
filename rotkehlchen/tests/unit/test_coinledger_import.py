@@ -271,13 +271,15 @@ def test_coinledger_importer(database) -> None:
 def test_coinledger_importer_rejects_contradictory_signs(database, tmp_path) -> None:
     importer = CoinledgerImporter(db=database)
     filepath = tmp_path / 'coinledger_contradictory_signs.csv'
+    header = (
+        'Timestamp (UTC),Type,Internal Id,Platform,Account Name,'
+        'Platform Id,Blockchain Id,Record Type,Asset,Amount,Description'
+    )
     filepath.write_text(
-        '\n'.join([
-            'Timestamp (UTC),Type,Internal Id,Platform,Account Name,Platform Id,Blockchain Id,Record Type,Asset,Amount,Description',
-            '2025-10-05T10:00:00.000,Interest,7000000001,Binance,Binance,,,Credit,USDT,-1.25,',
-            '2025-10-05T10:01:00.000,Gift Sent,7000000002,Binance,Binance,,,Debit,BTC,0.001,',
-            '2025-10-05T10:02:00.000,Interest,7000000003,Binance,Binance,,,Credit,USDT,0.8,',
-        ]),
+        f'{header}\n'
+        '2025-10-05T10:00:00.000,Interest,7000000001,Binance,Binance,,,Credit,USDT,-1.25,\n'
+        '2025-10-05T10:01:00.000,Gift Sent,7000000002,Binance,Binance,,,Debit,BTC,0.001,\n'
+        '2025-10-05T10:02:00.000,Interest,7000000003,Binance,Binance,,,Credit,USDT,0.8,',
         encoding='utf-8',
     )
 
@@ -289,7 +291,9 @@ def test_coinledger_importer_rejects_contradictory_signs(database, tmp_path) -> 
     assert importer.imported_entries == 2
     assert len(importer.import_msgs) == 1
     assert all(import_msg.get('is_error') is True for import_msg in importer.import_msgs)
-    assert all('Contradictory amount sign' in import_msg['msg'] for import_msg in importer.import_msgs)
+    assert all(
+        'Contradictory amount sign' in import_msg['msg'] for import_msg in importer.import_msgs
+    )
 
     with database.conn.read_ctx() as cursor:
         events = DBHistoryEvents(database).get_history_events_internal(
