@@ -33,7 +33,7 @@
     "@vueuse/core": "14.2.1",
     "bignumber.js": "9.3.1",
     "typescript": "5.9.3",
-    "vue": "3.5.29",
+    "vue": "3.5.30",
     "zod": "3.25.76"
   }
 }
