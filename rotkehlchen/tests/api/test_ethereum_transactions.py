@@ -1666,7 +1666,7 @@ def test_repulling_transaction_internal_replace_failure_rolls_back_tx_data(
         patch.object(
             rotki.chains_aggregator.ethereum.transactions,
             '_query_internal_transactions_for_parent_hash',
-            return_value=(internal_before, None),
+            return_value=(internal_before, None, 'etherscan'),
         ),
         patch.object(
             rotki.chains_aggregator.ethereum.transactions,

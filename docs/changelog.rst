@@ -25,6 +25,7 @@ Changelog
 * :bug:`-` Beefy Finance harvest call rewards will now be properly decoded as part of the beefy side of a transaction.
 * :bug:`-` Beefy Finance staking and unstaking of vault tokens will now be properly decoded by rotki along with any potential rewards.
 * :bug:`-` Depositing via Pendle v3 router should be now properly decoded by rotki.
+* :bug:`-` Repulling wrong data from indexers won't delete local data.
 * :bug:`-` Bridging ETH from mainnet to Optimism will no longer duplicate the event under some weird circumstances.
 * :bug:`-` Historic event values will no longer incorrectly fallback to the current price when the historic price is not available.
 * :bug:`-` Curve deposits with add liquidity + stake will now be properly decoded.

@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import DecoderContext, EvmDecodin
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import DataIntegrityError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -94,7 +94,7 @@ class OdosCommonDecoderBase(EvmDecoderInterface):
                     to_address=sender,
                     user_address=sender,
                 )
-            except RemoteError as e:
+            except (RemoteError, DataIntegrityError) as e:
                 log.error(f'Failed to get internal transactions for {self.label} swap {context.transaction} due to {e!s}')  # noqa: E501
             else:
                 for internal_native_in in internal_native_ins:
