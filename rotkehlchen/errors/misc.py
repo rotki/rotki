@@ -94,6 +94,10 @@ class DBSchemaError(Exception):
     """May be raised during database sanity check"""
 
 
+class DataIntegrityError(Exception):
+    """Raised when an operation would corrupt or destroy data that is already stored in the DB."""
+
+
 class GreenletKilledError(Exception):
     """Raised when a greenlet is killed"""
 

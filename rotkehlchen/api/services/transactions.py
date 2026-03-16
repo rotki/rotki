@@ -25,7 +25,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.errors.api import PremiumApiError
 from rotkehlchen.errors.asset import WrongAssetType
-from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
+from rotkehlchen.errors.misc import AlreadyExists, DataIntegrityError, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -444,14 +444,14 @@ class TransactionsService:
                 solana_tx_refs = cast('list[Signature]', tx_refs)
                 for solana_tx_ref in solana_tx_refs:
                     self._decode_given_solana_tx(solana_tx_ref, delete_custom)
-        except (RemoteError, DeserializationError, InputError) as e:
+        except (RemoteError, DeserializationError, InputError, DataIntegrityError) as e:
             success = False
             message = (
                 f'Failed to request {chain.name.lower()} transaction decoding due to {e!s}'
             )
             status_code = (
                 HTTPStatus.CONFLICT
-                if isinstance(e, InputError)
+                if isinstance(e, (InputError, DataIntegrityError))
                 else HTTPStatus.BAD_GATEWAY
             )
         finally:
@@ -832,14 +832,16 @@ class TransactionsService:
 
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         parent_hash_internal_txs: list[EvmInternalTransaction] = []
+        indexer_source = 'unknown'
         if transaction.to_address is not None:  # internal transactions only through contracts
-            parent_hash_internal_txs, _ = chain_manager.transactions._query_internal_transactions_for_parent_hash(  # noqa: E501
+            parent_hash_internal_txs, _, indexer_source = (
+                chain_manager.transactions._query_internal_transactions_for_parent_hash(
                 parent_tx_hash=tx_ref,
                 address=None,
                 return_queried_hashes=False,
                 known_parent_timestamps={tx_ref: transaction.timestamp},
                 tx_timestamp=transaction.timestamp,
-            )
+            ))
 
         with self.rotkehlchen.data.db.user_write() as write_cursor:
             write_cursor.execute(
@@ -861,6 +863,7 @@ class TransactionsService:
                     write_cursor=write_cursor,
                     parent_tx_hash=tx_ref,
                     transactions=parent_hash_internal_txs,
+                    indexer_source=indexer_source,
                 )
 
         events = chain_manager.transactions_decoder.decode_and_get_transaction_hashes(

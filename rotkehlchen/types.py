@@ -393,6 +393,7 @@ class EvmInternalTransaction(NamedTuple):
     value: int
     gas: int
     gas_used: int
+    source: str | None = None
 
     def __hash__(self) -> int:
         return hash(self.identifier)
