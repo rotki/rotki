@@ -35,7 +35,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -62,7 +62,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -80,7 +80,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -106,7 +106,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
           persist-credentials: false
@@ -117,12 +117,12 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v5
         with:
           package_json_file: frontend/package.json
 
       - name: Setup node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version-file: 'frontend/.nvmrc'
           cache: 'pnpm'
@@ -162,7 +162,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -172,13 +172,13 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Setup python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           version: ${{ env.UV_VERSION }}
@@ -201,7 +201,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -226,7 +226,7 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -258,7 +258,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -268,13 +268,13 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Setup python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: 'pip'
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           version: ${{ env.UV_VERSION }}
@@ -282,7 +282,7 @@ jobs:
 
       - name: Cache find-duplicate-constants binary
         id: fdc-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: tools/find-duplicate-constants/target/release/find-duplicate-constants
           key: ${{ runner.os }}-find-duplicate-constants-${{ hashFiles('tools/find-duplicate-constants/Cargo.lock', 'tools/find-duplicate-constants/Cargo.toml', 'tools/find-duplicate-constants/src/**') }}

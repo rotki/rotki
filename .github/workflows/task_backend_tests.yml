@@ -38,13 +38,13 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           fetch-depth: 2
           persist-credentials: false
 
       - name: Checkout test caching
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
         with:
           repository: rotki/test-caching
           path: test-caching
@@ -88,19 +88,19 @@ jobs:
           env_file: .github/.env.ci
 
       - name: Setup python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
           version: ${{ env.UV_VERSION }}
           cache-dependency-glob: "uv.lock"
 
       - name: Cache rotkehlchen test directory
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.cache/.rotkehlchen-test-dir
           key: ${{ runner.os }}-testdir
@@ -165,7 +165,7 @@ jobs:
 
       - name: Upload coverage artifacts
         if: ${{ inputs.collect_coverage }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-${{ inputs.os }}-${{ matrix.test-group }}
           path: .coverage.${{ matrix.test-group }}
