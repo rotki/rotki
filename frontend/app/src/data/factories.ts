@@ -54,5 +54,6 @@ export function defaultAccountingSettings(): AccountingSettings {
     pnlCsvHaveSummary: false,
     pnlCsvWithFormulas: true,
     taxfreeAfterPeriod: null,
+    useAssetCollectionsInCostBasis: true,
   };
 }

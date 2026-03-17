@@ -1688,6 +1688,7 @@ class ModifiableSettingsSchema(Schema):
     auto_delete_calendar_entries = fields.Boolean(load_default=None)
     auto_create_calendar_reminders = fields.Boolean(load_default=None)
     auto_create_profit_events = fields.Boolean(load_default=None)
+    use_asset_collections_in_cost_basis = fields.Boolean(load_default=None)
     ask_user_upon_size_discrepancy = fields.Boolean(load_default=None)
     auto_detect_tokens = fields.Boolean(load_default=None)
     csv_export_delimiter = EmptyAsNoneStringField(load_default=None)
@@ -1775,6 +1776,7 @@ class ModifiableSettingsSchema(Schema):
             asset_movement_time_range=data['asset_movement_time_range'],
             suppress_missing_key_msg_services=data['suppress_missing_key_msg_services'],
             auto_create_profit_events=data['auto_create_profit_events'],
+            use_asset_collections_in_cost_basis=data['use_asset_collections_in_cost_basis'],
         )
 
 

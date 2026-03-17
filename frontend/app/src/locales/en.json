@@ -142,7 +142,12 @@
         "error": "Failed to change cost basis fees settings: {message}"
       },
       "tax_free": "Tax free period {enabled}",
-      "tax_free_period": "Tax free period set to {period} days"
+      "tax_free_period": "Tax free period set to {period} days",
+      "use_asset_collections_in_cost_basis": {
+        "disabled": "Successfully disabled asset collections cost basis",
+        "enabled": "Successfully enabled asset collections cost basis",
+        "error": "Failed to change asset collections cost basis setting: {message}"
+      }
     },
     "validation": {
       "tax_free_days": "Please enter the number of days",
@@ -249,7 +254,8 @@
         "include_fees_in_cost_basis": "Take into account cost basis fees",
         "include_gas_costs": "Take into account Ethereum gas costs",
         "tax_free": "Is there a tax free period?",
-        "taxfree_after_period": "Tax free after how many days"
+        "taxfree_after_period": "Tax free after how many days",
+        "use_asset_collections_in_cost_basis": "Share cost basis across assets in the same collection"
       },
       "title": "Trade Settings"
     }
