@@ -3328,10 +3328,12 @@ def test_latest_upgrade_correctness(user_data_dir):
         resume_from_backup=False,
     )
     cursor = db.conn.cursor()
+    minimized_schema = dict(db.conn.minimized_schema)
+    minimized_schema.pop('evm_internal_tx_conflicts', None)  # created by data migration
     sanity_check_impl(  # do sanity check on the db schema
         cursor=cursor,
         db_name=db.conn.connection_type.name.lower(),
-        minimized_schema=db.conn.minimized_schema,
+        minimized_schema=minimized_schema,
         minimized_indexes=db.conn.minimized_indexes,
     )
     result = cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
@@ -3355,7 +3357,8 @@ def test_latest_upgrade_correctness(user_data_dir):
     missing_views = views_before - views_after_upgrade
     assert missing_tables == removed_tables
     assert missing_views == removed_views
-    assert tables_after_creation - tables_after_upgrade == set()
+    # This table is also created by a data migration and may not be present right after DB upgrade.
+    assert tables_after_creation - tables_after_upgrade == {'evm_internal_tx_conflicts'}
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
     assert new_tables == {

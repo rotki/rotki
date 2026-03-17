@@ -121,6 +121,7 @@ from rotkehlchen.api.v1.schemas import (
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
     IntegerIdentifierSchema,
+    InternalTxConflictsSchema,
     LidoCsmNodeOperatorSchema,
     LocationAssetMappingsDeleteSchema,
     LocationAssetMappingsPostSchema,
@@ -3709,6 +3710,30 @@ class RefetchTransactionsResource(BaseMethodView):
             async_query=async_query,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+        )
+
+
+class InternalTxConflictsResource(BaseMethodView):
+    get_schema = InternalTxConflictsSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            tx_hash: 'EVMTxHash | None' = None,
+            fixed: bool = False,
+            failed: bool = False,
+            limit: int | None = None,
+            offset: int | None = None,
+    ) -> Response:
+        return self.rest_api.get_pending_internal_tx_repull_conflicts(
+            async_query=async_query,
+            tx_hash=tx_hash,
+            fixed=fixed,
+            failed=failed,
+            limit=limit,
+            offset=offset,
         )
 
 

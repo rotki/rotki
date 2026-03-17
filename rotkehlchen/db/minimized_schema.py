@@ -27,6 +27,7 @@ MINIMIZED_USER_DB_SCHEMA = {
     "margin_positions": "idtextprimarykey,locationchar(1)notnulldefault('a')referenceslocation(location),open_timeinteger,close_timeinteger,profit_losstext,pl_currencytextnotnull,feetext,fee_currencytext,linktext,notestext,foreignkey(pl_currency)referencesassets(identifier)onupdatecascade,foreignkey(fee_currency)referencesassets(identifier)onupdatecascade",
     "used_query_ranges": "namevarchar[24]notnullprimarykey,start_tsinteger,end_tsinteger",
     "evm_tx_mappings": "tx_idintegernotnull,valueintegernotnull,foreignkey(tx_id)referencesevm_transactions(identifier)onupdatecascadeondeletecascade,primarykey(tx_id,value)",
+    "evm_internal_tx_conflicts": "transaction_hashblobnotnull,chainintegernotnull,actiontextnotnullcheck(actionin('fix_redecode','repull')),repull_reasontextcheck(repull_reasonin('all_zero_gas','other')),redecode_reasontextcheck(redecode_reasonin('mixed_zero_gas','duplicate_exact_rows','mixed_zero_gas_and_duplicate')),fixedintegernotnullcheck(fixedin(0,1)),last_retry_tsinteger,last_errortext,primarykey(transaction_hash,chain)",
     "settings": "namevarchar[24]notnullprimarykey,valuetext",
     "tags": "nametextnotnullprimarykeycollatenocase,descriptiontext,background_colortext,foreground_colortext",
     "tag_mappings": "object_referencetext,tag_nametext,foreignkey(tag_name)referencestags(name)primarykey(object_reference,tag_name)",

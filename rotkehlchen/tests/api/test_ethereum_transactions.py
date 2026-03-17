@@ -32,6 +32,7 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.internal_tx_conflicts import INTERNAL_TX_CONFLICT_ACTION_REPULL
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -1504,6 +1505,18 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
         )
 
     # trigger the deletion of the transaction's data by redecoding it
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, fixed) '
+            'VALUES (?, ?, ?, ?)',
+            (
+                tx_hash,
+                ChainID.ETHEREUM.serialize_for_db(),
+                INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                0,
+            ),
+        )
+
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
         json={'async_query': False, 'chain': 'eth', 'tx_refs': [str(tx_hash)]},
@@ -1517,6 +1530,10 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
             filter_query=filter_query,
             aggregate_by_group_ids=False,
         )
+        assert cursor.execute(
+            'SELECT fixed FROM evm_internal_tx_conflicts WHERE transaction_hash=? AND chain=?',
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0] == 1
     assert events_before_redecoding == events_after_redecoding
 
 

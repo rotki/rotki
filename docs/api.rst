@@ -2672,6 +2672,69 @@ Decode transactions that haven't been decoded yet
    :statuscode 500: Internal rotki error
 
 
+.. http:get:: /api/(version)/blockchains/transactions/internal/conflicts
+
+   Doing a GET on the internal transaction conflicts endpoint returns unresolved EVM transactions
+   that require action due to detected internal transaction conflicts.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      GET /api/1/blockchains/transactions/internal/conflicts HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": false, "fixed": false, "failed": false, "limit": 50, "offset": 0}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "entries": [
+                  {
+                      "chain": "ethereum",
+                      "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742",
+                      "action": "repull",
+                      "repull_reason": "all_zero_gas",
+                      "last_retry_ts": 1700000000,
+                      "last_error": "rpc timeout"
+                  }
+              ],
+              "entries_found": 1,
+              "entries_total": 3,
+              "entries_limit": 50
+          },
+          "message": ""
+      }
+
+   :resjson list[object] result.entries: The list of unresolved internal transaction conflicts that need action.
+   :resjson string result.entries.chain: Chain name.
+   :resjson string result.entries.tx_hash: Transaction hash in hex format.
+   :resjson string result.entries.action: Required action. Either ``repull`` or ``fix_redecode``.
+   :resjson string result.entries.repull_reason: Reason for repull. Values are ``all_zero_gas`` and ``other``. ``null`` for ``fix_redecode`` rows.
+   :resjson string result.entries.redecode_reason: Reason for redecode. Values are ``mixed_zero_gas``, ``duplicate_exact_rows`` and ``mixed_zero_gas_and_duplicate``. ``null`` for ``repull`` rows.
+   :resjson int result.entries.last_retry_ts: Unix timestamp of the most recent repull retry, or ``null`` if no retry has failed yet.
+   :resjson string result.entries.last_error: Error from the most recent failed repull retry, or ``null`` if no retry has failed yet.
+   :resjson int result.entries_found: Number of entries returned in the current page.
+   :resjson int result.entries_total: Total number of entries matching the applied filters.
+   :resjson int result.entries_limit: Applied limit value. ``-1`` when no limit is provided.
+   :reqjson int[optional] limit: Maximum number of rows to return.
+   :reqjson int[optional] offset: Number of rows to skip.
+   :reqjson string[optional] tx_hash: Filter rows by a specific EVM transaction hash.
+   :reqjson bool[optional] fixed: If ``true``, return fixed rows. Defaults to ``false`` (unfixed rows).
+   :reqjson bool[optional] failed: If ``true``, return only rows with a recorded failed retry (`last_retry_ts` and `last_error` set).
+   :statuscode 200: Conflicts successfully returned.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Other error. Check error message for details.
+   :statuscode 500: Internal rotki error
+
+
 Purging locally saved data for ethereum modules
 ====================================================
 

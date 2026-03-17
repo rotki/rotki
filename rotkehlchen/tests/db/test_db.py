@@ -132,6 +132,7 @@ TABLES_AT_INIT = [
     'evm_transactions_authorizations',
     'optimism_transactions',
     'evm_internal_transactions',
+    'evm_internal_tx_conflicts',
     'evmtx_receipts',
     'evmtx_receipt_logs',
     'evmtx_receipt_log_topics',
