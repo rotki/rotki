@@ -82,7 +82,7 @@ function updateFilters(updatedFilters: Filters) {
   });
 }
 
-watchImmediate(filter, (period) => {
+watchImmediate(filter, (period: EthStakingCombinedFilter | undefined) => {
   const updatedFilters = { ...get(filters) };
 
   if (period?.fromTimestamp)

@@ -132,7 +132,7 @@ function calculateAmountAndUnit(seconds: number) {
   };
 }
 
-watchImmediate(modelValue, (value) => {
+watchImmediate(modelValue, (value: CalendarReminderTemporaryPayload) => {
   const currentSeconds = calculateCurrentSeconds();
   const seconds = value.secsBefore;
 

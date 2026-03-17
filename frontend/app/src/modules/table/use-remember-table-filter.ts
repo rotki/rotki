@@ -41,7 +41,7 @@ export function useRememberTableFilter(
     if (!get(enabled))
       return;
 
-    const savedFilter = get(persistedFiltersRaw)[tableIdValue];
+    const savedFilter = get<Record<string, LocationQuery>>(persistedFiltersRaw)[tableIdValue];
 
     if (savedFilter && !isEmpty(savedFilter)) {
       // Strip page and limit — page resets to 1, limit comes from global itemsPerPage setting
@@ -64,7 +64,7 @@ export function useRememberTableFilter(
   const savePersistedFilter = (query: LocationQuery): void => {
     const tableIdValue = get(tableId);
 
-    const current = get(persistedFiltersRaw);
+    const current = get<Record<string, LocationQuery>>(persistedFiltersRaw);
     set(persistedFiltersRaw, {
       ...current,
       // Strip limit — it should always come from global itemsPerPage setting

@@ -1,5 +1,4 @@
 import type { ComputedRef } from 'vue';
-import { not } from '@vueuse/math';
 import { useSectionStatus } from '@/composables/status';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
@@ -34,7 +33,7 @@ export const useHistoryEventsStatus = createSharedComposable((): UseHistoryEvent
   const isTransactionsLoading = useIsTaskRunning(TaskType.TX);
 
   const refreshing = logicOr(sectionLoading, anyEventsDecoding, queryExchangeEventsLoading, onlineHistoryEventsLoading, protocolCacheUpdatesLoading);
-  const querying = not(logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished));
+  const querying = logicNot(logicOr(isQueryingTxsFinished, isQueryingOnlineEventsFinished));
   const shouldFetchEventsRegularly = logicOr(querying, refreshing);
   const processing = logicOr(isTransactionsLoading, isRepulling, refreshing);
 

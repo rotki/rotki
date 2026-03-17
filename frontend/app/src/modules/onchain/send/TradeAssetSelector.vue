@@ -96,8 +96,8 @@ watchImmediate([() => address, chain], ([_, currentChain]) => {
   }
 });
 
-watchImmediate(chain, (chain) => {
-  set(internalChain, chain);
+watchImmediate(chain, (chainVal: string) => {
+  set(internalChain, chainVal);
 });
 
 const { detectTokens: orchestratorDetect } = useTokenDetectionOrchestrator();

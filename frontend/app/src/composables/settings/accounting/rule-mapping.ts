@@ -10,7 +10,7 @@ export const useAccountingRuleMappings = createSharedComposable(() => {
 
   const { getAccountingRuleLinkedMapping } = useAccountingApi();
 
-  const accountingRuleLinkedMapping: Ref<Record<string, string[]>> = asyncComputed(
+  const accountingRuleLinkedMapping: Ref<Record<string, string[]>> = computedAsync(
     async () => getAccountingRuleLinkedMapping(),
     {},
   );

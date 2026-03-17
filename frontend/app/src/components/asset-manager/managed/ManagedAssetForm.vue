@@ -227,7 +227,7 @@ watch(assetType, () => {
   set(errors, {});
 });
 
-watchImmediate(modelValue, (asset) => {
+watchImmediate(modelValue, (asset: SupportedAsset) => {
   if (asset.underlyingTokens && asset.underlyingTokens.length > 0) {
     set(underlyingTokens, asset.underlyingTokens);
   }

@@ -75,7 +75,7 @@ importers:
         version: link:../common
       '@rotki/ui-library':
         specifier: 2.12.2
-        version: 2.12.2(@vueuse/core@13.9.0(vue@3.5.29(typescript@5.9.3)))(@vueuse/shared@13.9.0(vue@3.5.29(typescript@5.9.3)))(dayjs@1.11.19)(vue@3.5.29(typescript@5.9.3))
+        version: 2.12.2(@vueuse/core@14.2.1(vue@3.5.29(typescript@5.9.3)))(@vueuse/shared@14.2.1(vue@3.5.29(typescript@5.9.3)))(dayjs@1.11.19)(vue@3.5.29(typescript@5.9.3))
       '@types/ws':
         specifier: 8.18.1
         version: 8.18.1
@@ -86,14 +86,14 @@ importers:
         specifier: 2.0.4
         version: 2.0.4(vue@3.5.29(typescript@5.9.3))
       '@vueuse/core':
-        specifier: 13.9.0
-        version: 13.9.0(vue@3.5.29(typescript@5.9.3))
+        specifier: 14.2.1
+        version: 14.2.1(vue@3.5.29(typescript@5.9.3))
       '@vueuse/math':
-        specifier: 13.9.0
-        version: 13.9.0(vue@3.5.29(typescript@5.9.3))
+        specifier: 14.2.1
+        version: 14.2.1(vue@3.5.29(typescript@5.9.3))
       '@vueuse/shared':
-        specifier: 13.9.0
-        version: 13.9.0(vue@3.5.29(typescript@5.9.3))
+        specifier: 14.2.1
+        version: 14.2.1(vue@3.5.29(typescript@5.9.3))
       '@walletconnect/core':
         specifier: 2.23.7
         version: 2.23.7(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@6.0.6)(zod@3.25.76)
@@ -289,7 +289,7 @@ importers:
         version: 5.9.3
       unplugin-auto-import:
         specifier: 21.0.0
-        version: 21.0.0(@vueuse/core@13.9.0(vue@3.5.29(typescript@5.9.3)))
+        version: 21.0.0(@vueuse/core@14.2.1(vue@3.5.29(typescript@5.9.3)))
       unplugin-vue-components:
         specifier: 31.0.0
         version: 31.0.0(vue@3.5.29(typescript@5.9.3))
@@ -315,8 +315,8 @@ importers:
   common:
     devDependencies:
       '@vueuse/core':
-        specifier: 13.9.0
-        version: 13.9.0(vue@3.5.29(typescript@5.9.3))
+        specifier: 14.2.1
+        version: 14.2.1(vue@3.5.29(typescript@5.9.3))
       bignumber.js:
         specifier: 9.3.1
         version: 9.3.1(patch_hash=61396dd0164598dffc80190e90a8d2bd4ec88d03f7ec9956ab22182f63c0cb1d)
@@ -2455,21 +2455,21 @@ packages:
       '@vue/composition-api':
         optional: true
 
-  '@vueuse/core@13.9.0':
-    resolution: {integrity: sha512-ts3regBQyURfCE2BcytLqzm8+MmLlo5Ln/KLoxDVcsZ2gzIwVNnQpQOL/UKV8alUqjSZOlpFZcRNsLRqj+OzyA==}
+  '@vueuse/core@14.2.1':
+    resolution: {integrity: sha512-3vwDzV+GDUNpdegRY6kzpLm4Igptq+GA0QkJ3W61Iv27YWwW/ufSlOfgQIpN6FZRMG0mkaz4gglJRtq5SeJyIQ==}
     peerDependencies:
       vue: ^3.5.0
 
-  '@vueuse/math@13.9.0':
-    resolution: {integrity: sha512-Qk2jqlaEGKwwe2/MBGtUd8nPpzoQPSQTfm2d30NPywjpYdpbI+WqOAE99MuSq9kIRoU7Xq3IYBtxMaLTy6lpsA==}
+  '@vueuse/math@14.2.1':
+    resolution: {integrity: sha512-WV4WTm4GBeILnIAOePQNI1UbYv/HjDx1P+0MSXxFyBy3r8I9xVYn6xqBMLkCbXfAVmkr1sA/G5ILM2K8VDtIbA==}
     peerDependencies:
       vue: ^3.5.0
 
-  '@vueuse/metadata@13.9.0':
-    resolution: {integrity: sha512-1AFRvuiGphfF7yWixZa0KwjYH8ulyjDCC0aFgrGRz8+P4kvDFSdXLVfTk5xAN9wEuD1J6z4/myMoYbnHoX07zg==}
+  '@vueuse/metadata@14.2.1':
+    resolution: {integrity: sha512-1ButlVtj5Sb/HDtIy1HFr1VqCP4G6Ypqt5MAo0lCgjokrk2mvQKsK2uuy0vqu/Ks+sHfuHo0B9Y9jn9xKdjZsw==}
 
-  '@vueuse/shared@13.9.0':
-    resolution: {integrity: sha512-e89uuTLMh0U5cZ9iDpEI2senqPGfbPRTHM/0AaQkcxnpqjkZqDYP8rpfm7edOz8s+pOCOROEy1PIveSW8+fL5g==}
+  '@vueuse/shared@14.2.1':
+    resolution: {integrity: sha512-shTJncjV9JTI4oVNyF1FQonetYAiTBd+Qj7cY89SWbXSkx7gyhrgtEdF2ZAVWS1S3SHlaROO6F2IesJxQEkZBw==}
     peerDependencies:
       vue: ^3.5.0
 
@@ -8312,11 +8312,11 @@ snapshots:
       - supports-color
       - typescript
 
-  '@rotki/ui-library@2.12.2(@vueuse/core@13.9.0(vue@3.5.29(typescript@5.9.3)))(@vueuse/shared@13.9.0(vue@3.5.29(typescript@5.9.3)))(dayjs@1.11.19)(vue@3.5.29(typescript@5.9.3))':
+  '@rotki/ui-library@2.12.2(@vueuse/core@14.2.1(vue@3.5.29(typescript@5.9.3)))(@vueuse/shared@14.2.1(vue@3.5.29(typescript@5.9.3)))(dayjs@1.11.19)(vue@3.5.29(typescript@5.9.3))':
     dependencies:
       '@popperjs/core': 2.11.8
-      '@vueuse/core': 13.9.0(vue@3.5.29(typescript@5.9.3))
-      '@vueuse/shared': 13.9.0(vue@3.5.29(typescript@5.9.3))
+      '@vueuse/core': 14.2.1(vue@3.5.29(typescript@5.9.3))
+      '@vueuse/shared': 14.2.1(vue@3.5.29(typescript@5.9.3))
       dayjs: 1.11.19
       scule: 1.3.0
       tinycolor2: 1.6.0
@@ -9253,6 +9253,7 @@ snapshots:
     optionalDependencies:
       msw: 2.12.10(@types/node@24.12.0)(typescript@5.9.3)
       vite: 7.3.1(@types/node@24.12.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)
+    optional: true
 
   '@vitest/pretty-format@4.0.18':
     dependencies:
@@ -9280,7 +9281,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 3.0.3
-      vitest: 4.0.18(@types/node@24.12.0)(@vitest/ui@4.0.18)(happy-dom@20.8.3(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@2.6.1)(msw@2.12.10(@types/node@24.12.0)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
+      vitest: 4.0.18(@types/node@24.12.0)(@vitest/ui@4.0.18)(happy-dom@20.8.3(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@1.21.7)(msw@2.12.10(@types/node@24.12.0)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2)
 
   '@vitest/utils@4.0.18':
     dependencies:
@@ -9461,21 +9462,21 @@ snapshots:
       vue: 3.5.29(typescript@5.9.3)
       vue-demi: 0.13.11(vue@3.5.29(typescript@5.9.3))
 
-  '@vueuse/core@13.9.0(vue@3.5.29(typescript@5.9.3))':
+  '@vueuse/core@14.2.1(vue@3.5.29(typescript@5.9.3))':
     dependencies:
       '@types/web-bluetooth': 0.0.21
-      '@vueuse/metadata': 13.9.0
-      '@vueuse/shared': 13.9.0(vue@3.5.29(typescript@5.9.3))
+      '@vueuse/metadata': 14.2.1
+      '@vueuse/shared': 14.2.1(vue@3.5.29(typescript@5.9.3))
       vue: 3.5.29(typescript@5.9.3)
 
-  '@vueuse/math@13.9.0(vue@3.5.29(typescript@5.9.3))':
+  '@vueuse/math@14.2.1(vue@3.5.29(typescript@5.9.3))':
     dependencies:
-      '@vueuse/shared': 13.9.0(vue@3.5.29(typescript@5.9.3))
+      '@vueuse/shared': 14.2.1(vue@3.5.29(typescript@5.9.3))
       vue: 3.5.29(typescript@5.9.3)
 
-  '@vueuse/metadata@13.9.0': {}
+  '@vueuse/metadata@14.2.1': {}
 
-  '@vueuse/shared@13.9.0(vue@3.5.29(typescript@5.9.3))':
+  '@vueuse/shared@14.2.1(vue@3.5.29(typescript@5.9.3))':
     dependencies:
       vue: 3.5.29(typescript@5.9.3)
 
@@ -13944,7 +13945,7 @@ snapshots:
 
   unpipe@1.0.0: {}
 
-  unplugin-auto-import@21.0.0(@vueuse/core@13.9.0(vue@3.5.29(typescript@5.9.3))):
+  unplugin-auto-import@21.0.0(@vueuse/core@14.2.1(vue@3.5.29(typescript@5.9.3))):
     dependencies:
       local-pkg: 1.1.2
       magic-string: 0.30.21
@@ -13953,7 +13954,7 @@ snapshots:
       unplugin: 2.3.11
       unplugin-utils: 0.3.1
     optionalDependencies:
-      '@vueuse/core': 13.9.0(vue@3.5.29(typescript@5.9.3))
+      '@vueuse/core': 14.2.1(vue@3.5.29(typescript@5.9.3))
 
   unplugin-utils@0.3.1:
     dependencies:
@@ -14213,6 +14214,7 @@ snapshots:
       jiti: 2.6.1
       tsx: 4.21.0
       yaml: 2.8.2
+    optional: true
 
   vitest@4.0.18(@types/node@24.12.0)(@vitest/ui@4.0.18)(happy-dom@20.8.3(bufferutil@4.1.0)(utf-8-validate@6.0.6))(jiti@1.21.7)(msw@2.12.10(@types/node@24.12.0)(typescript@5.9.3))(tsx@4.21.0)(yaml@2.8.2):
     dependencies:
@@ -14291,6 +14293,7 @@ snapshots:
       - terser
       - tsx
       - yaml
+    optional: true
 
   vscode-uri@3.1.0: {}
 

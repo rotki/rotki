@@ -21,7 +21,7 @@ const stateUpdated = defineModel<boolean>('stateUpdated', { default: false, requ
 
 const { t } = useI18n({ useScope: 'global' });
 
-const lastChain = useLocalStorage('rotki.history_event.add_by_tx_hash.chain', Blockchain.ETH);
+const lastChain = useLocalStorage<string>('rotki.history_event.add_by_tx_hash.chain', Blockchain.ETH);
 const txRef = useRefPropVModel(modelValue, 'txRef');
 const blockchain = useRefPropVModel(modelValue, 'blockchain');
 const associatedAddress = useRefPropVModel(modelValue, 'associatedAddress');
@@ -55,12 +55,12 @@ watch(blockchain, (chain) => {
 });
 
 onMounted(() => {
-  const last = get(lastChain);
+  const last = get<string>(lastChain);
   const options = get(chainOptions);
   if (!options.includes(last) && options.length > 0) {
     set(lastChain, options[0]);
   }
-  set(blockchain, get(lastChain));
+  set(blockchain, get<string>(lastChain));
 });
 
 const accounts = computed<BlockchainAccount<AddressData>[]>({

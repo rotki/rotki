@@ -1,8 +1,8 @@
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
+import { objectOmit } from '@vueuse/shared';
 import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { arrayify } from '@/utils/array';
-import { useRefPropVModel } from '@/utils/model';
 
 export enum TableId {
   ACCOUNT_ASSET_BALANCES = 'ACCOUNT_ASSET_BALANCES',
@@ -42,6 +42,12 @@ export enum TableId {
   USER_DB_BACKUP = 'USER_DB_BACKUP',
 }
 
+type TableSorting<T> = Partial<Record<TableId, DataTableSortData<T>>>;
+
+function defaultTableSorting<T>(): TableSorting<T> {
+  return {};
+}
+
 export function useRememberTableSorting<T>(
   id: TableId,
   sort: WritableComputedRef<DataTableSortData<T>> | Ref<DataTableSortData<T>>,
@@ -49,15 +55,13 @@ export function useRememberTableSorting<T>(
 ): void {
   const { persistTableSorting } = storeToRefs(useFrontendSettingsStore());
 
-  const rawData = useLocalStorage<Record<string, DataTableSortData<T>>>(`rotki.table_sorting`, {});
-
-  const data = useRefPropVModel(rawData, id);
+  const rawData = useLocalStorage(`rotki.table_sorting`, defaultTableSorting<T>());
 
   onBeforeMount(() => {
     if (get(persistTableSorting)) {
       const sortableColumns = get(headers).filter(item => item.sortable).map(item => item.key);
 
-      const dataVal = get(data);
+      const dataVal = get<TableSorting<T>>(rawData)[id];
       if (dataVal) {
         const isArray = Array.isArray(dataVal);
         const dataInArray = arrayify(dataVal);
@@ -74,10 +78,10 @@ export function useRememberTableSorting<T>(
     // initial sort value and save it to storage, overriding any previously saved sorting preference.
     watch(sort, (sort) => {
       if (get(persistTableSorting)) {
-        set(data, sort);
+        set(rawData, { ...get<TableSorting<T>>(rawData), [id]: sort });
       }
       else {
-        set(data, undefined);
+        set(rawData, objectOmit(get<TableSorting<T>>(rawData), [id]));
       }
     });
   });
