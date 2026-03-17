@@ -34,7 +34,7 @@ def check_new_query_updates_timestamp(
     with GlobalDBHandler().conn.read_ctx() as cursor:
         last_queried_ts = globaldb_get_general_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=key_parts,  # type: ignore  # can be general or unique depending on is_general_cache
+            key_parts=key_parts,  # can be general or unique depending on is_general_cache
         )
         assert last_queried_ts is not None
 
@@ -45,7 +45,7 @@ def check_new_query_updates_timestamp(
     with GlobalDBHandler().conn.read_ctx() as cursor:
         new_queried_ts = globaldb_get_general_cache_last_queried_ts_by_key(
             cursor=cursor,
-            key_parts=key_parts,  # type: ignore  # can be general or unique depending on is_general_cache
+            key_parts=key_parts,  # can be general or unique depending on is_general_cache
         )
     assert new_queried_ts is not None
     assert new_queried_ts > last_queried_ts

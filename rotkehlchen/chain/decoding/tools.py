@@ -39,7 +39,7 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
         self.address_is_exchange = address_is_exchange_fn
         with self.database.conn.read_ctx() as cursor:
             tracked_accounts = self.database.get_blockchain_accounts(cursor)
-        self._tracked_addresses_for_chain: frozenset[A] = frozenset(tracked_accounts.get(self.blockchain))  # type: ignore[arg-type]  # noqa: E501
+        self._tracked_addresses_for_chain: frozenset[A] = frozenset(tracked_accounts.get(self.blockchain))  # noqa: E501
         self.sequence_counter = 0
         self.sequence_offset = 0
 
@@ -79,7 +79,7 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
     def refresh_tracked_accounts(self, cursor: 'DBCursor') -> None:
         """Refresh tracked accounts from the database"""
         self._tracked_addresses_for_chain = frozenset(
-            self.database.get_blockchain_accounts(cursor).get(self.blockchain),    # type: ignore[arg-type]
+            self.database.get_blockchain_accounts(cursor).get(self.blockchain),
         )
 
     def is_tracked(self, address: A) -> bool:
@@ -96,7 +96,7 @@ class BaseDecoderTools(ABC, Generic[T, A, R, E]):
             to_address: A | None,
     ) -> tuple[HistoryEventType, HistoryEventSubType, str | None, A | None, str, str] | None:
         """Decode the direction of a transfer"""
-        return decode_transfer_direction(  # type: ignore[type-var]
+        return decode_transfer_direction(
             from_address=from_address,
             to_address=to_address,
             tracked_accounts=self._tracked_addresses_for_chain,

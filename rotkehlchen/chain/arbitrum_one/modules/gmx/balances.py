@@ -131,7 +131,7 @@ class GmxBalances(ProtocolWithBalance):
                 method_name='getPositions',
                 arguments=calls_arguments[idx],
             )
-            user_address = string_to_evm_address(calls_arguments[idx][1])  # type: ignore[arg-type]  # mypy doesn't detect this as a string
+            user_address = string_to_evm_address(calls_arguments[idx][1])  # mypy doesn't detect this as a string  # noqa: E501
             collaterals_used = calls_arguments[idx][2]
             for position_idx, pos_result in enumerate(get_chunks(pos_information[0], 9)):
                 try:  # each position has 9 values returned by gmx

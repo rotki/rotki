@@ -313,6 +313,7 @@ def test_binance_query_balances_include_features(function_scope_binance: Binance
         balances, msg = binance.query_balances()
 
     assert msg == ''
+    assert balances is not None
     assert len(balances) == 7
     assert balances[A_BTC].amount == FVal('4723849.39208129')
     assert balances[A_ETH].amount == FVal('4763368.68006011')

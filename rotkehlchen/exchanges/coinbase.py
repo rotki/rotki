@@ -211,7 +211,7 @@ class Coinbase(ExchangeInterface):
             }
             jwt_token = jwt.encode(
                 jwt_payload,
-                private_key,
+                private_key,  # type: ignore[arg-type]
                 algorithm=self.key_type.value,
                 headers={'kid': self.api_key, 'nonce': secrets.token_hex()},
             )

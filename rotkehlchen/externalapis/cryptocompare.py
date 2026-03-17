@@ -218,7 +218,7 @@ class Cryptocompare(
         self.session = create_session()
         set_user_agent(self.session)
         self.last_histohour_query_ts = 0
-        self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
+        self.db: DBHandler | None  # "solve" the self.db discrepancy
 
     def can_query_history(
             self,
@@ -408,6 +408,8 @@ class Cryptocompare(
             **kwargs,
         )
         if method_name == 'query_endpoint_histohour':
+            if not isinstance(result1, list) or not isinstance(result2, list):
+                raise RemoteError('Cryptocompare histohour special case did not return list data')
             data = []
             for idx, entry in enumerate(result1):
                 entry2 = result2[idx]
@@ -420,6 +422,8 @@ class Cryptocompare(
                 })
             return data
 
+        if isinstance(result1, list) or isinstance(result2, list):
+            raise RemoteError('Cryptocompare special case returned unexpected list data for price')
         return Price(result1 * result2)  # pyright: ignore  # pyright does not see the if above
 
     def query_endpoint_histohour(

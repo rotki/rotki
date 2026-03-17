@@ -66,7 +66,7 @@ def create_session(max_backoff_secs: float = 30) -> requests.Session:
         ],
         # Maximum seconds between retries if backoff is enabled (currently irrelevant
         # with backoff_factor=0).
-        backoff_max=max_backoff_secs,  # type: ignore[call-arg]  # mypy doesn't seem to detect this one
+        backoff_max=max_backoff_secs,  # mypy doesn't seem to detect this one
         # Backoff in retry follows the formula
         # {backoff factor} * (2 ** ({number of previous retries}))
         # since we only care about connection errors/read errors that are solved just by

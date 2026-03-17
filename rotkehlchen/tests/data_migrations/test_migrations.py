@@ -67,7 +67,7 @@ class MockDataForMigrations(NamedTuple):
 class MockRotkiForMigrations(Rotkehlchen):
 
     def __init__(self, db: DBHandler) -> None:  # pylint: disable=W0231 # inheritance from Rotkehlchen is just for the type checker
-        self.data = MockDataForMigrations(db=db)  # type: ignore
+        self.data = MockDataForMigrations(db=db)
         self.msg_aggregator = db.msg_aggregator
 
 

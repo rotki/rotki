@@ -2382,7 +2382,7 @@ class DBHistoryEvents:
                     events_to_replace[movement_group_id] = processed_result_idx
 
                 processed_events_result.append(
-                    (grouped_events_num + matched_joined_group_count, event),   # type: ignore[arg-type]  # will be a list of tuple[int, HistoryBaseEntry]
+                    (grouped_events_num + matched_joined_group_count, event),  # will be a list of tuple[int, HistoryBaseEntry]  # noqa: E501
                 )
                 processed_result_idx += 1
 
@@ -2391,7 +2391,7 @@ class DBHistoryEvents:
             missing_movement_group_ids: list[str] = []
             for movement_group_id, idx in events_to_replace.items():
                 if (movement_event := movement_events_in_result.get(movement_group_id)) is not None:  # noqa: E501
-                    processed_events_result[idx] = (processed_events_result[idx][0], movement_event)  # type: ignore  # will be a list of tuple[int, HistoryBaseEntry]  # noqa: E501
+                    processed_events_result[idx] = (processed_events_result[idx][0], movement_event)  # will be a list of tuple[int, HistoryBaseEntry] # noqa: E501
                 else:
                     missing_movement_group_ids.append(movement_group_id)
 
@@ -2405,7 +2405,7 @@ class DBHistoryEvents:
                     ),
                 ):
                     idx = events_to_replace[event.group_identifier]
-                    processed_events_result[idx] = (processed_events_result[idx][0], event)  # type: ignore  # will be a list of tuple[int, HistoryBaseEntry]
+                    processed_events_result[idx] = (processed_events_result[idx][0], event)  # will be a list of tuple[int, HistoryBaseEntry]  # noqa: E501
 
         else:  # Not aggregating. Need to include all associated events in the movement groups.
             events_by_group: dict[str, list[HistoryBaseEntry]] = defaultdict(list)

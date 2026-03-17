@@ -585,7 +585,7 @@ def _get_or_create_token(
             (protocol is None and check_if_spam_token(symbol=symbol, name=name))
         )
 
-        token_kwargs = {
+        token_kwargs: dict[str, Any] = {
             'address': address,
             'token_kind': token_kind,
             'name': name,
@@ -598,13 +598,13 @@ def _get_or_create_token(
         }
         if token_class == EvmToken:
             token_kwargs.update({
-                'chain_id': chain_id,  # type: ignore[dict-item]
+                'chain_id': chain_id,
                 'collectible_id': collectible_id,
-                'underlying_tokens': underlying_tokens,  # type: ignore[dict-item]
+                'underlying_tokens': underlying_tokens,
             })
 
         # Store the information in the database
-        token = token_class.initialize(**token_kwargs)  # type: ignore[arg-type]
+        token = token_class.initialize(**token_kwargs)
         if asset_exists is True:
             # This means that we need to update the information in the database with the
             # newly queried data

@@ -88,7 +88,7 @@ def test_delegation_reward(accountant: 'Accountant'):
         address=None,
     )])
     for event in events_iterator:
-        pot.events_accountant.process(event=event, events_iterator=events_iterator)  # type: ignore
+        pot.events_accountant.process(event=event, events_iterator=events_iterator)
 
     matched_acquisitions = [MatchedAcquisition(
         amount=FVal('5'),

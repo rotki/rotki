@@ -85,7 +85,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
         counterparty=CPT_AAVE_V2,
     )])
     for event in events_iterator:
-        pot.events_accountant.process(event=event, events_iterator=events_iterator)  # type: ignore
+        pot.events_accountant.process(event=event, events_iterator=events_iterator)
 
     expected_events = [
         ProcessedAccountingEvent(
@@ -213,7 +213,7 @@ def test_v2_payback(accountant: 'Accountant'):
         counterparty=CPT_AAVE_V2,
     )])
     for event in events_iterator:
-        pot.events_accountant.process(event=event, events_iterator=events_iterator)  # type: ignore
+        pot.events_accountant.process(event=event, events_iterator=events_iterator)
 
     matched_acquisitions = [MatchedAcquisition(
         amount=FVal(50),

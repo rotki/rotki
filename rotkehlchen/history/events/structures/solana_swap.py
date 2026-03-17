@@ -90,8 +90,8 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
             asset=Asset(entry[6]).check_existence(),
             amount=amount,
             notes=entry[8] or None,
-            event_type=HistoryEventType.deserialize(entry[9]),  # type: ignore  # event type and subtype should always be correct from the DB
-            event_subtype=HistoryEventSubType.deserialize(entry[10]),  # type: ignore
+            event_type=HistoryEventType.deserialize(entry[9]),  # event type and subtype should always be correct from the DB  # noqa: E501
+            event_subtype=HistoryEventSubType.deserialize(entry[10]),
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
             tx_ref=Signature.from_bytes(entry[13]),
             counterparty=entry[14],
@@ -105,9 +105,9 @@ class SolanaSwapEvent(SolanaEvent, SwapEvent):
     @classmethod
     def deserialize(cls: type['SolanaSwapEvent'], data: dict[str, Any]) -> 'SolanaSwapEvent':
         swap_data = cls._deserialize_swap_data(cls._deserialize_base_history_data(data))
-        swap_data.pop('location')  # type: ignore[misc]  # remove the location key.
+        swap_data.pop('location')  # remove the location key.
         try:
-            return cls(  # type: ignore[misc]  # remove the location key.
+            return cls(  # remove the location key.
                 **swap_data,
                 tx_ref=Signature.from_string(data['tx_ref']),
                 counterparty=deserialize_optional(data['counterparty'], str),

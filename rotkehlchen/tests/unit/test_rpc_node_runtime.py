@@ -157,7 +157,7 @@ def test_consecutive_failures_accumulate() -> None:
     manager = _make_manager([])
     for _ in range(3):
         manager.mark_node_failure(node, 'error')
-    assert manager.get_runtime_state(node).consecutive_failures == 3  # type: ignore[union-attr]
+    assert manager.get_runtime_state(node).consecutive_failures == 3
 
 
 def test_mark_node_success_resets_consecutive_failures() -> None:
@@ -166,7 +166,7 @@ def test_mark_node_success_resets_consecutive_failures() -> None:
     manager.mark_node_failure(node, 'err')
     manager.mark_node_failure(node, 'err')
     manager.mark_node_success(node)
-    assert manager.get_runtime_state(node).consecutive_failures == 0  # type: ignore[union-attr]
+    assert manager.get_runtime_state(node).consecutive_failures == 0
 
 
 def test_get_runtime_state_returns_none_for_unknown_node() -> None:

@@ -3,7 +3,7 @@ import os
 import sys
 from collections.abc import Callable
 from functools import wraps
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, ParamSpec, TypeVar
 
 if TYPE_CHECKING:
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
@@ -16,18 +16,22 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
+P = ParamSpec('P')
+R = TypeVar('R')
 
-def progress_step(description: str) -> Callable:
+
+def progress_step(description: str) -> Callable[[Callable[P, R]], Callable[P, R]]:
     """Decorates a function with a description attribute and applies the enter/exit debug log too.
 
     Used by DB upgrade and migration for each step
     """
-    def step_decorator(function: Callable) -> Callable:
+    def step_decorator(function: Callable[P, R]) -> Callable[P, R]:
         function._description = description  # type: ignore  # we are creating the attribute
+        function_name = getattr(function, '__name__', function.__class__.__name__)
 
-        @enter_exit_debug_log(name=function.__name__)
+        @enter_exit_debug_log(name=function_name)
         @wraps(function)
-        def step_wrapped(*args: Any, **kwargs: Any) -> Any:
+        def step_wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
             return function(*args, **kwargs)
         return step_wrapped
     return step_decorator
@@ -65,11 +69,12 @@ def gather_caller_functions(depth: int) -> list[tuple[Callable, Callable]]:
             return True
         if getattr(func, '__globals__', {}).get('__name__') == module_name:
             return True
-        if getattr(func, '__code__', None) and getattr(func.__code__, 'co_filename', None):
+        code_obj = getattr(func, '__code__', None)
+        if code_obj is not None and getattr(code_obj, 'co_filename', None):
             # This checks if the function's code object is from a file in the same directory
             # as the caller's module. This is a heuristic and might need adjustment.
             caller_file = caller_frame.f_code.co_filename
-            func_file = func.__code__.co_filename
+            func_file = code_obj.co_filename
             return os.path.dirname(caller_file) == os.path.dirname(func_file)
         return False
 

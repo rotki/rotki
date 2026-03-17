@@ -452,7 +452,7 @@ class AccountingPot(CustomizableDateMixin):
             calculated_in_price = Price(total_paid / amount_in)
 
             if price_to_use == 'out':
-                calculated_out_price = out_price  # type: ignore[assignment]  # out_price is not None
+                calculated_out_price = out_price  # out_price is not None
             else:
                 calculated_out_price = Price((amount_in * in_price) / amount_out)  # type: ignore[operator]  # in_price is not None
 

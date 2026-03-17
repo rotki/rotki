@@ -536,7 +536,7 @@ def test_get_historical_asset_amounts_over_time_with_negative_amount_event_metri
     process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
 
     # Check that negative balance was detected via WS message
-    messages = db.msg_aggregator.rotki_notifier.messages  # type: ignore[union-attr]
+    messages = db.msg_aggregator.rotki_notifier.messages
     assert any(m.message_type == WSMessageType.NEGATIVE_BALANCE_DETECTED for m in messages)
 
     response = requests.post(
@@ -603,7 +603,7 @@ def test_get_historical_assets_in_collection_amounts_over_time(
     process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
 
     # Check that negative balance was detected via WS message
-    messages = db.msg_aggregator.rotki_notifier.messages  # type: ignore[union-attr]
+    messages = db.msg_aggregator.rotki_notifier.messages
     assert any(m.message_type == WSMessageType.NEGATIVE_BALANCE_DETECTED for m in messages)
 
     response = requests.post(
@@ -833,7 +833,7 @@ def test_get_historical_netvalue_with_negative_balance_events(
     process_historical_balances(database=db, msg_aggregator=db.msg_aggregator)
 
     # Verify negative balance was detected via WS message
-    messages = db.msg_aggregator.rotki_notifier.messages  # type: ignore[union-attr]
+    messages = db.msg_aggregator.rotki_notifier.messages
     assert any(m.message_type == WSMessageType.NEGATIVE_BALANCE_DETECTED for m in messages)
 
     response = requests.post(

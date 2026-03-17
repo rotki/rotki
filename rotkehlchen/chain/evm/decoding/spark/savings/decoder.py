@@ -220,8 +220,11 @@ class SparksavingsCommonDecoder(SparkCommonDecoder):
         return EvmDecodingOutput(action_items=action_items)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        decoders = dict.fromkeys(self.spark_savings_tokens, (self._decode_spark_tokens_deposit_withdrawal,))  # noqa: E501
+        decoders: dict[ChecksumEvmAddress, tuple[Any, ...]] = dict.fromkeys(
+            self.spark_savings_tokens,
+            (self._decode_spark_tokens_deposit_withdrawal,),
+        )
         if self.psm_address is not None:
-            decoders |= {self.psm_address: (self._decode_psm_deposit_withdrawal,)}
+            decoders[self.psm_address] = (self._decode_psm_deposit_withdrawal,)
 
         return decoders

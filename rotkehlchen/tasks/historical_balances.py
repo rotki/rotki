@@ -139,7 +139,7 @@ class Bucket(NamedTuple):
             (wallet_direction := event.maybe_get_direction(for_balance_tracking=True)) is not None
         ):
             return [
-                (cls(  # type: ignore[list-item]  # wallet_direction will not be neutral for dual bucket protocol events.
+                (cls(  # wallet_direction will not be neutral for dual bucket protocol events.
                     location=location,
                     location_label=event.location_label,
                     protocol=asset_protocol,
@@ -151,7 +151,7 @@ class Bucket(NamedTuple):
                     protocol=counterparty,
                     asset=asset,
                 ), EventDirection.IN if wallet_direction == EventDirection.OUT else EventDirection.OUT),  # noqa: E501
-            ]
+            ]  # type: ignore[return-value]
 
         if (  # Transfers affect both sender and receiver. Protocol tokens use protocol buckets.
             event_key in DUAL_BUCKET_TRANSFER_EVENTS and

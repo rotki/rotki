@@ -356,7 +356,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
             )
             log.debug(f'{self.name} API request', request_url=request_url)
             try:
-                response = self.session.request(  # type: ignore[misc]  # keyword is a string as typed above
+                response = self.session.request(  # keyword is a string as typed above
                     method=request_method,
                     url=request_url,
                     timeout=timeout,

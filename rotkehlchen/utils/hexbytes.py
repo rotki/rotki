@@ -2,7 +2,7 @@
 way rotki works instead of subclassing it to handle errors our way in order to keep
 it as lightweight as possible"""
 
-from typing import Self, Union, cast, overload
+from typing import Self, SupportsIndex, cast, overload
 
 from hexbytes import HexBytes as Web3HexBytes
 
@@ -61,20 +61,20 @@ class HexBytes(bytes):
         """
         return '0x' + super().hex()
 
-    @overload  # type: ignore
-    def __getitem__(self, key: int) -> int:
+    @overload
+    def __getitem__(self, key: SupportsIndex) -> int:
         ...
 
     @overload
-    def __getitem__(self, key: slice) -> 'HexBytes':
+    def __getitem__(self, key: slice[SupportsIndex | None]) -> Self:
         ...
 
-    def __getitem__(self, key: int | slice) -> Union[int, bytes, 'HexBytes']:
+    def __getitem__(self, key: SupportsIndex | slice[SupportsIndex | None]) -> int | Self:
         result = super().__getitem__(key)
-        if hasattr(result, 'hex'):
-            return type(self)(result)  # type: ignore  # cant be an int
+        if isinstance(result, int):
+            return result
 
-        return result
+        return type(self)(result)
 
     def __repr__(self) -> str:
         return f'HexBytes({self.hex()!r})'

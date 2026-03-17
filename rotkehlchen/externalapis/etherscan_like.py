@@ -558,7 +558,7 @@ class EtherscanLikeApi(ABC):
             for entry in result:
                 try:  # Handle normal transactions. Internal dict does not contain a hash sometimes
                     if is_internal or entry['hash'].startswith('GENESIS') is False:
-                        tx, _ = deserialize_evm_transaction(  # type: ignore
+                        tx, _ = deserialize_evm_transaction(
                             data=entry,
                             internal=is_internal,
                             chain_id=chain_id,
@@ -616,7 +616,7 @@ class EtherscanLikeApi(ABC):
                     yield transactions
                     last_ts = timestamp
                     transactions = []
-                transactions.append(tx)
+                transactions.append(tx)  # type: ignore[arg-type]
 
             if (new_options := self._maybe_paginate(result=result, options=options)) is None:
                 break  # no need to paginate further

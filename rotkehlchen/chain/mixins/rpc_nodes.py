@@ -393,8 +393,10 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
             endpoint_uri=(rpc_endpoint := f'http://{node.endpoint}' if not urlparse(node.endpoint).scheme else node.endpoint),  # noqa: E501
             request_kwargs={'timeout': self.rpc_timeout},
         )
-        ens = ENS(provider) if self.chain_id == ChainID.ETHEREUM else None
-        web3 = Web3(provider, ens=ens)
+        if self.chain_id == ChainID.ETHEREUM:
+            web3 = Web3(provider, ens=ENS(provider))
+        else:
+            web3 = Web3(provider)
         for middleware in (
                 'validation',  # validation middleware makes an un-needed for us chain ID validation causing 1 extra rpc call per eth_call # noqa: E501
                 'gas_price_strategy',  # We do not need to automatically estimate gas

@@ -295,7 +295,7 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                             method_name='token',
                         )))),
                     )),
-                    asset=received_token,  # type: ignore[has-type]
+                    asset=received_token,
                     from_event_type=HistoryEventType.RECEIVE,
                     from_event_subtype=HistoryEventSubType.NONE,
                     to_event_type=HistoryEventType.WITHDRAWAL,
@@ -311,7 +311,7 @@ class StakedaoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         maybe_reshuffle_events(
-            ordered_events=[return_event, withdraw_event] + claim_events,  # type: ignore[operator]
+            ordered_events=[return_event, withdraw_event] + claim_events,
             events_list=context.decoded_events,
         )
         return EvmDecodingOutput(action_items=action_items)

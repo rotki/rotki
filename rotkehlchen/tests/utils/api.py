@@ -83,7 +83,7 @@ def assert_proper_sync_response_with_result(
         status_code: HTTPStatus = HTTPStatus.OK,
 ) -> Any:
     assert_proper_response(response, status_code)
-    data = response.json()  # type: ignore
+    data = response.json()
     assert data['result'] is not None
     if message:
         assert message in data['message']

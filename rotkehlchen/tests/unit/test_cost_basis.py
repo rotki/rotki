@@ -1145,7 +1145,7 @@ def test_event_specific_accounting_rules(accountant: Accountant) -> None:
             accounting_treatment=TxAccountingTreatment.SWAP,
         ),
         links={},
-        event_ids=[history[0].identifier],  # type: ignore[list-item]  # identifier is not None in this case
+        event_ids=[history[0].identifier],  # identifier is not None in this case
     )
 
     add_in_event(pot=pot, amount=FVal(50), price=Price(FVal(10)), taxable=True)

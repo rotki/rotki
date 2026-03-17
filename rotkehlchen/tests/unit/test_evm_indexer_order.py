@@ -147,7 +147,7 @@ def test_try_indexers_sends_ws_notification_when_no_indexers() -> None:
         with pytest.raises(NoAvailableIndexers):
             inquirer._try_indexers(func=lambda _: 'ok')
 
-    inquirer.database.msg_aggregator.add_message.assert_called_once_with(  # type: ignore
+    inquirer.database.msg_aggregator.add_message.assert_called_once_with(
         message_type=WSMessageType.NO_AVAILABLE_INDEXERS,
         data={'chain': SupportedBlockchain.ETHEREUM.value},
     )

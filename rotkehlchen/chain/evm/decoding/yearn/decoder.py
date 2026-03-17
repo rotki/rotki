@@ -187,6 +187,8 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 event.notes = f'Deposit {event.amount} {event.asset.resolve_to_asset_with_symbol().symbol} in {counterparty} vault'  # noqa: E501
                 deposit_event = event
                 if event.address != YEARN_PARTNER_TRACKER:
+                    if event.address is None:
+                        continue
                     vault_token_name = _get_vault_token_name(event.address)
                     event.notes = f'{event.notes} {vault_token_name}'
             elif (
@@ -231,7 +233,7 @@ class YearnCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
         if context.transaction.input_data.startswith(YEARN_DEPOSIT_NO_LOGS_4_BYTES):
             self._handle_deposit_events(
                 events=context.decoded_events,
-                counterparty=counterparty,  # type: ignore  # will always be either CPT_YEARN_V1 or CPT_YEARN_V2
+                counterparty=counterparty,  # will always be either CPT_YEARN_V1 or CPT_YEARN_V2
             )
 
         vault_token = self.base.get_or_create_evm_token(vault_address)

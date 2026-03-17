@@ -157,7 +157,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             timestamp=TimestampMS(entry[3]),
             location=Location.deserialize_from_db(entry[4]),
             location_label=entry[5],
-            event_subtype=event_subtype,  # type: ignore[arg-type]  # guarded by runtime subtype validation above; mypy does not narrow Literal aliases from membership tests
+            event_subtype=event_subtype,  # guarded by runtime subtype validation above; mypy does not narrow Literal aliases from membership tests  # noqa: E501
             asset=Asset(entry[6]).check_existence(),
             amount=amount,
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
@@ -202,7 +202,7 @@ class AssetMovement(HistoryBaseEntry[AssetMovementExtraData | None]):
             timestamp=base_data['timestamp'],
             location=base_data['location'],
             location_label=base_data['location_label'],
-            event_subtype=event_subtype,  # type: ignore[arg-type]  # guarded by runtime subtype validation above; mypy does not narrow Literal aliases from membership tests
+            event_subtype=event_subtype,  # guarded by runtime subtype validation above; mypy does not narrow Literal aliases from membership tests  # noqa: E501
             asset=base_data['asset'],
             amount=base_data['amount'],
             extra_data=base_data['extra_data'],

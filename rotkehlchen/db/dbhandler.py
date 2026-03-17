@@ -394,7 +394,7 @@ class DBHandler:
         - SystemPermissionError if there are permission errors when accessing the DB
         """
         assert self.conn is None, 'md5hash should be taken only with a closed DB'
-        if transient:  # type: ignore
+        if transient:
             return file_md5(self.user_data_dir / TRANSIENT_DB_NAME)
         return file_md5(self.user_data_dir / USERDB_NAME)
 
@@ -452,9 +452,9 @@ class DBHandler:
     ) -> int | Timestamp | bool | Asset | frozenset['ExchangeLocationID'] | str | None:
         deserializer, default_value = self.setting_to_default_type[name]
         if (result := cursor.execute('SELECT value FROM settings WHERE name=?;', (name,)).fetchone()) is not None:  # noqa: E501
-            return deserializer(result[0])  # type: ignore
+            return deserializer(result[0])
 
-        return default_value  # type: ignore
+        return default_value
 
     def set_setting(
             self,
@@ -2224,7 +2224,7 @@ class DBHandler:
         querystr = 'SELECT name, location, api_key, api_secret, passphrase FROM user_credentials'
         if name is not None and location is not None:
             querystr += ' WHERE name=? and location=?'
-            bindings = (name, location.serialize_for_db())  # type: ignore
+            bindings = (name, location.serialize_for_db())
         querystr += ';'
         result = cursor.execute(querystr, bindings)
         credentials = defaultdict(list)
@@ -2282,7 +2282,7 @@ class DBHandler:
                     extras[key] = entry[1]
                 elif key == OKX_LOCATION_KEY:
                     try:  # type is checked above
-                        extras[key] = OkxLocation.deserialize(entry[1])  # type: ignore
+                        extras[key] = OkxLocation.deserialize(entry[1])
                     except DeserializationError as e:
                         log.error(f'Couldnt deserialize okx location from DB. {e!s}')
                 else:  # can only be BINANCE_MARKETS_KEY
@@ -3577,7 +3577,7 @@ class DBHandler:
 
             returned_indices.append(0 if prev_index == -1 else prev_index)
 
-        return tuple(returned_indices)  # type: ignore
+        return tuple(returned_indices)
 
     def get_addresses_to_xpub_mapping(
             self,

@@ -113,7 +113,8 @@ class EvmManager(
         mapping.
         """
         for account, token_balances in balance_result.items():
-            if (is_proxy_balances := proxies_information is not None):
+            if proxies_information is not None:
+                is_proxy_balances = True
                 proxy_type, proxy_owner_address = proxies_information[account]
                 protocol = PROXY_BALANCE_PROTOCOL_TEMPLATE.format(
                     type=proxy_type,
@@ -121,6 +122,7 @@ class EvmManager(
                 )
                 owner = proxy_owner_address
             else:
+                is_proxy_balances = False
                 owner, protocol = account, DEFAULT_BALANCE_LABEL
 
             for token, token_balance in token_balances.items():

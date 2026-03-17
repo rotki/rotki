@@ -419,7 +419,7 @@ class Eth2(EthereumModule):
         if count_apr != ZERO:
             sums['apr'] = sum_apr / count_apr
 
-        result = {'validators': pnls, 'sums': sums}
+        result = {'validators': dict(pnls), 'sums': dict(sums)}
         self.performance_cache.add(cache_key, result)  # save cache & return pagination on the data
         self.performance_cache_args = (addresses, validator_indices, status)
         return {
@@ -625,7 +625,7 @@ class Eth2(EthereumModule):
                 raise InputError(f'Validator {query_key} already exists in the DB')
 
         # at this point we gotta refresh validator data
-        result = self.beacon_inquirer.get_validator_data(indices_or_pubkeys=[query_key])  # mypy fails to see it's a list of one # type: ignore  # noqa: E501
+        result = self.beacon_inquirer.get_validator_data(indices_or_pubkeys=[query_key])  # mypy fails to see it's a list of one # noqa: E501
 
         if len(result) != 1:
             raise RemoteError(

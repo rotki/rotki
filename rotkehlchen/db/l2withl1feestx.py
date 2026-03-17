@@ -25,10 +25,10 @@ log = RotkehlchenLogsAdapter(logger)
 class DBL2WithL1FeesTx(DBEvmTx):
     AUTHORIZATION_DATA_START_INDEX: ClassVar[int] = 14
 
-    def add_transactions(
+    def add_transactions(  # type: ignore[override]
             self,
             write_cursor: 'DBCursor',
-            evm_transactions: list[L2WithL1FeesTransaction],  # type: ignore[override]
+            evm_transactions: list[L2WithL1FeesTransaction],
             relevant_address: ChecksumEvmAddress | None,
     ) -> None:
         """Adds L2WithL1Fees transactions to the database

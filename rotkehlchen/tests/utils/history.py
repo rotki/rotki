@@ -274,7 +274,7 @@ prices = {
 }
 
 
-def check_result_of_history_creation_for_remote_errors(  # type: ignore[return] # pylint: disable=useless-return
+def check_result_of_history_creation_for_remote_errors(  # pylint: disable=useless-return
         start_ts: Timestamp,  # pylint: disable=unused-argument
         end_ts: Timestamp,  # pylint: disable=unused-argument
         events: list[AccountingEventMixin],

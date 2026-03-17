@@ -351,7 +351,7 @@ def test_insert_into_addressbook(
     # try inserting a non checksummed address
     yabir_address_not_checksummed = '0xc37b40abdb939635068d3c5f13e7faf686f03b65'
     new_entry = AddressbookEntry(
-        address=yabir_address_not_checksummed,  # type: ignore  # we are forcing the error on types here
+        address=yabir_address_not_checksummed,  # type: ignore[arg-type]  # we are forcing the error on types here
         name='yab yab',
         blockchain=SupportedBlockchain.GNOSIS,
     )
@@ -1016,7 +1016,7 @@ def test_insert_unsupported_ecosystem_address_with_none_blockchain(
     """
     sui_address = '0xcde6dbe01902be1f200ff03dbbd149e586847be8cee15235f82750d9b06c0e04'
     unsupported_entry = AddressbookEntry(
-        address=sui_address,  # type: ignore
+        address=sui_address,  # type: ignore[arg-type]
         name='My sui address',
         blockchain=None,
     )

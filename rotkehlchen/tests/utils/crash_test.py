@@ -25,7 +25,7 @@ def subprocess_sequence_for_test_db_persistence_after_search() -> None:
     """
     add_logging_level('TRACE', TRACE)
     data_dir = default_data_directory().parent / 'test_data'
-    rotki = Rotkehlchen(default_args(data_dir=data_dir))  # type: ignore
+    rotki = Rotkehlchen(default_args(data_dir=data_dir))
     create_new = (data_dir / 'users' / 'testuser' / 'rotkehlchen.db').exists() is False
     rotki.unlock_user(
         user='testuser',

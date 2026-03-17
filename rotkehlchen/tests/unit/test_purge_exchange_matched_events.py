@@ -80,7 +80,7 @@ def test_purge_exchange_restores_matched_events(database: 'DBHandler') -> None:
         assert events_db.get_history_events_internal(
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(identifiers=[matched_event_id]),
-        )[0].counterparty == Location.KRAKEN.name.lower()  # type: ignore[attr-defined]
+        )[0].counterparty == Location.KRAKEN.name.lower()
 
     with database.conn.write_ctx() as write_cursor:
         database.purge_exchange_data(write_cursor=write_cursor, location=Location.KRAKEN)

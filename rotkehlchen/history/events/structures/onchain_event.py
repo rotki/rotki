@@ -171,10 +171,10 @@ class OnchainEvent(HistoryBaseEntry, Generic[T_TxRef, T_Address]):
                 'UPDATE chain_events_info SET tx_ref=?, counterparty=?, address=?', (
                     self._serialize_tx_ref_for_db(self.tx_ref),
                     self.counterparty,
-                    self.address,  # type: ignore  # T_Address is a string
+                    self.address,  # T_Address is a string
                 ),
             ),
-        )
+        )  # type: ignore[return-value]
 
     def serialize_for_db(self) -> tuple[
             tuple[str, str, HISTORY_EVENT_DB_TUPLE_WRITE],

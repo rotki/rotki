@@ -152,7 +152,9 @@ def test_serialize(blockchain_balances):
 
     # change something and see it is also reflected in the serialized dict
     a.optimism[address2].assets[OPTIMISM_USDC_TOKEN][DEFAULT_BALANCE_LABEL] = Balance(amount=FVal('100'), value=FVal('100'))  # noqa: E501
-    expected_serialized_dict[optimism_chain_key][address2]['assets'][OPTIMISM_USDC_TOKEN.serialize()] = {DEFAULT_BALANCE_LABEL: {'amount': '100', 'value': '100'}}  # noqa: E501
+    assert isinstance(expected_serialized_dict[optimism_chain_key][address2], dict)
+    assert isinstance(expected_serialized_dict[optimism_chain_key][address2]['assets'], dict)
+    expected_serialized_dict[optimism_chain_key][address2]['assets'][OPTIMISM_USDC_TOKEN.serialize()] = {DEFAULT_BALANCE_LABEL: {'amount': '100', 'value': '100'}}  # noqa: E501  # type: ignore[assignment]
     a.eth[address1].assets.pop(A_ETH.identifier)
     expected_serialized_dict[ethereum_chain_key][address1] = {'assets': {}, 'liabilities': {}}
     assert a.serialize(given_chain=None) == expected_serialized_dict
@@ -188,7 +190,7 @@ def test_native_token_balance(
     We test it by requesting a Polygon POS balance and checking MATIC balance.
     """
     address = polygon_pos_accounts[0]
-    sorted_call_order = sorted(blockchain.polygon_pos.node_inquirer.default_call_order())  # type: ignore
+    sorted_call_order = sorted(blockchain.polygon_pos.node_inquirer.default_call_order())
 
     def mock_default_call_order(skip_indexers: bool = False):  # pylint: disable=unused-argument
         # return sorted_call_order to remove randomness, and thus make it vcr'able
@@ -206,19 +208,19 @@ def test_native_token_balance(
             new=lambda *args, **kwargs: ([EvmTokenDetectionData(
                 identifier=pol.identifier,
                 address=pol.evm_address,
-                decimals=pol.decimals,  # type: ignore
+                decimals=pol.decimals,
             ), EvmTokenDetectionData(
                 identifier=usdc.identifier,
                 address=usdc.evm_address,
-                decimals=usdc.decimals,  # type: ignore
+                decimals=usdc.decimals,
             ), EvmTokenDetectionData(
                 identifier=weth.identifier,
                 address=weth.evm_address,
-                decimals=weth.decimals,  # type: ignore
+                decimals=weth.decimals,
             ), EvmTokenDetectionData(
                 identifier=usdt.identifier,
                 address=usdt.evm_address,
-                decimals=usdt.decimals,  # type: ignore
+                decimals=usdt.decimals,
             )], []),
         ),
     ):

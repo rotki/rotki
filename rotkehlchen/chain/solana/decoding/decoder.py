@@ -77,7 +77,7 @@ class SolanaDecodingRules(DecodingRulesBase):
     transfer_address_mappings: dict[SolanaAddress, tuple[Any, ...]]
     all_counterparties: set['CounterpartyDetails']
 
-    def __add__(self, other: 'SolanaDecodingRules') -> 'SolanaDecodingRules':
+    def __add__(self, other: 'SolanaDecodingRules') -> 'SolanaDecodingRules':  # type: ignore[override]
         if not isinstance(other, SolanaDecodingRules):
             raise TypeError(
                 f'Can only add SolanaDecodingRules to SolanaDecodingRules. Got {type(other)}',
@@ -612,7 +612,7 @@ class SolanaTransactionDecoder(TransactionDecoder[SolanaTransaction, SolanaDecod
             lambda instruction: SolanaDecoderContext(instruction=instruction, transaction=transaction, decoded_events=events, ata_data=ata_data),  # noqa: E501
         )):
             for item in item_list:
-                if (mapping_result := get_mapping(item)) is None:  # type: ignore[no-untyped-call]
+                if (mapping_result := get_mapping(item)) is None:
                     continue
 
                 context = create_context(item)

@@ -8,14 +8,13 @@ from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.arbitrum_one_tx import DBArbitrumOneTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
 from .interfaces import ArbitrumDecoderInterface
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.arbitrum_one.transactions import ArbitrumOneTransactions
-    from rotkehlchen.chain.arbitrum_one.types import ArbitrumOneTransaction
     from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
@@ -53,9 +52,12 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
 
     def _chain_specific_post_decoding_rules(
             self,
-            transaction: 'ArbitrumOneTransaction',  # type: ignore[override]
+            transaction: EvmTransaction,
     ) -> list[tuple[int, Callable]]:
-        return self.transaction_type_mappings.get(transaction.tx_type, [])
+        if not isinstance((tx_type := getattr(transaction, 'tx_type', None)), int):
+            return []
+        default_rules: list[tuple[int, Callable]] = []
+        return self.transaction_type_mappings.get(tx_type, default_rules)
 
     def _chain_specific_decoder_initialization(
             self,

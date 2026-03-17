@@ -105,24 +105,12 @@ dev = [
 ]
 
 lint = [
-    "mypy==1.19.1",
-    "mypy-extensions==1.1.0",
     "pylint==4.0.5",
     "astroid==4.0.2",  # engine of pylint, upgrade them together
     "ruff==0.15.5",
     "double-indent-rotki==0.1.7",  # our fork of double indent
     "pyright==1.1.408",
-    # type packages used by mypy
-    # pinned here so that we can have reproducible mypy runs
-    "types-chardet==5.0.4.6",
-    "types-cryptography==3.3.23.2",
-    "types-enum34==1.1.8",
-    "types-ipaddress==1.0.8",
-    "types-setuptools==80.9.0.20250822",
-    "types-requests==2.32.4.20250913",
-    "types-urllib3==1.26.25.14",
-    "types-toml==0.10.8.20240310",
-    "types-python-dateutil==2.9.0.20250822",
+    "ty==0.0.23",
 ]
 
 docs = [
@@ -173,113 +161,6 @@ fallback_version = "1.42.0"
 [tool.setuptools.package-data]
 "rotkehlchen.data" = ["*"]
 "rotkehlchen.chain" = ["ethereum/modules/dxdaomesa/data/contracts.json"]
-
-# -- Mypy config section --
-
-[tool.mypy]
-# Docs: https://mypy.readthedocs.io/en/latest/config_file.html
-ignore_missing_imports = true
-check_untyped_defs = true
-disallow_untyped_defs = true
-warn_unused_configs = true
-warn_unused_ignores = true
-warn_unreachable = true
-warn_redundant_casts = true
-disallow_untyped_decorators = true
-disallow_untyped_calls = true
-mypy_path="./stubs/"
-
-[[tool.mypy.overrides]]
-module = "rotkehlchen.*"
-ignore_missing_imports = false
-
-# -- These modules still need to have proper type definitions given --
-[[tool.mypy.overrides]]
-module = "rotkehlchen.tests.*"
-check_untyped_defs = false
-disallow_untyped_defs = false
-# Pytest's fixture decorators are not typed
-disallow_untyped_decorators = false
-
-# -- Typing has been fixed in these tests --
-[[tool.mypy.overrides]]
-module = [
-    "rotkehlchen.tests.api.blockchain.*",
-    "rotkehlchen.tests.api.test_aave",
-    "rotkehlchen.tests.api.test_accounting_rules",
-    "rotkehlchen.tests.api.test_addressbook",
-    "rotkehlchen.tests.api.test_assets",
-    "rotkehlchen.tests.api.test_assets_updates",
-    "rotkehlchen.tests.api.test_async",
-    "rotkehlchen.tests.api.test_balancer",
-    "rotkehlchen.tests.api.test_balances",
-    "rotkehlchen.tests.api.test_bitcoin",
-    "rotkehlchen.tests.api.test_caching",
-    "rotkehlchen.tests.api.test_calendar",
-    "rotkehlchen.tests.api.test_compound",
-    "rotkehlchen.tests.api.test_current_assets_price",
-    "rotkehlchen.tests.api.test_custom_assets",
-    "rotkehlchen.tests.api.test_data_import",
-    "rotkehlchen.tests.api.test_data_purging",
-    "rotkehlchen.tests.api.test_database",
-    "rotkehlchen.tests.api.test_defi",
-    "rotkehlchen.tests.api.test_ens",
-    "rotkehlchen.tests.api.test_erc20_info",
-    "rotkehlchen.tests.api.test_errors",
-    "rotkehlchen.tests.api.test_eth2",
-    "rotkehlchen.tests.api.test_ethereum_transactions",
-    "rotkehlchen.tests.api.test_evm_transactions",
-    "rotkehlchen.tests.api.test_evmlike",
-    "rotkehlchen.tests.api.test_exchange_rates_query",
-    "rotkehlchen.tests.api.test_exchanges",
-    "rotkehlchen.tests.api.test_external_services",
-    "rotkehlchen.tests.api.test_historical_assets_price",
-    "rotkehlchen.tests.api.test_history_base_entry",
-    "rotkehlchen.tests.api.test_history_events_export",
-    "rotkehlchen.tests.api.test_history",
-    "rotkehlchen.tests.api.test_icons",
-    "rotkehlchen.tests.api.test_ignored_actions",
-    "rotkehlchen.tests.api.test_liquity",
-    "rotkehlchen.tests.api.test_location_asset_mappings",
-    "rotkehlchen.tests.api.test_locations",
-    "rotkehlchen.tests.api.test_periodic",
-    "rotkehlchen.tests.api.test_pickle",
-    "rotkehlchen.tests.api.test_pnl_csv",
-    "rotkehlchen.tests.api.test_premium",
-    "rotkehlchen.tests.api.test_settings",
-    "rotkehlchen.tests.api.test_skipped_events",
-    "rotkehlchen.tests.api.test_snapshots",
-    "rotkehlchen.tests.api.test_statistics",
-    "rotkehlchen.tests.api.test_substrate_manager",
-    "rotkehlchen.tests.api.test_sushiswap",
-    "rotkehlchen.tests.data_migrations.test_migrations",
-    "rotkehlchen.tests.api.test_tags",
-    "rotkehlchen.tests.api.test_trades",
-    "rotkehlchen.tests.api.test_uniswap",
-    "rotkehlchen.tests.api.test_user_assets",
-    "rotkehlchen.tests.api.test_user_evm_tokens",
-    "rotkehlchen.tests.api.test_user_notes",
-    "rotkehlchen.tests.api.test_users",
-    "rotkehlchen.tests.api.test_yearn_vaults",
-]
-check_untyped_defs = true
-disallow_untyped_defs = true
-
-[[tool.mypy.overrides]]
-module = "rotkehlchen.tests.fixtures.google"
-ignore_errors = true  # since this is seen differently locally with requirements dev and differently in the CI with only requirements lint
-
-# custom pylint checkers still need to be typed
-[[tool.mypy.overrides]]
-module = "tools.pylint.*"
-check_untyped_defs = false
-disallow_untyped_defs = false
-
-# profiling is not typed
-[[tool.mypy.overrides]]
-module = "tools.profiling.*"
-check_untyped_defs = false
-disallow_untyped_defs = false
 
 # -- ruff config section --
 
@@ -336,7 +217,7 @@ select = [
     "UP",
     "YTT",
     "ASYNC",
-    # "ANN",  # flake8-annotations -- looks like mypy already covers this?
+    # "ANN",  # flake8-annotations -- covered by pyright reportMissingParameterType/reportUntypedFunctionDecorator
     "S",
     # "BLE",  # blind-except -- already pylint does this and we got ignores where needed
     # "FBT",  # FBT -- not sure I agree with the concept of boolean trap
@@ -501,8 +382,9 @@ reportMissingTypeStubs = false
 reportMissingImports = false
 reportUnknownMemberType = false
 reportUnknownVariableType = false
-reportUntypedFunctionDecorator = false
-reportUnknownArgumentType = false
+reportUntypedFunctionDecorator = "error"  # replaces mypy's disallow_untyped_decorators
+reportUnknownArgumentType = false       # replaces mypy's disallow_untyped_calls
+reportMissingParameterType = "error"      # replaces mypy's disallow_untyped_defs
 reportMissingTypeArgument = false
 reportInvalidTypeVarUse = false
 reportCallInDefaultInitializer = false
@@ -523,9 +405,106 @@ reportTypedDictNotRequiredAccess = "error"
 reportOptionalContextManager = false
 reportAssignmentType = false
 reportUnnecessaryComparison = true
+reportUnreachable = "warning"  # replaces mypy's warn_unreachable
 
 exclude = ["**/tests"]
 pythonVersion = "3.11"
+
+
+# -- ty config section --
+
+[tool.ty.environment]
+python-version = "3.11"
+extra-paths = ["./stubs"]  # replaces mypy's mypy_path
+
+[tool.ty.analysis]
+# Treat untyped third-party packages as Any to avoid spurious attribute errors
+replace-imports-with-any = ["sqlcipher3", "sqlcipher3.*"]
+
+[tool.ty.rules]
+# Warn on unused type: ignore and ty: ignore comments (replaces mypy's warn_unused_ignores)
+unused-ignore-comment = "warn"
+unused-type-ignore-comment = "warn"
+# Some libraries expose submodules lazily (e.g. gevent.lock); runtime is valid but ty warns.
+# Revisit once ty handles these package patterns better.
+possibly-missing-submodule = "ignore"
+
+[[tool.ty.overrides]]
+# These modules still need to have proper type definitions given - relax checking
+include = ["rotkehlchen/tests/**"]
+exclude = [
+    "rotkehlchen/tests/api/blockchain/**",
+    "rotkehlchen/tests/api/test_aave.py",
+    "rotkehlchen/tests/api/test_accounting_rules.py",
+    "rotkehlchen/tests/api/test_addressbook.py",
+    "rotkehlchen/tests/api/test_assets.py",
+    "rotkehlchen/tests/api/test_assets_updates.py",
+    "rotkehlchen/tests/api/test_async.py",
+    "rotkehlchen/tests/api/test_balancer.py",
+    "rotkehlchen/tests/api/test_balances.py",
+    "rotkehlchen/tests/api/test_bitcoin.py",
+    "rotkehlchen/tests/api/test_caching.py",
+    "rotkehlchen/tests/api/test_calendar.py",
+    "rotkehlchen/tests/api/test_compound.py",
+    "rotkehlchen/tests/api/test_current_assets_price.py",
+    "rotkehlchen/tests/api/test_custom_assets.py",
+    "rotkehlchen/tests/api/test_data_import.py",
+    "rotkehlchen/tests/api/test_data_purging.py",
+    "rotkehlchen/tests/api/test_database.py",
+    "rotkehlchen/tests/api/test_defi.py",
+    "rotkehlchen/tests/api/test_ens.py",
+    "rotkehlchen/tests/api/test_erc20_info.py",
+    "rotkehlchen/tests/api/test_errors.py",
+    "rotkehlchen/tests/api/test_eth2.py",
+    "rotkehlchen/tests/api/test_ethereum_transactions.py",
+    "rotkehlchen/tests/api/test_evm_transactions.py",
+    "rotkehlchen/tests/api/test_evmlike.py",
+    "rotkehlchen/tests/api/test_exchange_rates_query.py",
+    "rotkehlchen/tests/api/test_exchanges.py",
+    "rotkehlchen/tests/api/test_external_services.py",
+    "rotkehlchen/tests/api/test_historical_assets_price.py",
+    "rotkehlchen/tests/api/test_history_base_entry.py",
+    "rotkehlchen/tests/api/test_history_events_export.py",
+    "rotkehlchen/tests/api/test_history.py",
+    "rotkehlchen/tests/api/test_icons.py",
+    "rotkehlchen/tests/api/test_ignored_actions.py",
+    "rotkehlchen/tests/api/test_liquity.py",
+    "rotkehlchen/tests/api/test_location_asset_mappings.py",
+    "rotkehlchen/tests/api/test_locations.py",
+    "rotkehlchen/tests/api/test_periodic.py",
+    "rotkehlchen/tests/api/test_pickle.py",
+    "rotkehlchen/tests/api/test_pnl_csv.py",
+    "rotkehlchen/tests/api/test_premium.py",
+    "rotkehlchen/tests/api/test_settings.py",
+    "rotkehlchen/tests/api/test_skipped_events.py",
+    "rotkehlchen/tests/api/test_snapshots.py",
+    "rotkehlchen/tests/api/test_statistics.py",
+    "rotkehlchen/tests/api/test_substrate_manager.py",
+    "rotkehlchen/tests/api/test_sushiswap.py",
+    "rotkehlchen/tests/data_migrations/test_migrations.py",
+    "rotkehlchen/tests/api/test_tags.py",
+    "rotkehlchen/tests/api/test_trades.py",
+    "rotkehlchen/tests/api/test_uniswap.py",
+    "rotkehlchen/tests/api/test_user_assets.py",
+    "rotkehlchen/tests/api/test_user_evm_tokens.py",
+    "rotkehlchen/tests/api/test_user_notes.py",
+    "rotkehlchen/tests/api/test_users.py",
+    "rotkehlchen/tests/api/test_yearn_vaults.py",
+]
+
+[tool.ty.overrides.rules]
+# Pytest fixture decorators and helpers are untyped; suppress errors from untyped code
+unresolved-import = "ignore"
+unresolved-attribute = "ignore"
+invalid-argument-type = "ignore"
+invalid-method-override = "ignore"
+
+[[tool.ty.overrides]]
+# This file has conditional imports that behave differently locally vs CI
+include = ["rotkehlchen/tests/fixtures/google.py"]
+
+[tool.ty.overrides.rules]
+all = "ignore"
 
 
 [tool.pytest.ini_options]

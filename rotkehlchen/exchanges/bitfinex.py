@@ -631,7 +631,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                         # which should all map to the same USDT asset
                     ]:
                         try:
-                            asset = get_asset_func(param)  # type: ignore[operator]
+                            asset = get_asset_func(param)
                         except UnknownAsset:
                             continue
 

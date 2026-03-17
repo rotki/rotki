@@ -52,14 +52,13 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import TokenKind
+from rotkehlchen.types import ChecksumEvmAddress, TokenKind
 from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset, EvmToken
     from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -988,12 +987,15 @@ class WooFiCommonDecoder(EvmDecoderInterface):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
-        mappings = {
+        mappings: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
             WOO_ROUTER_V2: (self._decode_swap,),
             WOO_CROSS_SWAP_ROUTER_V5: (self._decode_cross_swap_router_events,),
             WOO_REWARD_MASTER_CHEF: (self._decode_master_chef_events,),
-        } | dict.fromkeys(self.superchargers, (self._decode_supercharger_events,)) \
-        | dict.fromkeys(self.withdrawal_managers, (self._decode_withdraw,))
+        }
+        for address in self.superchargers:
+            mappings[address] = (self._decode_supercharger_events,)
+        for address in self.withdrawal_managers:
+            mappings[address] = (self._decode_withdraw,)
         if self.stake_v1_address is not None:
             mappings[self.stake_v1_address] = (self._decode_stake_v1_events,)
         if self.stake_v2_address is not None:

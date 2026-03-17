@@ -20,17 +20,17 @@ from rotkehlchen.types import ChainID, Location, Timestamp, TokenKind
 
 
 class RKLEncoder(json.JSONEncoder):
-    def default(self, obj: Any) -> Any:
-        if isinstance(obj, FVal):
-            return str(obj)
-        if isinstance(obj, Location):
-            return str(obj)
-        if isinstance(obj, float):
+    def default(self, o: Any) -> Any:
+        if isinstance(o, FVal):
+            return str(o)
+        if isinstance(o, Location):
+            return str(o)
+        if isinstance(o, float):
             raise ValueError('Trying to json encode a float.')
-        if isinstance(obj, Asset):
-            return obj.identifier
+        if isinstance(o, Asset):
+            return o.identifier
 
-        return json.JSONEncoder.default(self, obj)
+        return super().default(o)
 
     def _encode(self, obj: Any) -> Any:
         if isinstance(obj, dict):
@@ -40,8 +40,8 @@ class RKLEncoder(json.JSONEncoder):
         # else
         return obj
 
-    def encode(self, obj: Any) -> Any:
-        return super().encode(self._encode(obj))
+    def encode(self, o: Any) -> str:
+        return super().encode(self._encode(o))
 
 
 def jsonloads_dict(data: str) -> dict[str, Any]:

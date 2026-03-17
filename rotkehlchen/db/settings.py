@@ -407,7 +407,7 @@ def db_settings_from_dict(
                         f'ended up in the DB. Setting it to None. Please open an issue in '
                         f'Github: https://github.com/rotki/rotki/issues/new/choose',
                     )
-                    int_value = None  # type: ignore[assignment]  # we do it on purpose
+                    int_value = None  # we do it on purpose
                 specified_args[key] = int_value
 
         elif key == 'main_currency':
@@ -526,7 +526,7 @@ class CachedSettings:
                 self._settings.default_evm_indexer_order,
             )
 
-        self.__class__._evm_indexers_order_per_chain = chain_to_indexers  # type: ignore
+        self.__class__._evm_indexers_order_per_chain = chain_to_indexers
 
     def initialize(self, settings: DBSettings) -> None:
         """Initialize with saved DB settings

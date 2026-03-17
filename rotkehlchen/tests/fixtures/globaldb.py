@@ -97,8 +97,8 @@ def create_globaldb(
 ) -> GlobalDBHandler:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
-    GlobalDBHandler._GlobalDBHandler__instance = None  # type: ignore
-    AssetResolver._AssetResolver__instance = None  # type: ignore
+    GlobalDBHandler._GlobalDBHandler__instance = None
+    AssetResolver._AssetResolver__instance = None
 
     return GlobalDBHandler(
         data_dir=data_directory,

@@ -25,6 +25,9 @@ def _search_only_nfts_levenstein(
         cursor: 'DBCursor',
         filter_query: 'LevenshteinFilterQuery',
 ) -> list[tuple[int, dict[str, Any]]]:
+    if filter_query.substring_search is None:
+        return []
+    search_term = filter_query.substring_search
     query, bindings = filter_query.prepare('nfts')
     cursor.execute('SELECT identifier, name, collection_name FROM nfts ' + query, bindings)
     search_result: list[tuple[int, dict[str, Any]]] = []
@@ -33,12 +36,12 @@ def _search_only_nfts_levenstein(
         if entry[1] is not None:
             lev_dist_min = min(
                 lev_dist_min,
-                levenshtein(filter_query.substring_search, entry[1].casefold()),
+                levenshtein(search_term, entry[1].casefold()),
             )
         if entry[2] is not None:
             lev_dist_min = min(
                 lev_dist_min,
-                levenshtein(filter_query.substring_search, entry[2].casefold()),
+                levenshtein(search_term, entry[2].casefold()),
             )
         entry_info = {
             'identifier': entry[0],
@@ -72,15 +75,16 @@ def _search_only_assets_levenstein(
 
             lev_dist_min = 100
             if filter_query.substring_search is not None:  # we search for address only
+                search_term = filter_query.substring_search
                 if entry[1] is not None:
                     lev_dist_min = min(
                         lev_dist_min,
-                        levenshtein(filter_query.substring_search, entry[1].casefold()),
+                        levenshtein(search_term, entry[1].casefold()),
                     )
                 if entry[2] is not None:
                     lev_dist_min = min(
                         lev_dist_min,
-                        levenshtein(filter_query.substring_search, entry[2].casefold()),
+                        levenshtein(search_term, entry[2].casefold()),
                     )
                 if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):
                     if found_eth is False:

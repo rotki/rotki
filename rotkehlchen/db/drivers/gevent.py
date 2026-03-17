@@ -168,7 +168,9 @@ class DBCursor:
 
     @property
     def lastrowid(self) -> int:
-        return self._cursor.lastrowid
+        lastrowid = self._cursor.lastrowid
+        assert lastrowid is not None
+        return lastrowid
 
     def close(self) -> None:
         self._cursor.close()

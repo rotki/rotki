@@ -128,16 +128,16 @@ class MissingAcquisition(NamedTuple):
     missing_amount: FVal
 
     def serialize(self) -> dict[str, str | int]:
-        data = {
+        data: dict[str, str | int] = {
             'asset': self.asset.identifier,
             'time': self.time,
             'found_amount': str(self.found_amount),
             'missing_amount': str(self.missing_amount),
         }
-        if self.originating_event_id:
+        if self.originating_event_id is not None:
             data['originating_event_id'] = self.originating_event_id
 
-        return data  # type: ignore
+        return data
 
 
 class MissingPrice(NamedTuple):

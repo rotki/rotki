@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from typing import Any
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
@@ -249,7 +250,7 @@ def asset_from_gemini(symbol: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_blockfi(symbol: str) -> AssetWithOracles:
+def asset_from_blockfi(symbol: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnknownAsset
@@ -265,7 +266,7 @@ def asset_from_blockfi(symbol: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_iconomi(symbol: str) -> AssetWithOracles:
+def asset_from_iconomi(symbol: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -282,7 +283,7 @@ def asset_from_iconomi(symbol: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_uphold(symbol: str) -> AssetWithOracles:
+def asset_from_uphold(symbol: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -298,7 +299,7 @@ def asset_from_uphold(symbol: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_nexo(nexo_name: str) -> AssetWithOracles:
+def asset_from_nexo(nexo_name: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -317,7 +318,7 @@ def asset_from_nexo(nexo_name: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_bitpanda(bitpanda_name: str) -> AssetWithOracles:
+def asset_from_bitpanda(bitpanda_name: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -333,7 +334,7 @@ def asset_from_bitpanda(bitpanda_name: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_cryptocom(cryptocom_name: str) -> AssetWithOracles:
+def asset_from_cryptocom(cryptocom_name: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -351,7 +352,7 @@ def asset_from_cryptocom(cryptocom_name: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_okx(okx_name: str) -> AssetWithOracles:
+def asset_from_okx(okx_name: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -367,7 +368,7 @@ def asset_from_okx(okx_name: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
+def asset_from_ftx(ftx_name: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -387,7 +388,7 @@ def asset_from_ftx(ftx_name: str) -> AssetWithOracles:
     return symbol_to_asset_or_token(name)
 
 
-def asset_from_bybit(name: str) -> AssetWithOracles:
+def asset_from_bybit(name: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset
@@ -403,7 +404,7 @@ def asset_from_bybit(name: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_woo(woo_name: str) -> AssetWithOracles:
+def asset_from_woo(woo_name: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnknownAsset
@@ -423,7 +424,7 @@ def asset_from_woo(woo_name: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_common_identifier(common_identifier: str) -> AssetWithOracles:
+def asset_from_common_identifier(common_identifier: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnknownAsset
@@ -440,7 +441,7 @@ def asset_from_common_identifier(common_identifier: str) -> AssetWithOracles:
     ))
 
 
-def asset_from_htx(htx_name: str) -> AssetWithOracles:
+def asset_from_htx(htx_name: Any) -> AssetWithOracles:
     """May raise:
     - DeserializationError
     - UnsupportedAsset

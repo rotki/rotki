@@ -197,7 +197,7 @@ def test_margin_events_affect_gained_lost_amount(accountant, google_service):
         fee_currency=A_BTC,
         link='2',
         notes='margin2',
-    )]
+    )]  # type: ignore[operator]
 
     accounting_history_process(
         accountant=accountant,

@@ -111,7 +111,7 @@ def fixture_rotki_premium_object(
         credentials=rotki_premium_credentials,
         username=username,
         msg_aggregator=MessagesAggregator(),
-        db=None,  # type: ignore # Since the fixture loads before others it was causing errors with the api fixture since the user folder already exists. Needs a bit of work to be figured out but is only used for the premium devices
+        db=None,  # Since the fixture loads before others it was causing errors with the api fixture since the user folder already exists. Needs a bit of work to be figured out but is only used for the premium devices  # noqa: E501
     )
     premium.status = SubscriptionStatus.ACTIVE
     default_limits = {
@@ -829,7 +829,7 @@ def rotkehlchen_api_server_with_exchanges(
             msg_aggregator=rotki.msg_aggregator,
             **kwargs,
         )
-        kraken_account_type = exchangeobj.account_type if exchange_location == Location.KRAKEN else None  # type: ignore  # noqa: E501
+        kraken_account_type = exchangeobj.account_type if exchange_location == Location.KRAKEN else None  # noqa: E501
         exchanges[exchange_location] = [exchangeobj]
         rotki.data.db.add_exchange(  # also add credentials in the DB
             name=exchangeobj.name,

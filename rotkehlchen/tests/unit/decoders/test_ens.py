@@ -414,7 +414,7 @@ def test_register_v2_with_refund(
             asset=A_ETH,
             amount=FVal('0.003850422928533558'),
             location_label=user_address,
-            notes=f'Register ENS name javxq.eth for 0.003850422928533558 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # type: ignore[attr-defined]  # decoder will have date mixin  # noqa: E501
+            notes=f'Register ENS name javxq.eth for 0.003850422928533558 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # decoder will have date mixin # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_2,
             extra_data={'name': 'javxq.eth', 'expires': expires_timestamp},

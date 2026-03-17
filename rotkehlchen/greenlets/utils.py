@@ -2,9 +2,10 @@ from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     import gevent
+    import greenlet
 
 
-def get_greenlet_name(greenlet: Union['gevent.Greenlet', 'gevent.greenlet']) -> str:
+def get_greenlet_name(greenlet: Union['gevent.Greenlet', 'greenlet.greenlet']) -> str:
     if greenlet.parent is None:
         greenlet_name = 'Main Greenlet'
     else:

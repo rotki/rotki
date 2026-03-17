@@ -52,11 +52,11 @@ def _add_defillama_to_oracles(cursor: 'DBCursor', setting_name: Literal['current
             # Type ignores here are needed since OracleSource can't have any member
             # or otherwise we would be re-defining them in their subclasses
             # (they take different values).
-            coingecko_pos = oracles.index(oracle_cls.COINGECKO.serialize())  # type: ignore[attr-defined]
-            oracles.insert(coingecko_pos + 1, oracle_cls.DEFILLAMA.serialize())  # type: ignore[attr-defined]
+            coingecko_pos = oracles.index(oracle_cls.COINGECKO.serialize())
+            oracles.insert(coingecko_pos + 1, oracle_cls.DEFILLAMA.serialize())
         except ValueError:
             # If coingecko is not in the list add at the end defillama
-            oracles.append(oracle_cls.DEFILLAMA.serialize())  # type: ignore[attr-defined]
+            oracles.append(oracle_cls.DEFILLAMA.serialize())
 
     cursor.execute(
         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',

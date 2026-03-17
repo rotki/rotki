@@ -713,7 +713,7 @@ def deserialize_evm_transaction(
                 elif indexer is not None:  # fallback to indexers for non-Etherscan sources
                     try:
                         l1_fee = indexer.get_l1_fee(
-                            chain_id=chain_id,  # type: ignore[arg-type]  # L2 chain guaranteed
+                            chain_id=chain_id,  # L2 chain guaranteed
                             account=from_address,
                             tx_hash=tx_hash,
                             block_number=block_number,

@@ -343,7 +343,7 @@ class SolanaInquirer(SolanaRPCMixin):
         ata_accounts = []
         for token_program_id in (TOKEN_PROGRAM_ID, TOKEN_2022_PROGRAM_ID):
             response = self.query(
-                method=lambda client, pid=token_program_id: client.get_token_accounts_by_owner(  # type: ignore
+                method=lambda client, pid=token_program_id: client.get_token_accounts_by_owner(
                     owner=Pubkey.from_string(account),
                     opts=TokenAccountOpts(program_id=pid),
                 ),
@@ -364,7 +364,7 @@ class SolanaInquirer(SolanaRPCMixin):
         signatures = []
         while True:
             response: GetSignaturesForAddressResp = self.query(
-                method=lambda client, _before=before, _until=until: client.get_signatures_for_address(  # type: ignore[misc]  # noqa: E501
+                method=lambda client, _before=before, _until=until: client.get_signatures_for_address(  # noqa: E501
                     account=Pubkey.from_string(address),
                     limit=SIGNATURES_PAGE_SIZE,
                     before=_before,

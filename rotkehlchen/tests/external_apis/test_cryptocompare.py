@@ -112,6 +112,7 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
         to_asset=A_USD,
         source=HistoricalPriceOracle.CRYPTOCOMPARE,
     )
+    assert data_range is not None
     assert data_range[0] == btc_start_ts
     assert data_range[1] == 1287964800  # that's the closest ts to now_ts cc returns
     old_cache_entries = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)
@@ -131,6 +132,7 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
         to_asset=A_USD,
         source=HistoricalPriceOracle.CRYPTOCOMPARE,
     )
+    assert data_range is not None
     assert data_range[0] == btc_start_ts
     assert data_range[1] == 1289174400  # that's the closest ts to now_ts cc returns
 
@@ -176,6 +178,7 @@ def test_cryptocompare_histohour_data_going_backward(database, freezer):
     result = get_globaldb_cache_entries(from_asset=A_BTC, to_asset=A_USD)
     assert len(result) > 6000  # arbitrary safe number
     data_range = globaldb.get_historical_price_range(A_BTC, A_USD, HistoricalPriceOracle.CRYPTOCOMPARE)  # noqa: E501
+    assert data_range is not None
     assert data_range[0] == btc_start_ts
     assert data_range[1] == 1301540400  # that's the closest ts to now_ts cc returns
 

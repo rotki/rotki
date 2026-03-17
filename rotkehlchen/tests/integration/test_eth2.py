@@ -432,7 +432,7 @@ def test_beacon_node_rpc_queries(eth2: 'Eth2'):
     assert eth2.beacon_inquirer.node is not None
     eth2.beacon_inquirer.set_rpc_endpoint('')  # unset beacon rpc endpoint
     assert eth2.beacon_inquirer.node is None
-    eth2.beacon_inquirer.set_rpc_endpoint('http://42.42.42.42:6969/')  # type: ignore  # with trailing slash -- not sure why it says this is unreachable
+    eth2.beacon_inquirer.set_rpc_endpoint('http://42.42.42.42:6969/')  # with trailing slash -- not sure why it says this is unreachable  # noqa: E501
     assert eth2.beacon_inquirer.node is not None
 
     # now let's test balances

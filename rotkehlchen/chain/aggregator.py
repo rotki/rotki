@@ -324,16 +324,15 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             self.activate_module(given_module)
 
         self.eth_asset = A_ETH.resolve_to_crypto_asset()
-        # type ignores here are to keep the callable mappings generic enough
-        self.chain_modify_init: dict[SupportedBlockchain, Callable[[SupportedBlockchain, Literal['append', 'remove']], None]] = {  # noqa: E501
-            SupportedBlockchain.KUSAMA: self._init_substrate_account_modification,  # type:ignore
-            SupportedBlockchain.POLKADOT: self._init_substrate_account_modification,  # type:ignore
+        self.chain_modify_init: dict[SupportedBlockchain, Callable[[SupportedBlockchain, Literal['append', 'remove']], None]] = {  # noqa: E501  # type: ignore[assignment]
+            SupportedBlockchain.KUSAMA: self._init_substrate_account_modification,
+            SupportedBlockchain.POLKADOT: self._init_substrate_account_modification,
         }
-        self.chain_modify_append: dict[SupportedBlockchain, Callable[[SupportedBlockchain, BlockchainAddress], None]] = {  # noqa: E501
-            SupportedBlockchain.ETHEREUM: self._append_eth_account_modification,  # type:ignore
+        self.chain_modify_append: dict[SupportedBlockchain, Callable[[SupportedBlockchain, BlockchainAddress], None]] = {  # noqa: E501  # type: ignore[assignment]
+            SupportedBlockchain.ETHEREUM: self._append_eth_account_modification,
         }
-        self.chain_modify_remove: dict[SupportedBlockchain, Callable[[SupportedBlockchain, BlockchainAddress], None]] = {  # noqa: E501
-            SupportedBlockchain.ETHEREUM: self._remove_eth_account_modification,  # type:ignore
+        self.chain_modify_remove: dict[SupportedBlockchain, Callable[[SupportedBlockchain, BlockchainAddress], None]] = {  # noqa: E501  # type: ignore[assignment]
+            SupportedBlockchain.ETHEREUM: self._remove_eth_account_modification,
         }
 
     def __del__(self) -> None:
@@ -589,7 +588,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if len(accounts := self.accounts.get(blockchain)) == 0:
                 return
         else:
-            accounts = addresses  # type: ignore  # they are both sequences.
+            accounts = addresses  # they are both sequences.
 
         self.balances.set(
             chain=blockchain,
@@ -1189,7 +1188,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             chains_with_valid_addresses = []
             for chain in chains_to_check:
                 chains_with_valid_addresses.append(chain)
-                if chain in EVM_CHAINS_WITH_TRANSACTIONS and self.get_chain_manager(chain).node_inquirer.is_contract(address=account):  # type: ignore  # mypy doesn't detect this as SUPPORTED_EVM_EVMLIKE_CHAINS  # noqa: E501
+                if chain in EVM_CHAINS_WITH_TRANSACTIONS and self.get_chain_manager(chain).node_inquirer.is_contract(address=account):  # mypy doesn't detect this as SUPPORTED_EVM_EVMLIKE_CHAINS # noqa: E501
                     evm_contract_addresses.add(account)
 
             new_accounts, new_failed_accounts, had_activity = self.check_chains_and_add_accounts(
@@ -1279,7 +1278,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def iterate_chain_managers_with_nodes(self) -> Iterator['ChainManagerWithNodesMixin']:
         """Iterate the supported evm chain managers"""
         for blockchain in CHAINS_WITH_NODES:
-            yield self.get_chain_manager(blockchain)  # type: ignore[misc]  # will be a chain manager with nodes
+            yield self.get_chain_manager(blockchain)  # will be a chain manager with nodes
 
     def flush_eth2_cache(self) -> None:
         """Flush cache for logic related to validators. We do this after modifying the list of

@@ -100,8 +100,9 @@ def request_available_nodes(func: Callable) -> Callable:
             except RemoteError as e:
                 requested_nodes.append(str(node))
                 endpoint = node_attributes.node_interface.url
+                func_name = getattr(func, '__name__', func.__class__.__name__)
                 log.warning(
-                    f'{manager.chain} {func.__name__!r} failed to request via '
+                    f'{manager.chain} {func_name!r} failed to request via '
                     f'{node} node at endpoint {endpoint} due to: {e!s}.',
                     args=args[1:],
                     kwargs=kwargs_,
@@ -559,6 +560,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         - RemoteError: `request_available_nodes()` fails to request after
         trying with all the available nodes.
         """
+        assert node_interface is not None
         return self._get_account_balance(account=account, node_interface=node_interface)
 
     def get_accounts_balance(
@@ -612,6 +614,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         - RemoteError: `request_available_nodes()` fails to request after
         trying with all the available nodes.
         """
+        assert node_interface is not None
         return self._get_chain_id(node_interface)
 
     @request_available_nodes
@@ -624,6 +627,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         - RemoteError: `request_available_nodes()` fails to request after
         trying with all the available nodes.
         """
+        assert node_interface is not None
         return self._get_chain_properties(node_interface)
 
     @request_available_nodes
@@ -636,6 +640,7 @@ class SubstrateManager(ChainManager[SubstrateAddress]):
         - RemoteError: `request_available_nodes()` fails to request after
         trying with all the available nodes.
         """
+        assert node_interface is not None
         return self._get_last_block(node_interface)
 
     def set_rpc_endpoint(self, endpoint: str) -> tuple[bool, str]:

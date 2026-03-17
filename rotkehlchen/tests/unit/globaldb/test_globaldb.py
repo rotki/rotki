@@ -999,6 +999,7 @@ def test_general_cache(globaldb):
             key_parts=[CacheType.CURVE_POOL_TOKENS, '123'],
             value='xyz',
         )
+        assert last_queried_ts_0 is not None
         assert ts_test_end >= last_queried_ts_0 >= ts_test_start
         last_queried_ts_1 = globaldb_get_general_cache_last_queried_ts(
             cursor=cursor,

@@ -11,7 +11,6 @@ from typing import (
     Optional,
     TypeVar,
     Union,
-    cast,
     overload,
 )
 
@@ -1001,7 +1000,7 @@ class Inquirer:
         - RemoteError
         """
         assert lp_token.chain_id in CURVE_CHAIN_IDS, f'{lp_token} is not on a curve supported chain'  # noqa: E501
-        chain_id = cast('CURVE_CHAIN_ID_TYPE', lp_token.chain_id)
+        chain_id = lp_token.chain_id
         evm_manager = self.get_evm_manager(chain_id=chain_id)
         evm_manager.assure_curve_cache_is_queried_and_decoder_updated(
             node_inquirer=evm_manager.node_inquirer,

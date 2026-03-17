@@ -145,7 +145,7 @@ def test_upload_data_to_server(
 
     now = ts_now()
     with patched_get, chunk_size_patch, patched_post as mocked_post, ws_patch as ws_mock:
-        tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()  # type: ignore[union-attr]  # task_manager can't be none here
+        tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()  # task_manager can't be none here  # noqa: E501
         if tasks is not None:
             gevent.wait(tasks)
 

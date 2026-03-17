@@ -1,5 +1,5 @@
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any, cast
+from typing import TYPE_CHECKING, Any, Protocol, cast
 
 from rotkehlchen.chain.ethereum.modules.lido_csm.constants import LidoCsmOperatorType
 from rotkehlchen.chain.ethereum.modules.lido_csm.metrics import LidoCsmMetricsFetcher
@@ -9,14 +9,19 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
+class IntArgsCallable(Protocol):
+    def __call__(self, *arguments: int) -> object:
+        ...
+
+
 class DummyContract:
-    def __init__(self, responses: dict[str, object]) -> None:
+    def __init__(self, responses: dict[str, object | IntArgsCallable]) -> None:
         self.responses = responses
 
     def call(self, *, method_name: str, arguments: list[int] | tuple[int, ...] = (), **_: object) -> object:  # noqa: E501
         response = self.responses[method_name]
         if callable(response):
-            return response(*arguments)
+            return response(*arguments)  # type: ignore[call-top-callable]
         return response
 
 
@@ -40,10 +45,10 @@ def test_lido_csm_metrics_fetcher_converts_values() -> None:
     fetcher = LidoCsmMetricsFetcher(
         evm_inquirer=cast('EthereumInquirer', SimpleNamespace()),
     )
-    fetcher.accounting_contract = accounting_contract  # type: ignore[assignment]
-    fetcher.module_contract = module_contract  # type: ignore[assignment]
-    fetcher.steth_contract = steth_contract  # type: ignore[assignment]
-    fetcher.fee_distributor_contract = fee_distributor_contract  # type: ignore[assignment]
+    fetcher.accounting_contract = accounting_contract
+    fetcher.module_contract = module_contract
+    fetcher.steth_contract = steth_contract
+    fetcher.fee_distributor_contract = fee_distributor_contract
 
     def fake_fetch_ipfs_json(cid: str) -> dict[str, Any]:
         return {

@@ -73,7 +73,7 @@ class DBQueryRanges:
                     'Cannot save ranges to the DB.',
                 )
                 assert False, msg  # hard fail in develop since range gaps are a programming error and should never happen.  # noqa: E501, PT015, B011
-                return  # type: ignore[unreachable]  # simply return without saving the range in production
+                return  # simply return without saving the range in production
 
         self.db.update_used_query_range(
             write_cursor=write_cursor,

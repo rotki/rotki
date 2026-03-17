@@ -1,0 +1,3 @@
+from typing import Any
+
+def get_version(*args: Any, **kwargs: Any) -> str: ...

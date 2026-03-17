@@ -28,7 +28,7 @@ class ArbitrumOneTransaction(EvmTransaction):  # noqa: PLW1641  # hash implement
             db_id: int = -1,
             authorization_list: list[EvmTransactionAuthorization] | None = None,
     ):
-        self.tx_type = tx_type
+        object.__setattr__(self, 'tx_type', tx_type)
         super().__init__(
             tx_hash=tx_hash,
             chain_id=chain_id,

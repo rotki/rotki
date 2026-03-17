@@ -114,7 +114,7 @@ def add_settings_to_test_db(
         settings.update(db_settings)
 
     with db.user_write() as write_cursor:
-        db.set_settings(write_cursor=write_cursor, settings=ModifiableDBSettings(**settings))  # type: ignore
+        db.set_settings(write_cursor=write_cursor, settings=ModifiableDBSettings(**settings))
         if ignored_assets:
             for asset in ignored_assets:
                 db.add_to_ignored_assets(write_cursor=write_cursor, asset=asset)

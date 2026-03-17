@@ -479,7 +479,7 @@ def test_resolve_accounting_treatment_prefers_event_specific_rule(database: DBHa
             accounting_treatment=None,
         ),
         links={},
-        event_ids=[stored_event.identifier],  # type: ignore[list-item]  # identifier is set after DB storage
+        event_ids=[stored_event.identifier],  # identifier is set after DB storage
     )
 
     with database.conn.read_ctx() as cursor:
@@ -560,7 +560,7 @@ def test_event_specific_rule_adds_to_existing_rule(database: DBHandler) -> None:
 
     # Create test events using the utility function
     entries = add_entries(DBHistoryEvents(database))
-    event_ids = [int(entry.identifier) for entry in entries[:3]]  # type: ignore[arg-type]  # id is present
+    event_ids = [int(entry.identifier) for entry in entries[:3]]  # id is present
 
     # Create initial event-specific rule for first two events
     rule_id_1 = db.add_accounting_rule(
@@ -614,7 +614,7 @@ def test_event_specific_rule_creates_new_rule(database: DBHandler) -> None:
 
     # Create test events using the utility function
     entries = add_entries(DBHistoryEvents(database))
-    event_ids = [int(entry.identifier) for entry in entries[:3]]  # type: ignore[arg-type]  # id is present
+    event_ids = [int(entry.identifier) for entry in entries[:3]]  # id is present
 
     # Create first event-specific rule for all three events
     rule_id_1 = db.add_accounting_rule(

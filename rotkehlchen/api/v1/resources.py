@@ -5,7 +5,7 @@ from functools import wraps
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, cast
 
 from flask import Blueprint, Request, Response, request as flask_request
 from marshmallow import Schema, ValidationError, fields
@@ -309,6 +309,8 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
+F = TypeVar('F', bound=Callable[..., Any])
+
 
 def _combine_parser_data(
         data_1: MultiDictProxy,
@@ -377,7 +379,7 @@ def load_view_args_file_data(request: Request, schema: Schema) -> MultiDictProxy
     return _combine_parser_data(view_args_data, file_data, schema)
 
 
-def allow_async_validation() -> Callable:
+def allow_async_validation() -> Callable[[F], F]:
     """
     Decorator to be used when validation should happen as an async task.
 
@@ -402,7 +404,7 @@ def allow_async_validation() -> Callable:
         except ValidationError as e:
             return {
                 'result': None,
-                'message': json.dumps(e.normalized_messages()),  # type: ignore[no-untyped-call]  # marshmallow doesn't have types for this function
+                'message': json.dumps(e.normalized_messages()),  # marshmallow doesn't have types for this function  # noqa: E501
                 'status_code': HTTPStatus.BAD_REQUEST,
             }
         except Exception as e:  # pylint: disable=broad-exception-caught
@@ -414,7 +416,7 @@ def allow_async_validation() -> Callable:
         kwargs.pop('async_query')  # async query has already been handled so it can be removed
         return method(view, *args, **kwargs)
 
-    def _allow_async_validation(f: Callable) -> Callable:
+    def _allow_async_validation(f: F) -> F:
         """Determine if the validation logic needs to be executed in a sync or async way"""
         @wraps(f)
         def wrapper(view: BaseMethodView, *args: Any, **kwargs: Any) -> Any:
@@ -434,14 +436,14 @@ def allow_async_validation() -> Callable:
                 **kwargs,
             )
 
-        return wrapper
+        return cast('F', wrapper)
     return _allow_async_validation
 
 
-def require_loggedin_user() -> Callable:
+def require_loggedin_user() -> Callable[[F], F]:
     """ This is a decorator for the RestAPI class's methods requiring a logged in user.
     """
-    def _require_loggedin_user(f: Callable) -> Callable:
+    def _require_loggedin_user(f: F) -> F:
         @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             # grab the `rest_api` attribute from the view class.
@@ -452,11 +454,11 @@ def require_loggedin_user() -> Callable:
                 return api_response(result_dict, status_code=HTTPStatus.UNAUTHORIZED)
             return f(*args, **kwargs)
 
-        return wrapper
+        return cast('F', wrapper)
     return _require_loggedin_user
 
 
-def require_premium_user(active_check: bool) -> Callable:
+def require_premium_user(active_check: bool) -> Callable[[F], F]:
     """
     Decorator only for premium
 
@@ -466,7 +468,7 @@ def require_premium_user(active_check: bool) -> Callable:
     If active_check is true there is also an API call to the rotkehlchen server
     to check that the saved key is also valid.
     """
-    def _require_premium_user(f: Callable) -> Callable:
+    def _require_premium_user(f: F) -> F:
         @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             # grab the `rest_api` attribute from the view class.
@@ -490,13 +492,13 @@ def require_premium_user(active_check: bool) -> Callable:
 
             return f(*args, **kwargs)
 
-        return wrapper
+        return cast('F', wrapper)
     return _require_premium_user
 
 
-def require_premium_capability(capability_name: str, pretty_name: str) -> Callable:
+def require_premium_capability(capability_name: str, pretty_name: str) -> Callable[[F], F]:
     """Decorator for endpoints gated by a premium capability."""
-    def _require_premium_capability(f: Callable) -> Callable:
+    def _require_premium_capability(f: F) -> F:
         @wraps(f)
         def wrapper(*args: Any, **kwargs: Any) -> Any:
             view_class = args[0]
@@ -513,7 +515,7 @@ def require_premium_capability(capability_name: str, pretty_name: str) -> Callab
             )
             return api_response(result_dict, status_code=HTTPStatus.FORBIDDEN)
 
-        return wrapper
+        return cast('F', wrapper)
     return _require_premium_capability
 
 
@@ -3267,7 +3269,7 @@ class ExportHistoryEventResource(BaseMethodView):
             filter_query: 'HistoryBaseEntryFilterQuery',
             directory_path: Path,
             match_exact_events: bool,
-    ) -> dict[str, Any]:
+    ) -> Response | dict[str, Any]:
         return self.rest_api.export_history_events(
             filter_query=filter_query,
             directory_path=directory_path,

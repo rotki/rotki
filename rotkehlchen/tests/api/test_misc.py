@@ -526,14 +526,14 @@ def test_update_log_level(
         ))['loglevel']['value'] == given_loglevel
 
         test_logger = logging.getLogger('rotkehlchen.test')
-        test_logger.trace('Test trace message')  # type: ignore[attr-defined]
+        test_logger.trace('Test trace message')
         assert 'Test trace message' in caplog.text
         assert 'logger.trace' not in caplog.text
     finally:
         # Reset global log level so this test does not affect other tests in the same worker.
         logger.setLevel(initial_loglevel)
     caplog.clear()
-    test_logger.trace('Post-reset trace message')  # type: ignore[attr-defined]
+    test_logger.trace('Post-reset trace message')
     assert 'Post-reset trace message' not in caplog.text
 
 

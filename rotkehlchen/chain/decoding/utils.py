@@ -78,7 +78,7 @@ def decode_safely(
         blockchain: SupportedBlockchain,
         func: Callable,
         tx_reference: str | None = None,
-        *args: tuple[Any],
+        *args: Any,
         **kwargs: Any,
 ) -> tuple[Any, bool]:
     """
@@ -95,6 +95,7 @@ def decode_safely(
         return func(*args, **kwargs), False
     except handled_exceptions as e:
         log.error(traceback.format_exc())
+        func_name = getattr(func, '__name__', func.__class__.__name__)
         error_prefix = (
             f'Decoding of transaction {tx_reference} in {blockchain}'
             if tx_reference is not None else
@@ -102,7 +103,7 @@ def decode_safely(
         )
         log.error(
             f'{error_prefix} failed due to {e} '
-            f'when calling {func.__name__} with {args=} {kwargs=}',
+            f'when calling {func_name} with {args=} {kwargs=}',
         )
         msg_aggregator.add_error(f'{error_prefix} failed. Check logs for more details')
 

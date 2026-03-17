@@ -74,7 +74,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
     pot = accountant.pots[0]
     events_iterator = peekable(events)
     for event in events_iterator:
-        pot.events_accountant.process(event=event, events_iterator=events_iterator)  # type: ignore
+        pot.events_accountant.process(event=event, events_iterator=events_iterator)
 
     extra_data = {
         'group_id': '1' + str(tx_hash) + '12',

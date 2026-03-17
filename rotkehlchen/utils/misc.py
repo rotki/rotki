@@ -397,7 +397,7 @@ def create_order_by_rules_list(
     ascending = data['ascending'] if data['ascending'] is not None else default_ascending
     if ascending is None:
         ascending = []
-    return list(zip_longest(order_by_attributes, ascending, fillvalue=is_ascending_by_default))  # type: ignore[arg-type]
+    return list(zip_longest(order_by_attributes, ascending, fillvalue=is_ascending_by_default))
 
 
 def is_production() -> bool:

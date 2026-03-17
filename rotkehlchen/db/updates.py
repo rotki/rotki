@@ -124,7 +124,7 @@ class RotkiDataUpdater:
                 continue  # perhaps broken file? Skipping
 
             # At this point we can apply the update. Type ignore is due to different sigs of data
-            self.update_type_mappings[update_type](updated_data, update_version)  # type: ignore
+            self.update_type_mappings[update_type](updated_data, update_version)
             with self.user_db.conn.write_ctx() as write_cursor:
                 write_cursor.execute(  # this was the last update to be applied for this data type, so remember it  # noqa: E501
                     'INSERT OR REPLACE INTO settings(name, value) VALUES (?, ?)',

@@ -76,7 +76,7 @@ def test_sorting_nfts(blockchain: ChainsAggregator):
         )
 
     nft_module = blockchain.get_module('nfts')
-    balances = nft_module.get_db_nft_balances(filter_query=NFTFilterQuery.make(order_by_rules=[('usd_price', False)]))['entries']  # type: ignore  # noqa: E501
+    balances = nft_module.get_db_nft_balances(filter_query=NFTFilterQuery.make(order_by_rules=[('usd_price', False)]))['entries']  # noqa: E501
     assert balances[0]['id'] == '_nft_0xfd9d8036f899ed5a9fd8cac7968e5f24d3db2a64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # gashawk with higher price first # noqa: E501
     assert balances[1]['id'] == '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041'  # noqa: E501
 

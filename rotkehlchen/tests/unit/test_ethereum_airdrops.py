@@ -5,7 +5,7 @@ from copy import deepcopy
 from http import HTTPStatus
 from io import BytesIO, StringIO
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import Mock, patch
 
 import polars as pl
@@ -324,7 +324,7 @@ def test_check_airdrops(
             extra_data={AIRDROP_IDENTIFIER_KEY: 'degen2_season1'},
         ),
     ]
-    MOCK_AIRDROP_INDEX['airdrops']['shutter']['new_asset_data'] = new_asset_data
+    MOCK_AIRDROP_INDEX['airdrops']['shutter']['new_asset_data'] = new_asset_data  # type: ignore[assignment]
     mock_airdrop_index = deepcopy(MOCK_AIRDROP_INDEX)
 
     new_asset_identifier = MOCK_AIRDROP_INDEX['airdrops']['shutter']['asset_identifier']
@@ -587,9 +587,9 @@ def test_fetch_airdrops_metadata(database, remote_etag, database_etag):
                 value=rlk_jsondumps(MOCK_AIRDROP_INDEX),
             )
 
-    mock_airdrop_index = MOCK_AIRDROP_INDEX
+    mock_airdrop_index: dict[str, Any] = deepcopy(MOCK_AIRDROP_INDEX)
     if remote_etag != database_etag:  # if etag is different, update mock_airdrop_index
-        mock_airdrop_index['airdrops']['diva']['name'] = 'new_name'
+        mock_airdrop_index['airdrops']['diva']['name'] = 'new_name'  # type: ignore[assignment]
 
     def _mock_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
         mock_response = Mock()

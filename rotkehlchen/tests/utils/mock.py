@@ -34,6 +34,10 @@ class MockResponse:
         return json.loads(self.text)
 
 
+class Version(NamedTuple):
+    version: int
+
+
 class MockEth:
 
     syncing = False
@@ -71,7 +75,7 @@ class MockWeb3:
 
     @property
     def net(self):
-        return NamedTuple('Version', ['version'])(version=1)
+        return Version(version=1)
 
 
 def patch_web3_request(given_web3, test_specific_mock_data):

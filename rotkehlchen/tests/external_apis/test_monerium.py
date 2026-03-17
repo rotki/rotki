@@ -220,7 +220,7 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer) -> No
     database = rotki.data.db
     # TODO: figure out why the fixture `start_with_valid_premium` doesn't activate the premium
     # by calling the chain aggregator
-    rotki.chains_aggregator.activate_premium_status(rotki.premium)  # type: ignore
+    rotki.chains_aggregator.activate_premium_status(rotki.premium)
     dbevents = DBHistoryEvents(database)
     amount_str = '1500'
     gnosishash = deserialize_evm_tx_hash(val='0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354')  # noqa: E501
@@ -380,7 +380,7 @@ def test_refresh_failure_notifies_reauthentication_needed(
     ):
         client.ensure_access_token()
 
-    assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(  # type: ignore[union-attr]
+    assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(
         message_type=WSMessageType.MONERIUM_SESSIONKEY_EXPIRED,
         data={'error': 'Please sign in with Monerium again to refresh your data'},
     )
@@ -421,7 +421,7 @@ def test_invalid_grant_refresh_clears_credentials(
             name=DBCacheStatic.MONERIUM_OAUTH_CREDENTIALS,
         ) is None
     assert client.is_authenticated() is False
-    assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(  # type: ignore[union-attr]
+    assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(
         message_type=WSMessageType.MONERIUM_SESSIONKEY_EXPIRED,
         data={'error': 'Please sign in with Monerium again to refresh your data'},
     )

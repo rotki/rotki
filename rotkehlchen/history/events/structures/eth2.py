@@ -183,7 +183,7 @@ class EthWithdrawalEvent(EthStakingEvent):
             group_identifier=entry[1],
             timestamp=TimestampMS(entry[3]),
             amount=amount,
-            withdrawal_address=entry[4],  # type: ignore  # exists for these events
+            withdrawal_address=entry[4],  # exists for these events
             validator_index=entry[8],
             is_exit=bool(entry[9]),
         )
@@ -390,7 +390,7 @@ class EthBlockEvent(EthStakingEvent):
             group_identifier=entry[1],
             timestamp=TimestampMS(entry[3]),
             amount=amount,
-            fee_recipient=entry[4],  # type: ignore  # exists for these events
+            fee_recipient=entry[4],  # exists for these events
             fee_recipient_tracked=fee_recipient_tracked,
             validator_index=entry[8],
             block_number=entry[9],
@@ -528,7 +528,7 @@ class EthDepositEvent(EvmEvent, EthStakingEvent):  # noqa: PLW1641  # hash in su
             sequence_index=entry[2],
             timestamp=TimestampMS(entry[3]),
             amount=amount,
-            depositor=entry[4],  # type: ignore  # exists for these events
+            depositor=entry[4],  # exists for these events
             identifier=entry[0],
             group_identifier=entry[1],
         )

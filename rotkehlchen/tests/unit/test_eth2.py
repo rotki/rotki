@@ -469,7 +469,7 @@ def test_eth_accumulating_validators_performance(
     tx_hash_1, timestamp, user_address, hour_in_ms = make_evm_tx_hash(), TimestampMS(1746119141000), ethereum_accounts[0], ts_sec_to_ms(Timestamp(HOUR_IN_SECONDS))  # noqa: E501
     events: list[HistoryBaseEntry] = [EthDepositEvent(
         tx_ref=tx_hash_1,
-        validator_index=validator.validator_index,  # type: ignore[arg-type]  # validator_index has been set
+        validator_index=validator.validator_index,  # validator_index has been set
         sequence_index=idx,
         timestamp=timestamp,
         amount=MIN_EFFECTIVE_BALANCE,
@@ -477,20 +477,20 @@ def test_eth_accumulating_validators_performance(
     ) for idx, validator in enumerate(validators)]
     events.extend([EthDepositEvent(
         tx_ref=make_evm_tx_hash(),
-        validator_index=validator3.validator_index,  # type: ignore[arg-type]
+        validator_index=validator3.validator_index,
         sequence_index=1,
         timestamp=TimestampMS(timestamp + (1 * hour_in_ms)),
         amount=FVal('64'),
         depositor=user_address,
     ), EthDepositEvent(
         tx_ref=make_evm_tx_hash(),
-        validator_index=validator4.validator_index,  # type: ignore[arg-type]
+        validator_index=validator4.validator_index,
         sequence_index=1,
         timestamp=TimestampMS(timestamp + (1 * hour_in_ms)),
         amount=(second_deposit := FVal('10')),
         depositor=user_address,
     ), EthWithdrawalEvent(
-        validator_index=validator3.validator_index,  # type: ignore[arg-type]
+        validator_index=validator3.validator_index,
         timestamp=TimestampMS(timestamp + (2 * hour_in_ms)),
         amount=(skim_amount := FVal('0.02')),
         withdrawal_address=user_address,
@@ -510,19 +510,19 @@ def test_eth_accumulating_validators_performance(
         address=WITHDRAWAL_REQUEST_CONTRACT,
         extra_data={'validator_index': validator3.validator_index},
     ), EthWithdrawalEvent(
-        validator_index=validator3.validator_index,  # type: ignore[arg-type]
+        validator_index=validator3.validator_index,
         timestamp=TimestampMS(timestamp + (36 * hour_in_ms)),
         amount=withdrawal_amount,
         withdrawal_address=user_address,
         is_exit=False,
     ), EthWithdrawalEvent(
-        validator_index=validator4.validator_index,  # type: ignore[arg-type]
+        validator_index=validator4.validator_index,
         timestamp=TimestampMS(timestamp + (72 * hour_in_ms)),
         amount=MIN_EFFECTIVE_BALANCE + second_deposit + (exit_amount := FVal('0.01')),
         withdrawal_address=user_address,
         is_exit=True,
     ), EthBlockEvent(
-        validator_index=validator1.validator_index,  # type: ignore[arg-type]
+        validator_index=validator1.validator_index,
         timestamp=TimestampMS(timestamp + (75 * hour_in_ms)),
         amount=(block_reward := FVal('0.05')),
         fee_recipient=user_address,

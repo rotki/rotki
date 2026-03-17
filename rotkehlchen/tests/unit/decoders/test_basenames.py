@@ -133,7 +133,7 @@ def test_basenames_register(
             asset=A_ETH,
             amount=FVal('0.0009997724755728'),
             location_label=user_address,
-            notes=f'Register Basenames name yabir.base.eth for 0.0009997724755728 ETH until {decoder.decoders["Basenames"].timestamp_to_date(Timestamp(1758296219))}',  # type: ignore[attr-defined]  # decoder will have date mixin  # noqa: E501
+            notes=f'Register Basenames name yabir.base.eth for 0.0009997724755728 ETH until {decoder.decoders["Basenames"].timestamp_to_date(Timestamp(1758296219))}',  # decoder will have date mixin # noqa: E501
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRAR_CONTROLLER,
             extra_data={'name': 'yabir.base.eth', 'expires': 1758296219},
@@ -250,7 +250,7 @@ def test_basenames_register_with_discount(
             asset=A_ETH,
             amount=ZERO,
             location_label=user_address,
-            notes=f'Register Basenames name javxq.base.eth until {decoder.decoders["Basenames"].timestamp_to_date(Timestamp(1762551303))}',  # type: ignore[attr-defined]  # decoder will have date mixin  # noqa: E501
+            notes=f'Register Basenames name javxq.base.eth until {decoder.decoders["Basenames"].timestamp_to_date(Timestamp(1762551303))}',  # decoder will have date mixin # noqa: E501
             counterparty=CPT_BASENAMES,
             address=BASENAMES_REGISTRAR_CONTROLLER,
             extra_data={'name': 'javxq.base.eth', 'expires': 1762551303},

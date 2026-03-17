@@ -100,7 +100,7 @@ def test_stake(
             asset=Asset(WCT_TOKEN_ID),
             amount=FVal(token_amount),
             location_label=user_address,
-            notes=f'Stake {token_amount} WCT until {decoder.decoders["Walletconnect"].timestamp_to_date(lock_timestamp)}',  # type: ignore  # noqa: E501
+            notes=f'Stake {token_amount} WCT until {decoder.decoders["Walletconnect"].timestamp_to_date(lock_timestamp)}',  # noqa: E501
             counterparty=CPT_WALLETCONNECT,
             address=WALLETCONECT_STAKE_WEIGHT,
             extra_data={'until': lock_timestamp},
@@ -188,7 +188,7 @@ def test_increase_lock(
             asset=Asset(WCT_TOKEN_ID),
             amount=ZERO,
             location_label=user_address,
-            notes=f'Increase WCT staking expiration until {decoder.decoders["Walletconnect"].timestamp_to_date(unlock_time)}',  # type: ignore  # noqa: E501
+            notes=f'Increase WCT staking expiration until {decoder.decoders["Walletconnect"].timestamp_to_date(unlock_time)}',  # noqa: E501
             counterparty=CPT_WALLETCONNECT,
             address=WALLETCONECT_STAKE_WEIGHT,
             extra_data={'until': unlock_time},
@@ -230,7 +230,7 @@ def test_update_lock(
             asset=Asset(WCT_TOKEN_ID),
             amount=FVal(token_amount),
             location_label=user_address,
-            notes=f'Stake {token_amount} WCT until {decoder.decoders["Walletconnect"].timestamp_to_date(unlock_time)}',  # type: ignore  # noqa: E501
+            notes=f'Stake {token_amount} WCT until {decoder.decoders["Walletconnect"].timestamp_to_date(unlock_time)}',  # noqa: E501
             counterparty=CPT_WALLETCONNECT,
             address=WALLETCONECT_STAKE_WEIGHT,
             extra_data={'until': unlock_time},

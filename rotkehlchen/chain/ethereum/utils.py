@@ -87,12 +87,12 @@ def should_update_protocol_cache(
         if cache_key in UNIQUE_CACHE_KEYS:
             last_update_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
                 cursor=cursor,
-                key_parts=(cache_key, *args),  # type: ignore  # cache_key needs type specification here
+                key_parts=(cache_key, *args),  # cache_key needs type specification here
             )
         else:
             last_update_ts = globaldb_get_general_cache_last_queried_ts_by_key(
                 cursor=cursor,
-                key_parts=(cache_key, *args),  # type: ignore  # cache_key needs type specification here
+                key_parts=(cache_key, *args),  # cache_key needs type specification here
             )
 
     if last_update_ts == Timestamp(0):
@@ -150,7 +150,7 @@ def try_download_ens_avatar(
 
     avatar_url = eth_inquirer.call_contract(
         contract_address=resolver_addr,
-        abi=ENS_RESOLVER_ABI,
+        abi=ENS_RESOLVER_ABI,  # type: ignore[arg-type]
         method_name='text',
         arguments=[normal_name_to_hash(ens_name), 'avatar'],
     )

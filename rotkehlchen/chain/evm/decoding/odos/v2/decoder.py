@@ -55,7 +55,7 @@ class Odosv2DecoderBase(OdosCommonDecoderBase):
             try:
                 # decode the multi swap event structure
                 # https://github.com/odos-xyz/odos-router-v2/blob/main/contracts/OdosRouterV2.sol#L74
-                _, decoded_data = decode_event_data_abi_str(context.tx_log, SWAPMULTI_EVENT_ABI)  # type: ignore[assignment]  # types are known from the ABI
+                _, decoded_data = decode_event_data_abi_str(context.tx_log, SWAPMULTI_EVENT_ABI)  # types are known from the ABI  # noqa: E501
             except DeserializationError as e:
                 log.error(
                     f'Failed to deserialize Odos event {context.tx_log=} at '

@@ -340,20 +340,25 @@ class RequiredAddressOptionalChainSchema(Schema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> OptionalBlockchainAccount:
-        if ((account := OptionalBlockchainAccount(
+        account = OptionalBlockchainAccount(
             address=data['address'],
             chain=data['blockchain'],
-        )).chain is not None and (
-            (account.chain.is_evm_or_evmlike() and not is_checksum_address(account.address)) or
-            (account.chain.is_substrate() and not is_valid_substrate_address(
-                chain=account.chain,  # type: ignore[arg-type]  # just checked `is_substrate()`
+        )
+        if account.chain is None:
+            return account
+
+        chain = account.chain
+        if (
+            (chain.is_evm_or_evmlike() and not is_checksum_address(account.address)) or
+            (chain in (SupportedBlockchain.POLKADOT, SupportedBlockchain.KUSAMA) and not is_valid_substrate_address(  # noqa: E501
+                chain=chain,
                 value=account.address,
             )) or
-            (account.chain == SupportedBlockchain.SOLANA and not is_valid_solana_address(address=account.address)) or  # noqa: E501
-            (not is_valid_bitcoin_address(chain=account.chain, value=account.address))
-        )):
+            (chain == SupportedBlockchain.SOLANA and not is_valid_solana_address(address=account.address)) or  # noqa: E501
+            (not is_valid_bitcoin_address(chain=chain, value=account.address))
+        ):
             raise ValidationError(
-                message=f'The address {account.address} is not a valid {account.chain} address.',
+                message=f'The address {account.address} is not a valid {chain} address.',
                 field_name='address',
             )
 
@@ -1254,7 +1259,7 @@ class CreateHistoryEventSchema(Schema):
                 spend=spend,
                 receive=receive,
                 fees=None if fee_count == 0 else [(
-                    AssetAmount(asset=fee_entry['asset'], amount=fee_entry['amount']),  # type: ignore[index]  # fee_entry will not be None since fees is checked above to be longer than fee_notes
+                    AssetAmount(asset=fee_entry['asset'], amount=fee_entry['amount']),  # fee_entry will not be None since fees is checked above to be longer than fee_notes  # noqa: E501
                     notes,
                     fee_identifiers[idx] if idx < len(fee_identifiers) else None,
                 ) for idx, (fee_entry, notes) in enumerate(zip_longest(fees, fee_notes, fillvalue=None))],  # noqa: E501
@@ -1509,8 +1514,8 @@ def _validate_indexers_list(indexers: list[EvmIndexer]) -> None:
 
 
 class EvmIndexerOrderField(fields.Field):
-    @staticmethod
     def _serialize(
+            self,
             value: dict[ChainID, list[EvmIndexer]] | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,

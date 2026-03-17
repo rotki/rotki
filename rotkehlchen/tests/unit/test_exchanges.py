@@ -236,7 +236,7 @@ def test_binance_selected_pairs_persist_after_restart(rotkehlchen_api_server: AP
     assert Location.BINANCE in rotki.exchange_manager.connected_exchanges
     assert len(rotki.exchange_manager.connected_exchanges[Location.BINANCE]) == 1
 
-    selected_pairs = rotki.exchange_manager.connected_exchanges[Location.BINANCE][0].selected_pairs  # type: ignore[attr-defined] # binance has the attribute present
+    selected_pairs = rotki.exchange_manager.connected_exchanges[Location.BINANCE][0].selected_pairs  # binance has the attribute present  # noqa: E501
     assert isinstance(selected_pairs, list)
     assert selected_pairs == expected_trade_pairs
 

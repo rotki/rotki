@@ -398,7 +398,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             (DBCacheDynamic.WITHDRAWALS_IDX, {'address': existing_address}, 4242),
         )
         for cache_key, kargs, value in cache_data:  # set and ensure value is set for each key
-            data.db.set_dynamic_cache(write_cursor, cache_key, value, **kargs)
+            data.db.set_dynamic_cache(write_cursor, cache_key, value, **kargs)  # type: ignore[call-overload]
             assert data.db.get_dynamic_cache(write_cursor, cache_key, **kargs) == value
 
     with data.db.conn.read_ctx() as cursor:
@@ -1623,6 +1623,7 @@ def test_remove_queried_address_on_account_remove(data_dir, username, sql_vm_ins
             '0xd36029d76af6fE4A356528e4Dc66B2C18123597D',
         )
         addresses = queried_addresses.get_queried_addresses_for_module(cursor, 'makerdao_vaults')
+        assert addresses is not None
         assert '0xd36029d76af6fE4A356528e4Dc66B2C18123597D' in addresses
 
     with data.db.user_write() as write_cursor:

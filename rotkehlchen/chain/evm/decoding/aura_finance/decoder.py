@@ -391,7 +391,7 @@ class AuraFinanceCommonDecoder(EvmDecoderInterface):
         }
 
     def decoding_by_input_data(self) -> dict[bytes, dict[bytes, Callable]]:
-        decoders = {
+        decoders: dict[bytes, dict[bytes, Callable]] = {
             GET_REWARD_4BYTE: {REWARD_PAID_TOPIC_V2: self._decode_reward_claims},
             CLAIM_REWARDS_L1_4BYTE: {REWARD_PAID_TOPIC_V2: self._decode_reward_claims},
             CLAIM_REWARDS_L2_4BYTE: {REWARD_PAID_TOPIC_V2: self._decode_reward_claims},

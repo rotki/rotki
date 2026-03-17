@@ -2,7 +2,7 @@ from collections.abc import Callable
 from contextlib import suppress
 from functools import partial
 from types import SimpleNamespace
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -297,14 +297,14 @@ def test_rate_limit_handling(
     mock_client2 = MagicMock(spec=Client)
     mock_client2.name = 'node2'
     solana_inquirer.rpc_mapping = {
-        node1_info: RPCNode(rpc_client=mock_client1, is_pruned=False, is_archive=False),
-        node2_info: RPCNode(rpc_client=mock_client2, is_pruned=False, is_archive=False),
+        node1_info: RPCNode(rpc_client=cast('Client', mock_client1), is_pruned=False, is_archive=False),  # noqa: E501
+        node2_info: RPCNode(rpc_client=cast('Client', mock_client2), is_pruned=False, is_archive=False),  # noqa: E501
     }
     call_log, do_rate_limit = [], True
 
     def mock_method(client: Client) -> None:
         """Mock RPC method that rate limits node1 when flag is set."""
-        client_name = client.name  # type: ignore[attr-defined]  # name was added via MagicMock
+        client_name = client.name  # name was added via MagicMock
         call_log.append(client_name)
 
         if client_name == 'node1' and do_rate_limit:

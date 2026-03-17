@@ -199,7 +199,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
             encode_params = urlencode(sorted_params)
             del params['signTimestamp']
         else:
-            request_body = json.dumps(params)  # type: ignore
+            request_body = json.dumps(params)
             encode_params = f'requestBody={request_body}&signTimestamp={timestamp}'
         sign_params_first = [method, path, encode_params]
         sign_params_second = '\n'.join(sign_params_first)

@@ -3084,7 +3084,7 @@ def test_remove_liquidity_single_token(
         amount=FVal(withdraw_amount := '886.525625'),
         location_label=user_address,
         address=(pool_addr := string_to_evm_address('0xec090cf6DD891D2d014beA6edAda6e05E025D93d')),
-        notes=f'Remove {withdraw_amount} USDC from {pool_addr} curve pool',  # type: ignore
+        notes=f'Remove {withdraw_amount} USDC from {pool_addr} curve pool',
         counterparty=CPT_CURVE,
     )]
 

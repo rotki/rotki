@@ -1312,7 +1312,7 @@ def test_binance_events_repull_after_deletion(
     # first query should fetch and store all trades
     with patch.object(exchange, 'api_query_list') as mock_api:
         mock_api.side_effect = lambda api_type, method, options=None: (
-            mock_api_trades_response(options.get('fromId', 0))
+            mock_api_trades_response((options or {}).get('fromId', 0))
             if method == 'myTrades'
             else []
         )
@@ -1349,7 +1349,7 @@ def test_binance_events_repull_after_deletion(
 
     with patch.object(exchange, 'api_query_list') as mock_api:
         mock_api.side_effect = lambda api_type, method, options=None: (
-            mock_api_trades_response(options.get('fromId', 0))
+            mock_api_trades_response((options or {}).get('fromId', 0))
             if method == 'myTrades'
             else []
         )

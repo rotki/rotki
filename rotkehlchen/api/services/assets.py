@@ -980,13 +980,17 @@ class AssetsService:
         return {'result': process_result(result), 'message': '', 'status_code': HTTPStatus.OK}
 
     def get_counterparties_details(self) -> dict[str, Any]:
-        counterparties = {(exchange_id := x.name.lower()): CounterpartyDetails(
-            identifier=exchange_id,
-            label=LOCATION_DETAILS[x].get('label', x.name.capitalize()),
-            image=LOCATION_DETAILS[x].get('image'),
-        ) for x in ALL_SUPPORTED_EXCHANGES}
+        counterparties: dict[str, CounterpartyDetails] = {
+            (exchange_id := x.name.lower()): CounterpartyDetails(
+                identifier=exchange_id,
+                label=LOCATION_DETAILS[x].get('label', x.name.capitalize()),
+                image=LOCATION_DETAILS[x].get('image'),
+            )
+            for x in ALL_SUPPORTED_EXCHANGES
+        }
         for counterparty in self.rotkehlchen.chains_aggregator.get_all_counterparties():
-            counterparties.setdefault(counterparty.identifier, counterparty)
+            if counterparty.identifier not in counterparties:
+                counterparties[counterparty.identifier] = counterparty
 
         return {
             'result': list(counterparties.values()),

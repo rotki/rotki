@@ -205,7 +205,7 @@ def test_bitmex_api_withdrawals_deposit_unknown_asset(mock_bitmex: 'Bitmex') -> 
         )
 
     assert len(movements) == 0
-    assert len(mock_bitmex.msg_aggregator.rotki_notifier.messages) == 1  # type: ignore
+    assert len(mock_bitmex.msg_aggregator.rotki_notifier.messages) == 1
 
 
 @pytest.mark.vcr

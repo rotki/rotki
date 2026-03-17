@@ -255,7 +255,7 @@ def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts, database):
         tx_hash=tx_hash,
         transactions=ethereum_transactions,
         evm_decoder=ethereum_tx_decoder,
-    )
+    )  # type: ignore[call-overload]
     timestamp, gas_amount, eigenpod_address = TimestampMS(1715733143000), '0.00133529055565527', '0x664BFef14A62F316175d39D355809D04D2Cb7a23'  # noqa: E501
     expected_events = [EvmEvent(
         tx_ref=tx_hash,

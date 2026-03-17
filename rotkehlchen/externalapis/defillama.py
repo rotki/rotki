@@ -53,7 +53,7 @@ class Defillama(
         PenalizablePriceOracleMixin.__init__(self)
         self.session = create_session()
         self.session.headers.update({'User-Agent': 'rotkehlchen'})
-        self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
+        self.db: DBHandler | None  # "solve" the self.db discrepancy
 
     def _query(
             self,

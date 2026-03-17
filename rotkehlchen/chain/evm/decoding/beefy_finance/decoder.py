@@ -179,7 +179,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                         (
                             resolved_asset := event.asset.resolve_to_crypto_asset()
                         ).is_evm_token() and
-                        resolved_asset.evm_address == reward_token and  # type: ignore[attr-defined]  # this is an evm token
+                        resolved_asset.evm_address == reward_token and  # this is an evm token
                         event.amount == asset_normalized_value(
                             amount=reward_amount,
                             asset=resolved_asset,
@@ -195,6 +195,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             return events
 
         spend_asset_addresses = []
+        spend_underlying_addresses: set[ChecksumEvmAddress] = set()
         is_withdrawal = True
         for event in spend_events:
             spend_asset = event.asset.resolve_to_crypto_asset()
@@ -202,7 +203,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 is_withdrawal = False
                 break
 
-            if self.vaults.get(spend_address := spend_asset.evm_address) is None:  # type: ignore[attr-defined]  # this is an evm token
+            if self.vaults.get(spend_address := spend_asset.evm_address) is None:  # this is an evm token  # noqa: E501
                 is_withdrawal = False
                 break
 
@@ -213,9 +214,9 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
             # Staking a moo/cow token into a Beefy reward pool mints an rmoo/rcow token.
             is_reward_pool_stake = any(
                 self._is_beefy_reward_pool_token(
-                    address=received_asset.evm_address,  # type: ignore[attr-defined]  # this is an evm token
+                    address=received_asset.evm_address,  # this is an evm token
                 ) and
-                (received_info := self.vaults.get(received_asset.evm_address)) is not None and  # type: ignore[attr-defined]  # this is an evm token
+                (received_info := self.vaults.get(received_asset.evm_address)) is not None and  # this is an evm token  # noqa: E501
                 received_info[0] in spend_asset_addresses
                 for event in unmatched_receive_events
                 if (received_asset := event.asset.resolve_to_crypto_asset()).is_evm_token()
@@ -230,7 +231,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 self._is_beefy_reward_pool_token(address=spend_address)
                 for spend_address in spend_asset_addresses
             ) and any(
-                received_asset.evm_address in spend_underlying_addresses  # type: ignore[attr-defined]  # this is an evm token
+                received_asset.evm_address in spend_underlying_addresses  # this is an evm token
                 for event in unmatched_receive_events
                 if (received_asset := event.asset.resolve_to_crypto_asset()).is_evm_token()
             )
@@ -267,7 +268,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                         (
                             received_asset := event.asset.resolve_to_crypto_asset()
                         ).is_evm_token() and
-                        received_asset.evm_address in spend_underlying_addresses  # type: ignore[attr-defined]  # this is an evm token
+                        received_asset.evm_address in spend_underlying_addresses  # this is an evm token  # noqa: E501
                 ):
                     receive_events.append(event)
                 else:
@@ -354,7 +355,7 @@ class BeefyFinanceCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                             (
                                 resolved_asset := event.asset.resolve_to_crypto_asset()
                             ).is_evm_token() and
-                            resolved_asset.evm_address == reward_token and  # type: ignore[attr-defined]  # this is an evm token
+                            resolved_asset.evm_address == reward_token and  # this is an evm token
                             event.amount == asset_normalized_value(
                                 amount=reward_amount,
                                 asset=resolved_asset,

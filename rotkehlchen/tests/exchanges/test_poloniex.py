@@ -104,17 +104,17 @@ def test_poloniex_trade_deserialization_errors():
         trade_from_poloniex(poloniex_trade=test_trade, exchange_name=exchange_name)
 
     test_trade = TEST_POLO_TRADE.copy()
-    test_trade['quantity'] = None
+    test_trade['quantity'] = None  # type: ignore[assignment]
     with pytest.raises(DeserializationError):
         trade_from_poloniex(poloniex_trade=test_trade, exchange_name=exchange_name)
 
     test_trade = TEST_POLO_TRADE.copy()
-    test_trade['price'] = None
+    test_trade['price'] = None  # type: ignore[assignment]
     with pytest.raises(DeserializationError):
         trade_from_poloniex(poloniex_trade=test_trade, exchange_name=exchange_name)
 
     test_trade = TEST_POLO_TRADE.copy()
-    test_trade['feeAmount'] = ['a']
+    test_trade['feeAmount'] = ['a']  # type: ignore[assignment]
     with pytest.raises(DeserializationError):
         trade_from_poloniex(poloniex_trade=test_trade, exchange_name=exchange_name)
 
@@ -434,9 +434,9 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex: 'Poloniex') -> Non
     messages = cast('MockRotkiNotifier', poloniex.msg_aggregator.rotki_notifier).messages
     assert len(messages) == 4
     assert messages[0].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
-    assert 'Found withdrawal of unsupported poloniex asset BALLS' in messages[1].data['value']  # type: ignore
+    assert 'Found withdrawal of unsupported poloniex asset BALLS' in messages[1].data['value']
     assert messages[2].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
-    assert 'Found deposit of unsupported poloniex asset EBT' in messages[3].data['value']  # type: ignore
+    assert 'Found deposit of unsupported poloniex asset EBT' in messages[3].data['value']
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

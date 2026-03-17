@@ -51,7 +51,7 @@ class ExternalServiceWithApiKeyOptionalDB(ExternalServiceWithApiKey, DBSetterMix
     """
     def __init__(self, database: 'DBHandler|None', service_name: ExternalService) -> None:
         super().__init__(database=database, service_name=service_name)  # type: ignore  # we are aware of discrepancy
-        self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
+        self.db: DBHandler | None  # "solve" the self.db discrepancy
 
     def _get_name(self) -> str:
         return str(self.service_name)

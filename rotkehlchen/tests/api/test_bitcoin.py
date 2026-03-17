@@ -338,7 +338,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server: 'APIServer') ->
 
     assert len(rotki.chains_aggregator.accounts.btc) != 0, 'should be populated after api call'
     # Check that addresses that have balances on both bitcoin and bitcoin cash are stored properly
-    with rotki.data.db.conn.read_ctx() as cursor:  # type: ignore  # this is reachable lol mypy
+    with rotki.data.db.conn.read_ctx() as cursor:  # this is reachable lol mypy
         mutual_in_chains_aggregator = 0
         for btc_addr in rotki.chains_aggregator.accounts.btc:
             if btc_addr in rotki.chains_aggregator.accounts.bch:

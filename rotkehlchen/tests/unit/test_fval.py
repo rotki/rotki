@@ -1,4 +1,5 @@
 import math
+from typing import cast
 
 import pytest
 
@@ -38,7 +39,7 @@ def test_simple_arithmetic():
 
     # For the moment not allowing operations against floats
     with pytest.raises(NotImplementedError):
-        _ = a + 5.23
+        _ = a + cast('int | FVal', 5.23)
 
 
 def test_arithmetic_with_int():

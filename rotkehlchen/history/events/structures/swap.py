@@ -128,7 +128,7 @@ class SwapEvent(HistoryBaseEntry):
             timestamp=TimestampMS(entry[3]),
             location=Location.deserialize_from_db(entry[4]),
             location_label=entry[5],
-            event_subtype=HistoryEventSubType.deserialize(entry[10]),  # type: ignore  # should always be correct from the DB
+            event_subtype=HistoryEventSubType.deserialize(entry[10]),  # should always be correct from the DB  # noqa: E501
             asset=Asset(entry[6]).check_existence(),
             amount=amount,
             extra_data=cls.deserialize_extra_data(entry=entry, extra_data=entry[11]),
@@ -183,7 +183,7 @@ class SwapEvent(HistoryBaseEntry):
 
     @classmethod
     def deserialize(cls: type['SwapEvent'], data: dict[str, Any]) -> 'SwapEvent':
-        return cls(**cls._deserialize_swap_data(  # type: ignore[arg-type]  # deserialized extra_data should be valid SwapEventExtraData
+        return cls(**cls._deserialize_swap_data(  # deserialized extra_data should be valid SwapEventExtraData  # noqa: E501
             base_data=cls._deserialize_base_history_data(data),
         ))
 

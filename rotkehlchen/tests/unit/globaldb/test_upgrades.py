@@ -488,7 +488,7 @@ def test_upgrade_v5_v6(globaldb: GlobalDBHandler, messages_aggregator):
         )
         assert cursor.fetchone()[0] == 1
         # check that of dummy entry, only first value is transferred to unique_cache
-        value = globaldb_get_unique_cache_value(cursor, (next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)), 'test'))  # type: ignore  # noqa: E501
+        value = globaldb_get_unique_cache_value(cursor, (next(iter(V5_V6_UPGRADE_UNIQUE_CACHE_KEYS)), 'test'))  # noqa: E501
         assert value == values[0]
 
         with globaldb.conn.write_ctx() as write_cursor:
@@ -1397,7 +1397,7 @@ def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
         ]
         assert globaldb_get_unique_cache_value(
             cursor=cursor,
-            key_parts=(CacheType.MORPHO_VAULTS,),  # type: ignore[arg-type]  # MORPHO_VAULTS was a unique cache key at the time of this upgrade
+            key_parts=(CacheType.MORPHO_VAULTS,),  # MORPHO_VAULTS was a unique cache key at the time of this upgrade  # noqa: E501
         ) == '123'
         assert cursor.execute("SELECT address, protocol FROM evm_tokens WHERE protocol LIKE 'balancer-%' ORDER BY address").fetchall() == [  # noqa: E501
             ('0x3C4D5E6F7890ABCDEF1234567890ABCDEF123456', 'balancer-v1'),  # should become balancer-v2  # noqa: E501
@@ -1461,7 +1461,7 @@ def test_upgrade_v13_v14(globaldb: GlobalDBHandler, messages_aggregator):
         ]
         assert globaldb_get_unique_cache_value(
             cursor=cursor,
-            key_parts=(CacheType.MORPHO_VAULTS,),  # type: ignore[arg-type]  # MORPHO_VAULTS was a unique cache key at the time of this upgrade
+            key_parts=(CacheType.MORPHO_VAULTS,),  # MORPHO_VAULTS was a unique cache key at the time of this upgrade  # noqa: E501
         ) is None
         assert cursor.execute("SELECT address, protocol FROM evm_tokens WHERE protocol LIKE 'balancer-%' ORDER BY address").fetchall() == [  # noqa: E501
             ('0x3C4D5E6F7890ABCDEF1234567890ABCDEF123456', 'balancer-v2'),

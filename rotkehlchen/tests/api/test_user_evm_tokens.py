@@ -294,7 +294,7 @@ def test_adding_user_tokens(
     )
     # test that adding invalid cryptocompare fails
     bad_token_2['cryptocompare'] = bad_identifier
-    bad_token_2['coingecko'] = None
+    bad_token_2['coingecko'] = None  # type: ignore[assignment]
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,

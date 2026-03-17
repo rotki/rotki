@@ -220,8 +220,6 @@ class HDKey:
         """
         if isinstance(idx, int):
             return idx
-        if not isinstance(idx, str):
-            raise XPUBError('XPUB path index must be string or integer')
         if idx[-1] in {'h', "'"}:  # account for h or ' conventions
             return int(idx[:-1]) + BIP32_HARDEN
         return int(idx)

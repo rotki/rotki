@@ -601,7 +601,7 @@ def test_local_bitcoin_mempool_api(
             for address in addresses
         ]
 
-        mock_mempool.assert_has_calls(expected_calls)  # type: ignore
+        mock_mempool.assert_has_calls(expected_calls)
 
 
 def _mock_blockstream_or_mempool_query(url, **kwargs):  # pylint: disable=unused-argument

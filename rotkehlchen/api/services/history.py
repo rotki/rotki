@@ -387,11 +387,12 @@ class HistoryService:
         )
         grouped_events_nums: list[int | None]
         events: list[HistoryBaseEntry]
-        grouped_events_nums, events = (
-            zip(*processed_events_result, strict=False)  # type: ignore
-            if aggregate_by_group_ids is True and len(processed_events_result) != 0 else
-            ([None] * len(processed_events_result), processed_events_result)
-        )
+        if aggregate_by_group_ids is True:
+            grouped_events_nums = [entry[0] for entry in processed_events_result]  # type: ignore[index]  # grouped mode yields (group_num, event)
+            events = [entry[1] for entry in processed_events_result]  # type: ignore[index]  # grouped mode yields (group_num, event)
+        else:
+            grouped_events_nums = [None] * len(processed_events_result)
+            events = processed_events_result  # type: ignore[assignment]  # non-grouped mode yields events
         result = {
             'entries': self._serialize_and_group_history_events(
                 events=events,
@@ -498,7 +499,7 @@ class HistoryService:
                 query_data.append(entry)
 
         prices_from_db = GlobalDBHandler.get_historical_prices(
-            query_data=query_data,  # type: ignore[arg-type]
+            query_data=query_data,
             max_seconds_distance=HOUR_IN_SECONDS,
         )
         missing_prices: list[tuple[Asset, Timestamp]] = []

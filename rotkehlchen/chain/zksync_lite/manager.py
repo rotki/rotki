@@ -639,6 +639,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
 
                 # This is a deposit from L1 to ZKSync Lite. from is in L1. to is in L2
                 if tracked_to:  # decode only if receiver in zksync lite is ours
+                    assert transaction.to_address is not None
                     suffix = ''
                     if transaction.from_address != transaction.to_address:
                         suffix = f' address {transaction.to_address}'
@@ -649,7 +650,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
                         HistoryEventSubType.BRIDGE,
                         transaction.asset,
                         transaction.amount,
-                        transaction.to_address,  # type:ignore [arg-type]  # to_address should exist here
+                        transaction.to_address,  # to_address should exist here
                         None,
                         notes,
                     ))
@@ -831,7 +832,7 @@ class ZksyncLiteManager(ChainManagerWithTransactions[ChecksumEvmAddress], ChainW
         """
         queryfilter, bindings = '', ()
         if not force_redecode:
-            queryfilter, bindings = ' WHERE is_decoded=?', (0,)  # type: ignore
+            queryfilter, bindings = ' WHERE is_decoded=?', (0,)
 
         transactions = self.get_db_transactions(queryfilter, bindings)
         with self.database.conn.read_ctx() as cursor:

@@ -3,7 +3,7 @@ import logging.config
 import re
 from collections.abc import Callable, MutableMapping
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any, Final, ParamSpec, TypeVar
 
 import gevent
 
@@ -87,7 +87,11 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
     def __init__(self, logger: logging.Logger):
         super().__init__(logger, extra={})
 
-    def process(self, given_msg: Any, kwargs: MutableMapping[str, Any]) -> tuple[str, dict]:
+    def process(
+            self,
+            msg: Any,
+            kwargs: MutableMapping[str, Any],
+    ) -> tuple[Any, MutableMapping[str, Any]]:
         """
         This is the main post-processing function for rotki logs
 
@@ -95,7 +99,7 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
         - appends all kwargs to the final message, redacting any sensitive information
         - appends the greenlet id in the log message
         """
-        msg, greenlet = str(given_msg), gevent.getcurrent()
+        msg, greenlet = str(msg), gevent.getcurrent()
         greenlet_name = get_greenlet_name(greenlet)
         if (
                 'json_data' in kwargs and
@@ -109,7 +113,8 @@ class RotkehlchenLogsAdapter(logging.LoggerAdapter):
             kwargs['json_data'] = sanitized_data
 
         msg = greenlet_name + ': ' + msg + ','.join(f' {k}={v}' for k, v in kwargs.items())
-        return msg, {}
+        empty_kwargs: MutableMapping[str, Any] = {}
+        return msg, empty_kwargs
 
     def trace(self, msg: str, *args: Any, **kwargs: Any) -> None:
         """
@@ -186,7 +191,7 @@ def configure_logging(args: argparse.Namespace) -> None:
     else:
         selected_handlers = ['console']
 
-    filters = {
+    filters: dict[str, dict[str, Any]] = {
         'pywsgi': {
             '()': PywsgiFilter,
         },
@@ -206,7 +211,7 @@ def configure_logging(args: argparse.Namespace) -> None:
     logging.config.dictConfig({
         'version': 1,
         'disable_existing_loggers': False,
-        'filters': filters,
+        'filters': filters,  # type: ignore[dict-item]
         'formatters': formatters,
         'handlers': handlers,
         'loggers': loggers,
@@ -223,13 +228,15 @@ def configure_logging(args: argparse.Namespace) -> None:
 
 
 log = RotkehlchenLogsAdapter(logging.getLogger(__name__))
+P = ParamSpec('P')
+R = TypeVar('R')
 
 
-def enter_exit_debug_log(name: str | None = None) -> 'Callable':
+def enter_exit_debug_log(name: str | None = None) -> 'Callable[[Callable[P, R]], Callable[P, R]]':
     """Decorator to debug log enter and exit events of a function"""
-    def log_decorator(function: 'Callable') -> 'Callable':
-        def log_wrapped(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> None:
-            function_name = function.__name__ if name is None else name
+    def log_decorator(function: 'Callable[P, R]') -> 'Callable[P, R]':
+        def log_wrapped(*args: P.args, **kwargs: P.kwargs) -> R:
+            function_name = getattr(function, '__name__', function.__class__.__name__) if name is None else name  # noqa: E501
             log.debug(f'Enter {function_name}')
             result = function(*args, **kwargs)
             log.debug(f'Exit {function_name}')

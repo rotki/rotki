@@ -53,7 +53,7 @@ class GoogleCalendarAPI:
                 return self._credentials
 
             log.info('Loading OAuth credentials')
-            self._credentials = Credentials(  # type: ignore[no-untyped-call]
+            self._credentials = Credentials(
                 token=creds_data['token'],
                 refresh_token=creds_data['refresh_token'],
                 scopes=GOOGLE_CALENDAR_SCOPES,
@@ -391,7 +391,7 @@ class GoogleCalendarAPI:
                     log.error(error_msg)
                     errors.append(error_msg)
 
-        result = {
+        result: dict[str, Any] = {
             'events_processed': events_processed,
             'events_created': events_created,
             'events_updated': events_updated,
@@ -511,7 +511,7 @@ class GoogleCalendarAPI:
 
     def _create_credentials(self, access_token: str, refresh_token: str) -> Credentials:
         """Create Google credentials object with refresh capability."""
-        return Credentials(  # type: ignore[no-untyped-call]
+        return Credentials(
             token=access_token,
             refresh_token=refresh_token,
             token_uri='https://oauth2.googleapis.com/token',

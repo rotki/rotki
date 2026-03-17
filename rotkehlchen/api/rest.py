@@ -281,7 +281,10 @@ def make_response_from_dict(response_data: dict[str, Any]) -> Response:
     )
 
 
-def async_api_call() -> Callable:
+def async_api_call() -> Callable[
+        [Callable[..., dict[str, Any] | Response]],
+        Callable[..., Response],
+]:
     """
     This is a decorator that should be used with endpoints that can be called asynchronously.
     It reads `async_query` argument from the wrapped function to determine whether to call
@@ -291,9 +294,9 @@ def async_api_call() -> Callable:
     status code.
     This decorator reads the dictionary and transforms it to a Response object.
     """
-    def wrapper(func: Callable[..., dict[str, Any]]) -> Callable[..., Response]:
+    def wrapper(func: Callable[..., dict[str, Any] | Response]) -> Callable[..., Response]:
         def inner(rest_api: 'RestAPI', async_query: bool = False, **kwargs: Any) -> Response:
-            response: dict[str, Any]
+            response: dict[str, Any] | Response
             if async_query is True:
                 return rest_api._query_async(
                     command=func,
@@ -309,7 +312,7 @@ def async_api_call() -> Callable:
     return wrapper
 
 
-def login_lock() -> Callable:
+def login_lock() -> Callable[[Callable[..., Response]], Callable[..., Response]]:
     """
     This is a decorator that uses the login lock at RestAPI to avoid a race condition between
     async tasks using the user unlock logic.
@@ -378,7 +381,8 @@ class RestAPI:
                 f'{greenlet.exception!s}',
             )
             # Setting empty message to signify that the death of the greenlet is expected.
-            self._write_task_result(task_id, {'result': None, 'message': ''})
+            if task_id is not None:
+                self._write_task_result(task_id, {'result': None, 'message': ''})
             return
 
         log.error(
@@ -2380,8 +2384,8 @@ class RestAPI:
         }
         if self.rotkehlchen.user_is_logged_in:
             with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-                result_dict['userdb']['info'] = self.rotkehlchen.data.db.get_db_info(cursor)  # type: ignore
-            result_dict['userdb']['backups'] = self.rotkehlchen.data.db.get_backups()  # type: ignore
+                result_dict['userdb']['info'] = self.rotkehlchen.data.db.get_db_info(cursor)
+            result_dict['userdb']['backups'] = self.rotkehlchen.data.db.get_backups()
 
         return api_response(_wrap_in_ok_result(result_dict), status_code=HTTPStatus.OK)
 
@@ -3144,7 +3148,7 @@ class RestAPI:
         except NotFoundError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.NOT_FOUND)
 
-        result = {
+        result: dict[str, Any] = {
             'times': list(balances),
             'values': [str(x) for x in balances.values()],
         }

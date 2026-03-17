@@ -178,7 +178,7 @@ class CSVExporter(CustomizableDateMixin):
         if event.cost_basis is not None:
             if self.settings.cost_basis_method == CostBasisMethod.ACB:
                 # ACB doesn't have matched acquisitions so we use pure numbers.
-                cost_basis = event.cost_basis.taxable_bought_cost if name == 'taxable' else event.cost_basis.taxfree_bought_cost  # type: ignore[assignment]  # noqa: E501
+                cost_basis = event.cost_basis.taxable_bought_cost if name == 'taxable' else event.cost_basis.taxfree_bought_cost  # noqa: E501
                 cost_basis = str(cost_basis) if cost_basis != 0 else ''
             else:  # FIFO, LIFO, HIFO (methods that do have matched acquisitions)
                 cost_basis = ''

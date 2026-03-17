@@ -1239,6 +1239,7 @@ def test_legacy_boost_exit(ethereum_inquirer, ethereum_accounts, beefy_cache):
     )
     # TODO @yabirgb(#11317): Fix the beefy decoder to process correctly boost exits
     legacy_vault = EvmToken('eip155:1/erc20:0xbd313b13ed794B86Bd161885F8e170769E0e68b2')
+    assert legacy_vault.underlying_tokens is not None
     assert (
         len(legacy_vault.underlying_tokens) == 1 and
         legacy_vault.underlying_tokens[0].address == '0x46EA5993fdDC27E4f770eFfB6921F401101Cbd59'

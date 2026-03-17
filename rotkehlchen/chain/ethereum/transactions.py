@@ -163,7 +163,7 @@ class EthereumTransactions(EvmTransactions):
                     with suppress(AlreadyExists):
                         self.add_transaction_by_hash(
                             tx_hash=deserialize_evm_tx_hash(log_event['transactionHash']),
-                            associated_address=user_address,  # type: ignore # it's an evm address
+                            associated_address=user_address,  # it's an evm address
                             must_exist=True,
                         )
 

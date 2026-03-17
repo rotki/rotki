@@ -65,7 +65,7 @@ class BeaconNode:
         log.info(f'Connected to {rpc_endpoint} with beacon node {version}')
 
     @overload
-    def query(  # type: ignore  # not sure how to fix the overlapping type at overload here
+    def query(  # not sure how to fix the overlapping type at overload here
             self,
             method: Literal['GET'],
             endpoint: Literal['eth/v1/node/version'],

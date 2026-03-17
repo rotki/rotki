@@ -580,7 +580,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         ),)
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(  # type: ignore[return-value]  # they are inherently strings
+        return dict.fromkeys(GlobalDBHandler.get_addresses_by_protocol(  # they are inherently strings  # noqa: E501
             chain_id=self.node_inquirer.chain_id,
             protocol=self.counterparty,
         ), self.counterparty) | dict.fromkeys(self.pool_addresses, self.counterparty)

@@ -108,6 +108,7 @@ def test_coinbase_query_balances(function_scope_coinbaseprime: Coinbaseprime):
         balances, msg = coinbase.query_balances()
 
     assert msg == ''
+    assert balances is not None
     assert len(balances) == 3
     assert balances[A_ENS].amount == FVal('5000')
     assert balances[A_SOL].amount == FVal('150000')

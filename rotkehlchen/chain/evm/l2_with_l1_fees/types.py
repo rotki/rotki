@@ -43,7 +43,7 @@ class L2WithL1FeesTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemen
             db_id: int = -1,
             authorization_list: list[EvmTransactionAuthorization] | None = None,
     ):
-        self.l1_fee = l1_fee
+        object.__setattr__(self, 'l1_fee', l1_fee)
         super().__init__(
             tx_hash=tx_hash,
             chain_id=chain_id,

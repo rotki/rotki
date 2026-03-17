@@ -181,7 +181,7 @@ def test_ens_expiry_calendar_reminders(
             timestamp=ens_expires,
             description=f'{ens_name} expires on {reminder_creator.timestamp_to_date(ens_expires)}',
             counterparty=counterparty,
-            address=ens_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
+            address=ens_events[idx].location_label,  # location_label is not None, checked above
             blockchain=ChainID.deserialize(ens_events[idx].location.to_chain_id()).to_blockchain(),
             color=ENS_CALENDAR_COLOR,
             auto_delete=True,
@@ -239,7 +239,7 @@ def test_locked_crv_calendar_reminders(
             timestamp=locktime,
             description=f'Lock period for {crv_events[idx].amount} CRV in vote escrow ends on {reminder_creator.timestamp_to_date(locktime)}',  # noqa: E501
             counterparty=CPT_CURVE,
-            address=crv_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
+            address=crv_events[idx].location_label,  # location_label is not None, checked above
             blockchain=ChainID.deserialize(crv_events[idx].location.to_chain_id()).to_blockchain(),
             color=CRV_CALENDAR_COLOR,
             auto_delete=True,

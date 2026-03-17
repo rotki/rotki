@@ -72,22 +72,24 @@ class AlchemyAssetData(NamedTuple):
 
     def serialize_for_historical_price(self, timestamp: Timestamp) -> dict[str, Any]:
         """Serialize the asset data for historical price API request."""
-        result: dict[str, Any] = {
-            'verb': 'POST',
-            'endpoint': 'historical',
-            'payload': {
-                'interval': '1h',
-                'endTime': timestamp + HOUR_IN_SECONDS,
-                'startTime': timestamp - HOUR_IN_SECONDS,
-            },
+        payload: dict[str, Any] = {
+            'interval': '1h',
+            'endTime': timestamp + HOUR_IN_SECONDS,
+            'startTime': timestamp - HOUR_IN_SECONDS,
         }
         if self.symbol is not None:
-            result['payload']['symbol'] = self.symbol
+            payload['symbol'] = self.symbol
         else:
-            result['payload']['network'] = self.network
-            result['payload']['address'] = self.address
+            assert self.network is not None
+            assert self.address is not None
+            payload['network'] = self.network
+            payload['address'] = self.address
 
-        return result
+        return {
+            'verb': 'POST',
+            'endpoint': 'historical',
+            'payload': payload,
+        }
 
 
 class Alchemy(
@@ -106,7 +108,7 @@ class Alchemy(
         PenalizablePriceOracleMixin.__init__(self)
         self.session = create_session()
         set_user_agent(self.session)
-        self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
+        self.db: DBHandler | None  # "solve" the self.db discrepancy
 
     def query_current_price(
             self,

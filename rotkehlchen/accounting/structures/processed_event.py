@@ -119,7 +119,7 @@ class ProcessedAccountingEvent:
         If `export_type` is set to CSV then `evm_explorer` is used to format the notes adding
         a link to each transaction.
         """
-        exported_dict = {
+        exported_dict: dict[str, Any] = {
             'type': self.event_type.serialize(),
             'notes': self.notes,
             'location': str(self.location),
@@ -153,10 +153,10 @@ class ProcessedAccountingEvent:
                         database=database,
                         matched_address=matched_address,
                     ),
-                    string=exported_dict['notes'],  # type: ignore [call-overload]  # exported_dict['notes'] is always a string
+                    string=exported_dict['notes'],  # exported_dict['notes'] is always a string
                 )
         else:  # for the other types of export we include the cost basis information
-            cost_basis = None
+            cost_basis: dict[str, Any] | None = None
             if self.cost_basis is not None:
                 cost_basis = self.cost_basis.serialize()
             exported_dict['cost_basis'] = cost_basis

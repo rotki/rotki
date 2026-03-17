@@ -99,18 +99,21 @@ class BitcoinManager(BitcoinCommonManager):
         - KeyError if got unexpected json structure
         """
         results: list[dict[str, Any]] = []
-        # the docs suggest 10 seconds for 429 (https://blockchain.info/q)
-        kwargs: Any = {'handle_429': True, 'backoff_in_seconds': 10}
         for i in range(0, len(accounts), 80):
             base_url = f"{BLOCKCHAIN_INFO_BASE_URL}/multiaddr?active={'|'.join(accounts[i:i + 80])}"  # noqa: E501
             if key == 'addresses':
-                results.extend(request_get_dict(url=base_url, **kwargs)[key])
+                results.extend(request_get_dict(
+                    url=base_url,
+                    handle_429=True,
+                    backoff_in_seconds=10,
+                )[key])
             else:  # key == 'txs'
                 offset = 0
                 while True:
                     results.extend(chunk := request_get_dict(
                         url=f'{base_url}&n={BLOCKCHAIN_INFO_TX_LIMIT}&offset={offset}',
-                        **kwargs,
+                        handle_429=True,
+                        backoff_in_seconds=10,
                     )[key])
                     if len(chunk) < BLOCKCHAIN_INFO_TX_LIMIT:
                         break  # all txs have been queried

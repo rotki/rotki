@@ -101,7 +101,7 @@ class CalendarEntry(NamedTuple):
             description=row[2],
             counterparty=row[3],
             timestamp=Timestamp(row[4]),
-            address=row[5],  # type: ignore  # it is a str here
+            address=row[5],  # type: ignore[arg-type]  # stored DB value is validated by blockchain
             blockchain=SupportedBlockchain.deserialize(row[6]) if row[6] else None,
             color=HexColorCode(row[7]) if row[7] else None,
             auto_delete=bool(row[8]),

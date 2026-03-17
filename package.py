@@ -12,7 +12,7 @@ import urllib.request
 from collections.abc import Callable, Generator
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any
+from typing import Any, TypeVar, cast
 
 from packaging import version
 from setuptools_scm import get_version
@@ -47,6 +47,7 @@ APPLE_ID = 'APPLEID'
 APPLE_ID_PASS = 'APPLEIDPASS'
 X64_APPL_RUST_TARGET = 'x86_64-apple-darwin'
 ARM_APPL_RUST_TARGET = 'aarch64-apple-darwin'
+F = TypeVar('F', bound=Callable[..., Any])
 
 
 def env_var_to_bool(value: str | None) -> bool:
@@ -55,7 +56,7 @@ def env_var_to_bool(value: str | None) -> bool:
     return value.lower() in {'1', 'true', 'yes', 'on'}
 
 
-def log_group(name: str) -> Callable:
+def log_group(name: str) -> Callable[[F], F]:
     def start_group(group_name: str) -> None:
         if os.environ.get('CI'):
             subprocess.call(f'echo ::group::"{group_name}"', shell=True)
@@ -68,13 +69,13 @@ def log_group(name: str) -> Callable:
         else:
             logger.info('\n\n-----------------\n\n')
 
-    def decorate(fn: Callable) -> Callable:
+    def decorate(fn: F) -> F:
         def wrapper(*args: Any, **kwargs: Any | None) -> None:
             start_group(name)
             fn(*args, **kwargs)
             end_group()
 
-        return wrapper
+        return cast('F', wrapper)
     return decorate
 
 

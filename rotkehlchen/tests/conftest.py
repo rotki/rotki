@@ -111,7 +111,7 @@ if sys.platform == 'darwin':
                 self.trace('new basetemp', t)
                 return t
 
-        pytest.TempdirFactory.getbasetemp = getbasetemp
+        pytest.TempdirFactory.getbasetemp = getbasetemp  # type: ignore[assignment]
         with suppress(AttributeError):
             delattr(request.config._tmpdirhandler, '_basetemp')
 

@@ -109,8 +109,12 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
 
     tokens = rotki.chains_aggregator.ethereum.tokens
     tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)
-    Inquirer.find_main_currency_prices = MagicMock(side_effect=Inquirer.find_main_currency_prices)
     with (
+        patch.object(
+            target=Inquirer,
+            attribute='find_main_currency_prices',
+            new=MagicMock(side_effect=Inquirer.find_main_currency_prices),
+        ),
         patch(
             target='rotkehlchen.chain.evm.tokens.EvmTokens._query_new_tokens',
             wraps=super(EvmTokensWithProxies, tokens)._query_new_tokens,
@@ -528,7 +532,7 @@ def test_monerium_queries(
             EvmTokenDetectionData(
                 identifier=new_eure.identifier,
                 address=new_eure.evm_address,
-                decimals=new_eure.decimals,  # type: ignore
+                decimals=new_eure.decimals,
             ), EvmTokenDetectionData(
                 identifier=A_GNOSIS_EURE.identifier,
                 address=string_to_evm_address('0xcB444e90D8198415266c6a2724b7900fb12FC56E'),

@@ -229,7 +229,7 @@ class Monerium:
                 event.notes = new_notes
                 if new_type:
                     event.event_type = new_type
-                    event.event_subtype = new_subtype  # type: ignore  # both type/subtype are set
+                    event.event_subtype = new_subtype  # both type/subtype are set
 
                 dbevents.edit_history_event(
                     write_cursor=write_cursor,

@@ -147,7 +147,7 @@ class SkyDecoder(EvmDecoderInterface):
                     event.location_label == location_label
             ):
                 out_event = event
-                location_label = event.location_label  # type: ignore[assignment]
+                location_label = event.location_label
             elif (
                     event.asset == USDS_ASSET and
                     event.event_type == HistoryEventType.RECEIVE and

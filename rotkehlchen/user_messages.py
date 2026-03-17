@@ -103,7 +103,7 @@ class MessagesAggregator:
         if service in CachedSettings().get_settings().suppress_missing_key_msg_services:
             return
 
-        data = {'service': service.serialize()}
+        data: dict[str, str] = {'service': service.serialize()}
         if location is not None:
             data['location'] = location
 

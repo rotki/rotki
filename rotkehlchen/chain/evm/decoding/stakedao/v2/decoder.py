@@ -433,12 +433,14 @@ class Stakedaov2CommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        mappings = dict.fromkeys(self.vaults, (self._decode_vault_events,))
+        mappings: dict[ChecksumEvmAddress, tuple[Any, ...]] = dict.fromkeys(
+            self.vaults,
+            (self._decode_vault_events,),
+        )
         if self.accountant_address is not None and self.reward_token_address is not None:
             mappings[self.accountant_address] = (self._decode_accountant_claim_reward,)
-        mappings.update(
-            dict.fromkeys(VOTEMARKET_PLATFORM_ADDRESSES, (self._decode_votemarket_claim,)),
-        )
+        for address in VOTEMARKET_PLATFORM_ADDRESSES:
+            mappings[address] = (self._decode_votemarket_claim,)
         mappings[LAPOSTE_ADDRESS] = (self._decode_laposte_events,)
 
         return mappings

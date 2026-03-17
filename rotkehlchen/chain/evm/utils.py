@@ -276,7 +276,7 @@ def query_contract_response_as_dict(
         if func_abi.get('name') != method:
             continue
 
-        outputs = [x.get('name') for x in func_abi.get('outputs', [])]  # type: ignore  # outputs will be an iterable list
+        outputs = [x.get('name') for x in func_abi.get('outputs', [])]  # outputs will be an iterable list  # noqa: E501
         try:
             return dict(zip(outputs, data, strict=True))
         except ValueError:  # data doesn't have the length expected by the ABI.

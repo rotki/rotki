@@ -97,9 +97,11 @@ def test_yearn_api(database, ethereum_inquirer):
         address=string_to_evm_address('0x4c2dF8adB2B14e1d5FDBD9d11A2cf7562b67adC9'),
         chain_id=ChainID.ETHEREUM,
     )
+    assert token is not None
     assert token.name == 'Curve mevETHfrxE-f Factory yVault'
     assert token.symbol == 'yvCurve-mevETHfrxE-f'
     assert token.protocol == CPT_YEARN_V2
+    assert token.underlying_tokens is not None
     assert len(token.underlying_tokens) == 1
     assert token.underlying_tokens[0].address == '0x9b77bd0a665F05995b68e36fC1053AFFfAf0d4B5'
 
@@ -108,9 +110,11 @@ def test_yearn_api(database, ethereum_inquirer):
         address=string_to_evm_address('0x04AeBe2e4301CdF5E9c57B01eBdfe4Ac4B48DD13'),
         chain_id=ChainID.ETHEREUM,
     )
+    assert token is not None
     assert token.name == 'mkUSD yVault-A'
     assert token.symbol == 'yvmkUSD-A'
     assert token.protocol == CPT_YEARN_V3
+    assert token.underlying_tokens is not None
     assert len(token.underlying_tokens) == 1
     assert token.underlying_tokens[0].address == '0x4591DBfF62656E7859Afe5e45f6f47D3669fBB28'
 

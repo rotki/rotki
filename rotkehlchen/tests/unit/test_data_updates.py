@@ -277,7 +277,7 @@ def make_mock_github_response(latest: int, min_version: str | None = None, max_v
         if 'info' in url:
             result = {}
             for update_type in UpdateType:
-                entry = {'latest': latest}
+                entry: dict[str, Any] = {'latest': latest}
                 for i in range(1, latest + 1):
                     if min_version or max_version:
                         if 'limits' not in entry:  # not using defaultdict to see that if missing it's also handled by the code fine  # noqa: E501
@@ -760,7 +760,7 @@ def _check_location_unsupported_assets(cursor: 'DBCursor', after_upgrade: bool) 
                     'WHERE location = ? AND exchange_symbol = ?;', (
                         Location.deserialize(location).serialize_for_db(), symbol,
                     ),
-                ).fetchone()[0] == expected_count(symbol)  # type: ignore[no-untyped-call]
+                ).fetchone()[0] == expected_count(symbol)
 
 
 def test_location_unsupported_assets_updates(

@@ -63,14 +63,19 @@ class BaseEvmDecoderTools(BaseDecoderTools[EvmTxReceipt, ChecksumEvmAddress, EVM
         self.is_non_conformant_erc721 = is_non_conformant_erc721_fn
         self.exceptions_mappings = exceptions_mappings or {}
 
-    def reset_sequence_counter(self, tx_receipt: EvmTxReceipt) -> None:
+    def reset_sequence_counter(self, tx_data: Any) -> None:
         """Reset the sequence index counter before decoding a transaction.
         `sequence_offset` is set to one more than the highest tx log index, and is used in
         `get_next_sequence_index` to add new events whose sequence index will not collide with
         the sequence index of any events that have associated tx logs.
         """
-        super().reset_sequence_counter(tx_receipt)
-        self.sequence_offset = tx_receipt.logs[-1].log_index + 1 if len(tx_receipt.logs) else 0
+        super().reset_sequence_counter(tx_data)
+        tx_receipt = tx_data if isinstance(tx_data, EvmTxReceipt) else None
+        self.sequence_offset = (
+            tx_receipt.logs[-1].log_index + 1
+            if tx_receipt is not None and len(tx_receipt.logs) != 0
+            else 0
+        )
 
     def get_sequence_index(self, tx_log: EvmTxReceiptLog) -> int:
         """Get the sequence index for an event associated with a specific tx log.

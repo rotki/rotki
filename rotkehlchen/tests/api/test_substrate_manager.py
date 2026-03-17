@@ -24,7 +24,7 @@ def test_set_unset_own_rpc_endpoint(rotkehlchen_api_server: APIServer) -> None:
 
     # No nodes connected
     assert kusama_manager.own_rpc_endpoint is None  # from `ksm_rpc_endpoint` fixture
-    assert len(kusama_manager.available_node_attributes_map) == 0  # type: ignore
+    assert len(kusama_manager.available_node_attributes_map) == 0
     assert len(kusama_manager.available_nodes_call_order) == 0
 
     # Set ksm_rpc_endpoint with a reliable endpoint (e.g. NOT Parity)

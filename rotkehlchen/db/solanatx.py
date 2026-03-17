@@ -122,8 +122,8 @@ class DBSolanaTx(DBCommonTx[SolanaAddress, SolanaTransaction, Signature, SolanaT
             token_cache_data,
         )
 
-    @staticmethod
     def get_transactions(
+            self,
             cursor: 'DBCursor',
             filter_: SolanaTransactionsFilterQuery,
     ) -> list[SolanaTransaction]:

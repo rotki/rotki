@@ -560,13 +560,13 @@ def _process_airdrop_file(
     temp_airdrop_tuples = []
     airdrop_lazy_dataframe = get_airdrop_data(airdrop_data, protocol_name, data_dir)
 
-    for (address, amount_raw) in (
-        airdrop_lazy_dataframe.filter(
+    airdrop_df = airdrop_lazy_dataframe.filter(
             pl.selectors.by_index(0).is_in(addresses),
         ).select(
             pl.selectors.by_index(0, 1),  # select only first two columns (addr, amount)
-        ).collect().rows()
-    ):
+        ).collect()
+
+    for address, amount_raw in airdrop_df.rows():  # type: ignore[attr-defined]
         if protocol_name in {
             'cornichon',
             'tornado',

@@ -146,7 +146,7 @@ class ExternalServiceApiCredentials(NamedTuple):
 T_TradePair = str
 TradePair = NewType('TradePair', T_TradePair)
 
-ChecksumEvmAddress = ChecksumAddress
+ChecksumEvmAddress: TypeAlias = ChecksumAddress
 
 T_EVMTxHash = HexBytes
 EVMTxHash = NewType('EVMTxHash', T_EVMTxHash)
@@ -177,7 +177,7 @@ Eth2PubKey = NewType('Eth2PubKey', T_Eth2PubKey)
 T_SolanaAddress = str
 SolanaAddress = NewType('SolanaAddress', T_SolanaAddress)
 
-BlockchainAddress = BTCAddress | ChecksumEvmAddress | SubstrateAddress | SolanaAddress
+BlockchainAddress: TypeAlias = BTCAddress | ChecksumEvmAddress | SubstrateAddress | SolanaAddress
 AnyBlockchainAddress = TypeVar(
     'AnyBlockchainAddress',
     BTCAddress,
@@ -185,8 +185,8 @@ AnyBlockchainAddress = TypeVar(
     SubstrateAddress,
     SolanaAddress,
 )
-ListOfBlockchainAddresses = list[BTCAddress] | list[ChecksumEvmAddress] | list[SubstrateAddress] | list[SolanaAddress]  # noqa: E501
-TuplesOfBlockchainAddresses = tuple[BTCAddress, ...] | tuple[ChecksumEvmAddress, ...] | tuple[SubstrateAddress, ...] | tuple[SolanaAddress, ...]  # noqa: E501
+ListOfBlockchainAddresses: TypeAlias = list[BTCAddress] | list[ChecksumEvmAddress] | list[SubstrateAddress] | list[SolanaAddress]  # noqa: E501
+TuplesOfBlockchainAddresses: TypeAlias = tuple[BTCAddress, ...] | tuple[ChecksumEvmAddress, ...] | tuple[SubstrateAddress, ...] | tuple[SolanaAddress, ...]  # noqa: E501
 
 
 T_Price = FVal
@@ -970,7 +970,7 @@ ADDRESSBOOK_BLOCKCHAIN_GROUP_PREFIX: Final = 'TYPE_'  # prefix used along the ad
 
 
 class AddressbookEntry(NamedTuple):
-    address: 'BlockchainAddress'
+    address: BlockchainAddress
     name: str
     blockchain: SupportedBlockchain | None
 
@@ -982,7 +982,7 @@ class AddressbookEntry(NamedTuple):
         }
 
     @staticmethod
-    def check_chain_ecosystem(address: 'BlockchainAddress') -> Literal[
+    def check_chain_ecosystem(address: BlockchainAddress) -> Literal[
         ChainType.BITCOIN,
         ChainType.EVMLIKE,
         ChainType.SUBSTRATE,
@@ -1011,7 +1011,7 @@ class AddressbookEntry(NamedTuple):
         raise AddressNotSupported(f'Unsupported address {address}')
 
     @staticmethod
-    def get_ecosystem_key_by_address(address: 'BlockchainAddress') -> str:
+    def get_ecosystem_key_by_address(address: BlockchainAddress) -> str:
         """May raise:
             - AddressNotSupported
         """

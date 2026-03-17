@@ -730,7 +730,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
                 amount=FVal('2.5'),
                 location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
                 address=(address := string_to_evm_address('0xA7C8F1e13eDC5FBfB768f55ECF2Fee5d4C5BF964')),  # noqa: E501,
-                notes=f'Send 2.5 ETH to {address}',  # type: ignore
+                notes=f'Send 2.5 ETH to {address}',
             ), EvmEvent(
                 tx_ref=deserialize_evm_tx_hash('0x9a76e51e6feb83690b4f0ecb257adbceb73b6f8b38d7d5c5d3f5e22fd10e3c72'),
                 sequence_index=100,
@@ -1037,11 +1037,11 @@ def test_add_edit_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
     # Edit the group identifier of the first entry and add a fee
     entry = entries[0].copy()
     entry.pop('identifier')
-    entry['identifiers'] = [
+    entry['identifiers'] = [  # type: ignore[assignment]
         event.identifier for event in events
         if event.timestamp == swap1_timestamp
     ]
-    entry['fees'], entry['group_identifier'], entry['user_notes'] = [{'amount': '0.1', 'asset': 'USD'}, {'amount': '0.01', 'asset': 'ETH'}], 'test_id', ['Note1', 'Note2', 'Note3', 'Note4']  # noqa: E501
+    entry['fees'], entry['group_identifier'], entry['user_notes'] = [{'amount': '0.1', 'asset': 'USD'}, {'amount': '0.01', 'asset': 'ETH'}], 'test_id', ['Note1', 'Note2', 'Note3', 'Note4']  # noqa: E501  # type: ignore[assignment]
     assert_proper_sync_response_with_result(requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=entry,
@@ -1265,7 +1265,7 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
     entry['identifiers'], ids_per_subtype = [], defaultdict(list)
     for event in events:
         if event.timestamp == Timestamp(1569924575000):
-            entry['identifiers'].append(event.identifier)  # type: ignore  # mypy doesn't understand what type the items in `entry` have
+            entry['identifiers'].append(event.identifier)  # mypy doesn't understand what type the items in `entry` have  # noqa: E501
             ids_per_subtype[event.event_subtype.serialize()].append(event.identifier)
 
     for subtype in ('spend', 'receive', 'fee'):
@@ -1409,9 +1409,9 @@ def test_add_edit_evm_swap_events(rotkehlchen_api_server: 'APIServer') -> None:
     # Remove a receive event from the multi-trade group. The fee event (id=5, seq_idx=4) should
     # shift to seq_idx=3, taking the sequence index of the removed receive event (id=8, seq_idx=3).
     # This tests that deletions happen before edits to avoid sequence_index conflicts.
-    entry['identifiers'] = [1, 2, 3, 8, 5]  # update to match current DB state
+    entry['identifiers'] = [1, 2, 3, 8, 5]  # type: ignore[assignment]  # update to match current DB state
     entry['receive'] = [entry['receive'][0]]  # type: ignore[index]  # keep only the first receive
-    entry['fee'] = [{'identifier': 5, 'amount': '0.0012', 'asset': A_WETH.identifier}]
+    entry['fee'] = [{'identifier': 5, 'amount': '0.0012', 'asset': A_WETH.identifier}]  # type: ignore[assignment]
     assert_proper_sync_response_with_result(requests.patch(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json=entry,
@@ -2061,7 +2061,7 @@ def test_add_edit_solana_swap_events(rotkehlchen_api_server: 'APIServer') -> Non
     timestamp_to_edit = TimestampMS(1569924575000)
     for event in events:
         if event.timestamp == timestamp_to_edit:
-            entry['identifiers'].append(event.identifier)  # type: ignore
+            entry['identifiers'].append(event.identifier)
             ids_per_subtype[event.event_subtype.serialize()].append(event.identifier)
 
     for subtype in ('spend', 'receive', 'fee'):

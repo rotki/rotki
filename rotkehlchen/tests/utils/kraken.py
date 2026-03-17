@@ -605,4 +605,4 @@ class MockKraken(Kraken):
             response = json.dumps(new_data)
             return jsonloads_dict(response)
         # else
-        return super().api_query(method, req)  # type: ignore[unreachable]
+        return super().api_query(method, req)

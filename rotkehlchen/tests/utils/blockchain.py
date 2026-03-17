@@ -360,8 +360,7 @@ def mock_etherscan_query(
 
             if data.startswith('0x252dba42'):  # aggregate
                 # Get the multicall aggregate input data
-                fn_abi = contract.functions.abi[0]
-                assert fn_abi['name'] == 'aggregate', 'Abi position of multicall aggregate changed'
+                fn_abi = contract._find_matching_fn_abi('aggregate')
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode(input_types, bytes.fromhex(data[10:]))
@@ -630,13 +629,13 @@ def setup_evm_addresses_activity_mock(
     def mock_is_contract(address: ChecksumEvmAddress):
         return address in eth_contract_addresses
 
-    def mock_avax_get_tx_count(account):
-        if account in avalanche_addresses:
+    def mock_avax_get_tx_count(account: ChecksumEvmAddress):
+        if avalanche_addresses is not None and account in avalanche_addresses:
             return 1
         return 0
 
-    def mock_avax_balance(account):
-        if account in avalanche_addresses:
+    def mock_avax_balance(account: ChecksumEvmAddress):
+        if avalanche_addresses is not None and account in avalanche_addresses:
             return ONE
         return ZERO
 

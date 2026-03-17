@@ -168,7 +168,7 @@ class Blockscout(EtherscanLikeApi):
 
         return json_ret  # 'txlistinternal', 'txlist', 'tokentx
 
-    @overload  # type: ignore[override]
+    @overload
     def _query(
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
@@ -212,7 +212,7 @@ class Blockscout(EtherscanLikeApi):
     ) -> list[dict[str, Any]] | str | int | dict[str, Any] | None:
         ...
 
-    def _query(
+    def _query(  # type: ignore[override]
             self,
             chain_id: SUPPORTED_CHAIN_IDS,
             module: str,

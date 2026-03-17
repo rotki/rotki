@@ -720,7 +720,10 @@ def test_superfluid_cache(ethereum_inquirer: EthereumInquirer):
 @requires_env([TestEnvironment.NIGHTLY])
 def test_superfluid_remote_data_is_as_expected():
     """Nightly test to check that the Superfluid token list contains the expected data."""
-    _, token_data_list = get_superfluid_token_list()
+    token_list_data = get_superfluid_token_list()
+    assert token_list_data is not None
+    _, token_data_list = token_list_data
+    assert token_data_list is not None
     for token_data in token_data_list:
         tags = token_data.get('tags', [])
         assert (

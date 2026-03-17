@@ -320,7 +320,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         Returns the list of events or None if the tx was not decoded or the events were purged.
         """
         with self.database.conn.read_ctx() as cursor:
-            tx_id = transaction.get_or_query_db_id(cursor)
+            tx_id = transaction.get_or_query_db_id(cursor)  # type: ignore[arg-type]
 
         if ignore_cache is True:  # delete all decoded events for the given tx ref
             with self.database.user_write() as write_cursor:

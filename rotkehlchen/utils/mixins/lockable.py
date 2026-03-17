@@ -2,7 +2,7 @@ import logging
 from collections import defaultdict
 from collections.abc import Callable
 from functools import wraps
-from typing import Any
+from typing import Any, Concatenate, ParamSpec, TypeVar
 
 from gevent.lock import Semaphore
 
@@ -12,18 +12,21 @@ from .common import function_sig_key
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+P = ParamSpec('P')
+R = TypeVar('R')
 
 
-def skip_if_running(f: Callable) -> Callable:
+def skip_if_running(f: Callable[P, R]) -> Callable[P, R | None]:
     """Decorator that skips execution if the function is already running.
     For class/instance methods, use LockableQueryMixIn with protect_with_lock instead.
     """
     lock = Semaphore()
 
     @wraps(f)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R | None:
         if not lock.acquire(blocking=False):
-            log.debug(f'{f.__name__} already running, skipping')
+            function_name = getattr(f, '__name__', f.__class__.__name__)
+            log.debug(f'{function_name} already running, skipping')
             return None
         try:
             return f(*args, **kwargs)
@@ -47,7 +50,10 @@ class LockableQueryMixIn:
         self.query_locks_map_lock = Semaphore()
 
 
-def protect_with_lock(arguments_matter: bool = False, skip_ignore_cache: bool = False) -> Callable:
+def protect_with_lock(
+        arguments_matter: bool = False,
+        skip_ignore_cache: bool = False,
+) -> Callable[[Callable[Concatenate[LockableQueryMixIn, P], R]], Callable[Concatenate[LockableQueryMixIn, P], R]]:  # noqa: E501
     """ This is a decorator for protecting a call of an object with a lock
     The objects must adhere to the interface of having:
         - A mapping of ids to query_lock objects
@@ -57,11 +63,14 @@ def protect_with_lock(arguments_matter: bool = False, skip_ignore_cache: bool = 
         - the Blockchain object
         - EvmNodeInquirer
     """
-    def _protect_with_lock(f: Callable) -> Callable:
+    def _protect_with_lock(
+            f: Callable[Concatenate[LockableQueryMixIn, P], R],
+    ) -> Callable[Concatenate[LockableQueryMixIn, P], R]:
         @wraps(f)
-        def wrapper(wrappingobj: LockableQueryMixIn, *args: Any, **kwargs: Any) -> Any:
+        def wrapper(wrappingobj: LockableQueryMixIn, *args: P.args, **kwargs: P.kwargs) -> R:
+            function_name = getattr(f, '__name__', f.__class__.__name__)
             lock_key = function_sig_key(
-                f.__name__,        # name
+                function_name,     # name
                 arguments_matter,  # arguments_matter
                 skip_ignore_cache,  # skip_ignore_cache
                 *args,

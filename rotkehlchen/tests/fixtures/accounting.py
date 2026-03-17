@@ -327,7 +327,7 @@ def _create_inquirer(
 ) -> Inquirer:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
-    Inquirer._Inquirer__instance = None  # type: ignore
+    Inquirer._Inquirer__instance = None
     # Get a defillama,cryptocompare etc without a DB since invoking DB fixture here causes problems
     # of existing user for some tests
     inquirer = Inquirer(

@@ -572,7 +572,7 @@ def test_all_indexers_get_same_tx_results(
         ):
             # get_transactions returns an iterator of lists. Consume the iterator, check that
             # only one list was returned, and append that list to the result_list.
-            assert len(result := list(indexer.get_transactions(  # type: ignore[call-overload]  # mypy doesn't understand that action will be a valid literal
+            assert len(result := list(indexer.get_transactions(  # mypy doesn't understand that action will be a valid literal  # noqa: E501
                 chain_id=ethereum_inquirer.chain_id,
                 account=ethereum_accounts[0],
                 action=action,

@@ -1215,8 +1215,8 @@ def should_exclude_possible_match(
         event.event_subtype == HistoryEventSubType.NONE and
         event.location in BLOCKCHAIN_LOCATIONS and
         (chain_accounts := blockchain_accounts.get(SupportedBlockchain.from_location(
-            location=event.location,  # type: ignore[arg-type]  # checked `in BLOCKCHAIN_LOCATIONS` above
-        ))) is not None and
+            location=event.location,  # checked `in BLOCKCHAIN_LOCATIONS` above
+        ))) and
         event.location_label in chain_accounts and
         ((  # btc/bch don't have the address attribute so can only go by a tracked location label.
             (addr := getattr(event, 'address', None)) is None and

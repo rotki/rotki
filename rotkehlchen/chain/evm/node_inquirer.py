@@ -134,7 +134,7 @@ def _query_web3_get_logs(
         # As seen in https://github.com/rotki/rotki/issues/1787, the json RPC, if it
         # is infura can throw an error here which we can only parse by catching the  exception
         try:
-            new_events_web3: list[dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501
+            new_events_web3: list[dict[str, Any]] = [dict(x) for x in web3.eth.get_logs(filter_args)]  # noqa: E501  # type: ignore[no-matching-overload]
         except (Web3Exception, ValueError, KeyError) as e:
             if isinstance(e, ValueError | Web3Exception):
                 try:
@@ -477,6 +477,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
           indexers or gas limit errors from RPC nodes.
         """
         gas_limit_error_seen = False
+        method_name = getattr(method, '__name__', method.__class__.__name__)
         for node_idx, weighted_node in enumerate(call_order):
             node_info = weighted_node.node_info
             if (rpc_node := self.rpc_mapping.get(node_info, None)) is None:
@@ -494,7 +495,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                         continue
 
             if rpc_node is not None and ((
-                method.__name__ in self.methods_that_query_past_data and
+                method_name in self.methods_that_query_past_data and
                 rpc_node.is_pruned is True
             ) or (
                 kwargs.get('block_identifier', 'latest') != 'latest' and
@@ -522,7 +523,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             except requests.Timeout as e:  # Add node to failed_to_connect_nodes to prevent repeatedly timing out on the same node.  # noqa: E501
                 log.warning(
                     f'Timed out while querying {node_info.name} for '
-                    f'{method.__name__}: {e!s}. Skipping this node in future queries.',
+                    f'{method_name}: {e!s}. Skipping this node in future queries.',
                 )
                 self.mark_node_failure(node_info, str(e))
                 self.failed_to_connect_nodes.add(node_info.name)
@@ -540,7 +541,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             ) as e:
                 log.warning(
                     f'Failed to query {node_info.name} with position on the query list {node_idx} '
-                    f'for {method.__name__} due to {e!s}',
+                    f'for {method_name} due to {e!s}',
                 )
                 if any(x in str(e).lower() for x in ('out of gas', 'exceeds block gas limit')):
                     gas_limit_error_seen = True
@@ -556,12 +557,12 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
 
         # no node in the call order list was successfully queried
         log.error(
-            f'Failed to query {method.__name__} after trying the following '
+            f'Failed to query {method_name} after trying the following '
             f'nodes: {[x.node_info.name for x in call_order]}. Call parameters were {kwargs}',
         )
         if gas_limit_error_seen:
             raise RequestTooLargeError(
-                f'Failed to query {method.__name__} for {self.blockchain} due to gas limit error',
+                f'Failed to query {method_name} for {self.blockchain} due to gas limit error',
             )
 
         raise RemoteError(f'Error querying information from {self.blockchain!s}. Check logs for more information')  # noqa: E501
@@ -989,7 +990,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 while True:  # loop to continuously reduce block range if need b
                     end_block = min(start_block + blocks_step, until_block)
                     try:
-                        new_events = self._try_indexers(func=lambda indexer, start=start_block, end=end_block: indexer.get_logs(  # type: ignore[misc]  # noqa: E501
+                        new_events = self._try_indexers(func=lambda indexer, start=start_block, end=end_block: indexer.get_logs(  # noqa: E501
                             chain_id=self.chain_id,
                             contract_address=contract_address,
                             topics=filter_args.get('topics', []),
@@ -1420,7 +1421,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         try:
             return self._try_indexers(
                 func=lambda indexer: indexer.get_l1_fee(
-                    chain_id=self.chain_id,  # type: ignore[arg-type]  # mypy doesn't understand the check above
+                    chain_id=self.chain_id,  # mypy doesn't understand the check above
                     account=account,
                     tx_hash=tx_hash,
                     block_number=block_number,

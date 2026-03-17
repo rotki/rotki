@@ -1,9 +1,12 @@
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple, cast
 
 import pytest
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.user_messages import MessagesAggregator
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.websockets.notifier import RotkiNotifier
 
 
 class MockedWsMessage(NamedTuple):
@@ -62,7 +65,7 @@ def fixture_initialize_mock_rotki_notifier() -> bool:
 def function_scope_messages_aggregator(function_scope_initialize_mock_rotki_notifier):
     msg_aggregator = MessagesAggregator()
     if function_scope_initialize_mock_rotki_notifier is True:
-        msg_aggregator.rotki_notifier = MockRotkiNotifier()
+        msg_aggregator.rotki_notifier = cast('RotkiNotifier', MockRotkiNotifier())
     return msg_aggregator
 
 
@@ -70,5 +73,5 @@ def function_scope_messages_aggregator(function_scope_initialize_mock_rotki_noti
 def messages_aggregator(initialize_mock_rotki_notifier):
     msg_aggregator = MessagesAggregator()
     if initialize_mock_rotki_notifier is True:
-        msg_aggregator.rotki_notifier = MockRotkiNotifier()
+        msg_aggregator.rotki_notifier = cast('RotkiNotifier', MockRotkiNotifier())
     return msg_aggregator

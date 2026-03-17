@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Literal, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI
 from ens.constants import ENS_MAINNET_ADDR
@@ -180,16 +180,17 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         if resolver_addr is None:
             log.error(f'Could not get ENS resolver for {name}')
             return None
+        assert normal_name is not None
 
         ens_resolver_abi = ENS_RESOLVER_ABI.copy()
-        arguments = [normal_name_to_hash(normal_name)]
+        arguments: list[Any] = [normal_name_to_hash(normal_name)]
         if blockchain != SupportedBlockchain.ETHEREUM:
             arguments.append(blockchain.ens_coin_type())
 
         address = self._call_contract(
             web3=web3,
             contract_address=resolver_addr,
-            abi=ens_resolver_abi,
+            abi=ens_resolver_abi,  # type: ignore[arg-type]
             method_name='addr',
             arguments=arguments,
         )

@@ -117,7 +117,7 @@ def test_cached_settings(
     assert rotki.user_is_logged_in is True
 
     # Cached settings and DBSettings match
-    with rotki.data.db.conn.read_ctx() as cursor:  # type: ignore
+    with rotki.data.db.conn.read_ctx() as cursor:
         db_settings = rotki.data.db.get_settings(cursor)
 
     cached_settings = CachedSettings().get_settings()

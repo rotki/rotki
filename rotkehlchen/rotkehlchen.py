@@ -9,7 +9,7 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from pathlib import Path
 from types import FunctionType
-from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, overload
 
 import gevent
 
@@ -109,7 +109,6 @@ from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
-    EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_BITCOIN_CHAINS_TYPE,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
@@ -736,12 +735,12 @@ class Rotkehlchen:
 
         xpub_data = self.data.db.get_bitcoin_xpub_data(
             cursor=cursor,
-            blockchain=blockchain,  # type: ignore
+            blockchain=blockchain,
         )
         addresses_to_account_data = {x.address: x for x in account_data}
         address_to_xpub_mappings = self.data.db.get_addresses_to_xpub_mapping(
             cursor=cursor,
-            blockchain=blockchain,  # type: ignore
+            blockchain=blockchain,
             addresses=list(addresses_to_account_data.keys()),
         )
 
@@ -993,7 +992,7 @@ class Rotkehlchen:
         for blockchain, tracked_accounts in blockchain_to_addresses.items():
             self.remove_single_blockchain_accounts(
                 blockchain=blockchain,
-                accounts=tracked_accounts,  # type: ignore  # mypy doesn't detect this as a list of blockchain addresses
+                accounts=tracked_accounts,  # mypy doesn't detect this as a list of blockchain addresses  # noqa: E501
             )
 
     def remove_single_blockchain_accounts(
@@ -1014,9 +1013,8 @@ class Rotkehlchen:
         )
         with contextlib.ExitStack() as stack:
             if blockchain in EVM_CHAINS_WITH_TRANSACTIONS:
-                blockchain = cast('EVM_CHAINS_WITH_TRANSACTIONS_TYPE', blockchain)  # by default mypy doesn't narrow the type  # noqa: E501
                 evm_manager = self.chains_aggregator.get_chain_manager(blockchain)
-                evm_addresses: list[ChecksumEvmAddress] = cast('list[ChecksumEvmAddress]', accounts)  # noqa: E501
+                evm_addresses: list[ChecksumEvmAddress] = accounts  # type: ignore[assignment]
                 self.maybe_kill_running_tx_query_tasks(blockchain, evm_addresses)
                 stack.enter_context(evm_manager.transactions.wait_until_no_query_for(evm_addresses))
                 stack.enter_context(evm_manager.transactions.missing_receipts_lock)
@@ -1107,12 +1105,12 @@ class Rotkehlchen:
             else:
                 location_str = str(exchange.location)
                 if location_str not in balances:  # need to widen type at assignment here
-                    balances[location_str] = cast('dict[Asset, Balance]', exchange_balances)
+                    balances[location_str] = exchange_balances  # type: ignore[assignment]
                 else:  # multiple exchange of same type. Combine balances
                     balances[location_str] = combine_dicts(
                         balances[location_str],
-                        exchange_balances,  # type: ignore
-                    )
+                        exchange_balances,
+                    )  # type: ignore[call-overload]
 
         liabilities: dict[Asset, Balance]
         try:
@@ -1161,7 +1159,7 @@ class Rotkehlchen:
         # retrieve loopring balances if module is activated
         if self.chains_aggregator.get_module('loopring'):
             try:
-                loopring_balances = self.chains_aggregator.get_loopring_balances()
+                loopring_balances_raw = self.chains_aggregator.get_loopring_balances()
             except RemoteError as e:
                 problem_free = False
                 self.msg_aggregator.add_message(
@@ -1169,8 +1167,8 @@ class Rotkehlchen:
                     data={'location': 'loopring', 'error': str(e)},
                 )
             else:
-                if len(loopring_balances) != 0:
-                    balances[str(Location.LOOPRING)] = loopring_balances
+                if isinstance(loopring_balances_raw, dict) and len(loopring_balances_raw) != 0:
+                    balances[str(Location.LOOPRING)] = loopring_balances_raw  # type: ignore[assignment]
 
         # retrieve nft balances if module is activated
         nfts = self.chains_aggregator.get_module('nfts')

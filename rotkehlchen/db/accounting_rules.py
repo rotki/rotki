@@ -748,7 +748,7 @@ def query_missing_accounting_rules(
         # iterator
         current_event_index = 0
         for _, event in bindings_and_events_iterator:
-            if accountant.processable_events_cache.get(event.identifier) is not None:  # type: ignore
+            if accountant.processable_events_cache.get(event.identifier) is not None:
                 current_event_index += 1
                 continue
 
@@ -759,7 +759,7 @@ def query_missing_accounting_rules(
                     (isinstance(event, EvmEvent) and event.group_identifier.startswith('BP1_'))
             ):
 
-                accountant.processable_events_cache.add(event.identifier, EventAccountingRuleStatus.PROCESSED)  # type: ignore  # noqa: E501
+                accountant.processable_events_cache.add(event.identifier, EventAccountingRuleStatus.PROCESSED)  # noqa: E501
                 current_event_index += 1
                 continue
 
@@ -770,9 +770,9 @@ def query_missing_accounting_rules(
                 event_specific_treatments=event_specific_treatments,
                 generic_treatments=generic_treatments,
             )
-            accountant.processable_events_cache.add(event.identifier, accounting_outcome)  # type: ignore
-            accountant.processable_events_cache_signatures.get(cache_identifier).append(event.identifier)  # type: ignore
-            accountant.processable_events_cache_signatures.get(event.identifier).append(event.identifier)  # type: ignore
+            accountant.processable_events_cache.add(event.identifier, accounting_outcome)
+            accountant.processable_events_cache_signatures.get(cache_identifier).append(event.identifier)
+            accountant.processable_events_cache_signatures.get(event.identifier).append(event.identifier)
 
             # the current event in addition to have an accounting rule could have a callback that
             # affects events that come after and is not enough to check the accounting rule
@@ -790,7 +790,7 @@ def query_missing_accounting_rules(
                 current_event_index += len(new_missing_accounting_rule)
                 if accounting_outcome is EventAccountingRuleStatus.NOT_PROCESSED:  # we processed it in the callback so is not missing  # noqa: E501
                     accountant.processable_events_cache.add(
-                        key=event.identifier,  # type: ignore  # the identifier is optional in the event
+                        key=event.identifier,  # the identifier is optional in the event
                         value=EventAccountingRuleStatus.PROCESSED,
                     )
 

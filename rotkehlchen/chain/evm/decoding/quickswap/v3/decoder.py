@@ -173,9 +173,9 @@ class Quickswapv3CommonDecoder(Quickswapv3LikeLPDecoder):
     # -- DecoderInterface methods
 
     def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return super().post_decoding_rules() | {
-            CPT_QUICKSWAP_V3_ROUTER: [(0, self._v3_router_post_decoding)],
-        }
+        rules = super().post_decoding_rules()
+        rules[CPT_QUICKSWAP_V3_ROUTER] = [(0, self._v3_router_post_decoding)]
+        return rules
 
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
         return {self.router_address: CPT_QUICKSWAP_V3_ROUTER}

@@ -383,7 +383,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                     if current_query_ts + time_step >= end_ts:
                         break  # end of time range query and last page. We are done.
                     # else update query ts
-                    current_query_ts += time_step  # type: ignore
+                    current_query_ts += time_step
                     continue
                 raise RemoteError(msg) from e
 
@@ -396,7 +396,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                         log.debug(f'Found an inner kucoin {case}. Skipping it.')
                         continue
 
-                    results.extend(deserialization_method(raw_result=raw_result))  # type: ignore[arg-type]  # deserialization_method return value will be correct for the specified case
+                    results.extend(deserialization_method(raw_result=raw_result))  # deserialization_method return value will be correct for the specified case  # noqa: E501
                 except (
                     DeserializationError,
                     KeyError,
@@ -426,7 +426,7 @@ class Kucoin(ExchangeInterface, SignatureGeneratorMixin):
                 if current_query_ts + time_step >= end_ts:
                     break  # end of time range query and last page. We are done.
                 # else update query ts
-                current_query_ts += time_step  # type: ignore
+                current_query_ts += time_step
 
             # Update pagination params per endpoint
             # NB: Copying the dict before updating it prevents losing the call args values

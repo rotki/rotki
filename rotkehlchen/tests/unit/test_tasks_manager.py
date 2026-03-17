@@ -336,7 +336,7 @@ def test_premium_status_error_conditions(
         task_manager.schedule()
         gevent.joinall(task_manager.running_greenlets)
 
-        messages = task_manager.database.msg_aggregator.rotki_notifier.messages   # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
+        messages = task_manager.database.msg_aggregator.rotki_notifier.messages  # rotki_notifier is MockRotkiNotifier  # noqa: E501
         assert messages[0].data == {'is_premium_active': False, 'expired': error_case[1]}
 
 
@@ -357,7 +357,7 @@ def test_premium_device_limit_error(
         task_manager.schedule()
         gevent.joinall(task_manager.running_greenlets)
 
-        messages = task_manager.database.msg_aggregator.rotki_notifier.messages   # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
+        messages = task_manager.database.msg_aggregator.rotki_notifier.messages  # rotki_notifier is MockRotkiNotifier  # noqa: E501
         assert len(messages) == 1
         assert messages[0].message_type == 'premium_status_update'
         assert messages[0].data == {
@@ -924,7 +924,7 @@ def test_update_lending_protocol_underlying_assets_task(
                 name=cache_key,
             ) is not None
 
-        assert len(task_manager.database.msg_aggregator.rotki_notifier.messages) == 0  # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
+        assert len(task_manager.database.msg_aggregator.rotki_notifier.messages) == 0  # rotki_notifier is MockRotkiNotifier  # noqa: E501
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

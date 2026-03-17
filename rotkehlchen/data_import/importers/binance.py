@@ -389,7 +389,7 @@ class BinanceDepositWithdrawEntry(BinanceSingleEntry):
     """This class processes Deposit and Withdraw actions
         which are AssetMovements in the internal representation"""
 
-    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # figure out how to mark final only in this class
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # figure out how to mark final only in this class  # noqa: E501
         'Deposit',
         'Buy Crypto',  # it's a direct buy where you deposit fiat and get credited with crypto
         'Fiat Deposit',
@@ -459,7 +459,7 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
     other staking rewards in the Binance program.
     """
 
-    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # figure out how to mark final only in this class
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # figure out how to mark final only in this class  # noqa: E501
         'ETH 2.0 Staking Rewards',
         'Launchpool Interest',
         'Staking Rewards',
@@ -639,7 +639,7 @@ class BinanceUSDMProgram(BinanceSingleEntry):
 class BinancePOSEntry(BinanceSingleEntry):
     """Processing POS related actions"""
 
-    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # type: ignore[misc]  # figure out how to mark final only in this class
+    AVAILABLE_OPERATIONS: Final[tuple[str, ...]] = (  # figure out how to mark final only in this class  # noqa: E501
         'POS savings interest',
         'POS savings purchase',
         'POS savings redemption',

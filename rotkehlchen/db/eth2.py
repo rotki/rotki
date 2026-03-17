@@ -478,9 +478,9 @@ class DBEth2:
                 event_subtypes=[HistoryEventSubType.CONSOLIDATE],
                 counterparties=[CPT_ETH2],
             )):
-                events.extend(events_db.get_history_events_internal(
+                events.extend(events_db.get_history_events_internal(  # type: ignore[no-matching-overload]  # no overload for EthStakingEventFilterQuery
                     cursor=cursor,
-                    filter_query=filter_query,  # type: ignore[arg-type]  # no overload for EthStakingEventFilterQuery
+                    filter_query=filter_query,
                 ))
 
             # Get withdrawal request events for each validator

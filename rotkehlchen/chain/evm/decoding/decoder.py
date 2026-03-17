@@ -144,12 +144,7 @@ class EvmDecodingRules(DecodingRulesBase):
     all_counterparties: set['CounterpartyDetails']
     addresses_to_counterparties: dict[ChecksumEvmAddress, str]
 
-    def __add__(self, other: 'EvmDecodingRules') -> 'EvmDecodingRules':
-        if not isinstance(other, EvmDecodingRules):
-            raise TypeError(
-                f'Can only add EvmDecodingRules to EvmDecodingRules. Got {type(other)}',
-            )
-
+    def __add__(self, other: 'EvmDecodingRules') -> 'EvmDecodingRules':  # type: ignore[override]
         intersection = set(other.input_data_rules).intersection(set(self.input_data_rules))
         if len(intersection) != 0:
             raise ValueError(f'Input data duplicates found in decoding rules for {intersection}')

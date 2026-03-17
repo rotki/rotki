@@ -571,7 +571,7 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
             movement_subtype = HistoryEventSubType.SPEND
 
         raw_data = self._paginated_api_query(
-            endpoint=endpoint,  # type: ignore  # mypy doesn't detect that the string is assigned once
+            endpoint=endpoint,  # mypy doesn't detect that the string is assigned once
             options={'limit': PAGINATION_LIMIT},
         )
 

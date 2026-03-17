@@ -49,7 +49,7 @@ def fixture_task_manager(
         api_task_greenlets=api_task_greenlets,
         database=database,
         cryptocompare=cryptocompare,
-        premium_sync_manager=MockPremiumSyncManager(),  # type: ignore
+        premium_sync_manager=MockPremiumSyncManager(),
         chains_aggregator=blockchain,
         exchange_manager=exchange_manager,
         deactivate_premium=lambda: None,

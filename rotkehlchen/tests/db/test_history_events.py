@@ -447,7 +447,7 @@ def test_read_write_customized_events_from_db(database: DBHandler, entries_limit
                 aggregate_by_group_ids=aggregate_by_group_ids,
             )
             if aggregate_by_group_ids is False:  # don't check the grouping case. Just make sure no exception is raised  # noqa: E501
-                filtered_ids = [x.tx_ref if isinstance(x, EvmEvent) else x.group_identifier for x in events]  # type: ignore  # events are not tuples when aggregate_by_group_ids is False  # noqa: E501
+                filtered_ids = [x.tx_ref if isinstance(x, EvmEvent) else x.group_identifier for x in events]  # events are not tuples when aggregate_by_group_ids is False # noqa: E501
                 assert filtered_ids == expected_ids
 
             db.get_history_events_count(  # don't check result, just check for exception
@@ -508,6 +508,7 @@ def test_delete_last_event(database):
         assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 1, 'Only the EVM event should be left'  # noqa: E501
 
     msg = db.delete_history_events_by_identifier(identifiers=[evm_group_identifier])
+    assert msg is not None
     assert 'was the last event of a transaction' in msg
     with db.db.conn.read_ctx() as cursor:
         assert len(db.get_history_events_internal(cursor, HistoryEventFilterQuery.make())) == 1, 'EVM event should be left'  # noqa: E501

@@ -201,10 +201,10 @@ def test_report_events_sort_by_columns(database):
             )
             for idx, event in enumerate(results):
                 field_value_fn = test_case['check_field']
-                field_value = field_value_fn(event)
+                field_value = field_value_fn(event)  # type: ignore[call-non-callable]
 
                 index = idx if is_ascending else len(results) - 1 - idx
-                expected_value = test_case['expected_values'][index]
+                expected_value = test_case['expected_values'][index]  # type: ignore[index]
                 assert field_value == expected_value
 
 

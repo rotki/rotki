@@ -36,7 +36,7 @@ if TYPE_CHECKING:
 
 @pytest.fixture(name='mock_coinbase')
 def fixture_mock_coinbase(messages_aggregator) -> Coinbase:
-    return Coinbase('coinbase1', str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)), object(), messages_aggregator)  # type: ignore  # noqa: E501
+    return Coinbase('coinbase1', str(uuid.uuid4()), base64.b64encode(make_random_bytes(32)), object(), messages_aggregator)  # noqa: E501
 
 
 def test_name(mock_coinbase):

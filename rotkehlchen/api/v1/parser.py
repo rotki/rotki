@@ -1,7 +1,7 @@
 
 import functools
 from collections.abc import Callable, Mapping
-from typing import Any
+from typing import Any, cast
 
 from flask import Request
 from flask.views import MethodView
@@ -26,7 +26,7 @@ class ResourceReadingParser(FlaskParser):
             error_status_code: int | None = None,
             error_headers: Mapping[str, str] | None = None,
             allow_async_validation: bool | None = False,
-    ) -> Callable:
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         """Decorator that injects parsed arguments into a view function or method.
 
         Edited from core parser to include the resource object.
@@ -40,15 +40,19 @@ class ResourceReadingParser(FlaskParser):
         # Optimization: If argmap is passed as a dictionary, we only need
         # to generate a Schema once
         if isinstance(argmap, Mapping):
-            if not isinstance(argmap, dict):
-                argmap = dict(argmap)
-            argmap = Schema.from_dict(argmap)()
+            argmap_mapping = cast('Mapping[str, Any]', argmap)
+            argmap_dict = (
+                cast('dict[str, Any]', argmap_mapping)
+                if isinstance(argmap_mapping, dict)
+                else dict(argmap_mapping.items())
+            )
+            argmap = Schema.from_dict(argmap_dict)()
 
-        def decorator(func: Callable) -> Callable:
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
             req_ = request_obj
 
             @functools.wraps(func)
-            def wrapper(*args: Any, **kwargs: Any) -> Callable:
+            def wrapper(*args: Any, **kwargs: Any) -> Any:
                 req_obj = req_
 
                 if not req_obj:
@@ -56,7 +60,7 @@ class ResourceReadingParser(FlaskParser):
 
                 # NOTE: At this point, argmap may be a Schema, or a callable
                 parsed_args = self.parse(
-                    args[0],  # This should be the self of the resource object
+                    cast('MethodView', args[0]),  # This should be the resource object
                     argmap,
                     req=req_obj,
                     location=location,
@@ -100,7 +104,11 @@ class ResourceReadingParser(FlaskParser):
         location = location or self.location
         data = None
         validators = _ensure_list_of_callables(validate)
-        schema = self._get_schema(argmap, resource_object)
+        schema = (
+            cast('Callable[[MethodView], Schema]', argmap)(resource_object)
+            if callable(argmap)
+            else self._get_schema(argmap, req)
+        )
         try:
             location_data = self._load_location_data(
                 schema=schema, req=req, location=location,
@@ -129,19 +137,6 @@ class ResourceReadingParser(FlaskParser):
             )
         return data
 
-    def _get_schema(
-            self,
-            argmap: ArgMap,
-            resource_object: MethodView,  # type: ignore[override]
-    ) -> Schema:
-        """Override the behaviour of the standard parser.
-
-        Initialize Schema with a callable that gets the resource object as argument.
-        The type ignore is due to the underlying original class having `Request` type there.
-        """
-        assert callable(argmap), 'Should only use this parser with a callable'
-        return argmap(resource_object)  # type: ignore
-
 
 class IgnoreKwargAfterPostLoadParser(FlaskParser):
     """A version of FlaskParser that does not augment with kwarg arguments after post_load"""
@@ -152,7 +147,7 @@ class IgnoreKwargAfterPostLoadParser(FlaskParser):
             kwargs: dict[str, Any],
             parsed_args: Mapping,
             as_kwargs: bool,
-            arg_name,
+            arg_name: str | None,
     ) -> tuple[tuple, Mapping]:
         return args, parsed_args
 

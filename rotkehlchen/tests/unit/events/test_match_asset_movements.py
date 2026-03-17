@@ -377,7 +377,7 @@ def test_match_asset_movements(database: 'DBHandler') -> None:
     assert matched_asset_movements[3] == withdrawal4
 
     # Check that the unmatched movements ws message was sent
-    assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(  # type: ignore  # pop_message will be present since it's a MockRotkiNotifier
+    assert database.msg_aggregator.rotki_notifier.pop_message() == MockedWsMessage(  # pop_message will be present since it's a MockRotkiNotifier  # noqa: E501
         message_type=WSMessageType.UNMATCHED_ASSET_MOVEMENTS,
         data={'count': (unmatched_count := 2)},
     )
@@ -974,7 +974,7 @@ def test_exchange_deposit_delayed_credit(database: 'DBHandler') -> None:
 
     assert matched_event.event_type == HistoryEventType.EXCHANGE_TRANSFER
     assert matched_event.event_subtype == HistoryEventSubType.SPEND
-    assert matched_event.counterparty == 'poloniex'  # type: ignore[attr-defined]
+    assert matched_event.counterparty == 'poloniex'
     assert matched_event.notes == f'Send 1 ETH from {user_address} to Poloniex'
     assert matched_event.extra_data == {'matched_asset_movement': {
         'group_identifier': asset_movement.group_identifier,
@@ -1138,7 +1138,7 @@ def test_deposit_withdrawal_direction(database: 'DBHandler') -> None:
                 history=[(movement_event := AssetMovement(
                     identifier=(movement_id := 1),
                     location=Location.KRAKEN,
-                    event_subtype=movement_type,  # type: ignore[arg-type]  # will only be spend or receive
+                    event_subtype=movement_type,  # will only be spend or receive
                     timestamp=TimestampMS(1520000000000),
                     asset=A_USDC,
                     amount=FVal('25'),

@@ -128,7 +128,7 @@ class IncludeExcludeListField(fields.Field[IncludeExcludeFilterData]):
         deserialized_behaviour = 'IN' if behaviour == 'include' else 'NOT IN'
         return IncludeExcludeFilterData(
             values=deserialized_values,  # type: ignore[arg-type] #  it should be a history event
-            operator=deserialized_behaviour,  # type: ignore[arg-type]
+            operator=deserialized_behaviour,
         )
 
 
@@ -283,8 +283,8 @@ class TaxFreeAfterPeriodField(fields.Field):
 
 class AmountField(fields.Field[FVal]):
 
-    @staticmethod
     def _serialize(
+            self,
             value: FVal | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -327,8 +327,8 @@ class PositiveAmountField(AmountField):
 
 class PriceField(fields.Field[FVal]):
 
-    @staticmethod
     def _serialize(
+            self,
             value: FVal | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -356,8 +356,8 @@ class PriceField(fields.Field[FVal]):
 
 class FloatingPercentageField(fields.Field[FVal]):
 
-    @staticmethod
     def _serialize(
+            self,
             value: FVal | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -436,8 +436,8 @@ class SerializableEnumField(fields.Field):
         self.enum_class = enum_class
         super().__init__(**kwargs)
 
-    @staticmethod
     def _serialize(
+            self,
             value: SerializableEnumMixin | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -477,8 +477,8 @@ class StrEnumField(fields.Field):
         self.enum_class = enum_class
         super().__init__(**kwargs)
 
-    @staticmethod
     def _serialize(
+            self,
             value: SerializableEnumMixin | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -511,8 +511,8 @@ class EvmChainNameField(fields.Field):
         self.limit_to = limit_to
         super().__init__(**kwargs)
 
-    @staticmethod
     def _serialize(
+            self,
             value: ChainID | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -549,8 +549,8 @@ class EvmChainLikeNameField(fields.Field):
         self.limit_to = limit_to
         super().__init__(**kwargs)
 
-    @staticmethod
     def _serialize(
+            self,
             value: SupportedBlockchain | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -618,8 +618,8 @@ class AssetField(fields.Field):
         self._asset_deserializer = ASSET_DESERIALIZERS.get(expected_type, expected_type)
         super().__init__(**kwargs)
 
-    @staticmethod
     def _serialize(
+            self,
             value: Asset | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -652,8 +652,8 @@ class UnionAssetField(fields.Field):
         self._deserializers = tuple(ASSET_DESERIALIZERS.get(t, t) for t in allowed_types)
         super().__init__(**kwargs)
 
-    @staticmethod
     def _serialize(
+            self,
             value: Asset | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -691,8 +691,8 @@ class MaybeAssetField(fields.Field):
         self.expected_type = expected_type
         super().__init__(**kwargs)
 
-    @staticmethod
     def _serialize(
+            self,
             value: Asset | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -721,8 +721,8 @@ class MaybeAssetField(fields.Field):
 
 class EvmAddressField(fields.Field):
 
-    @staticmethod
     def _serialize(
+            self,
             value: ChecksumEvmAddress | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -752,8 +752,8 @@ class EvmAddressField(fields.Field):
 
 class SolanaAddressField(fields.Field):
 
-    @staticmethod
     def _serialize(
+            self,
             value: SolanaAddress | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -785,8 +785,8 @@ class BaseTransactionHashField(fields.Field, ABC, Generic[T_TxHash]):
     def deserialize_string_value(value: str) -> T_TxHash:
         ...
 
-    @staticmethod
     def _serialize(
+            self,
             value: T_TxHash | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -839,8 +839,8 @@ class AssetTypeField(fields.Field):
         self.exclude_types = exclude_types
         super().__init__(**kwargs)
 
-    @staticmethod
     def _serialize(
+            self,
             value: AssetType | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -873,8 +873,8 @@ class LocationField(fields.Field):
         self.limit_to = limit_to
         super().__init__(**kwargs)
 
-    @staticmethod
     def _serialize(
+            self,
             value: Location | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -920,8 +920,8 @@ class ApiKeyField(fields.Field):
 
 class ApiSecretField(fields.Field):
 
-    @staticmethod
     def _serialize(
+            self,
             value: ApiSecret | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -963,8 +963,8 @@ class DirectoryField(fields.Field):
 
 class AssetConflictsField(fields.Field):
 
-    @staticmethod
     def _serialize(
+            self,
             value: dict[str, Any] | None,
             attr: str | None,  # pylint: disable=unused-argument
             obj: Any,
@@ -1003,7 +1003,7 @@ class AssetConflictsField(fields.Field):
 
             deserialized_dict[asset] = choice
 
-        return deserialized_dict  # type: ignore
+        return deserialized_dict
 
 
 class FileField(fields.Field):

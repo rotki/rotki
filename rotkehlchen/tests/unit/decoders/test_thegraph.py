@@ -618,7 +618,7 @@ def test_undelegate_horizon(
         asset=A_GRT_ARB,
         amount=ZERO,
         location_label=delegator_address,
-        notes=f'Undelegate 163.464055706537930283 GRT from indexer 0xECcDF8231326A9c5aaD32df76a633aaa4c49b104. Lock expires at {decoder.decoders["Thegraph"].timestamp_to_date(lock_expiration)}',  # type: ignore  # noqa: E501
+        notes=f'Undelegate 163.464055706537930283 GRT from indexer 0xECcDF8231326A9c5aaD32df76a633aaa4c49b104. Lock expires at {decoder.decoders["Thegraph"].timestamp_to_date(lock_expiration)}',  # noqa: E501
         counterparty=CPT_THEGRAPH,
         address=CONTRACT_STAKING_ARB,
     )]

@@ -540,6 +540,12 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
             notes=f'Cast {weight} votes for pool {bytes_to_address(context.tx_log.topics[2])}',
         )])
 
+    def _decode_claim_rewards_fee_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        return self._decode_claim_rewards_events(context=context, suffix='fee')
+
+    def _decode_claim_rewards_bribe_events(self, context: DecoderContext) -> EvmDecodingOutput:
+        return self._decode_claim_rewards_events(context=context, suffix='bribe')
+
     def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         parent_mappings = super().reload_data()
         decoder_mappings = self.addresses_to_decoders()
@@ -549,7 +555,7 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
         return dict(parent_mappings) | decoder_mappings
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        decoders = {
+        decoders: dict[ChecksumEvmAddress, tuple[Any, ...]] = {
             self.voting_escrow_address: (self._decode_voting_escrow_events,),
             self.voter_address: (self._decode_vote_events,),
         }
@@ -558,12 +564,12 @@ class VelodromeLikeDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderM
                 cursor=cursor,
                 key_parts=[self.gauge_fees_cache_type],
             ):
-                decoders[string_to_evm_address(addy)] = (lambda context: self._decode_claim_rewards_events(context=context, suffix='fee'),)  # noqa: E501
+                decoders[string_to_evm_address(addy)] = (self._decode_claim_rewards_fee_events,)
 
             for addy in globaldb_get_general_cache_values(
                 cursor=cursor,
                 key_parts=[self.gauge_bribes_cache_type],
             ):
-                decoders[string_to_evm_address(addy)] = (lambda context: self._decode_claim_rewards_events(context=context, suffix='bribe'),)  # noqa: E501
+                decoders[string_to_evm_address(addy)] = (self._decode_claim_rewards_bribe_events,)
 
             return decoders

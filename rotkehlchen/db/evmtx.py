@@ -65,7 +65,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
     # Index in the SQL result tuple where authorization fields (nonce, delegated_address) begin  # noqa: E501
     AUTHORIZATION_DATA_START_INDEX: ClassVar[int] = 13
 
-    def add_transactions(
+    def add_transactions(  # type: ignore[override]
             self,
             write_cursor: 'DBCursor',
             evm_transactions: list[EvmTransaction],
@@ -193,7 +193,8 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
     ) -> list[EvmInternalTransaction]:
         """Get all internal transactions under a parent tx_hash for a given chain"""
         chain_id = blockchain.to_chain_id()
-        address_filter, bindings = '', [parent_tx_hash, chain_id.serialize_for_db()]
+        address_filter = ''
+        bindings: list[Any] = [parent_tx_hash, chain_id.serialize_for_db()]
         if from_address is not None:
             address_filter += ' AND ITX.from_address=?'
             bindings.append(from_address)
@@ -273,12 +274,12 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         if chain is not None:
             chains = [chain]
             delete_query += ' WHERE chain_id = ?'
-            delete_bindings = (chain.to_chain_id().serialize_for_db(),)    # type: ignore[assignment]
+            delete_bindings = (chain.to_chain_id().serialize_for_db(),)
         else:
-            chains = get_args(SUPPORTED_EVM_CHAINS_TYPE)  # type: ignore[assignment]
+            chains = get_args(SUPPORTED_EVM_CHAINS_TYPE)
         if tx_hash is not None:
             delete_query += f' {"WHERE" if len(delete_bindings) == 0 else "AND"} tx_hash=?'
-            delete_bindings += (tx_hash,)  # type: ignore
+            delete_bindings += (tx_hash,)
 
         else:  # for entire chains, clear ranges
             for entry in chains:
@@ -302,7 +303,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         querystr = 'SELECT DISTINCT evm_transactions.tx_hash FROM evm_transactions '
         bindings = ()
         if tx_filter_query is not None:
-            filter_query, bindings = tx_filter_query.prepare(with_order=False, with_pagination=False)  # type: ignore  # noqa: E501
+            filter_query, bindings = tx_filter_query.prepare(with_order=False, with_pagination=False)  # noqa: E501
             querystr += filter_query + ' AND '
         else:
             querystr += ' WHERE '
@@ -310,7 +311,7 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
         querystr += 'evm_transactions.identifier NOT IN (SELECT tx_id from evmtx_receipts)'
         if limit is not None:
             querystr += 'LIMIT ?'
-            bindings = (*bindings, limit)  # type: ignore
+            bindings = (*bindings, limit)
 
         hashes = []
         with self.db.conn.read_ctx() as cursor:

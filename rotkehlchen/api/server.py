@@ -2,7 +2,7 @@ import json
 import logging
 import sys
 from http import HTTPStatus
-from typing import Any
+from typing import Any, NoReturn
 
 import werkzeug
 from flask import Blueprint, Flask, Response, abort, jsonify, request
@@ -379,13 +379,10 @@ def setup_urls(
         urls: URLS,
 ) -> None:
     for url_tuple in urls:
-        if len(url_tuple) == 2:
-            route, resource_cls = url_tuple
-            endpoint = resource_cls.__name__.lower()
-        elif len(url_tuple) == 3:
-            route, resource_cls, endpoint = url_tuple
-        else:
+        route, resource_cls, *maybe_endpoint = url_tuple
+        if len(maybe_endpoint) > 1:
             raise ValueError(f'Invalid URL format: {url_tuple!r}')
+        endpoint = maybe_endpoint[0] if len(maybe_endpoint) == 1 else resource_cls.__name__.lower()
         blueprint.add_url_rule(
             route,
             view_func=resource_cls.as_view(endpoint, rest_api_object=rest_api),
@@ -396,12 +393,12 @@ def endpoint_not_found(e: NotFound) -> Response:
     msg = 'invalid endpoint'
     # The isinstance check is because I am not sure if `e` is always going to
     # be a "NotFound" error here
-    if isinstance(e, NotFound):
+    if isinstance(e, NotFound) and isinstance(e.description, str):
         msg = e.description
     return api_response(wrap_in_fail_result(msg), HTTPStatus.NOT_FOUND)
 
 
-@parser.error_handler  # type: ignore
+@parser.error_handler
 @resource_parser.error_handler
 @ignore_kwarg_parser.error_handler
 def handle_request_parsing_error(
@@ -410,7 +407,7 @@ def handle_request_parsing_error(
         _schema: Schema,
         error_status_code: int | None,  # pylint: disable=unused-argument
         error_headers: dict | None,  # pylint: disable=unused-argument
-) -> None:
+) -> NoReturn:
     """ This handles request parsing errors generated for example by schema
     field validation failing."""
     msg = str(err)
@@ -424,6 +421,7 @@ def handle_request_parsing_error(
     err_response = jsonify(result=None, message=msg)
     err_response.status_code = HTTPStatus.BAD_REQUEST
     abort(err_response)
+    raise AssertionError('unreachable')
 
 
 class APIServer:
