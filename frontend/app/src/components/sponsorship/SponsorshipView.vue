@@ -53,7 +53,7 @@ const loginIndex = useLocalStorage<number>('rotki.sponsorship.login_index', -1);
 function getCurrentSponsor(): Sponsor {
   const length = sponsors.length;
   if (!drawer) {
-    const loginIndexVal = get(loginIndex);
+    const loginIndexVal = get<number>(loginIndex);
     // Login screen: determine and save the flipped index
     if (loginIndexVal === -1) {
       set(loginIndex, Math.floor(Math.random() * length));
@@ -62,10 +62,10 @@ function getCurrentSponsor(): Sponsor {
       // Flip from previous
       set(loginIndex, (loginIndexVal + 1) % length);
     }
-    return sponsors[get(loginIndex)];
+    return sponsors[get<number>(loginIndex)];
   }
   // Drawer: use the opposite of what's stored for login
-  const drawerIndex = (get(loginIndex) + 1) % length;
+  const drawerIndex = (get<number>(loginIndex) + 1) % length;
   return sponsors[drawerIndex];
 }
 

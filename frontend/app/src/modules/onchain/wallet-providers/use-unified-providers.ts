@@ -191,7 +191,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
   // Handle automatic provider selection with smart source preference
   async function handleAutoSelection(): Promise<void> {
     const currentProviders = get(availableProviders);
-    const prefs = get(preferences);
+    const prefs = get<ProviderPreferences>(preferences);
 
     if (!prefs.autoSelectSingle || currentProviders.length === 0) {
       return;
@@ -271,7 +271,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
 
     // Update preferences (automatically persisted by useLocalStorage)
     set(preferences, {
-      ...get(preferences),
+      ...get<ProviderPreferences>(preferences),
       lastSelectedUuid: uuid,
     });
 
@@ -301,7 +301,7 @@ function createUnifiedProvidersComposable(): UnifiedProvidersComposable {
 
     // Update preferences
     set(preferences, {
-      ...get(preferences),
+      ...get<ProviderPreferences>(preferences),
       lastSelectedUuid: undefined,
     });
 

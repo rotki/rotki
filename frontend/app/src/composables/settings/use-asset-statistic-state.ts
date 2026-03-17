@@ -40,7 +40,7 @@ export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefine
       if (!assetValue) {
         return false;
       }
-      return get(stateForAsset)[assetValue] !== undefined;
+      return get<Record<string, number>>(stateForAsset)[assetValue] !== undefined;
     },
     set(enabled: boolean) {
       const assetValue = toValue(asset);
@@ -49,20 +49,20 @@ export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefine
       }
       if (enabled) {
         set(stateForAsset, {
-          ...get(stateForAsset),
+          ...get<Record<string, number>>(stateForAsset),
           [assetValue]: get(useHistoricalAssetBalances) ? Preference.EVENTS : Preference.SNAPSHOT,
         });
       }
       else {
         set(stateForAsset, {
-          ...omit(get(stateForAsset), [assetValue]),
+          ...omit(get<Record<string, number>>(stateForAsset), [assetValue]),
         });
       }
     },
   });
 
   function getPreference(asset: string): Source | undefined {
-    const assetPreference = get(stateForAsset)[asset];
+    const assetPreference = get<Record<string, number>>(stateForAsset)[asset];
 
     if (assetPreference === undefined) {
       return undefined;
@@ -86,7 +86,7 @@ export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefine
     }
 
     set(stateForAsset, {
-      ...get(stateForAsset),
+      ...get<Record<string, number>>(stateForAsset),
       [assetValue]: enabled ? Preference.EVENTS : Preference.SNAPSHOT,
     });
   });
@@ -97,7 +97,7 @@ export function useAssetStatisticState(asset: MaybeRefOrGetter<string | undefine
     }
 
     if (get(rememberStateForAsset)) {
-      set(useHistoricalAssetBalances, get(stateForAsset)[asset] === Preference.EVENTS);
+      set(useHistoricalAssetBalances, get<Record<string, number>>(stateForAsset)[asset] === Preference.EVENTS);
     }
     else {
       set(useHistoricalAssetBalances, get(enabled));

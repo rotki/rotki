@@ -70,9 +70,9 @@ async function save(): Promise<boolean> {
   return success;
 }
 
-watchImmediate(modelValue, (modelValue) => {
-  if (isDefined(modelValue)) {
-    set(newDeviceName, get(modelValue, 'deviceName'));
+watchImmediate(modelValue, (value: PremiumDevice | undefined) => {
+  if (isDefined(value)) {
+    set(newDeviceName, get(value, 'deviceName'));
   }
   else {
     set(newDeviceName, '');

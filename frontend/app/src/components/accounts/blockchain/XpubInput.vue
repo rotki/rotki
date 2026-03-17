@@ -148,18 +148,18 @@ watch(errors, (errors) => {
     get(v$).$validate();
 });
 
-watchImmediate(xpub, (xpub) => {
-  set(xpubKey, xpub?.xpub || '');
-  const prefix = getPrefix(xpub?.xpubType);
+watchImmediate(xpub, (xpubVal: XpubPayload | undefined) => {
+  set(xpubKey, xpubVal?.xpub || '');
+  const prefix = getPrefix(xpubVal?.xpubType);
   if (prefix !== XpubPrefix.XPUB)
     set(xpubKeyPrefix, prefix);
 
   const derivation = get(derivationPath);
-  if (derivation && derivation.replace(/'/g, '').replace(/\/$/, '') !== xpub?.derivationPath)
-    set(derivationPath, xpub?.derivationPath || '');
+  if (derivation && derivation.replace(/'/g, '').replace(/\/$/, '') !== xpubVal?.derivationPath)
+    set(derivationPath, xpubVal?.derivationPath || '');
 
-  if (disabled && xpub?.xpub && xpub.xpubType) {
-    const currentPrefix = getPrefix(xpub.xpubType);
+  if (disabled && xpubVal?.xpub && xpubVal.xpubType) {
+    const currentPrefix = getPrefix(xpubVal.xpubType);
     set(detectedType, currentPrefix);
   }
 });
@@ -186,7 +186,7 @@ watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, key, path]) => {
     payload = {
       derivationPath: path?.replace(/'/g, '').replace(/\/$/, '') ?? undefined,
       xpub: key.trim(),
-      xpubType: getKeyType(prefix as XpubPrefix),
+      xpubType: getKeyType(prefix),
     };
   }
   set(xpub, payload);

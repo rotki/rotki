@@ -9,7 +9,7 @@ const isAnimationEnabledSetting = useSharedLocalStorage('rotki.animations_enable
 
 function defaultSessionSettings(): SessionSettings {
   return {
-    animationsEnabled: get(isAnimationEnabledSetting),
+    animationsEnabled: get<boolean>(isAnimationEnabledSetting),
     timeframe: TimeFramePeriod.ALL,
   };
 }

@@ -50,7 +50,9 @@ const mockHistoryTransactionAccounts = {
 
 const mockStatusUpdater = {
   fetchDisabled: vi.fn(() => false),
+  getStatus: vi.fn(() => Status.NONE),
   isFirstLoad: vi.fn(() => true),
+  loading: vi.fn(() => false),
   resetStatus: vi.fn(),
   setStatus: vi.fn(),
 };

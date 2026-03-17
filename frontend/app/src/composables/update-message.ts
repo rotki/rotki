@@ -20,11 +20,11 @@ export const useUpdateMessage = createSharedComposable(() => {
   };
 
   watch(appVersion, (appVersion) => {
-    setShowNotes(appVersion, get(lastUsedVersion));
+    setShowNotes(appVersion, get<string | null>(lastUsedVersion));
   });
 
   onMounted(() => {
-    setShowNotes(get(appVersion), get(lastUsedVersion));
+    setShowNotes(get(appVersion), get<string | null>(lastUsedVersion));
   });
 
   return {

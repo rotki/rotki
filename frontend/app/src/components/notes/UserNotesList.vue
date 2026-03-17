@@ -155,7 +155,7 @@ watch([premium], async () => {
     await fetchNotes();
 });
 
-debouncedWatch(
+watchDebounced(
   search,
   (search) => {
     set(titleSubstring, search);
