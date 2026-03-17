@@ -21,6 +21,11 @@ WHITESPACE_RE = re.compile(
     re.DOTALL | re.MULTILINE,
 )
 
+# TODO: Remove this exception in the next DB upgrade (v52). `evm_internal_tx_conflicts`
+# is currently created by user data migration 24, which runs after schema sanity checks
+# during login for existing databases.
+OPTIONAL_USERDB_TABLES_DURING_SANITY_CHECK = {'evm_internal_tx_conflicts'}
+
 
 def db_script_normalizer(text: str) -> str:
     """Normalize the string for comparison of the DB schema. That means removing all
@@ -78,6 +83,16 @@ def sanity_check_impl(
     for obj_type, minimized_data in [('table', minimized_schema), ('index', minimized_indexes)]:
         db_data = db_objects[obj_type]
         missing = minimized_data.keys() - db_data.keys()
+        if (
+                obj_type == 'table' and
+                db_name == 'user' and
+                (optional_missing := missing.intersection(OPTIONAL_USERDB_TABLES_DURING_SANITY_CHECK))  # noqa: E501
+        ):
+            logger.warning(
+                f'Skipping temporary sanity check table requirement for {optional_missing}. '
+                'They are created by a post-login data migration.',
+            )
+            missing -= optional_missing
         if missing:
             msg = f'{obj_type.capitalize()}s {missing} are missing from your {db_name} database.'
             if obj_type == 'table':
