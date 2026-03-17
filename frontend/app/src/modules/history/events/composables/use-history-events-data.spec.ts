@@ -38,6 +38,7 @@ vi.mock('@/modules/history/events/use-history-events-status', () => ({
 vi.mock('@/modules/assets/use-assets-store', () => ({
   useAssetsStore: vi.fn(() => ({
     isAssetIgnored: mockIsAssetIgnored,
+    ignoredAssets: ref<string[]>([]),
   })),
 }));
 
@@ -61,6 +62,8 @@ vi.mock('@/utils/collection', () => ({
 }));
 
 describe('use-history-events-data', () => {
+  let scope: ReturnType<typeof effectScope>;
+
   function createMockEvent(overrides: Omit<Partial<HistoryEventEntry>, 'entryType'> = {}): HistoryEventEntry {
     const event: HistoryEventEntry = {
       address: '0x5A0b54D5dc17e0AadC383d2db43B0a0D3E029c4c',
@@ -97,11 +100,13 @@ describe('use-history-events-data', () => {
 
   beforeEach(() => {
     setActivePinia(createPinia());
+    scope = effectScope();
     mockFetchHistoryEvents.mockResolvedValue({ data: [] });
     mockIsAssetIgnored.mockReturnValue(false);
   });
 
   afterEach(() => {
+    scope.stop();
     vi.clearAllMocks();
   });
 
@@ -121,7 +126,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       expect(get(result.groups)).toHaveLength(2);
       expect(get(result.groups)[0]).toEqual(event1);
@@ -144,7 +149,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       expect(get(result.groups)).toHaveLength(2);
     });
@@ -164,7 +169,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       expect(get(result.loading)).toBe(true);
 
@@ -186,7 +191,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       expect(result.eventsLoading).toBeDefined();
     });
@@ -205,7 +210,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await nextTick();
 
@@ -225,7 +230,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       expect(get(result.groups)).toEqual([]);
       expect(get(result.events)).toEqual([]);
@@ -253,7 +258,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       expect(get(result.found)).toBe(100);
       expect(get(result.limit)).toBe(10);
@@ -296,7 +301,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      useHistoryEventsData(options, emit);
+      scope.run(() => useHistoryEventsData(options, emit));
 
       await waitForFetchEvents();
 
@@ -330,7 +335,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -356,7 +361,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -381,7 +386,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -406,7 +411,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -432,7 +437,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -461,7 +466,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -495,7 +500,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -535,7 +540,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      useHistoryEventsData(options, emit);
+      scope.run(() => useHistoryEventsData(options, emit));
 
       await waitForFetchEvents();
 
@@ -567,7 +572,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       // Let the first (immediate) fetch start
       await nextTick();
@@ -606,7 +611,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
       expect(get(result.rawEvents)).toHaveLength(1);
@@ -643,7 +648,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       // After immediate watch fires, eventsLoading should be true
       await nextTick();
@@ -686,7 +691,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       // Let first fetch start
       await nextTick();
@@ -730,7 +735,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      useHistoryEventsData(options, emit);
+      scope.run(() => useHistoryEventsData(options, emit));
 
       await waitForFetchEvents();
       mockCancelByTag.mockClear();
@@ -758,7 +763,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      useHistoryEventsData(options, emit);
+      scope.run(() => useHistoryEventsData(options, emit));
 
       await waitForFetchEvents();
       mockCancelByTag.mockClear();
@@ -786,7 +791,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
       expect(get(result.rawEvents)).toHaveLength(1);
@@ -856,7 +861,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -885,7 +890,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -912,7 +917,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -960,7 +965,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -989,7 +994,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       await waitForFetchEvents();
 
@@ -1012,7 +1017,7 @@ describe('use-history-events-data', () => {
       };
 
       const emit = vi.fn();
-      const result = useHistoryEventsData(options, emit);
+      const result = scope.run(() => useHistoryEventsData(options, emit))!;
 
       expect(result.isSubgroupIncomplete([])).toBe(false);
     });

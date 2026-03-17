@@ -41,6 +41,7 @@ vi.mock('@/composables/api/history/events', async () => {
       fetchTransactionsTask: vi.fn().mockResolvedValue({}),
       deleteHistoryEvent: vi.fn(),
       decodeTransactions: vi.fn().mockResolvedValue({}),
+      getUndecodedTransactionsBreakdown: vi.fn().mockResolvedValue({}),
       redecodeMissingEvents: vi.fn(),
       addHistoryEvent: vi.fn(),
       editHistoryEvent: vi.fn(),

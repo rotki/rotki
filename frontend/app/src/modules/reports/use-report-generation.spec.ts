@@ -40,13 +40,17 @@ vi.mock('@/modules/tasks/use-task-handler', () => ({
 }));
 
 describe('useReportGeneration', () => {
+  let scope: ReturnType<typeof effectScope>;
+
   beforeEach(() => {
     setActivePinia(createPinia());
+    scope = effectScope();
     vi.clearAllMocks();
     vi.useFakeTimers();
   });
 
   afterEach(() => {
+    scope.stop();
     vi.useRealTimers();
   });
 
@@ -58,7 +62,7 @@ describe('useReportGeneration', () => {
       });
       mockFetchReports.mockResolvedValue(undefined);
 
-      const { generateReport } = useReportGeneration();
+      const { generateReport } = scope.run(() => useReportGeneration())!;
       const result = await generateReport({ end: 2000, start: 1000 });
 
       expect(result).toBe(42);
@@ -76,7 +80,7 @@ describe('useReportGeneration', () => {
         success: false,
       });
 
-      const { generateReport } = useReportGeneration();
+      const { generateReport } = scope.run(() => useReportGeneration())!;
       const result = await generateReport({ end: 2000, start: 1000 });
 
       expect(result).toBe(-1);
@@ -89,7 +93,7 @@ describe('useReportGeneration', () => {
         success: true,
       });
 
-      const { generateReport } = useReportGeneration();
+      const { generateReport } = scope.run(() => useReportGeneration())!;
       const result = await generateReport({ end: 2000, start: 1000 });
 
       expect(result).toBe(0);
@@ -105,7 +109,7 @@ describe('useReportGeneration', () => {
         success: true,
       });
 
-      const { exportReportData } = useReportGeneration();
+      const { exportReportData } = scope.run(() => useReportGeneration())!;
       const result = await exportReportData({ fromTimestamp: 1000, toTimestamp: 2000 });
 
       expect(result).toEqual(mockData);
@@ -121,7 +125,7 @@ describe('useReportGeneration', () => {
         success: false,
       });
 
-      const { exportReportData } = useReportGeneration();
+      const { exportReportData } = scope.run(() => useReportGeneration())!;
       const result = await exportReportData({ fromTimestamp: 1000, toTimestamp: 2000 });
 
       expect(result).toEqual({});

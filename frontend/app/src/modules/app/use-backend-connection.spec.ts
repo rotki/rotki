@@ -39,13 +39,17 @@ vi.mock('@shared/utils', () => ({
 }));
 
 describe('useBackendConnection', () => {
+  let scope: ReturnType<typeof effectScope>;
+
   beforeEach(() => {
     setActivePinia(createPinia());
+    scope = effectScope();
     vi.useFakeTimers();
     vi.clearAllMocks();
   });
 
   afterEach(() => {
+    scope.stop();
     vi.useRealTimers();
     vi.clearAllMocks();
   });
@@ -65,7 +69,7 @@ describe('useBackendConnection', () => {
       });
 
       const { useBackendConnection } = await importModule();
-      const { getVersion } = useBackendConnection();
+      const { getVersion } = scope.run(() => useBackendConnection())!;
       await getVersion();
 
       const store = useMainStore();
@@ -80,7 +84,7 @@ describe('useBackendConnection', () => {
       mockInfo.mockResolvedValue({});
 
       const { useBackendConnection } = await importModule();
-      const { getVersion } = useBackendConnection();
+      const { getVersion } = scope.run(() => useBackendConnection())!;
       await getVersion();
 
       const store = useMainStore();
@@ -98,7 +102,7 @@ describe('useBackendConnection', () => {
       });
 
       const { useBackendConnection } = await importModule();
-      const { getInfo } = useBackendConnection();
+      const { getInfo } = scope.run(() => useBackendConnection())!;
       await getInfo();
 
       const store = useMainStore();
@@ -115,7 +119,7 @@ describe('useBackendConnection', () => {
       set(connectionEnabled, false);
 
       const { useBackendConnection } = await importModule();
-      const { connect } = useBackendConnection();
+      const { connect } = scope.run(() => useBackendConnection())!;
       connect();
 
       vi.advanceTimersByTime(5000);
@@ -127,7 +131,7 @@ describe('useBackendConnection', () => {
       mockPing.mockRejectedValue(new Error('timeout'));
 
       const { useBackendConnection } = await importModule();
-      const { connect } = useBackendConnection();
+      const { connect } = scope.run(() => useBackendConnection())!;
       connect();
 
       for (let i = 0; i <= 20; i++) {
@@ -144,7 +148,7 @@ describe('useBackendConnection', () => {
       mockPing.mockRejectedValue(new Error('timeout'));
 
       const { useBackendConnection } = await importModule();
-      const { cancelConnectionAttempts, connect } = useBackendConnection();
+      const { cancelConnectionAttempts, connect } = scope.run(() => useBackendConnection())!;
       connect();
 
       vi.advanceTimersByTime(2000);
@@ -164,7 +168,7 @@ describe('useBackendConnection', () => {
       const store = useMainStore();
 
       const { useBackendConnection } = await importModule();
-      const { stopConnectionAttempts } = useBackendConnection();
+      const { stopConnectionAttempts } = scope.run(() => useBackendConnection())!;
       stopConnectionAttempts();
 
       expect(get(store.connectionEnabled)).toBe(false);

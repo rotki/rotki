@@ -1,7 +1,7 @@
 import type { RefreshTransactionsParams } from './types';
 import type { Exchange } from '@/types/exchanges';
 import type { ChainAddress } from '@/types/history/events';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryRefreshStateStore } from '@/store/history/refresh-state';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events/schemas';
 import { Status } from '@/types/status';
@@ -131,9 +131,12 @@ vi.mock('@/store/history/query-status/events-query-status', () => ({
 }));
 
 describe('useRefreshTransactions', () => {
+  let scope: ReturnType<typeof effectScope>;
+
   beforeEach(() => {
     const pinia = createPinia();
     setActivePinia(pinia);
+    scope = effectScope();
 
     // Reset the refresh state store
     const refreshStateStore = useHistoryRefreshStateStore();
@@ -148,9 +151,13 @@ describe('useRefreshTransactions', () => {
     set(mockExchangeData.syncingExchanges, mockExchanges);
   });
 
+  afterEach(() => {
+    scope.stop();
+  });
+
   describe('basic refresh flow', () => {
     it('should perform full refresh when called without parameters', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -166,7 +173,7 @@ describe('useRefreshTransactions', () => {
       mockStatusUpdater.fetchDisabled.mockReturnValue(true);
 
       // First, perform a refresh to mark all accounts/exchanges as refreshed
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
       mockStatusUpdater.fetchDisabled.mockReturnValue(false);
       await refreshTransactions();
 
@@ -183,7 +190,7 @@ describe('useRefreshTransactions', () => {
 
     it('should set LOADING status on first load', async () => {
       mockStatusUpdater.isFirstLoad.mockReturnValue(true);
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -192,7 +199,7 @@ describe('useRefreshTransactions', () => {
 
     it('should set REFRESHING status on subsequent loads', async () => {
       mockStatusUpdater.isFirstLoad.mockReturnValue(false);
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -202,7 +209,7 @@ describe('useRefreshTransactions', () => {
 
   describe('account-specific refresh', () => {
     it('should refresh only specified accounts', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
       const specificAccounts = [mockEvmAccounts[0]];
 
       await refreshTransactions({
@@ -217,7 +224,7 @@ describe('useRefreshTransactions', () => {
     });
 
     it('should not query exchanges when only accounts are specified', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({
         payload: { accounts: mockEvmAccounts },
@@ -230,7 +237,7 @@ describe('useRefreshTransactions', () => {
 
   describe('exchange refresh', () => {
     it('should refresh exchanges when exchanges are specified', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({
         payload: { exchanges: mockExchanges },
@@ -241,7 +248,7 @@ describe('useRefreshTransactions', () => {
     });
 
     it('should refresh all connected exchanges in full refresh', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -253,7 +260,7 @@ describe('useRefreshTransactions', () => {
   describe('new account detection', () => {
     it('should bypass fetchDisabled when new accounts are detected', async () => {
       mockStatusUpdater.fetchDisabled.mockReturnValue(true);
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -265,7 +272,7 @@ describe('useRefreshTransactions', () => {
   describe('new exchange detection', () => {
     it('should bypass fetchDisabled when new exchanges are detected', async () => {
       mockStatusUpdater.fetchDisabled.mockReturnValue(true);
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -278,7 +285,7 @@ describe('useRefreshTransactions', () => {
     it('should add new accounts to pending when refresh is running', async () => {
       vi.useFakeTimers();
 
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
       const firstRefresh = refreshTransactions();
 
       // Trigger another refresh while first is running
@@ -299,7 +306,7 @@ describe('useRefreshTransactions', () => {
 
   describe('chain filtering', () => {
     it('should filter accounts by specified chains', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({
         chains: ['eth'],
@@ -311,7 +318,7 @@ describe('useRefreshTransactions', () => {
 
   describe('disableEvmEvents parameter', () => {
     it('should execute only ETH_WITHDRAWALS and BLOCK_PRODUCTIONS queries when disableEvmEvents is true', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({
         disableEvmEvents: true,
@@ -330,7 +337,7 @@ describe('useRefreshTransactions', () => {
     });
 
     it('should execute custom queries when disableEvmEvents is false', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({
         disableEvmEvents: false,
@@ -349,7 +356,7 @@ describe('useRefreshTransactions', () => {
 
   describe('online queries', () => {
     it('should execute ETH_WITHDRAWALS and BLOCK_PRODUCTIONS queries on full refresh', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -362,7 +369,7 @@ describe('useRefreshTransactions', () => {
     });
 
     it('should execute custom queries when specified', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({
         payload: {
@@ -380,7 +387,7 @@ describe('useRefreshTransactions', () => {
   describe('error handling', () => {
     it('should handle errors gracefully and reset status', async () => {
       mockTransactionSync.syncTransactionsByChains.mockRejectedValue(new Error('Sync failed'));
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -389,7 +396,7 @@ describe('useRefreshTransactions', () => {
 
     it('should continue with other operations when one fails', async () => {
       mockTransactionSync.syncTransactionsByChains.mockRejectedValue(new Error('Sync failed'));
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -400,7 +407,7 @@ describe('useRefreshTransactions', () => {
       mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus.mockRejectedValueOnce(
         new Error('Fatal error'),
       );
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -411,7 +418,7 @@ describe('useRefreshTransactions', () => {
       mockHistoryTransactionDecoding.fetchUndecodedTransactionsStatus.mockRejectedValueOnce(
         new Error('Fatal error'),
       );
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -423,7 +430,7 @@ describe('useRefreshTransactions', () => {
 
   describe('transaction chain type sync', () => {
     it('should sync EVM transactions', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -437,7 +444,7 @@ describe('useRefreshTransactions', () => {
     });
 
     it('should sync Bitcoin transactions', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -452,7 +459,7 @@ describe('useRefreshTransactions', () => {
     it('should not sync transactions for empty account types', async () => {
       mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([]);
 
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -462,7 +469,7 @@ describe('useRefreshTransactions', () => {
 
   describe('query status management', () => {
     it('should initialize query status for EVM accounts', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -472,7 +479,7 @@ describe('useRefreshTransactions', () => {
     it('should reset query status when no accounts to refresh', async () => {
       mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([]);
 
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({
         payload: { accounts: [], exchanges: [] },
@@ -484,7 +491,7 @@ describe('useRefreshTransactions', () => {
 
   describe('userInitiated parameter', () => {
     it('should pass userInitiated to fetchDisabled check', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({ userInitiated: true });
 
@@ -492,7 +499,7 @@ describe('useRefreshTransactions', () => {
     });
 
     it('should default userInitiated to false', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -502,7 +509,7 @@ describe('useRefreshTransactions', () => {
 
   describe('scheduler state hooks', () => {
     it('should call onHistoryStarted when refresh starts with accounts', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -510,7 +517,7 @@ describe('useRefreshTransactions', () => {
     });
 
     it('should call onHistoryFinished when refresh completes', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -519,7 +526,7 @@ describe('useRefreshTransactions', () => {
 
     it('should call onHistoryFinished even when errors occur', async () => {
       mockTransactionSync.syncTransactionsByChains.mockRejectedValue(new Error('Sync failed'));
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -530,7 +537,7 @@ describe('useRefreshTransactions', () => {
       mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue([]);
       set(mockExchangeData.syncingExchanges, []);
 
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({
         payload: { accounts: [], exchanges: [] },
@@ -549,7 +556,7 @@ describe('useRefreshTransactions', () => {
         callOrder.push('syncTransactionsByChains');
       });
 
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -566,7 +573,7 @@ describe('useRefreshTransactions', () => {
         callOrder.push('onHistoryFinished');
       });
 
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -577,7 +584,7 @@ describe('useRefreshTransactions', () => {
   describe('exchange filtering', () => {
     it('should filter out exchanges not in syncingExchanges', async () => {
       const unknownExchange: Exchange = { location: 'unknown_exchange', name: 'Unknown' };
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions({
         payload: { exchanges: [mockExchanges[0], unknownExchange] },
@@ -592,7 +599,7 @@ describe('useRefreshTransactions', () => {
     it('should drain pending exchanges after refresh completes', async () => {
       vi.useFakeTimers();
 
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
       const firstRefresh = refreshTransactions();
 
       // Queue pending exchanges while first refresh is running
@@ -616,7 +623,7 @@ describe('useRefreshTransactions', () => {
       mockStatusUpdater.isFirstLoad.mockReturnValue(false);
 
       // First refresh to mark all accounts as known
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
       await refreshTransactions({ userInitiated: true });
 
       vi.clearAllMocks();
@@ -633,7 +640,7 @@ describe('useRefreshTransactions', () => {
   describe('full refresh with no new accounts', () => {
     it('should not refresh accounts when all accounts are already known and not user initiated', async () => {
       // First refresh to mark all accounts as known
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
       await refreshTransactions();
 
       vi.clearAllMocks();
@@ -650,7 +657,7 @@ describe('useRefreshTransactions', () => {
 
   describe('undecoded transactions', () => {
     it('should queue fetchUndecodedTransactionsBreakdown after operations complete', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -658,7 +665,7 @@ describe('useRefreshTransactions', () => {
     });
 
     it('should queue fetchUndecodedTransactionsStatus for decodable accounts', async () => {
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -670,7 +677,7 @@ describe('useRefreshTransactions', () => {
       // Return only non-decodable accounts
       mockHistoryTransactionAccounts.getAllAccounts.mockReturnValue(mockBitcoinAccounts);
 
-      const { refreshTransactions } = useRefreshTransactions();
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
 
       await refreshTransactions();
 
@@ -688,7 +695,7 @@ describe('useRefreshTransactions', () => {
       let refreshFn: ((params?: RefreshTransactionsParams) => Promise<void>) | undefined;
 
       scope.run(() => {
-        const { refreshTransactions } = useRefreshTransactions();
+        const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
         refreshFn = refreshTransactions;
       });
 

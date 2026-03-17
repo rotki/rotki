@@ -2,7 +2,7 @@ import type { AccountPayload, XpubAccountPayload } from '@/types/blockchain/acco
 import type { Tag } from '@/types/tags';
 import { Blockchain } from '@rotki/common';
 import { createMockCSV } from '@test/mocks/file';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useAccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 import { useTagsApi } from '@/composables/api/tags';
 import { useAccountImport } from '@/modules/accounts/import-export/use-account-import';
@@ -108,9 +108,16 @@ vi.mock('@/composables/info/chains', async () => {
 });
 
 describe('useAccountImport', () => {
+  let scope: ReturnType<typeof effectScope>;
+
   beforeEach(() => {
     setActivePinia(createPinia());
+    scope = effectScope();
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    scope.stop();
   });
 
   it('should import valid accounts from csv', async () => {
@@ -123,7 +130,7 @@ describe('useAccountImport', () => {
       '0x124,,eth,Name2,tag1;tag2',
     ]);
 
-    const { importAccounts } = useAccountImport();
+    const { importAccounts } = scope.run(() => useAccountImport())!;
     await importAccounts(mockFile);
 
     expect(addAccount).toHaveBeenCalledTimes(1);
@@ -156,7 +163,7 @@ describe('useAccountImport', () => {
       '0x125,,gnosis,Name3,tag1;tag2',
     ]);
 
-    const { importAccounts } = useAccountImport();
+    const { importAccounts } = scope.run(() => useAccountImport())!;
     await importAccounts(mockFile);
 
     expect(addAccount).toHaveBeenCalledTimes(2);
@@ -183,7 +190,7 @@ describe('useAccountImport', () => {
       'Name2,tag1;tag2',
     ]);
 
-    const { importAccounts } = useAccountImport();
+    const { importAccounts } = scope.run(() => useAccountImport())!;
 
     await expect(importAccounts(mockFile)).resolves.toBeUndefined();
     expect(mockNotifyError).toHaveBeenCalledWith(
@@ -201,7 +208,7 @@ describe('useAccountImport', () => {
       `${XPUB},derivationPath=${DERIVATION_PATH},btc,Test Pub,tag1`,
     ]);
 
-    const { importAccounts } = useAccountImport();
+    const { importAccounts } = scope.run(() => useAccountImport())!;
     await importAccounts(mockFile);
 
     expect(addAccount).toHaveBeenCalledTimes(1);
@@ -227,7 +234,7 @@ describe('useAccountImport', () => {
       `${VALIDATOR_1},ownershipPercentage=80,eth2,,`,
     ]);
 
-    const { importAccounts } = useAccountImport();
+    const { importAccounts } = scope.run(() => useAccountImport())!;
     await importAccounts(mockFile);
 
     expect(save).toHaveBeenCalledTimes(1);
@@ -263,7 +270,7 @@ describe('useAccountImport', () => {
       `${VALIDATOR_2},ownershipPercentage=99,eth2,,`,
     ]);
 
-    const { importAccounts } = useAccountImport();
+    const { importAccounts } = scope.run(() => useAccountImport())!;
     await importAccounts(mockFile);
 
     expect(save).toHaveBeenCalledTimes(1);
