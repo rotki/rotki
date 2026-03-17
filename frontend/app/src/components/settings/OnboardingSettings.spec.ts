@@ -81,7 +81,9 @@ describe('onboarding-settings', () => {
   async function createWrapper(): Promise<VueWrapper<InstanceType<typeof OnboardingSettings>>> {
     const pinia = createPinia();
     setActivePinia(pinia);
-    await useBackendConnection().getInfo();
+    const scope = effectScope();
+    await scope.run(async () => useBackendConnection().getInfo())!;
+    scope.stop();
 
     return mount(OnboardingSettings, {
       global: {

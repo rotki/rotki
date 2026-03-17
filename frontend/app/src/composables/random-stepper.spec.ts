@@ -1,40 +1,49 @@
-import type * as Vue from 'vue';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
+import { mount, type VueWrapper } from '@vue/test-utils';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useRandomStepper } from '@/composables/random-stepper';
 
 describe('useRandomStepper', () => {
   beforeAll(() => {
-    const pinia = createPinia();
     vi.useFakeTimers();
-    setActivePinia(pinia);
+  });
 
-    vi.mock('vue', async () => {
-      const mod = await vi.importActual<typeof Vue>('vue');
+  function mountStepper(steps: number, interval: number = 1000): { wrapper: VueWrapper; result: ReturnType<typeof useRandomStepper> } {
+    let result!: ReturnType<typeof useRandomStepper>;
+    const wrapper = mount(defineComponent({
+      setup() {
+        result = useRandomStepper(steps, interval);
+        return {};
+      },
+      render: () => null,
+    }));
+    return { wrapper, result };
+  }
 
-      return {
-        ...mod,
-        onMounted: vi.fn().mockImplementation((fn: () => void) => fn()),
-      };
-    });
+  let wrapper: VueWrapper;
+
+  beforeEach(() => {
+    wrapper?.unmount();
   });
 
   it('should not randomise when it is a single message', () => {
-    const { step, steps } = useRandomStepper(1, 1000);
+    const { wrapper: w, result: { step, steps } } = mountStepper(1);
+    wrapper = w;
 
     expect(get(step)).toBe(1);
-    expect(get(steps)).toBe(1);
+    expect(steps).toBe(1);
 
     vi.advanceTimersByTime(1000);
 
     expect(get(step)).toBe(1);
-    expect(get(steps)).toBe(1);
+    expect(steps).toBe(1);
   });
 
   it('should randomise when there are multiple messages', () => {
-    const { step, steps } = useRandomStepper(5, 1000);
+    const { wrapper: w, result: { step, steps } } = mountStepper(5);
+    wrapper = w;
 
     expect(get(step)).toBe(1);
-    expect(get(steps)).toBe(5);
+    expect(steps).toBe(5);
 
     vi.advanceTimersByTime(1000);
 
@@ -52,10 +61,11 @@ describe('useRandomStepper', () => {
   });
 
   it('should not randomise when timer is paused', () => {
-    const { step, steps, onPause, onResume } = useRandomStepper(5, 1000);
+    const { wrapper: w, result: { step, steps, onPause, onResume } } = mountStepper(5);
+    wrapper = w;
 
     expect(get(step)).toBe(1);
-    expect(get(steps)).toBe(5);
+    expect(steps).toBe(5);
 
     onPause();
     vi.advanceTimersByTime(1000);
@@ -79,10 +89,11 @@ describe('useRandomStepper', () => {
   });
 
   it('should reset random timer when user navigates', async () => {
-    const { step, steps, onNavigate } = useRandomStepper(5, 1000);
+    const { wrapper: w, result: { step, steps, onNavigate } } = mountStepper(5);
+    wrapper = w;
 
     expect(get(step)).toBe(1);
-    expect(get(steps)).toBe(5);
+    expect(steps).toBe(5);
 
     vi.advanceTimersByTime(900);
     await onNavigate(2);

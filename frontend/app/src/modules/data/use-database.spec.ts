@@ -27,8 +27,10 @@ describe('useDatabase', () => {
 
   let mockUserIdentifier: ReturnType<typeof ref<string | undefined>>;
   let mockDataDirectory: ReturnType<typeof ref<string | undefined>>;
+  let scope: ReturnType<typeof effectScope>;
 
   beforeEach(async () => {
+    scope = effectScope();
     vi.resetModules();
 
     // Create fresh refs for each test
@@ -75,13 +77,14 @@ describe('useDatabase', () => {
     // Clean up localStorage
     localStorage.removeItem(localStorageKey);
 
+    scope.stop();
     vi.clearAllMocks();
   });
 
   describe('database initialization', () => {
     it('should not be ready when user is not set', async () => {
       const { useDatabase } = await import('./use-database');
-      const { isReady } = useDatabase();
+      const { isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
 
@@ -92,7 +95,7 @@ describe('useDatabase', () => {
       set(mockUserIdentifier, testUsername);
 
       const { useDatabase } = await import('./use-database');
-      const { isReady } = useDatabase();
+      const { isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
 
@@ -104,7 +107,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { isReady } = useDatabase();
+      const { isReady } = scope.run(() => useDatabase())!;
 
       // Wait for watch to execute
       await nextTick();
@@ -118,7 +121,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(50);
@@ -132,7 +135,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(50);
@@ -152,7 +155,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(100);
@@ -183,7 +186,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(100);
@@ -210,7 +213,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(100);
@@ -234,7 +237,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(100);
@@ -264,7 +267,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(100);
@@ -281,7 +284,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(100);
@@ -305,7 +308,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(100);
@@ -334,7 +337,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(100);
@@ -356,7 +359,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(100);
@@ -393,7 +396,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { db, isReady } = useDatabase();
+      const { db, isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(100);
@@ -419,7 +422,7 @@ describe('useDatabase', () => {
 
       const { useDatabase } = await import('./use-database');
       // Don't destructure db - we need to access the getter each time to get updated value
-      const database = useDatabase();
+      const database = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(50);
@@ -454,7 +457,7 @@ describe('useDatabase', () => {
       set(mockDataDirectory, testDataDirectory);
 
       const { useDatabase } = await import('./use-database');
-      const { isReady } = useDatabase();
+      const { isReady } = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(50);
@@ -478,7 +481,7 @@ describe('useDatabase', () => {
 
       const { useDatabase } = await import('./use-database');
       // Don't destructure db - we need to access the getter each time to get updated value
-      const database = useDatabase();
+      const database = scope.run(() => useDatabase())!;
 
       await nextTick();
       await wait(50);

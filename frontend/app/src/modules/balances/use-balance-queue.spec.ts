@@ -1,5 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { type ComputedRef, nextTick, ref } from 'vue';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { type ComputedRef, type EffectScope, nextTick, ref } from 'vue';
 import { BalanceQueueService } from '@/modules/balances/services/balance-queue';
 
 const mockAnyEventsDecoding = ref<boolean>(false);
@@ -13,14 +13,21 @@ vi.mock('@/modules/history/events/use-history-events-status', () => ({
 const { useBalanceQueue } = await import('@/modules/balances/use-balance-queue');
 
 describe('useBalanceQueue', () => {
+  let scope: EffectScope;
+
   beforeEach(() => {
+    scope = effectScope();
     vi.useFakeTimers();
     BalanceQueueService.resetInstance();
     set(mockAnyEventsDecoding, false);
   });
 
+  afterEach(() => {
+    scope.stop();
+  });
+
   it('should process token detection items', async () => {
-    const { queueTokenDetection, stats } = useBalanceQueue();
+    const { queueTokenDetection, stats } = scope.run(() => useBalanceQueue())!;
 
     const fetchFn = vi.fn().mockResolvedValue(undefined);
     await queueTokenDetection('eth', ['0x123'], fetchFn);
@@ -31,7 +38,7 @@ describe('useBalanceQueue', () => {
   });
 
   it('should process balance query items', async () => {
-    const { queueBalanceQueries, stats } = useBalanceQueue();
+    const { queueBalanceQueries, stats } = scope.run(() => useBalanceQueue())!;
 
     const fetchFn = vi.fn().mockResolvedValue(undefined);
     await queueBalanceQueries(['eth', 'btc'], fetchFn);
@@ -43,7 +50,7 @@ describe('useBalanceQueue', () => {
   });
 
   it('should reset state when singleton is reset between sessions', async () => {
-    const { queueBalanceQueries, stats } = useBalanceQueue();
+    const { queueBalanceQueries, stats } = scope.run(() => useBalanceQueue())!;
 
     // Session 1: process some items
     const fetchFn = vi.fn().mockResolvedValue(undefined);
@@ -56,7 +63,7 @@ describe('useBalanceQueue', () => {
     BalanceQueueService.resetInstance();
 
     // Session 2: get a fresh composable (simulates re-login)
-    const session2 = useBalanceQueue();
+    const session2 = scope.run(() => useBalanceQueue())!;
 
     // Stats should be clean — no stale data from session 1
     expect(get(session2.stats).completed).toBe(0);
@@ -76,7 +83,7 @@ describe('useBalanceQueue', () => {
   it('should block processing while events are decoding', async () => {
     set(mockAnyEventsDecoding, true);
 
-    const { queueTokenDetection, stats } = useBalanceQueue();
+    const { queueTokenDetection, stats } = scope.run(() => useBalanceQueue())!;
 
     const fetchFn = vi.fn().mockResolvedValue(undefined);
     const promise = queueTokenDetection('eth', ['0x123'], fetchFn);

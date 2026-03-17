@@ -1,18 +1,23 @@
+import type { EffectScope } from 'vue';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useIntervalScheduler } from './use-interval-scheduler';
 
 describe('useIntervalScheduler', () => {
+  let scope: EffectScope;
+
   beforeEach(() => {
+    scope = effectScope();
     vi.useFakeTimers();
   });
 
   afterEach(() => {
+    scope.stop();
     vi.useRealTimers();
   });
 
   it('should call callback on each interval tick', async () => {
     const callback = vi.fn().mockResolvedValue(undefined);
-    const scheduler = useIntervalScheduler({ callback, intervalMs: 1000 });
+    const scheduler = scope.run(() => useIntervalScheduler({ callback, intervalMs: 1000 }))!;
 
     scheduler.start();
 
@@ -29,7 +34,7 @@ describe('useIntervalScheduler', () => {
 
   it('should call callback immediately when start is called with immediate=true', async () => {
     const callback = vi.fn().mockResolvedValue(undefined);
-    const scheduler = useIntervalScheduler({ callback, intervalMs: 5000 });
+    const scheduler = scope.run(() => useIntervalScheduler({ callback, intervalMs: 5000 }))!;
 
     scheduler.start(true);
     await vi.advanceTimersByTimeAsync(0);
@@ -41,7 +46,7 @@ describe('useIntervalScheduler', () => {
 
   it('should not call callback immediately when start is called with immediate=false', async () => {
     const callback = vi.fn().mockResolvedValue(undefined);
-    const scheduler = useIntervalScheduler({ callback, intervalMs: 5000 });
+    const scheduler = scope.run(() => useIntervalScheduler({ callback, intervalMs: 5000 }))!;
 
     scheduler.start(false);
     await vi.advanceTimersByTimeAsync(0);
@@ -53,7 +58,7 @@ describe('useIntervalScheduler', () => {
 
   it('should prevent double-start', async () => {
     const callback = vi.fn().mockResolvedValue(undefined);
-    const scheduler = useIntervalScheduler({ callback, intervalMs: 1000 });
+    const scheduler = scope.run(() => useIntervalScheduler({ callback, intervalMs: 1000 }))!;
 
     scheduler.start();
     scheduler.start();
@@ -67,7 +72,7 @@ describe('useIntervalScheduler', () => {
 
   it('should stop the interval on stop', async () => {
     const callback = vi.fn().mockResolvedValue(undefined);
-    const scheduler = useIntervalScheduler({ callback, intervalMs: 1000 });
+    const scheduler = scope.run(() => useIntervalScheduler({ callback, intervalMs: 1000 }))!;
 
     scheduler.start();
     await vi.advanceTimersByTimeAsync(1000);
@@ -82,7 +87,7 @@ describe('useIntervalScheduler', () => {
 
   it('should allow restart after stop', async () => {
     const callback = vi.fn().mockResolvedValue(undefined);
-    const scheduler = useIntervalScheduler({ callback, intervalMs: 1000 });
+    const scheduler = scope.run(() => useIntervalScheduler({ callback, intervalMs: 1000 }))!;
 
     scheduler.start();
     scheduler.stop();
@@ -97,7 +102,7 @@ describe('useIntervalScheduler', () => {
 
   it('should handle stop when not started', () => {
     const callback = vi.fn();
-    const scheduler = useIntervalScheduler({ callback, intervalMs: 1000 });
+    const scheduler = scope.run(() => useIntervalScheduler({ callback, intervalMs: 1000 }))!;
 
     expect(() => scheduler.stop()).not.toThrow();
   });

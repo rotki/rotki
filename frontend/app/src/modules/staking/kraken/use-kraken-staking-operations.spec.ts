@@ -51,9 +51,7 @@ vi.mock('@/modules/tasks/use-task-store', () => ({
 }));
 
 vi.mock('@/store/settings/frontend', () => ({
-  useFrontendSettingsStore: vi.fn(() => ({
-    itemsPerPage: 10,
-  })),
+  useFrontendSettingsStore: vi.fn(() => reactive({ itemsPerPage: 10 })),
 }));
 
 function defaultEvents(): KrakenStakingEvents {
@@ -68,13 +66,17 @@ function defaultEvents(): KrakenStakingEvents {
 }
 
 describe('useKrakenStakingOperations', () => {
+  let scope: ReturnType<typeof effectScope>;
+
   beforeEach(() => {
     setActivePinia(createPinia());
+    scope = effectScope();
     vi.clearAllMocks();
     mockIsTaskRunning.mockReturnValue(false);
   });
 
   afterEach(() => {
+    scope.stop();
     vi.clearAllMocks();
   });
 
@@ -84,7 +86,7 @@ describe('useKrakenStakingOperations', () => {
 
       mockFetchKrakenStakingEvents.mockRejectedValueOnce(new Error('Request timeout'));
 
-      const { fetchEvents } = useKrakenStakingOperations();
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
       const statusStore = useStatusStore();
 
       await fetchEvents();
@@ -106,7 +108,7 @@ describe('useKrakenStakingOperations', () => {
       mockFetchKrakenStakingEvents.mockResolvedValue(eventsData);
       mockRefreshKrakenStaking.mockResolvedValue({ taskId: 1 });
 
-      const { fetchEvents } = useKrakenStakingOperations();
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
       const statusStore = useStatusStore();
 
       await fetchEvents();
@@ -122,7 +124,7 @@ describe('useKrakenStakingOperations', () => {
       mockFetchKrakenStakingEvents.mockResolvedValueOnce(defaultEvents());
       mockRefreshKrakenStaking.mockRejectedValueOnce(new Error('Backend unresponsive'));
 
-      const { fetchEvents } = useKrakenStakingOperations();
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
       const statusStore = useStatusStore();
 
       await fetchEvents();
@@ -135,7 +137,7 @@ describe('useKrakenStakingOperations', () => {
     it('should skip when task is already running', async () => {
       mockIsTaskRunning.mockReturnValue(true);
 
-      const { fetchEvents } = useKrakenStakingOperations();
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
       await fetchEvents();
 
       expect(mockFetchKrakenStakingEvents).not.toHaveBeenCalled();
@@ -145,7 +147,7 @@ describe('useKrakenStakingOperations', () => {
       mockFetchKrakenStakingEvents.mockResolvedValue(defaultEvents());
       mockRefreshKrakenStaking.mockResolvedValue({ taskId: 1 });
 
-      const { fetchEvents } = useKrakenStakingOperations();
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
       const dateFilter = { fromTimestamp: 1000, toTimestamp: 2000 };
 
       await fetchEvents(false, dateFilter);
@@ -164,7 +166,7 @@ describe('useKrakenStakingOperations', () => {
       mockFetchKrakenStakingEvents.mockResolvedValue(defaultEvents());
       mockRefreshKrakenStaking.mockResolvedValue({ taskId: 1 });
 
-      const { fetchEvents } = useKrakenStakingOperations();
+      const { fetchEvents } = scope.run(() => useKrakenStakingOperations())!;
       await fetchEvents(true);
 
       expect(mockRefreshKrakenStaking).toHaveBeenCalledOnce();
@@ -176,7 +178,7 @@ describe('useKrakenStakingOperations', () => {
       mockFetchKrakenStakingEvents.mockResolvedValue(defaultEvents());
       mockRefreshKrakenStaking.mockResolvedValue({ taskId: 1 });
 
-      const { updatePagination } = useKrakenStakingOperations();
+      const { updatePagination } = scope.run(() => useKrakenStakingOperations())!;
 
       await updatePagination({
         ascending: [true],
