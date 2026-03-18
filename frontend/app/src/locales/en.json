@@ -1515,6 +1515,7 @@
         "remove_asset": "Remove Asset",
         "return_wrapped": "Return Wrapped",
         "reward": "Reward",
+        "spam": "Spam",
         "spend": "Spend"
       },
       "history_event_type": {
