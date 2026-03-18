@@ -2700,6 +2700,7 @@ Decode transactions that haven't been decoded yet
                   {
                       "chain": "ethereum",
                       "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742",
+                      "timestamp": 1700000000,
                       "action": "repull",
                       "repull_reason": "all_zero_gas",
                       "last_retry_ts": 1700000000,
@@ -2716,6 +2717,7 @@ Decode transactions that haven't been decoded yet
    :resjson list[object] result.entries: The list of unresolved internal transaction conflicts that need action.
    :resjson string result.entries.chain: Chain name.
    :resjson string result.entries.tx_hash: Transaction hash in hex format.
+   :resjson int result.entries.timestamp: Unix timestamp of the transaction, or ``null`` if the transaction is not found in the local database.
    :resjson string result.entries.action: Required action. Either ``repull`` or ``fix_redecode``.
    :resjson string result.entries.repull_reason: Reason for repull. Values are ``all_zero_gas`` and ``other``. ``null`` for ``fix_redecode`` rows.
    :resjson string result.entries.redecode_reason: Reason for redecode. Values are ``mixed_zero_gas``, ``duplicate_exact_rows`` and ``mixed_zero_gas_and_duplicate``. ``null`` for ``repull`` rows.
@@ -2727,8 +2729,13 @@ Decode transactions that haven't been decoded yet
    :reqjson int[optional] limit: Maximum number of rows to return.
    :reqjson int[optional] offset: Number of rows to skip.
    :reqjson string[optional] tx_hash: Filter rows by a specific EVM transaction hash.
+   :reqjson string[optional] chain: Filter rows by chain name (e.g. ``"ethereum"``, ``"optimism"``).
+   :reqjson int[optional] from_timestamp: Unix timestamp. Only return rows whose transaction timestamp is greater than or equal to this value. Defaults to ``0``.
+   :reqjson int[optional] to_timestamp: Unix timestamp. Only return rows whose transaction timestamp is less than or equal to this value. Defaults to current time. Rows without a known transaction timestamp are always included.
    :reqjson bool[optional] fixed: If ``true``, return fixed rows. Defaults to ``false`` (unfixed rows).
    :reqjson bool[optional] failed: If ``true``, return only rows with a recorded failed retry (`last_retry_ts` and `last_error` set).
+   :reqjson list[optional] order_by_attributes: List of attributes to order by. Valid values: ``chain``, ``tx_hash``, ``timestamp``, ``action``, ``repull_reason``, ``redecode_reason``, ``last_retry_ts``, ``last_error``. Defaults to ``["chain", "tx_hash"]``.
+   :reqjson list[optional] ascending: List of booleans corresponding to each ``order_by_attributes`` entry. ``true`` for ascending, ``false`` for descending.
    :statuscode 200: Conflicts successfully returned.
    :statuscode 401: User is not logged in.
    :statuscode 409: Other error. Check error message for details.

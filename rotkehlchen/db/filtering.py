@@ -2638,3 +2638,123 @@ class HistoricalBalancesFilterQuery(DBFilterQuery, FilterWithTimestamp):
             filter_str = 'AND ' + filter_str[6:]
 
         return filter_str, bindings
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBInternalTxConflictsFailedFilter(DBFilter):
+    """Filter for rows that have a recorded failed retry."""
+    failed: bool = False
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        if not self.failed:
+            return [], []
+
+        return [
+            'c.last_retry_ts IS NOT NULL AND c.last_error IS NOT NULL',
+        ], []
+
+
+INTERNAL_TX_CONFLICTS_JOIN: Final = (
+    'LEFT JOIN evm_transactions et '
+    'ON et.tx_hash = c.transaction_hash AND et.chain_id = c.chain '
+)
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBNullSafeTimestampFilter(DBTimestampFilter):
+    """Timestamp filter that also includes rows where the timestamp is NULL.
+
+    Useful for LEFT JOIN queries where the joined table may not have a matching row.
+    """
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        filters, bindings = super().prepare()
+        if len(filters) == 0:
+            return [], []
+
+        timestamp_field = self.timestamp_field or 'timestamp'
+        null_safe = f'({timestamp_field} IS NULL OR ({" AND ".join(filters)}))'
+        return [null_safe], bindings
+
+
+INTERNAL_TX_CONFLICTS_COLUMN_MAP: Final = {
+    'chain': 'c.chain',
+    'tx_hash': 'c.transaction_hash',
+    'timestamp': 'et.timestamp',
+    'action': 'c.action',
+    'repull_reason': 'c.repull_reason',
+    'redecode_reason': 'c.redecode_reason',
+    'last_retry_ts': 'c.last_retry_ts',
+    'last_error': 'c.last_error',
+}
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class InternalTxConflictsFilterQuery(DBFilterQuery, FilterWithTimestamp):
+
+    @classmethod
+    def make(
+            cls: type['InternalTxConflictsFilterQuery'],
+            from_ts: Timestamp,
+            to_ts: Timestamp,
+            tx_hash: EVMTxHash | None = None,
+            chain_id: ChainID | None = None,
+            fixed: bool = False,
+            failed: bool = False,
+            limit: int | None = None,
+            offset: int | None = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
+    ) -> 'InternalTxConflictsFilterQuery':
+        if order_by_rules is not None:
+            resolved_rules = []
+            for attr, asc in order_by_rules:
+                if attr not in INTERNAL_TX_CONFLICTS_COLUMN_MAP:
+                    raise InvalidFilter(
+                        f'Invalid order_by attribute {attr}. '
+                        f'Valid values: {", ".join(INTERNAL_TX_CONFLICTS_COLUMN_MAP)}',
+                    )
+                resolved_rules.append((INTERNAL_TX_CONFLICTS_COLUMN_MAP[attr], asc))
+        else:
+            resolved_rules = [('c.chain', True), ('c.transaction_hash', True)]
+
+        filter_query = cls.create(
+            and_op=True,
+            limit=limit if limit is not None else (-1 if offset is not None else None),
+            offset=offset if offset is not None else (0 if limit is not None else None),
+            order_by_rules=resolved_rules,
+        )
+        filter_query.timestamp_filter = DBNullSafeTimestampFilter(
+            and_op=True,
+            from_ts=from_ts,
+            to_ts=to_ts,
+            timestamp_field='et.timestamp',
+        )
+        filters: list[DBFilter] = [
+            DBEqualsFilter(
+                and_op=True,
+                column='fixed',
+                value=int(fixed),
+                alias='c',
+            ),
+            filter_query.timestamp_filter,
+        ]
+        if tx_hash is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='transaction_hash',
+                value=tx_hash,
+                alias='c',
+            ))
+        if chain_id is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='chain',
+                value=chain_id.serialize_for_db(),
+                alias='c',
+            ))
+        if failed:
+            filters.append(
+                DBInternalTxConflictsFailedFilter(and_op=True, failed=True),
+            )
+        filter_query.filters = filters
+        return filter_query

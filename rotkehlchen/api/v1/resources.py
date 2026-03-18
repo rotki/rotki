@@ -304,7 +304,10 @@ from .types import ModuleWithBalances, ModuleWithStats, TaskName
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
-    from rotkehlchen.db.filtering import HistoryEventFilterQuery
+    from rotkehlchen.db.filtering import (
+        HistoryEventFilterQuery,
+        InternalTxConflictsFilterQuery,
+    )
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -3721,19 +3724,11 @@ class InternalTxConflictsResource(BaseMethodView):
     def get(
             self,
             async_query: bool,
-            tx_hash: 'EVMTxHash | None' = None,
-            fixed: bool = False,
-            failed: bool = False,
-            limit: int | None = None,
-            offset: int | None = None,
+            filter_query: 'InternalTxConflictsFilterQuery',
     ) -> Response:
         return self.rest_api.get_pending_internal_tx_repull_conflicts(
             async_query=async_query,
-            tx_hash=tx_hash,
-            fixed=fixed,
-            failed=failed,
-            limit=limit,
-            offset=offset,
+            filter_query=filter_query,
         )
 
 
