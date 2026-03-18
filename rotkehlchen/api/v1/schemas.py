@@ -65,6 +65,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import (
+    INTERNAL_TX_CONFLICTS_COLUMN_MAP,
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetsFilterQuery,
@@ -76,6 +77,7 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
     HistoryEventWithCounterpartyFilterQuery,
     HistoryEventWithTxRefFilterQuery,
+    InternalTxConflictsFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
@@ -4702,10 +4704,57 @@ class RefetchTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
                         )
 
 
-class InternalTxConflictsSchema(AsyncQueryArgumentSchema, DBPaginationSchema):
+class InternalTxConflictsSchema(
+        AsyncQueryArgumentSchema,
+        TimestampRangeSchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
     tx_hash = EVMTransactionHashField(load_default=None)
+    chain = EvmChainNameField(load_default=None)
     fixed = fields.Boolean(load_default=False)
     failed = fields.Boolean(load_default=False)
+
+    @validates_schema
+    def validate_order_by_attributes(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data.get('order_by_attributes') is not None:
+            for attr in data['order_by_attributes']:
+                if attr is not None and attr not in INTERNAL_TX_CONFLICTS_COLUMN_MAP:
+                    raise ValidationError(
+                        message=f'Invalid order_by attribute {attr}. '
+                        f'Valid values: {", ".join(INTERNAL_TX_CONFLICTS_COLUMN_MAP)}',
+                        field_name='order_by_attributes',
+                    )
+
+    @post_load
+    def make_internal_tx_conflicts_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        filter_query = InternalTxConflictsFilterQuery.make(
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            tx_hash=data.get('tx_hash'),
+            chain_id=data.get('chain'),
+            fixed=data['fixed'],
+            failed=data['failed'],
+            limit=data.get('limit'),
+            offset=data.get('offset'),
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['chain', 'tx_hash'],
+                is_ascending_by_default=True,
+            ),
+        )
+        return {
+            'async_query': data['async_query'],
+            'filter_query': filter_query,
+        }
 
 
 class AddressesInteraction(Schema):

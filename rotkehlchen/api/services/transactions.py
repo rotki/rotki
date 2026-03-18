@@ -18,6 +18,7 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
+    InternalTxConflictsFilterQuery,
     SolanaTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -573,11 +574,7 @@ class TransactionsService:
 
     def get_pending_internal_tx_repull_conflicts(
             self,
-            tx_hash: EVMTxHash | None = None,
-            fixed: bool = False,
-            failed: bool = False,
-            limit: int | None = None,
-            offset: int | None = None,
+            filter_query: InternalTxConflictsFilterQuery,
     ) -> dict[str, Any]:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if not table_exists(cursor, 'evm_internal_tx_conflicts'):
@@ -586,17 +583,11 @@ class TransactionsService:
             else:
                 entries = get_pending_internal_tx_repull_conflicts(
                     cursor=cursor,
-                    tx_hash=tx_hash,
-                    fixed=fixed,
-                    failed=failed,
-                    limit=limit,
-                    offset=offset,
+                    filter_query=filter_query,
                 )
                 entries_total = count_pending_internal_tx_repull_conflicts(
                     cursor=cursor,
-                    tx_hash=tx_hash,
-                    fixed=fixed,
-                    failed=failed,
+                    filter_query=filter_query,
                 )
 
         return {
@@ -605,17 +596,18 @@ class TransactionsService:
                     {
                         'chain': chain_id.to_name(),
                         'tx_hash': str(row_tx_hash),
+                        'timestamp': tx_timestamp,
                         'action': action,
                         'repull_reason': repull_reason,
                         'redecode_reason': redecode_reason,
                         'last_retry_ts': last_retry_ts,
                         'last_error': last_error,
                     }
-                    for chain_id, row_tx_hash, action, repull_reason, redecode_reason, last_retry_ts, last_error in entries  # noqa: E501
+                    for chain_id, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error in entries  # noqa: E501
                 ],
                 'entries_found': len(entries),
                 'entries_total': entries_total,
-                'entries_limit': -1 if limit is None else limit,
+                'entries_limit': -1 if filter_query.pagination is None else filter_query.pagination.limit,  # noqa: E501
             },
             'message': '',
             'status_code': HTTPStatus.OK,

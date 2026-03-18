@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, Final, cast
 
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, TX_DECODED, HistoryMappingState
+from rotkehlchen.db.filtering import INTERNAL_TX_CONFLICTS_JOIN
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
@@ -12,6 +13,7 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.filtering import InternalTxConflictsFilterQuery
 
 INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE: Final = 'fix_redecode'
 INTERNAL_TX_CONFLICT_ACTION_REPULL: Final = 'repull'
@@ -202,43 +204,26 @@ def get_internal_tx_conflicts(
 
 def get_pending_internal_tx_repull_conflicts(
         cursor: 'DBCursor',
-        tx_hash: EVMTxHash | None = None,
-        fixed: bool = False,
-        failed: bool = False,
-        limit: int | None = None,
-        offset: int | None = None,
-) -> list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, str, str | None, str | None, int | None, str | None]]:  # noqa: E501
-    """Return internal tx conflicts with action and metadata."""
-    query = (
-        'SELECT chain, transaction_hash, action, repull_reason, redecode_reason, last_retry_ts, last_error '  # noqa: E501
-        'FROM evm_internal_tx_conflicts WHERE fixed=?'
+        filter_query: 'InternalTxConflictsFilterQuery',
+) -> list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int | None, str, str | None, str | None, int | None, str | None]]:  # noqa: E501
+    """Return internal tx conflicts with action and metadata, including the transaction timestamp."""  # noqa: E501
+    base_query = (
+        'SELECT c.chain, c.transaction_hash, et.timestamp, c.action, '
+        'c.repull_reason, c.redecode_reason, c.last_retry_ts, c.last_error '
+        f'FROM evm_internal_tx_conflicts c {INTERNAL_TX_CONFLICTS_JOIN}'
     )
-    bindings: list[object] = [int(fixed)]
-    if tx_hash is not None:
-        query += ' AND transaction_hash=?'
-        bindings.append(tx_hash)
-    if failed:
-        query += ' AND last_retry_ts IS NOT NULL AND last_error IS NOT NULL'
-    query += ' ORDER BY chain, transaction_hash'
-    if limit is not None:
-        query += ' LIMIT ?'
-        bindings.append(limit)
-    if offset is not None:
-        if limit is None:
-            query += ' LIMIT -1'
-        query += ' OFFSET ?'
-        bindings.append(offset)
-
-    entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, str, str | None, str | None, int | None, str | None]] = []  # noqa: E501
-    for chain, row_tx_hash, action, repull_reason, redecode_reason, last_retry_ts, last_error in cursor.execute(  # noqa: E501
-            query,
+    filter_str, bindings = filter_query.prepare()
+    entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int | None, str, str | None, str | None, int | None, str | None]] = []  # noqa: E501
+    for row_chain, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error in cursor.execute(  # noqa: E501
+            base_query + filter_str,
             bindings,
     ):
-        chain_id = ChainID.deserialize_from_db(chain)
+        chain_id = ChainID.deserialize_from_db(row_chain)
         assert chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
         entries.append((
             cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', chain_id),
             deserialize_evm_tx_hash(row_tx_hash),
+            tx_timestamp,
             action,
             repull_reason,
             redecode_reason,
@@ -251,20 +236,17 @@ def get_pending_internal_tx_repull_conflicts(
 
 def count_pending_internal_tx_repull_conflicts(
         cursor: 'DBCursor',
-        tx_hash: EVMTxHash | None = None,
-        fixed: bool = False,
-        failed: bool = False,
+        filter_query: 'InternalTxConflictsFilterQuery',
 ) -> int:
     """Count internal tx conflicts matching the pending-conflicts filters."""
-    query = 'SELECT COUNT(*) FROM evm_internal_tx_conflicts WHERE fixed=?'
-    bindings: list[object] = [int(fixed)]
-    if tx_hash is not None:
-        query += ' AND transaction_hash=?'
-        bindings.append(tx_hash)
-    if failed:
-        query += ' AND last_retry_ts IS NOT NULL AND last_error IS NOT NULL'
-
-    return cursor.execute(query, bindings).fetchone()[0]
+    filter_str, bindings = filter_query.prepare(
+        with_pagination=False,
+        with_order=False,
+    )
+    return cursor.execute(
+        f'SELECT COUNT(*) FROM evm_internal_tx_conflicts c {INTERNAL_TX_CONFLICTS_JOIN}' + filter_str,  # noqa: E501
+        bindings,
+    ).fetchone()[0]
 
 
 def set_internal_tx_conflict_fixed(

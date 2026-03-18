@@ -10,7 +10,7 @@ from rotkehlchen.db.internal_tx_conflicts import (
 )
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID
+from rotkehlchen.types import ChainID, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -48,6 +48,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         {
             'chain': 'ethereum',
             'tx_hash': str(tx_hash_pending),
+            'timestamp': None,
             'action': INTERNAL_TX_CONFLICT_ACTION_REPULL,
             'repull_reason': INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS,
             'redecode_reason': None,
@@ -57,6 +58,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         {
             'chain': 'ethereum',
             'tx_hash': str(tx_hash_failed),
+            'timestamp': None,
             'action': INTERNAL_TX_CONFLICT_ACTION_REPULL,
             'repull_reason': INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS,
             'redecode_reason': None,
@@ -66,6 +68,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         {
             'chain': 'ethereum',
             'tx_hash': str(tx_hash_pending_redecode),
+            'timestamp': None,
             'action': INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE,
             'repull_reason': None,
             'redecode_reason': INTERNAL_TX_CONFLICT_REDECODE_REASON_DUPLICATE_EXACT_ROWS,
@@ -75,6 +78,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         {
             'chain': 'ethereum',
             'tx_hash': str(tx_hash_retry_without_error),
+            'timestamp': None,
             'action': INTERNAL_TX_CONFLICT_ACTION_REPULL,
             'repull_reason': INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS,
             'redecode_reason': None,
@@ -86,6 +90,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         (
             entry['chain'],
             entry['tx_hash'],
+            entry['timestamp'],
             entry['action'],
             entry['repull_reason'],
             entry['redecode_reason'],
@@ -97,6 +102,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         (
             entry['chain'],
             entry['tx_hash'],
+            entry['timestamp'],
             entry['action'],
             entry['repull_reason'],
             entry['redecode_reason'],
@@ -171,3 +177,107 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         str(tx_hash_pending),
         str(tx_hash_failed),
     }
+
+
+def test_get_pending_internal_tx_conflicts_chain_and_timestamp_filters(
+        rotkehlchen_api_server: 'APIServer',
+) -> None:
+    tx_hash_eth_early = make_evm_tx_hash()
+    tx_hash_optimism = make_evm_tx_hash()
+    tx_hash_eth_late = make_evm_tx_hash()
+
+    ts_early = Timestamp(1700000000)
+    ts_mid = Timestamp(1700001000)
+    ts_late = Timestamp(1700002000)
+
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO evm_transactions(tx_hash, chain_id, timestamp, block_number, from_address, to_address, value, gas, gas_price, gas_used, input_data, nonce) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',  # noqa: E501
+            [
+                (tx_hash_eth_early, ChainID.ETHEREUM.serialize_for_db(), ts_early, 1, '0xabc', None, '0', '21000', '1', '21000', b'', 0),  # noqa: E501
+                (tx_hash_optimism, ChainID.OPTIMISM.serialize_for_db(), ts_mid, 2, '0xabc', None, '0', '21000', '1', '21000', b'', 1),  # noqa: E501
+                (tx_hash_eth_late, ChainID.ETHEREUM.serialize_for_db(), ts_late, 3, '0xabc', None, '0', '21000', '1', '21000', b'', 2),  # noqa: E501
+            ],
+        )
+        write_cursor.executemany(
+            'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, repull_reason, redecode_reason, fixed, last_retry_ts, last_error) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',  # noqa: E501
+            [
+                (tx_hash_eth_early, ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS, None, 0, None, None),  # noqa: E501
+                (tx_hash_optimism, ChainID.OPTIMISM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS, None, 0, None, None),  # noqa: E501
+                (tx_hash_eth_late, ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS, None, 0, None, None),  # noqa: E501
+            ],
+        )
+
+    # filter by chain
+    by_chain = assert_proper_response_with_result(
+        response=requests.get(
+            api_url_for(rotkehlchen_api_server, 'internaltxconflictsresource'),
+            json={'async_query': False, 'chain': 'ethereum'},
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=False,
+    )
+    assert by_chain['entries_found'] == 2
+    assert by_chain['entries_total'] == 2
+    assert {entry['tx_hash'] for entry in by_chain['entries']} == {
+        str(tx_hash_eth_early),
+        str(tx_hash_eth_late),
+    }
+    assert all(entry['chain'] == 'ethereum' for entry in by_chain['entries'])
+
+    # filter by from_timestamp
+    by_from_ts = assert_proper_response_with_result(
+        response=requests.get(
+            api_url_for(rotkehlchen_api_server, 'internaltxconflictsresource'),
+            json={'async_query': False, 'from_timestamp': ts_mid},
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=False,
+    )
+    assert by_from_ts['entries_found'] == 2
+    assert {entry['tx_hash'] for entry in by_from_ts['entries']} == {
+        str(tx_hash_optimism),
+        str(tx_hash_eth_late),
+    }
+
+    # filter by to_timestamp
+    by_to_ts = assert_proper_response_with_result(
+        response=requests.get(
+            api_url_for(rotkehlchen_api_server, 'internaltxconflictsresource'),
+            json={'async_query': False, 'to_timestamp': ts_mid},
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=False,
+    )
+    assert by_to_ts['entries_found'] == 2
+    assert {entry['tx_hash'] for entry in by_to_ts['entries']} == {
+        str(tx_hash_eth_early),
+        str(tx_hash_optimism),
+    }
+
+    # filter by timestamp range (only middle entry)
+    by_range = assert_proper_response_with_result(
+        response=requests.get(
+            api_url_for(rotkehlchen_api_server, 'internaltxconflictsresource'),
+            json={'async_query': False, 'from_timestamp': ts_mid, 'to_timestamp': ts_mid},
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=False,
+    )
+    assert by_range['entries_found'] == 1
+    assert by_range['entries'][0]['tx_hash'] == str(tx_hash_optimism)
+    assert by_range['entries'][0]['timestamp'] == ts_mid
+    assert by_range['entries'][0]['chain'] == 'optimism'
+
+    # combine chain and timestamp filters
+    chain_and_ts = assert_proper_response_with_result(
+        response=requests.get(
+            api_url_for(rotkehlchen_api_server, 'internaltxconflictsresource'),
+            json={'async_query': False, 'chain': 'ethereum', 'from_timestamp': ts_late},
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=False,
+    )
+    assert chain_and_ts['entries_found'] == 1
+    assert chain_and_ts['entries'][0]['tx_hash'] == str(tx_hash_eth_late)
+    assert chain_and_ts['entries'][0]['timestamp'] == ts_late
