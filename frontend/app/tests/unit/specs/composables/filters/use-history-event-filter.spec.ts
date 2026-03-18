@@ -49,6 +49,8 @@ describe('composables::filter/use-history-event-filter - Additional Tests', () =
       eventTypes: ref([]),
       eventSubTypes: ref([]),
       getEventTypeData: vi.fn().mockReturnValue(computed(() => undefined)),
+      historyEventTypeGlobalMapping: ref({}),
+      historyEventTypes: computed<string[]>(() => []),
     });
     const { connected } = storeToRefs(useMainStore());
     set(connected, true);
