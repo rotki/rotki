@@ -4,7 +4,10 @@ import { usePremium } from '@/composables/premium';
 import { useSync } from '@/composables/session/sync';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';
 
-defineProps<{ pending: boolean }>();
+const { pending, disabled = false } = defineProps<{
+  pending: boolean;
+  disabled?: boolean;
+}>();
 
 const emit = defineEmits<{
   action: [action: SyncAction];
@@ -35,7 +38,7 @@ const { loadingBalancesAndDetection: loading } = useBalancesLoading();
           :variant="uploadStatus ? 'default' : 'outlined'"
           color="primary"
           class="w-full"
-          :disabled="!premium || pending || loading"
+          :disabled="!premium || pending || loading || disabled"
           @click="action(UPLOAD)"
         >
           <template #prepend>
@@ -56,7 +59,7 @@ const { loadingBalancesAndDetection: loading } = useBalancesLoading();
           variant="outlined"
           color="primary"
           class="w-full"
-          :disabled="!premium || pending || !!uploadStatus || loading"
+          :disabled="!premium || pending || !!uploadStatus || loading || disabled"
           @click="action(DOWNLOAD)"
         >
           <template #prepend>
