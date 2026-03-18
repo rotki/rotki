@@ -57,6 +57,7 @@ export const backendIcons: string[] = [
   'lu-rocket',
   'lu-scale',
   'lu-send-to-back',
+  'lu-shield-alert',
   'lu-skull',
   'lu-sprout',
   'lu-square-pen',
