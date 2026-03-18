@@ -6,6 +6,7 @@ import CryptoToCryptoTradeSetting from '@/components/settings/accounting/CryptoT
 import EthStakingTaxableAfterWithdrawalSetting from '@/components/settings/accounting/EthStakingTaxableAfterWithdrawalSetting.vue';
 import GasCostSetting from '@/components/settings/accounting/GasCostSetting.vue';
 import TaxFreeSetting from '@/components/settings/accounting/TaxFreeSetting.vue';
+import UseAssetCollectionsInCostBasisSetting from '@/components/settings/accounting/UseAssetCollectionsInCostBasisSetting.vue';
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 
 const { t } = useI18n({ useScope: 'global' });
@@ -22,6 +23,7 @@ const { t } = useI18n({ useScope: 'global' });
       <TaxFreeSetting />
       <CalculatePastCostBasisSetting />
       <CostBasisFeesSetting />
+      <UseAssetCollectionsInCostBasisSetting />
       <CostBasisMethodSetting />
       <EthStakingTaxableAfterWithdrawalSetting />
     </div>

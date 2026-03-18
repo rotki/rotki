@@ -22,6 +22,7 @@ from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.evm_swap import EvmSwapEvent
@@ -1323,3 +1324,238 @@ def test_csv_exporter_settings(database: 'DBHandler') -> None:
     csv_exporter = CSVExporter(database)
     assert csv_exporter.transaction_explorers[SupportedBlockchain.ETHEREUM] == 'myexplorer.eth'
     assert csv_exporter.transaction_explorers[SupportedBlockchain.POLYGON_POS] == 'myexplorer.polygon'  # noqa: E501
+
+
+def _create_test_collection(
+        main_id: str,
+        other_id: str,
+        name: str,
+        symbol: str,
+) -> tuple[Asset, Asset]:
+    """Insert two minimal test assets and a collection into the global DB."""
+    with GlobalDBHandler().conn.write_ctx() as cursor:
+        cursor.switch_foreign_keys('OFF')
+        cursor.executemany(
+            'INSERT OR IGNORE INTO assets(identifier, name, type) VALUES(?, ?, ?)',
+            [(main_id, main_id, 'B'), (other_id, other_id, 'B')],
+        )
+        cursor.switch_foreign_keys('ON')
+        cursor.execute(
+            'INSERT INTO asset_collections (name, symbol, main_asset) VALUES (?, ?, ?)',
+            (name, symbol, main_id),
+        )
+        collection_id = cursor.lastrowid
+        cursor.executemany(
+            'INSERT INTO multiasset_mappings (collection_id, asset) VALUES (?, ?)',
+            [(collection_id, main_id), (collection_id, other_id)],
+        )
+    return Asset(main_id), Asset(other_id)
+
+
+def test_collection_cost_basis_no_missing_acquisition(accountant: Accountant) -> None:
+    """Acquire asset_A from collection X, then spend asset_B from the same collection X.
+    Expect no MissingAcquisition because both resolve to the same cost basis bucket."""
+    cost_basis = accountant.pots[0].cost_basis
+    main_asset, other_asset = _create_test_collection(
+        main_id='TEST_CB_MAIN_1',
+        other_id='TEST_CB_OTHER_1',
+        name='Test CB collection',
+        symbol='TESTCB1',
+    )
+
+    # Acquire via the main asset
+    events = cost_basis.get_events(main_asset)
+    events.acquisitions_manager.add_in_event(
+        AssetAcquisitionEvent(
+            amount=FVal(5),
+            timestamp=EXAMPLE_TIMESTAMP,
+            rate=Price(ONE),
+            index=1,
+        ),
+    )
+
+    # Both assets should share the same bucket
+    assert cost_basis.get_events(other_asset) is events, (
+        'other_asset should map to the same CostBasisEvents as main_asset'
+    )
+
+    # Spend via the other asset — should consume from the shared bucket
+    result = cost_basis.reduce_asset_amount(
+        originating_event_id=None,
+        asset=other_asset,
+        amount=FVal(3),
+        timestamp=EXAMPLE_TIMESTAMP,
+    )
+    assert result is True
+    assert len(cost_basis.missing_acquisitions) == 0
+    remaining = events.acquisitions_manager.get_acquisitions()
+    assert len(remaining) == 1
+    assert remaining[0].remaining_amount == FVal(2)
+
+
+def test_collection_cost_basis_partial_missing_acquisition(accountant: Accountant) -> None:
+    """Acquire partial amount via main_asset, spend more via other_asset in same collection.
+    Expect MissingAcquisition only for the true shortfall."""
+    cost_basis = accountant.pots[0].cost_basis
+    main_asset, other_asset = _create_test_collection(
+        main_id='TEST_CB_MAIN_2',
+        other_id='TEST_CB_OTHER_2',
+        name='Test CB partial',
+        symbol='TESTCB2',
+    )
+
+    events = cost_basis.get_events(main_asset)
+    events.acquisitions_manager.add_in_event(
+        AssetAcquisitionEvent(
+            amount=FVal(2),
+            timestamp=EXAMPLE_TIMESTAMP,
+            rate=Price(ONE),
+            index=1,
+        ),
+    )
+
+    # Spend more than was acquired — should create a MissingAcquisition for the shortfall
+    result = cost_basis.reduce_asset_amount(
+        originating_event_id=None,
+        asset=other_asset,
+        amount=FVal(5),
+        timestamp=EXAMPLE_TIMESTAMP,
+    )
+    assert result is False
+    assert len(cost_basis.missing_acquisitions) == 1
+    missing = cost_basis.missing_acquisitions[0]
+    assert missing.found_amount == FVal(2)
+    assert missing.missing_amount == FVal(3)
+
+
+def test_collection_cost_basis_different_collections_still_missing(accountant: Accountant) -> None:
+    """Assets from different collections must NOT share a bucket.
+    A spend on an unrelated asset should produce MissingAcquisition."""
+    cost_basis = accountant.pots[0].cost_basis
+    asset_in_collection, _ = _create_test_collection(
+        main_id='TEST_CB_MAIN_3',
+        other_id='TEST_CB_OTHER_3',
+        name='Test CB single',
+        symbol='TESTCB3',
+    )
+    # Create a standalone asset with no collection of its own
+    with GlobalDBHandler().conn.write_ctx() as cursor:
+        cursor.switch_foreign_keys('OFF')
+        cursor.execute(
+            'INSERT OR IGNORE INTO assets(identifier, name, type) VALUES(?, ?, ?)',
+            ('TEST_CB_STANDALONE', 'Test standalone', 'B'),
+        )
+        cursor.switch_foreign_keys('ON')
+    unrelated_asset = Asset('TEST_CB_STANDALONE')
+
+    events = cost_basis.get_events(asset_in_collection)
+    events.acquisitions_manager.add_in_event(
+        AssetAcquisitionEvent(
+            amount=FVal(10),
+            timestamp=EXAMPLE_TIMESTAMP,
+            rate=Price(ONE),
+            index=1,
+        ),
+    )
+
+    # Spend unrelated_asset which has no acquisitions — returns False, no bucket sharing
+    result = cost_basis.reduce_asset_amount(
+        originating_event_id=None,
+        asset=unrelated_asset,
+        amount=ONE,
+        timestamp=EXAMPLE_TIMESTAMP,
+    )
+    assert result is False
+    # No MissingAcquisition when the acquisitions bucket is completely empty
+    # (MissingAcquisition is only created when some but not all acquisitions are found)
+    assert len(cost_basis.missing_acquisitions) == 0
+    # Confirm the collection asset's acquisitions were not consumed
+    assert events.acquisitions_manager.get_acquisitions()[0].remaining_amount == FVal(10)
+
+
+def test_collection_cost_basis_non_collection_asset_unchanged(accountant: Accountant) -> None:
+    """An asset with no collection entry must resolve to itself, preserving existing behavior."""
+    cost_basis = accountant.pots[0].cost_basis
+    # A_BTC has no collection mapping entry (no multiasset_mappings row) — bucket is A_BTC itself
+    assert cost_basis._resolve_bucket_asset(A_BTC) == A_BTC
+
+
+def test_collection_cost_basis_weth_preserved(accountant: Accountant) -> None:
+    """WETH -> ETH mapping must still work via the new resolver pipeline."""
+    cost_basis = accountant.pots[0].cost_basis
+    assert cost_basis._resolve_bucket_asset(A_WETH) == A_ETH
+    # Both should share the same events bucket
+    assert cost_basis.get_events(A_WETH) is cost_basis.get_events(A_ETH)
+
+
+def test_asset_collections_disabled(accountant: Accountant) -> None:
+    """When use_asset_collections_in_cost_basis=False, assets in the same collection must
+    NOT share a cost basis bucket and should produce MissingAcquisition."""
+    cost_basis = accountant.pots[0].cost_basis
+    cost_basis.reset(DBSettings(use_asset_collections_in_cost_basis=False))
+
+    main_asset, other_asset = _create_test_collection(
+        main_id='TEST_CB_DISABLED_MAIN',
+        other_id='TEST_CB_DISABLED_OTHER',
+        name='Test CB disabled',
+        symbol='TESTCBD',
+    )
+
+    # Acquire via main asset
+    events = cost_basis.get_events(main_asset)
+    events.acquisitions_manager.add_in_event(
+        AssetAcquisitionEvent(
+            amount=FVal(5),
+            timestamp=EXAMPLE_TIMESTAMP,
+            rate=Price(ONE),
+            index=1,
+        ),
+    )
+
+    # With collections disabled, other_asset should have its own separate bucket
+    assert cost_basis.get_events(other_asset) is not events
+
+    # Spending other_asset should produce MissingAcquisition (no shared bucket)
+    result = cost_basis.reduce_asset_amount(
+        originating_event_id=None,
+        asset=other_asset,
+        amount=FVal(3),
+        timestamp=EXAMPLE_TIMESTAMP,
+    )
+    assert result is False
+
+
+def test_asset_collections_enabled(accountant: Accountant) -> None:
+    """When use_asset_collections_in_cost_basis=True (default), assets in the same collection
+    share a cost basis bucket and produce no MissingAcquisition."""
+    cost_basis = accountant.pots[0].cost_basis
+    cost_basis.reset(DBSettings(use_asset_collections_in_cost_basis=True))
+
+    main_asset, other_asset = _create_test_collection(
+        main_id='TEST_CB_ENABLED_MAIN',
+        other_id='TEST_CB_ENABLED_OTHER',
+        name='Test CB enabled',
+        symbol='TESTCBE',
+    )
+
+    events = cost_basis.get_events(main_asset)
+    events.acquisitions_manager.add_in_event(
+        AssetAcquisitionEvent(
+            amount=FVal(5),
+            timestamp=EXAMPLE_TIMESTAMP,
+            rate=Price(ONE),
+            index=1,
+        ),
+    )
+
+    # With collections enabled, both assets share the same bucket
+    assert cost_basis.get_events(other_asset) is events
+
+    result = cost_basis.reduce_asset_amount(
+        originating_event_id=None,
+        asset=other_asset,
+        amount=FVal(3),
+        timestamp=EXAMPLE_TIMESTAMP,
+    )
+    assert result is True
+    assert len(cost_basis.missing_acquisitions) == 0

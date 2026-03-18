@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, overload
 
 from rotkehlchen.accounting.types import MissingAcquisition, MissingPrice
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.db.settings import DBSettings
@@ -591,12 +592,43 @@ class CostBasisCalculator(CustomizableDateMixin):
         self.missing_acquisitions: list[MissingAcquisition] = []
         self.missing_prices: set[MissingPrice] = set()
 
-    def get_events(self, asset: Asset) -> CostBasisEvents:
-        """Custom getter for events so that we have common cost basis for some assets"""
-        if asset == A_WETH:
-            asset = A_ETH
+    def _resolve_bucket_asset(self, asset: Asset) -> Asset:
+        """Resolve an asset to its canonical cost basis bucket asset.
 
-        return self._events[asset]
+        - WETH is mapped to ETH (preserved existing behavior).
+        - If use_asset_collections_in_cost_basis is enabled, assets in a collection
+          are mapped to that collection's main_asset so that acquisitions and spends
+          of different assets in the same collection share a common cost basis bucket,
+          preventing false MissingAcquisitions.
+        - Assets not belonging to any collection remain unchanged.
+        - Results are cached in AssetResolver.collection_main_asset_cache (LRU, shared globally).
+        """
+        if asset == A_WETH:
+            return A_ETH
+
+        if not self.settings.use_asset_collections_in_cost_basis:
+            return asset
+
+        asset_id = asset.identifier
+        main_asset_id = AssetResolver.get_collection_main_asset(asset_id)
+        if main_asset_id is not None and main_asset_id != asset_id:
+            log.debug(
+                'Resolved asset to collection bucket for cost basis',
+                asset=asset_id,
+                bucket_asset=main_asset_id,
+            )
+            return Asset(main_asset_id)
+
+        return asset
+
+    def get_events(self, asset: Asset) -> CostBasisEvents:
+        """Custom getter for events so that we have common cost basis for some assets.
+
+        Assets belonging to the same global asset collection share a single cost basis
+        bucket keyed by the collection's main_asset, preventing MissingAcquisition errors
+        when acquisitions and spends use different but economically equivalent identifiers.
+        """
+        return self._events[self._resolve_bucket_asset(asset)]
 
     def reduce_asset_amount(
             self,

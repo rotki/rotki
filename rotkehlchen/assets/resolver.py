@@ -36,6 +36,9 @@ class AssetResolver:
     # the cache maps identifier -> final representation of the asset
     assets_cache: LRUCacheLowerKey['AssetWithNameAndType'] = LRUCacheLowerKey(maxsize=512)
     types_cache: LRUCacheLowerKey[AssetType] = LRUCacheLowerKey(maxsize=512)
+    # Maps asset identifier -> collection main_asset identifier (or None if not in a collection).
+    # None is a valid cached value so presence must be tested with `identifier.lower() in cache`.
+    collection_main_asset_cache: LRUCacheLowerKey[str | None] = LRUCacheLowerKey(maxsize=512)
 
     def __new__(  # noqa: PYI034 # singleton pattern should not get Self
             cls,
@@ -63,9 +66,27 @@ class AssetResolver:
         if identifier is not None:
             AssetResolver.__instance.assets_cache.remove(identifier)
             AssetResolver.__instance.types_cache.remove(identifier)
+            AssetResolver.__instance.collection_main_asset_cache.remove(identifier)
         else:
             AssetResolver.__instance.assets_cache.clear()
             AssetResolver.__instance.types_cache.clear()
+            AssetResolver.__instance.collection_main_asset_cache.clear()
+
+    @staticmethod
+    def get_collection_main_asset(identifier: str) -> str | None:
+        """Return the main asset identifier for the collection that contains identifier.
+
+        Returns None if identifier is not a member of any collection.
+        Results are cached; None (no collection) is also a valid cached value so
+        presence is checked with ``identifier.lower() in cache`` before calling .get().
+        """
+        cache = AssetResolver.collection_main_asset_cache
+        if identifier.lower() in cache:
+            return cache.get(identifier)
+
+        main_asset = AssetResolver._globaldb.get_collection_main_asset(identifier)
+        cache.add(identifier, main_asset)
+        return main_asset
 
     @staticmethod
     def resolve_asset(identifier: str) -> 'AssetWithNameAndType':

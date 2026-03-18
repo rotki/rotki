@@ -14,6 +14,7 @@ export const useAccountingSettingsStore = defineStore('settings/accounting', () 
   const calculatePastCostBasis = useComputedRef(settings, 'calculatePastCostBasis');
   const ethStakingTaxableAfterWithdrawalEnabled = useComputedRef(settings, 'ethStakingTaxableAfterWithdrawalEnabled');
   const costBasisMethod = useComputedRef(settings, 'costBasisMethod');
+  const useAssetCollectionsInCostBasis = useComputedRef(settings, 'useAssetCollectionsInCostBasis');
 
   const update = (accountingSettings: AccountingSettings): void => {
     set(settings, {
@@ -34,6 +35,7 @@ export const useAccountingSettingsStore = defineStore('settings/accounting', () 
     settings,
     taxfreeAfterPeriod,
     update,
+    useAssetCollectionsInCostBasis,
   };
 });
 

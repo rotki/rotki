@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Assets in the same collection now share cost basis, preventing false missing acquisition errors when the same asset is tracked under different identifiers.
 * :feature:`-` Sushiswap swaps should now be decoded on all EVM chains
 * :bug:`11854` Users can now unmark assets as spam or unignore them directly from the history events context menu, instead of having to navigate to the asset manager.
 * :bug:`-` Curve withdrawals with dynamic amount of assets will now be properly decoded.
