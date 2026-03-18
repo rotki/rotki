@@ -2585,6 +2585,10 @@
       "api_key_missing_alert": "{indexer} is your first priority indexer but you don't have an API key configured. Queries may be slower or fail. Consider adding an API key for better performance.",
       "chain_order": "{chain} Indexer Order",
       "chain_updated": "{chain} indexer order updated",
+      "chain_warnings": {
+        "base_limited_indexers": "Blockscout is the only freely available indexer for Base. Consider setting it as your first priority. Blockscout is currently reindexing Base, so data may be temporarily incomplete.",
+        "optimism_blockscout": "Blockscout does not have properly indexed transactions for Optimism before the Bedrock upgrade. Pre-Bedrock transaction history may be incomplete when using Blockscout."
+      },
       "data_name": "indexer",
       "default_order": "Default Indexer Order",
       "default_tab": "Default",

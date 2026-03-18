@@ -167,6 +167,23 @@ const currentOrder = computed<PrioritizedListId[]>(() => {
   return get(localChainOrders)[tab] ?? [];
 });
 
+const chainWarnings = computed<string[]>(() => {
+  const tab = get(activeTab);
+  if (tab === DEFAULT_TAB)
+    return [];
+
+  const warnings: string[] = [];
+  const order = get(currentOrder);
+
+  if (tab === 'optimism' && order.includes(EvmIndexer.BLOCKSCOUT))
+    warnings.push(t('evm_settings.indexer.chain_warnings.optimism_blockscout'));
+
+  if (tab === 'base' && (order.length === 0 || order[0] !== EvmIndexer.BLOCKSCOUT))
+    warnings.push(t('evm_settings.indexer.chain_warnings.base_limited_indexers'));
+
+  return warnings;
+});
+
 const missingApiKeyIndexer = computed<string | null>(() => {
   const order = get(currentOrder);
   if (order.length === 0)
@@ -364,6 +381,16 @@ watchImmediate([evmIndexersOrder, defaultEvmIndexerOrder], () => {
             {{ t('evm_settings.indexer.enter_api_key') }}
           </RuiButton>
         </div>
+      </RuiAlert>
+
+      <RuiAlert
+        v-for="(warning, index) in chainWarnings"
+        :key="index"
+        type="warning"
+        class="mb-4"
+        data-cy="chain-warning-alert"
+      >
+        {{ warning }}
       </RuiAlert>
 
       <RuiTabItems v-model="activeTab">
