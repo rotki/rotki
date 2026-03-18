@@ -87,6 +87,33 @@ class EventsAccountant:
         if isinstance(event, EvmEvent | SolanaEvent):
             general_extra_data['tx_ref'] = str(event.tx_ref)
 
+        if event_settings.accounting_treatment == TxAccountingTreatment.BASIS_TRANSFER:
+            next_event = events_iterator.peek(None)
+            if not isinstance(next_event, HistoryBaseEntry) or next_event.group_identifier != event.group_identifier:  # noqa: E501
+                log.error(
+                    f'Tried to process basis transfer but could not find the paired '
+                    f'event for {event}',
+                )
+                return 1
+
+            paired_direction = next_event.maybe_get_direction()
+            paired_counterparty = getattr(next_event, 'counterparty', None)
+            event_counterparty = getattr(event, 'counterparty', None)
+            if (
+                paired_direction is None or
+                paired_direction == event_direction or
+                paired_counterparty != event_counterparty
+            ):
+                log.error(
+                    f'Tried to process basis transfer but the paired event has '
+                    f'unexpected shape: {paired_direction=}, {paired_counterparty=}, '
+                    f'{event_direction=}, {event_counterparty=} for {event}',
+                )
+                return 1
+
+            next(events_iterator)  # consume the validated paired event
+            return 2
+
         if event_settings.accounting_treatment == TxAccountingTreatment.SWAP:
             processed_event_count = 1
             next_event = events_iterator.peek(None)

@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`11908` Individual pending task items now show a static icon instead of an indeterminate spinner, reducing visual noise when many tasks are running.
+* :bug:`-` Wrapping and unwrapping the native asset no longer resets cost basis. Disposals after a wrap now use the original pre-wrap acquisition cost.
 * :feature:`11896` Indexer limitation warnings are now shown in the EVM Indexer Order settings for Optimism (Blockscout pre-Bedrock gaps) and Base (Blockscout as only free indexer).
 * :bug:`11901` The event_subtype filter (e.g. subtype=None) is no longer lost when navigating away from the history events page and back.
 * :bug:`-` Assets in the same collection now share cost basis, preventing false missing acquisition errors when the same asset is tracked under different identifiers.

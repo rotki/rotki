@@ -13,8 +13,11 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
+from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_WETH
+from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -386,3 +389,399 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
     expected_receive_event.count_cost_basis_pnl = False
     assert accounting_pot.processed_events[1:] == [expected_spend_event, expected_receive_event]
     assert accounting_pot.pnls.taxable == ETH_PRICE_TS_1 + expected_spend_event.pnl.taxable
+
+
+TIMESTAMP_3_SECS = Timestamp(1633593636)
+TIMESTAMP_3_MS = ts_sec_to_ms(TIMESTAMP_3_SECS)
+WETH_PRICE_TS_3 = FVal('4000')
+
+MOCKED_PRICES_WITH_WETH = {
+    'ETH': {
+        'EUR': {
+            TIMESTAMP_1_SECS: ETH_PRICE_TS_1,
+            TIMESTAMP_2_SECS: ETH_PRICE_TS_2,
+            TIMESTAMP_3_SECS: WETH_PRICE_TS_3,
+        },
+    },
+    A_WETH.identifier: {
+        'EUR': {
+            TIMESTAMP_1_SECS: ETH_PRICE_TS_1,
+            TIMESTAMP_2_SECS: ETH_PRICE_TS_2,
+            TIMESTAMP_3_SECS: WETH_PRICE_TS_3,
+        },
+    },
+    A_DAI.identifier: {
+        'EUR': {
+            TIMESTAMP_2_SECS: Price(ONE),
+        },
+    },
+}
+
+
+def _setup_basis_transfer_rules(accounting_pot: 'AccountingPot') -> None:
+    """Insert basis_transfer rules for both WETH wrap and unwrap, then re-reset the pot."""
+    rules_db = DBAccountingRules(accounting_pot.database)
+    basis_transfer_rule = BaseEventSettings(
+        taxable=False,
+        count_entire_amount_spend=False,
+        count_cost_basis_pnl=False,
+        accounting_treatment=TxAccountingTreatment.BASIS_TRANSFER,
+    )
+    rules_db.add_accounting_rule(
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        counterparty=CPT_WETH,
+        rule=basis_transfer_rule,
+        links={},
+        force_update=True,
+    )
+    rules_db.add_accounting_rule(
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        counterparty=CPT_WETH,
+        rule=basis_transfer_rule,
+        links={},
+        force_update=True,
+    )
+    with accounting_pot.database.conn.read_ctx() as cursor:
+        settings = accounting_pot.database.get_settings(cursor)
+    accounting_pot.reset(
+        settings=settings,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(0),
+        report_id=1,
+    )
+
+
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
+def test_accounting_basis_transfer_weth_wrap(accounting_pot: 'AccountingPot'):
+    """
+    Test the full ETH -> WETH wrap -> WETH sale scenario:
+    1. Acquire 1 ETH at 2000 EUR (TIMESTAMP_1)
+    2. Wrap ETH -> WETH (TIMESTAMP_2) — should be neutral, zero PnL
+    3. Sell 1 WETH at 4000 EUR (TIMESTAMP_3) — should match original ETH basis of 2000
+       yielding taxable PnL of 2000 EUR
+    """
+    _setup_basis_transfer_rules(accounting_pot)
+
+    # Step 1: Acquire 1 ETH at TIMESTAMP_1 (price = 2000 EUR)
+    _gain_one_ether(events_accountant=accounting_pot.events_accountant)
+    assert len(accounting_pot.processed_events) == 1
+    pnl_after_acquire = accounting_pot.pnls.taxable
+
+    # Step 2: Wrap ETH -> WETH at TIMESTAMP_2
+    wrap_out_event = EvmEvent(
+        tx_ref=EXAMPLE_EVM_HASH,
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Wrap 1 ETH in WETH',
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+    wrap_in_event = EvmEvent(
+        tx_ref=EXAMPLE_EVM_HASH,
+        sequence_index=2,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Receive 1 WETH',
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+
+    consumed_num = accounting_pot.events_accountant.process(
+        event=wrap_out_event,
+        events_iterator=peekable([wrap_in_event]),
+    )
+    assert consumed_num == 2
+    assert len(accounting_pot.processed_events) == 1, 'Wrap should not add processed events'
+    assert accounting_pot.pnls.taxable == pnl_after_acquire, 'Wrap should not change PnL'
+
+    # Step 3: Sell 1 WETH at TIMESTAMP_3 (price = 4000 EUR)
+    # Since WETH maps to the ETH cost basis pool, the acquisition lot at 2000 EUR should be used.
+    weth_sell_event = EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TIMESTAMP_3_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Send 1 WETH',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+    )
+    consumed_num = accounting_pot.events_accountant.process(
+        event=weth_sell_event,
+        events_iterator=peekable([]),
+    )
+    assert consumed_num == 1
+    assert len(accounting_pot.processed_events) == 2
+
+    # The WETH sell should use the original ETH acquisition basis of 2000 EUR.
+    sell_event = accounting_pot.processed_events[-1]
+    assert sell_event.cost_basis is not None, 'WETH sell should have matched cost basis'
+    assert sell_event.cost_basis.taxable_bought_cost == ETH_PRICE_TS_1, (
+        f'Expected original ETH basis of {ETH_PRICE_TS_1}, got {sell_event.cost_basis.taxable_bought_cost}'  # noqa: E501
+    )
+    assert sell_event.cost_basis.is_complete is True, 'Cost basis should be fully matched'
+    # For a spend event pnl = sale_value - taxable_bought_cost.
+    # With count_entire_amount_spend=True: pnl = -taxable_bought_cost = -ETH_PRICE_TS_1
+    assert sell_event.pnl.taxable == -ETH_PRICE_TS_1
+
+
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
+def test_accounting_basis_transfer_missing_pair(accounting_pot: 'AccountingPot'):
+    """Test that basis_transfer gracefully handles a missing paired event."""
+    _setup_basis_transfer_rules(accounting_pot)
+
+    wrap_out_event = EvmEvent(
+        tx_ref=EXAMPLE_EVM_HASH,
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Wrap 1 ETH in WETH',
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+
+    # No paired event in iterator - should return 1 (graceful fallback)
+    consumed_num = accounting_pot.events_accountant.process(
+        event=wrap_out_event,
+        events_iterator=peekable([]),
+    )
+    assert consumed_num == 1
+
+
+@pytest.mark.parametrize('use_basis_transfer', [True, False])
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
+def test_accounting_basis_transfer_weth_unwrap(accounting_pot: 'AccountingPot', use_basis_transfer: bool):  # noqa: E501
+    """
+    Test the full WETH acquire -> WETH unwrap -> ETH sale scenario:
+    1. Acquire 1 WETH at 2000 EUR (TIMESTAMP_1)
+    2. Unwrap WETH -> ETH (TIMESTAMP_2)
+       - With BASIS_TRANSFER: both paired events consumed atomically, zero PnL
+       - Without: default SPEND/RETURN_WRAPPED rule processes only the out-event
+         (consumed_num=1), leaving the paired in-event for later processing if needed
+    3. Sell 1 ETH at 4000 EUR (TIMESTAMP_3) — in both cases the original WETH basis
+       of 2000 is used since WETH and ETH share the same cost-basis pool
+    """
+    if use_basis_transfer:
+        _setup_basis_transfer_rules(accounting_pot)
+
+    # Step 1: Acquire 1 WETH at TIMESTAMP_1 (price = 2000 EUR)
+    weth_acquire_event = EvmEvent(
+        tx_ref=EXAMPLE_EVM_HASH,
+        sequence_index=0,
+        timestamp=TIMESTAMP_1_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Received 1 WETH',
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+    )
+    consumed_num = accounting_pot.events_accountant.process(
+        event=weth_acquire_event,
+        events_iterator=peekable([]),
+    )
+    assert consumed_num == 1
+    assert len(accounting_pot.processed_events) == 1
+    pnl_after_acquire = accounting_pot.pnls.taxable
+
+    # Step 2: Unwrap WETH -> ETH at TIMESTAMP_2
+    unwrap_out_event = EvmEvent(
+        tx_ref=(unwrap_hash := make_evm_tx_hash()),
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Unwrap 1 WETH',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+    unwrap_in_event = EvmEvent(
+        tx_ref=unwrap_hash,
+        sequence_index=2,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Receive 1 ETH',
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+
+    consumed_num = accounting_pot.events_accountant.process(
+        event=unwrap_out_event,
+        events_iterator=peekable([unwrap_in_event]),
+    )
+    if use_basis_transfer:
+        # Both paired events consumed atomically; no processed events or PnL change
+        assert consumed_num == 2
+        assert len(accounting_pot.processed_events) == 1, 'Unwrap should not add processed events'
+        assert accounting_pot.pnls.taxable == pnl_after_acquire, 'Unwrap should not change PnL'
+    else:
+        # Default rule (taxable=false, count_cost_basis_pnl=false): adds a non-taxable
+        # processed event for the out-leg only. No cost basis is consumed and no PnL is realized.
+        assert consumed_num == 1
+        assert len(accounting_pot.processed_events) == 2, 'Default SPEND rule adds a processed event'  # noqa: E501
+        assert accounting_pot.pnls.taxable == pnl_after_acquire, 'Non-taxable unwrap should not change PnL'    # noqa: E501
+        unwrap_processed_event = accounting_pot.processed_events[-1]
+        assert unwrap_processed_event.cost_basis is None
+        assert unwrap_processed_event.taxable_amount == ZERO
+        assert unwrap_processed_event.free_amount == ONE
+
+    # Step 3: Sell 1 ETH at TIMESTAMP_3 (price = 4000 EUR)
+    eth_sell_event = EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TIMESTAMP_3_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Send 1 ETH',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+    )
+    consumed_num = accounting_pot.events_accountant.process(
+        event=eth_sell_event,
+        events_iterator=peekable([]),
+    )
+    assert consumed_num == 1
+    sell_event = accounting_pot.processed_events[-1]
+    assert sell_event.cost_basis is not None
+    if use_basis_transfer:
+        assert len(accounting_pot.processed_events) == 2
+    else:
+        assert len(accounting_pot.processed_events) == 3
+
+    # In both cases, the ETH sell uses the original WETH acquisition basis of 2000 EUR.
+    assert sell_event.cost_basis.taxable_bought_cost == ETH_PRICE_TS_1, (
+        f'Expected original WETH basis of {ETH_PRICE_TS_1}, got {sell_event.cost_basis.taxable_bought_cost}'  # noqa: E501
+    )
+    assert sell_event.cost_basis.is_complete is True
+    assert sell_event.pnl.taxable == -ETH_PRICE_TS_1
+
+
+@pytest.mark.parametrize('use_basis_transfer', [True, False])
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
+def test_basis_transfer_vs_default_rules_weth_wrap(accounting_pot: 'AccountingPot', use_basis_transfer: bool):  # noqa: E501
+    """
+    Compare BASIS_TRANSFER vs default rules for ETH wrapping.
+
+    With default rules the DEPOSIT/DEPOSIT_FOR_WRAPPED out-event calls spend_asset()
+    with taxable_spend=false (since taxable=false but count_cost_basis_pnl=true),
+    which silently consumes the original lot via reduce_asset_amount(). The in-event
+    then creates a fresh lot at wrap-time price. Net effect: cost basis is reset.
+
+    With BASIS_TRANSFER both events are consumed atomically and the pool is untouched,
+    preserving the original acquisition cost.
+    """
+    if use_basis_transfer:
+        _setup_basis_transfer_rules(accounting_pot)
+
+    # Step 1: Acquire 1 ETH at TIMESTAMP_1 (price = 2000 EUR)
+    _gain_one_ether(events_accountant=accounting_pot.events_accountant)
+    assert len(accounting_pot.processed_events) == 1
+
+    # Step 2: Wrap ETH -> WETH at TIMESTAMP_2 (price = 3000 EUR)
+    wrap_out_event = EvmEvent(
+        tx_ref=(wrap_hash := make_evm_tx_hash()),
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Wrap 1 ETH in WETH',
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+    wrap_in_event = EvmEvent(
+        tx_ref=wrap_hash,
+        sequence_index=2,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Receive 1 WETH',
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+
+    if use_basis_transfer:
+        consumed_num = accounting_pot.events_accountant.process(
+            event=wrap_out_event,
+            events_iterator=peekable([wrap_in_event]),
+        )
+        assert consumed_num == 2
+        assert len(accounting_pot.processed_events) == 1
+    else:
+        # Real accounting run: both events processed separately
+        consumed_num = accounting_pot.events_accountant.process(
+            event=wrap_out_event,
+            events_iterator=peekable([wrap_in_event]),
+        )
+        assert consumed_num == 1
+        # The in-event was not consumed by the out-event, process it separately
+        consumed_num = accounting_pot.events_accountant.process(
+            event=wrap_in_event,
+            events_iterator=peekable([]),
+        )
+        assert consumed_num == 1
+
+    # Step 3: Sell 1 WETH at TIMESTAMP_3 (price = 4000 EUR)
+    weth_sell_event = EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TIMESTAMP_3_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Send 1 WETH',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+    )
+    consumed_num = accounting_pot.events_accountant.process(
+        event=weth_sell_event,
+        events_iterator=peekable([]),
+    )
+    assert consumed_num == 1
+
+    sell_event = accounting_pot.processed_events[-1]
+    assert sell_event.cost_basis is not None
+    assert sell_event.cost_basis.is_complete is True
+
+    if use_basis_transfer:
+        # Original lot (2000) preserved → sell uses that basis
+        assert sell_event.cost_basis.taxable_bought_cost == ETH_PRICE_TS_1
+        assert sell_event.pnl.taxable == -ETH_PRICE_TS_1
+    else:
+        # Original lot consumed by the out-event, fresh lot created at 3000 by the in-event.
+        # The sell matches the stepped-up basis instead of the original acquisition cost.
+        assert sell_event.cost_basis.taxable_bought_cost == ETH_PRICE_TS_2
+        assert sell_event.pnl.taxable == -ETH_PRICE_TS_2

@@ -4,6 +4,7 @@ import { CollectionCommonFields } from '@/types/collection';
 
 export enum AccountingTreatment {
   SWAP = 'swap',
+  BASIS_TRANSFER = 'basis_transfer',
 }
 
 const AccountingTreatmentEnum = z.enum(AccountingTreatment);

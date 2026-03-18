@@ -30,6 +30,7 @@ class EventsAccountantCallback(Protocol):
 
 class TxAccountingTreatment(DBCharEnumMixIn):
     SWAP = auto()
+    BASIS_TRANSFER = auto()  # Accounting treatment for transfer of cost basis without any changes
 
 
 ACCOUNTING_SETTING_DB_TUPLE = tuple[
