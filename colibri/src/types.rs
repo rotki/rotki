@@ -25,21 +25,61 @@ pub enum AssetType {
     EosToken = 20,
     FusionToken = 21,
     LuniverseToken = 22,
-    Other = 23,  // OTHER and OWN chain are probably the same thing -- needs checking
+    Other = 23, // OTHER and OWN chain are probably the same thing -- needs checking
     SolanaToken = 25,
     Nft = 26,
     CustomAsset = 27,
 }
 
 impl AssetType {
+    pub fn from_name(name: &str) -> Option<Self> {
+        [
+            AssetType::Fiat,
+            AssetType::OwnChain,
+            AssetType::EvmToken,
+            AssetType::OmniToken,
+            AssetType::NeoToken,
+            AssetType::CounterpartyToken,
+            AssetType::BitSharesToken,
+            AssetType::ArdorToken,
+            AssetType::NxtToken,
+            AssetType::UbiqToken,
+            AssetType::NuBitsToken,
+            AssetType::BurstToken,
+            AssetType::WavesToken,
+            AssetType::QtumToken,
+            AssetType::StellarToken,
+            AssetType::TronToken,
+            AssetType::OntologyToken,
+            AssetType::VechainToken,
+            AssetType::EosToken,
+            AssetType::FusionToken,
+            AssetType::LuniverseToken,
+            AssetType::Other,
+            AssetType::SolanaToken,
+            AssetType::Nft,
+            AssetType::CustomAsset,
+        ]
+        .into_iter()
+        .find(|asset_type| AssetType::serialize(*asset_type) == name)
+    }
+
+    pub fn serialize_for_db(self) -> String {
+        ((self as u32 + 64) as u8 as char).to_string()
+    }
+
     pub fn deserialize_from_db(value: &str) -> Result<Self, String> {
         if value.len() != 1 {
-            return Err(format!("Failed to deserialize AssetType DB value from multi-character value: {value}"));
+            return Err(format!(
+                "Failed to deserialize AssetType DB value from multi-character value: {value}"
+            ));
         }
 
         let number = match value.chars().next() {
             Some(c) => c as u32,
-            None => return Err("Failed to deserialize AssetType DB value from empty string".to_string()),
+            None => {
+                return Err("Failed to deserialize AssetType DB value from empty string".to_string())
+            }
         };
 
         if number < 65 {
@@ -160,6 +200,34 @@ impl ChainID {
         }
     }
 
+    /// Deserializes from the lowercase name used by the API, matching Python's
+    /// `ChainID.to_name()` / `ChainID.name.lower()` format.
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name {
+            "ethereum" => Some(ChainID::Ethereum),
+            "optimism" => Some(ChainID::Optimism),
+            "binance_sc" => Some(ChainID::BinanceSc),
+            "gnosis" => Some(ChainID::Gnosis),
+            "polygon_pos" => Some(ChainID::PolygonPos),
+            "fantom" => Some(ChainID::Fantom),
+            "base" => Some(ChainID::Base),
+            "arbitrum_one" => Some(ChainID::ArbitrumOne),
+            "avalanche" => Some(ChainID::Avalanche),
+            "celo" => Some(ChainID::Celo),
+            "arbitrum_nova" => Some(ChainID::ArbitrumNova),
+            "cronos" => Some(ChainID::Cronos),
+            "boba" => Some(ChainID::Boba),
+            "evmos" => Some(ChainID::Evmos),
+            "polygon_zkevm" => Some(ChainID::PolygonZkevm),
+            "zksync_era" => Some(ChainID::ZksyncEra),
+            "pulsechain" => Some(ChainID::Pulsechain),
+            "scroll" => Some(ChainID::Scroll),
+            "sonic" => Some(ChainID::Sonic),
+            "linea" => Some(ChainID::Linea),
+            _ => None,
+        }
+    }
+
     pub fn to_name(self) -> String {
         match self {
             ChainID::Ethereum => "ethereum".to_string(),
@@ -192,18 +260,44 @@ mod tests {
 
     #[test]
     fn test_asset_type_deserialization() {
-        assert_eq!(AssetType::deserialize_from_db("A").unwrap(), AssetType::Fiat);  // 'A' = 65, 65-64 = 1
-        assert_eq!(AssetType::deserialize_from_db("B").unwrap(), AssetType::OwnChain);  // 'B' = 66, 66-64 = 2
-        assert_eq!(AssetType::deserialize_from_db("C").unwrap(), AssetType::EvmToken);  // 'C' = 67, 67-64 = 3
-        assert!(AssetType::deserialize_from_db("abc").is_err());  // Multi-character
-        assert!(AssetType::deserialize_from_db("@").is_err());  // ASCII 64, too low
+        assert_eq!(
+            AssetType::deserialize_from_db("A").unwrap(),
+            AssetType::Fiat
+        ); // 'A' = 65, 65-64 = 1
+        assert_eq!(
+            AssetType::deserialize_from_db("B").unwrap(),
+            AssetType::OwnChain
+        ); // 'B' = 66, 66-64 = 2
+        assert_eq!(
+            AssetType::deserialize_from_db("C").unwrap(),
+            AssetType::EvmToken
+        ); // 'C' = 67, 67-64 = 3
+        assert!(AssetType::deserialize_from_db("abc").is_err()); // Multi-character
+        assert!(AssetType::deserialize_from_db("@").is_err()); // ASCII 64, too low
+    }
+
+    #[test]
+    fn test_asset_type_from_name() {
+        assert_eq!(AssetType::from_name("fiat"), Some(AssetType::Fiat));
+        assert_eq!(AssetType::from_name("evm token"), Some(AssetType::EvmToken));
+        assert_eq!(AssetType::from_name("non-existent"), None);
+    }
+
+    #[test]
+    fn test_asset_type_serialize_for_db() {
+        assert_eq!(AssetType::Fiat.serialize_for_db(), "A");
+        assert_eq!(AssetType::OwnChain.serialize_for_db(), "B");
+        assert_eq!(AssetType::EvmToken.serialize_for_db(), "C");
     }
 
     #[test]
     fn test_chain_id_deserialization() {
         assert_eq!(ChainID::deserialize_from_db(1).unwrap(), ChainID::Ethereum);
         assert_eq!(ChainID::deserialize_from_db(10).unwrap(), ChainID::Optimism);
-        assert_eq!(ChainID::deserialize_from_db(42161).unwrap(), ChainID::ArbitrumOne);
+        assert_eq!(
+            ChainID::deserialize_from_db(42161).unwrap(),
+            ChainID::ArbitrumOne
+        );
         assert!(ChainID::deserialize_from_db(999999).is_err());
     }
 

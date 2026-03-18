@@ -98,7 +98,7 @@ describe('composables/api/assets/info', () => {
       let capturedBody: DefaultBodyType = null;
 
       server.use(
-        http.post(`${backendUrl}/api/1/assets/search/levenshtein`, async ({ request }) => {
+        http.post(`${colibriUrl}/assets/search/levenshtein`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({
             result: [
@@ -135,7 +135,7 @@ describe('composables/api/assets/info', () => {
       let capturedBody: DefaultBodyType = null;
 
       server.use(
-        http.post(`${backendUrl}/api/1/assets/search/levenshtein`, async ({ request }) => {
+        http.post(`${colibriUrl}/assets/search/levenshtein`, async ({ request }) => {
           capturedBody = await request.json();
           return HttpResponse.json({
             result: [
@@ -173,7 +173,7 @@ describe('composables/api/assets/info', () => {
 
     it('should handle empty search results', async () => {
       server.use(
-        http.post(`${backendUrl}/api/1/assets/search/levenshtein`, () =>
+        http.post(`${colibriUrl}/assets/search/levenshtein`, () =>
           HttpResponse.json({
             result: [],
             message: '',
@@ -188,7 +188,7 @@ describe('composables/api/assets/info', () => {
 
     it('should throw error on failure', async () => {
       server.use(
-        http.post(`${backendUrl}/api/1/assets/search/levenshtein`, () =>
+        http.post(`${colibriUrl}/assets/search/levenshtein`, () =>
           HttpResponse.json({
             result: null,
             message: 'Search failed',

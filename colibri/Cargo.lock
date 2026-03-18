@@ -1321,6 +1321,7 @@ dependencies = [
  "rustc_version 0.4.1",
  "serde",
  "serde_json",
+ "strsim",
  "thiserror 2.0.17",
  "tokio",
  "tower-http",

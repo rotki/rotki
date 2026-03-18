@@ -322,13 +322,9 @@ pub async fn get_icon(
     Option<[(&'static str, &'static str); 2]>,
     Option<Bytes>,
 ) {
-    let Some((bytes, extension)) = resolve_icon_bytes(
-        data_dir.as_path(),
-        asset_id,
-        &asset_path,
-        globaldb,
-    )
-    .await else {
+    let Some((bytes, extension)) =
+        resolve_icon_bytes(data_dir.as_path(), asset_id, &asset_path, globaldb).await
+    else {
         return (StatusCode::NOT_FOUND, None, None);
     };
     let headers = match get_headers(&extension) {
@@ -611,8 +607,8 @@ mod tests {
         match result {
             Some((bytes, extension)) => {
                 let text = std::str::from_utf8(&bytes).unwrap();
-                assert!(text.contains("USDC/ETH"));  // trade pair
-                assert!(text.contains("0.05"));  // fee range
+                assert!(text.contains("USDC/ETH")); // trade pair
+                assert!(text.contains("0.05")); // fee range
                 assert_eq!(extension, "svg", "Expected SVG extension for v4 position");
             }
             None => {

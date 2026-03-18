@@ -15,7 +15,8 @@ macro_rules! get_datadir {
 
 // Assures the default rotki data directory exists and returns it
 fn default_data_dir(is_prod: bool) -> std::io::Result<PathBuf> {
-    let datadir = match std::env::consts::OS {  // spellchecker:disable-line
+    let datadir = match std::env::consts::OS {
+        // spellchecker:disable-line
         "linux" => get_datadir!(dirs::data_dir, "Could not find XDG data dir", is_prod),
         "windows" => get_datadir!(
             dirs::data_local_dir,

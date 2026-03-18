@@ -47,6 +47,8 @@ export function useAssetInfoApi(): UseAssetInfoApiReturn {
         ...payload,
       },
       {
+        baseURL: defaultApiUrls.colibriApiUrl,
+        retry: true,
         signal,
       },
     );
