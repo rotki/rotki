@@ -11,7 +11,7 @@ from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.decoding.uniswap.v3.utils import get_uniswap_v3_position_price
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
-from rotkehlchen.constants import HOUR_IN_SECONDS, ONE
+from rotkehlchen.constants import HOUR_IN_SECONDS, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_ETH,
     A_ETH2,
@@ -224,6 +224,21 @@ class PriceHistorian:
                 except (RemoteError, NoPriceForGivenTimestamp):
                     log.error(f'Could not query uniswap position price for {from_asset.identifier} and time {timestamp}.')  # noqa: E501
                     return None
+
+        if from_asset.is_evm_token() and (evm_token := from_asset.resolve_to_evm_token()).underlying_tokens is not None:  # noqa: E501
+            aggregated_price = ZERO
+            for underlying_token in evm_token.underlying_tokens:
+                underlying_asset = EvmToken(underlying_token.get_identifier(parent_chain=evm_token.chain_id))  # noqa: E501
+                if (underlying_price := PriceHistorian._get_cached_price_or_query(
+                    from_asset=underlying_asset,
+                    to_asset=to_asset,
+                    timestamp=timestamp,
+                    max_seconds_distance=max_seconds_distance,
+                )) is not None:
+                    aggregated_price += FVal(underlying_price) * underlying_token.weight
+
+            if aggregated_price != ZERO:
+                return Price(aggregated_price)
 
         return None
 
