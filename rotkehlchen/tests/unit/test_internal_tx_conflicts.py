@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HistoryMappingState
@@ -105,6 +106,33 @@ def test_repull_internal_tx_conflicts_batch_limit(database) -> None:
             'SELECT COUNT(*) FROM key_value_cache WHERE name=?',
             (DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS.value,),
         ).fetchone()[0] == 1
+
+
+def test_repull_internal_tx_conflicts_sends_ws_message_after_fix(database) -> None:
+    tx_hash = make_evm_tx_hash()
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, fixed) VALUES(?, ?, ?, ?)',  # noqa: E501
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, 0),
+        )
+
+    with (
+            patch.object(database.msg_aggregator, 'add_message') as add_message_mock,
+            patch(
+                'rotkehlchen.tasks.internal_tx_conflicts._repull_and_redecode_tx',
+                return_value=None,
+            ),
+    ):
+        repull_internal_tx_conflicts(
+            database=database,
+            chains_aggregator=cast('ChainsAggregator', object()),
+            limit=INTERNAL_TXS_TO_REPULL,
+        )
+
+    add_message_mock.assert_called_once_with(
+        message_type=WSMessageType.INTERNAL_TX_FIXED,
+        data={'chain': ChainID.ETHEREUM.to_name(), 'tx_hash': str(tx_hash)},
+    )
 
 
 def test_repull_internal_tx_conflicts_skip_customized(database) -> None:

@@ -1,6 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -138,6 +139,10 @@ def repull_internal_tx_conflicts(
                 tx_hash=tx_hash,
                 chain_id=chain_id,
             )
+        database.msg_aggregator.add_message(
+            message_type=WSMessageType.INTERNAL_TX_FIXED,
+            data={'chain': chain_id.to_name(), 'tx_hash': str(tx_hash)},
+        )
 
     with database.user_write() as write_cursor:
         database.set_static_cache(
