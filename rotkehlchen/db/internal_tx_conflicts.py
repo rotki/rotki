@@ -205,16 +205,22 @@ def get_internal_tx_conflicts(
 def get_pending_internal_tx_repull_conflicts(
         cursor: 'DBCursor',
         filter_query: 'InternalTxConflictsFilterQuery',
-) -> list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int | None, str, str | None, str | None, int | None, str | None]]:  # noqa: E501
+) -> list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int | None, str, str | None, str | None, int | None, str | None, str | None]]:  # noqa: E501
     """Return internal tx conflicts with action and metadata, including the transaction timestamp."""  # noqa: E501
     base_query = (
         'SELECT c.chain, c.transaction_hash, et.timestamp, c.action, '
-        'c.repull_reason, c.redecode_reason, c.last_retry_ts, c.last_error '
+        'c.repull_reason, c.redecode_reason, c.last_retry_ts, c.last_error, ('
+        'SELECT DISTINCT h.group_identifier '
+        'FROM history_events h '
+        'INNER JOIN chain_events_info ce ON h.identifier = ce.identifier '
+        'WHERE ce.tx_ref = c.transaction_hash '
+        'ORDER BY h.group_identifier'
+        ' LIMIT 1) '
         f'FROM evm_internal_tx_conflicts c {INTERNAL_TX_CONFLICTS_JOIN}'
     )
     filter_str, bindings = filter_query.prepare()
-    entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int | None, str, str | None, str | None, int | None, str | None]] = []  # noqa: E501
-    for row_chain, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error in cursor.execute(  # noqa: E501
+    entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int | None, str, str | None, str | None, int | None, str | None, str | None]] = []  # noqa: E501
+    for row_chain, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error, group_identifier in cursor.execute(  # noqa: E501
             base_query + filter_str,
             bindings,
     ):
@@ -229,6 +235,7 @@ def get_pending_internal_tx_repull_conflicts(
             redecode_reason,
             last_retry_ts,
             last_error,
+            group_identifier,
         ))
 
     return entries

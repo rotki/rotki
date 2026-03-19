@@ -8,9 +8,11 @@ from rotkehlchen.db.internal_tx_conflicts import (
     INTERNAL_TX_CONFLICT_REDECODE_REASON_DUPLICATE_EXACT_ROWS,
     INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS,
 )
+from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID, Timestamp
+from rotkehlchen.types import ChainID, Location, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -33,6 +35,27 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
                 (tx_hash_done, ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS, None, 1, None, None),  # noqa: E501
             ],
         )
+        write_cursor.execute(
+            'INSERT INTO history_events(entry_type, group_identifier, sequence_index, timestamp, location, location_label, asset, amount, notes, type, subtype) '  # noqa: E501
+            'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.EVM_EVENT.value,
+                'pending_group',
+                0,
+                1700000000,
+                Location.from_chain_id(ChainID.ETHEREUM).serialize_for_db(),
+                '0xabc',
+                'ETH',
+                '1',
+                None,
+                HistoryEventType.INFORMATIONAL.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        )
+        write_cursor.execute(
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) VALUES (?, ?, ?, ?)',  # noqa: E501
+            (write_cursor.lastrowid, tx_hash_pending, None, None),
+        )
 
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'internaltxconflictsresource'),
@@ -54,6 +77,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
             'redecode_reason': None,
             'last_retry_ts': 1700000000,
             'last_error': 'rpc timeout',
+            'group_identifier': 'pending_group',
         },
         {
             'chain': 'ethereum',
@@ -64,6 +88,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
             'redecode_reason': None,
             'last_retry_ts': 1700000100,
             'last_error': 'indexer error',
+            'group_identifier': None,
         },
         {
             'chain': 'ethereum',
@@ -74,6 +99,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
             'redecode_reason': INTERNAL_TX_CONFLICT_REDECODE_REASON_DUPLICATE_EXACT_ROWS,
             'last_retry_ts': None,
             'last_error': None,
+            'group_identifier': None,
         },
         {
             'chain': 'ethereum',
@@ -84,6 +110,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
             'redecode_reason': None,
             'last_retry_ts': 1700000200,
             'last_error': None,
+            'group_identifier': None,
         },
     ]
     assert {
@@ -96,6 +123,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
             entry['redecode_reason'],
             entry['last_retry_ts'],
             entry['last_error'],
+            entry['group_identifier'],
         )
         for entry in entries
     } == {
@@ -108,6 +136,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
             entry['redecode_reason'],
             entry['last_retry_ts'],
             entry['last_error'],
+            entry['group_identifier'],
         )
         for entry in expected
     }
