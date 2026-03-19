@@ -261,6 +261,10 @@ def set_internal_tx_conflict_fixed(
         tx_hash: EVMTxHash,
         chain_id: ChainID,
 ) -> None:
+    """Mark an internal tx conflict as fixed. The evm_internal_tx_conflicts table is
+    temporary — it exists only for the conflict resolution feature introduced in v1.42.1
+    release and will be removed in a future version. This is a no-op if no matching
+    conflict row exists for the given tx_hash and chain_id."""
     write_cursor.execute(
         'UPDATE evm_internal_tx_conflicts SET fixed=1, last_error=NULL WHERE transaction_hash=? AND chain=?',  # noqa: E501
         (tx_hash, chain_id.serialize_for_db()),

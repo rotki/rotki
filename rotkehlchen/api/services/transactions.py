@@ -25,6 +25,7 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.internal_tx_conflicts import (
     count_pending_internal_tx_repull_conflicts,
     get_pending_internal_tx_repull_conflicts,
+    is_tx_customized,
     set_internal_tx_conflict_fixed,
 )
 from rotkehlchen.db.settings import CachedSettings
@@ -577,7 +578,7 @@ class TransactionsService:
             filter_query: InternalTxConflictsFilterQuery,
     ) -> dict[str, Any]:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            if not table_exists(cursor, 'evm_internal_tx_conflicts'):
+            if not table_exists(cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
                 entries = []
                 entries_found = 0
                 entries_total = 0
@@ -896,6 +897,40 @@ class TransactionsService:
                 tx_timestamp=transaction.timestamp,
             ))
 
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            tx_is_customized = is_tx_customized(cursor, tx_ref, chain_manager.node_inquirer.chain_id)  # noqa: E501
+
+        if not delete_custom and tx_is_customized:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                write_cursor.execute(
+                    'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                    (tx_ref, chain_manager.node_inquirer.chain_id.serialize_for_db()),
+                )
+                dbevmtx.add_transactions(
+                    write_cursor=write_cursor,
+                    evm_transactions=[transaction],
+                    relevant_address=None,
+                )
+                dbevmtx.add_or_ignore_receipt_data(
+                    write_cursor=write_cursor,
+                    chain_id=chain_manager.node_inquirer.chain_id,
+                    data=raw_receipt_data,
+                )
+                if transaction.to_address is not None:
+                    chain_manager.transactions._replace_internal_transactions_for_parent_hash(
+                        write_cursor=write_cursor,
+                        parent_tx_hash=tx_ref,
+                        transactions=parent_hash_internal_txs,
+                        indexer_source=indexer_source,
+                    )
+                if table_exists(write_cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
+                    set_internal_tx_conflict_fixed(
+                        write_cursor=write_cursor,
+                        tx_hash=tx_ref,
+                        chain_id=chain_manager.node_inquirer.chain_id,
+                    )
+            return
+
         with self.rotkehlchen.data.db.user_write() as write_cursor:
             write_cursor.execute(
                 'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
@@ -930,7 +965,7 @@ class TransactionsService:
             events=events,
         )
         with self.rotkehlchen.data.db.user_write() as write_cursor:
-            if table_exists(write_cursor, 'evm_internal_tx_conflicts'):
+            if table_exists(write_cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
                 set_internal_tx_conflict_fixed(
                     write_cursor=write_cursor,
                     tx_hash=tx_ref,
