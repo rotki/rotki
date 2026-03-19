@@ -31,6 +31,7 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.binance_sc.node_inquirer import BinanceSCInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
@@ -713,6 +714,58 @@ def test_uniswapv4_swap_with_internal_fee_transaction(
         amount=FVal(fee_amount := '0.00000067528372179'),
         location_label=user_address,
         notes=f'Spend {fee_amount} ETH as a Uniswap V4 fee',
+        counterparty=CPT_UNISWAP_V4,
+        address=universal_router,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x1440D247172A622Ac56b7f9eCE3F3C01DF35148C']])
+def test_swap_via_erc4337_bundled_tx_on_base(
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that a Uniswap V4 swap executed via an ERC-4337 bundled transaction
+    is correctly decoded as a swap. The bundler submits multiple UserOperations
+    in one tx, so events from other users' operations must not leak into ours."""
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=(tx_hash := deserialize_evm_tx_hash('0x13020b28e7f28558b9cf07a1be11bc898d3de99d8414a8b9a4e7b60a4e4cb7a3')),  # noqa: E501
+    )
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,  # this is most likely a zora reward
+        sequence_index=1,
+        timestamp=(timestamp := TimestampMS(1755110615000)),
+        location=Location.BASE,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        amount=FVal(receive_eth := '0.000111'),
+        location_label=(user_address := base_accounts[0]),
+        notes=f'Receive {receive_eth} ETH from 0x7777777b3eA6C126942BB14dD5C3C11D365C385D',
+        address=string_to_evm_address('0x7777777b3eA6C126942BB14dD5C3C11D365C385D'),
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        amount=FVal(swap_amount := '0.000111'),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} ETH in Uniswap V4',
+        counterparty=CPT_UNISWAP_V4,
+        address=(universal_router := string_to_evm_address('0x6fF5693b99212Da76ad316178A184AB56D299b43')),  # noqa: E501
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:8453/erc20:0xF369B640B2293416845B591FDD672284dBA0390d'),
+        amount=FVal(receive_amount := '6625756.350975654777790004'),
+        location_label=user_address,
+        notes=f'Receive {receive_amount} HawaiianVibes after a swap in Uniswap V4',
         counterparty=CPT_UNISWAP_V4,
         address=universal_router,
     )]

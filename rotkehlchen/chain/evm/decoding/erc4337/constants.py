@@ -2,7 +2,7 @@ from typing import Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
-# v0.6, v0.7 and v0.8 EntryPoint addresses on Ethereum mainnet.
+# v0.6, v0.7 and v0.8 EntryPoint addresses. They are the same across all EVM chains.
 ERC4337_ENTRYPOINTS: Final = (
     string_to_evm_address('0x5FF137D4b0FDCD49DcA30c7CF57E578a026d2789'),
     string_to_evm_address('0x0000000071727De22E5E9d8BAf0edAc6f37da032'),
