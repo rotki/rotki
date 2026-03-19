@@ -12,6 +12,7 @@ interface UseVirtualScrollHighlightOptions {
   flattenedRows: ComputedRef<VirtualRow[]>;
   getRowHeight: (index: number) => number;
   getCardHeight: (index: number) => number;
+  highlightedGroupIdentifier: ComputedRef<string | undefined>;
   highlightedIdentifiers: ComputedRef<string[] | undefined>;
   highlightTypes: ComputedRef<Record<string, HighlightType> | undefined>;
   loading: Ref<boolean>;
@@ -23,6 +24,7 @@ interface UseVirtualScrollHighlightReturn {
   getHighlightType: (event: HistoryEventEntry) => HighlightType | undefined;
   getSwapHighlightType: (swapEvents: HistoryEventEntry[]) => HighlightType | undefined;
   isCardLayout: Ref<boolean>;
+  isGroupHighlighted: (groupId: string) => boolean;
   isHighlighted: (event: HistoryEventEntry) => boolean;
   isSwapHighlighted: (swapEvents: HistoryEventEntry[]) => boolean;
   virtualList: UseVirtualListReturn<VirtualRow>['list'];
@@ -43,6 +45,7 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
     flattenedRows,
     getRowHeight,
     getCardHeight,
+    highlightedGroupIdentifier,
     highlightedIdentifiers,
     highlightTypes,
     loading,
@@ -126,13 +129,30 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
   }
 
   /**
+   * Check if a group should be highlighted by its group identifier.
+   */
+  function isGroupHighlighted(groupId: string): boolean {
+    return get(highlightedGroupIdentifier) === groupId;
+  }
+
+  /**
+   * Get the highlight type for a group identifier.
+   */
+  function getGroupHighlightType(groupId: string): HighlightType | undefined {
+    const types = get(highlightTypes);
+    if (!types)
+      return undefined;
+    return types[`group:${groupId}`];
+  }
+
+  /**
    * Check if an event should be highlighted.
    */
   function isHighlighted(event: HistoryEventEntry): boolean {
     const identifiers = get(highlightedIdentifiers);
-    if (!identifiers || identifiers.length === 0)
-      return false;
-    return identifiers.includes(event.identifier.toString());
+    if (identifiers && identifiers.length > 0 && identifiers.includes(event.identifier.toString()))
+      return true;
+    return isGroupHighlighted(event.groupIdentifier);
   }
 
   /**
@@ -142,7 +162,7 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
     const types = get(highlightTypes);
     if (!types)
       return undefined;
-    return types[event.identifier.toString()];
+    return types[event.identifier.toString()] ?? getGroupHighlightType(event.groupIdentifier);
   }
 
   /**
@@ -150,9 +170,9 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
    */
   function isSwapHighlighted(swapEvents: HistoryEventEntry[]): boolean {
     const identifiers = get(highlightedIdentifiers);
-    if (!identifiers || identifiers.length === 0)
-      return false;
-    return swapEvents.some(e => identifiers.includes(e.identifier.toString()));
+    if (identifiers && identifiers.length > 0 && swapEvents.some(e => identifiers.includes(e.identifier.toString())))
+      return true;
+    return swapEvents.some(e => isGroupHighlighted(e.groupIdentifier));
   }
 
   /**
@@ -167,10 +187,15 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
       if (type)
         return type;
     }
+    for (const event of swapEvents) {
+      const type = getGroupHighlightType(event.groupIdentifier);
+      if (type)
+        return type;
+    }
     return undefined;
   }
 
-  watch(highlightedIdentifiers, () => {
+  watch([highlightedIdentifiers, highlightedGroupIdentifier], () => {
     set(hasScrolledToHighlight, false);
     set(pendingHighlightScroll, true);
   });
@@ -184,8 +209,29 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
     }
   });
 
-  watchDebounced([flattenedRows, highlightedIdentifiers, loading], ([rows, identifiers, isLoading]) => {
-    if (isLoading || !identifiers || identifiers.length === 0 || rows.length === 0 || get(hasScrolledToHighlight))
+  watchDebounced([flattenedRows, highlightedIdentifiers, highlightedGroupIdentifier, loading], ([rows, identifiers, groupId, isLoading]) => {
+    if (isLoading || rows.length === 0 || get(hasScrolledToHighlight))
+      return;
+
+    const hasIdentifiers = identifiers && identifiers.length > 0;
+    if (!hasIdentifiers && !groupId)
+      return;
+
+    // For group-based highlights (no identifiers), find the group header row
+    if (!hasIdentifiers && groupId) {
+      const groupIndex = rows.findIndex(row => row.type === 'group-header' && row.groupId === groupId);
+      if (groupIndex < 0)
+        return;
+
+      set(hasScrolledToHighlight, true);
+      set(pendingHighlightScroll, false);
+      startPromise(nextTick(() => {
+        scrollTo(groupIndex);
+      }));
+      return;
+    }
+
+    if (!identifiers || identifiers.length === 0)
       return;
 
     const indices = identifiers
@@ -228,6 +274,7 @@ export function useVirtualScrollHighlight(options: UseVirtualScrollHighlightOpti
     getHighlightType,
     getSwapHighlightType,
     isCardLayout,
+    isGroupHighlighted,
     isHighlighted,
     isSwapHighlighted,
     virtualList,

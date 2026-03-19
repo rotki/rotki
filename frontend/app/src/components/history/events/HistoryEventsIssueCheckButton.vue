@@ -2,6 +2,7 @@
 import { DIALOG_TYPES, type DialogShowOptions } from '@/components/history/events/dialog-types';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
+import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
 
 const showAlerts = defineModel<boolean>('showAlerts', { default: false });
 
@@ -13,18 +14,26 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { autoMatchLoading, unmatchedCount } = useUnmatchedAssetMovements();
 const { actionableCount: duplicatesCount } = useCustomizedEventDuplicates();
+const { pendingCount: internalConflictsCount } = useInternalTxConflicts();
 
-const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(duplicatesCount));
+const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(duplicatesCount) + get(internalConflictsCount));
 const hasIssues = computed<boolean>(() => !get(autoMatchLoading) && get(totalIssuesCount) > 0);
-const hasOnlyUnmatchedMovements = computed<boolean>(() => get(unmatchedCount) > 0 && get(duplicatesCount) === 0);
-const hasOnlyDuplicates = computed<boolean>(() => get(unmatchedCount) === 0 && get(duplicatesCount) > 0);
+
+const singleIssueDialog = computed<DialogShowOptions | undefined>(() => {
+  const issueTypes: DialogShowOptions[] = [];
+  if (get(unmatchedCount) > 0)
+    issueTypes.push({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+  if (get(duplicatesCount) > 0)
+    issueTypes.push({ type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
+  if (get(internalConflictsCount) > 0)
+    issueTypes.push({ type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
+  return issueTypes.length === 1 ? issueTypes[0] : undefined;
+});
 
 function toggleAlerts(): void {
-  if (get(hasOnlyUnmatchedMovements)) {
-    emit('show:dialog', { type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
-  }
-  else if (get(hasOnlyDuplicates)) {
-    emit('show:dialog', { type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
+  const single = get(singleIssueDialog);
+  if (single) {
+    emit('show:dialog', single);
   }
   else {
     set(showAlerts, !get(showAlerts));

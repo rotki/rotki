@@ -15,6 +15,7 @@ export const DIALOG_TYPES = {
   CUSTOMIZED_EVENT_DUPLICATES: 'customizedEventDuplicates',
   DECODING_STATUS: 'decodingStatus',
   EVENT_FORM: 'eventForm',
+  INTERNAL_TX_CONFLICTS: 'internalTxConflicts',
   MATCH_ASSET_MOVEMENTS: 'matchAssetMovements',
   MISSING_RULES: 'missingRules',
   PROTOCOL_CACHE: 'protocolCache',
@@ -30,6 +31,7 @@ export type DialogShowOptions =
   | { type: typeof DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES }
   | { type: typeof DIALOG_TYPES.DECODING_STATUS; persistent?: boolean }
   | { type: typeof DIALOG_TYPES.EVENT_FORM; data: GroupEventData | StandaloneEventData }
+  | { type: typeof DIALOG_TYPES.INTERNAL_TX_CONFLICTS }
   | { type: typeof DIALOG_TYPES.MATCH_ASSET_MOVEMENTS }
   | { type: typeof DIALOG_TYPES.MISSING_RULES; data: HistoryEventEditData }
   | { type: typeof DIALOG_TYPES.PROTOCOL_CACHE }

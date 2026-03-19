@@ -110,6 +110,7 @@ const {
   groupLoading,
   groups,
   hasActiveFilters,
+  highlightedGroupIdentifier,
   highlightedIdentifiers,
   highlightTypes,
   identifiers,
@@ -176,6 +177,7 @@ const {
 
 const debouncedProcessing = refDebounced(processing, 200);
 const { autoMatchLoading, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
+
 const { eventsModificationCounter } = storeToRefs(useHistoryStore());
 useHistoryEventNavigationConsumer(pagination, pageParams, groupLoading);
 const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading);
@@ -268,6 +270,7 @@ watchDebounced(route, async () => {
           :processing="processing"
           :main-page="mainPage"
           @open:match-asset-movements="openMatchAssetMovementsDialog()"
+          @open:internal-tx-conflicts="dialogContainer?.show({ type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS })"
         />
 
         <RuiCard>
@@ -319,6 +322,7 @@ watchDebounced(route, async () => {
             :exclude-ignored="!toggles.showIgnoredAssets"
             :has-active-filters="hasActiveFilters"
             :identifiers="identifiers"
+            :highlighted-group-identifier="highlightedGroupIdentifier"
             :highlighted-identifiers="highlightedIdentifiers"
             :highlight-types="highlightTypes"
             :selection="selectionMode"

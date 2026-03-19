@@ -25,6 +25,7 @@ export const SocketMessageType = {
   EXCHANGE_UNKNOWN_ASSET: 'exchange_unknown_asset',
   GNOSISPAY_SESSIONKEY_EXPIRED: 'gnosispay_sessionkey_expired',
   HISTORY_EVENTS_STATUS: 'history_events_status',
+  INTERNAL_TX_FIXED: 'internal_tx_fixed',
   LEGACY: 'legacy',
   MISSING_API_KEY: 'missing_api_key',
   MONERIUM_SESSIONKEY_EXPIRED: 'monerium_sessionkey_expired',

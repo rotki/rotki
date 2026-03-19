@@ -1,0 +1,202 @@
+import type { Ref } from 'vue';
+import type { InternalTxConflict } from './types';
+import { NotificationGroup, Severity } from '@rotki/common';
+import { startPromise } from '@shared/utils';
+import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/decoding';
+import { useSupportedChains } from '@/composables/info/chains';
+import { createPersistentSharedComposable } from '@/modules/common/use-persistent-shared-composable';
+import { useNotificationsStore } from '@/store/notifications';
+import { useTaskStore } from '@/store/tasks';
+import { TaskType } from '@/types/task-type';
+import { logger } from '@/utils/logging';
+import { useInternalTxConflictSelection } from './use-internal-tx-conflict-selection';
+import { getConflictKey } from './use-internal-tx-conflicts';
+
+export interface ResolutionProgress {
+  completed: number;
+  current: InternalTxConflict | undefined;
+  failed: number;
+  isRunning: boolean;
+  total: number;
+}
+
+function defaultProgress(): ResolutionProgress {
+  return {
+    completed: 0,
+    current: undefined,
+    failed: 0,
+    isRunning: false,
+    total: 0,
+  };
+}
+
+interface UseInternalTxConflictResolutionReturn {
+  cancelResolution: () => void;
+  isResolving: (conflict: InternalTxConflict) => boolean;
+  progress: Ref<ResolutionProgress>;
+  resolveMany: (conflicts: InternalTxConflict[], callbacks: ResolutionCallbacks) => Promise<void>;
+  resolveOne: (conflict: InternalTxConflict, callbacks: ResolutionCallbacks) => Promise<void>;
+}
+
+export interface ResolutionCallbacks {
+  onComplete: () => Promise<void>;
+}
+
+export const useInternalTxConflictResolution = createPersistentSharedComposable(({ acquireBusy, releaseBusy }): UseInternalTxConflictResolutionReturn => {
+  const { t } = useI18n({ useScope: 'global' });
+  const { getChain } = useSupportedChains();
+  const { pullAndRedecodeTransactions } = useHistoryTransactionDecoding();
+  const { removeKeys } = useInternalTxConflictSelection();
+  const { notify } = useNotificationsStore();
+  const { cancelTaskByTaskType } = useTaskStore();
+
+  const progress = ref<ResolutionProgress>(defaultProgress());
+  const cancelRequested = ref<boolean>(false);
+  const resolvingKeys = ref<Set<string>>(new Set());
+
+  function isResolving(conflict: InternalTxConflict): boolean {
+    return get(resolvingKeys).has(getConflictKey(conflict));
+  }
+
+  // Both REPULL and FIX_REDECODE resolve via the same backend API (pull + redecode).
+  // The action type distinction is visual — it categorizes the problem for the user,
+  // not the resolution strategy.
+  async function executeResolution(conflict: InternalTxConflict): Promise<void> {
+    const chainId = getChain(conflict.chain);
+
+    await pullAndRedecodeTransactions({
+      transactions: [{ location: chainId, txRef: conflict.txHash }],
+    });
+  }
+
+  async function resolveOne(conflict: InternalTxConflict, callbacks: ResolutionCallbacks): Promise<void> {
+    const key = getConflictKey(conflict);
+    set(resolvingKeys, new Set([...get(resolvingKeys), key]));
+    acquireBusy();
+
+    try {
+      await executeResolution(conflict);
+      removeKeys([key]);
+    }
+    catch (error: any) {
+      logger.error('Failed to resolve conflict:', error);
+    }
+    finally {
+      const keys = new Set(get(resolvingKeys));
+      keys.delete(key);
+      set(resolvingKeys, keys);
+      try {
+        await callbacks.onComplete();
+      }
+      finally {
+        releaseBusy();
+      }
+    }
+  }
+
+  async function resolveMany(conflicts: InternalTxConflict[], callbacks: ResolutionCallbacks): Promise<void> {
+    set(cancelRequested, false);
+    acquireBusy();
+
+    try {
+      const total = conflicts.length;
+      set(progress, {
+        completed: 0,
+        current: undefined,
+        failed: 0,
+        isRunning: true,
+        total,
+      });
+
+      notify({
+        group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
+        message: t('internal_tx_conflicts.notifications.started', { total }),
+        severity: Severity.INFO,
+        title: t('internal_tx_conflicts.notifications.title'),
+      });
+
+      const resolvedKeys: string[] = [];
+
+      for (const conflict of conflicts) {
+        if (get(cancelRequested))
+          break;
+
+        set(progress, { ...get(progress), current: conflict });
+
+        try {
+          await executeResolution(conflict);
+          resolvedKeys.push(getConflictKey(conflict));
+          const completed = get(progress).completed + 1;
+          set(progress, { ...get(progress), completed });
+          notify({
+            group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
+            message: t('internal_tx_conflicts.notifications.progress', { completed, total }),
+            severity: Severity.INFO,
+            title: t('internal_tx_conflicts.notifications.title'),
+          });
+        }
+        catch (error: any) {
+          logger.error('Failed to resolve conflict:', error);
+          set(progress, { ...get(progress), failed: get(progress).failed + 1 });
+        }
+
+        if (resolvedKeys.length > 0) {
+          removeKeys([...resolvedKeys]);
+          resolvedKeys.length = 0;
+        }
+
+        await callbacks.onComplete();
+      }
+
+      const { completed, failed } = get(progress);
+      const cancelled = get(cancelRequested);
+
+      set(progress, { ...get(progress), current: undefined, isRunning: false });
+      set(progress, defaultProgress());
+
+      if (cancelled) {
+        notify({
+          display: true,
+          group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
+          message: t('internal_tx_conflicts.notifications.cancelled', { completed, total }),
+          severity: Severity.WARNING,
+          title: t('internal_tx_conflicts.notifications.title'),
+        });
+      }
+      else if (failed > 0) {
+        notify({
+          display: true,
+          group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
+          message: t('internal_tx_conflicts.notifications.completed_with_errors', { completed, failed, total }),
+          severity: Severity.WARNING,
+          title: t('internal_tx_conflicts.notifications.title'),
+        });
+      }
+      else {
+        notify({
+          display: true,
+          group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
+          message: t('internal_tx_conflicts.notifications.completed', { total }),
+          severity: Severity.INFO,
+          title: t('internal_tx_conflicts.notifications.title'),
+        });
+      }
+    }
+    finally {
+      releaseBusy();
+    }
+  }
+
+  function cancelResolution(): void {
+    set(cancelRequested, true);
+    startPromise(cancelTaskByTaskType(TaskType.TRANSACTIONS_DECODING));
+  }
+
+  return {
+    cancelResolution,
+    isResolving,
+    progress,
+    resolveMany,
+    resolveOne,
+  };
+});

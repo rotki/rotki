@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import type { Nullable } from '@rotki/common';
 import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
-import type { Pinned } from '@/types/session';
 import MatchAssetMovementsContent from '@/components/history/events/MatchAssetMovementsContent.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { type Pinned, PinnedNames } from '@/types/session';
 
 const modelValue = defineModel<boolean>({ default: false });
 
@@ -30,7 +30,7 @@ function setPinned(pin: Nullable<Pinned>): void {
 
 function pinSection(highlightedGroupIdentifier?: string): void {
   const pin: Pinned = {
-    name: 'match-asset-movements-pinned',
+    name: PinnedNames.MATCH_ASSET_MOVEMENTS,
     props: highlightedGroupIdentifier ? { highlightedGroupIdentifier } : {},
   };
 

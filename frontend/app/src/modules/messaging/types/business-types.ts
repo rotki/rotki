@@ -16,6 +16,13 @@ export const ExchangeUnknownAssetData = z.object({
 
 export type ExchangeUnknownAssetData = z.infer<typeof ExchangeUnknownAssetData>;
 
+export const InternalTxFixedData = z.object({
+  chain: z.string(),
+  txHash: z.string(),
+});
+
+export type InternalTxFixedData = z.infer<typeof InternalTxFixedData>;
+
 const RefreshBalancesType = {
   BLOCKCHAIN_BALANCES: 'blockchain_balances',
 } as const;

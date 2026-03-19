@@ -27,6 +27,8 @@ export interface HistoryEventNavigationRequest {
   highlightedPotentialMatch?: number;
   /** Event ID for negative balance highlight (error/red) */
   highlightedNegativeBalanceEvent?: number;
+  /** Tx hash for internal tx conflict highlight (warning/yellow, group-based) */
+  highlightedInternalTxConflict?: string;
   /** When true, preserve current route filters and calculate position within filtered view */
   preserveFilters?: boolean;
   /** Fallback requests to try when the target is not found in filtered results */
@@ -38,7 +40,14 @@ export interface HighlightTarget {
   groupIdentifier: string;
 }
 
-export type HighlightTargetType = 'assetMovement' | 'negativeBalance' | 'potentialMatch';
+export const HighlightTargetTypes = {
+  ASSET_MOVEMENT: 'assetMovement',
+  INTERNAL_TX_CONFLICT: 'internalTxConflict',
+  NEGATIVE_BALANCE: 'negativeBalance',
+  POTENTIAL_MATCH: 'potentialMatch',
+} as const;
+
+export type HighlightTargetType = typeof HighlightTargetTypes[keyof typeof HighlightTargetTypes];
 
 const historyEventsPath = Routes.HISTORY_EVENTS.toString();
 const pendingNavigation = ref<HistoryEventNavigationRequest>();
@@ -98,6 +107,7 @@ export const useHistoryEventNavigation = createSharedComposable(() => {
     const candidates: string[] = [
       targets.potentialMatch?.groupIdentifier,
       targets.assetMovement?.groupIdentifier,
+      targets.internalTxConflict?.groupIdentifier,
       targets.negativeBalance?.groupIdentifier,
     ].filter((id): id is string => !!id);
 
