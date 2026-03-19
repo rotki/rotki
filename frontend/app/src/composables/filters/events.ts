@@ -3,7 +3,6 @@ import type { FilterSchema } from '@/composables/use-pagination-filter/types';
 import type {
   MatchedKeywordWithBehaviour,
   SearchMatcher,
-
 } from '@/types/filtering';
 import {
   HistoryEventEntryType,
@@ -83,6 +82,55 @@ export function useHistoryEventFilter(
   const { assetInfo, assetSearch } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { t } = useI18n({ useScope: 'global' });
+
+  const validSubtypeKeys = computed<string[]>(() => {
+    if (disabled.eventSubtypes)
+      return [];
+
+    const globalMapping = get(historyEventTypeGlobalMapping);
+    if (Object.keys(globalMapping).length === 0)
+      return [];
+
+    let selectedEventTypes = get(filters)?.eventTypes || [];
+    if (!Array.isArray(selectedEventTypes))
+      selectedEventTypes = [selectedEventTypes.toString()];
+
+    const keys: string[] = [];
+    if (selectedEventTypes.length > 0) {
+      selectedEventTypes.forEach((selectedEventType) => {
+        const globalMappingFound = globalMapping[selectedEventType];
+        if (globalMappingFound)
+          keys.push(...Object.keys(globalMappingFound));
+      });
+    }
+    else {
+      for (const key in globalMapping)
+        keys.push(...Object.keys(globalMapping[key]));
+    }
+
+    return keys;
+  });
+
+  watch(validSubtypeKeys, (keys) => {
+    if (keys.length === 0)
+      return;
+
+    let selectedEventSubtypes = get(filters)?.eventSubtypes || [];
+    if (!Array.isArray(selectedEventSubtypes))
+      selectedEventSubtypes = [selectedEventSubtypes.toString()];
+
+    if (selectedEventSubtypes.length === 0)
+      return;
+
+    const filteredEventSubtypes = selectedEventSubtypes.filter(item => keys.includes(item));
+
+    if (!isEqual(filteredEventSubtypes, selectedEventSubtypes)) {
+      set(filters, {
+        ...get(filters),
+        eventSubtypes: filteredEventSubtypes.length > 0 ? filteredEventSubtypes : undefined,
+      });
+    }
+  });
 
   const matchers = computed<Matcher[]>(() => {
     const selectedLocation = get(filters)?.location;
@@ -202,50 +250,17 @@ export function useHistoryEventFilter(
         });
       }
 
-      let selectedEventTypes = get(filters)?.eventTypes || [];
-      if (!Array.isArray(selectedEventTypes))
-        selectedEventTypes = [selectedEventTypes.toString()];
-
       if (!disabled.eventSubtypes) {
-        const globalMapping = get(historyEventTypeGlobalMapping);
-
-        const globalMappingKeys: string[] = [];
-        if (selectedEventTypes.length > 0) {
-          selectedEventTypes.forEach((selectedEventType) => {
-            const globalMappingFound = globalMapping[selectedEventType];
-            if (globalMappingFound)
-              globalMappingKeys.push(...Object.keys(globalMappingFound));
-          });
-        }
-        else {
-          for (const key in globalMapping)
-            globalMappingKeys.push(...Object.keys(globalMapping[key]));
-        }
-
-        let selectedEventSubtypes = get(filters)?.eventSubtypes || [];
-        if (!Array.isArray(selectedEventSubtypes))
-          selectedEventSubtypes = [selectedEventSubtypes.toString()];
-
-        if (selectedEventSubtypes.length > 0) {
-          const filteredEventSubtypes = selectedEventSubtypes.filter(item => globalMappingKeys.includes(item));
-
-          if (!isEqual(filteredEventSubtypes, selectedEventSubtypes)) {
-            set(filters, {
-              ...get(filters),
-              eventSubtypes: filteredEventSubtypes.length > 0 ? filteredEventSubtypes : undefined,
-            });
-          }
-        }
-
+        const subtypeKeys = get(validSubtypeKeys);
         data.push({
           description: t('transactions.filter.event_subtype'),
           key: HistoryEventFilterKeys.EVENT_SUBTYPE,
           keyValue: HistoryEventFilterValueKeys.EVENT_SUBTYPE,
           multiple: true,
           string: true,
-          suggestions: () => globalMappingKeys.filter(uniqueStrings),
+          suggestions: () => subtypeKeys.filter(uniqueStrings),
           suggestionsToShow: -1,
-          validate: (type: string) => globalMappingKeys.includes(type),
+          validate: (type: string) => subtypeKeys.includes(type),
         });
       }
     }

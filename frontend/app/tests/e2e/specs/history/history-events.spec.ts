@@ -504,3 +504,51 @@ test.describe.serial('evm history events', () => {
     }).toPass({ timeout: 10000 });
   });
 });
+
+test.describe.serial('history event filter persistence', () => {
+  let ctx: SharedTestContext;
+  let page: HistoryEventsPage;
+
+  test.beforeAll(async ({ browser, request }) => {
+    ctx = await createLoggedInContext(browser, request);
+    page = new HistoryEventsPage(ctx.sharedPage);
+  });
+
+  test.afterAll(async () => {
+    await cleanupContext(ctx);
+  });
+
+  test('event_subtype=none filter persists after navigation', async () => {
+    await ctx.app.checkGetPremiumButton();
+    await page.visit();
+    await waitForNoRunningTasks(ctx.sharedPage);
+
+    // Apply event_type and event_subtype filters
+    await page.applyTableFilter('event_type', 'receive');
+    await page.applyTableFilter('event_subtype', 'none');
+
+    // Verify filters are in the URL
+    await expect(async () => {
+      const url = ctx.sharedPage.url();
+      expect(url).toContain('eventTypes=receive');
+      expect(url).toContain('eventSubtypes=none');
+    }).toPass({ timeout: 5000 });
+
+    // Navigate to dashboard
+    await RotkiApp.navigateTo(ctx.sharedPage, 'dashboard');
+    await expect(async () => {
+      expect(ctx.sharedPage.url()).toContain('/dashboard');
+    }).toPass({ timeout: 10000 });
+
+    // Navigate back to history events
+    await page.visit();
+    await waitForNoRunningTasks(ctx.sharedPage);
+
+    // Verify both filters are restored in the URL
+    await expect(async () => {
+      const url = ctx.sharedPage.url();
+      expect(url).toContain('eventTypes=receive');
+      expect(url).toContain('eventSubtypes=none');
+    }).toPass({ timeout: 10000 });
+  });
+});
