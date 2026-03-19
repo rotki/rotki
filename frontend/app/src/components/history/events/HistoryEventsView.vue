@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Account, Blockchain, HistoryEventEntryType } from '@rotki/common';
+import type { PullLocationTransactionPayload } from '@/types/history/events';
 import type { HistoryEventEntry, HistoryEventRow } from '@/types/history/events/schemas';
 import RefreshButton from '@/components/helper/RefreshButton.vue';
 import { DIALOG_TYPES, type DialogShowOptions, type HistoryEventsToggles } from '@/components/history/events/dialog-types';
@@ -18,7 +19,6 @@ import { useHistoryEventsDeletion } from '@/modules/history/events/composables/u
 import { useHistoryEventsSelectionActions } from '@/modules/history/events/composables/use-history-events-selection-actions';
 import { useHistoryEventsSelectionMode } from '@/modules/history/events/composables/use-selection-mode';
 import { useHistoryEventsStatus } from '@/modules/history/events/use-history-events-status';
-import { useHistoryStore } from '@/store/history';
 
 defineOptions({ inheritAttrs: false });
 
@@ -143,6 +143,7 @@ const actions = useHistoryEventsActions({
   entryTypes,
   fetchData,
   groups,
+  mainPage,
   onlyChains,
   shouldFetchEventsRegularly,
 });
@@ -176,9 +177,7 @@ const {
 });
 
 const debouncedProcessing = refDebounced(processing, 200);
-const { autoMatchLoading, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
-
-const { eventsModificationCounter } = storeToRefs(useHistoryStore());
+const { autoMatchLoading, autoMatchMovement, refreshUnmatchedAssetMovements } = useUnmatchedAssetMovements();
 useHistoryEventNavigationConsumer(pagination, pageParams, groupLoading);
 const backgroundLoading = logicOr(debouncedProcessing, autoMatchLoading);
 
@@ -194,8 +193,13 @@ function handleUpdateEventIds({ eventIds, groupedEvents, rawEvents }: { eventIds
   set(originalGroups, rawEvents || get(groups).data);
 }
 
-function openMatchAssetMovementsDialog(): void {
-  get(dialogContainer)?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });
+async function handleRedecode(event?: PullLocationTransactionPayload): Promise<void> {
+  await actions.fetch.dataAndRedecode(event);
+  if (event?.linkedMovement) {
+    const matched = await autoMatchMovement(event.linkedMovement);
+    if (matched)
+      await actions.fetch.dataAndLocations();
+  }
 }
 
 async function handleMovementChanged(): Promise<void> {
@@ -225,12 +229,6 @@ watchImmediate(route, async ({ query }) => {
 
 watch(backgroundLoading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
-    await actions.fetch.dataAndLocations();
-});
-
-// Refresh when events are modified (e.g., from pinned sidebar matching)
-watch(eventsModificationCounter, async (current, previous) => {
-  if (props.mainPage && current > previous)
     await actions.fetch.dataAndLocations();
 });
 
@@ -269,7 +267,7 @@ watchDebounced(route, async () => {
           v-model:show="showAlerts"
           :processing="processing"
           :main-page="mainPage"
-          @open:match-asset-movements="openMatchAssetMovementsDialog()"
+          @open:match-asset-movements="dialogContainer?.show({ type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS })"
           @open:internal-tx-conflicts="dialogContainer?.show({ type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS })"
         />
 
@@ -330,7 +328,7 @@ watchDebounced(route, async () => {
             :duplicate-handling-status="duplicateHandlingStatus"
             @clear-filters="clearFilters()"
             @show:dialog="dialogContainer?.show($event)"
-            @refresh="actions.fetch.dataAndRedecode($event)"
+            @refresh="handleRedecode($event)"
             @refresh:block-event="actions.redecode.blocks($event)"
             @set-page="setPage($event)"
             @update-event-ids="handleUpdateEventIds($event)"

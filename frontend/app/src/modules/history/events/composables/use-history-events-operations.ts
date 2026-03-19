@@ -1,6 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { HistoryEventDeletePayload, HistoryEventsTableEmitFn, HistoryEventUnlinkPayload } from '@/modules/history/events/types';
 import type {
+  LinkedMovementMatch,
   LocationAndTxRef,
   PullEventPayload,
 } from '@/types/history/events';
@@ -15,6 +16,7 @@ import { useIgnore } from '@/composables/history';
 import { useHistoryEvents } from '@/composables/history/events';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useSupportedChains } from '@/composables/info/chains';
+import { Defaults } from '@/data/defaults';
 import { useCompleteEvents } from '@/modules/history/events/composables/use-complete-events';
 import { useConfirmStore } from '@/store/confirm';
 import { useNotificationsStore } from '@/store/notifications';
@@ -58,6 +60,7 @@ export function useHistoryEventsOperations(
   const redecodePayload = ref<PullEventPayload>();
   const hasCustomEvents = ref<boolean>(false);
   const showIndexerOptions = ref<boolean>(false);
+  const pendingLinkedMovement = ref<LinkedMovementMatch>();
 
   const { t } = useI18n({ useScope: 'global' });
 
@@ -74,6 +77,40 @@ export function useHistoryEventsOperations(
   }, selected, () => {
     emit('refresh');
   });
+
+  function buildLinkedMovement(movementEvent: HistoryEventEntry, groupEvents: HistoryEventEntry[]): LinkedMovementMatch {
+    const nonMovementEvents = groupEvents.filter(item => !isAssetMovementEvent(item) && item.eventSubtype !== 'fee');
+    const movementTimestamp = movementEvent.timestamp;
+    const movementAmount = movementEvent.amount;
+
+    const defaultTimeRange = Defaults.ASSET_MOVEMENT_TIME_RANGE;
+    const defaultTolerance = Defaults.ASSET_MOVEMENT_AMOUNT_TOLERANCE;
+
+    let timeRange: number = defaultTimeRange;
+    let tolerance: string = defaultTolerance;
+
+    if (nonMovementEvents.length > 0) {
+      const timeDiffs = nonMovementEvents.map(e => Math.abs(e.timestamp - movementTimestamp));
+      timeRange = Math.max(Math.max(...timeDiffs, 60) * 2, defaultTimeRange);
+
+      const amountDiffs = nonMovementEvents
+        .map(e => movementAmount.minus(e.amount).abs().div(movementAmount))
+        .filter(d => d.isFinite());
+
+      if (amountDiffs.length > 0) {
+        const maxDiff = amountDiffs.reduce((a, b) => (a.gt(b) ? a : b));
+        const computed = maxDiff.multipliedBy(2).toFixed(6);
+        tolerance = computed > defaultTolerance ? computed : defaultTolerance;
+      }
+    }
+
+    return {
+      groupIdentifier: movementEvent.actualGroupIdentifier || movementEvent.groupIdentifier,
+      identifier: movementEvent.identifier,
+      timeRange,
+      tolerance,
+    };
+  }
 
   function getItemClass(item: HistoryEventEntry): '' | 'opacity-50' {
     return item.ignoredInAccounting ? 'opacity-50' : '';
@@ -195,7 +232,9 @@ export function useHistoryEventsOperations(
       return;
     }
 
-    const isAnyCustom = getGroupEvents(groupIdentifier).some(item => isCustomizedEvent(item));
+    const groupEvents = getGroupEvents(groupIdentifier);
+    const isAnyCustom = groupEvents.some(item => isCustomizedEvent(item));
+    const movementEvent = groupEvents.find(item => isAssetMovementEvent(item));
 
     // If there are custom events, show dialog to ask about custom event handling
     if (isAnyCustom) {
@@ -209,6 +248,7 @@ export function useHistoryEventsOperations(
     // No custom events - just redecode directly without dialog
     emit('refresh', {
       deleteCustom: false,
+      linkedMovement: movementEvent ? buildLinkedMovement(movementEvent, groupEvents) : undefined,
       transactions: [payload.data],
     });
   }
@@ -219,7 +259,10 @@ export function useHistoryEventsOperations(
       return;
     }
 
-    const isAnyCustom = getGroupEvents(eventIdentifier).some(item => isCustomizedEvent(item));
+    const groupEvents = getGroupEvents(eventIdentifier);
+    const isAnyCustom = groupEvents.some(item => isCustomizedEvent(item));
+    const movementEvent = groupEvents.find(item => isAssetMovementEvent(item));
+    set(pendingLinkedMovement, movementEvent ? buildLinkedMovement(movementEvent, groupEvents) : undefined);
 
     // Show dialog with indexer options (only for EVM events)
     set(hasCustomEvents, isAnyCustom);
@@ -239,10 +282,12 @@ export function useHistoryEventsOperations(
       emit('refresh', {
         customIndexersOrder,
         deleteCustom,
+        linkedMovement: get(pendingLinkedMovement),
         transactions: [payload.data],
       });
     }
     set(redecodePayload, undefined);
+    set(pendingLinkedMovement, undefined);
   }
 
   return {

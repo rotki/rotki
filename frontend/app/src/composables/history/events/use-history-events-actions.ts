@@ -35,6 +35,7 @@ interface UseHistoryEventsActionsOptions {
   currentAction: Ref<HistoryEventAction>;
   fetchData: () => Promise<void>;
   groups: Ref<Collection<HistoryEventRow>>;
+  mainPage?: Ref<boolean>;
   shouldFetchEventsRegularly?: Ref<boolean>;
   showDialog?: (options: { type: 'decodingStatus'; persistent?: boolean }) => Promise<void>;
 }
@@ -66,6 +67,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     entryTypes,
     fetchData: fetchEventsData,
     groups,
+    mainPage,
     onlyChains,
     shouldFetchEventsRegularly,
     showDialog,
@@ -84,11 +86,13 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
 
   const { show } = useConfirmStore();
   const { notify } = useNotificationsStore();
+  const historyStore = useHistoryStore();
   const {
     fetchAssociatedLocations,
     fetchLocationLabels,
     resetUndecodedTransactionsStatus,
-  } = useHistoryStore();
+  } = historyStore;
+  const { eventsModificationCounter } = storeToRefs(historyStore);
   const { refreshTransactions } = useHistoryTransactions();
   const {
     fetchUndecodedTransactionsStatus,
@@ -197,6 +201,14 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   // Set up auto-fetch functionality if shouldFetchEventsRegularly is provided
   if (shouldFetchEventsRegularly) {
     useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
+  }
+
+  // Refresh when events are modified (e.g., from pinned sidebar matching)
+  if (mainPage) {
+    watch(eventsModificationCounter, async (current, previous) => {
+      if (get(mainPage) && current > previous)
+        await fetchDataAndLocations();
+    });
   }
 
   // Dialog handlers
