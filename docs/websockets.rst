@@ -690,6 +690,26 @@ Sent when the periodic event processing task is unable to find corresponding eve
 - ``count``: Total number of asset movements that could not be matched.
 
 
+Internal Transaction Conflict Fixed
+====================================
+
+Sent when the internal transaction conflict repull task marks a conflict as fixed.
+
+::
+
+    {
+        "type": "internal_tx_fixed",
+        "data": {
+            "chain": "ethereum",
+            "tx_hash": "0xabc123..."
+        }
+    }
+
+
+- ``chain``: EVM chain name where the fixed transaction belongs.
+- ``tx_hash``: Transaction hash of the fixed internal transaction conflict.
+
+
 Historical Balance Processing Progress
 =========================================
 
