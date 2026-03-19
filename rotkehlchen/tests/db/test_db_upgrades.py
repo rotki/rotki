@@ -3360,6 +3360,9 @@ def test_latest_upgrade_correctness(user_data_dir):
     new_tables = tables_after_upgrade - tables_before
     assert new_tables == {
         'bitcoin_events_addresses',
+        'evm_chain_event_txs',
+        'solana_chain_event_txs',
+        'zksynclite_chain_event_txs',
     }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
@@ -3951,6 +3954,48 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
         resume_from_backup=False,
     )
     with db_v51.conn.write_ctx() as write_cursor:
+        evm_tx_hash = make_evm_tx_hash()
+        solana_signature = bytes(range(64))
+        zksync_tx_hash = make_evm_tx_hash()
+        write_cursor.execute(
+            'INSERT INTO evm_transactions('
+            'tx_hash, chain_id, timestamp, block_number, from_address, to_address, value, gas, '
+            'gas_price, gas_used, input_data, nonce'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                evm_tx_hash,
+                ChainID.ETHEREUM.serialize_for_db(),
+                1730000000,
+                1,
+                '0x1111111111111111111111111111111111111111',
+                '0x2222222222222222222222222222222222222222',
+                '1',
+                '21000',
+                '1',
+                '21000',
+                b'',
+                1,
+            ),
+        )
+        write_cursor.execute(
+            'INSERT INTO solana_transactions(slot, fee, block_time, success, signature) '
+            'VALUES (?, ?, ?, ?, ?)',
+            (1, 1, 1730000000, 1, solana_signature),
+        )
+        write_cursor.execute(
+            'INSERT INTO zksynclite_transactions('
+            'tx_hash, timestamp, block_number, from_address, to_address, asset, amount'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?)',
+            (
+                zksync_tx_hash,
+                1730000000,
+                1,
+                '0x1111111111111111111111111111111111111111',
+                '0x2222222222222222222222222222222222222222',
+                'ETH',
+                '1',
+            ),
+        )
         write_cursor.execute(
             'INSERT INTO history_events('
             'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
@@ -4011,6 +4056,102 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
                 HistoryEventSubType.FEE.serialize(),
             ),
         )
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.EVM_EVENT.serialize_for_db(),
+                'EVM_LINK_TEST_1',
+                0,
+                1730000003000,
+                Location.ETHEREUM.serialize_for_db(),
+                '0x1111111111111111111111111111111111111111',
+                'ETH',
+                '1',
+                'evm test',
+                HistoryEventType.SPEND.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        )
+        evm_event_identifier = write_cursor.lastrowid
+        write_cursor.execute(
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) VALUES(?, ?, ?, ?)',  # noqa: E501
+            (evm_event_identifier, evm_tx_hash, 'test', None),
+        )
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.SOLANA_EVENT.serialize_for_db(),
+                'SOL_LINK_TEST_1',
+                0,
+                1730000004000,
+                Location.SOLANA.serialize_for_db(),
+                None,
+                'ETH',
+                '1',
+                'solana test',
+                HistoryEventType.SPEND.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        )
+        solana_event_identifier = write_cursor.lastrowid
+        write_cursor.execute(
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) VALUES(?, ?, ?, ?)',  # noqa: E501
+            (solana_event_identifier, solana_signature, 'test', None),
+        )
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.EVM_EVENT.serialize_for_db(),
+                'ZK_LINK_TEST_1',
+                0,
+                1730000005000,
+                Location.ZKSYNC_LITE.serialize_for_db(),
+                '0x1111111111111111111111111111111111111111',
+                'ETH',
+                '1',
+                'zksync test',
+                HistoryEventType.SPEND.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        )
+        zksync_event_identifier = write_cursor.lastrowid
+        write_cursor.execute(
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) VALUES(?, ?, ?, ?)',  # noqa: E501
+            (zksync_event_identifier, zksync_tx_hash, 'test', None),
+        )
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'entry_type, group_identifier, sequence_index, timestamp, location, location_label, '
+            'asset, amount, notes, type, subtype'
+            ') VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                HistoryBaseEntryType.SOLANA_EVENT.serialize_for_db(),
+                'SOL_ORPHAN_TEST_1',
+                0,
+                1730000006000,
+                Location.SOLANA.serialize_for_db(),
+                None,
+                'ETH',
+                '1',
+                'orphan test',
+                HistoryEventType.SPEND.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
+        )
+        orphan_event_identifier = write_cursor.lastrowid
+        write_cursor.execute(
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) VALUES(?, ?, ?, ?)',  # noqa: E501
+            (orphan_event_identifier, bytes([9] * 64), 'test', None),
+        )
 
     db_v51.logout()
     db = _init_db_with_target_version(
@@ -4021,7 +4162,13 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
     )
     with db.conn.read_ctx() as cursor:
         assert table_exists(cursor=cursor, name='bitcoin_events_addresses')
+        assert table_exists(cursor=cursor, name='evm_chain_event_txs')
+        assert table_exists(cursor=cursor, name='solana_chain_event_txs')
+        assert table_exists(cursor=cursor, name='zksynclite_chain_event_txs')
         assert index_exists(cursor=cursor, name='idx_bitcoin_events_addresses_address')
+        assert index_exists(cursor=cursor, name='idx_evm_chain_event_txs_tx_id')
+        assert index_exists(cursor=cursor, name='idx_solana_chain_event_txs_tx_id')
+        assert index_exists(cursor=cursor, name='idx_zksynclite_chain_event_txs_tx_id')
         mappings = cursor.execute(
             'SELECT address FROM bitcoin_events_addresses '
             'WHERE event_identifier IN ('
@@ -4046,6 +4193,28 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
             'SELECT identifier FROM history_events WHERE group_identifier = ?'
             ')',
             ('BTC_NOTE_TEST_2',),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_chain_event_txs WHERE event_identifier IN ('
+            'SELECT identifier FROM history_events WHERE group_identifier = ?'
+            ')',
+            ('EVM_LINK_TEST_1',),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM solana_chain_event_txs WHERE event_identifier IN ('
+            'SELECT identifier FROM history_events WHERE group_identifier = ?'
+            ')',
+            ('SOL_LINK_TEST_1',),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM zksynclite_chain_event_txs WHERE event_identifier IN ('
+            'SELECT identifier FROM history_events WHERE group_identifier = ?'
+            ')',
+            ('ZK_LINK_TEST_1',),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier = ?',
+            ('SOL_ORPHAN_TEST_1',),
         ).fetchone()[0] == 0
 
     db.logout()

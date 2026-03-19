@@ -3821,7 +3821,7 @@ class RestAPI:
                     ) for matched_event_identifier in matched_event_identifiers],
                 )
                 # Restore events from the backup created before matching
-                DBHistoryEvents.maybe_restore_history_events_from_backup(
+                DBHistoryEvents(self.rotkehlchen.data.db).maybe_restore_history_events_from_backup(
                     write_cursor=write_cursor,
                     identifiers=[*matched_event_identifiers, asset_movement_identifier],
                 )
