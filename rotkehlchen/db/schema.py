@@ -968,6 +968,7 @@ CREATE INDEX IF NOT EXISTS idx_history_events_ignored ON history_events(ignored)
 CREATE INDEX IF NOT EXISTS idx_history_event_links_right ON history_event_links(right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_links_composite ON history_event_links(link_type, left_event_id, right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_link_ignores_type ON history_event_link_ignores(link_type);
+CREATE INDEX IF NOT EXISTS idx_chain_events_info_tx_ref ON chain_events_info(tx_ref);
 CREATE UNIQUE INDEX IF NOT EXISTS unique_generic_accounting_rules ON accounting_rules(type, subtype, counterparty) WHERE is_event_specific = 0;
 """  # noqa: E501
 

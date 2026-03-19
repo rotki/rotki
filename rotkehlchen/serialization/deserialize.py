@@ -638,7 +638,10 @@ def deserialize_evm_transaction(
 
         if internal:
             if data.get('callType') == 'delegatecall':
-                raise DeserializationError('Skipping delegatecall internal transaction since no value transfer occurs')  # noqa: E501
+                # Should never reach here — all callers must filter delegatecall entries
+                # before calling this function. If it does, log and skip silently.
+                log.error(f'delegatecall internal tx reached deserialization. Caller should have filtered it. Data: {data}')  # noqa: E501
+                raise DeserializationError('Unexpected delegatecall internal transaction reached deserialization')  # noqa: E501
 
             return EvmInternalTransaction(
                 parent_tx_hash=tx_hash,
