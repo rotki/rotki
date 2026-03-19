@@ -2703,6 +2703,7 @@ Decode transactions that haven't been decoded yet
                       "timestamp": 1700000000,
                       "action": "repull",
                       "repull_reason": "all_zero_gas",
+                      "group_identifier": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742",
                       "last_retry_ts": 1700000000,
                       "last_error": "rpc timeout"
                   }
@@ -2721,6 +2722,7 @@ Decode transactions that haven't been decoded yet
    :resjson string result.entries.action: Required action. Either ``repull`` or ``fix_redecode``.
    :resjson string result.entries.repull_reason: Reason for repull. Values are ``all_zero_gas`` and ``other``. ``null`` for ``fix_redecode`` rows.
    :resjson string result.entries.redecode_reason: Reason for redecode. Values are ``mixed_zero_gas``, ``duplicate_exact_rows`` and ``mixed_zero_gas_and_duplicate``. ``null`` for ``repull`` rows.
+   :resjson string result.entries.group_identifier: Group identifier of history events linked to ``tx_hash``. ``null`` when no linked events are found.
    :resjson int result.entries.last_retry_ts: Unix timestamp of the most recent repull retry, or ``null`` if no retry has failed yet.
    :resjson string result.entries.last_error: Error from the most recent failed repull retry, or ``null`` if no retry has failed yet.
    :resjson int result.entries_found: Number of entries returned in the current page.

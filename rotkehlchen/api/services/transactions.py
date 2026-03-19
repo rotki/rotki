@@ -602,8 +602,9 @@ class TransactionsService:
                         'redecode_reason': redecode_reason,
                         'last_retry_ts': last_retry_ts,
                         'last_error': last_error,
+                        'group_identifier': group_identifier,
                     }
-                    for chain_id, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error in entries  # noqa: E501
+                    for chain_id, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error, group_identifier in entries  # noqa: E501
                 ],
                 'entries_found': len(entries),
                 'entries_total': entries_total,
