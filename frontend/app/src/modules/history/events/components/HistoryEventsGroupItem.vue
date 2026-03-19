@@ -109,6 +109,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
       <HistoryEventsAction
         v-if="!hideActions"
         :event="group"
+        :group-events="groupEvents"
         :loading="loading"
         :duplicate-handling-status="duplicateHandlingStatus"
         class="shrink-0"
@@ -215,6 +216,7 @@ const isCard = computed<boolean>(() => props.variant === 'card');
     <HistoryEventsAction
       v-if="!hideActions"
       :event="group"
+      :group-events="groupEvents"
       :loading="loading"
       :duplicate-handling-status="duplicateHandlingStatus"
       class="shrink-0"

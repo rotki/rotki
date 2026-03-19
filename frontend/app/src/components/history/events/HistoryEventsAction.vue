@@ -34,6 +34,7 @@ import {
 
 const props = defineProps<{
   event: HistoryEventEntry;
+  groupEvents?: HistoryEventEntry[];
   loading: boolean;
   duplicateHandlingStatus?: DuplicateHandlingStatus;
 }>();
@@ -80,7 +81,29 @@ const solanaEvent = computed<SolanaEvent | SolanaSwapEvent | undefined>(() => {
   return undefined;
 });
 
-const eventWithDecoding = computed<DecodableEventType | undefined>(() => get(evmEvent) || get(solanaEvent));
+const eventWithDecoding = computed<DecodableEventType | undefined>(() => {
+  const direct = get(evmEvent) || get(solanaEvent);
+  if (direct)
+    return direct;
+
+  if (!props.groupEvents)
+    return undefined;
+
+  for (const child of props.groupEvents) {
+    if (isEvmEvent(child) || isEvmSwapEvent(child) || isSolanaEvent(child) || isSolanaSwapEvent(child))
+      return child;
+  }
+
+  return undefined;
+});
+
+const decodableEvmEvent = computed<EvmHistoryEvent | EvmSwapEvent | undefined>(() => {
+  const decoded = get(eventWithDecoding);
+  if (decoded && (isEvmEvent(decoded) || isEvmSwapEvent(decoded)))
+    return decoded;
+
+  return undefined;
+});
 
 const eventWithTxRef = computed<{ location: string; txRef: string } | undefined>(() => {
   const currentEvent = get(event);
@@ -279,7 +302,7 @@ function confirmIgnoreDuplicate(): void {
         <template v-else-if="eventWithDecoding">
           <RuiButton
             variant="list"
-            :class="{ '!py-2': evmEvent }"
+            :class="{ '!py-2': decodableEvmEvent }"
             :disabled="loading || txEventsDecoding"
             @click="redecode(eventWithDecoding)"
           >
@@ -293,7 +316,7 @@ function confirmIgnoreDuplicate(): void {
             {{ t('transactions.actions.redecode_events') }}
             <template #append>
               <RuiTooltip
-                v-if="evmEvent"
+                v-if="decodableEvmEvent"
                 :popper="{ placement: 'top', scroll: false, resize: false }"
               >
                 <template #activator>
@@ -303,7 +326,7 @@ function confirmIgnoreDuplicate(): void {
                     size="sm"
                     class="!p-2"
                     :disabled="loading || txEventsDecoding"
-                    @click.stop="redecodeWithOptions(evmEvent)"
+                    @click.stop="redecodeWithOptions(decodableEvmEvent)"
                   >
                     <RuiIcon
                       name="lu-settings-2"
