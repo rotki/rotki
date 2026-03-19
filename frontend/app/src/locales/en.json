@@ -4698,8 +4698,7 @@
   "premium_placeholder": {
     "current_plan": "{tier} plan",
     "free_description": "This feature requires a minimum of {tier} tier.",
-    "premium_description": "This feature requires a minimum of {tier} tier. Your current tier is {currentTier}.",
-    "upgrade_plan": "Upgrade plan"
+    "premium_description": "This feature requires a minimum of {tier} tier. Your current tier is {currentTier}."
   },
   "premium_settings": {
     "actions": {

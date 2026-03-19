@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import { externalLinks } from '@shared/external-links';
+import ExternalLink from '@/components/helper/ExternalLink.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
 import { useInterop } from '@/composables/electron-interop';
+import { usePremiumHelper } from '@/composables/premium';
 import { usePrivacyMode } from '@/composables/privacy';
 import { useRememberSettings } from '@/composables/user/use-remember-settings';
 import { useLogout } from '@/modules/account/use-logout';
@@ -17,6 +20,12 @@ const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
 const { isXs } = useBreakpoint();
 
 const { savedRememberPassword } = useRememberSettings();
+const { currentTier, premium } = usePremiumHelper();
+
+const tierLabel = computed<string>(() => {
+  const tier = get(currentTier);
+  return tier ? t('premium_placeholder.current_plan', { tier }) : '';
+});
 
 const { show } = useConfirmStore();
 
@@ -59,11 +68,27 @@ const { isDark } = useRotkiTheme();
         data-cy="user-dropdown"
         class="py-2"
       >
-        <div
-          data-cy="username"
-          class="py-3 font-bold text-center"
-        >
-          {{ username }}
+        <div class="py-3 flex flex-col items-center gap-1">
+          <div
+            data-cy="username"
+            class="font-bold"
+          >
+            {{ username }}
+          </div>
+          <ExternalLink
+            v-if="premium && tierLabel"
+            custom
+            :url="externalLinks.manageSubscriptions"
+          >
+            <RuiChip
+              size="sm"
+              variant="outlined"
+              color="primary"
+              class="!cursor-pointer"
+            >
+              {{ tierLabel }}
+            </RuiChip>
+          </ExternalLink>
         </div>
         <RuiDivider />
         <RouterLink :to="{ path: '/settings' }">
