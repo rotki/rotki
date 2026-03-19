@@ -53,6 +53,8 @@ Changelog
 * :bug:`-` The rare case of balancer v2 swaps with repeated swap logs for a single events is now decoded properly.
 * :feature:`-` ERC4337 fee payments will now be properly understood by rotki
 * :bug:`-` 1inch swaps using Trader Joe Liquidity Book swap should now be properly decoded by rotki.
+* :bug:`-` Transactions routed through ERC-4337 bundlers and other smart contract wallet intermediaries should now be  properly understood.
+* :feature:`-` ERC-4337 fee detection should now work on all EVM chains, not just Ethereum.
 
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import EvmDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_EVM_DECODING_OUTPUT,
@@ -20,6 +21,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_UNISWAP_V4_LP, MODIFY_LIQUIDITY, POSITION_MANAGER_ABI, V4_SWAP_TOPIC
 from .utils import decode_uniswap_v4_like_swaps
@@ -58,6 +60,19 @@ class Uniswapv4CommonDecoder(EvmDecoderInterface):
 
     def _decode_modify_liquidity(self, context: 'DecoderContext') -> 'EvmDecodingOutput':
         if context.tx_log.topics[0] != MODIFY_LIQUIDITY:
+            return DEFAULT_EVM_DECODING_OUTPUT
+
+        # Check if any Transfer logs in this transaction involve both a tracked address and
+        # the pool/position manager. If not, this LP event is from an unrelated user
+        # (e.g. in a bundled ERC-4337 transaction) and can be skipped without an RPC call.
+        relevant_addresses = {self.pool_manager, self.position_manager}
+        if not any(
+                tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                len(tx_log.topics) >= 3 and
+                {(from_addr := bytes_to_address(tx_log.topics[1])), (to_addr := bytes_to_address(tx_log.topics[2]))} & relevant_addresses and  # noqa: E501
+                self.base.any_tracked([from_addr, to_addr])
+                for tx_log in context.all_logs
+        ):
             return DEFAULT_EVM_DECODING_OUTPUT
 
         if len(pool_info := self.node_inquirer.call_contract(

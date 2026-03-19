@@ -637,6 +637,9 @@ def deserialize_evm_transaction(
             authorization_list = None
 
         if internal:
+            if data.get('callType') == 'delegatecall':
+                raise DeserializationError('Skipping delegatecall internal transaction since no value transfer occurs')  # noqa: E501
+
             return EvmInternalTransaction(
                 parent_tx_hash=tx_hash,
                 chain_id=chain_id,
