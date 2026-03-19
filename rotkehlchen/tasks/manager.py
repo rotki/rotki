@@ -722,7 +722,7 @@ class TaskManager:
 
     def _maybe_repull_internal_tx_conflicts(self) -> Optional[list[gevent.Greenlet]]:
         with self.database.conn.read_ctx() as cursor:
-            if not table_exists(cursor, 'evm_internal_tx_conflicts'):
+            if not table_exists(cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
                 return None
 
         if should_run_periodic_task(
