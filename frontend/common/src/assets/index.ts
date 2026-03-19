@@ -112,3 +112,10 @@ export function getAddressFromSolanaIdentifier(identifier?: string): string {
 
   return identifier.split(':')[1] ?? '';
 }
+
+export function getAddressFromStarknetIdentifier(identifier?: string): string {
+  if (!identifier)
+    return '';
+
+  return identifier.split(':')[1] ?? '';
+}

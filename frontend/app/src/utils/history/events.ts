@@ -17,6 +17,8 @@ import {
   type OnlineHistoryEvent,
   type SolanaEvent,
   type SolanaSwapEvent,
+  type StarknetEvent,
+  type StarknetSwapEvent,
 } from '@/types/history/events/schemas';
 
 export function isOfEventType<T extends HistoryEvent>(e: HistoryEvent, type: HistoryEventEntryType): e is T {
@@ -110,6 +112,22 @@ function isSolanaSwapEventType(type: HistoryEventEntryType): boolean {
 
 export function isSolanaSwapEvent(event: HistoryEvent): event is SolanaSwapEvent {
   return isSolanaSwapEventType(event.entryType);
+}
+
+export function isStarknetEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.STARKNET_EVENT;
+}
+
+export function isStarknetEvent(event: HistoryEvent): event is StarknetEvent {
+  return isStarknetEventType(event.entryType);
+}
+
+function isStarknetSwapEventType(type: HistoryEventEntryType): boolean {
+  return type === HistoryEventEntryType.STARKNET_SWAP_EVENT;
+}
+
+export function isStarknetSwapEvent(event: HistoryEvent): event is StarknetSwapEvent {
+  return isStarknetSwapEventType(event.entryType);
 }
 
 function isMissingAccountingRule(type: HistoryEventAccountingRuleStatus): boolean {

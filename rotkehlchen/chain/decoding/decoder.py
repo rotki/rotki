@@ -52,7 +52,7 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
             self,
             database: 'DBHandler',
             dbtx: T_DBTx,
-            tx_mappings_table: Literal['evm_tx_mappings', 'solana_tx_mappings'],
+            tx_mappings_table: Literal['evm_tx_mappings', 'solana_tx_mappings', 'starknet_tx_mappings'],
             chain_name: str,
             value_asset: 'AssetWithOracles',
             rules: T_DecodingRules,

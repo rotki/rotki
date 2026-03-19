@@ -150,6 +150,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
     from rotkehlchen.chain.scroll.manager import ScrollManager
     from rotkehlchen.chain.solana.manager import SolanaManager
+    from rotkehlchen.chain.starknet.manager import StarknetManager
     from rotkehlchen.chain.substrate.manager import SubstrateManager
     from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -262,6 +263,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             bitcoin_manager: 'BitcoinManager',
             bitcoin_cash_manager: 'BitcoinCashManager',
             solana_manager: 'SolanaManager',
+            starknet_manager: 'StarknetManager',
             msg_aggregator: MessagesAggregator,
             database: 'DBHandler',
             greenlet_manager: GreenletManager,
@@ -288,6 +290,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.bitcoin = bitcoin_manager
         self.bitcoin_cash = bitcoin_cash_manager
         self.solana = solana_manager
+        self.starknet = starknet_manager
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.accounts = blockchain_accounts
@@ -305,6 +308,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.avax_lock = Semaphore()
         self.optimism_lock = Semaphore()
         self.solana_lock = Semaphore()
+        self.starknet_lock = Semaphore()
         self.polygon_pos_lock = Semaphore()
         self.arbitrum_one_lock = Semaphore()
         self.base_lock = Semaphore()
@@ -985,6 +989,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
 
     @overload
     def get_chain_manager(self, blockchain: Literal[SupportedBlockchain.SOLANA]) -> 'SolanaManager':  # noqa: E501
+        ...
+
+    @overload
+    def get_chain_manager(self, blockchain: Literal[SupportedBlockchain.STARKNET]) -> 'StarknetManager':  # noqa: E501
         ...
 
     @overload

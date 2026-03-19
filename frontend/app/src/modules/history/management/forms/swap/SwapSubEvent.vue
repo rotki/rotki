@@ -11,7 +11,7 @@ import { toMessages } from '@/utils/validation';
 
 const modelValue = defineModel<SwapSubEventModel>({ required: true });
 
-const { disabled, solana, type } = defineProps<{
+const { disabled, solana, starknet, type } = defineProps<{
   type: 'receive' | 'spend' | 'fee';
   index: number;
   disabled?: boolean;
@@ -19,6 +19,7 @@ const { disabled, solana, type } = defineProps<{
   location: string;
   single: boolean;
   solana?: boolean;
+  starknet?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -46,7 +47,7 @@ const rules = computed(() => (disabled
   : {
       amount: commonRules.createRequiredAmountRule(),
       asset: commonRules.createRequiredAssetRule(),
-      locationLabel: solana ? commonRules.createValidSolanaAddressRule() : commonRules.createValidEthAddressRule(),
+      locationLabel: solana ? commonRules.createValidSolanaAddressRule() : starknet ? commonRules.createValidStarknetAddressRule() : commonRules.createValidEthAddressRule(),
       userNotes: commonRules.createExternalValidationRule(),
     }));
 

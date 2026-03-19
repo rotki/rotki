@@ -116,6 +116,8 @@ export const SOLANA_TOKEN = 'solana token';
 
 export const SOLANA_CHAIN = 'solana';
 
+export const STARKNET_CHAIN = 'starknet';
+
 export const CUSTOM_ASSET = 'custom asset';
 
 export function isSpammableAssetType(assetType?: string | null): boolean {

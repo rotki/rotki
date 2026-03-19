@@ -27,6 +27,7 @@ import {
   isEvmEventType,
   isOnlineHistoryEventType,
   isSolanaEventType,
+  isStarknetEventType,
   isWithdrawalEventType,
 } from '@/utils/history/events';
 
@@ -139,7 +140,7 @@ export function useHistoryEventFilter(
 
     const entryTypesVal = get(entryTypes);
     const transactionEventsIncluded
-      = !entryTypesVal || entryTypesVal.some(type => isEvmEventType(type) || isEthDepositEventType(type) || isSolanaEventType(type));
+      = !entryTypesVal || entryTypesVal.some(type => isEvmEventType(type) || isEthDepositEventType(type) || isSolanaEventType(type) || isStarknetEventType(type));
 
     const evmOrOnlineEventsIncluded
       = !entryTypesVal || entryTypesVal.some(type => isEvmEventType(type) || isOnlineHistoryEventType(type));

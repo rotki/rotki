@@ -10,6 +10,7 @@ const { type } = defineProps<{
   disabled?: boolean;
   timestamp: number;
   solana?: boolean;
+  starknet?: boolean;
   type: 'receive' | 'spend' | 'fee';
 }>();
 
@@ -101,6 +102,7 @@ defineExpose({
       :index="0"
       single
       :solana="solana"
+      :starknet="starknet"
     />
 
     <template
@@ -117,6 +119,7 @@ defineExpose({
         :disabled="disabled"
         :single="modelValue.length === 1"
         :solana="solana"
+        :starknet="starknet"
         @remove="remove($event)"
       />
 

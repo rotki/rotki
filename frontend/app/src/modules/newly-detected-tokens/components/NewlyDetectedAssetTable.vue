@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdentifier } from '@rotki/common';
+import { type BigNumber, getAddressFromEvmIdentifier, getAddressFromSolanaIdentifier, getAddressFromStarknetIdentifier } from '@rotki/common';
 import DateDisplay from '@/components/display/DateDisplay.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import HintMenuIcon from '@/components/HintMenuIcon.vue';
@@ -36,6 +36,9 @@ const TOKEN_KIND_MAPPING = {
   [NewDetectedTokenKind.SOLANA]: {
     addressFormatter: getAddressFromSolanaIdentifier,
   },
+  [NewDetectedTokenKind.STARKNET]: {
+    addressFormatter: getAddressFromStarknetIdentifier,
+  },
 } as const;
 
 const { t } = useI18n({ useScope: 'global' });
@@ -46,7 +49,7 @@ const tokenKindFilter = ref<NewDetectedTokenKind>();
 const { cache } = useAssetInfoCache();
 
 const { getAllIdentifiers, getData, isReady, removeNewDetectedTokens } = useNewlyDetectedTokens();
-const { getChain, isSolanaChains } = useSupportedChains();
+const { getChain, isSolanaChains, isStarknetChains } = useSupportedChains();
 const { addresses } = useAccountAddresses();
 const { markAssetsAsSpam } = useSpamAsset();
 const { getAssetPrice } = usePriceUtils();
@@ -140,15 +143,25 @@ const hasSolanaAccounts = computed<boolean>(() =>
   Object.entries(get(addresses)).some(([chain, addrs]) => isSolanaChains(chain) && addrs.length > 0),
 );
 
+const hasStarknetAccounts = computed<boolean>(() =>
+  Object.entries(get(addresses)).some(([chain, addrs]) => isStarknetChains(chain) && addrs.length > 0),
+);
+
 const tokenKindOptions = computed<{ title: string; value: NewDetectedTokenKind | undefined }[]>(() => {
   const options: { title: string; value: NewDetectedTokenKind | undefined }[] = [
     { title: 'EVM', value: NewDetectedTokenKind.EVM },
   ];
 
-  if (get(hasSolanaAccounts)) {
+  const hasMultipleKinds = get(hasSolanaAccounts) || get(hasStarknetAccounts);
+
+  if (hasMultipleKinds)
     options.unshift({ title: t('asset_table.newly_detected.all_types'), value: undefined });
+
+  if (get(hasSolanaAccounts))
     options.push({ title: 'Solana', value: NewDetectedTokenKind.SOLANA });
-  }
+
+  if (get(hasStarknetAccounts))
+    options.push({ title: 'Starknet', value: NewDetectedTokenKind.STARKNET });
 
   return options;
 });

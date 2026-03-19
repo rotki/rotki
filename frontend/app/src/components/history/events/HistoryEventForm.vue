@@ -9,10 +9,12 @@ import EthDepositEventForm from '@/modules/history/management/forms/EthDepositEv
 import EthWithdrawalEventForm from '@/modules/history/management/forms/EthWithdrawalEventForm.vue';
 import EvmEventForm from '@/modules/history/management/forms/EvmEventForm.vue';
 import EvmSwapEventForm from '@/modules/history/management/forms/EvmSwapEventForm.vue';
-import { EVM_EVENTS, isEvmTypeEvent, isSolanaTypeEvent, SOLANA_EVENTS } from '@/modules/history/management/forms/form-guards';
+import { EVM_EVENTS, isEvmTypeEvent, isSolanaTypeEvent, isStarknetTypeEvent, SOLANA_EVENTS, STARKNET_EVENTS } from '@/modules/history/management/forms/form-guards';
 import OnlineHistoryEventForm from '@/modules/history/management/forms/OnlineHistoryEventForm.vue';
 import SolanaEventForm from '@/modules/history/management/forms/SolanaEventForm.vue';
 import SolanaSwapEventForm from '@/modules/history/management/forms/SolanaSwapEventForm.vue';
+import StarknetEventForm from '@/modules/history/management/forms/StarknetEventForm.vue';
+import StarknetSwapEventForm from '@/modules/history/management/forms/StarknetSwapEventForm.vue';
 import SwapEventForm from '@/modules/history/management/forms/SwapEventForm.vue';
 
 interface FormComponent {
@@ -47,7 +49,14 @@ const isSolanaGroupAdd = computed<boolean>(() => {
   return isSolanaTypeEvent(data.group.entryType);
 });
 
-const isGroupAdd = logicOr(isEvmGroupAdd, isSolanaGroupAdd);
+const isStarknetGroupAdd = computed<boolean>(() => {
+  if (data.type !== 'group-add') {
+    return false;
+  }
+  return isStarknetTypeEvent(data.group.entryType);
+});
+
+const isGroupAdd = logicOr(isEvmGroupAdd, isSolanaGroupAdd, isStarknetGroupAdd);
 
 const historyEventEntryTypes = computed<HistoryEventEntryType[]>(() => {
   if (get(isEvmGroupAdd)) {
@@ -55,6 +64,9 @@ const historyEventEntryTypes = computed<HistoryEventEntryType[]>(() => {
   }
   else if (get(isSolanaGroupAdd)) {
     return [...SOLANA_EVENTS];
+  }
+  else if (get(isStarknetGroupAdd)) {
+    return [...STARKNET_EVENTS];
   }
   return Object.values(HistoryEventEntryType);
 });
@@ -69,6 +81,8 @@ const formComponents: Record<HistoryEventEntryType, Component> = {
   [HistoryEventEntryType.HISTORY_EVENT]: OnlineHistoryEventForm,
   [HistoryEventEntryType.SOLANA_EVENT]: SolanaEventForm,
   [HistoryEventEntryType.SOLANA_SWAP_EVENT]: SolanaSwapEventForm,
+  [HistoryEventEntryType.STARKNET_EVENT]: StarknetEventForm,
+  [HistoryEventEntryType.STARKNET_SWAP_EVENT]: StarknetSwapEventForm,
   [HistoryEventEntryType.SWAP_EVENT]: SwapEventForm,
 };
 

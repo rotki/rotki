@@ -18,6 +18,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     Eth2PubKey,
     SolanaAddress,
+    StarknetAddress,
     SupportedBlockchain,
 )
 
@@ -30,7 +31,8 @@ ALL_BALANCE_TYPES = (
     dict[BTCAddress, Balance] |
     defaultdict[Eth2PubKey, BalanceSheet] |
     dict[SubstrateAddress, BalanceSheet] |
-    dict[SolanaAddress, BalanceSheet]
+    dict[SolanaAddress, BalanceSheet] |
+    dict[StarknetAddress, BalanceSheet]
 )
 
 
@@ -53,6 +55,7 @@ class BlockchainBalances:
     avax: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     zksync_lite: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     solana: defaultdict[SolanaAddress, BalanceSheet] = field(init=False)
+    starknet: defaultdict[StarknetAddress, BalanceSheet] = field(init=False)
 
     @overload
     def get(self, chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE) -> defaultdict[ChecksumEvmAddress, BalanceSheet]:  # noqa: E501
@@ -100,6 +103,10 @@ class BlockchainBalances:
 
     @overload
     def set(self, chain: Literal[SupportedBlockchain.SOLANA], balances: dict[SolanaAddress, BalanceSheet]) -> None:  # noqa: E501
+        ...
+
+    @overload
+    def set(self, chain: Literal[SupportedBlockchain.STARKNET], balances: dict[StarknetAddress, BalanceSheet]) -> None:  # noqa: E501
         ...
 
     @overload

@@ -9,12 +9,13 @@ interface UseHistoryTransactionAccountsReturn {
   getEvmAccounts: (chains?: string[]) => ChainAddress[];
   getEvmLikeAccounts: (chains?: string[]) => ChainAddress[];
   getSolanaAccounts: (chains?: string[]) => ChainAddress[];
+  getStarknetAccounts: (chains?: string[]) => ChainAddress[];
   getTransactionTypeFromChain: (chain: string) => TransactionChainType;
 }
 
 export function useHistoryTransactionAccounts(): UseHistoryTransactionAccountsReturn {
   const { addresses } = useAccountAddresses();
-  const { isBtcChains, isEvmLikeChains, isSolanaChains, supportsTransactions } = useSupportedChains();
+  const { isBtcChains, isEvmLikeChains, isSolanaChains, isStarknetChains, supportsTransactions } = useSupportedChains();
 
   const getAccountsByChainType = (
     chainFilter: (chain: string) => boolean,
@@ -41,11 +42,15 @@ export function useHistoryTransactionAccounts(): UseHistoryTransactionAccountsRe
   const getSolanaAccounts = (chains: string[] = []): ChainAddress[] =>
     getAccountsByChainType(isSolanaChains, chains);
 
+  const getStarknetAccounts = (chains: string[] = []): ChainAddress[] =>
+    getAccountsByChainType(isStarknetChains, chains);
+
   const getAllAccounts = (chains: string[] = []): ChainAddress[] => [
     ...getEvmAccounts(chains),
     ...getEvmLikeAccounts(chains),
     ...getBitcoinAccounts(chains),
     ...getSolanaAccounts(chains),
+    ...getStarknetAccounts(chains),
   ];
 
   const getTransactionTypeFromChain = (chain: string): TransactionChainType => {
@@ -55,6 +60,8 @@ export function useHistoryTransactionAccounts(): UseHistoryTransactionAccountsRe
       return TransactionChainType.BITCOIN;
     if (isSolanaChains(chain))
       return TransactionChainType.SOLANA;
+    if (isStarknetChains(chain))
+      return TransactionChainType.STARKNET;
 
     return TransactionChainType.EVM;
   };
@@ -65,6 +72,7 @@ export function useHistoryTransactionAccounts(): UseHistoryTransactionAccountsRe
     getEvmAccounts,
     getEvmLikeAccounts,
     getSolanaAccounts,
+    getStarknetAccounts,
     getTransactionTypeFromChain,
   };
 }

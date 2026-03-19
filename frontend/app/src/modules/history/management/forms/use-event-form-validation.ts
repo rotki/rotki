@@ -1,6 +1,6 @@
 import type { ValidationRuleCollection, ValidationRuleWithoutParams } from '@vuelidate/core';
 import type { Ref } from 'vue';
-import { isValidEthAddress, isValidEvmTxHash, isValidSolanaAddress, isValidSolanaSignature } from '@rotki/common';
+import { isValidEthAddress, isValidEvmTxHash, isValidSolanaAddress, isValidSolanaSignature, isValidStarknetAddress, isValidStarknetTxHash } from '@rotki/common';
 import { helpers, minLength, required, requiredIf } from '@vuelidate/validators';
 
 interface CreateCommonRules {
@@ -23,8 +23,10 @@ interface CreateCommonRules {
   createValidCounterpartyRule: <T>(counterparties: Ref<string[]>) => ValidationRuleCollection<T>;
   createValidEthAddressRule: <T>() => ValidationRuleCollection<T>;
   createValidSolanaAddressRule: <T>() => ValidationRuleCollection<T>;
+  createValidStarknetAddressRule: <T>() => ValidationRuleCollection<T>;
   createValidTxHashRule: <T>() => ValidationRuleCollection<T>;
   createValidSolanaSignatureRule: <T>() => ValidationRuleCollection<T>;
+  createValidStarknetTxHashRule: <T>() => ValidationRuleCollection<T>;
 }
 
 interface UseEventFormValidationReturn {
@@ -131,6 +133,19 @@ export function useEventFormValidation(): UseEventFormValidationReturn {
         (value: string) => isValidSolanaSignature(value),
       ),
       required: helpers.withMessage(t('transactions.events.form.signature.validation.non_empty'), required),
+    }),
+    createValidStarknetAddressRule: () => ({
+      isValid: helpers.withMessage(
+        t('transactions.events.form.address.validation.valid'),
+        (value: string) => !value || isValidStarknetAddress(value),
+      ),
+    }),
+    createValidStarknetTxHashRule: () => ({
+      isValid: helpers.withMessage(
+        t('transactions.events.form.tx_hash.validation.valid'),
+        (value: string) => isValidStarknetTxHash(value),
+      ),
+      required: helpers.withMessage(t('transactions.events.form.tx_hash.validation.non_empty'), required),
     }),
     createValidTxHashRule: () => ({
       isValid: helpers.withMessage(

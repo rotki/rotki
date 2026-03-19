@@ -112,6 +112,26 @@ const SolanaSwapEventSchema = CommonHistoryEvent.extend({
 
 export type SolanaSwapEvent = z.infer<typeof SolanaSwapEventSchema>;
 
+const StarknetEventSchema = CommonHistoryEvent.extend({
+  address: z.string().nullable(),
+  counterparty: z.string().nullable(),
+  entryType: z.literal(HistoryEventEntryType.STARKNET_EVENT),
+  extraData: z.unknown().nullish(),
+  txRef: z.string(),
+});
+
+export type StarknetEvent = z.infer<typeof StarknetEventSchema>;
+
+const StarknetSwapEventSchema = CommonHistoryEvent.extend({
+  address: z.string().nullable(),
+  counterparty: z.string().nullable(),
+  entryType: z.literal(HistoryEventEntryType.STARKNET_SWAP_EVENT),
+  extraData: z.unknown().nullish(),
+  txRef: z.string(),
+});
+
+export type StarknetSwapEvent = z.infer<typeof StarknetSwapEventSchema>;
+
 export const HistoryEvent = z.union([
   EvmHistoryEvent,
   AssetMovementEvent,
@@ -123,9 +143,11 @@ export const HistoryEvent = z.union([
   EvmSwapEventSchema,
   SolanaEventSchema,
   SolanaSwapEventSchema,
+  StarknetEventSchema,
+  StarknetSwapEventSchema,
 ]);
 
-export type GroupEditableHistoryEvents = AssetMovementEvent | SwapEvent | EvmSwapEvent | SolanaSwapEvent;
+export type GroupEditableHistoryEvents = AssetMovementEvent | SwapEvent | EvmSwapEvent | SolanaSwapEvent | StarknetSwapEvent;
 
 export interface FeeEntry {
   amount: string;
@@ -134,7 +156,7 @@ export interface FeeEntry {
 
 export type SwapEventUserNotes = [string, string, ...string[]];
 
-export type StandaloneEditableEvents = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | SolanaEvent;
+export type StandaloneEditableEvents = EvmHistoryEvent | OnlineHistoryEvent | EthWithdrawalEvent | EthBlockEvent | EthDepositEvent | SolanaEvent | StarknetEvent;
 
 export type HistoryEvent = StandaloneEditableEvents | GroupEditableHistoryEvents;
 
@@ -197,6 +219,15 @@ type EditSolanaEventPayload = Omit<
 };
 
 export type NewSolanaEventPayload = Omit<EditSolanaEventPayload, 'identifier'>;
+
+type EditStarknetEventPayload = Omit<
+  StarknetEvent,
+  'ignoredInAccounting' | 'states' | 'groupIdentifier' | 'location'
+> & {
+  groupIdentifier: string | null;
+};
+
+export type NewStarknetEventPayload = Omit<EditStarknetEventPayload, 'identifier'>;
 
 type EditOnlineHistoryEventPayload = Omit<OnlineHistoryEvent, 'ignoredInAccounting' | 'states'>;
 
@@ -280,6 +311,22 @@ export interface EditSolanaSwapEventPayload extends AddSolanaSwapEventPayload {
   identifiers: number[];
 }
 
+export interface AddStarknetSwapEventPayload {
+  entryType: typeof HistoryEventEntryType.STARKNET_SWAP_EVENT;
+  address?: string;
+  timestamp: number;
+  fee?: SwapSubEventModel[];
+  spend: SwapSubEventModel[];
+  receive: SwapSubEventModel[];
+  counterparty: string;
+  sequenceIndex: string;
+  txRef: string;
+}
+
+export interface EditStarknetSwapEventPayload extends AddStarknetSwapEventPayload {
+  identifiers: number[];
+}
+
 export type EditHistoryEventPayload =
   | EditEvmHistoryEventPayload
   | EditOnlineHistoryEventPayload
@@ -287,7 +334,8 @@ export type EditHistoryEventPayload =
   | EditEthDepositEventPayload
   | EditEthWithdrawalEventPayload
   | EditAssetMovementEventPayload
-  | EditSolanaEventPayload;
+  | EditSolanaEventPayload
+  | EditStarknetEventPayload;
 
 export type NewHistoryEventPayload =
   | NewEvmHistoryEventPayload
@@ -296,11 +344,12 @@ export type NewHistoryEventPayload =
   | NewEthDepositEventPayload
   | NewEthWithdrawalEventPayload
   | NewAssetMovementEventPayload
-  | NewSolanaEventPayload;
+  | NewSolanaEventPayload
+  | NewStarknetEventPayload;
 
-export type AddHistoryEventPayload = NewHistoryEventPayload | AddSwapEventPayload | AddEvmSwapEventPayload | AddSolanaSwapEventPayload;
+export type AddHistoryEventPayload = NewHistoryEventPayload | AddSwapEventPayload | AddEvmSwapEventPayload | AddSolanaSwapEventPayload | AddStarknetSwapEventPayload;
 
-export type ModifyHistoryEventPayload = EditHistoryEventPayload | EditSwapEventPayload | EditEvmSwapEventPayload | EditSolanaSwapEventPayload;
+export type ModifyHistoryEventPayload = EditHistoryEventPayload | EditSwapEventPayload | EditEvmSwapEventPayload | EditSolanaSwapEventPayload | EditStarknetSwapEventPayload;
 
 export enum HistoryEventAccountingRuleStatus {
   HAS_RULE = 'has rule',

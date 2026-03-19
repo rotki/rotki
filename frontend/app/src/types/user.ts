@@ -25,6 +25,7 @@ export const SuppressibleMissingKeyService = {
   ETHERSCAN: 'etherscan',
   HELIUS: 'helius',
   THEGRAPH: 'thegraph',
+  VOYAGER: 'voyager',
 } as const;
 
 export const SuppressibleMissingKeyServiceEnum = z.enum([
@@ -32,6 +33,7 @@ export const SuppressibleMissingKeyServiceEnum = z.enum([
   SuppressibleMissingKeyService.ETHERSCAN,
   SuppressibleMissingKeyService.HELIUS,
   SuppressibleMissingKeyService.THEGRAPH,
+  SuppressibleMissingKeyService.VOYAGER,
 ]);
 
 export type SuppressibleMissingKeyService = z.infer<typeof SuppressibleMissingKeyServiceEnum>;
@@ -254,6 +256,7 @@ export const ExternalServiceKeys = z.object({
   monerium: ApiKey.optional(),
   opensea: ApiKey.optional(),
   thegraph: ApiKey.optional(),
+  voyager: ApiKey.optional(),
 });
 
 export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;

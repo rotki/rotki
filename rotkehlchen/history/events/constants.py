@@ -12,5 +12,7 @@ CHAIN_ENTRY_TYPES: Final = {  # types that need the chain event columns
     HistoryBaseEntryType.EVM_SWAP_EVENT,
     HistoryBaseEntryType.SOLANA_EVENT,
     HistoryBaseEntryType.SOLANA_SWAP_EVENT,
+    HistoryBaseEntryType.STARKNET_EVENT,
+    HistoryBaseEntryType.STARKNET_SWAP_EVENT,
     HistoryBaseEntryType.ETH_DEPOSIT_EVENT,
 }
