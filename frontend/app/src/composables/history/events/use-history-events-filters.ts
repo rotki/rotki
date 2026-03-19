@@ -57,6 +57,7 @@ interface UseHistoryEventsFiltersReturn {
   groupLoading: Ref<boolean>;
   groups: Ref<Collection<HistoryEventRow>>;
   hasActiveFilters: ComputedRef<boolean>;
+  highlightedGroupIdentifier: ComputedRef<string | undefined>;
   highlightedIdentifiers: ComputedRef<string[] | undefined>;
   highlightTypes: ComputedRef<Record<string, HighlightType>>;
   identifiers: ComputedRef<string[] | undefined>;
@@ -209,6 +210,7 @@ export function useHistoryEventsFilters(
         'duplicateHandlingStatus',
         'targetGroupIdentifier',
         'highlightedAssetMovement',
+        'highlightedInternalTxConflict',
         'highlightedPotentialMatch',
         'highlightedNegativeBalanceEvent',
       ],
@@ -219,7 +221,7 @@ export function useHistoryEventsFilters(
     queryParamsOnly: computed(() => {
       const duplicateHandlingStatusValue = get(duplicateHandlingStatusFromQuery);
       const groupIdentifiersValue = get(groupIdentifiersFromQuery);
-      const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
+      const { highlightedAssetMovement, highlightedInternalTxConflict, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
 
       const missingAcquisitionValue = get(missingAcquisitionFromQuery);
       const stateMarkersValue = get(toggles, 'stateMarkers');
@@ -227,6 +229,7 @@ export function useHistoryEventsFilters(
         duplicateHandlingStatus: duplicateHandlingStatusValue,
         groupIdentifiers: groupIdentifiersValue?.join(','),
         highlightedAssetMovement,
+        highlightedInternalTxConflict,
         highlightedNegativeBalanceEvent,
         highlightedPotentialMatch,
         locationLabels: get(usedLocationLabels),
@@ -281,28 +284,32 @@ export function useHistoryEventsFilters(
   const highlightedIdentifiers = computed<string[] | undefined>(() => {
     const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
     const identifiers: string[] = [];
-
     if (highlightedAssetMovement)
       identifiers.push(highlightedAssetMovement.toString());
     if (highlightedPotentialMatch)
       identifiers.push(highlightedPotentialMatch.toString());
     if (highlightedNegativeBalanceEvent)
       identifiers.push(highlightedNegativeBalanceEvent.toString());
-
     return identifiers.length > 0 ? identifiers : undefined;
+  });
+
+  const highlightedGroupIdentifier = computed<string | undefined>(() => {
+    const { highlightedInternalTxConflict } = get(route).query;
+    return highlightedInternalTxConflict ? highlightedInternalTxConflict.toString() : undefined;
   });
 
   const highlightTypes = computed<Record<string, HighlightType>>(() => {
     const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
     const types: Record<string, HighlightType> = {};
-
     if (highlightedAssetMovement)
       types[highlightedAssetMovement.toString()] = 'warning';
     if (highlightedNegativeBalanceEvent)
       types[highlightedNegativeBalanceEvent.toString()] = 'error';
     if (highlightedPotentialMatch)
       types[highlightedPotentialMatch.toString()] = 'success';
-
+    const groupId = get(highlightedGroupIdentifier);
+    if (groupId)
+      types[`group:${groupId}`] = 'warning';
     return types;
   });
 
@@ -332,12 +339,7 @@ export function useHistoryEventsFilters(
     set(locationLabels, labels);
   }
 
-  /**
-   * Calculate position of highlighted event within current filters and set the page directly.
-   * This avoids a duplicate fetch by setting the page before the pagination system's debounced fetch fires.
-   * The filter watcher fires at HIGHLIGHT_FILTER_DEBOUNCE while the pagination fetch fires at HIGHLIGHT_FETCH_DEBOUNCE,
-   * so if the position API responds quickly, setPage() resets the debounce and only one fetch occurs.
-   */
+  // Calculate position of highlighted event and set the page directly to avoid a duplicate fetch.
   let navigationGeneration = 0;
 
   async function navigateToHighlightPosition(): Promise<void> {
@@ -378,6 +380,7 @@ export function useHistoryEventsFilters(
     groupLoading,
     groups,
     hasActiveFilters,
+    highlightedGroupIdentifier,
     highlightedIdentifiers,
     highlightTypes,
     identifiers: missingAcquisitionFromQuery,

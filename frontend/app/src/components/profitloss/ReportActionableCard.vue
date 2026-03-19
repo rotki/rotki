@@ -2,11 +2,11 @@
 import type { Component } from 'vue';
 import type { DialogType } from '@/types/dialogs';
 import type { EditableMissingPrice, MissingAcquisition, MissingPrice, Report } from '@/types/reports';
-import type { Pinned } from '@/types/session';
 import { type Nullable, toSentenceCase } from '@rotki/common';
 import { useConfirmStore } from '@/store/confirm';
 import { useReportsStore } from '@/store/reports';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { type Pinned, PinnedNames } from '@/types/session';
 
 const props = withDefaults(
   defineProps<{
@@ -22,6 +22,7 @@ const emit = defineEmits<{
   'set-dialog': [value: boolean];
   'regenerate': [];
 }>();
+
 const ReportMissingAcquisitions = defineAsyncComponent(
   () => import('@/components/profitloss/ReportMissingAcquisitions.vue'),
 );
@@ -69,7 +70,7 @@ function setPinned(pin: Nullable<Pinned>) {
 
 function pinSection() {
   const pinned: Pinned = {
-    name: 'report-actionable-card',
+    name: PinnedNames.REPORT_ACTIONABLE_CARD,
     props: {
       isPinned: true,
       report: get(report),

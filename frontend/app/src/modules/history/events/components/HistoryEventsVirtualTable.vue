@@ -31,6 +31,7 @@ const props = defineProps<{
   hasActiveFilters?: boolean;
   tableHeightOffset?: number;
   identifiers?: string[];
+  highlightedGroupIdentifier?: string;
   highlightedIdentifiers?: string[];
   highlightTypes?: Record<string, HighlightType>;
   hideActions?: boolean;
@@ -99,6 +100,7 @@ const {
   getHighlightType,
   getSwapHighlightType,
   isCardLayout,
+  isGroupHighlighted,
   isHighlighted,
   isSwapHighlighted,
   virtualList,
@@ -107,6 +109,7 @@ const {
   flattenedRows,
   getRowHeight,
   getCardHeight,
+  highlightedGroupIdentifier: computed(() => props.highlightedGroupIdentifier),
   highlightedIdentifiers: computed(() => props.highlightedIdentifiers),
   highlightTypes: computed(() => props.highlightTypes),
   loading,
@@ -275,6 +278,8 @@ function isShowingIgnoredAssets(groupId: string): boolean {
             :duplicate-handling-status="duplicateHandlingStatus"
             :has-hidden-ignored-assets="hasHiddenIgnoredAssets(row.groupId)"
             :showing-ignored-assets="isShowingIgnoredAssets(row.groupId)"
+            :highlight="isGroupHighlighted(row.groupId)"
+            :highlight-type="isGroupHighlighted(row.groupId) ? getHighlightType(row.data) : undefined"
             :variant="itemVariant"
             @add-event="addEvent($event, row.data)"
             @toggle-ignore="toggle($event)"

@@ -3706,6 +3706,72 @@
       "label": "XPUB"
     }
   },
+  "internal_tx_conflicts": {
+    "actions": {
+      "fix_redecode": "Fix & Redecode",
+      "pin": "Pin to sidebar",
+      "repull": "Repull",
+      "show_in_events": "Show in history events",
+      "unpin": "Unpin section"
+    },
+    "banner": {
+      "action": "Review",
+      "message": "{count} internal transaction conflict(s) need attention"
+    },
+    "columns": {
+      "action": "Action",
+      "chain": "Chain",
+      "last_error": "Last Error",
+      "last_retry": "Last Retry",
+      "reason": "Reason",
+      "timestamp": "Date",
+      "tx_hash": "Tx Hash"
+    },
+    "dialog": {
+      "description": "Internal transactions that were detected as conflicted or duplicated. The system will auto-retry periodically.",
+      "title": "Internal Transaction Conflicts"
+    },
+    "errors": {
+      "fetch": "Failed to fetch internal transaction conflicts: {error}",
+      "fetch_title": "Internal Tx Conflicts Error"
+    },
+    "notifications": {
+      "cancelled": "Resolution cancelled. {completed} of {total} conflicts resolved.",
+      "completed": "Successfully resolved all {total} conflicts.",
+      "completed_with_errors": "Resolved {completed} of {total} conflicts. {failed} failed.",
+      "progress": "Resolved {completed} of {total} conflicts...",
+      "started": "Resolving {total} internal transaction conflicts...",
+      "title": "Internal Tx Conflict Resolution"
+    },
+    "pinned": {
+      "title": "Internal Tx Conflicts"
+    },
+    "reasons": {
+      "all_zero_gas": "All zero gas",
+      "duplicate_exact_rows": "Duplicate exact rows",
+      "mixed_zero_gas": "Mixed zero gas",
+      "mixed_zero_gas_and_duplicate": "Mixed zero gas & duplicate",
+      "other": "Other"
+    },
+    "resolution": {
+      "cancel": "Cancel",
+      "progress": "Resolving {completed} of {total}...",
+      "resolve": "Repull and redecode",
+      "resolve_selected": "Resolve Selected ({count})"
+    },
+    "selection": {
+      "clear": "Clear",
+      "selected": "{count} selected"
+    },
+    "status": {
+      "never": "Never"
+    },
+    "tabs": {
+      "failed": "Failed",
+      "fixed": "Fixed",
+      "pending": "Pending"
+    }
+  },
   "kraken_page": {
     "loading": "Your Kraken staking information is loading...",
     "no_premium": "Upgrade to premium to access Kraken staking information",
@@ -5352,6 +5418,7 @@
     "alerts": {
       "button": "Actions needed",
       "check_duplicate_events": "Check duplicate events",
+      "check_internal_conflicts": "Check internal tx conflicts",
       "check_unmatched_movements": "Check unmatched movements",
       "no_issues_found": "No issues found",
       "title": "There are actions needed for your events"

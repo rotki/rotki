@@ -5,6 +5,7 @@ import { LegacyMessageData, SocketMessageType } from './types/base';
 import {
   AccountingRuleConflictData,
   ExchangeUnknownAssetData,
+  InternalTxFixedData,
   RefreshBalancesData,
 } from './types/business-types';
 import {
@@ -137,6 +138,11 @@ const DatabaseUploadProgressMessage = z.object({
   type: z.literal(SocketMessageType.DATABASE_UPLOAD_PROGRESS),
 });
 
+const InternalTxFixedMessage = z.object({
+  data: InternalTxFixedData,
+  type: z.literal(SocketMessageType.INTERNAL_TX_FIXED),
+});
+
 const UnmatchedAssetMovementsMessage = z.object({
   data: UnmatchedAssetMovementsData,
   type: z.literal(SocketMessageType.UNMATCHED_ASSET_MOVEMENTS),
@@ -165,6 +171,7 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   SolanaTokensMigrationMessage,
   BinancePairsMissingMessage,
   DatabaseUploadProgressMessage,
+  InternalTxFixedMessage,
   UnmatchedAssetMovementsMessage,
 ]);
 
