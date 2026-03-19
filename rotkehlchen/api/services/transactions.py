@@ -579,16 +579,20 @@ class TransactionsService:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if not table_exists(cursor, 'evm_internal_tx_conflicts'):
                 entries = []
+                entries_found = 0
                 entries_total = 0
             else:
                 entries = get_pending_internal_tx_repull_conflicts(
                     cursor=cursor,
                     filter_query=filter_query,
                 )
-                entries_total = count_pending_internal_tx_repull_conflicts(
+                entries_found = count_pending_internal_tx_repull_conflicts(
                     cursor=cursor,
                     filter_query=filter_query,
                 )
+                entries_total = cursor.execute(
+                    'SELECT COUNT(*) FROM evm_internal_tx_conflicts',
+                ).fetchone()[0]
 
         return {
             'result': {
@@ -606,9 +610,9 @@ class TransactionsService:
                     }
                     for chain_id, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error, group_identifier in entries  # noqa: E501
                 ],
-                'entries_found': len(entries),
+                'entries_found': entries_found,
                 'entries_total': entries_total,
-                'entries_limit': -1 if filter_query.pagination is None else filter_query.pagination.limit,  # noqa: E501
+                'entries_limit': -1,
             },
             'message': '',
             'status_code': HTTPStatus.OK,

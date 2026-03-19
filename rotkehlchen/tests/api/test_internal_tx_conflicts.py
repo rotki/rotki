@@ -141,7 +141,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         for entry in expected
     }
     assert result['entries_found'] == 4
-    assert result['entries_total'] == 4
+    assert result['entries_total'] == 5
     assert result['entries_limit'] == -1
 
     paged_1 = assert_proper_response_with_result(
@@ -160,12 +160,12 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=False,
     )
-    assert paged_1['entries_found'] == 1
-    assert paged_1['entries_total'] == 4
-    assert paged_1['entries_limit'] == 1
-    assert paged_2['entries_found'] == 1
-    assert paged_2['entries_total'] == 4
-    assert paged_2['entries_limit'] == 1
+    assert paged_1['entries_found'] == 4
+    assert paged_1['entries_total'] == 5
+    assert paged_1['entries_limit'] == -1
+    assert paged_2['entries_found'] == 4
+    assert paged_2['entries_total'] == 5
+    assert paged_2['entries_limit'] == -1
     assert paged_1['entries'][0]['tx_hash'] != paged_2['entries'][0]['tx_hash']
 
     filtered = assert_proper_response_with_result(
@@ -177,7 +177,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         async_query=False,
     )
     assert filtered['entries_found'] == 1
-    assert filtered['entries_total'] == 1
+    assert filtered['entries_total'] == 5
     assert filtered['entries'][0]['tx_hash'] == str(tx_hash_pending)
 
     fixed_rows = assert_proper_response_with_result(
@@ -189,7 +189,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         async_query=False,
     )
     assert fixed_rows['entries_found'] == 1
-    assert fixed_rows['entries_total'] == 1
+    assert fixed_rows['entries_total'] == 5
     assert fixed_rows['entries'][0]['tx_hash'] == str(tx_hash_done)
 
     failed_rows = assert_proper_response_with_result(
@@ -201,7 +201,7 @@ def test_get_pending_internal_tx_conflicts_endpoint(rotkehlchen_api_server: 'API
         async_query=False,
     )
     assert failed_rows['entries_found'] == 2
-    assert failed_rows['entries_total'] == 2
+    assert failed_rows['entries_total'] == 5
     assert {entry['tx_hash'] for entry in failed_rows['entries']} == {
         str(tx_hash_pending),
         str(tx_hash_failed),
@@ -247,7 +247,7 @@ def test_get_pending_internal_tx_conflicts_chain_and_timestamp_filters(
         async_query=False,
     )
     assert by_chain['entries_found'] == 2
-    assert by_chain['entries_total'] == 2
+    assert by_chain['entries_total'] == 3
     assert {entry['tx_hash'] for entry in by_chain['entries']} == {
         str(tx_hash_eth_early),
         str(tx_hash_eth_late),
