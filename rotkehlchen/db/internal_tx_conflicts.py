@@ -209,33 +209,58 @@ def get_pending_internal_tx_repull_conflicts(
     """Return internal tx conflicts with action and metadata, including the transaction timestamp."""  # noqa: E501
     base_query = (
         'SELECT c.chain, c.transaction_hash, et.timestamp, c.action, '
-        'c.repull_reason, c.redecode_reason, c.last_retry_ts, c.last_error, ('
-        'SELECT DISTINCT h.group_identifier '
-        'FROM history_events h '
-        'INNER JOIN chain_events_info ce ON h.identifier = ce.identifier '
-        'WHERE ce.tx_ref = c.transaction_hash '
-        'ORDER BY h.group_identifier'
-        ' LIMIT 1) '
+        'c.repull_reason, c.redecode_reason, c.last_retry_ts, c.last_error '
         f'FROM evm_internal_tx_conflicts c {INTERNAL_TX_CONFLICTS_JOIN}'
     )
     filter_str, bindings = filter_query.prepare()
-    entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int | None, str, str | None, str | None, int | None, str | None, str | None]] = []  # noqa: E501
-    for row_chain, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error, group_identifier in cursor.execute(  # noqa: E501
+    # First pass: collect rows and compute default group identifiers
+    rows: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int | None, str, str | None, str | None, int | None, str | None]] = []  # noqa: E501
+    tx_hashes: list[bytes] = []
+    for row_chain, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error in cursor.execute(  # noqa: E501
             base_query + filter_str,
             bindings,
     ):
         chain_id = ChainID.deserialize_from_db(row_chain)
         assert chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-        entries.append((
+        tx_hash = deserialize_evm_tx_hash(row_tx_hash)
+        rows.append((
             cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', chain_id),
-            deserialize_evm_tx_hash(row_tx_hash),
+            tx_hash,
             tx_timestamp,
             action,
             repull_reason,
             redecode_reason,
             last_retry_ts,
             last_error,
-            group_identifier,
+        ))
+        tx_hashes.append(bytes(tx_hash))
+
+    # Single batch query to get group identifiers for all tx hashes at once.
+    group_id_map: dict[bytes, str] = {}
+    if tx_hashes:
+        placeholders = ','.join(['?'] * len(tx_hashes))
+        for tx_ref, group_id in cursor.execute(
+                'SELECT ce.tx_ref, MIN(h.group_identifier) '
+                'FROM history_events h '
+                'INNER JOIN chain_events_info ce ON h.identifier = ce.identifier '
+                f'WHERE ce.tx_ref IN ({placeholders}) '
+                'GROUP BY ce.tx_ref',
+                tx_hashes,
+        ):
+            group_id_map[bytes(tx_ref)] = group_id
+
+    entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, int | None, str, str | None, str | None, int | None, str | None, str | None]] = []  # noqa: E501
+    for chain_id, tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error in rows:  # noqa: E501
+        entries.append((
+            chain_id,
+            tx_hash,
+            tx_timestamp,
+            action,
+            repull_reason,
+            redecode_reason,
+            last_retry_ts,
+            last_error,
+            group_id_map.get(bytes(tx_hash)),
         ))
 
     return entries
