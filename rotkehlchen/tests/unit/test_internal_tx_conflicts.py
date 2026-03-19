@@ -1,3 +1,4 @@
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import patch
 
@@ -32,7 +33,9 @@ if TYPE_CHECKING:
 
 def make_dummy_chains_aggregator(
         get_transaction_by_hash_result: tuple[Any, dict[str, str]],
-        query_internal_side_effect: Exception,
+        query_internal_side_effect: Exception | None = None,
+        query_internal_return_value: tuple[Any, Any, str] | None = None,
+        replace_internal_hook: Callable[..., None] | None = None,
 ) -> Any:
     class _DummyInquirer:
         def get_transaction_by_hash(self, tx_hash):
@@ -43,11 +46,24 @@ def make_dummy_chains_aggregator(
             self.evm_inquirer = _DummyInquirer()
 
         def _query_internal_transactions_for_parent_hash(self, **_kwargs):
-            raise query_internal_side_effect
+            if query_internal_side_effect is not None:
+                raise query_internal_side_effect
+            if query_internal_return_value is not None:
+                return query_internal_return_value
+            return [], None, ''
+
+        def _replace_internal_transactions_for_parent_hash(self, **kwargs):
+            if replace_internal_hook is not None:
+                replace_internal_hook(**kwargs)
+
+    class _DummyDecoder:
+        def decode_and_get_transaction_hashes(self, **_kwargs):
+            return []
 
     class _DummyChainManager:
         def __init__(self) -> None:
             self.transactions = _DummyTransactions()
+            self.transactions_decoder = _DummyDecoder()
 
     class _DummyChainsAggregator:
         def get_chain_manager(self, blockchain):
@@ -317,6 +333,41 @@ def test_repull_fetch_failure_keeps_db_unchanged(database) -> None:
 
     assert tx_after == tx_before
     assert internal_after == internal_before
+
+
+def test_repull_internal_conflict_uses_indexer_source_from_internal_query(database) -> None:
+    tx_hash = make_evm_tx_hash()
+    tx = EvmTransaction(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000000),
+        block_number=1,
+        from_address=make_evm_address(),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    )
+    captured_indexer_source = {}
+
+    with patch.object(DBEvmTx, 'add_or_ignore_receipt_data'):
+        _repull_and_redecode_tx(
+            database=database,
+            chains_aggregator=make_dummy_chains_aggregator(
+                get_transaction_by_hash_result=(tx, {'status': '0x1'}),
+                query_internal_return_value=([], None, 'etherscan'),
+                replace_internal_hook=lambda **kwargs: captured_indexer_source.update(
+                    {'value': kwargs['indexer_source']},
+                ),
+            ),
+            chain_id=ChainID.ETHEREUM,
+            tx_hash=tx_hash,
+        )
+
+    assert captured_indexer_source['value'] == 'etherscan'
 
 
 def test_fix_conflict_with_specific_internal_tx_dataset(database) -> None:

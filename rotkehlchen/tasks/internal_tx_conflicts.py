@@ -48,13 +48,16 @@ def _repull_and_redecode_tx(
         raise InputError(f'Failed to repull {chain.name.lower()} tx {tx_hash!s}. {e!s}') from e
 
     parent_hash_internal_txs: list[EvmInternalTransaction] = []
+    indexer_source = ''
     if transaction.to_address is not None:  # internals exist only for contract interactions
         try:
-            parent_hash_internal_txs, _ = chain_manager.transactions._query_internal_transactions_for_parent_hash(  # noqa: E501
-                parent_tx_hash=tx_hash,
-                address=None,
-                return_queried_hashes=False,
-                known_parent_timestamps={tx_hash: transaction.timestamp},
+            parent_hash_internal_txs, _, indexer_source = (
+                chain_manager.transactions._query_internal_transactions_for_parent_hash(
+                    parent_tx_hash=tx_hash,
+                    address=None,
+                    return_queried_hashes=False,
+                    known_parent_timestamps={tx_hash: transaction.timestamp},
+                )
             )
         except (RemoteError, DeserializationError) as e:
             raise InputError(
@@ -74,6 +77,7 @@ def _repull_and_redecode_tx(
             write_cursor=write_cursor,
             parent_tx_hash=tx_hash,
             transactions=parent_hash_internal_txs,
+            indexer_source=indexer_source,
         )
 
     chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
