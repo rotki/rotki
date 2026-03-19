@@ -8,6 +8,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.balances.historical import HistoricalBalancesManager
+from rotkehlchen.balances.types import HistoricalBalancesParams
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
@@ -16,9 +17,8 @@ from rotkehlchen.chain.evm.decoding.balancer.constants import CPT_BALANCER_V2
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_ETH
-from rotkehlchen.constants.misc import ONE, ZERO
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.filtering import HistoricalBalancesFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -184,46 +184,6 @@ def test_has_unprocessed_events(
     assert manager._has_unprocessed_events('timestamp <= ?', [TimestampMS(9999)]) is True
 
 
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
-def test_get_balances_with_unprocessed_events_and_timestamp_filter(
-        database: 'DBHandler',
-        messages_aggregator: 'MessagesAggregator',
-) -> None:
-    """Regression test ensuring FVal timestamp scaling results are int-converted for SQL binding.
-
-    When querying historical balances with a timestamp filter, the timestamp is multiplied by
-    scaling_factor, producing an FVal that must be explicitly converted to int before passing
-    to SQL to avoid type binding errors.
-    """
-    with database.user_write() as write_cursor:
-        DBHistoryEvents(database).add_history_event(
-            write_cursor=write_cursor,
-            event=EvmEvent(
-                tx_ref=make_evm_tx_hash(),
-                group_identifier='grp_test',
-                sequence_index=0,
-                timestamp=TimestampMS(1729787659000),
-                location=Location.ETHEREUM,
-                event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.NONE,
-                asset=A_ETH,
-                amount=ONE,
-                location_label=TEST_ADDR1,
-            ),
-        )
-
-    filter_query = HistoricalBalancesFilterQuery.make(
-        timestamp=Timestamp(1729787659),
-        location=Location.ETHEREUM,
-    )
-    manager = HistoricalBalancesManager(database)
-    processing_required, balances = manager.get_balances(filter_query=filter_query)
-
-    assert processing_required is True
-    assert balances is None
-
-
-@pytest.mark.skip(reason='Historical balance processing is temporarily disabled.')
 def test_get_balances_skips_zero_amounts(
         database: 'DBHandler',
         messages_aggregator: 'MessagesAggregator',
@@ -271,8 +231,7 @@ def test_get_balances_skips_zero_amounts(
             )],
         )
 
-    process_historical_balances(database, messages_aggregator)
-    _, balances = manager.get_balances(HistoricalBalancesFilterQuery.make(timestamp=Timestamp(4)))
+    balances, _ = manager.get_balances(HistoricalBalancesParams(to_timestamp=Timestamp(4)))
     assert balances == {A_BTC: FVal('5')}
 
 
