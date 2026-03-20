@@ -68,6 +68,7 @@ def _repull_and_redecode_tx(
                     address=None,
                     return_queried_hashes=False,
                     known_parent_timestamps={tx_hash: transaction.timestamp},
+                    tx_timestamp=transaction.timestamp,
                 )
             )
         except (RemoteError, DeserializationError) as e:
