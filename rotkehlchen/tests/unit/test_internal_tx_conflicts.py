@@ -38,6 +38,7 @@ def make_dummy_chains_aggregator(
         query_internal_side_effect: Exception | None = None,
         query_internal_return_value: tuple[Any, Any, str] | None = None,
         replace_internal_hook: Callable[..., None] | None = None,
+        query_internal_hook: Callable[..., None] | None = None,
 ) -> Any:
     class _DummyInquirer:
         def get_transaction_by_hash(self, tx_hash):
@@ -47,7 +48,9 @@ def make_dummy_chains_aggregator(
         def __init__(self) -> None:
             self.evm_inquirer = _DummyInquirer()
 
-        def _query_internal_transactions_for_parent_hash(self, **_kwargs):
+        def _query_internal_transactions_for_parent_hash(self, **kwargs):
+            if query_internal_hook is not None:
+                query_internal_hook(**kwargs)
             if query_internal_side_effect is not None:
                 raise query_internal_side_effect
             if query_internal_return_value is not None:
@@ -508,3 +511,39 @@ def test_fix_conflict_with_specific_internal_tx_dataset(database) -> None:
             'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=? AND value=?',
             (parent_tx, 0),
         ).fetchone()[0] == 0
+
+
+def test_repull_passes_tx_timestamp_to_internal_query(database) -> None:
+    """Ensure _repull_and_redecode_tx forwards the transaction timestamp as
+    tx_timestamp so that indexer guards (e.g. Blockscout pre-Bedrock check)
+    can gate queries correctly."""
+    tx_hash = make_evm_tx_hash()
+    tx = EvmTransaction(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=(tx_ts := Timestamp(1600000000)),
+        block_number=1,
+        from_address=make_evm_address(),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    )
+    captured_kwargs: dict[str, Any] = {}
+
+    with patch.object(DBEvmTx, 'add_or_ignore_receipt_data'):
+        _repull_and_redecode_tx(
+            database=database,
+            chains_aggregator=make_dummy_chains_aggregator(
+                get_transaction_by_hash_result=(tx, {'status': '0x1'}),
+                query_internal_return_value=([], None, ''),
+                query_internal_hook=lambda **kwargs: captured_kwargs.update(kwargs),
+            ),
+            chain_id=ChainID.ETHEREUM,
+            tx_hash=tx_hash,
+        )
+
+    assert captured_kwargs.get('tx_timestamp') == tx_ts
