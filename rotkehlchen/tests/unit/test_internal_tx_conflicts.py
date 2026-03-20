@@ -486,7 +486,7 @@ def test_fix_conflict_with_specific_internal_tx_dataset(database) -> None:
             cursor=write_cursor,
             action=INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE,
             fixed=False,
-        ) == [(ChainID.ARBITRUM_ONE, tx_hash)]
+        ) == [(ChainID.ARBITRUM_ONE, tx_hash, INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE)]
 
         clean_internal_tx_conflict(
             write_cursor=write_cursor,

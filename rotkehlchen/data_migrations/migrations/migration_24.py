@@ -40,7 +40,7 @@ def data_migration_24(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     @progress_step(description='Fixing non-customized internal tx conflicts')
     def _fix_non_customized(rotki: 'Rotkehlchen') -> None:
         with rotki.data.db.conn.write_ctx() as write_cursor:
-            for chain_id, tx_hash in get_internal_tx_conflicts(
+            for chain_id, tx_hash, _ in get_internal_tx_conflicts(
                 cursor=write_cursor,
                 action=INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE,
                 fixed=False,

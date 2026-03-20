@@ -175,29 +175,35 @@ def clean_internal_tx_conflict(
 
 def get_internal_tx_conflicts(
         cursor: 'DBCursor',
-        action: str,
         fixed: bool,
+        action: str | None = None,
         limit: int | None = None,
-) -> list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash]]:
-    """Get internal tx conflict entries."""
+) -> list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, str]]:
+    """Get internal tx conflict entries. When action is None, returns all action types."""
     query = (
-        'SELECT chain, transaction_hash FROM evm_internal_tx_conflicts '
-        'WHERE action=? AND fixed=? '
+        'SELECT chain, transaction_hash, action FROM evm_internal_tx_conflicts '
+        'WHERE fixed=? '
+    )
+    bindings: tuple[object, ...] = (int(fixed),)
+    if action is not None:
+        query += 'AND action=? '
+        bindings = (*bindings, action)
+
+    query += (
         'ORDER BY '
         'CASE WHEN last_retry_ts IS NULL THEN 0 ELSE 1 END, '
         'last_retry_ts ASC, '
         'chain, transaction_hash'
     )
-    bindings: tuple[object, ...] = (action, int(fixed))
     if limit is not None:
         query += ' LIMIT ?'
         bindings = (*bindings, limit)
 
-    entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash]] = []
-    for chain, tx_hash in cursor.execute(query, bindings):
+    entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, str]] = []
+    for chain, tx_hash, row_action in cursor.execute(query, bindings):
         chain_id = ChainID.deserialize_from_db(chain)
         assert chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-        entries.append((cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', chain_id), deserialize_evm_tx_hash(tx_hash)))  # noqa: E501
+        entries.append((cast('EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', chain_id), deserialize_evm_tx_hash(tx_hash), row_action))  # noqa: E501
 
     return entries
 

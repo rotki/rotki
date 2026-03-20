@@ -7,6 +7,7 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.internal_tx_conflicts import (
     INTERNAL_TX_CONFLICT_ACTION_REPULL,
+    clean_internal_tx_conflict,
     get_internal_tx_conflicts,
     is_tx_customized,
     set_internal_tx_conflict_fixed,
@@ -107,40 +108,55 @@ def repull_internal_tx_conflicts(
         chains_aggregator: 'ChainsAggregator',
         limit: int,
 ) -> None:
-    """Process a batch of repull internal tx conflicts."""
+    """Process a batch of internal tx conflicts (both repull and fix_redecode)."""
     with database.conn.read_ctx() as read_cursor:
         entries = get_internal_tx_conflicts(
             cursor=read_cursor,
-            action=INTERNAL_TX_CONFLICT_ACTION_REPULL,
             fixed=False,
             limit=limit,
         )
 
-    for chain_id, tx_hash in entries:
-        try:
-            _repull_and_redecode_tx(
-                database=database,
-                chains_aggregator=chains_aggregator,
-                chain_id=chain_id,
-                tx_hash=tx_hash,
-            )
-        except (InputError, RemoteError, DeserializationError, DataIntegrityError) as e:
-            error_msg = str(e)
-            if isinstance(e, DataIntegrityError):
-                error_msg = f'Indexer did not provide valid data: {e!s}'
-            log.error(
-                f'Failed to repull internal tx conflict {tx_hash!s} on {chain_id.to_name()} '
-                f'due to {error_msg}',
-            )
+    for chain_id, tx_hash, action in entries:
+        if action == INTERNAL_TX_CONFLICT_ACTION_REPULL:
+            try:
+                _repull_and_redecode_tx(
+                    database=database,
+                    chains_aggregator=chains_aggregator,
+                    chain_id=chain_id,
+                    tx_hash=tx_hash,
+                )
+            except (InputError, RemoteError, DeserializationError, DataIntegrityError) as e:
+                error_msg = str(e)
+                if isinstance(e, DataIntegrityError):
+                    error_msg = f'Indexer did not provide valid data: {e!s}'
+                log.error(
+                    f'Failed to repull internal tx conflict {tx_hash!s} on '
+                    f'{chain_id.to_name()} due to {error_msg}',
+                )
+                with database.user_write() as write_cursor:
+                    set_internal_tx_conflict_repull_error(
+                        write_cursor=write_cursor,
+                        tx_hash=tx_hash,
+                        chain_id=chain_id,
+                        retry_ts=ts_now(),
+                        error=error_msg,
+                    )
+                continue
+        else:  # fix_redecode
             with database.user_write() as write_cursor:
-                set_internal_tx_conflict_repull_error(
+                clean_internal_tx_conflict(
                     write_cursor=write_cursor,
                     tx_hash=tx_hash,
                     chain_id=chain_id,
-                    retry_ts=ts_now(),
-                    error=error_msg,
                 )
-            continue
+            chain = chain_id.to_blockchain()
+            chain_manager = chains_aggregator.get_chain_manager(blockchain=chain)  # type: ignore[call-overload]
+            chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
+                tx_hashes=[tx_hash],
+                send_ws_notifications=True,
+                ignore_cache=True,
+                delete_customized=False,
+            )
 
         with database.user_write() as write_cursor:
             set_internal_tx_conflict_fixed(
