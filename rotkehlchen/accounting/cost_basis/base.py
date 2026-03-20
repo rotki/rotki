@@ -630,6 +630,85 @@ class CostBasisCalculator(CustomizableDateMixin):
         """
         return self._events[self._resolve_bucket_asset(asset)]
 
+    def transfer_basis(
+            self,
+            out_asset: Asset,
+            in_asset: Asset,
+            out_amount: FVal,
+            in_amount: FVal,
+            timestamp: Timestamp,
+    ) -> None:
+        """Transfer cost basis lots from out_asset to in_asset preserving original prices.
+
+        Used for deposit/withdraw-wrapped events where no taxable event should occur
+        and cost basis should carry over from the source to the destination asset.
+        For same-bucket assets (e.g. ETH/WETH) this is a no-op since get_events()
+        resolves both to the same CostBasisEvents object.
+        """
+        if ZERO in (out_amount, in_amount):
+            log.error(
+                'Basis transfer called with zero amount',
+                out_asset=out_asset,
+                in_asset=in_asset,
+                out_amount=out_amount,
+                in_amount=in_amount,
+            )
+            return
+
+        source_events = self.get_events(out_asset)
+        dest_events = self.get_events(in_asset)
+
+        if source_events is dest_events:
+            return  # same cost basis bucket (e.g. ETH/WETH), nothing to do
+
+        # Scaling factors to preserve total cost when amounts differ (e.g. 100 DAI → 95 aDAI)
+        # new_amount = old_amount * amount_ratio, new_rate = old_rate * rate_ratio
+        # so new_amount * new_rate = old_amount * old_rate (total cost preserved)
+        amount_ratio = in_amount / out_amount
+        rate_ratio = out_amount / in_amount
+
+        remaining = out_amount
+        lots_to_transfer: list[tuple[FVal, Price, Timestamp, int]] = []
+
+        for acquisition in source_events.acquisitions_manager.processing_iterator():
+            if remaining <= ZERO:
+                break
+
+            if remaining < acquisition.remaining_amount:
+                lots_to_transfer.append((
+                    remaining, acquisition.rate, acquisition.timestamp, acquisition.index,
+                ))
+                source_events.acquisitions_manager.consume_result(remaining, out_asset)
+                remaining = ZERO
+                break
+
+            used = acquisition.remaining_amount
+            remaining -= used
+            lots_to_transfer.append((
+                used, acquisition.rate, acquisition.timestamp, acquisition.index,
+            ))
+            source_events.acquisitions_manager.consume_result(used, out_asset)
+            acquisition.remaining_amount = ZERO
+
+        if remaining != ZERO and not out_asset.is_fiat():
+            self.missing_acquisitions.append(
+                MissingAcquisition(
+                    originating_event_id=None,
+                    asset=out_asset,
+                    time=timestamp,
+                    found_amount=out_amount - remaining,
+                    missing_amount=remaining,
+                ),
+            )
+
+        for lot_amount, lot_rate, lot_timestamp, lot_index in lots_to_transfer:
+            dest_events.acquisitions_manager.add_in_event(AssetAcquisitionEvent(
+                amount=lot_amount * amount_ratio,
+                timestamp=lot_timestamp,
+                rate=Price(lot_rate * rate_ratio),
+                index=lot_index,
+            ))
+
     def reduce_asset_amount(
             self,
             originating_event_id: int | None,

@@ -30,6 +30,7 @@ class EventsAccountantCallback(Protocol):
 
 class TxAccountingTreatment(DBCharEnumMixIn):
     SWAP = auto()
+    BASIS_TRANSFER = auto()
 
 
 ACCOUNTING_SETTING_DB_TUPLE = tuple[
