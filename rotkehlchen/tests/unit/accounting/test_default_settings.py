@@ -12,9 +12,13 @@ from rotkehlchen.accounting.cost_basis.base import (
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
+from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_WETH
+from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -386,3 +390,443 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
     expected_receive_event.count_cost_basis_pnl = False
     assert accounting_pot.processed_events[1:] == [expected_spend_event, expected_receive_event]
     assert accounting_pot.pnls.taxable == ETH_PRICE_TS_1 + expected_spend_event.pnl.taxable
+
+
+# --- BASIS_TRANSFER tests ---
+
+TIMESTAMP_3_SECS = Timestamp(1633593636)
+TIMESTAMP_3_MS = ts_sec_to_ms(TIMESTAMP_3_SECS)
+WETH_PRICE_TS_3 = FVal('4000')
+
+# Aave v1 aDAI — not in any asset collection with DAI, so separate cost basis bucket
+A_ADAI_V1 = Asset('eip155:1/erc20:0xfC1E690f61EFd961294b3e1Ce3313fBD8aa4f85d')
+
+MOCKED_PRICES_WITH_WETH = {
+    'ETH': {
+        'EUR': {
+            TIMESTAMP_1_SECS: ETH_PRICE_TS_1,
+            TIMESTAMP_2_SECS: ETH_PRICE_TS_2,
+            TIMESTAMP_3_SECS: WETH_PRICE_TS_3,
+        },
+    },
+    A_WETH.identifier: {
+        'EUR': {
+            TIMESTAMP_1_SECS: ETH_PRICE_TS_1,
+            TIMESTAMP_2_SECS: ETH_PRICE_TS_2,
+            TIMESTAMP_3_SECS: WETH_PRICE_TS_3,
+        },
+    },
+    A_DAI.identifier: {
+        'EUR': {
+            TIMESTAMP_1_SECS: Price(ONE),
+            TIMESTAMP_2_SECS: Price(ONE),
+            TIMESTAMP_3_SECS: Price(ONE),
+        },
+    },
+    A_ADAI_V1.identifier: {
+        'EUR': {
+            TIMESTAMP_1_SECS: Price(ONE),
+            TIMESTAMP_2_SECS: Price(ONE),
+            TIMESTAMP_3_SECS: Price(ONE),
+        },
+    },
+}
+
+
+def _setup_basis_transfer_rules(
+        accounting_pot: 'AccountingPot',
+        counterparty: str = CPT_WETH,
+) -> None:
+    """Insert basis_transfer rules for both wrap and unwrap, then re-reset the pot."""
+    rules_db = DBAccountingRules(accounting_pot.database)
+    basis_transfer_rule = BaseEventSettings(
+        taxable=False,
+        count_entire_amount_spend=False,
+        count_cost_basis_pnl=False,
+        accounting_treatment=TxAccountingTreatment.BASIS_TRANSFER,
+    )
+    rules_db.add_accounting_rule(
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        counterparty=counterparty,
+        rule=basis_transfer_rule,
+        links={},
+        force_update=True,
+    )
+    rules_db.add_accounting_rule(
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        counterparty=counterparty,
+        rule=basis_transfer_rule,
+        links={},
+        force_update=True,
+    )
+    with accounting_pot.database.conn.read_ctx() as cursor:
+        settings = accounting_pot.database.get_settings(cursor)
+    accounting_pot.reset(
+        settings=settings,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(0),
+        report_id=1,
+    )
+
+
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
+def test_basis_transfer_weth_wrap(accounting_pot: 'AccountingPot'):
+    """
+    Test that BASIS_TRANSFER preserves cost basis across ETH → WETH wrapping.
+    1. Acquire 1 ETH at 2000 EUR
+    2. Wrap ETH → WETH (should be a no-op for cost basis since same bucket)
+    3. Sell 1 WETH at 4000 EUR → cost basis should be original 2000 EUR
+    """
+    _setup_basis_transfer_rules(accounting_pot)
+
+    # Step 1: Acquire 1 ETH at 2000 EUR
+    _gain_one_ether(events_accountant=accounting_pot.events_accountant)
+    assert len(accounting_pot.processed_events) == 1
+    pnl_after_acquire = accounting_pot.pnls.taxable
+
+    # Step 2: Wrap ETH → WETH
+    wrap_out = EvmEvent(
+        tx_ref=(wrap_hash := make_evm_tx_hash()),
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Wrap 1 ETH in WETH',
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+    wrap_in = EvmEvent(
+        tx_ref=wrap_hash,
+        sequence_index=2,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Receive 1 WETH',
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+
+    assert (consumed := accounting_pot.events_accountant.process(
+        event=wrap_out,
+        events_iterator=peekable([wrap_in]),
+    )) == 2, f'Expected 2 events consumed, got {consumed}'
+    assert len(accounting_pot.processed_events) == 1, 'Wrap should not add processed events'
+    assert accounting_pot.pnls.taxable == pnl_after_acquire, 'Wrap should not change PnL'
+
+    # Step 3: Sell 1 WETH at 4000 EUR
+    sell = EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TIMESTAMP_3_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Send 1 WETH',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+    )
+    accounting_pot.events_accountant.process(
+        event=sell,
+        events_iterator=peekable([]),
+    )
+
+    sell_event = accounting_pot.processed_events[-1]
+    assert sell_event.cost_basis is not None, 'WETH sell should have matched cost basis'
+    assert sell_event.cost_basis.taxable_bought_cost == ETH_PRICE_TS_1, (
+        f'Expected original ETH basis of {ETH_PRICE_TS_1}, '
+        f'got {sell_event.cost_basis.taxable_bought_cost}'
+    )
+    assert sell_event.cost_basis.is_complete is True
+
+
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
+def test_basis_transfer_weth_unwrap(accounting_pot: 'AccountingPot'):
+    """
+    Test that BASIS_TRANSFER preserves cost basis across WETH → ETH unwrapping.
+    1. Acquire 1 WETH at 2000 EUR
+    2. Unwrap WETH → ETH (no-op for same-bucket cost basis)
+    3. Sell 1 ETH at 4000 EUR → cost basis should be original 2000 EUR
+    """
+    _setup_basis_transfer_rules(accounting_pot)
+
+    # Step 1: Acquire 1 WETH at 2000 EUR
+    weth_acquire = EvmEvent(
+        tx_ref=EXAMPLE_EVM_HASH,
+        sequence_index=0,
+        timestamp=TIMESTAMP_1_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Received 1 WETH',
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+    )
+    accounting_pot.events_accountant.process(
+        event=weth_acquire,
+        events_iterator=peekable([]),
+    )
+    pnl_after_acquire = accounting_pot.pnls.taxable
+
+    # Step 2: Unwrap WETH → ETH
+    unwrap_out = EvmEvent(
+        tx_ref=(unwrap_hash := make_evm_tx_hash()),
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Unwrap 1 WETH',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+    unwrap_in = EvmEvent(
+        tx_ref=unwrap_hash,
+        sequence_index=2,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Receive 1 ETH',
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REDEEM_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+
+    assert accounting_pot.events_accountant.process(
+        event=unwrap_out,
+        events_iterator=peekable([unwrap_in]),
+    ) == 2
+    assert accounting_pot.pnls.taxable == pnl_after_acquire, 'Unwrap should not change PnL'
+
+    # Step 3: Sell 1 ETH at 4000 EUR
+    sell = EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TIMESTAMP_3_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Send 1 ETH',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+    )
+    accounting_pot.events_accountant.process(
+        event=sell,
+        events_iterator=peekable([]),
+    )
+
+    sell_event = accounting_pot.processed_events[-1]
+    assert sell_event.cost_basis is not None
+    assert sell_event.cost_basis.taxable_bought_cost == ETH_PRICE_TS_1
+    assert sell_event.cost_basis.is_complete is True
+
+
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
+def test_basis_transfer_different_bucket(accounting_pot: 'AccountingPot'):
+    """
+    Test that BASIS_TRANSFER correctly moves cost basis lots between assets
+    in DIFFERENT cost basis buckets: DAI → aDAI (Aave v1 deposit).
+
+    DAI and aDAI are separate assets with no shared collection, so the transfer
+    must actually extract lots from DAI's bucket and re-insert them into aDAI's bucket
+    with original acquisition prices preserved.
+    """
+    cpt_test = 'test_protocol'
+    _setup_basis_transfer_rules(accounting_pot, counterparty=cpt_test)
+
+    # Step 1: Acquire 100 DAI at 1 EUR each
+    dai_acquire = EvmEvent(
+        tx_ref=EXAMPLE_EVM_HASH,
+        sequence_index=0,
+        timestamp=TIMESTAMP_1_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_DAI,
+        amount=FVal(100),
+        notes='Received 100 DAI',
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+    )
+    accounting_pot.events_accountant.process(
+        event=dai_acquire,
+        events_iterator=peekable([]),
+    )
+
+    # Verify DAI lot exists in cost basis
+    dai_events = accounting_pot.cost_basis.get_events(A_DAI)
+    assert len(dai_events.acquisitions_manager) == 1
+    dai_acquisitions = dai_events.acquisitions_manager.get_acquisitions()
+    assert dai_acquisitions[0].remaining_amount == FVal(100)
+    assert dai_acquisitions[0].rate == Price(ONE)
+
+    # Step 2: Deposit 100 DAI into Aave → receive 100 aDAI (1:1 for Aave v1)
+    deposit_out = EvmEvent(
+        tx_ref=(dep_hash := make_evm_tx_hash()),
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_DAI,
+        amount=FVal(100),
+        notes='Deposit 100 DAI into Aave',
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        counterparty=cpt_test,
+    )
+    deposit_in = EvmEvent(
+        tx_ref=dep_hash,
+        sequence_index=2,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ADAI_V1,
+        amount=FVal(100),
+        notes='Receive 100 aDAI from Aave',
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        counterparty=cpt_test,
+    )
+
+    assert accounting_pot.events_accountant.process(
+        event=deposit_out,
+        events_iterator=peekable([deposit_in]),
+    ) == 2
+
+    # Verify DAI lots are consumed (empty)
+    assert len(dai_events.acquisitions_manager) == 0, 'DAI lots should be consumed by transfer'
+
+    # Verify aDAI now has the transferred lot with preserved rate
+    # Original: 100 DAI at 1 EUR each → total cost 100 EUR
+    # Transferred: 100 aDAI at 1 EUR each (1:1 ratio, rate unchanged)
+    # Total cost preserved: 100 * 1 = 100 EUR ✓
+    adai_events = accounting_pot.cost_basis.get_events(A_ADAI_V1)
+    adai_acquisitions = adai_events.acquisitions_manager.get_acquisitions()
+    assert len(adai_acquisitions) == 1
+    assert adai_acquisitions[0].remaining_amount == FVal(100)
+    assert adai_acquisitions[0].rate == Price(ONE), (
+        f'Expected transferred rate of 1 EUR, got {adai_acquisitions[0].rate}'
+    )
+    # Original acquisition timestamp is preserved, not the deposit timestamp
+    assert adai_acquisitions[0].timestamp == TIMESTAMP_1_SECS
+
+
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES])
+def test_basis_transfer_missing_pair(accounting_pot: 'AccountingPot'):
+    """Test that basis_transfer gracefully handles a missing paired event."""
+    _setup_basis_transfer_rules(accounting_pot)
+
+    wrap_out = EvmEvent(
+        tx_ref=EXAMPLE_EVM_HASH,
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Wrap 1 ETH in WETH',
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+
+    # No paired event → should return 1 (graceful fallback)
+    assert accounting_pot.events_accountant.process(
+        event=wrap_out,
+        events_iterator=peekable([]),
+    ) == 1
+
+
+@pytest.mark.parametrize('mocked_price_queries', [MOCKED_PRICES_WITH_WETH])
+def test_basis_transfer_vs_default_rules(accounting_pot: 'AccountingPot'):
+    """
+    Demonstrate that WITHOUT basis_transfer, the default rules reset cost basis
+    on wrapping. The deposit out-event calls spend_asset() which consumes the
+    original lot, and the receive in-event creates a fresh lot at wrap-time price.
+
+    This test documents the bug that BASIS_TRANSFER fixes.
+    """
+    # Do NOT set up basis_transfer rules — use defaults
+
+    # Step 1: Acquire 1 ETH at 2000 EUR
+    _gain_one_ether(events_accountant=accounting_pot.events_accountant)
+
+    # Step 2: Wrap ETH → WETH at timestamp 2 (price = 3000 EUR)
+    # With default rules, both events are processed individually
+    wrap_out = EvmEvent(
+        tx_ref=(wrap_hash := make_evm_tx_hash()),
+        sequence_index=1,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_ETH,
+        amount=ONE,
+        notes='Wrap 1 ETH in WETH',
+        event_type=HistoryEventType.DEPOSIT,
+        event_subtype=HistoryEventSubType.DEPOSIT_FOR_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+    wrap_in = EvmEvent(
+        tx_ref=wrap_hash,
+        sequence_index=2,
+        timestamp=TIMESTAMP_2_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Receive 1 WETH',
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+        counterparty=CPT_WETH,
+    )
+
+    # Out event consumed separately (returns 1, not 2)
+    consumed = accounting_pot.events_accountant.process(
+        event=wrap_out,
+        events_iterator=peekable([wrap_in]),
+    )
+    assert consumed == 1, 'Without BASIS_TRANSFER, out-event is processed alone'
+    # In event also processed separately
+    accounting_pot.events_accountant.process(
+        event=wrap_in,
+        events_iterator=peekable([]),
+    )
+
+    # Step 3: Sell 1 WETH at 4000 EUR
+    sell = EvmEvent(
+        tx_ref=make_evm_tx_hash(),
+        sequence_index=0,
+        timestamp=TIMESTAMP_3_MS,
+        location=Location.ETHEREUM,
+        location_label=EXAMPLE_ADDRESS,
+        asset=A_WETH,
+        amount=ONE,
+        notes='Send 1 WETH',
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+    )
+    accounting_pot.events_accountant.process(
+        event=sell,
+        events_iterator=peekable([]),
+    )
+
+    sell_event = accounting_pot.processed_events[-1]
+    assert sell_event.cost_basis is not None
+    # BUG: Without BASIS_TRANSFER, cost basis was reset to wrap-time price (3000)
+    # instead of the original purchase price (2000)
+    assert sell_event.cost_basis.taxable_bought_cost == ETH_PRICE_TS_2, (
+        'Without BASIS_TRANSFER, cost basis is incorrectly reset to wrap-time price'
+    )

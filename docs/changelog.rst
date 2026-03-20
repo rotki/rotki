@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Added an accounting rule to transfer cost basis between assets and applied it as a default for actions such as wrapping/unwrapping ETH, depositing to DeFi etc.
 * :bug:`11908` Individual pending task items now show a static icon instead of an indeterminate spinner, reducing visual noise when many tasks are running.
 * :feature:`11896` Indexer limitation warnings are now shown in the EVM Indexer Order settings for Optimism (Blockscout pre-Bedrock gaps) and Base (Blockscout as only free indexer).
 * :bug:`11901` The event_subtype filter (e.g. subtype=None) is no longer lost when navigating away from the history events page and back.

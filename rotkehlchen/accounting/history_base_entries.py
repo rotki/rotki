@@ -87,6 +87,44 @@ class EventsAccountant:
         if isinstance(event, EvmEvent | SolanaEvent):
             general_extra_data['tx_ref'] = str(event.tx_ref)
 
+        if event_settings.accounting_treatment == TxAccountingTreatment.BASIS_TRANSFER:
+            next_event = events_iterator.peek(None)
+            if not isinstance(next_event, HistoryBaseEntry) or next_event.group_identifier != event.group_identifier:  # noqa: E501
+                log.error(
+                    f'Tried to process basis transfer but could not find the paired '
+                    f'event for {event}',
+                )
+                return 1
+
+            paired_direction = next_event.maybe_get_direction()
+            if paired_direction is None or paired_direction == event_direction:
+                log.error(
+                    f'Tried to process basis transfer but the paired event has '
+                    f'unexpected direction: {paired_direction=} {event_direction=} '
+                    f'for {event}',
+                )
+                return 1
+
+            in_event = cast('HistoryBaseEntry', next(events_iterator))  # consume the paired event
+
+            with self.pot.database.conn.read_ctx() as cursor:
+                if (
+                    event.asset in (ignored_assets := self.pot.database.get_ignored_asset_ids(cursor)) or  # noqa: E501
+                    in_event.asset in ignored_assets
+                ):
+                    return 2
+
+            # event_direction is OUT (first event is always the deposit/spend)
+            # paired_direction is IN (second event is always the receive/withdraw)
+            self.pot.cost_basis.transfer_basis(
+                out_asset=event.asset,
+                in_asset=in_event.asset,
+                out_amount=event.amount,
+                in_amount=in_event.amount,
+                timestamp=timestamp,
+            )
+            return 2
+
         if event_settings.accounting_treatment == TxAccountingTreatment.SWAP:
             processed_event_count = 1
             next_event = events_iterator.peek(None)
