@@ -373,16 +373,19 @@ defineExpose({
                   icon
                   size="sm"
                   :disabled="!row.groupIdentifier"
-                  :color="highlightedTxHash === row.txHash ? 'primary' : undefined"
+                  :color="highlightedTxHash === row.txHash ? 'warning' : undefined"
                   @click="emit('show-in-events', row)"
                 >
                   <RuiIcon
-                    name="lu-external-link"
+                    :name="highlightedTxHash === row.txHash ? 'lu-eye-off' : 'lu-external-link'"
                     size="16"
                   />
                 </RuiButton>
               </template>
-              {{ t('internal_tx_conflicts.actions.show_in_events') }}
+              {{ highlightedTxHash === row.txHash
+                ? t('internal_tx_conflicts.actions.clear_highlight')
+                : t('internal_tx_conflicts.actions.show_in_events')
+              }}
             </RuiTooltip>
           </div>
         </template>
