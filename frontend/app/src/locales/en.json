@@ -3709,6 +3709,7 @@
   "internal_tx_conflicts": {
     "actions": {
       "clear_highlight": "Clear highlight",
+      "copy_error": "Copy error message",
       "fix_redecode": "Fix & Redecode",
       "pin": "Pin to sidebar",
       "repull": "Repull",
@@ -3720,7 +3721,6 @@
       "message": "{count} internal transaction conflict(s) need attention"
     },
     "columns": {
-      "action": "Action",
       "chain": "Chain",
       "last_error": "Last Error",
       "last_retry": "Last Retry",
