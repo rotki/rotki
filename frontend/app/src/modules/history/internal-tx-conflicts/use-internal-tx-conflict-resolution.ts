@@ -45,7 +45,7 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
   const { getChain } = useSupportedChains();
   const { cancelDecoding, pullAndDecodeTransactionsRaw } = useHistoryTransactionDecoding();
   const { removeKeys } = useInternalTxConflictSelection();
-  const { notify } = useNotificationsStore();
+  const { notify, removeMatching } = useNotificationsStore();
 
   const progress = ref<ResolutionProgress>(defaultProgress());
   const cancelRequested = ref<boolean>(false);
@@ -154,10 +154,10 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
       set(progress, { ...get(progress), current: undefined, isRunning: false });
       set(progress, defaultProgress());
 
+      removeMatching(({ group }) => group === NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION);
+
       if (cancelled) {
         notify({
-          display: true,
-          group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
           message: t('internal_tx_conflicts.notifications.cancelled', { completed, total }),
           severity: Severity.WARNING,
           title: t('internal_tx_conflicts.notifications.title'),
@@ -165,8 +165,6 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
       }
       else if (failed > 0) {
         notify({
-          display: true,
-          group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
           message: t('internal_tx_conflicts.notifications.completed_with_errors', { completed, failed, total }),
           severity: Severity.WARNING,
           title: t('internal_tx_conflicts.notifications.title'),
@@ -174,8 +172,6 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
       }
       else {
         notify({
-          display: true,
-          group: NotificationGroup.INTERNAL_TX_CONFLICT_RESOLUTION,
           message: t('internal_tx_conflicts.notifications.completed', { total }),
           severity: Severity.INFO,
           title: t('internal_tx_conflicts.notifications.title'),

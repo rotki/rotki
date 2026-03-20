@@ -36,6 +36,7 @@ vi.mock('./use-internal-tx-conflict-selection', () => ({
 vi.mock('@/store/notifications', () => ({
   useNotificationsStore: (): object => ({
     notify: vi.fn(),
+    removeMatching: vi.fn(),
   }),
 }));
 
