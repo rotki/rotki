@@ -32,7 +32,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     pullAndRecodeTransactionRequest,
   } = useHistoryEventsApi();
 
-  const { awaitTask, isTaskRunning } = useTaskStore();
+  const { awaitTask, cancelTaskByTaskType, isTaskRunning } = useTaskStore();
   const {
     markDecodingCancelled,
     resetUndecodedTransactionsStatus,
@@ -185,53 +185,62 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     );
   };
 
-  const pullAndDecodeTransactions = async (payload: PullTransactionPayload): Promise<void> => {
-    const notifyUser = (error: string): void => notify({
-      display: true,
-      message: t('actions.transactions_redecode.error.description', {
-        error,
+  /**
+   * Core decode function that throws on failure instead of notifying.
+   * Used by callers that need to handle errors themselves (e.g. conflict resolution).
+   */
+  const pullAndDecodeTransactionsRaw = async (payload: PullTransactionPayload): Promise<void> => {
+    const taskType = TaskType.TRANSACTIONS_DECODING;
+    const { taskId } = await pullAndRecodeTransactionRequest(payload);
+
+    let taskMeta = {
+      description: t('actions.transactions_redecode.task.single_description', {
+        chain: get(getChainName(payload.chain)),
+        number: payload.txRefs.length,
       }),
-      title: t('actions.transactions_redecode.error.title'),
-    });
+      title: t('actions.transactions_redecode.task.title'),
+    };
 
-    try {
-      const taskType = TaskType.TRANSACTIONS_DECODING;
-      const { taskId } = await pullAndRecodeTransactionRequest(payload);
-
-      let taskMeta = {
-        description: t('actions.transactions_redecode.task.single_description', {
-          chain: get(getChainName(payload.chain)),
-          number: payload.txRefs.length,
+    if (payload.txRefs.length === 1) {
+      taskMeta = {
+        description: t('actions.transactions_redecode.task.description', {
+          chain: payload.chain,
+          tx: payload.txRefs[0],
         }),
         title: t('actions.transactions_redecode.task.title'),
       };
+    }
 
-      if (payload.txRefs.length === 1) {
-        taskMeta = {
-          description: t('actions.transactions_redecode.task.description', {
-            chain: payload.chain,
-            tx: payload.txRefs[0],
-          }),
-          title: t('actions.transactions_redecode.task.title'),
-        };
-      }
+    const { message, result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
 
-      const { message, result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
+    if (result) {
+      clearDependedSection();
+    }
+    else {
+      throw new Error(message ?? t('actions.transactions_redecode.error.title'));
+    }
+  };
 
-      if (result) {
-        clearDependedSection();
-      }
-      else {
-        notifyUser(message ?? '');
-      }
+  /**
+   * Notifying wrapper — catches errors and shows notifications to the user.
+   * Used by the UI redecode flow where errors are displayed as toast messages.
+   */
+  const pullAndDecodeTransactions = async (payload: PullTransactionPayload): Promise<void> => {
+    try {
+      await pullAndDecodeTransactionsRaw(payload);
     }
     catch (error: any) {
-      if (isTaskCancelled(error)) {
+      if (isTaskCancelled(error))
         return;
-      }
 
       logger.error(error);
-      notifyUser(error);
+      notify({
+        display: true,
+        message: t('actions.transactions_redecode.error.description', {
+          error: error.message ?? error,
+        }),
+        title: t('actions.transactions_redecode.error.title'),
+      });
     }
   };
 
@@ -341,11 +350,17 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     }
   };
 
+  async function cancelDecoding(): Promise<void> {
+    await cancelTaskByTaskType(TaskType.TRANSACTIONS_DECODING);
+  }
+
   return {
+    cancelDecoding,
     checkMissingEventsAndRedecode,
     decodeTransactionsTask,
     fetchUndecodedTransactionsBreakdown,
     fetchUndecodedTransactionsStatus,
+    pullAndDecodeTransactionsRaw,
     pullAndRecodeEthBlockEvents,
     pullAndRedecodeTransactions,
     redecodeTransactions,
