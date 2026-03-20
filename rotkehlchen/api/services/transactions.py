@@ -27,6 +27,7 @@ from rotkehlchen.db.internal_tx_conflicts import (
     get_pending_internal_tx_repull_conflicts,
     is_tx_customized,
     set_internal_tx_conflict_fixed,
+    set_internal_tx_conflict_repull_error,
 )
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
@@ -59,6 +60,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -462,6 +464,18 @@ class TransactionsService:
                 if isinstance(e, (InputError, DataIntegrityError))
                 else HTTPStatus.BAD_GATEWAY
             )
+            if chain.is_evm():
+                with self.rotkehlchen.data.db.user_write() as write_cursor:
+                    if table_exists(write_cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
+                        set_internal_tx_conflict_repull_error(
+                            write_cursor=write_cursor,
+                            tx_hash=evm_tx_ref,  # pyright: ignore[reportPossiblyUnboundVariable]
+                            chain_id=self.rotkehlchen.chains_aggregator.get_chain_manager(
+                                blockchain=cast('SUPPORTED_EVM_CHAINS_TYPE', chain),
+                            ).node_inquirer.chain_id,
+                            retry_ts=ts_now(),
+                            error=str(e),
+                        )
         finally:
             if indexer_order_customized:
                 CachedSettings().evm_indexers_order_override_var.reset(indexer_order_customized)
