@@ -17,6 +17,7 @@ from rotkehlchen.db.internal_tx_conflicts import (
     POPULATE_INTERNAL_TX_CONFLICTS_QUERY,
     clean_internal_tx_conflict,
     get_internal_tx_conflicts,
+    is_tx_customized,
 )
 from rotkehlchen.errors.misc import DataIntegrityError, InputError, RemoteError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
@@ -136,8 +137,30 @@ def test_repull_internal_tx_conflicts_sends_ws_message_after_fix(database) -> No
 
 
 def test_repull_internal_tx_conflicts_skip_customized(database) -> None:
+    """Customized txs should be repulled (fixing bad internal data) but not
+    redecoded, so the customized events are preserved.  The conflict entry
+    must be marked as fixed afterwards."""
     tx_hash = make_evm_tx_hash()
+    tx = EvmTransaction(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000000),
+        block_number=1,
+        from_address=(sender := make_evm_address()),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    )
     with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[tx],
+            relevant_address=sender,
+        )
         write_cursor.execute(
             'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, fixed) VALUES(?, ?, ?, ?)',  # noqa: E501
             (tx_hash, ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, 0),
@@ -154,7 +177,7 @@ def test_repull_internal_tx_conflicts_skip_customized(database) -> None:
                 0,
                 1700000000,
                 Location.ETHEREUM.serialize_for_db(),
-                make_evm_address(),
+                sender,
                 A_ETH.identifier,
                 '1',
                 'customized',
@@ -178,19 +201,35 @@ def test_repull_internal_tx_conflicts_skip_customized(database) -> None:
             ),
         )
 
-    with patch('rotkehlchen.tasks.internal_tx_conflicts._repull_and_redecode_tx') as repull_mock:
+    with (
+        patch(
+            'rotkehlchen.tasks.internal_tx_conflicts.is_tx_customized',
+            wraps=is_tx_customized,
+        ) as customized_check,
+        patch.object(DBEvmTx, 'add_or_ignore_receipt_data'),
+    ):
         repull_internal_tx_conflicts(
             database=database,
-            chains_aggregator=cast('ChainsAggregator', object()),
+            chains_aggregator=make_dummy_chains_aggregator(
+                get_transaction_by_hash_result=(tx, {'status': '0x1'}),
+                query_internal_return_value=([], None, ''),
+            ),
             limit=INTERNAL_TXS_TO_REPULL,
         )
 
-    assert repull_mock.call_count == 0
+    # is_tx_customized was called inside _repull_and_redecode_tx
+    assert customized_check.call_count == 1
     with database.conn.read_ctx() as cursor:
+        # conflict is marked as fixed (repull succeeded, decode was skipped)
         assert cursor.execute(
             'SELECT fixed FROM evm_internal_tx_conflicts WHERE transaction_hash=? AND chain=?',
             (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
-        ).fetchone()[0] == 0
+        ).fetchone()[0] == 1
+        # customized event is still present and untouched
+        assert cursor.execute(
+            'SELECT notes FROM history_events WHERE identifier=?',
+            (777_001,),
+        ).fetchone()[0] == 'customized'
 
 
 def test_repull_internal_tx_conflicts_records_retry_error(database) -> None:

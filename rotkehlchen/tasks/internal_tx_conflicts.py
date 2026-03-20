@@ -20,7 +20,11 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.types import ChainID, EvmInternalTransaction, EVMTxHash
+    from rotkehlchen.types import (
+        EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+        EvmInternalTransaction,
+        EVMTxHash,
+    )
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -29,10 +33,15 @@ log = RotkehlchenLogsAdapter(logger)
 def _repull_and_redecode_tx(
         database: 'DBHandler',
         chains_aggregator: 'ChainsAggregator',
-        chain_id: 'ChainID',
+        chain_id: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
         tx_hash: 'EVMTxHash',
 ) -> None:
-    """Repull tx and internals before replacing local rows, then redecode."""
+    """Repull tx and internals before replacing local rows, then redecode.
+
+    For customized transactions only the tx data and internals are refreshed
+    without redecoding, to avoid creating duplicate events alongside the
+    preserved customized ones.
+    """
     chain = chain_id.to_blockchain()
     chain_manager = chains_aggregator.get_chain_manager(blockchain=chain)  # type: ignore[call-overload]
     try:
@@ -81,6 +90,10 @@ def _repull_and_redecode_tx(
             indexer_source=indexer_source,
         )
 
+    with database.conn.read_ctx() as cursor:
+        if is_tx_customized(cursor=cursor, tx_hash=tx_hash, chain_id=chain_id):
+            return  # repulled data but skip redecoding to preserve customized events
+
     chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
         tx_hashes=[tx_hash],
         send_ws_notifications=True,
@@ -104,10 +117,6 @@ def repull_internal_tx_conflicts(
         )
 
     for chain_id, tx_hash in entries:
-        with database.conn.read_ctx() as cursor:
-            if is_tx_customized(cursor=cursor, tx_hash=tx_hash, chain_id=chain_id):
-                continue
-
         try:
             _repull_and_redecode_tx(
                 database=database,
