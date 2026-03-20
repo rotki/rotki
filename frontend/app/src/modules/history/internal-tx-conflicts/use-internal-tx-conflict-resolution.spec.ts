@@ -5,8 +5,8 @@ import { type ResolutionCallbacks, useInternalTxConflictResolution } from './use
 
 const { spies } = vi.hoisted(() => ({
   spies: {
-    cancelTaskByTaskType: vi.fn<() => Promise<void>>(),
-    pullAndRedecodeTransactions: vi.fn<() => Promise<void>>(),
+    cancelDecoding: vi.fn<() => Promise<void>>(),
+    pullAndDecodeTransactionsRaw: vi.fn<() => Promise<void>>(),
     removeKeys: vi.fn(),
   },
 }));
@@ -22,7 +22,8 @@ vi.mock('@/composables/info/chains', () => ({
 
 vi.mock('@/composables/history/events/tx/decoding', () => ({
   useHistoryTransactionDecoding: (): object => ({
-    pullAndRedecodeTransactions: spies.pullAndRedecodeTransactions,
+    cancelDecoding: spies.cancelDecoding,
+    pullAndDecodeTransactionsRaw: spies.pullAndDecodeTransactionsRaw,
   }),
 }));
 
@@ -35,12 +36,6 @@ vi.mock('./use-internal-tx-conflict-selection', () => ({
 vi.mock('@/store/notifications', () => ({
   useNotificationsStore: (): object => ({
     notify: vi.fn(),
-  }),
-}));
-
-vi.mock('@/store/tasks', () => ({
-  useTaskStore: (): object => ({
-    cancelTaskByTaskType: spies.cancelTaskByTaskType,
   }),
 }));
 
@@ -66,8 +61,8 @@ describe('use-internal-tx-conflict-resolution', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    spies.pullAndRedecodeTransactions.mockResolvedValue(undefined);
-    spies.cancelTaskByTaskType.mockResolvedValue(undefined);
+    spies.pullAndDecodeTransactionsRaw.mockResolvedValue(undefined);
+    spies.cancelDecoding.mockResolvedValue(undefined);
     scope = effectScope();
     scope.run(() => {
       composable = useInternalTxConflictResolution();
@@ -81,18 +76,19 @@ describe('use-internal-tx-conflict-resolution', () => {
   });
 
   describe('resolveOne', () => {
-    it('calls pullAndRedecodeTransactions for repull action', async () => {
+    it('calls pullAndDecodeTransactionsRaw for repull action', async () => {
       const conflict = createMockConflict({ action: InternalTxConflictActions.REPULL, chain: 'ethereum' });
       await composable.resolveOne(conflict, callbacks);
 
-      expect(spies.pullAndRedecodeTransactions).toHaveBeenCalledWith({
-        transactions: [{ location: 'eth', txRef: '0xabc' }],
+      expect(spies.pullAndDecodeTransactionsRaw).toHaveBeenCalledWith({
+        chain: 'eth',
+        txRefs: ['0xabc'],
       });
       expect(spies.removeKeys).toHaveBeenCalledWith(['ethereum:0xabc']);
       expect(callbacks.onComplete).toHaveBeenCalled();
     });
 
-    it('calls pullAndRedecodeTransactions for fix_redecode action', async () => {
+    it('calls pullAndDecodeTransactionsRaw for fix_redecode action', async () => {
       const conflict = createMockConflict({
         action: InternalTxConflictActions.FIX_REDECODE,
         chain: 'ethereum',
@@ -102,15 +98,16 @@ describe('use-internal-tx-conflict-resolution', () => {
       });
       await composable.resolveOne(conflict, callbacks);
 
-      expect(spies.pullAndRedecodeTransactions).toHaveBeenCalledWith({
-        transactions: [{ location: 'eth', txRef: '0xdef' }],
+      expect(spies.pullAndDecodeTransactionsRaw).toHaveBeenCalledWith({
+        chain: 'eth',
+        txRefs: ['0xdef'],
       });
       expect(spies.removeKeys).toHaveBeenCalledWith(['ethereum:0xdef']);
       expect(callbacks.onComplete).toHaveBeenCalled();
     });
 
     it('handles errors without removing keys', async () => {
-      spies.pullAndRedecodeTransactions.mockRejectedValue(new Error('Network error'));
+      spies.pullAndDecodeTransactionsRaw.mockRejectedValue(new Error('Network error'));
       const conflict = createMockConflict();
       await composable.resolveOne(conflict, callbacks);
 
@@ -120,7 +117,7 @@ describe('use-internal-tx-conflict-resolution', () => {
 
     it('tracks resolving state per conflict', async () => {
       let resolveCall: (() => void) | undefined;
-      spies.pullAndRedecodeTransactions.mockImplementationOnce(
+      spies.pullAndDecodeTransactionsRaw.mockImplementationOnce(
         async (): Promise<void> => new Promise<void>((resolve) => {
           resolveCall = resolve;
         }),
@@ -148,15 +145,18 @@ describe('use-internal-tx-conflict-resolution', () => {
 
       await composable.resolveMany(conflicts, callbacks);
 
-      expect(spies.pullAndRedecodeTransactions).toHaveBeenCalledTimes(3);
-      expect(spies.pullAndRedecodeTransactions).toHaveBeenCalledWith({
-        transactions: [{ location: 'eth', txRef: '0x111' }],
+      expect(spies.pullAndDecodeTransactionsRaw).toHaveBeenCalledTimes(3);
+      expect(spies.pullAndDecodeTransactionsRaw).toHaveBeenCalledWith({
+        chain: 'eth',
+        txRefs: ['0x111'],
       });
-      expect(spies.pullAndRedecodeTransactions).toHaveBeenCalledWith({
-        transactions: [{ location: 'eth', txRef: '0x222' }],
+      expect(spies.pullAndDecodeTransactionsRaw).toHaveBeenCalledWith({
+        chain: 'eth',
+        txRefs: ['0x222'],
       });
-      expect(spies.pullAndRedecodeTransactions).toHaveBeenCalledWith({
-        transactions: [{ location: 'opt', txRef: '0x333' }],
+      expect(spies.pullAndDecodeTransactionsRaw).toHaveBeenCalledWith({
+        chain: 'opt',
+        txRefs: ['0x333'],
       });
       expect(spies.removeKeys).toHaveBeenCalledTimes(3);
       expect(callbacks.onComplete).toHaveBeenCalledTimes(3);
@@ -176,12 +176,12 @@ describe('use-internal-tx-conflict-resolution', () => {
 
       await composable.resolveMany(conflicts, callbacks);
 
-      expect(spies.pullAndRedecodeTransactions).toHaveBeenCalledTimes(2);
+      expect(spies.pullAndDecodeTransactionsRaw).toHaveBeenCalledTimes(2);
     });
 
     it('increments failed counter on error and continues', async () => {
-      spies.pullAndRedecodeTransactions.mockRejectedValueOnce(new Error('fail'));
-      spies.pullAndRedecodeTransactions.mockResolvedValueOnce(undefined);
+      spies.pullAndDecodeTransactionsRaw.mockRejectedValueOnce(new Error('fail'));
+      spies.pullAndDecodeTransactionsRaw.mockResolvedValueOnce(undefined);
 
       const conflicts = [
         createMockConflict({ chain: 'ethereum', txHash: '0x111' }),
@@ -190,19 +190,19 @@ describe('use-internal-tx-conflict-resolution', () => {
 
       await composable.resolveMany(conflicts, callbacks);
 
-      expect(spies.pullAndRedecodeTransactions).toHaveBeenCalledTimes(2);
+      expect(spies.pullAndDecodeTransactionsRaw).toHaveBeenCalledTimes(2);
       expect(spies.removeKeys).toHaveBeenCalledWith(['optimism:0x222']);
       expect(callbacks.onComplete).toHaveBeenCalledTimes(2);
     });
 
     it('stops processing when cancel is requested', async () => {
       let resolveFirst: (() => void) | undefined;
-      spies.pullAndRedecodeTransactions.mockImplementationOnce(
+      spies.pullAndDecodeTransactionsRaw.mockImplementationOnce(
         async (): Promise<void> => new Promise<void>((resolve) => {
           resolveFirst = resolve;
         }),
       );
-      spies.pullAndRedecodeTransactions.mockResolvedValueOnce(undefined);
+      spies.pullAndDecodeTransactionsRaw.mockResolvedValueOnce(undefined);
 
       const conflicts = [
         createMockConflict({ chain: 'ethereum', txHash: '0x111' }),
@@ -214,7 +214,7 @@ describe('use-internal-tx-conflict-resolution', () => {
       resolveFirst?.();
       await promise;
 
-      expect(spies.pullAndRedecodeTransactions).toHaveBeenCalledTimes(1);
+      expect(spies.pullAndDecodeTransactionsRaw).toHaveBeenCalledTimes(1);
     });
   });
 });

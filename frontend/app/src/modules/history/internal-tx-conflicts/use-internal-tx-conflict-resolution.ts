@@ -6,8 +6,6 @@ import { useHistoryTransactionDecoding } from '@/composables/history/events/tx/d
 import { useSupportedChains } from '@/composables/info/chains';
 import { createPersistentSharedComposable } from '@/modules/common/use-persistent-shared-composable';
 import { useNotificationsStore } from '@/store/notifications';
-import { useTaskStore } from '@/store/tasks';
-import { TaskType } from '@/types/task-type';
 import { logger } from '@/utils/logging';
 import { useInternalTxConflictSelection } from './use-internal-tx-conflict-selection';
 import { getConflictKey } from './use-internal-tx-conflicts';
@@ -45,10 +43,9 @@ export interface ResolutionCallbacks {
 export const useInternalTxConflictResolution = createPersistentSharedComposable(({ acquireBusy, releaseBusy }): UseInternalTxConflictResolutionReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const { getChain } = useSupportedChains();
-  const { pullAndRedecodeTransactions } = useHistoryTransactionDecoding();
+  const { cancelDecoding, pullAndDecodeTransactionsRaw } = useHistoryTransactionDecoding();
   const { removeKeys } = useInternalTxConflictSelection();
   const { notify } = useNotificationsStore();
-  const { cancelTaskByTaskType } = useTaskStore();
 
   const progress = ref<ResolutionProgress>(defaultProgress());
   const cancelRequested = ref<boolean>(false);
@@ -61,11 +58,14 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
   // Both REPULL and FIX_REDECODE resolve via the same backend API (pull + redecode).
   // The action type distinction is visual — it categorizes the problem for the user,
   // not the resolution strategy.
+  // Uses pullAndDecodeTransactionsRaw which throws on failure,
+  // so errors are properly tracked by the resolution progress.
   async function executeResolution(conflict: InternalTxConflict): Promise<void> {
-    const chainId = getChain(conflict.chain);
+    const chain = getChain(conflict.chain);
 
-    await pullAndRedecodeTransactions({
-      transactions: [{ location: chainId, txRef: conflict.txHash }],
+    await pullAndDecodeTransactionsRaw({
+      chain,
+      txRefs: [conflict.txHash],
     });
   }
 
@@ -189,7 +189,7 @@ export const useInternalTxConflictResolution = createPersistentSharedComposable(
 
   function cancelResolution(): void {
     set(cancelRequested, true);
-    startPromise(cancelTaskByTaskType(TaskType.TRANSACTIONS_DECODING));
+    startPromise(cancelDecoding());
   }
 
   return {
