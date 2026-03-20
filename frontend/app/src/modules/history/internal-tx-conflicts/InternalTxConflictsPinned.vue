@@ -18,7 +18,7 @@ const router = useRouter();
 const route = useRoute();
 
 const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
-const { clearAllHighlightTargets, requestNavigation, setHighlightTarget } = useHistoryEventNavigation();
+const { clearAllHighlightTargets, highlightTargets, requestNavigation, setHighlightTarget } = useHistoryEventNavigation();
 const { cancelResolution, progress } = useInternalTxConflictResolution();
 
 const activeTxHash = ref<string | undefined>(highlightedTxHash);
@@ -75,6 +75,11 @@ onBeforeMount(() => {
 watch([() => highlightedGroupIdentifier, () => highlightedTxHash], ([newGroupId, newHash], [oldGroupId]) => {
   if (newGroupId && newHash && newGroupId !== oldGroupId)
     navigateToHighlight(newGroupId, newHash);
+});
+
+watch(highlightTargets, (targets) => {
+  if (Object.keys(targets).length === 0)
+    set(activeTxHash, undefined);
 });
 
 onUnmounted(() => {

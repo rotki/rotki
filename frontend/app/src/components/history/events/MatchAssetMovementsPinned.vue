@@ -28,7 +28,13 @@ const potentialMatchMovement = ref<UnmatchedAssetMovement>();
 const showPotentialMatchesDrawer = ref<boolean>(false);
 
 const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
-const { clearAllHighlightTargets, clearHighlightTarget, requestNavigation, setHighlightTarget } = useHistoryEventNavigation();
+const {
+  clearAllHighlightTargets,
+  clearHighlightTarget,
+  highlightTargets,
+  requestNavigation,
+  setHighlightTarget,
+} = useHistoryEventNavigation();
 
 const {
   ignoredMovements,
@@ -180,6 +186,14 @@ watch(() => props.highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
   // Update local ref and navigate to the new highlight
   set(activeGroupIdentifier, newHighlight);
   navigateToHighlightedMovement(newHighlight);
+});
+
+watch(highlightTargets, (targets) => {
+  if (Object.keys(targets).length > 0) {
+    return;
+  }
+  set(activeGroupIdentifier, undefined);
+  set(activePotentialMatchIdentifier, undefined);
 });
 
 onUnmounted(() => {
