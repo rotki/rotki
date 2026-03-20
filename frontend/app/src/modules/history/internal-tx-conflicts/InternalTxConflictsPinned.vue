@@ -59,6 +59,11 @@ function showInHistoryEvents(conflict: InternalTxConflict): void {
   if (!conflict.groupIdentifier)
     return;
 
+  if (get(activeTxHash) === conflict.txHash) {
+    startPromise(clearHighlight());
+    return;
+  }
+
   navigateToHighlight(conflict.groupIdentifier, conflict.txHash);
 }
 

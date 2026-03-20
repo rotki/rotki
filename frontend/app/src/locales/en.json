@@ -3708,6 +3708,7 @@
   },
   "internal_tx_conflicts": {
     "actions": {
+      "clear_highlight": "Clear highlight",
       "fix_redecode": "Fix & Redecode",
       "pin": "Pin to sidebar",
       "repull": "Repull",
