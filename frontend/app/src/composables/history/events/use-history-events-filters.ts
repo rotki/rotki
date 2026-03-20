@@ -5,14 +5,13 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { Collection } from '@/types/collection';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
 import { type Account, type HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 import { objectOmit } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { isValidHistoryEventState } from '@/composables/history/events/mapping/state';
 import { DuplicateHandlingStatus, type HighlightType } from '@/composables/history/events/types';
-import { HIGHLIGHT_FETCH_DEBOUNCE, HIGHLIGHT_FILTER_DEBOUNCE, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
+import { HIGHLIGHT_FETCH_DEBOUNCE, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
 import { useRefWithDebounce } from '@/composables/ref';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { TableId } from '@/modules/table/use-remember-table-sorting';
@@ -97,7 +96,10 @@ export function useHistoryEventsFilters(
 
   const route = useRoute();
   const { fetchHistoryEvents } = useHistoryEvents();
-  const { findHighlightPage } = useHistoryEventNavigation();
+  const { clearAllHighlightTargets, isNavigating } = useHistoryEventNavigation();
+
+  const highlightKeys = ['highlightedAssetMovement', 'highlightedInternalTxConflict', 'highlightedPotentialMatch', 'highlightedNegativeBalanceEvent'] as const;
+  const shouldPreserveHighlights = ref<boolean>(highlightKeys.some(key => !!get(route).query[key]));
 
   const fetchHistoryEventsTagged = async (
     payload: MaybeRef<HistoryEventRequestPayload>,
@@ -221,6 +223,7 @@ export function useHistoryEventsFilters(
     queryParamsOnly: computed(() => {
       const duplicateHandlingStatusValue = get(duplicateHandlingStatusFromQuery);
       const groupIdentifiersValue = get(groupIdentifiersFromQuery);
+      const preserve = get(shouldPreserveHighlights);
       const { highlightedAssetMovement, highlightedInternalTxConflict, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
 
       const missingAcquisitionValue = get(missingAcquisitionFromQuery);
@@ -228,10 +231,14 @@ export function useHistoryEventsFilters(
       return {
         duplicateHandlingStatus: duplicateHandlingStatusValue,
         groupIdentifiers: groupIdentifiersValue?.join(','),
-        highlightedAssetMovement,
-        highlightedInternalTxConflict,
-        highlightedNegativeBalanceEvent,
-        highlightedPotentialMatch,
+        ...(preserve
+          ? {
+              highlightedAssetMovement,
+              highlightedInternalTxConflict,
+              highlightedNegativeBalanceEvent,
+              highlightedPotentialMatch,
+            }
+          : {}),
         locationLabels: get(usedLocationLabels),
         missingAcquisitionIdentifier: missingAcquisitionValue?.join(','),
         ...(stateMarkersValue.length > 0 ? { stateMarkers: stateMarkersValue.join(',') } : {}),
@@ -339,37 +346,30 @@ export function useHistoryEventsFilters(
     set(locationLabels, labels);
   }
 
-  // Calculate position of highlighted event and set the page directly to avoid a duplicate fetch.
-  let navigationGeneration = 0;
-
-  async function navigateToHighlightPosition(): Promise<void> {
-    const generation = ++navigationGeneration;
-    const page = await findHighlightPage(get(pageParams), get(pagination).limit);
-
-    if (generation !== navigationGeneration)
-      return;
-
-    if (page >= 1)
-      setPage(page);
-  }
-
   /**
-   * Re-navigate highlights when any parameter affecting the result set changes.
-   * Watches the aggregated pageParams (filters, toggles, limit, etc.) but ignores
-   * offset changes since those are just page navigation.
+   * Clear highlights when the user changes page or filters.
+   * Sort changes (orderByAttributes, ascending) are excluded so highlights
+   * persist through reordering.
    */
-  watchDebounced(pageParams, (params, oldParams) => {
-    if (!oldParams)
+  watch(pageParams, (params, oldParams) => {
+    if (!oldParams || !get(shouldPreserveHighlights) || get(isNavigating))
       return;
 
-    const current = objectOmit(params, ['offset']);
-    const previous = objectOmit(oldParams, ['offset']);
+    const current = objectOmit(params, ['orderByAttributes', 'ascending']);
+    const previous = objectOmit(oldParams, ['orderByAttributes', 'ascending']);
 
     if (isEqual(current, previous))
       return;
 
-    startPromise(navigateToHighlightPosition());
-  }, { debounce: HIGHLIGHT_FILTER_DEBOUNCE, deep: true });
+    set(shouldPreserveHighlights, false);
+    clearAllHighlightTargets();
+  }, { deep: true });
+
+  /** Re-enable highlight preservation when new highlight params arrive via navigation. */
+  watch(() => get(route).query, (query, oldQuery) => {
+    if (highlightKeys.some(key => query[key] && query[key] !== oldQuery?.[key]))
+      set(shouldPreserveHighlights, true);
+  });
 
   return {
     clearFilters,

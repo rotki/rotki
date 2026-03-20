@@ -6,10 +6,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { useHistoryEventsFilters } from './use-history-events-filters';
 
 let capturedRequestParams: ComputedRef<Partial<HistoryEventRequestPayload>> | undefined;
+let capturedQueryParamsOnly: ComputedRef<Record<string, unknown>> | undefined;
+
+interface PaginationMockOptions {
+  requestParams?: ComputedRef<Partial<HistoryEventRequestPayload>>;
+  queryParamsOnly?: ComputedRef<Record<string, unknown>>;
+}
 
 vi.mock('@/composables/use-pagination-filter', () => ({
-  usePaginationFilters: vi.fn((_requestFn: unknown, options: { requestParams?: ComputedRef<Partial<HistoryEventRequestPayload>> }) => {
+  usePaginationFilters: vi.fn((_requestFn: unknown, options: PaginationMockOptions) => {
     capturedRequestParams = options.requestParams;
+    capturedQueryParamsOnly = options.queryParamsOnly;
     return {
       fetchData: vi.fn(),
       filters: computed(() => ({})),
@@ -32,12 +39,16 @@ vi.mock('@/composables/history/events', () => ({
   })),
 }));
 
+const mockIsNavigating = ref<boolean>(false);
+const mockClearAllHighlightTargets = vi.fn();
+
 vi.mock('@/composables/history/events/use-history-event-navigation', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/composables/history/events/use-history-event-navigation')>();
   return {
     ...actual,
     useHistoryEventNavigation: vi.fn(() => ({
-      findHighlightPage: vi.fn().mockResolvedValue(-1),
+      clearAllHighlightTargets: mockClearAllHighlightTargets,
+      isNavigating: mockIsNavigating,
     })),
   };
 });
@@ -91,9 +102,13 @@ function createDefaultOptions(locationValue?: string): DefaultOptions {
 describe('useHistoryEventsFilters', () => {
   beforeEach(() => {
     capturedRequestParams = undefined;
+    capturedQueryParamsOnly = undefined;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    const router = useRouter();
+    await router.push({ query: {} });
+    set(mockIsNavigating, false);
     vi.clearAllMocks();
   });
 
@@ -139,6 +154,81 @@ describe('useHistoryEventsFilters', () => {
       expect(capturedRequestParams).toBeDefined();
       const params = get(capturedRequestParams!);
       expect(params.location).toBe('binanceus');
+    });
+  });
+
+  describe('highlight preservation', () => {
+    it('should include highlight params in queryParamsOnly when route has highlights', async () => {
+      const router = useRouter();
+      await router.push({ query: { highlightedAssetMovement: '123' } });
+
+      const { options, toggles } = createDefaultOptions();
+      useHistoryEventsFilters(options, toggles);
+
+      expect(capturedQueryParamsOnly).toBeDefined();
+      const params = get(capturedQueryParamsOnly!);
+      expect(params.highlightedAssetMovement).toBe('123');
+    });
+
+    it('should return highlighted identifiers from route query', async () => {
+      const router = useRouter();
+      await router.push({ query: { highlightedAssetMovement: '42', highlightedPotentialMatch: '99' } });
+
+      const { options, toggles } = createDefaultOptions();
+      const { highlightedIdentifiers } = useHistoryEventsFilters(options, toggles);
+
+      expect(get(highlightedIdentifiers)).toEqual(['42', '99']);
+    });
+
+    it('should return correct highlight types from route query', async () => {
+      const router = useRouter();
+      await router.push({ query: { highlightedAssetMovement: '10', highlightedNegativeBalanceEvent: '20' } });
+
+      const { options, toggles } = createDefaultOptions();
+      const { highlightTypes } = useHistoryEventsFilters(options, toggles);
+
+      const types = get(highlightTypes);
+      expect(types['10']).toBe('warning');
+      expect(types['20']).toBe('error');
+    });
+
+    it('should return highlighted group identifier for internal tx conflicts', async () => {
+      const router = useRouter();
+      await router.push({ query: { highlightedInternalTxConflict: '0xabc' } });
+
+      const { options, toggles } = createDefaultOptions();
+      const { highlightedGroupIdentifier, highlightTypes } = useHistoryEventsFilters(options, toggles);
+
+      expect(get(highlightedGroupIdentifier)).toBe('0xabc');
+      expect(get(highlightTypes)['group:0xabc']).toBe('warning');
+    });
+
+    it('should preserve highlights when navigation system is active', async () => {
+      const router = useRouter();
+
+      // Simulate navigation system pushing route with highlights (isNavigating is true)
+      set(mockIsNavigating, true);
+      await router.push({ query: { highlightedAssetMovement: '123', page: '5' } });
+
+      const { options, toggles } = createDefaultOptions();
+      useHistoryEventsFilters(options, toggles);
+      await nextTick();
+
+      // Highlights should be preserved because isNavigating is true
+      expect(get(capturedQueryParamsOnly!)?.highlightedAssetMovement).toBe('123');
+      expect(mockClearAllHighlightTargets).not.toHaveBeenCalled();
+    });
+
+    it('should not include highlight keys in queryParamsOnly when no highlights are active', () => {
+      const { options, toggles } = createDefaultOptions();
+      useHistoryEventsFilters(options, toggles);
+
+      expect(capturedQueryParamsOnly).toBeDefined();
+      const params = get(capturedQueryParamsOnly!);
+      expect(params).not.toHaveProperty('highlightedAssetMovement');
+      expect(params).not.toHaveProperty('highlightedInternalTxConflict');
+      expect(params).not.toHaveProperty('highlightedPotentialMatch');
+      expect(params).not.toHaveProperty('highlightedNegativeBalanceEvent');
     });
   });
 });
