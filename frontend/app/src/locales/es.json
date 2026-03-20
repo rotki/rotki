@@ -3057,13 +3057,6 @@
           "action": "Yes, Ignore the Transaction",
           "message": "A transaction requires at least 1 event. Do you want to ignore the transaction in accounting instead?",
           "title": "Cannot Delete Event"
-        },
-        "reset": {
-          "message": "Hay eventos personalizados en esta transacción",
-          "options": {
-            "keep_custom_events": "No elimines mis eventos personalizados",
-            "remove_custom_events": "Eliminar los eventos personalizados y volver a codificar la transacción"
-          }
         }
       },
       "dialog": {

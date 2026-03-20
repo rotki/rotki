@@ -5473,14 +5473,9 @@
           "title": "Ignore Transaction in Accounting"
         },
         "reset": {
-          "custom_events_title": "Custom Events",
+          "custom_events_warning": "This transaction contains custom events. Redecoding will remove all custom events and regenerate them from the chain data.",
           "indexer_order_hint": "Change the order of indexers used when redecoding this transaction. This does not affect your settings.",
-          "indexer_order_title": "Indexer Order",
-          "message": "There are custom events in this transaction",
-          "options": {
-            "keep_custom_events": "Don't remove my custom events",
-            "remove_custom_events": "Remove custom events and redecode the transaction"
-          }
+          "indexer_order_title": "Indexer Order"
         },
         "unlink": {
           "message": "Are you sure you want to unlink these matched events? The matched event may need manual attention after unlinking.",
