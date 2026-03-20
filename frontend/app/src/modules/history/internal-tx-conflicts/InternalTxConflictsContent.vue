@@ -2,6 +2,7 @@
 import type { DataTableColumn } from '@rotki/ui-library';
 import { startPromise } from '@shared/utils';
 import DateDisplay from '@/components/display/DateDisplay.vue';
+import CopyButton from '@/components/helper/CopyButton.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import HashLink from '@/modules/common/links/HashLink.vue';
@@ -85,13 +86,13 @@ const headers = computed<DataTableColumn<InternalTxConflict>[]>(() => {
 
   return [
     { key: 'selection', label: '', sortable: false },
-    { key: 'chain', label: t('internal_tx_conflicts.columns.chain'), sortable: true },
+    { key: 'chain', label: '', sortable: true, cellClass: '!p-1', class: '!p-1' },
     { key: 'txHash', label: t('internal_tx_conflicts.columns.tx_hash'), sortable: true },
-    { key: 'action', label: t('internal_tx_conflicts.columns.action'), sortable: true },
+    { key: 'action', label: '', sortable: true, cellClass: '!p-1', class: '!p-1' },
     { key: 'timestamp', label: t('internal_tx_conflicts.columns.timestamp'), sortable: true },
     { key: 'reason', label: t('internal_tx_conflicts.columns.reason') },
     { key: 'lastRetryTs', label: t('internal_tx_conflicts.columns.last_retry'), sortable: true },
-    { key: 'lastError', label: t('internal_tx_conflicts.columns.last_error') },
+    { key: 'lastError', label: t('internal_tx_conflicts.columns.last_error'), cellClass: 'max-w-56' },
     { key: 'actions', label: '' },
   ];
 });
@@ -177,54 +178,55 @@ defineExpose({
       </RuiTab>
     </RuiTabs>
 
-    <div class="px-4 pt-4">
+    <div class="flex flex-col md:flex-row md:items-center gap-2 px-4 pt-4 pb-2 shrink-0">
+      <div class="flex items-center gap-3">
+        <template v-if="isRunning">
+          <RuiProgress
+            variant="indeterminate"
+            color="primary"
+            class="flex-1"
+          />
+          <span class="text-body-2 whitespace-nowrap">
+            {{ t('internal_tx_conflicts.resolution.progress', { completed: progress.completed, total: progress.total }) }}
+          </span>
+          <RuiButton
+            variant="outlined"
+            color="error"
+            size="sm"
+            @click="cancelResolution()"
+          >
+            {{ t('internal_tx_conflicts.resolution.cancel') }}
+          </RuiButton>
+        </template>
+        <template v-else>
+          <span class="text-body-2 whitespace-nowrap">
+            {{ t('internal_tx_conflicts.selection.selected', { count: selectedCount }) }}
+          </span>
+          <RuiButton
+            color="primary"
+            size="sm"
+            :disabled="selectedCount === 0"
+            @click="onResolveSelected()"
+          >
+            {{ t('internal_tx_conflicts.resolution.resolve_selected', { count: selectedCount }) }}
+          </RuiButton>
+          <RuiButton
+            variant="outlined"
+            size="sm"
+            :disabled="selectedCount === 0"
+            @click="clearSelection()"
+          >
+            {{ t('internal_tx_conflicts.selection.clear') }}
+          </RuiButton>
+        </template>
+      </div>
+
       <TableFilter
         v-model:matches="filters"
         :matchers="matchers"
         :disabled="loading"
+        class="flex-1"
       />
-    </div>
-
-    <div class="flex items-center gap-3 px-4 py-2 shrink-0">
-      <template v-if="isRunning">
-        <RuiProgress
-          variant="indeterminate"
-          color="primary"
-          class="flex-1"
-        />
-        <span class="text-body-2 whitespace-nowrap">
-          {{ t('internal_tx_conflicts.resolution.progress', { completed: progress.completed, total: progress.total }) }}
-        </span>
-        <RuiButton
-          variant="outlined"
-          color="error"
-          size="sm"
-          @click="cancelResolution()"
-        >
-          {{ t('internal_tx_conflicts.resolution.cancel') }}
-        </RuiButton>
-      </template>
-      <template v-else>
-        <span class="text-body-2">
-          {{ t('internal_tx_conflicts.selection.selected', { count: selectedCount }) }}
-        </span>
-        <RuiButton
-          color="primary"
-          size="sm"
-          :disabled="selectedCount === 0"
-          @click="onResolveSelected()"
-        >
-          {{ t('internal_tx_conflicts.resolution.resolve_selected', { count: selectedCount }) }}
-        </RuiButton>
-        <RuiButton
-          variant="outlined"
-          size="sm"
-          :disabled="selectedCount === 0"
-          @click="clearSelection()"
-        >
-          {{ t('internal_tx_conflicts.selection.clear') }}
-        </RuiButton>
-      </template>
     </div>
 
     <div
@@ -278,7 +280,6 @@ defineExpose({
         </template>
         <template #item.action="{ row }">
           <RuiTooltip
-            v-if="compact"
             :popper="{ placement: 'top' }"
             :open-delay="400"
           >
@@ -291,13 +292,6 @@ defineExpose({
             </template>
             {{ getActionLabel(row.action) }}
           </RuiTooltip>
-          <RuiChip
-            v-else
-            size="sm"
-            :color="row.action === InternalTxConflictActions.REPULL ? 'primary' : 'warning'"
-          >
-            {{ getActionLabel(row.action) }}
-          </RuiChip>
         </template>
         <template #item.timestamp="{ row }">
           <div :class="compact && 'text-xs'">
@@ -326,17 +320,28 @@ defineExpose({
           <span v-else>{{ t('internal_tx_conflicts.status.never') }}</span>
         </template>
         <template #item.lastError="{ row }">
-          <RuiTooltip
+          <div
             v-if="row.lastError"
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-            tooltip-class="max-w-80"
+            class="flex items-center gap-1"
           >
-            <template #activator>
-              <span class="truncate max-w-48 inline-block align-bottom">{{ row.lastError }}</span>
-            </template>
-            {{ row.lastError }}
-          </RuiTooltip>
+            <RuiTooltip
+              :popper="{ placement: 'top' }"
+              :open-delay="400"
+              tooltip-class="max-w-80"
+            >
+              <template #activator>
+                <span class="truncate max-w-48 inline-block align-bottom">
+                  {{ row.lastError }}
+                </span>
+              </template>
+              {{ row.lastError }}
+            </RuiTooltip>
+            <CopyButton
+              size="sm"
+              :value="row.lastError"
+              :tooltip="t('internal_tx_conflicts.actions.copy_error')"
+            />
+          </div>
           <!-- eslint-disable-next-line @intlify/vue-i18n/no-raw-text -->
           <span v-else>—</span>
         </template>
