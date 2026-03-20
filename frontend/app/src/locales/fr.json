@@ -3479,13 +3479,6 @@
           "action": "Oui, Ignorer la Transaction",
           "message": "Une transaction nécessite au moins 1 événement. Voulez-vous l'ignorer dans le compte au lieu?",
           "title": "Impossible de Supprimer Événement"
-        },
-        "reset": {
-          "message": "Cette transaction comporte des événements personnalisés",
-          "options": {
-            "keep_custom_events": "Ne supprimez pas mes événements personnalisés",
-            "remove_custom_events": "Supprimer les événements personnalisés et redécoder la transaction"
-          }
         }
       },
       "dialog": {
