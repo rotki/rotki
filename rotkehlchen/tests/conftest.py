@@ -113,7 +113,7 @@ if sys.platform == 'darwin':
 
         pytest.TempdirFactory.getbasetemp = getbasetemp
         with suppress(AttributeError):
-            delattr(request.config._tmpdirhandler, '_basetemp')
+            del request.config._tmpdirhandler._basetemp
 
     @pytest.fixture
     def tmpdir(request, tmpdir_factory):

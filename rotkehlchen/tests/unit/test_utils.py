@@ -217,7 +217,7 @@ def test_is_production():
     with patch_our_version:
         assert is_production() is False  # version is non production
 
-    delattr(sys, 'frozen')
+    del sys.frozen
     version_str = 'v1.32.0'
     with patch_our_version:
         assert is_production() is False  # even if full tag, when not frozen not production
