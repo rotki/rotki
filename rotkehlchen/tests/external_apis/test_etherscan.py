@@ -156,22 +156,30 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(),
         )
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (GENESIS_HASH, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
         internal_tx_in_db = dbtx.get_evm_internal_transactions(
             parent_tx_hash=GENESIS_HASH,
             blockchain=SupportedBlockchain.ETHEREUM,
+            parent_tx_id=parent_tx_id,
         )
 
         assert dbtx.get_evm_internal_transactions(  # filter using from_address
             parent_tx_hash=GENESIS_HASH,
             blockchain=SupportedBlockchain.ETHEREUM,
+            parent_tx_id=parent_tx_id,
             from_address=ZERO_ADDRESS,
         ) == dbtx.get_evm_internal_transactions(  # filter using to_address
             parent_tx_hash=GENESIS_HASH,
             blockchain=SupportedBlockchain.ETHEREUM,
+            parent_tx_id=parent_tx_id,
             to_address=string_to_evm_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A'),
         ) == dbtx.get_evm_internal_transactions(  # filter using both from_address and to_address
             parent_tx_hash=GENESIS_HASH,
             blockchain=SupportedBlockchain.ETHEREUM,
+            parent_tx_id=parent_tx_id,
             from_address=ZERO_ADDRESS,
             to_address=string_to_evm_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A'),
         ) == internal_tx_in_db  # filter using none of from_address and to_address
@@ -179,10 +187,12 @@ def test_etherscan_get_transactions_genesis_block(eth_transactions):
         assert dbtx.get_evm_internal_transactions(  # filter using different from_address
             parent_tx_hash=GENESIS_HASH,
             blockchain=SupportedBlockchain.ETHEREUM,
+            parent_tx_id=parent_tx_id,
             from_address=string_to_evm_address('0xC951900c341aBbb3BAfbf7ee2029377071Dbc36A'),
         ) == dbtx.get_evm_internal_transactions(  # filter using different to_address
             parent_tx_hash=GENESIS_HASH,
             blockchain=SupportedBlockchain.ETHEREUM,
+            parent_tx_id=parent_tx_id,
             to_address=ZERO_ADDRESS,
         ) == []
 
