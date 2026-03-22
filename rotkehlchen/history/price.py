@@ -380,10 +380,11 @@ class PriceHistorian:
         assets_price: defaultdict[Asset, defaultdict] = defaultdict(
             lambda: defaultdict(lambda: ZERO_PRICE),
         )
+        unique_pairs = set(assets_timestamp)
         send_ws_every_prices = msg_aggregator.how_many_events_per_ws(
-            total_events=(total_events := len(assets_timestamp)),
+            total_events=(total_events := len(unique_pairs)),
         )
-        for idx, (asset, timestamp) in enumerate(assets_timestamp):
+        for idx, (asset, timestamp) in enumerate(unique_pairs):
             if idx % send_ws_every_prices == 0:
                 msg_aggregator.add_message(
                     message_type=WSMessageType.PROGRESS_UPDATES,
