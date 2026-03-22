@@ -188,26 +188,28 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             self,
             parent_tx_hash: EVMTxHash,
             blockchain: SupportedBlockchain,
+            parent_tx_id: int,
             from_address: ChecksumEvmAddress | None = None,
             to_address: ChecksumEvmAddress | None = None,
     ) -> list[EvmInternalTransaction]:
-        """Get all internal transactions under a parent tx_hash for a given chain"""
+        """Get all internal transactions under a parent tx for a given chain.
+        Uses parent_tx_id to query directly by foreign key without joining."""
         chain_id = blockchain.to_chain_id()
-        address_filter, bindings = '', [parent_tx_hash, chain_id.serialize_for_db()]
+        address_filter: str = ''
+        bindings: list = [parent_tx_id]
         if from_address is not None:
-            address_filter += ' AND ITX.from_address=?'
+            address_filter += ' AND from_address=?'
             bindings.append(from_address)
         if to_address is not None:
-            address_filter += ' AND ITX.to_address=?'
+            address_filter += ' AND to_address=?'
             bindings.append(to_address)
 
+        query = (
+            'SELECT trace_id, from_address, to_address, value, gas, gas_used '
+            f'FROM evm_internal_transactions WHERE parent_tx=?{address_filter}'
+        )
         with self.db.conn.read_ctx() as cursor:
-            results = cursor.execute(
-                'SELECT ITX.trace_id, ITX.from_address, ITX.to_address, ITX.value, ITX.gas, '
-                'ITX.gas_used FROM evm_internal_transactions ITX INNER JOIN evm_transactions TX '
-                'ON ITX.parent_tx=TX.identifier WHERE TX.tx_hash=? AND TX.chain_id=?'
-                f'{address_filter}', bindings,
-            )
+            results = cursor.execute(query, bindings)
             transactions = []
             for result in results:
                 tx = EvmInternalTransaction(

@@ -1160,12 +1160,19 @@ class EvmTransactions(ABC):  # noqa: B024
         - DataIntegrityError if the indexer returns an empty result but the DB already contains
         internal transactions for this tx hash."""
         # check if full internal txs for this parent tx and chain have already been queried.
+        # Also fetch the tx DB id to avoid a JOIN later.
+        chain_id_db = chain_id.serialize_for_db()
         with self.database.conn.read_ctx() as cursor:
+            if (row := cursor.execute(
+                'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                (tx_hash, chain_id_db),
+            ).fetchone()) is None:
+                return []  # transaction not in DB yet
+
+            parent_tx_id = row[0]
             was_queried = cursor.execute(
-                'SELECT 1 FROM evm_tx_mappings WHERE tx_id IN ('
-                'SELECT identifier FROM evm_transactions '
-                'WHERE tx_hash=? AND chain_id=?) AND value=?',
-                (tx_hash, chain_id.serialize_for_db(), TX_INTERNALS_QUERIED),
+                'SELECT 1 FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+                (parent_tx_id, TX_INTERNALS_QUERIED),
             ).fetchone() is not None
 
         if was_queried is False:
@@ -1175,9 +1182,8 @@ class EvmTransactions(ABC):  # noqa: B024
             )
             with self.database.user_write() as write_cursor:
                 write_cursor.execute(
-                    'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) '
-                    'SELECT identifier, ? FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-                    (TX_INTERNALS_QUERIED, tx_hash, chain_id.serialize_for_db()),
+                    'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES (?, ?)',
+                    (parent_tx_id, TX_INTERNALS_QUERIED),
                 )
             log.debug(
                 f'Queried full internal txs for {tx_hash!s} on {chain_id.to_name()} '
@@ -1189,6 +1195,7 @@ class EvmTransactions(ABC):  # noqa: B024
             blockchain=CHAINID_TO_SUPPORTED_BLOCKCHAIN[chain_id],
             from_address=from_address,
             to_address=to_address,
+            parent_tx_id=parent_tx_id,
         )
 
     def get_or_create_transaction(

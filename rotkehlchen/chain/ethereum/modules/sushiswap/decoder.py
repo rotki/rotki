@@ -211,6 +211,7 @@ class SushiswapDecoder(EvmDecoderInterface):
             internal_txs = DBEvmTx(self.node_inquirer.database).get_evm_internal_transactions(
                 parent_tx_hash=transaction.tx_hash,
                 blockchain=self.node_inquirer.blockchain,
+                parent_tx_id=transaction.db_id,
             )
             if len(internal_txs) == 0:
                 return fee, fee_event

@@ -343,9 +343,15 @@ def test_empty_repull_blocked_when_db_has_internals(
         )
 
     # DB must remain untouched
+    with database.conn.read_ctx() as cursor:
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (parent_tx.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
     stored = dbevmtx.get_evm_internal_transactions(
         parent_tx_hash=parent_tx.tx_hash,
         blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
     )
     assert stored == [existing_internal_tx]
 
@@ -379,9 +385,15 @@ def test_empty_repull_allowed_when_db_has_no_internals(
             parent_tx_hash=parent_tx.tx_hash,
         )
 
+    with database.conn.read_ctx() as cursor:
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (parent_tx.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
     stored = dbevmtx.get_evm_internal_transactions(
         parent_tx_hash=parent_tx.tx_hash,
         blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
     )
     assert stored == []
 
@@ -439,9 +451,15 @@ def test_nonempty_repull_replaces_existing_internals(
             parent_tx_hash=parent_tx.tx_hash,
         )
 
+    with database.conn.read_ctx() as cursor:
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (parent_tx.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
     stored = dbevmtx.get_evm_internal_transactions(
         parent_tx_hash=parent_tx.tx_hash,
         blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
     )
     assert stored == [updated_internal_tx]
 
@@ -694,9 +712,14 @@ def test_indexers_fall_back_properly(
         }
 
         # Check that an internal tx (always queried via an indexer) was properly retrieved.
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash1, ChainID.OPTIMISM.serialize_for_db()),
+        ).fetchone()[0]
         internal_txs = dbevmtx.get_evm_internal_transactions(
             parent_tx_hash=tx_hash1,
             blockchain=SupportedBlockchain.OPTIMISM,
+            parent_tx_id=parent_tx_id,
         )
         assert len(internal_txs) == 1  # tx has two internal txs but only one involves the tracked address.  # noqa: E501
 

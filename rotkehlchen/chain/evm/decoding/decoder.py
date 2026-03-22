@@ -558,7 +558,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
         self.base.reset_sequence_counter(tx_receipt)
         # check if any eth transfer happened in the transaction, including in internal transactions
-        events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
+        events = self._maybe_decode_simple_transactions(transaction, tx_receipt, tx_id=tx_id)
         action_items: list[ActionItem] = []
         counterparties = set()
         refresh_balances = False
@@ -792,6 +792,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             events: list['EvmEvent'],
+            tx_id: int,
     ) -> None:
         """
         check for internal transactions if the transaction is not canceled. This function mutates
@@ -803,6 +804,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         internal_txs = self.dbtx.get_evm_internal_transactions(
             parent_tx_hash=tx.tx_hash,
             blockchain=self.evm_inquirer.blockchain,
+            parent_tx_id=tx_id,
         )
         for internal_tx in internal_txs:
             if internal_tx.to_address is None:
@@ -946,6 +948,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self,
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
+            tx_id: int,
     ) -> list['EvmEvent']:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
         events: list[EvmEvent] = []
@@ -1001,6 +1004,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             tx=tx,
             tx_receipt=tx_receipt,
             events=events,
+            tx_id=tx_id,
         )
 
         if tx_receipt.status is False or direction_result is None:
