@@ -30,6 +30,20 @@ log = RotkehlchenLogsAdapter(logger)
 WEB3 = Web3()
 
 
+_WEB3_CONTRACT_CACHE: dict[tuple[ChecksumEvmAddress, int], Any] = {}
+
+
+def _get_web3_contract(address: ChecksumEvmAddress, abi: ABI) -> Any:
+    """Get or create a cached Web3 contract object keyed by (address, id(abi)).
+    ABI objects are long-lived constants so id() is a stable key."""
+    if (cached := _WEB3_CONTRACT_CACHE.get(key := (address, id(abi)))) is not None:
+        return cached
+
+    contract = WEB3.eth.contract(address=address, abi=abi)
+    _WEB3_CONTRACT_CACHE[key] = contract
+    return contract
+
+
 class EvmContract(NamedTuple):
     address: ChecksumEvmAddress
     abi: ABI
@@ -72,7 +86,7 @@ class EvmContract(NamedTuple):
         )
 
     def encode(self, method_name: str, arguments: list[Any] | None = None) -> str:
-        contract = WEB3.eth.contract(address=self.address, abi=self.abi)
+        contract = _get_web3_contract(address=self.address, abi=self.abi)
         return contract.encode_abi(method_name, args=arguments or [])
 
     def decode(
@@ -86,7 +100,7 @@ class EvmContract(NamedTuple):
         May raise:
             DeserializationError: If the decoding fails
         """
-        contract = WEB3.eth.contract(address=self.address, abi=self.abi)
+        contract = _get_web3_contract(address=self.address, abi=self.abi)
         fn_abi = contract._find_matching_fn_abi(
             method_name,
             *(arguments or []),
@@ -121,7 +135,7 @@ class EvmContract(NamedTuple):
         May raise:
             DeserializationError: If the decoding fails
         """
-        contract = WEB3.eth.contract(address=self.address, abi=self.abi)
+        contract = _get_web3_contract(address=self.address, abi=self.abi)
         try:
             return contract.decode_function_input(input_data)
         except Web3ValueError as e:
