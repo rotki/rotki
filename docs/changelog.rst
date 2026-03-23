@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11935` Editing a manual balance to have duplicate names should no longer be possible.
 * :feature:`-` Added an accounting rule to transfer cost basis between assets and applied it as a default for actions such as wrapping/unwrapping ETH, depositing to DeFi etc.
 * :bug:`11908` Individual pending task items now show a static icon instead of an indeterminate spinner, reducing visual noise when many tasks are running.
 * :bug:`11902` The redecode option is now available for exchange withdrawals with a linked on-chain transaction.
