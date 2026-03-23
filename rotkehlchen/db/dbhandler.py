@@ -1834,8 +1834,19 @@ class DBHandler:
 
         May raise:
         - InputError if any of the manually tracked balance labels to edit do not
-        exist in the DB
+        exist in the DB or if any of the new labels already exist for a different entry
         """
+        # Check that the new labels don't conflict with existing entries
+        for entry in data:
+            write_cursor.execute(
+                'SELECT id FROM manually_tracked_balances WHERE label=? AND id!=?',
+                (entry.label, entry.identifier),
+            )
+            if write_cursor.fetchone() is not None:
+                raise InputError(
+                    f'A manually tracked balance entry with label "{entry.label}" already exists',
+                )
+
         # Update the manually tracked balance entries in the DB
         tuples = [(
             entry.asset.identifier,
