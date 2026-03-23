@@ -211,43 +211,42 @@ export const useTaskStore = defineStore('tasks', () => {
     meta: M,
     nonUnique = false,
   ): Promise<TaskResponse<R, M>> => {
-    addTask(id, type, meta);
+    // Register the handler BEFORE adding the task to prevent a race where the
+    // monitor picks up the completed task before the handler is in place.
+    const promise = new Promise<TaskResponse<R, M>>((resolve, reject) => {
+      registerHandler<R, M>(type, (actionResult, meta) => {
+        unregisterHandler(type, id.toString());
+        const { message, result } = actionResult;
 
-    return new Promise<TaskResponse<R, M>>((resolve, reject) => {
-      registerHandler<R, M>(
-        type,
-        (actionResult, meta) => {
-          unregisterHandler(type, id.toString());
-          const { message, result } = actionResult;
+        if (actionResult.error) {
+          reject(actionResult.error);
+        }
+        else if (result === null) {
+          let errorMessage: string;
+          if (message) {
+            if (message === USER_CANCELLED_TASK) {
+              const msg = 'Request cancelled';
+              if (checkIfDevelopment() && !import.meta.env.VITE_TEST)
+                logger.debug(`${msg} -> task_id: ${id}, task_type: ${TaskType[type]}`);
 
-          if (actionResult.error) {
-            reject(actionResult.error);
-          }
-          else if (result === null) {
-            let errorMessage: string;
-            if (message) {
-              if (message === USER_CANCELLED_TASK) {
-                const msg = 'Request cancelled';
-                if (checkIfDevelopment() && !import.meta.env.VITE_TEST)
-                  logger.debug(`${msg} -> task_id: ${id}, task_type: ${TaskType[type]}`);
-
-                reject(new UserCancelledTaskError(msg));
-                return;
-              }
-              errorMessage = message;
-              reject(new Error(errorMessage));
+              reject(new UserCancelledTaskError(msg));
+              return;
             }
-            else {
-              reject(new BackendCancelledTaskError(`Backend cancelled task_id: ${id}, task_type: ${TaskType[type]}`));
-            }
+            errorMessage = message;
+            reject(new Error(errorMessage));
           }
           else {
-            resolve({ message, meta, result });
+            reject(new BackendCancelledTaskError(`Backend cancelled task_id: ${id}, task_type: ${TaskType[type]}`));
           }
-        },
-        nonUnique ? id.toString() : undefined,
-      );
+        }
+        else {
+          resolve({ message, meta, result });
+        }
+      }, nonUnique ? id.toString() : undefined);
     });
+
+    addTask(id, type, meta);
+    return promise;
   };
 
   const filterTasks = (taskIds: number[]): { ready: number[]; unknown: number[] } => {
