@@ -2,7 +2,7 @@ import { z } from 'zod/v4';
 
 export const GoogleCalendarStatusSchema = z.object({
   authenticated: z.boolean(),
-  userEmail: z.string().optional(),
+  userEmail: z.string().nullish(),
 });
 
 export type GoogleCalendarStatus = z.infer<typeof GoogleCalendarStatusSchema>;
@@ -10,7 +10,7 @@ export type GoogleCalendarStatus = z.infer<typeof GoogleCalendarStatusSchema>;
 export const GoogleCalendarAuthResultSchema = z.object({
   success: z.boolean(),
   message: z.string(),
-  userEmail: z.string().optional(),
+  userEmail: z.string().nullish(),
 });
 
 export type GoogleCalendarAuthResult = z.infer<typeof GoogleCalendarAuthResultSchema>;
