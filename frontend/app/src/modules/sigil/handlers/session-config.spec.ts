@@ -36,6 +36,7 @@ describe('useSessionConfigHandler', () => {
     const result = collect();
 
     expect(result.premium).toBe(true);
+    expect(result.plan).toBe('Free');
     expect(result.mainCurrency).toBe('EUR');
     expect(result.language).toBe('es');
     expect(result.theme).toBe('dark');

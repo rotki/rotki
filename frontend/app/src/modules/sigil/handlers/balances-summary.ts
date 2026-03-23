@@ -1,9 +1,11 @@
 import type { BalancesSummaryPayload } from '@/modules/sigil/types';
 import { useAggregatedBalances } from '@/composables/balances/use-aggregated-balances';
+import { usePremiumHelper } from '@/composables/premium';
 import { useBlockchainAccountsStore } from '@/modules/accounts/use-blockchain-accounts-store';
 import { useBalancesStore } from '@/modules/balances/use-balances-store';
 
 export function useBalancesSummaryHandler(): () => BalancesSummaryPayload {
+  const { currentTier, premium } = usePremiumHelper();
   const { accounts } = storeToRefs(useBlockchainAccountsStore());
   const { manualBalances } = storeToRefs(useBalancesStore());
   const { assets } = useAggregatedBalances();
@@ -23,6 +25,8 @@ export function useBalancesSummaryHandler(): () => BalancesSummaryPayload {
 
     return {
       ...dynamicKeys,
+      premium: get(premium),
+      plan: get(currentTier),
       hasManualBalances: get(manualBalances).length > 0,
       distinctAssetCount: get(assets).length,
       totalAccounts,

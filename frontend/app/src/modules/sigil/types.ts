@@ -3,6 +3,8 @@
  */
 export interface SessionConfigPayload {
   premium: boolean;
+  /** Current subscription tier (e.g. "Free", "Basic", "Pro") */
+  plan: string;
   appVersion: string;
   mainCurrency: string;
   language: string;
@@ -18,6 +20,8 @@ export interface SessionConfigPayload {
  * Per-exchange connection counts are sent as dynamic `exchange_{location}` keys.
  */
 export interface ExchangesSummaryPayload {
+  premium: boolean;
+  plan: string;
   exchangeCount: number;
   [key: `exchange_${string}`]: number;
 }
@@ -27,6 +31,8 @@ export interface ExchangesSummaryPayload {
  * Per-chain account counts are sent as dynamic `accounts_{chain}` keys.
  */
 export interface BalancesSummaryPayload {
+  premium: boolean;
+  plan: string;
   hasManualBalances: boolean;
   distinctAssetCount: number;
   totalAccounts: number;
@@ -38,6 +44,8 @@ export interface BalancesSummaryPayload {
  * Sent once after history sync completes — history event metrics.
  */
 export interface HistorySyncPayload {
+  premium: boolean;
+  plan: string;
   /** Total number of history events across all sources */
   totalEvents: number;
   /** Number of events with ignored/spam assets */
