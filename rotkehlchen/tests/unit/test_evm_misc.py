@@ -207,7 +207,7 @@ def test_get_transactions_populates_block_timestamp_cache(
         input_data=b'',
         nonce=1,
     )
-    with patch.object(ethereum_inquirer, '_try_indexers_iterable', return_value=iter([[tx]])):
+    with patch.object(ethereum_inquirer, '_try_indexers_iterable_with_source', return_value=(iter([[tx]]), 'mock')):  # noqa: E501
         result = list(ethereum_inquirer.get_transactions(
             account=make_evm_address(),
             action='txlist',

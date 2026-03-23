@@ -12,7 +12,7 @@ MINIMIZED_USER_DB_SCHEMA = {
     "blockchain_accounts": "blockchainvarchar[24]notnull,accounttextnotnull,primarykey(blockchain,account)",
     "evm_accounts_details": "accountvarchar[42]notnull,chain_idintegernotnull,keytextnotnull,valuetextnotnull,primarykey(account,chain_id,key,value)",
     "multisettings": "namevarchar[24]notnull,valuetext,unique(name,value)",
-    "manually_tracked_balances": "idintegerprimarykey,assettextnotnull,labeltextnotnull,amounttext,locationchar(1)notnulldefault('a')referenceslocation(location),categorychar(1)notnulldefault('a')referencesbalance_category(category),foreignkey(asset)referencesassets(identifier)onupdatecascade",
+    "manually_tracked_balances": "idintegerprimarykey,assettextnotnull,labeltextnotnullunique,amounttext,locationchar(1)notnulldefault('a')referenceslocation(location),categorychar(1)notnulldefault('a')referencesbalance_category(category),foreignkey(asset)referencesassets(identifier)onupdatecascade",
     "evm_transactions": "identifierintegernotnullprimarykey,tx_hashblobnotnull,chain_idintegernotnull,timestampintegernotnull,block_numberintegernotnull,from_addresstextnotnull,to_addresstext,valuetextnotnull,gastextnotnull,gas_pricetextnotnull,gas_usedtextnotnull,input_datablobnotnull,nonceintegernotnull,unique(tx_hash,chain_id)",
     "evm_transactions_authorizations": "tx_idintegernotnullprimarykey,nonceintegernotnull,delegated_addresstextnotnull,foreignkey(tx_id)referencesevm_transactions(identifier)ondeletecascade",
     "optimism_transactions": "tx_idintegernotnullprimarykey,l1_feetext,foreignkey(tx_id)referencesevm_transactions(identifier)ondeletecascadeonupdatecascade",
