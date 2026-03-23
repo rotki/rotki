@@ -252,6 +252,31 @@ describe('store:tasks', () => {
     ).rejects.toThrow(new BackendCancelledTaskError('Backend cancelled task_id: 1, task_type: IMPORT_CSV'));
   });
 
+  it('handler is registered before task becomes visible to monitor', async () => {
+    server.use(
+      ...mockTasks({
+        status: {
+          completed: [1],
+          pending: [],
+        },
+        tasks: [getTaskResult(1, 'done')],
+      }),
+    );
+
+    // Start monitor BEFORE awaitTask — simulates the setInterval poll firing
+    // right as the task is added. With the fix, the handler is registered before
+    // addTask, so the monitor can still resolve the promise.
+    const monitorPromise = store.monitor();
+    const taskPromise = store.awaitTask<string, TaskMeta>(1, TaskType.ASSET_UPDATE, getMeta());
+
+    // Run a second monitor cycle to pick up the now-registered task
+    await monitorPromise;
+    await store.monitor();
+
+    const response = await taskPromise;
+    expect(response.result).toBe('done');
+  });
+
   it('not found tasks result into an error', async () => {
     expect.assertions(1);
     server.use(
