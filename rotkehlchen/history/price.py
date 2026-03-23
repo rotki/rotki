@@ -380,7 +380,7 @@ class PriceHistorian:
         assets_price: defaultdict[Asset, defaultdict] = defaultdict(
             lambda: defaultdict(lambda: ZERO_PRICE),
         )
-        unique_pairs = set(assets_timestamp)
+        unique_pairs = list(dict.fromkeys(assets_timestamp))
         send_ws_every_prices = msg_aggregator.how_many_events_per_ws(
             total_events=(total_events := len(unique_pairs)),
         )
