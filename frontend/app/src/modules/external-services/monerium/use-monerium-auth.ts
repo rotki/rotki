@@ -1,5 +1,6 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { MoneriumOAuthResult, MoneriumStatus } from './types';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { useSessionAuthStore } from '@/store/session/auth';
 import { logger } from '@/utils/logging';
 import { useMoneriumOAuthApi } from './use-monerium-api';
@@ -23,10 +24,11 @@ export const useMoneriumOAuth = createSharedComposable((): UseMoneriumOAuthRetur
   const api = useMoneriumOAuthApi();
 
   const { logged } = storeToRefs(useSessionAuthStore());
+  const { allowed } = useFeatureAccess(PremiumFeature.MONERIUM);
 
   const status: Ref<MoneriumStatus | undefined> = asyncComputed<MoneriumStatus | undefined>(
     async () => {
-      if (get(logged)) {
+      if (get(logged) && get(allowed)) {
         try {
           return await api.getStatus();
         }
