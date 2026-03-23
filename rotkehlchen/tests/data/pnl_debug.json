@@ -205,7 +205,9 @@
     "asset_movement_amount_tolerance": "0.000001",
     "asset_movement_time_range": 3600,
     "suppress_missing_key_msg_services": [],
-    "use_asset_collections_in_cost_basis": true
+    "use_asset_collections_in_cost_basis": true,
+    "internal_txs_to_repull": 20,
+    "internal_tx_conflict_repull_frequency": 3600
   },
   "ignored_events_ids": ["100x0xca0a482213c17ccb0471b02ffab40b92279ae7f25da53e426fda5e73e915509f"],
   "pnl_settings": {

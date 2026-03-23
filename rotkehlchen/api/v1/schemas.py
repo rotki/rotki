@@ -1709,6 +1709,16 @@ class ModifiableSettingsSchema(Schema):
         required=False,
         load_default=None,
     )
+    internal_txs_to_repull = fields.Integer(
+        required=False,
+        load_default=None,
+        validate=validate.Range(min=1),
+    )
+    internal_tx_conflict_repull_frequency = fields.Integer(  # in seconds
+        required=False,
+        load_default=None,
+        validate=validate.Range(min=30),  # every 30 seconds is minimum
+    )
 
     @validates_schema
     def validate_settings_schema(
@@ -1779,6 +1789,8 @@ class ModifiableSettingsSchema(Schema):
             suppress_missing_key_msg_services=data['suppress_missing_key_msg_services'],
             auto_create_profit_events=data['auto_create_profit_events'],
             use_asset_collections_in_cost_basis=data['use_asset_collections_in_cost_basis'],
+            internal_txs_to_repull=data['internal_txs_to_repull'],
+            internal_tx_conflict_repull_frequency=data['internal_tx_conflict_repull_frequency'],
         )
 
 
