@@ -15,6 +15,8 @@ describe('useBalancesSummaryHandler', () => {
     const collect = useBalancesSummaryHandler();
     const result = collect();
 
+    expect(result.premium).toBe(false);
+    expect(result.plan).toBe('Free');
     expect(result.hasManualBalances).toBe(false);
     expect(result.totalAccounts).toBe(0);
     expect(result.totalChains).toBe(0);

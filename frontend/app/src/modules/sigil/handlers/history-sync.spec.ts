@@ -12,6 +12,7 @@ const { useHistorySyncHandler } = await import('@/modules/sigil/handlers/history
 
 describe('useHistorySyncHandler', () => {
   beforeEach(() => {
+    setActivePinia(createPinia());
     mockFetchHistoryEvents.mockReset();
   });
 
@@ -23,7 +24,7 @@ describe('useHistorySyncHandler', () => {
     const collect = useHistorySyncHandler();
     const result = await collect();
 
-    expect(result).toEqual({ totalEvents: 42, spamEvents: 7, totalGroups: 20 });
+    expect(result).toEqual({ premium: false, plan: 'Free', totalEvents: 42, spamEvents: 7, totalGroups: 20 });
     expect(mockFetchHistoryEvents).toHaveBeenCalledTimes(2);
     expect(mockFetchHistoryEvents).toHaveBeenCalledWith({
       limit: 1,

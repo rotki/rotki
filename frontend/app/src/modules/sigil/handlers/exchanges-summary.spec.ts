@@ -10,6 +10,8 @@ describe('useExchangesSummaryHandler', () => {
     const collect = useExchangesSummaryHandler();
     const result = collect();
 
+    expect(result.premium).toBe(false);
+    expect(result.plan).toBe('Free');
     expect(result.exchangeCount).toBe(0);
   });
 
