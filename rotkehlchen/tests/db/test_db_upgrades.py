@@ -4015,6 +4015,19 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
             ),
         )
 
+    # Insert manually tracked balances with duplicate labels to test dedup
+    with db_v51.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '
+            'VALUES(?, ?, ?, ?, ?)',
+            [
+                ('BTC', 'My wallet', '1.5', 'A', 'A'),
+                ('ETH', 'My wallet', '10', 'A', 'A'),  # duplicate label
+                ('ETH', 'My wallet', '20', 'A', 'A'),  # another duplicate
+                ('BTC', 'Unique balance', '0.5', 'A', 'A'),
+            ],
+        )
+
     db_v51.logout()
     db = _init_db_with_target_version(
         target_version=52,
@@ -4050,5 +4063,38 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
             ')',
             ('BTC_NOTE_TEST_2',),
         ).fetchone()[0] == 0
+
+        # Verify duplicate labels were deduplicated
+        labels = cursor.execute(
+            'SELECT label FROM manually_tracked_balances ORDER BY id',
+        ).fetchall()
+        assert labels == [
+            ('My wallet',),
+            ('My wallet (2)',),
+            ('My wallet (3)',),
+            ('Unique balance',),
+        ]
+
+        # Verify UNIQUE constraint is enforced — inserting a duplicate label should fail
+        with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
+            cursor.execute(
+                'INSERT INTO manually_tracked_balances(asset, label, amount, location, category) '
+                'VALUES(?, ?, ?, ?, ?)',
+                ('BTC', 'Unique balance', '1', 'A', 'A'),
+            )
+
+        # Verify the upgraded table has the correct schema with id column
+        columns = [
+            row[1] for row in cursor.execute(
+                'PRAGMA table_info(manually_tracked_balances)',
+            ).fetchall()
+        ]
+        assert columns == ['id', 'asset', 'label', 'amount', 'location', 'category']
+        # Verify id column auto-populated and data survived the migration
+        rows = cursor.execute(
+            'SELECT id, asset, label, amount FROM manually_tracked_balances ORDER BY id',
+        ).fetchall()
+        assert len(rows) == 4
+        assert all(row[0] is not None for row in rows)  # all have an id
 
     db.logout()

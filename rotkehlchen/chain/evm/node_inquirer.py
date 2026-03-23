@@ -1598,7 +1598,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if action == 'txlist':
             for tx_batch in transactions_iterator:
                 for tx in tx_batch:
-                    self.block_to_timestamp_cache.add(key=tx.block_number, value=tx.timestamp)
+                    self.block_to_timestamp_cache.add(key=tx.block_number, value=tx.timestamp)    # type: ignore[union-attr]
 
                 yield tx_batch
         else:

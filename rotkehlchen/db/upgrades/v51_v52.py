@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.bitcoin.bch.validation import is_valid_bitcoin_cash_address
 from rotkehlchen.chain.bitcoin.validation import is_valid_btc_address
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
@@ -97,5 +98,42 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             f'Inserted {len(mappings)} bitcoin event address mappings '
             'during v51->v52 upgrade',
         )
+
+    @progress_step(description='Adding UNIQUE constraint to manually_tracked_balances label column.')  # noqa: E501
+    def _add_unique_label_constraint(write_cursor: 'DBCursor') -> None:
+        """Add UNIQUE constraint to the label column of manually_tracked_balances.
+        First deduplicate any existing entries by appending a suffix.
+        """
+        duplicates = write_cursor.execute(
+            'SELECT label FROM manually_tracked_balances '
+            'GROUP BY label HAVING COUNT(*) > 1',
+        ).fetchall()
+
+        for (label,) in duplicates:
+            rows = write_cursor.execute(
+                'SELECT id FROM manually_tracked_balances WHERE label=? ORDER BY id',
+                (label,),
+            ).fetchall()
+            for idx, (row_id,) in enumerate(rows[1:], start=2):
+                write_cursor.execute(
+                    'UPDATE manually_tracked_balances SET label=? WHERE id=?',
+                    (f'{label} ({idx})', row_id),
+                )
+
+        write_cursor.switch_foreign_keys('OFF')
+        update_table_schema(
+            write_cursor=write_cursor,
+            table_name='manually_tracked_balances',
+            schema="""id INTEGER PRIMARY KEY,
+            asset TEXT NOT NULL,
+            label TEXT NOT NULL UNIQUE,
+            amount TEXT,
+            location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
+            category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
+            FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE""",
+            insert_columns='asset, label, amount, location, category',
+            insert_order='(asset, label, amount, location, category)',
+        )
+        write_cursor.switch_foreign_keys('ON')
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

@@ -260,7 +260,7 @@ DB_CREATE_MANUALLY_TRACKED_BALANCES = """
 CREATE TABLE IF NOT EXISTS manually_tracked_balances (
     id INTEGER PRIMARY KEY,
     asset TEXT NOT NULL,
-    label TEXT NOT NULL,
+    label TEXT NOT NULL UNIQUE,
     amount TEXT,
     location CHAR(1) NOT NULL DEFAULT('A') REFERENCES location(location),
     category CHAR(1) NOT NULL DEFAULT('A') REFERENCES balance_category(category),
