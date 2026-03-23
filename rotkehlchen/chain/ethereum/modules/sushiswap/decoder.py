@@ -15,6 +15,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
+from rotkehlchen.chain.evm.decoding.sushiswap.constants import (
+    REDSNWAP_ROUTE_PROCESSOR_TOPIC,
+    TOKEN_CHOMPER_ADDRESS,
+)
 from rotkehlchen.chain.evm.decoding.uniswap.v2.constants import UNISWAP_V2_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.uniswap.v2.utils import (
     decode_uniswap_like_deposit_and_withdrawals,
@@ -44,9 +48,6 @@ SUSHISWAP_REDSNWAP_ROUTE_PROCESSORS: Final = (  # https://docs.sushi.com/aggrega
     string_to_evm_address('0x3Ced11c610556e5292fBC2e75D68c3899098C14C'),
     string_to_evm_address('0x2905d7e4D048d29954F81b02171DD313F457a4a4'),
 )
-# RedSnwapper fee collector that receives token swap fees
-TOKEN_CHOMPER_ADDRESS: Final = string_to_evm_address('0xde7259893Af7cdbC9fD806c6ba61D22D581d5667')
-REDSNWAP_ROUTE_PROCESSOR_TOPIC: Final = b'\x84\xb5\x14\xc5\xb9&\x87\x9b\xf6j\x04\xe4\xbe\xcd\xc6\xf5!\xe9JD\x11\xe7\xdf\xa3\xdd%_!Dx\xf5X'  # noqa: E501
 SUSHISWAP_V2_FACTORY: Final = string_to_evm_address('0xC0AEe478e3658e2610c5F7A4A2E1777cE9e4f2Ac')
 SUSHISWAP_V2_INIT_CODE_HASH: Final = '0xe18a34eb0e04b04f7a0ac29a6e80748dca96319b42c54d679cb821dca90c6303'  # noqa: E501
 
@@ -210,6 +211,7 @@ class SushiswapDecoder(EvmDecoderInterface):
             internal_txs = DBEvmTx(self.node_inquirer.database).get_evm_internal_transactions(
                 parent_tx_hash=transaction.tx_hash,
                 blockchain=self.node_inquirer.blockchain,
+                parent_tx_id=transaction.db_id,
             )
             if len(internal_txs) == 0:
                 return fee, fee_event

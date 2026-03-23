@@ -35,6 +35,7 @@ class WSMessageType(StrEnum):
     UNMATCHED_ASSET_MOVEMENTS = auto()
     NEGATIVE_BALANCE_DETECTED = auto()
     NO_AVAILABLE_INDEXERS = auto()
+    INTERNAL_TX_FIXED = auto()
 
 
 class ProgressUpdateSubType(StrEnum):

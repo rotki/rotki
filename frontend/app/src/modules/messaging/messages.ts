@@ -5,6 +5,7 @@ import { LegacyMessageData, SocketMessageType } from './types/base';
 import {
   AccountingRuleConflictData,
   ExchangeUnknownAssetData,
+  InternalTxFixedData,
   RefreshBalancesData,
 } from './types/business-types';
 import {
@@ -143,6 +144,11 @@ const NoAvailableIndexersMessage = z.object({
   type: z.literal(SocketMessageType.NO_AVAILABLE_INDEXERS),
 });
 
+const InternalTxFixedMessage = z.object({
+  data: InternalTxFixedData,
+  type: z.literal(SocketMessageType.INTERNAL_TX_FIXED),
+});
+
 const UnmatchedAssetMovementsMessage = z.object({
   data: UnmatchedAssetMovementsData,
   type: z.literal(SocketMessageType.UNMATCHED_ASSET_MOVEMENTS),
@@ -172,6 +178,7 @@ export const WebsocketMessage = z.discriminatedUnion('type', [
   BinancePairsMissingMessage,
   DatabaseUploadProgressMessage,
   NoAvailableIndexersMessage,
+  InternalTxFixedMessage,
   UnmatchedAssetMovementsMessage,
 ]);
 

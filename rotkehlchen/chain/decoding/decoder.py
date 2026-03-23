@@ -362,11 +362,39 @@ class TransactionDecoder(ABC, Generic[T_Transaction, T_DecodingRules, T_DecoderI
         The transaction hashes must exist in the DB at the time of the call.
         This logic modifies the `events` argument if it isn't none.
 
+        When ignore_cache is True the undecoded_tx_query_lock is acquired to
+        prevent the undecoded-transactions periodic task from picking up the
+        same tx while TX_DECODED is temporarily cleared during redecoding.
+
         May raise:
         - DeserializationError if there is a problem with contacting a remote to get receipts
         - RemoteError if there is a problem with contacting a remote to get receipts
         - InputError if the transaction hash is not found in the DB
         """
+        if ignore_cache:
+            self.undecoded_tx_query_lock.acquire()
+
+        try:
+            return self._do_decode_transaction_hashes(
+                ignore_cache=ignore_cache,
+                tx_hashes=tx_hashes,
+                events=events,
+                send_ws_notifications=send_ws_notifications,
+                delete_customized=delete_customized,
+            )
+        finally:
+            if ignore_cache:
+                self.undecoded_tx_query_lock.release()
+
+    def _do_decode_transaction_hashes(
+            self,
+            ignore_cache: bool,
+            tx_hashes: list[T_TxHash],
+            events: list[T_Event] | None = None,
+            send_ws_notifications: bool = False,
+            delete_customized: bool = False,
+    ) -> tuple[bool, list[T_Event]]:
+        """Inner decode logic called by _decode_transaction_hashes after lock acquisition."""
         with self.database.conn.read_ctx() as cursor:
             self.reload_data(cursor)
 

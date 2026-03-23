@@ -26,7 +26,13 @@ from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.asset import UnknownAsset
-from rotkehlchen.errors.misc import AlreadyExists, InputError, NoAvailableIndexers, RemoteError
+from rotkehlchen.errors.misc import (
+    AlreadyExists,
+    DataIntegrityError,
+    InputError,
+    NoAvailableIndexers,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -499,6 +505,7 @@ class EvmTransactions(ABC):  # noqa: B024
             parent_tx_hash: EVMTxHash,
             address: ChecksumEvmAddress | None = None,
             return_queried_hashes: Literal[True] = True,
+            tx_timestamp: Timestamp | None = None,
     ) -> list[EVMTxHash]:
         ...
 
@@ -508,6 +515,7 @@ class EvmTransactions(ABC):  # noqa: B024
             parent_tx_hash: EVMTxHash,
             address: ChecksumEvmAddress | None = None,
             return_queried_hashes: Literal[False] = False,
+            tx_timestamp: Timestamp | None = None,
     ) -> None:
         ...
 
@@ -517,6 +525,7 @@ class EvmTransactions(ABC):  # noqa: B024
             parent_tx_hash: EVMTxHash,
             address: ChecksumEvmAddress | None = None,
             return_queried_hashes: bool = False,
+            tx_timestamp: Timestamp | None = None,
     ) -> list[EVMTxHash] | None:
         ...
 
@@ -525,13 +534,20 @@ class EvmTransactions(ABC):  # noqa: B024
             parent_tx_hash: EVMTxHash,
             address: ChecksumEvmAddress | None = None,
             return_queried_hashes: bool = False,
+            tx_timestamp: Timestamp | None = None,
     ) -> list[EVMTxHash] | None:
-        """Query internal txs for a parent hash and atomically replace DB internals."""
-        parent_hash_internal_txs, queried_hashes = (
+        """Query internal txs for a parent hash and atomically replace DB internals.
+
+        tx_timestamp is the timestamp of the parent transaction. It is passed by callers
+        that already have the transaction object in memory (e.g. after get_or_create_transaction)
+        so that indexers can use it to gate their queries without an extra DB round-trip.
+        """
+        parent_hash_internal_txs, queried_hashes, indexer_source = (
             self._query_internal_transactions_for_parent_hash(
                 parent_tx_hash=parent_tx_hash,
                 address=address,
                 return_queried_hashes=return_queried_hashes,
+                tx_timestamp=tx_timestamp,
             )
         )
         with self.database.user_write() as write_cursor:
@@ -539,6 +555,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 write_cursor=write_cursor,
                 parent_tx_hash=parent_tx_hash,
                 transactions=parent_hash_internal_txs,
+                indexer_source=indexer_source,
             )
         return queried_hashes
 
@@ -548,32 +565,39 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress | None,
             return_queried_hashes: bool,
             known_parent_timestamps: dict[EVMTxHash, Timestamp] | None = None,
-    ) -> tuple[list[tuple[EvmInternalTransaction, Timestamp]], list[EVMTxHash] | None]:
+            tx_timestamp: Timestamp | None = None,
+    ) -> tuple[list[tuple[EvmInternalTransaction, Timestamp]], list[EVMTxHash] | None, str]:
         """Query internal transactions and normalize parent-transaction state.
 
         This helper is shared by both range and parent-hash flows and has no
         side effects on internal-transactions persistence.
         For each non-zero-value internal transaction it ensures the parent
         transaction exists in the DB via `get_or_create_transaction`.
+
+        tx_timestamp is the timestamp of the parent transaction passed in from callers
+        that already have the transaction object in memory so that indexers can use it
+        to gate their queries without an extra DB round-trip.
         """
         internal_txs_with_timestamps: list[tuple[EvmInternalTransaction, Timestamp]] = []
         parent_tx_timestamps: dict[EVMTxHash, Timestamp] = (
             known_parent_timestamps.copy() if known_parent_timestamps is not None else {}
         )
         queried_hashes: list[EVMTxHash] | None = [] if return_queried_hashes else None
-        for new_internal_txs in self.evm_inquirer.get_transactions(
+        internal_txs_iterator, indexer_source = self.evm_inquirer.get_transactions_with_source(
                 account=address,
                 period_or_hash=query_period_or_hash,
                 action='txlistinternal',
-        ):
+                tx_timestamp=tx_timestamp,
+        )
+        for new_internal_txs in internal_txs_iterator:
             internal_txs_with_timestamps.extend(self._process_internal_transactions_batch(
-                new_internal_txs=new_internal_txs,
+                new_internal_txs=[tx._replace(source=indexer_source) for tx in new_internal_txs],
                 address=address,
                 parent_tx_timestamps=parent_tx_timestamps,
                 queried_hashes=queried_hashes,
             ))
 
-        return internal_txs_with_timestamps, queried_hashes
+        return internal_txs_with_timestamps, queried_hashes, indexer_source
 
     def _process_internal_transactions_batch(
             self,
@@ -632,7 +656,8 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress | None = None,
             return_queried_hashes: Literal[True] = True,
             known_parent_timestamps: dict[EVMTxHash, Timestamp] | None = None,
-    ) -> tuple[list[EvmInternalTransaction], list[EVMTxHash]]:
+            tx_timestamp: Timestamp | None = None,
+    ) -> tuple[list[EvmInternalTransaction], list[EVMTxHash], str]:
         ...
 
     @overload
@@ -642,7 +667,8 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress | None = None,
             return_queried_hashes: Literal[False] = False,
             known_parent_timestamps: dict[EVMTxHash, Timestamp] | None = None,
-    ) -> tuple[list[EvmInternalTransaction], None]:
+            tx_timestamp: Timestamp | None = None,
+    ) -> tuple[list[EvmInternalTransaction], None, str]:
         ...
 
     @overload
@@ -652,7 +678,8 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress | None = None,
             return_queried_hashes: bool = False,
             known_parent_timestamps: dict[EVMTxHash, Timestamp] | None = None,
-    ) -> tuple[list[EvmInternalTransaction], list[EVMTxHash] | None]:
+            tx_timestamp: Timestamp | None = None,
+    ) -> tuple[list[EvmInternalTransaction], list[EVMTxHash] | None, str]:
         ...
 
     def _query_internal_transactions_for_parent_hash(
@@ -661,39 +688,77 @@ class EvmTransactions(ABC):  # noqa: B024
             address: ChecksumEvmAddress | None = None,
             return_queried_hashes: bool = False,
             known_parent_timestamps: dict[EVMTxHash, Timestamp] | None = None,
-    ) -> tuple[list[EvmInternalTransaction], list[EVMTxHash] | None]:
+            tx_timestamp: Timestamp | None = None,
+    ) -> tuple[list[EvmInternalTransaction], list[EVMTxHash] | None, str]:
         """Fetch internal txs for a parent hash without replacing DB internals.
 
         This method only performs querying/deserialization and parent-tx
         normalization. The caller decides when/how to persist using
         `_replace_internal_transactions_for_parent_hash`.
+
+        tx_timestamp is the timestamp of the parent transaction passed in from callers
+        that already have the transaction object in memory so that indexers can use it
+        to gate their queries without an extra DB round-trip.
         """
-        internal_txs_with_timestamps, queried_hashes = self._query_internal_transactions(
+        internal_txs_with_timestamps, queried_hashes, indexer_source = self._query_internal_transactions(  # noqa: E501
             query_period_or_hash=parent_tx_hash,
             address=address,
             return_queried_hashes=return_queried_hashes,
             known_parent_timestamps=known_parent_timestamps,
+            tx_timestamp=tx_timestamp,
         )
-        return [entry[0] for entry in internal_txs_with_timestamps], queried_hashes
+        return [entry[0] for entry in internal_txs_with_timestamps], queried_hashes, indexer_source
 
     def _replace_internal_transactions_for_parent_hash(
             self,
             write_cursor: 'DBCursor',
             parent_tx_hash: EVMTxHash,
             transactions: list[EvmInternalTransaction],
+            indexer_source: str,
     ) -> None:
-        """Atomically replace all internal tx rows for a single parent tx hash."""
+        """Atomically replace all internal tx rows for a single parent tx hash.
+
+        May raise:
+        - DataIntegrityError if the fetched list is empty but DB already has internals for this
+          tx hash, indicating the indexer returned a bad/incomplete response that would
+          overwrite existing data.
+        """
+        if len(transactions) == 0:
+            with self.database.conn.read_ctx() as cursor:
+                existing_count = cursor.execute(
+                    'SELECT COUNT(*) FROM evm_internal_transactions WHERE parent_tx IN ('
+                    'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?)',
+                    (parent_tx_hash, self.evm_inquirer.chain_id.serialize_for_db()),
+                ).fetchone()[0]
+            if existing_count > 0:
+                msg = (
+                    f'Refusing to replace internal transactions for {parent_tx_hash!s} on '
+                    f'{self.evm_inquirer.chain_name}: indexer "{indexer_source}" returned an '
+                    f'empty result but DB '
+                    f'already contains {existing_count} internal transaction(s) for this '
+                    f'transaction. The indexer may be experiencing issues. Retry later or '
+                    f'switch to a healthy indexer.'
+                )
+                log.error(
+                    'Prevented data loss: blocked empty re-pull of internal transactions',
+                    tx_hash=str(parent_tx_hash),
+                    chain=self.evm_inquirer.chain_name,
+                    indexer=indexer_source,
+                    existing_count=existing_count,
+                )
+                raise DataIntegrityError(msg)
+            return  # empty fetch + no existing data → no-op
+
         self.dbevmtx.delete_evm_internal_transactions_by_parent_tx_hash(
             write_cursor=write_cursor,
             parent_tx_hash=parent_tx_hash,
             chain_id=self.evm_inquirer.chain_id,
         )
-        if len(transactions) != 0:
-            self.dbevmtx.add_evm_internal_transactions(
-                write_cursor=write_cursor,
-                transactions=transactions,
-                relevant_address=None,
-            )
+        self.dbevmtx.add_evm_internal_transactions(
+            write_cursor=write_cursor,
+            transactions=transactions,
+            relevant_address=None,
+        )
 
     def _get_internal_transactions_for_ranges(
             self,
@@ -1077,31 +1142,48 @@ class EvmTransactions(ABC):  # noqa: B024
             tx_hash: 'EVMTxHash',
             chain_id: ChainID,
             user_address: 'ChecksumEvmAddress',
+            tx_timestamp: Timestamp | None = None,
             to_address: 'ChecksumEvmAddress | None' = None,
             from_address: 'ChecksumEvmAddress | None' = None,
     ) -> list[EvmInternalTransaction]:
         """Queries the internal transactions of a parent tx_hash, saves them in the DB and returns
         them. Uses tx mappings to avoid querying the same parent hash repeatedly.
 
+        tx_timestamp is the timestamp of the parent transaction. Callers always have the parent
+        transaction object in memory before querying its internal transactions, so this is passed
+        directly rather than looked up from the DB. Indexers can use it to gate queries (e.g.
+        skipping periods where they lack proper data) without an extra round-trip.
+
         May raise:
         - RemoteError if there is a problem querying the data sources or transaction hash does
-        not exist."""
+        not exist.
+        - DataIntegrityError if the indexer returns an empty result but the DB already contains
+        internal transactions for this tx hash."""
         # check if full internal txs for this parent tx and chain have already been queried.
+        # Also fetch the tx DB id to avoid a JOIN later.
+        chain_id_db = chain_id.serialize_for_db()
         with self.database.conn.read_ctx() as cursor:
+            if (row := cursor.execute(
+                'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                (tx_hash, chain_id_db),
+            ).fetchone()) is None:
+                return []  # transaction not in DB yet
+
+            parent_tx_id = row[0]
             was_queried = cursor.execute(
-                'SELECT 1 FROM evm_tx_mappings WHERE tx_id IN ('
-                'SELECT identifier FROM evm_transactions '
-                'WHERE tx_hash=? AND chain_id=?) AND value=?',
-                (tx_hash, chain_id.serialize_for_db(), TX_INTERNALS_QUERIED),
+                'SELECT 1 FROM evm_tx_mappings WHERE tx_id=? AND value=?',
+                (parent_tx_id, TX_INTERNALS_QUERIED),
             ).fetchone() is not None
 
         if was_queried is False:
-            self._query_and_save_internal_transactions_for_parent_hash(parent_tx_hash=tx_hash)
+            self._query_and_save_internal_transactions_for_parent_hash(
+                parent_tx_hash=tx_hash,
+                tx_timestamp=tx_timestamp,
+            )
             with self.database.user_write() as write_cursor:
                 write_cursor.execute(
-                    'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) '
-                    'SELECT identifier, ? FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-                    (TX_INTERNALS_QUERIED, tx_hash, chain_id.serialize_for_db()),
+                    'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES (?, ?)',
+                    (parent_tx_id, TX_INTERNALS_QUERIED),
                 )
             log.debug(
                 f'Queried full internal txs for {tx_hash!s} on {chain_id.to_name()} '
@@ -1113,6 +1195,7 @@ class EvmTransactions(ABC):  # noqa: B024
             blockchain=CHAINID_TO_SUPPORTED_BLOCKCHAIN[chain_id],
             from_address=from_address,
             to_address=to_address,
+            parent_tx_id=parent_tx_id,
         )
 
     def get_or_create_transaction(
@@ -1215,6 +1298,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 self._query_and_save_internal_transactions_for_parent_hash(
                     address=None,  # get all internal transactions for the parent hash
                     parent_tx_hash=tx_hash,
+                    tx_timestamp=transaction.timestamp,
                 )
         return tx_receipt
 

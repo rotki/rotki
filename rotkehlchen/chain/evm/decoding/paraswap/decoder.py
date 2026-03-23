@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     EvmDecodingOutput,
 )
 from rotkehlchen.chain.evm.transactions import EvmTransactions
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import DataIntegrityError, RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -126,11 +126,12 @@ class ParaswapCommonDecoder(EvmDecoderInterface, ABC):
                 internal_fee_txs = self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
                     tx_hash=context.transaction.tx_hash,
                     chain_id=self.base.evm_inquirer.chain_id,
+                    tx_timestamp=context.transaction.timestamp,
                     from_address=self.router_address,
                     to_address=self.fee_receiver_address,
                     user_address=sender,
                 )
-            except RemoteError as e:
+            except (RemoteError, DataIntegrityError) as e:
                 log.error(f'Failed to get internal transactions for paraswap {self.node_inquirer.chain_name} swap {context.transaction.tx_hash!s} due to {e!s}')  # noqa: E501
             else:
                 if len(internal_fee_txs) > 0:

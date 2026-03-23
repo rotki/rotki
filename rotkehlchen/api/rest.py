@@ -93,6 +93,7 @@ from rotkehlchen.db.filtering import (
     HistoricalBalancesFilterQuery,
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
+    InternalTxConflictsFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
@@ -3389,6 +3390,15 @@ class RestAPI:
             to_timestamp=to_timestamp,
             chain=chain,
             address=address,
+        )
+
+    @async_api_call()
+    def get_pending_internal_tx_repull_conflicts(
+            self,
+            filter_query: InternalTxConflictsFilterQuery,
+    ) -> dict[str, Any]:
+        return self.transactions_service.get_pending_internal_tx_repull_conflicts(
+            filter_query=filter_query,
         )
 
     def addresses_interacted_before(

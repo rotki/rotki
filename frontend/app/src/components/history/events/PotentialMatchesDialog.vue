@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import type { UnmatchedAssetMovement } from '@/composables/history/events/use-unmatched-asset-movements';
-import type { Pinned } from '@/types/session';
 import PotentialMatchesContent from '@/components/history/events/PotentialMatchesContent.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { type Pinned, PinnedNames } from '@/types/session';
 
 const modelValue = defineModel<boolean>({ required: true });
 
@@ -30,7 +30,7 @@ function onMatched(): void {
 
 function showUnmatchedInEvents(): void {
   const pin: Pinned = {
-    name: 'match-asset-movements-pinned',
+    name: PinnedNames.MATCH_ASSET_MOVEMENTS,
     props: { highlightedGroupIdentifier: movement.groupIdentifier },
   };
 
@@ -42,7 +42,7 @@ function showUnmatchedInEvents(): void {
 
 function showPotentialMatchInEvents(data: { identifier: number; groupIdentifier: string }): void {
   const pin: Pinned = {
-    name: 'match-asset-movements-pinned',
+    name: PinnedNames.MATCH_ASSET_MOVEMENTS,
     props: {
       highlightedGroupIdentifier: movement.groupIdentifier,
       highlightedPotentialMatchIdentifier: data.identifier,

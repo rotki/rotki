@@ -66,6 +66,7 @@ from rotkehlchen.db.constants import (
 )
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import (
+    INTERNAL_TX_CONFLICTS_COLUMN_MAP,
     AccountingRulesFilterQuery,
     AddressbookFilterQuery,
     AssetsFilterQuery,
@@ -77,6 +78,7 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
     HistoryEventWithCounterpartyFilterQuery,
     HistoryEventWithTxRefFilterQuery,
+    InternalTxConflictsFilterQuery,
     LevenshteinFilterQuery,
     LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
@@ -1695,6 +1697,7 @@ class ModifiableSettingsSchema(Schema):
     auto_delete_calendar_entries = fields.Boolean(load_default=None)
     auto_create_calendar_reminders = fields.Boolean(load_default=None)
     auto_create_profit_events = fields.Boolean(load_default=None)
+    use_asset_collections_in_cost_basis = fields.Boolean(load_default=None)
     ask_user_upon_size_discrepancy = fields.Boolean(load_default=None)
     auto_detect_tokens = fields.Boolean(load_default=None)
     csv_export_delimiter = EmptyAsNoneStringField(load_default=None)
@@ -1782,6 +1785,7 @@ class ModifiableSettingsSchema(Schema):
             asset_movement_time_range=data['asset_movement_time_range'],
             suppress_missing_key_msg_services=data['suppress_missing_key_msg_services'],
             auto_create_profit_events=data['auto_create_profit_events'],
+            use_asset_collections_in_cost_basis=data['use_asset_collections_in_cost_basis'],
         )
 
 
@@ -4709,6 +4713,59 @@ class RefetchTransactionsSchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
                             message=f'Account {address} with chain {chain.name.lower()} is not tracked by rotki',  # noqa: E501
                             field_name='address',
                         )
+
+
+class InternalTxConflictsSchema(
+        AsyncQueryArgumentSchema,
+        TimestampRangeSchema,
+        DBPaginationSchema,
+        DBOrderBySchema,
+):
+    tx_hash = EVMTransactionHashField(load_default=None)
+    chain = EvmChainNameField(load_default=None)
+    fixed = fields.Boolean(load_default=False)
+    failed = fields.Boolean(load_default=False)
+
+    @validates_schema
+    def validate_order_by_attributes(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data.get('order_by_attributes') is not None:
+            for attr in data['order_by_attributes']:
+                if attr is not None and attr not in INTERNAL_TX_CONFLICTS_COLUMN_MAP:
+                    raise ValidationError(
+                        message=f'Invalid order_by attribute {attr}. '
+                        f'Valid values: {", ".join(INTERNAL_TX_CONFLICTS_COLUMN_MAP)}',
+                        field_name='order_by_attributes',
+                    )
+
+    @post_load
+    def make_internal_tx_conflicts_query(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> dict[str, Any]:
+        filter_query = InternalTxConflictsFilterQuery.make(
+            from_ts=data['from_timestamp'],
+            to_ts=data['to_timestamp'],
+            tx_hash=data.get('tx_hash'),
+            chain_id=data.get('chain'),
+            fixed=data['fixed'],
+            failed=data['failed'],
+            limit=data.get('limit'),
+            offset=data.get('offset'),
+            order_by_rules=create_order_by_rules_list(
+                data=data,
+                default_order_by_fields=['chain', 'tx_hash'],
+                is_ascending_by_default=True,
+            ),
+        )
+        return {
+            'async_query': data['async_query'],
+            'filter_query': filter_query,
+        }
 
 
 class AddressesInteraction(Schema):

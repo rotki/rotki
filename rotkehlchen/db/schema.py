@@ -480,6 +480,26 @@ CREATE TABLE IF NOT EXISTS evm_tx_mappings (
 );
 """
 
+DB_CREATE_EVM_INTERNAL_TX_CONFLICTS = """
+CREATE TABLE IF NOT EXISTS evm_internal_tx_conflicts (
+    transaction_hash BLOB NOT NULL,
+    chain INTEGER NOT NULL,
+    action TEXT NOT NULL CHECK (action IN ('fix_redecode', 'repull')),
+    repull_reason TEXT CHECK (repull_reason IN ('all_zero_gas', 'other')),
+    redecode_reason TEXT CHECK (
+        redecode_reason IN (
+            'mixed_zero_gas',
+            'duplicate_exact_rows',
+            'mixed_zero_gas_and_duplicate'
+        )
+    ),
+    fixed INTEGER NOT NULL CHECK (fixed IN (0, 1)),
+    last_retry_ts INTEGER,
+    last_error TEXT,
+    PRIMARY KEY (transaction_hash, chain)
+);
+"""
+
 DB_CREATE_SETTINGS = """
 CREATE TABLE IF NOT EXISTS settings (
     name VARCHAR[24] NOT NULL PRIMARY KEY,
@@ -960,6 +980,7 @@ CREATE INDEX IF NOT EXISTS idx_bitcoin_events_addresses_address ON bitcoin_event
 CREATE INDEX IF NOT EXISTS idx_history_event_links_right ON history_event_links(right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_links_composite ON history_event_links(link_type, left_event_id, right_event_id);
 CREATE INDEX IF NOT EXISTS idx_history_event_link_ignores_type ON history_event_link_ignores(link_type);
+CREATE INDEX IF NOT EXISTS idx_chain_events_info_tx_ref ON chain_events_info(tx_ref);
 CREATE UNIQUE INDEX IF NOT EXISTS unique_generic_accounting_rules ON accounting_rules(type, subtype, counterparty) WHERE is_event_specific = 0;
 """  # noqa: E501
 
@@ -1003,6 +1024,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_MARGIN}
 {DB_CREATE_USED_QUERY_RANGES}
 {DB_CREATE_EVM_TX_MAPPINGS}
+{DB_CREATE_EVM_INTERNAL_TX_CONFLICTS}
 {DB_CREATE_SETTINGS}
 {DB_CREATE_TAGS_TABLE}
 {DB_CREATE_TAG_MAPPINGS}

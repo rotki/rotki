@@ -4,6 +4,7 @@ import { useCustomizedEventDuplicates } from '@/composables/history/events/use-c
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
 import { useRefWithDebounce } from '@/composables/ref';
 import { useStatusUpdater } from '@/composables/status';
+import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
 import { Routes } from '@/router/routes';
 import { Section } from '@/types/status';
 
@@ -16,6 +17,7 @@ const { processing, mainPage } = defineProps<{
 
 const emit = defineEmits<{
   'open:match-asset-movements': [];
+  'open:internal-tx-conflicts': [];
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -41,11 +43,14 @@ const {
   manualReviewGroupIds,
 } = useCustomizedEventDuplicates();
 
+const { fetchPendingCount, pendingCount: internalConflictsCount } = useInternalTxConflicts();
+
 const showUnmatchedMovements = computed<boolean>(() => !get(autoMatchLoading) && get(unmatchedCount) > 0);
 const showAutoFixDuplicates = computed<boolean>(() => get(autoFixCount) > 0);
 const showManualReviewDuplicates = computed<boolean>(() => get(manualReviewCount) > 0);
+const showInternalConflicts = computed<boolean>(() => get(internalConflictsCount) > 0);
 
-const hasAlerts = logicOr(showUnmatchedMovements, showAutoFixDuplicates, showManualReviewDuplicates);
+const hasAlerts = logicOr(showUnmatchedMovements, showAutoFixDuplicates, showManualReviewDuplicates, showInternalConflicts);
 const refreshing = logicOr(unmatchedLoading, duplicatesLoading);
 
 const showAlerts = logicAnd(() => mainPage, hasAlerts, show);
@@ -57,6 +62,11 @@ function closeAlerts(): void {
 function openMatchAssetMovements(): void {
   closeAlerts();
   emit('open:match-asset-movements');
+}
+
+function openInternalTxConflicts(): void {
+  closeAlerts();
+  emit('open:internal-tx-conflicts');
 }
 
 async function viewDuplicates(groupIds: string[], status: DuplicateHandlingStatus): Promise<void> {
@@ -76,6 +86,7 @@ watchImmediate(loading, async (isLoading) => {
     await Promise.all([
       refreshUnmatchedAssetMovements(),
       fetchCustomizedEventDuplicates(),
+      fetchPendingCount(),
     ]);
   }
 });
@@ -150,6 +161,20 @@ watchImmediate(loading, async (isLoading) => {
               @click="viewDuplicates(manualReviewGroupIds, DuplicateHandlingStatus.MANUAL_REVIEW)"
             >
               {{ t('customized_event_duplicates.banner.view_action') }}
+            </RuiButton>
+          </div>
+        </li>
+        <li v-if="showInternalConflicts">
+          <div class="flex items-center">
+            <span>{{ t('internal_tx_conflicts.banner.message', { count: internalConflictsCount }) }}</span>
+            <RuiButton
+              variant="text"
+              color="warning"
+              size="sm"
+              class="ml-2 underline"
+              @click="openInternalTxConflicts()"
+            >
+              {{ t('internal_tx_conflicts.banner.action') }}
             </RuiButton>
           </div>
         </li>

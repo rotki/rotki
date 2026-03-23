@@ -487,6 +487,7 @@ class EtherscanLikeApi(ABC):
             account: ChecksumEvmAddress | None,
             action: Literal['txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmInternalTransaction]]:
         ...
 
@@ -497,6 +498,7 @@ class EtherscanLikeApi(ABC):
             account: ChecksumEvmAddress | None,
             action: Literal['txlist'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmTransaction]]:
         ...
 
@@ -506,6 +508,7 @@ class EtherscanLikeApi(ABC):
             account: ChecksumEvmAddress | None,
             action: Literal['txlist', 'txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]:
         """Gets a list of transactions (either normal or internal) for an account.
 
@@ -558,6 +561,9 @@ class EtherscanLikeApi(ABC):
             for entry in result:
                 try:  # Handle normal transactions. Internal dict does not contain a hash sometimes
                     if is_internal or entry['hash'].startswith('GENESIS') is False:
+                        if is_internal and entry.get('callType') == 'delegatecall':
+                            log.debug(f'Skipping delegatecall internal tx {entry.get("hash")} on {chain_id.to_name()}')  # noqa: E501
+                            continue
                         tx, _ = deserialize_evm_transaction(  # type: ignore
                             data=entry,
                             internal=is_internal,

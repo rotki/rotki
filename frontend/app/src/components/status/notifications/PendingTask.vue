@@ -16,7 +16,7 @@ const { progress: taskProgress } = storeToRefs(useReportsStore());
 const { historicalDailyPriceStatus } = storeToRefs(useHistoricCachePriceStore());
 const { t } = useI18n({ useScope: 'global' });
 
-const hasDeterminateProgress = computed(() => {
+const hasDeterminateProgress = computed<boolean>(() => {
   const { type } = task;
   return type === TaskType.TRADE_HISTORY || type === TaskType.FETCH_DAILY_HISTORIC_PRICE;
 });
@@ -56,13 +56,20 @@ const progress = computed<number | undefined>(() => {
       </div>
     </div>
     <RuiProgress
+      v-if="hasDeterminateProgress"
       color="primary"
       circular
-      :variant="hasDeterminateProgress ? 'determinate' : 'indeterminate'"
+      variant="determinate"
       :value="progress"
       size="24"
-      :show-label="hasDeterminateProgress"
+      show-label
       thickness="2"
+    />
+    <RuiIcon
+      v-else
+      name="lu-loader"
+      size="20"
+      class="text-rui-text-secondary shrink-0"
     />
     <RuiTooltip
       :popper="{ placement: 'top' }"

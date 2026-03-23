@@ -29,6 +29,7 @@ from rotkehlchen.chain.evm.decoding.balancer.v3.decoder import Balancerv3CommonD
 from rotkehlchen.chain.evm.decoding.beefy_finance.decoder import BeefyFinanceCommonDecoder
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_SUPPORTED_CHAINS_WITHOUT_VCOW
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
+from rotkehlchen.chain.evm.decoding.erc4337.decoder import Erc4337Decoder
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.oneinch.v6.decoder import Oneinchv6Decoder
@@ -248,6 +249,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         Think: Perhaps we can move them under a specific directory and use the
         normal loading?
         """
+        self._add_single_decoder(class_name='Erc4337', decoder_class=Erc4337Decoder, rules=rules)
         self._add_single_decoder(class_name='Safemultisig', decoder_class=SafemultisigDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Oneinchv5', decoder_class=Oneinchv5Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Oneinchv6', decoder_class=Oneinchv6Decoder, rules=rules)  # noqa: E501
@@ -490,25 +492,20 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         the rule is run.
         Matches post decoding rules to all matched counterparties propagated for decoding
         from the decoding/enriching rules and also the counterparties associated with the
-        transaction to_address field.
+        transaction to_address field. If to_address doesn't match a known counterparty
+        (e.g. ERC-4337 EntryPoint, Safe, or other intermediaries), falls back to scanning
+        all decoded event addresses for counterparty matches.
         Returns a tuple containing the list of decoded events and a boolean flag indicating
         whether any post-decoding rules ran successfully and may have modified the events.
         """
         maybe_modified = False
         if transaction.to_address is not None:
-            # in delegation transactions, to_address can be the user's wallet, not
-            # the actual contract. look at event addresses to find possible protocols that were actually used.  # noqa: E501
-            # TODO: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=126845644
-            # add a test for this once we merge bugfixes into develop.
-            if (
-                transaction.authorization_list is not None and
-                len(transaction.authorization_list) > 0
-            ):
+            if (address_counterparty := self.rules.addresses_to_counterparties.get(transaction.to_address)) is not None:  # noqa: E501
+                counterparties.add(address_counterparty)
+            else:  # to_address didn't match any known protocol (e.g. ERC-4337, Safe, delegation)
                 for addy in {event.address for event in decoded_events if event.address is not None}:  # noqa: E501
                     if (address_counterparty := self.rules.addresses_to_counterparties.get(addy)) is not None:  # noqa: E501
                         counterparties.add(address_counterparty)
-            elif (address_counterparty := self.rules.addresses_to_counterparties.get(transaction.to_address)) is not None:  # noqa: E501
-                counterparties.add(address_counterparty)
 
         rules = self._chain_specific_post_decoding_rules(transaction)
         # get the rules that need to be applied by counterparty
@@ -558,7 +555,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
 
         self.base.reset_sequence_counter(tx_receipt)
         # check if any eth transfer happened in the transaction, including in internal transactions
-        events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
+        events = self._maybe_decode_simple_transactions(transaction, tx_receipt, tx_id=tx_id)
         action_items: list[ActionItem] = []
         counterparties = set()
         refresh_balances = False
@@ -792,6 +789,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             events: list['EvmEvent'],
+            tx_id: int,
     ) -> None:
         """
         check for internal transactions if the transaction is not canceled. This function mutates
@@ -803,6 +801,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         internal_txs = self.dbtx.get_evm_internal_transactions(
             parent_tx_hash=tx.tx_hash,
             blockchain=self.evm_inquirer.blockchain,
+            parent_tx_id=tx_id,
         )
         for internal_tx in internal_txs:
             if internal_tx.to_address is None:
@@ -946,6 +945,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             self,
             tx: EvmTransaction,
             tx_receipt: EvmTxReceipt,
+            tx_id: int,
     ) -> list['EvmEvent']:
         """Decodes normal ETH transfers, internal transactions and gas cost payments"""
         events: list[EvmEvent] = []
@@ -1001,6 +1001,7 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
             tx=tx,
             tx_receipt=tx_receipt,
             events=events,
+            tx_id=tx_id,
         )
 
         if tx_receipt.status is False or direction_result is None:

@@ -19,14 +19,23 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
+    InternalTxConflictsFilterQuery,
     SolanaTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.internal_tx_conflicts import (
+    count_pending_internal_tx_repull_conflicts,
+    get_pending_internal_tx_repull_conflicts,
+    is_tx_customized,
+    set_internal_tx_conflict_fixed,
+    set_internal_tx_conflict_repull_error,
+)
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
+from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import PremiumApiError
 from rotkehlchen.errors.asset import WrongAssetType
-from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
+from rotkehlchen.errors.misc import AlreadyExists, DataIntegrityError, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -52,6 +61,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
+from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from collections.abc import Callable
@@ -485,16 +495,28 @@ class TransactionsService:
                 solana_tx_refs = cast('list[Signature]', tx_refs)
                 for solana_tx_ref in solana_tx_refs:
                     self._decode_given_solana_tx(solana_tx_ref, delete_custom)
-        except (RemoteError, DeserializationError, InputError) as e:
+        except (RemoteError, DeserializationError, InputError, DataIntegrityError) as e:
             success = False
             message = (
                 f'Failed to request {chain.name.lower()} transaction decoding due to {e!s}'
             )
             status_code = (
                 HTTPStatus.CONFLICT
-                if isinstance(e, InputError)
+                if isinstance(e, (InputError, DataIntegrityError))
                 else HTTPStatus.BAD_GATEWAY
             )
+            if chain.is_evm():
+                with self.rotkehlchen.data.db.user_write() as write_cursor:
+                    if table_exists(write_cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
+                        set_internal_tx_conflict_repull_error(
+                            write_cursor=write_cursor,
+                            tx_hash=evm_tx_ref,  # pyright: ignore[reportPossiblyUnboundVariable]
+                            chain_id=self.rotkehlchen.chains_aggregator.get_chain_manager(
+                                blockchain=cast('SUPPORTED_EVM_CHAINS_TYPE', chain),
+                            ).node_inquirer.chain_id,
+                            retry_ts=ts_now(),
+                            error=str(e),
+                        )
         finally:
             if indexer_order_customized:
                 CachedSettings().evm_indexers_order_override_var.reset(indexer_order_customized)
@@ -605,6 +627,52 @@ class TransactionsService:
                 ).fetchone()[0]
 
         return {'result': tx_info, 'message': '', 'status_code': HTTPStatus.OK}
+
+    def get_pending_internal_tx_repull_conflicts(
+            self,
+            filter_query: InternalTxConflictsFilterQuery,
+    ) -> dict[str, Any]:
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            if not table_exists(cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
+                entries = []
+                entries_found = 0
+                entries_total = 0
+            else:
+                entries = get_pending_internal_tx_repull_conflicts(
+                    cursor=cursor,
+                    filter_query=filter_query,
+                )
+                entries_found = count_pending_internal_tx_repull_conflicts(
+                    cursor=cursor,
+                    filter_query=filter_query,
+                )
+                entries_total = cursor.execute(
+                    'SELECT COUNT(*) FROM evm_internal_tx_conflicts',
+                ).fetchone()[0]
+
+        return {
+            'result': {
+                'entries': [
+                    {
+                        'chain': chain_id.to_name(),
+                        'tx_hash': str(row_tx_hash),
+                        'timestamp': tx_timestamp,
+                        'action': action,
+                        'repull_reason': repull_reason,
+                        'redecode_reason': redecode_reason,
+                        'last_retry_ts': last_retry_ts,
+                        'last_error': last_error,
+                        'group_identifier': group_identifier,
+                    }
+                    for chain_id, row_tx_hash, tx_timestamp, action, repull_reason, redecode_reason, last_retry_ts, last_error, group_identifier in entries  # noqa: E501
+                ],
+                'entries_found': entries_found,
+                'entries_total': entries_total,
+                'entries_limit': -1,
+            },
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
 
     def force_refetch_transactions(
             self,
@@ -873,13 +941,50 @@ class TransactionsService:
 
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         parent_hash_internal_txs: list[EvmInternalTransaction] = []
+        indexer_source = 'unknown'
         if transaction.to_address is not None:  # internal transactions only through contracts
-            parent_hash_internal_txs, _ = chain_manager.transactions._query_internal_transactions_for_parent_hash(  # noqa: E501
+            parent_hash_internal_txs, _, indexer_source = (
+                chain_manager.transactions._query_internal_transactions_for_parent_hash(
                 parent_tx_hash=tx_ref,
                 address=None,
                 return_queried_hashes=False,
                 known_parent_timestamps={tx_ref: transaction.timestamp},
-            )
+                tx_timestamp=transaction.timestamp,
+            ))
+
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            tx_is_customized = is_tx_customized(cursor, tx_ref, chain_manager.node_inquirer.chain_id)  # noqa: E501
+
+        if not delete_custom and tx_is_customized:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                write_cursor.execute(
+                    'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                    (tx_ref, chain_manager.node_inquirer.chain_id.serialize_for_db()),
+                )
+                dbevmtx.add_transactions(
+                    write_cursor=write_cursor,
+                    evm_transactions=[transaction],
+                    relevant_address=None,
+                )
+                dbevmtx.add_or_ignore_receipt_data(
+                    write_cursor=write_cursor,
+                    chain_id=chain_manager.node_inquirer.chain_id,
+                    data=raw_receipt_data,
+                )
+                if transaction.to_address is not None:
+                    chain_manager.transactions._replace_internal_transactions_for_parent_hash(
+                        write_cursor=write_cursor,
+                        parent_tx_hash=tx_ref,
+                        transactions=parent_hash_internal_txs,
+                        indexer_source=indexer_source,
+                    )
+                if table_exists(write_cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
+                    set_internal_tx_conflict_fixed(
+                        write_cursor=write_cursor,
+                        tx_hash=tx_ref,
+                        chain_id=chain_manager.node_inquirer.chain_id,
+                    )
+            return
 
         with self.rotkehlchen.data.db.user_write() as write_cursor:
             write_cursor.execute(
@@ -901,6 +1006,7 @@ class TransactionsService:
                     write_cursor=write_cursor,
                     parent_tx_hash=tx_ref,
                     transactions=parent_hash_internal_txs,
+                    indexer_source=indexer_source,
                 )
 
         events = chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
@@ -913,6 +1019,13 @@ class TransactionsService:
             chain=chain,
             events=events,
         )
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            if table_exists(write_cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
+                set_internal_tx_conflict_fixed(
+                    write_cursor=write_cursor,
+                    tx_hash=tx_ref,
+                    chain_id=chain_manager.node_inquirer.chain_id,
+                )
 
     def _maybe_notify_missing_credentials_after_decode(
             self,

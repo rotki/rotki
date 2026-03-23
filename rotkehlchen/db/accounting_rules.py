@@ -554,6 +554,14 @@ def _events_to_consume(
 
                 break
 
+        elif accounting_treatment == TxAccountingTreatment.BASIS_TRANSFER:
+            _, peeked_event = events_iterator.peek((None, None))
+            if peeked_event is None or peeked_event.group_identifier != event.group_identifier:
+                log.error(f'Event with {event.group_identifier=} should have a BASIS_TRANSFER paired event')  # noqa: E501
+                return ids_processed
+            _, next_event = next(events_iterator)
+            ids_processed.append((next_event.identifier, cache_identifier))  # type: ignore[arg-type]
+
         return ids_processed
 
     if isinstance(event, EvmEvent) is False:

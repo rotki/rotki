@@ -1,5 +1,5 @@
 from contextlib import ExitStack
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import patch
 
 import pytest
@@ -16,7 +16,7 @@ from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.misc import DataIntegrityError, RemoteError
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_ethereum_transaction, make_evm_address
 from rotkehlchen.types import (
@@ -193,8 +193,8 @@ def test_query_and_save_internal_transactions_returns_only_new_hashes(
 
     with patch.object(
         ethereum_manager.node_inquirer,
-        'get_transactions',
-        return_value=iter([[EvmInternalTransaction(
+        'get_transactions_with_source',
+        return_value=(iter([[EvmInternalTransaction(
             parent_tx_hash=existing_parent_tx.tx_hash,
             chain_id=ChainID.ETHEREUM,
             trace_id=1,
@@ -213,7 +213,7 @@ def test_query_and_save_internal_transactions_returns_only_new_hashes(
             gas=1,
             gas_used=1,
         ),
-    ]])), patch.object(
+    ]]), 'etherscan')), patch.object(
         ethereum_manager.node_inquirer,
         'get_transaction_by_hash',
         side_effect=_mock_get_transaction_by_hash,
@@ -267,8 +267,8 @@ def test_query_single_parent_hash_replaces_existing_internal_transactions(
 
     with patch.object(
         ethereum_manager.node_inquirer,
-        'get_transactions',
-        return_value=iter([[EvmInternalTransaction(
+        'get_transactions_with_source',
+        return_value=(iter([[EvmInternalTransaction(
             parent_tx_hash=parent_tx.tx_hash,
             chain_id=ChainID.ETHEREUM,
             trace_id=1,
@@ -277,7 +277,7 @@ def test_query_single_parent_hash_replaces_existing_internal_transactions(
             value=100,
             gas=30945,
             gas_used=0,
-        )]]),
+        )]]), 'etherscan'),
     ):
         ethereum_manager.transactions._query_and_save_internal_transactions_for_parent_hash(
             parent_tx_hash=parent_tx.tx_hash,
@@ -295,6 +295,173 @@ def test_query_single_parent_hash_replaces_existing_internal_transactions(
         ).fetchall()
 
     assert rows == [(1, sender, receiver, '100', '30945', '0')]
+
+
+def test_empty_repull_blocked_when_db_has_internals(
+        database: 'DBHandler',
+        ethereum_manager: 'EthereumManager',
+) -> None:
+    """Case A: empty re-pull + DB has existing internals => raises RemoteError, DB unchanged."""
+    dbevmtx = DBEvmTx(database)
+    parent_tx = make_ethereum_transaction()
+    sender, receiver = make_evm_address(), make_evm_address()
+    existing_internal_tx = EvmInternalTransaction(
+        parent_tx_hash=parent_tx.tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        trace_id=1,
+        from_address=sender,
+        to_address=receiver,
+        value=100,
+        gas=0,
+        gas_used=0,
+    )
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[parent_tx],
+            relevant_address=None,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(parent_tx.tx_hash),
+        )
+        dbevmtx.add_evm_internal_transactions(
+            write_cursor=write_cursor,
+            transactions=[existing_internal_tx],
+            relevant_address=None,
+        )
+
+    # Indexer returns empty list (simulating Blockscout indexing issue)
+    with patch.object(
+        ethereum_manager.node_inquirer,
+        'get_transactions_with_source',
+        return_value=(iter([[]]), 'blockscout'),
+    ), pytest.raises(DataIntegrityError, match='empty result'):
+        ethereum_manager.transactions._query_and_save_internal_transactions_for_parent_hash(
+            parent_tx_hash=parent_tx.tx_hash,
+        )
+
+    # DB must remain untouched
+    with database.conn.read_ctx() as cursor:
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (parent_tx.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+    stored = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=parent_tx.tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
+    )
+    assert stored == [existing_internal_tx]
+
+
+def test_empty_repull_allowed_when_db_has_no_internals(
+        database: 'DBHandler',
+        ethereum_manager: 'EthereumManager',
+) -> None:
+    """Case B: empty re-pull + DB has no internals => no error, normal empty handling."""
+    dbevmtx = DBEvmTx(database)
+    parent_tx = make_ethereum_transaction()
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[parent_tx],
+            relevant_address=None,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(parent_tx.tx_hash),
+        )
+
+    # Indexer returns empty list and DB has no existing internals — should be a no-op
+    with patch.object(
+        ethereum_manager.node_inquirer,
+        'get_transactions_with_source',
+        return_value=(iter([[]]), 'blockscout'),
+    ):
+        ethereum_manager.transactions._query_and_save_internal_transactions_for_parent_hash(
+            parent_tx_hash=parent_tx.tx_hash,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (parent_tx.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+    stored = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=parent_tx.tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
+    )
+    assert stored == []
+
+
+def test_nonempty_repull_replaces_existing_internals(
+        database: 'DBHandler',
+        ethereum_manager: 'EthereumManager',
+) -> None:
+    """Case C: non-empty re-pull + DB has existing internals => replacement succeeds."""
+    dbevmtx = DBEvmTx(database)
+    parent_tx = make_ethereum_transaction()
+    sender, receiver = make_evm_address(), make_evm_address()
+    with database.user_write() as write_cursor:
+        dbevmtx.add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[parent_tx],
+            relevant_address=None,
+        )
+        dbevmtx.add_or_ignore_receipt_data(
+            write_cursor=write_cursor,
+            chain_id=ChainID.ETHEREUM,
+            data=_make_receipt_data(parent_tx.tx_hash),
+        )
+        dbevmtx.add_evm_internal_transactions(
+            write_cursor=write_cursor,
+            transactions=[EvmInternalTransaction(
+                parent_tx_hash=parent_tx.tx_hash,
+                chain_id=ChainID.ETHEREUM,
+                trace_id=1,
+                from_address=sender,
+                to_address=receiver,
+                value=50,
+                gas=0,
+                gas_used=0,
+            )],
+            relevant_address=None,
+        )
+
+    updated_internal_tx = EvmInternalTransaction(
+        parent_tx_hash=parent_tx.tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        trace_id=1,
+        from_address=sender,
+        to_address=receiver,
+        value=50,
+        gas=21000,  # updated gas
+        gas_used=0,
+    )
+    with patch.object(
+        ethereum_manager.node_inquirer,
+        'get_transactions_with_source',
+        return_value=(iter([[updated_internal_tx]]), 'routescan'),
+    ):
+        ethereum_manager.transactions._query_and_save_internal_transactions_for_parent_hash(
+            parent_tx_hash=parent_tx.tx_hash,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (parent_tx.tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
+    stored = dbevmtx.get_evm_internal_transactions(
+        parent_tx_hash=parent_tx.tx_hash,
+        blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
+    )
+    assert stored == [updated_internal_tx]
 
 
 def test_query_range_replaces_internal_transactions_for_address(
@@ -358,8 +525,8 @@ def test_query_range_replaces_internal_transactions_for_address(
 
     with patch.object(
         ethereum_manager.node_inquirer,
-        'get_transactions',
-        return_value=iter([[EvmInternalTransaction(
+        'get_transactions_with_source',
+        return_value=(iter([[EvmInternalTransaction(
             parent_tx_hash=parent_tx.tx_hash,
             chain_id=ChainID.ETHEREUM,
             trace_id=1,
@@ -368,7 +535,7 @@ def test_query_range_replaces_internal_transactions_for_address(
             value=100,
             gas=30945,
             gas_used=0,
-        )]]),
+        )]]), 'etherscan'),
     ):
         ethereum_manager.transactions._query_and_save_internal_transactions_for_range(
             address=queried_address,
@@ -545,9 +712,14 @@ def test_indexers_fall_back_properly(
         }
 
         # Check that an internal tx (always queried via an indexer) was properly retrieved.
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash1, ChainID.OPTIMISM.serialize_for_db()),
+        ).fetchone()[0]
         internal_txs = dbevmtx.get_evm_internal_transactions(
             parent_tx_hash=tx_hash1,
             blockchain=SupportedBlockchain.OPTIMISM,
+            parent_tx_id=parent_tx_id,
         )
         assert len(internal_txs) == 1  # tx has two internal txs but only one involves the tracked address.  # noqa: E501
 
@@ -561,28 +733,36 @@ def test_all_indexers_get_same_tx_results(
     """Test that all indexers return the same results for the same tx queries."""
     txlist_results: list[list[EvmTransaction]] = []
     txlistinteral_results: list[list[EvmInternalTransaction]] = []
+    period = TimestampOrBlockRange(
+        range_type='timestamps',
+        from_value=Timestamp(1720000000),
+        to_value=Timestamp(1735000000),
+    )
     for indexer in (
         ethereum_inquirer.etherscan,
         ethereum_inquirer.blockscout,
         ethereum_inquirer.routescan,
     ):
-        for action, result_list in (
-            ('txlist', txlist_results),
-            ('txlistinternal', txlistinteral_results),
-        ):
-            # get_transactions returns an iterator of lists. Consume the iterator, check that
-            # only one list was returned, and append that list to the result_list.
-            assert len(result := list(indexer.get_transactions(  # type: ignore[call-overload]  # mypy doesn't understand that action will be a valid literal
-                chain_id=ethereum_inquirer.chain_id,
-                account=ethereum_accounts[0],
-                action=action,
-                period_or_hash=TimestampOrBlockRange(
-                    range_type='timestamps',
-                    from_value=Timestamp(1720000000),
-                    to_value=Timestamp(1735000000),
-                ),
-            ))) == 1
-            result_list.append(result[0])
+        # get_transactions returns an iterator of lists. Consume the iterator, check that only
+        # one list was returned, and append that list to the result lists.
+        assert len(txlist_result := cast('list[list[EvmTransaction]]', list(indexer.get_transactions(  # noqa: E501
+            chain_id=ethereum_inquirer.chain_id,
+            account=ethereum_accounts[0],
+            action='txlist',
+            period_or_hash=period,
+        )))) == 1
+        txlist_results.append(txlist_result[0])
+
+        assert len(txlistinternal_result := cast(
+            'list[list[EvmInternalTransaction]]',
+            list(indexer.get_transactions(
+            chain_id=ethereum_inquirer.chain_id,
+            account=ethereum_accounts[0],
+            action='txlistinternal',
+            period_or_hash=period,
+            )),
+        )) == 1
+        txlistinteral_results.append(txlistinternal_result[0])
 
     # Check that there are 6 txs and 1 internal tx for the requested range and that the results
     # from each indexer all match. trace_id is excluded since it varies between indexers.

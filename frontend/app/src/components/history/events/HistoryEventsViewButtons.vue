@@ -4,6 +4,7 @@ import { DIALOG_TYPES, type DialogShowOptions } from '@/components/history/event
 import HistoryEventsIssueCheckButton from '@/components/history/events/HistoryEventsIssueCheckButton.vue';
 import { useCustomizedEventDuplicates } from '@/composables/history/events/use-customized-event-duplicates';
 import { useUnmatchedAssetMovements } from '@/composables/history/events/use-unmatched-asset-movements';
+import { useInternalTxConflicts } from '@/modules/history/internal-tx-conflicts/use-internal-tx-conflicts';
 import HistoryRefreshButton from '@/modules/history/refresh/HistoryRefreshButton.vue';
 
 const showAlerts = defineModel<boolean>('showAlerts', { default: false });
@@ -21,7 +22,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-type IssueCheckType = 'unmatched' | 'duplicates';
+type IssueCheckType = 'unmatched' | 'duplicates' | 'internalConflicts';
 
 const menuOpen = ref<boolean>(false);
 const checkingType = ref<IssueCheckType>();
@@ -29,6 +30,7 @@ const noIssuesFeedback = ref<IssueCheckType>();
 
 const { refreshUnmatchedAssetMovements, unmatchedCount, ignoredCount } = useUnmatchedAssetMovements();
 const { fetchCustomizedEventDuplicates, totalCount: duplicatesCount } = useCustomizedEventDuplicates();
+const { pendingCount: internalConflictsCount, fetchPendingCount } = useInternalTxConflicts();
 
 const { start: startFeedbackTimeout, stop: stopFeedbackTimeout } = useTimeoutFn(() => {
   set(noIssuesFeedback, undefined);
@@ -67,6 +69,23 @@ async function checkDuplicates(): Promise<void> {
     }
     else {
       showNoIssuesFeedback('duplicates');
+    }
+  }
+  finally {
+    set(checkingType, undefined);
+  }
+}
+
+async function checkInternalConflicts(): Promise<void> {
+  set(checkingType, 'internalConflicts');
+  try {
+    await fetchPendingCount();
+    if (get(internalConflictsCount) > 0) {
+      set(menuOpen, false);
+      emit('show:dialog', { type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
+    }
+    else {
+      showNoIssuesFeedback('internalConflicts');
     }
   }
   finally {
@@ -201,6 +220,28 @@ async function checkDuplicates(): Promise<void> {
           <RuiIcon :name="noIssuesFeedback === 'duplicates' ? 'lu-circle-check' : 'lu-copy'" />
         </template>
         {{ noIssuesFeedback === 'duplicates' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_duplicate_events') }}
+      </RuiButton>
+
+      <RuiButton
+        variant="list"
+        :disabled="processing || !!checkingType"
+        :loading="checkingType === 'internalConflicts'"
+        :color="noIssuesFeedback === 'internalConflicts' ? 'success' : undefined"
+        @click.stop="checkInternalConflicts()"
+      >
+        <template #prepend>
+          <RuiBadge
+            :model-value="internalConflictsCount > 0"
+            color="warning"
+            dot
+            placement="top"
+            offset-y="4"
+            offset-x="-4"
+          >
+            <RuiIcon :name="noIssuesFeedback === 'internalConflicts' ? 'lu-circle-check' : 'lu-git-merge'" />
+          </RuiBadge>
+        </template>
+        {{ noIssuesFeedback === 'internalConflicts' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_internal_conflicts') }}
       </RuiButton>
     </div>
   </RuiMenu>

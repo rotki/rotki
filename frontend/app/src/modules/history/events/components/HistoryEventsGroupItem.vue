@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { DuplicateHandlingStatus } from '@/composables/history/events/types';
 import type { LocationAndTxRef, PullEventPayload } from '@/types/history/events';
 import type { HistoryEventEntry, StandaloneEditableEvents } from '@/types/history/events/schemas';
 import DateDisplay from '@/components/display/DateDisplay.vue';
@@ -8,6 +7,7 @@ import HistoryEventsAction from '@/components/history/events/HistoryEventsAction
 import HistoryEventsIdentifier from '@/components/history/events/HistoryEventsIdentifier.vue';
 import IgnoredInAccountingIcon from '@/components/history/IgnoredInAccountingIcon.vue';
 import LocationIcon from '@/components/history/LocationIcon.vue';
+import { type DuplicateHandlingStatus, getHighlightClass, type HighlightType } from '@/composables/history/events/types';
 
 const {
   group,
@@ -26,6 +26,8 @@ const {
   duplicateHandlingStatus?: DuplicateHandlingStatus;
   hasHiddenIgnoredAssets?: boolean;
   showingIgnoredAssets?: boolean;
+  highlight?: boolean;
+  highlightType?: HighlightType;
   variant?: 'row' | 'card';
 }>();
 
@@ -56,6 +58,7 @@ const isCard = computed<boolean>(() => variant === 'card');
     v-if="isCard"
     data-cy="history-event-group"
     class="pt-1 pb-2 px-3 border-b border-rui-grey-200 dark:border-rui-grey-800 bg-rui-grey-100 dark:bg-dark-elevated"
+    :class="highlight && getHighlightClass(highlightType)"
   >
     <!-- Top row: Location + Identifier + Actions -->
     <div class="flex items-center justify-between gap-2 mb-0.5">
@@ -108,6 +111,7 @@ const isCard = computed<boolean>(() => variant === 'card');
       <HistoryEventsAction
         v-if="!hideActions"
         :event="group"
+        :group-events="groupEvents"
         :loading="loading"
         :duplicate-handling-status="duplicateHandlingStatus"
         class="shrink-0"
@@ -143,6 +147,7 @@ const isCard = computed<boolean>(() => variant === 'card');
     v-else
     data-cy="history-event-group"
     class="h-12 flex items-center gap-2.5 border-b border-default !border-t-rui-grey-400 dark:!border-t-rui-grey-600 pl-2 pr-4 bg-white dark:bg-dark-elevated contain-content"
+    :class="highlight && getHighlightClass(highlightType)"
   >
     <IgnoredInAccountingIcon
       v-if="group.ignoredInAccounting"
@@ -213,6 +218,7 @@ const isCard = computed<boolean>(() => variant === 'card');
     <HistoryEventsAction
       v-if="!hideActions"
       :event="group"
+      :group-events="groupEvents"
       :loading="loading"
       :duplicate-handling-status="duplicateHandlingStatus"
       class="shrink-0"

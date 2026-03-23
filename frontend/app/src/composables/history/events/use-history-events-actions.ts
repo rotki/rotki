@@ -19,6 +19,7 @@ import { useHistoryEventsDialogHandlers } from '@/composables/history/events/use
 import { useHistoryEventsAutoFetch } from '@/modules/history/events/use-history-events-auto-fetch';
 import { useHistoryDataFetching } from '@/modules/history/use-history-data-fetching';
 import { useConfirmStore } from '@/store/confirm';
+import { useHistoryStore } from '@/store/history';
 import {
   isEthBlockEvent,
   isEvmEvent,
@@ -38,6 +39,7 @@ interface UseHistoryEventsActionsOptions {
   fetchData: () => Promise<void>;
   /** The current collection of grouped history event rows. */
   groups: Ref<Collection<HistoryEventRow>>;
+  mainPage?: MaybeRefOrGetter<boolean>;
   /** When provided, enables periodic auto-fetching of events. */
   shouldFetchEventsRegularly?: Ref<boolean>;
   /** Opens a dialog (e.g. decoding status) when redecoding all events. */
@@ -71,6 +73,7 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
     entryTypes,
     fetchData: fetchEventsData,
     groups,
+    mainPage,
     onlyChains,
     shouldFetchEventsRegularly,
     showDialog,
@@ -88,6 +91,8 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
 
   const { show } = useConfirmStore();
   const { fetchAssociatedLocations, fetchLocationLabels } = useHistoryDataFetching();
+  const historyStore = useHistoryStore();
+  const { eventsVersion } = storeToRefs(historyStore);
   const { refreshTransactions } = useHistoryTransactions();
   const {
     fetchUndecodedTransactionsStatus,
@@ -196,6 +201,14 @@ export function useHistoryEventsActions(options: UseHistoryEventsActionsOptions)
   // Set up auto-fetch functionality if shouldFetchEventsRegularly is provided
   if (shouldFetchEventsRegularly) {
     useHistoryEventsAutoFetch(shouldFetchEventsRegularly, fetchDataAndLocations);
+  }
+
+  // Refresh when events are modified (e.g., from pinned sidebar matching)
+  if (mainPage) {
+    watch(eventsVersion, async (current, previous) => {
+      if (toValue(mainPage) && current > previous)
+        await fetchDataAndLocations();
+    });
   }
 
   const dialogHandlers = useHistoryEventsDialogHandlers({

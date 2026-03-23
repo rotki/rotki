@@ -4,7 +4,7 @@ import type { Pinned } from '@/types/session';
 import { startPromise } from '@shared/utils';
 import MatchAssetMovementsContent from '@/components/history/events/MatchAssetMovementsContent.vue';
 import PotentialMatchesContent from '@/components/history/events/PotentialMatchesContent.vue';
-import { useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
+import { HighlightTargetTypes, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
 import {
   type UnmatchedAssetMovement,
   useUnmatchedAssetMovements,
@@ -28,7 +28,13 @@ const potentialMatchMovement = ref<UnmatchedAssetMovement>();
 const showPotentialMatchesDrawer = ref<boolean>(false);
 
 const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
-const { clearAllHighlightTargets, clearHighlightTarget, requestNavigation, setHighlightTarget } = useHistoryEventNavigation();
+const {
+  clearAllHighlightTargets,
+  clearHighlightTarget,
+  highlightTargets,
+  requestNavigation,
+  setHighlightTarget,
+} = useHistoryEventNavigation();
 
 const {
   ignoredMovements,
@@ -53,8 +59,8 @@ function selectMovement(movement: UnmatchedAssetMovement): void {
   set(activePotentialMatchIdentifier, undefined);
   set(activeGroupIdentifier, movement.groupIdentifier);
 
-  clearHighlightTarget('potentialMatch');
-  setHighlightTarget('assetMovement', { groupIdentifier: movement.groupIdentifier, identifier });
+  clearHighlightTarget(HighlightTargetTypes.POTENTIAL_MATCH);
+  setHighlightTarget(HighlightTargetTypes.ASSET_MOVEMENT, { groupIdentifier: movement.groupIdentifier, identifier });
 
   requestNavigation({
     highlightedAssetMovement: identifier,
@@ -66,7 +72,7 @@ async function closePotentialMatchesDrawer(): Promise<void> {
   set(showPotentialMatchesDrawer, false);
   set(potentialMatchMovement, undefined);
   set(activePotentialMatchIdentifier, undefined);
-  clearHighlightTarget('potentialMatch');
+  clearHighlightTarget(HighlightTargetTypes.POTENTIAL_MATCH);
 
   // Clear the green highlight from route while preserving the yellow highlight
   const { highlightedPotentialMatch, ...remainingQuery } = get(route).query;
@@ -98,8 +104,8 @@ function showInHistoryEvents(movement: UnmatchedAssetMovement): void {
 
   set(activeGroupIdentifier, movement.groupIdentifier);
   set(activePotentialMatchIdentifier, undefined);
-  clearHighlightTarget('potentialMatch');
-  setHighlightTarget('assetMovement', { groupIdentifier: movement.groupIdentifier, identifier });
+  clearHighlightTarget(HighlightTargetTypes.POTENTIAL_MATCH);
+  setHighlightTarget(HighlightTargetTypes.ASSET_MOVEMENT, { groupIdentifier: movement.groupIdentifier, identifier });
 
   requestNavigation({
     highlightedAssetMovement: identifier,
@@ -112,7 +118,7 @@ function showPotentialMatchInHistoryEvents(
   unmatchedIdentifier?: number,
 ): void {
   set(activePotentialMatchIdentifier, data.identifier);
-  setHighlightTarget('potentialMatch', { groupIdentifier: data.groupIdentifier, identifier: data.identifier });
+  setHighlightTarget(HighlightTargetTypes.POTENTIAL_MATCH, { groupIdentifier: data.groupIdentifier, identifier: data.identifier });
 
   const yellowHighlight = unmatchedIdentifier
     ?? (Number(get(route).query.highlightedAssetMovement) || undefined);
@@ -180,6 +186,14 @@ watch(() => highlightedGroupIdentifier, (newHighlight, oldHighlight) => {
   // Update local ref and navigate to the new highlight
   set(activeGroupIdentifier, newHighlight);
   navigateToHighlightedMovement(newHighlight);
+});
+
+watch(highlightTargets, (targets) => {
+  if (Object.keys(targets).length > 0) {
+    return;
+  }
+  set(activeGroupIdentifier, undefined);
+  set(activePotentialMatchIdentifier, undefined);
 });
 
 onUnmounted(() => {

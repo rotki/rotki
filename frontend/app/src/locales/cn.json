@@ -3197,13 +3197,6 @@
           "action": "是的，忽略交易",
           "message": "一个交易至少需要一个事件。你想在会计中忽略这个交易吗？",
           "title": "无法删除事件"
-        },
-        "reset": {
-          "message": "该事务中有自定义事件",
-          "options": {
-            "keep_custom_events": "不要删除我的自定义事件",
-            "remove_custom_events": "移除自定义事件并重新解码事务"
-          }
         }
       },
       "dialog": {

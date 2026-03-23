@@ -49,6 +49,7 @@ describe('useHistoryEventFilter', () => {
       eventTypes: ref([]),
       eventSubTypes: ref([]),
       getEventTypeData: vi.fn().mockReturnValue(computed(() => undefined)),
+      historyEventTypeGlobalMapping: ref({}),
     });
     const { connected } = storeToRefs(useMainStore());
     set(connected, true);

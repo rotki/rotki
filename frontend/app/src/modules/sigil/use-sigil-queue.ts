@@ -184,6 +184,10 @@ function handleVisibilityChange(): void {
 }
 
 function startQueue(): void {
+  // Guard against double-invocation leaking the previous interval.
+  if (flushTimer)
+    clearInterval(flushTimer);
+
   flushTimer = setInterval(() => {
     startPromise(flush());
   }, FLUSH_INTERVAL_MS);

@@ -1,7 +1,7 @@
 import type { EffectScope } from 'vue';
-import type { HistoryEventNavigationRequest } from './use-history-event-navigation';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HighlightTargetTypes, type HistoryEventNavigationRequest } from './use-history-event-navigation';
 
 const mockRouterPush = vi.fn().mockResolvedValue(undefined);
 const mockGetHistoryEventGroupPosition = vi.fn();
@@ -111,15 +111,15 @@ describe('use-history-event-navigation', () => {
     const { useHistoryEventNavigation } = await importFresh();
     const { clearAllHighlightTargets, clearHighlightTarget, highlightTargets, setHighlightTarget } = scope.run(() => useHistoryEventNavigation())!;
 
-    setHighlightTarget('assetMovement', { groupIdentifier: 'group-1', identifier: 100 });
-    setHighlightTarget('potentialMatch', { groupIdentifier: 'group-2', identifier: 200 });
+    setHighlightTarget(HighlightTargetTypes.ASSET_MOVEMENT, { groupIdentifier: 'group-1', identifier: 100 });
+    setHighlightTarget(HighlightTargetTypes.POTENTIAL_MATCH, { groupIdentifier: 'group-2', identifier: 200 });
 
     expect(get(highlightTargets)).toEqual({
       assetMovement: { groupIdentifier: 'group-1', identifier: 100 },
       potentialMatch: { groupIdentifier: 'group-2', identifier: 200 },
     });
 
-    clearHighlightTarget('potentialMatch');
+    clearHighlightTarget(HighlightTargetTypes.POTENTIAL_MATCH);
     expect(get(highlightTargets)).toEqual({
       assetMovement: { groupIdentifier: 'group-1', identifier: 100 },
     });
@@ -139,7 +139,7 @@ describe('use-history-event-navigation', () => {
       const { useHistoryEventNavigation } = await importFresh();
       const { findHighlightPage, setHighlightTarget } = scope.run(() => useHistoryEventNavigation())!;
 
-      setHighlightTarget('assetMovement', { groupIdentifier: 'group-1', identifier: 100 });
+      setHighlightTarget(HighlightTargetTypes.ASSET_MOVEMENT, { groupIdentifier: 'group-1', identifier: 100 });
 
       const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(3); // position 25, limit 10 → page 3
@@ -162,9 +162,9 @@ describe('use-history-event-navigation', () => {
       const { useHistoryEventNavigation } = await importFresh();
       const { findHighlightPage, setHighlightTarget } = scope.run(() => useHistoryEventNavigation())!;
 
-      setHighlightTarget('potentialMatch', { groupIdentifier: 'group-green', identifier: 200 });
-      setHighlightTarget('assetMovement', { groupIdentifier: 'group-yellow', identifier: 100 });
-      setHighlightTarget('negativeBalance', { groupIdentifier: 'group-red', identifier: 300 });
+      setHighlightTarget(HighlightTargetTypes.POTENTIAL_MATCH, { groupIdentifier: 'group-green', identifier: 200 });
+      setHighlightTarget(HighlightTargetTypes.ASSET_MOVEMENT, { groupIdentifier: 'group-yellow', identifier: 100 });
+      setHighlightTarget(HighlightTargetTypes.NEGATIVE_BALANCE, { groupIdentifier: 'group-red', identifier: 300 });
 
       const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(1); // position 5, limit 10 → page 1
@@ -182,8 +182,8 @@ describe('use-history-event-navigation', () => {
       const { useHistoryEventNavigation } = await importFresh();
       const { findHighlightPage, setHighlightTarget } = scope.run(() => useHistoryEventNavigation())!;
 
-      setHighlightTarget('potentialMatch', { groupIdentifier: 'group-green', identifier: 200 });
-      setHighlightTarget('assetMovement', { groupIdentifier: 'group-yellow', identifier: 100 });
+      setHighlightTarget(HighlightTargetTypes.POTENTIAL_MATCH, { groupIdentifier: 'group-green', identifier: 200 });
+      setHighlightTarget(HighlightTargetTypes.ASSET_MOVEMENT, { groupIdentifier: 'group-yellow', identifier: 100 });
 
       const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(2); // position 15, limit 10 → page 2
@@ -196,7 +196,7 @@ describe('use-history-event-navigation', () => {
       const { useHistoryEventNavigation } = await importFresh();
       const { findHighlightPage, setHighlightTarget } = scope.run(() => useHistoryEventNavigation())!;
 
-      setHighlightTarget('assetMovement', { groupIdentifier: 'group-1', identifier: 100 });
+      setHighlightTarget(HighlightTargetTypes.ASSET_MOVEMENT, { groupIdentifier: 'group-1', identifier: 100 });
 
       const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(-1);
@@ -208,7 +208,7 @@ describe('use-history-event-navigation', () => {
       const { useHistoryEventNavigation } = await importFresh();
       const { findHighlightPage, setHighlightTarget } = scope.run(() => useHistoryEventNavigation())!;
 
-      setHighlightTarget('assetMovement', { groupIdentifier: 'group-1', identifier: 100 });
+      setHighlightTarget(HighlightTargetTypes.ASSET_MOVEMENT, { groupIdentifier: 'group-1', identifier: 100 });
 
       const page = await findHighlightPage(createFilterPayload(), 10);
       expect(page).toBe(-1);

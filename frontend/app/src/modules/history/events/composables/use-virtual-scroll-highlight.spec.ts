@@ -88,10 +88,13 @@ function setupComposable(overrides: {
   const loading = ref<boolean>(overrides.loading ?? false);
   const pagination = ref<TablePaginationData>(overrides.pagination ?? { page: 1, total: 0, limit: 10 });
 
+  const highlightedGroupIdentifier = ref<string | undefined>(undefined);
+
   const composable = useVirtualScrollHighlight({
     flattenedRows: computed<VirtualRow[]>(() => get(flattenedRows)),
     getRowHeight: (): number => 48,
     getCardHeight: (): number => 140,
+    highlightedGroupIdentifier: computed<string | undefined>(() => get(highlightedGroupIdentifier)),
     highlightedIdentifiers: computed<string[] | undefined>(() => get(highlightedIdentifiers)),
     highlightTypes: computed<Record<string, HighlightType> | undefined>(() => get(highlightTypes)),
     loading,

@@ -8,6 +8,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional, overload
 
 from rotkehlchen.accounting.types import MissingAcquisition, MissingPrice
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.db.settings import DBSettings
@@ -591,12 +592,122 @@ class CostBasisCalculator(CustomizableDateMixin):
         self.missing_acquisitions: list[MissingAcquisition] = []
         self.missing_prices: set[MissingPrice] = set()
 
-    def get_events(self, asset: Asset) -> CostBasisEvents:
-        """Custom getter for events so that we have common cost basis for some assets"""
-        if asset == A_WETH:
-            asset = A_ETH
+    def _resolve_bucket_asset(self, asset: Asset) -> Asset:
+        """Resolve an asset to its canonical cost basis bucket asset.
 
-        return self._events[asset]
+        - WETH is mapped to ETH (preserved existing behavior).
+        - If use_asset_collections_in_cost_basis is enabled, assets in a collection
+          are mapped to that collection's main_asset so that acquisitions and spends
+          of different assets in the same collection share a common cost basis bucket,
+          preventing false MissingAcquisitions.
+        - Assets not belonging to any collection remain unchanged.
+        - Results are cached in AssetResolver.collection_main_asset_cache (LRU, shared globally).
+        """
+        if asset == A_WETH:
+            return A_ETH
+
+        if not self.settings.use_asset_collections_in_cost_basis:
+            return asset
+
+        asset_id = asset.identifier
+        main_asset_id = AssetResolver.get_collection_main_asset(asset_id)
+        if main_asset_id is not None and main_asset_id != asset_id:
+            log.debug(
+                'Resolved asset to collection bucket for cost basis',
+                asset=asset_id,
+                bucket_asset=main_asset_id,
+            )
+            return Asset(main_asset_id)
+
+        return asset
+
+    def get_events(self, asset: Asset) -> CostBasisEvents:
+        """Custom getter for events so that we have common cost basis for some assets.
+
+        Assets belonging to the same global asset collection share a single cost basis
+        bucket keyed by the collection's main_asset, preventing MissingAcquisition errors
+        when acquisitions and spends use different but economically equivalent identifiers.
+        """
+        return self._events[self._resolve_bucket_asset(asset)]
+
+    def transfer_basis(
+            self,
+            out_asset: Asset,
+            in_asset: Asset,
+            out_amount: FVal,
+            in_amount: FVal,
+            timestamp: Timestamp,
+    ) -> None:
+        """Transfer cost basis lots from out_asset to in_asset preserving original prices.
+
+        Used for deposit/withdraw-wrapped events where no taxable event should occur
+        and cost basis should carry over from the source to the destination asset.
+        For same-bucket assets (e.g. ETH/WETH) this is a no-op since get_events()
+        resolves both to the same CostBasisEvents object.
+        """
+        if ZERO in (out_amount, in_amount):
+            log.error(
+                'Basis transfer called with zero amount',
+                out_asset=out_asset,
+                in_asset=in_asset,
+                out_amount=out_amount,
+                in_amount=in_amount,
+            )
+            return
+
+        source_events = self.get_events(out_asset)
+        dest_events = self.get_events(in_asset)
+
+        if source_events is dest_events:
+            return  # same cost basis bucket (e.g. ETH/WETH), nothing to do
+
+        # Scaling factors to preserve total cost when amounts differ (e.g. 100 DAI → 95 aDAI)
+        # new_amount = old_amount * amount_ratio, new_rate = old_rate * rate_ratio
+        # so new_amount * new_rate = old_amount * old_rate (total cost preserved)
+        amount_ratio = in_amount / out_amount
+        rate_ratio = out_amount / in_amount
+
+        remaining = out_amount
+        lots_to_transfer: list[tuple[FVal, Price, Timestamp, int]] = []
+
+        for acquisition in source_events.acquisitions_manager.processing_iterator():
+            if remaining <= ZERO:
+                break
+
+            if remaining < acquisition.remaining_amount:
+                lots_to_transfer.append((
+                    remaining, acquisition.rate, acquisition.timestamp, acquisition.index,
+                ))
+                source_events.acquisitions_manager.consume_result(remaining, out_asset)
+                remaining = ZERO
+                break
+
+            used = acquisition.remaining_amount
+            remaining -= used
+            lots_to_transfer.append((
+                used, acquisition.rate, acquisition.timestamp, acquisition.index,
+            ))
+            source_events.acquisitions_manager.consume_result(used, out_asset)
+            acquisition.remaining_amount = ZERO
+
+        if remaining != ZERO and not out_asset.is_fiat():
+            self.missing_acquisitions.append(
+                MissingAcquisition(
+                    originating_event_id=None,
+                    asset=out_asset,
+                    time=timestamp,
+                    found_amount=out_amount - remaining,
+                    missing_amount=remaining,
+                ),
+            )
+
+        for lot_amount, lot_rate, lot_timestamp, lot_index in lots_to_transfer:
+            dest_events.acquisitions_manager.add_in_event(AssetAcquisitionEvent(
+                amount=lot_amount * amount_ratio,
+                timestamp=lot_timestamp,
+                rate=Price(lot_rate * rate_ratio),
+                index=lot_index,
+            ))
 
     def reduce_asset_amount(
             self,

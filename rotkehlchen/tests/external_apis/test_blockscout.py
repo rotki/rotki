@@ -4,6 +4,8 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.optimism.constants import OP_BEDROCK_BLOCK, OP_BEDROCK_UPGRADE
+from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EthWithdrawalFilterQuery
@@ -15,7 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, TimestampMS
+from rotkehlchen.types import ChainID, Timestamp, TimestampMS
 
 
 @pytest.fixture(name='blockscout')
@@ -111,6 +113,102 @@ def test_hash_activity(blockscout):
         chain_id=ChainID.ETHEREUM,
         account=string_to_evm_address('0x6c66149E65c517605e0a2e4F707550ca342f9c1B'),
     ) == HasChainActivity.NONE
+
+
+def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> None:
+    """Blockscout does not properly index internal transactions on Optimism for blocks
+    predating the Bedrock upgrade. Queries touching that range must raise RemoteError so
+    that _try_indexers falls back to other indexers (Etherscan, Routescan) that may have
+    the data, rather than silently returning empty results.
+    """
+    with patch.object(blockscout.session, 'request') as mock_request:
+        # Block range entirely before Bedrock: RemoteError, no network call
+        with pytest.raises(RemoteError):
+            next(blockscout.get_transactions(
+                chain_id=ChainID.OPTIMISM,
+                account=make_evm_address(),
+                action='txlistinternal',
+                period_or_hash=TimestampOrBlockRange(
+                    range_type='blocks',
+                    from_value=0,
+                    to_value=OP_BEDROCK_BLOCK - 1,
+                ),
+            ))
+        assert mock_request.call_count == 0
+
+        # Block range crossing the Bedrock boundary: also RemoteError so the full range
+        # is retried by another indexer rather than returning only post-Bedrock results
+        with pytest.raises(RemoteError):
+            next(blockscout.get_transactions(
+                chain_id=ChainID.OPTIMISM,
+                account=make_evm_address(),
+                action='txlistinternal',
+                period_or_hash=TimestampOrBlockRange(
+                    range_type='blocks',
+                    from_value=OP_BEDROCK_BLOCK - 1000,
+                    to_value=OP_BEDROCK_BLOCK + 1000,
+                ),
+            ))
+        assert mock_request.call_count == 0
+
+        # Timestamp range entirely before Bedrock: RemoteError, no network call
+        with pytest.raises(RemoteError):
+            next(blockscout.get_transactions(
+                chain_id=ChainID.OPTIMISM,
+                account=make_evm_address(),
+                action='txlistinternal',
+                period_or_hash=TimestampOrBlockRange(
+                    range_type='timestamps',
+                    from_value=0,
+                    to_value=OP_BEDROCK_UPGRADE - 1,
+                ),
+            ))
+        assert mock_request.call_count == 0
+
+        # Hash-based query with a pre-Bedrock timestamp: RemoteError, no network call
+        with pytest.raises(RemoteError):
+            next(blockscout.get_transactions(
+                chain_id=ChainID.OPTIMISM,
+                account=None,
+                action='txlistinternal',
+                period_or_hash=make_evm_tx_hash(),
+                tx_timestamp=Timestamp(OP_BEDROCK_UPGRADE - 1),
+            ))
+        assert mock_request.call_count == 0
+
+    # Post-Bedrock block range on Optimism should reach the network normally
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        status_code=HTTPStatus.OK,
+        text='{"message":"No internal transactions found","result":[],"status":"0"}',
+    )) as mock_post:
+        list(blockscout.get_transactions(
+            chain_id=ChainID.OPTIMISM,
+            account=make_evm_address(),
+            action='txlistinternal',
+            period_or_hash=TimestampOrBlockRange(
+                range_type='blocks',
+                from_value=OP_BEDROCK_BLOCK + 1,
+                to_value=OP_BEDROCK_BLOCK + 1000,
+            ),
+        ))
+        assert mock_post.call_count == 1
+
+    # Same pre-Bedrock block range on Ethereum should reach the network (no Bedrock concept)
+    with patch.object(blockscout.session, 'request', return_value=MockResponse(
+        status_code=HTTPStatus.OK,
+        text='{"message":"No internal transactions found","result":[],"status":"0"}',
+    )) as mock_eth:
+        list(blockscout.get_transactions(
+            chain_id=ChainID.ETHEREUM,
+            account=make_evm_address(),
+            action='txlistinternal',
+            period_or_hash=TimestampOrBlockRange(
+                range_type='blocks',
+                from_value=0,
+                to_value=OP_BEDROCK_BLOCK - 1,
+            ),
+        ))
+        assert mock_eth.call_count == 1
 
 
 def test_missing_data_error(blockscout: Blockscout) -> None:

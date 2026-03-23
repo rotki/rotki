@@ -3066,13 +3066,6 @@
           "action": "Yes, Ignore the Transaction",
           "message": "A transaction requires at least 1 event. Do you want to ignore the transaction in accounting instead?",
           "title": "Cannot Delete Event"
-        },
-        "reset": {
-          "message": "Υπάρχουν προσαρμοσμένα συμβάντα σε αυτή τη συναλλαγή",
-          "options": {
-            "keep_custom_events": "Μην αφαιρείτε τα προσαρμοσμένα συμβάντα μου",
-            "remove_custom_events": "Αφαίρεση προσαρμοσμένων συμβάντων και επανακωδικοποίηση της συναλλαγής"
-          }
         }
       },
       "dialog": {

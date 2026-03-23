@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.rainbow.constants import (
     RAINBOW_ROUTER_CONTRACT,
 )
 from rotkehlchen.chain.evm.transactions import EvmTransactions
+from rotkehlchen.chain.evm.types import EvmIndexer, SerializableChainIndexerOrder
 from rotkehlchen.constants.assets import A_BSC_BNB, A_ETH, A_OP, A_POL
 from rotkehlchen.db.constants import TX_INTERNALS_QUERIED
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -21,6 +22,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.unit.test_types import LEGACY_TESTS_INDEXER_ORDER
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
+    ChainID,
     EvmInternalTransaction,
     Location,
     TimestampMS,
@@ -552,6 +554,64 @@ def test_rainbow_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
         amount=FVal(fee_amount),
         location_label=user_address,
         notes=f'Spend {fee_amount} POL as Rainbow fee',
+        counterparty=CPT_RAINBOW_SWAPS,
+        address=RAINBOW_ROUTER_CONTRACT,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(order={ChainID.BASE: [EvmIndexer.BLOCKSCOUT]})}])  # noqa: E501
+@pytest.mark.parametrize('base_accounts', [['0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c']])
+def test_rainbow_swap_token_to_eth_on_base(base_inquirer, base_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x1dadb9930dfd8732fe2281435fabf3b32d0a1317b02c4484153e3c9c8e5aa5ce')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
+    gas_fees, swap_amount, received_amount, fee_amount, timestamp, user_address = '0.000764710318845322', '2043495.674885273676574334', '0.168875532937728981', '0.001447747887010283', TimestampMS(1710032189000), base_accounts[0]  # noqa: E501
+    assert events == [EvmEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(gas_fees),
+        location_label=user_address,
+        notes=f'Burn {gas_fees} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:8453/erc20:0x0d97F261b1e88845184f678e2d1e7a98D9FD38dE'),
+        amount=FVal(swap_amount),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} TYBG in Rainbow',
+        address=RAINBOW_ROUTER_CONTRACT,
+        counterparty=CPT_RAINBOW_SWAPS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_ETH,
+        amount=FVal(received_amount),
+        location_label=user_address,
+        notes=f'Receive {received_amount} ETH as the result of a swap in Rainbow',
+        address=RAINBOW_ROUTER_CONTRACT,
+        counterparty=CPT_RAINBOW_SWAPS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=3,
+        timestamp=timestamp,
+        location=Location.BASE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        amount=FVal(fee_amount),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} ETH as Rainbow fee',
         counterparty=CPT_RAINBOW_SWAPS,
         address=RAINBOW_ROUTER_CONTRACT,
     )]

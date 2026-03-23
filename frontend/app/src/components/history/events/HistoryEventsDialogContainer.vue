@@ -71,6 +71,12 @@ const CustomizedEventDuplicatesDialog = defineAsyncComponent({
   loadingComponent: DialogLoadingComponent,
 });
 
+const InternalTxConflictsDialog = defineAsyncComponent({
+  delay: 200,
+  loader: () => import('@/modules/history/internal-tx-conflicts/InternalTxConflictsDialog.vue'),
+  loadingComponent: DialogLoadingComponent,
+});
+
 const MatchAssetMovementsDialog = defineAsyncComponent({
   delay: 200,
   loader: () => import('@/components/history/events/MatchAssetMovementsDialog.vue'),
@@ -213,6 +219,11 @@ defineExpose({
 
     <CustomizedEventDuplicatesDialog
       v-if="currentDialog.type === DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES"
+      v-model="dialogIsOpen"
+    />
+
+    <InternalTxConflictsDialog
+      v-if="currentDialog.type === DIALOG_TYPES.INTERNAL_TX_CONFLICTS"
       v-model="dialogIsOpen"
     />
 

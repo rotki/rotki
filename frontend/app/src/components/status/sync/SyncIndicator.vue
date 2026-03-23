@@ -8,6 +8,7 @@ import SyncSettings from '@/components/status/sync/SyncSettings.vue';
 import { useLinks } from '@/composables/links';
 import { useSync } from '@/composables/session/sync';
 import { useLogout } from '@/modules/account/use-logout';
+import { PremiumFeature, useFeatureAccess } from '@/modules/premium/use-feature-access';
 import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useTaskStore } from '@/modules/tasks/use-task-store';
@@ -23,6 +24,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { premium, premiumSync } = storeToRefs(usePremiumStore());
 const { lastDataUpload } = storeToRefs(useSessionMetadataStore());
+const { allowed: cloudBackupAllowed } = useFeatureAccess(PremiumFeature.CLOUD_BACKUP);
 
 const {
   cancelSync,
@@ -86,6 +88,9 @@ const uploadProgressIcon = computed<string>(() => {
 });
 
 const tooltip = computed<string>(() => {
+  if (!get(cloudBackupAllowed))
+    return t('sync_indicator.cloud_backup_unavailable');
+
   if (get(uploadStatus)) {
     const title = t('sync_indicator.db_upload_result.title');
     const message = t('sync_indicator.db_upload_result.message', {
@@ -171,14 +176,24 @@ watchImmediate(runCounter, (runCounter) => {
           v-bind="attrs"
         >
           <RuiBadge
-            :model-value="!!uploadStatus"
-            color="warning"
-            dot
+            :model-value="!!uploadStatus || !cloudBackupAllowed"
+            :color="!cloudBackupAllowed ? undefined : 'warning'"
+            :dot="cloudBackupAllowed"
             placement="top"
-            offset-y="4"
-            size="lg"
+            :offset-y="cloudBackupAllowed ? 4 : 12"
+            :offset-x="cloudBackupAllowed ? undefined : -6"
+            :size="cloudBackupAllowed ? 'lg' : 'sm'"
             class="flex items-center"
           >
+            <template
+              v-if="!cloudBackupAllowed"
+              #icon
+            >
+              <RuiIcon
+                name="lu-lock-keyhole"
+                size="10"
+              />
+            </template>
             <RuiIcon
               v-if="uploadStatus"
               name="lu-cloud-off-fill"
@@ -221,10 +236,34 @@ watchImmediate(runCounter, (runCounter) => {
               </span>
             </div>
           </div>
-          <SyncSettings v-model="syncSettingMenuOpen" />
+          <SyncSettings
+            v-model="syncSettingMenuOpen"
+            :disabled="!cloudBackupAllowed"
+          />
         </div>
         <RuiAlert
-          v-if="uploadProgress"
+          v-if="!cloudBackupAllowed"
+          type="info"
+          outlined
+          class="border border-rui-info"
+        >
+          <div class="text-sm">
+            {{ t('sync_indicator.cloud_backup_unavailable') }}
+          </div>
+          <div class="flex flex-row-reverse -mb-1">
+            <RuiButton
+              variant="text"
+              color="primary"
+              size="sm"
+              :href="href"
+              @click="onLinkClick()"
+            >
+              {{ t('sync_indicator.cloud_backup_upgrade') }}
+            </RuiButton>
+          </div>
+        </RuiAlert>
+        <RuiAlert
+          v-else-if="uploadProgress"
           type="info"
           outlined
           class="border border-rui-info"
@@ -302,6 +341,7 @@ watchImmediate(runCounter, (runCounter) => {
         </RuiAlert>
         <SyncButtons
           :pending="pending"
+          :disabled="!cloudBackupAllowed"
           @action="showConfirmation($event)"
         />
       </div>
@@ -311,7 +351,7 @@ watchImmediate(runCounter, (runCounter) => {
     <RuiBadge
       placement="top"
       offset-y="12"
-      offset-x="-10"
+      offset-x="-6"
       size="sm"
     >
       <template #icon>

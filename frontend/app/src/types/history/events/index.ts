@@ -23,10 +23,18 @@ export interface TransactionRequestPayload {
   readonly accounts: BlockchainAddress[];
 }
 
+export interface LinkedMovementMatch {
+  readonly identifier: number;
+  readonly groupIdentifier: string;
+  readonly timeRange: number;
+  readonly tolerance: string;
+}
+
 export interface PullLocationTransactionPayload {
   readonly transactions: LocationAndTxRef[];
   readonly deleteCustom?: boolean;
   readonly customIndexersOrder?: string[];
+  readonly linkedMovement?: LinkedMovementMatch;
 }
 
 export interface PullEthBlockEventPayload {

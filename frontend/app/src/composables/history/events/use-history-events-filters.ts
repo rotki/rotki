@@ -5,14 +5,13 @@ import type { HistoryEventRequestPayload } from '@/modules/history/events/reques
 import type { Collection } from '@/types/collection';
 import type { HistoryEventRow } from '@/types/history/events/schemas';
 import { type Account, type HistoryEventEntryType, toSnakeCase, type Writeable } from '@rotki/common';
-import { startPromise } from '@shared/utils';
 import { objectOmit } from '@vueuse/shared';
 import { isEqual } from 'es-toolkit';
 import { type Filters, type Matcher, useHistoryEventFilter } from '@/composables/filters/events';
 import { useHistoryEvents } from '@/composables/history/events';
 import { isValidHistoryEventState } from '@/composables/history/events/mapping/state';
 import { DuplicateHandlingStatus, type HighlightType } from '@/composables/history/events/types';
-import { HIGHLIGHT_FETCH_DEBOUNCE, HIGHLIGHT_FILTER_DEBOUNCE, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
+import { HIGHLIGHT_FETCH_DEBOUNCE, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
 import { useRefWithDebounce } from '@/composables/ref';
 import { usePaginationFilters } from '@/composables/use-pagination-filter';
 import { TableId } from '@/modules/table/use-remember-table-sorting';
@@ -57,6 +56,7 @@ interface UseHistoryEventsFiltersReturn {
   groupLoading: Ref<boolean>;
   groups: Ref<Collection<HistoryEventRow>>;
   hasActiveFilters: ComputedRef<boolean>;
+  highlightedGroupIdentifier: ComputedRef<string | undefined>;
   highlightedIdentifiers: ComputedRef<string[] | undefined>;
   highlightTypes: ComputedRef<Record<string, HighlightType>>;
   identifiers: ComputedRef<string[] | undefined>;
@@ -96,7 +96,10 @@ export function useHistoryEventsFilters(
 
   const route = useRoute();
   const { fetchHistoryEvents } = useHistoryEvents();
-  const { findHighlightPage } = useHistoryEventNavigation();
+  const { clearAllHighlightTargets, isNavigating } = useHistoryEventNavigation();
+
+  const highlightKeys = ['highlightedAssetMovement', 'highlightedInternalTxConflict', 'highlightedPotentialMatch', 'highlightedNegativeBalanceEvent'] as const;
+  const shouldPreserveHighlights = ref<boolean>(highlightKeys.some(key => !!get(route).query[key]));
 
   const fetchHistoryEventsTagged = async (
     payload: MaybeRef<HistoryEventRequestPayload>,
@@ -209,6 +212,7 @@ export function useHistoryEventsFilters(
         'duplicateHandlingStatus',
         'targetGroupIdentifier',
         'highlightedAssetMovement',
+        'highlightedInternalTxConflict',
         'highlightedPotentialMatch',
         'highlightedNegativeBalanceEvent',
       ],
@@ -219,16 +223,22 @@ export function useHistoryEventsFilters(
     queryParamsOnly: computed(() => {
       const duplicateHandlingStatusValue = get(duplicateHandlingStatusFromQuery);
       const groupIdentifiersValue = get(groupIdentifiersFromQuery);
-      const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
+      const preserve = get(shouldPreserveHighlights);
+      const { highlightedAssetMovement, highlightedInternalTxConflict, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
 
       const missingAcquisitionValue = get(missingAcquisitionFromQuery);
       const stateMarkersValue = get(toggles, 'stateMarkers');
       return {
         duplicateHandlingStatus: duplicateHandlingStatusValue,
         groupIdentifiers: groupIdentifiersValue?.join(','),
-        highlightedAssetMovement,
-        highlightedNegativeBalanceEvent,
-        highlightedPotentialMatch,
+        ...(preserve
+          ? {
+              highlightedAssetMovement,
+              highlightedInternalTxConflict,
+              highlightedNegativeBalanceEvent,
+              highlightedPotentialMatch,
+            }
+          : {}),
         locationLabels: get(usedLocationLabels),
         missingAcquisitionIdentifier: missingAcquisitionValue?.join(','),
         ...(stateMarkersValue.length > 0 ? { stateMarkers: stateMarkersValue.join(',') } : {}),
@@ -284,31 +294,32 @@ export function useHistoryEventsFilters(
   const highlightedIdentifiers = computed<string[] | undefined>(() => {
     const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
     const identifiers: string[] = [];
-
     if (highlightedAssetMovement)
       identifiers.push(highlightedAssetMovement.toString());
     if (highlightedPotentialMatch)
       identifiers.push(highlightedPotentialMatch.toString());
     if (highlightedNegativeBalanceEvent)
       identifiers.push(highlightedNegativeBalanceEvent.toString());
-
     return identifiers.length > 0 ? identifiers : undefined;
   });
-
+  const highlightedGroupIdentifier = computed<string | undefined>(() => {
+    const { highlightedInternalTxConflict } = get(route).query;
+    return highlightedInternalTxConflict ? highlightedInternalTxConflict.toString() : undefined;
+  });
   const highlightTypes = computed<Record<string, HighlightType>>(() => {
     const { highlightedAssetMovement, highlightedPotentialMatch, highlightedNegativeBalanceEvent } = get(route).query;
     const types: Record<string, HighlightType> = {};
-
     if (highlightedAssetMovement)
       types[highlightedAssetMovement.toString()] = 'warning';
     if (highlightedNegativeBalanceEvent)
       types[highlightedNegativeBalanceEvent.toString()] = 'error';
     if (highlightedPotentialMatch)
       types[highlightedPotentialMatch.toString()] = 'success';
-
+    const groupId = get(highlightedGroupIdentifier);
+    if (groupId)
+      types[`group:${groupId}`] = 'warning';
     return types;
   });
-
   const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
     const entryTypesValue = toValue(entryTypes);
     return {
@@ -336,41 +347,29 @@ export function useHistoryEventsFilters(
   }
 
   /**
-   * Calculate position of highlighted event within current filters and set the page directly.
-   * This avoids a duplicate fetch by setting the page before the pagination system's debounced fetch fires.
-   * The filter watcher fires at HIGHLIGHT_FILTER_DEBOUNCE while the pagination fetch fires at HIGHLIGHT_FETCH_DEBOUNCE,
-   * so if the position API responds quickly, setPage() resets the debounce and only one fetch occurs.
+   * Clear highlights when the user changes page or filters.
+   * Sort changes (orderByAttributes, ascending) are excluded so highlights
+   * persist through reordering.
    */
-  let navigationGeneration = 0;
-
-  async function navigateToHighlightPosition(): Promise<void> {
-    const generation = ++navigationGeneration;
-    const page = await findHighlightPage(get(pageParams), get(pagination).limit);
-
-    if (generation !== navigationGeneration)
+  watch(pageParams, (params, oldParams) => {
+    if (!oldParams || !get(shouldPreserveHighlights) || get(isNavigating))
       return;
 
-    if (page >= 1)
-      setPage(page);
-  }
-
-  /**
-   * Re-navigate highlights when any parameter affecting the result set changes.
-   * Watches the aggregated pageParams (filters, toggles, limit, etc.) but ignores
-   * offset changes since those are just page navigation.
-   */
-  watchDebounced(pageParams, (params, oldParams) => {
-    if (!oldParams)
-      return;
-
-    const current = objectOmit(params, ['offset']);
-    const previous = objectOmit(oldParams, ['offset']);
+    const current = objectOmit(params, ['orderByAttributes', 'ascending']);
+    const previous = objectOmit(oldParams, ['orderByAttributes', 'ascending']);
 
     if (isEqual(current, previous))
       return;
 
-    startPromise(navigateToHighlightPosition());
-  }, { debounce: HIGHLIGHT_FILTER_DEBOUNCE, deep: true });
+    set(shouldPreserveHighlights, false);
+    clearAllHighlightTargets();
+  }, { deep: true });
+
+  /** Re-enable highlight preservation when new highlight params arrive via navigation. */
+  watch(() => get(route).query, (query, oldQuery) => {
+    if (highlightKeys.some(key => query[key] && query[key] !== oldQuery?.[key]))
+      set(shouldPreserveHighlights, true);
+  });
 
   return {
     clearFilters,
@@ -381,6 +380,7 @@ export function useHistoryEventsFilters(
     groupLoading,
     groups,
     hasActiveFilters,
+    highlightedGroupIdentifier,
     highlightedIdentifiers,
     highlightTypes,
     identifiers: missingAcquisitionFromQuery,

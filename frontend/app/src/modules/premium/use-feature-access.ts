@@ -28,12 +28,20 @@ export function useFeatureAccess(feature: MaybeRefOrGetter<PremiumFeature>): Use
       return false;
 
     const caps = get(capabilities);
-    return caps?.[toValue(feature)]?.enabled ?? false;
+    const featureValue = toValue(feature);
+    if (featureValue === PremiumFeature.CLOUD_BACKUP)
+      return (caps?.maxBackupSizeMb ?? 0) > 0;
+
+    return caps?.[featureValue]?.enabled ?? false;
   });
 
   const minimumTier = computed<string | null>(() => {
     const caps = get(capabilities);
-    return caps?.[toValue(feature)]?.minimumTier ?? null;
+    const featureValue = toValue(feature);
+    if (featureValue === PremiumFeature.CLOUD_BACKUP)
+      return null;
+
+    return caps?.[featureValue]?.minimumTier ?? null;
   });
 
   const currentTier = computed<string>(() => get(capabilities)?.currentTier ?? 'Free');

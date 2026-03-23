@@ -100,6 +100,7 @@ export const BaseAccountingSettings = z.object({
   ethStakingTaxableAfterWithdrawalEnabled: z.boolean().nullish(),
   includeCrypto2crypto: z.boolean(),
   includeFeesInCostBasis: z.boolean().nullish(),
+  useAssetCollectionsInCostBasis: z.boolean().nullish(),
   includeGasCosts: z.boolean(),
   profitCurrency: z.string().nullish(),
   taxfreeAfterPeriod: z.number().nullish(),
@@ -157,6 +158,7 @@ function getAccountingSettings(settings: UserSettings): AccountingSettings {
     pnlCsvHaveSummary: settings.pnlCsvHaveSummary,
     pnlCsvWithFormulas: settings.pnlCsvWithFormulas,
     taxfreeAfterPeriod: settings.taxfreeAfterPeriod,
+    useAssetCollectionsInCostBasis: settings.useAssetCollectionsInCostBasis,
   };
 }
 

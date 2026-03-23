@@ -16,7 +16,7 @@ import {
 
 const show = defineModel<boolean>('show', { required: true });
 
-const { payload } = defineProps<{
+const { payload, hasCustomEvents, showIndexerOptions } = defineProps<{
   payload: PullEventPayload | undefined;
   hasCustomEvents?: boolean;
   showIndexerOptions?: boolean;
@@ -28,6 +28,8 @@ const emit = defineEmits<{
 
 const deleteCustom = ref<boolean>(false);
 const localIndexerOrder = ref<PrioritizedListId[]>([]);
+
+const forceDeleteCustom = computed<boolean>(() => !!hasCustomEvents);
 
 const { t } = useI18n({ useScope: 'global' });
 const { getEvmChainName } = useSupportedChains();
@@ -79,7 +81,7 @@ function getInitialIndexerOrder(): PrioritizedListId[] {
 }
 
 function resetState(): void {
-  set(deleteCustom, false);
+  set(deleteCustom, get(forceDeleteCustom));
   set(localIndexerOrder, getInitialIndexerOrder());
 }
 
@@ -113,41 +115,19 @@ watch(show, (value) => {
         {{ t('transactions.actions.redecode_events') }}
       </template>
 
-      <!-- Custom events section - only show when there are custom events -->
-      <SettingsItem
+      <!-- Custom events warning - only show when there are custom events -->
+      <RuiAlert
         v-if="hasCustomEvents"
-        class="!pt-0 pb-6"
-        :class="{ '!border-0 !pb-0': !showIndexerOptions || !isEvmEvent }"
+        type="warning"
+        class="mb-4"
       >
-        <template #title>
-          {{ t('transactions.events.confirmation.reset.custom_events_title') }}
-        </template>
-        <template #subtitle>
-          {{ t('transactions.events.confirmation.reset.message') }}
-        </template>
-        <RuiRadioGroup
-          v-model="deleteCustom"
-          color="primary"
-          :hide-details="true"
-          size="sm"
-        >
-          <RuiRadio :value="false">
-            <span class="text-sm">{{ t('transactions.events.confirmation.reset.options.keep_custom_events') }}</span>
-          </RuiRadio>
-          <RuiRadio
-            :value="true"
-            class="-my-2"
-          >
-            <span class="text-sm">{{ t('transactions.events.confirmation.reset.options.remove_custom_events') }}</span>
-          </RuiRadio>
-        </RuiRadioGroup>
-      </SettingsItem>
+        {{ t('transactions.events.confirmation.reset.custom_events_warning') }}
+      </RuiAlert>
 
       <!-- Indexer order section for EVM events (only when showIndexerOptions is true) -->
       <SettingsItem
         v-if="showIndexerOptions && isEvmEvent"
         class="!py-0 !border-0"
-        :class="{ '!pt-4': hasCustomEvents }"
       >
         <template #title>
           {{ t('transactions.events.confirmation.reset.indexer_order_title') }}

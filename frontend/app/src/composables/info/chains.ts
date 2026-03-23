@@ -44,6 +44,7 @@ interface UseSupportedChainsReturn {
   getChainAccountType: (chain: string) => string | undefined;
   getChainImageUrl: (chain: string) => string;
   getChainName: (location: string) => string;
+  getEvmChainId: (name: string) => number | undefined;
   getEvmChainName: (chain: string) => string | undefined;
   getNativeAsset: (chain: string) => string;
   isBtcChains: (chain: string) => boolean;
@@ -166,6 +167,9 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
     const info = getChainInfoById(chain);
     return (info && 'nativeToken' in info ? info.nativeToken : undefined) ?? chain.toUpperCase();
   };
+
+  const getEvmChainId = (name: string): number | undefined =>
+    get(allEvmChains).find(x => x.name === name)?.id;
 
   // Chain matching and name resolution
 
@@ -297,6 +301,7 @@ export const useSupportedChains = createSharedComposable((): UseSupportedChainsR
     getChainAccountType,
     getChainImageUrl,
     getChainName,
+    getEvmChainId,
     getEvmChainName,
     getNativeAsset,
     isBtcChains,

@@ -2,7 +2,7 @@ import type { TablePaginationData } from '@rotki/ui-library';
 import type { ComputedRef, Ref } from 'vue';
 import type { HistoryEventRequestPayload } from '@/modules/history/events/request-types';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
-import { HIGHLIGHT_LOADING_START_TIMEOUT, type HistoryEventNavigationRequest, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
+import { HIGHLIGHT_LOADING_START_TIMEOUT, HighlightTargetTypes, type HistoryEventNavigationRequest, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
 import { useNotifications } from '@/modules/notifications/use-notifications';
 import { Routes } from '@/router/routes';
 import { getErrorMessage } from '@/utils/error-handling';
@@ -34,7 +34,7 @@ export function useHistoryEventNavigationConsumer(
   watchImmediate(route, ({ query }) => {
     const { targetGroupIdentifier, highlightedNegativeBalanceEvent } = query;
     if (targetGroupIdentifier && highlightedNegativeBalanceEvent) {
-      setHighlightTarget('negativeBalance', {
+      setHighlightTarget(HighlightTargetTypes.NEGATIVE_BALANCE, {
         groupIdentifier: targetGroupIdentifier.toString(),
         identifier: Number(highlightedNegativeBalanceEvent),
       });
@@ -49,8 +49,8 @@ export function useHistoryEventNavigationConsumer(
    * Clear all highlight query params from the current route.
    */
   async function clearHighlightsFromRoute(): Promise<void> {
-    const { highlightedAssetMovement, highlightedNegativeBalanceEvent, highlightedPotentialMatch, ...remainingQuery } = get(route).query;
-    if (highlightedAssetMovement || highlightedPotentialMatch || highlightedNegativeBalanceEvent) {
+    const { highlightedAssetMovement, highlightedInternalTxConflict, highlightedNegativeBalanceEvent, highlightedPotentialMatch, ...remainingQuery } = get(route).query;
+    if (highlightedAssetMovement || highlightedInternalTxConflict || highlightedPotentialMatch || highlightedNegativeBalanceEvent) {
       await router.replace({ query: remainingQuery });
     }
   }
@@ -69,6 +69,9 @@ export function useHistoryEventNavigationConsumer(
 
     if (request.highlightedNegativeBalanceEvent)
       query.highlightedNegativeBalanceEvent = request.highlightedNegativeBalanceEvent.toString();
+
+    if (request.highlightedInternalTxConflict)
+      query.highlightedInternalTxConflict = request.highlightedInternalTxConflict;
 
     return query;
   }

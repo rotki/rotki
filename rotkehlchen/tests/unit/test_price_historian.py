@@ -4,12 +4,21 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
-from rotkehlchen.constants.assets import A_AAVE, A_BTC, A_ETH_MATIC, A_ETH_POL, A_POL, A_USD
+from rotkehlchen.constants.assets import (
+    A_AAVE,
+    A_BTC,
+    A_CRV,
+    A_ETH_MATIC,
+    A_ETH_POL,
+    A_LINK,
+    A_POL,
+    A_USD,
+)
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
@@ -418,3 +427,48 @@ def test_matic_pol_hardforked_price(price_historian: PriceHistorian) -> None:
                 to_asset=A_USD,
                 timestamp=timestamp,
             ).is_close(expected_price, max_diff='0.003')
+
+
+def test_historical_price_underlying_tokens(globaldb: 'GlobalDBHandler') -> None:
+    """Test that querying a historical price for a token with underlying tokens
+    resolves the price from the underlying tokens weighted by their proportions."""
+    aave_weight, link_weight, crv_weight = FVal('0.6'), FVal('0.2'), FVal('0.2')
+    address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    token = EvmToken.initialize(
+        address=address,
+        chain_id=ChainID.ETHEREUM,
+        token_kind=TokenKind.ERC20,
+        decimals=18,
+        name='Test',
+        symbol='YAB',
+        underlying_tokens=[
+            UnderlyingToken(address=A_AAVE.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=aave_weight),  # noqa: E501
+            UnderlyingToken(address=A_LINK.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=link_weight),  # noqa: E501
+            UnderlyingToken(address=A_CRV.resolve_to_evm_token().evm_address, token_kind=TokenKind.ERC20, weight=crv_weight),  # noqa: E501
+        ],
+    )
+    globaldb.add_asset(token)
+
+    query_timestamp = Timestamp(1710719119)
+    # Add manual historical prices for each underlying token
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=A_AAVE, to_asset=A_USD, price=Price(FVal('100')),
+        timestamp=query_timestamp, source=HistoricalPriceOracle.MANUAL,
+    ))
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=A_LINK, to_asset=A_USD, price=Price(FVal('25')),
+        timestamp=query_timestamp, source=HistoricalPriceOracle.MANUAL,
+    ))
+    globaldb.add_single_historical_price(HistoricalPrice(
+        from_asset=A_CRV, to_asset=A_USD, price=Price(FVal('10')),
+        timestamp=query_timestamp, source=HistoricalPriceOracle.MANUAL,
+    ))
+
+    # expected = 100*0.6 + 25*0.2 + 10*0.2 = 60 + 5 + 2 = 67
+    price = PriceHistorian.get_price_for_special_asset(
+        from_asset=token,
+        to_asset=A_USD,
+        timestamp=query_timestamp,
+        max_seconds_distance=3600,
+    )
+    assert price == Price(FVal('67'))

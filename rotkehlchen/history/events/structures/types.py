@@ -107,6 +107,7 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     LOSS = auto()
     DEPOSIT_TO_PROTOCOL = auto()
     WITHDRAW_FROM_PROTOCOL = auto()
+    SPAM = auto()  # for spam/phishing transactions
 
     def serialize_or_none(self) -> str | None:
         return self.serialize()
@@ -202,6 +203,7 @@ class EventCategory(Enum):
     SELF_TRANSACTION = 60, EventDirection.NEUTRAL
     PROTOCOL_DEPOSIT = 61, EventDirection.NEUTRAL
     PROTOCOL_WITHDRAWAL = 62, EventDirection.NEUTRAL
+    SPAM = 63, EventDirection.IN
 
     @property
     def direction(self) -> EventDirection:

@@ -1,6 +1,6 @@
 import type { SigilEvent, SigilEventMap } from '@/modules/sigil/types';
 import { startPromise } from '@shared/utils';
-import { createSharedComposable } from '@vueuse/core';
+import { createPersistentSharedComposable } from '@/modules/common/use-persistent-shared-composable';
 import { sigilBus } from '@/modules/sigil/event-bus';
 import { useBalancesSummaryHandler } from '@/modules/sigil/handlers/balances-summary';
 import { useExchangesSummaryHandler } from '@/modules/sigil/handlers/exchanges-summary';
@@ -10,6 +10,7 @@ import { enqueue, startQueue, stopQueue, WEBSITE_ID } from '@/modules/sigil/use-
 import { router } from '@/router';
 import { useMainStore } from '@/store/main';
 import { useSessionAuthStore } from '@/store/session/auth';
+import { usePremiumStore } from '@/store/session/premium';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { logger } from '@/utils/logging';
 
@@ -44,10 +45,11 @@ function buildSafeUrl(to: { name?: string | symbol | null | undefined; params: R
   });
 }
 
-export const useSigil = createSharedComposable(() => {
+export const useSigil = createPersistentSharedComposable(({ acquireBusy, releaseBusy }) => {
   const { logged } = storeToRefs(useSessionAuthStore());
   const { submitUsageAnalytics } = storeToRefs(useGeneralSettingsStore());
   const { isDevelop } = storeToRefs(useMainStore());
+  const { capabilities } = storeToRefs(usePremiumStore());
 
   // Initialize handlers in Vue context so they can resolve stores/composables.
   const collectSessionConfig = useSessionConfigHandler();
@@ -78,7 +80,17 @@ export const useSigil = createSharedComposable(() => {
     logger.debug(`[sigil] chronicle: ${event}`);
   }
 
-  function onSessionReady(): void {
+  let sessionReadyHandled = false;
+
+  async function onSessionReady(): Promise<void> {
+    if (sessionReadyHandled)
+      return;
+    sessionReadyHandled = true;
+
+    // Wait for premium capabilities to load so plan/tier is accurate.
+    if (!get(capabilities))
+      await until(capabilities).not.toBeUndefined({ timeout: 5000 }).catch(() => {});
+
     chronicle('session_config', collectSessionConfig());
     chronicle('exchanges_summary', collectExchangesSummary());
   }
@@ -111,29 +123,61 @@ export const useSigil = createSharedComposable(() => {
     }
   }
 
+  function onSessionReadyEvent(): void {
+    startPromise(onSessionReady());
+  }
+
+  let active = false;
+
   function activate(): void {
+    if (active)
+      return;
+    active = true;
+    acquireBusy();
+
     startQueue();
     registerPageTracking();
-    sigilBus.on('session:ready', onSessionReady);
+    sigilBus.on('session:ready', onSessionReadyEvent);
     sigilBus.on('balances:loaded', onBalancesLoaded);
     sigilBus.on('history:ready', onHistoryReady);
+
+    // If the session is already active when sigil activates (e.g. the watcher
+    // ran after session:ready was emitted), collect the data immediately.
+    if (get(logged))
+      startPromise(onSessionReady());
   }
 
   function deactivate(): void {
-    sigilBus.off('session:ready', onSessionReady);
+    if (!active)
+      return;
+    active = false;
+
+    sigilBus.off('session:ready', onSessionReadyEvent);
     sigilBus.off('balances:loaded', onBalancesLoaded);
     sigilBus.off('history:ready', onHistoryReady);
     unregisterPageTracking();
     stopQueue();
+    releaseBusy();
+  }
+
+  function resetSession(): void {
     emittedEvents.clear();
+    sessionReadyHandled = false;
   }
 
   // Only activate on production builds with analytics opted in.
   // VITE_SIGIL_DEBUG=true overrides the production-only gate for local testing.
   const sigilDebug = !!import.meta.env.VITE_SIGIL_DEBUG;
 
+  // Reset one-shot events only when the user actually logs out,
+  // not on transient deactivate/reactivate cycles.
+  watch(logged, (isLogged) => {
+    if (!isLogged)
+      resetSession();
+  });
+
   watchImmediate(
-    computed<boolean>(() => !!WEBSITE_ID && get(logged) && get(submitUsageAnalytics) && (sigilDebug || !get(isDevelop))),
+    () => !!WEBSITE_ID && get(logged) && get(submitUsageAnalytics) && (sigilDebug || !get(isDevelop)),
     (active) => {
       set(isSigilActive, active);
       if (active) {

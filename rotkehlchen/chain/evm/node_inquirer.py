@@ -1559,6 +1559,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             account: ChecksumEvmAddress | None,
             action: Literal['txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmInternalTransaction]]:
         ...
 
@@ -1568,6 +1569,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             account: ChecksumEvmAddress | None,
             action: Literal['txlist'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmTransaction]]:
         ...
 
@@ -1576,34 +1578,80 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             account: ChecksumEvmAddress | None,
             action: Literal['txlist', 'txlistinternal'],
             period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
     ) -> Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]]:
         """Return transaction batches from indexers in configured order.
 
         For `action='txlist'`, this also stores each tx's block->timestamp mapping in
         `self.block_to_timestamp_cache` so later RPC timestamp lookups can be skipped.
+
+        tx_timestamp is the timestamp of the parent transaction for hash-based internal
+        transaction queries. Passed through to indexers so they can gate queries without
+        an extra DB round-trip.
         """
+        transactions_iterator, _ = self.get_transactions_with_source(
+            account=account,
+            period_or_hash=period_or_hash,
+            action=action,
+            tx_timestamp=tx_timestamp,
+        )
         if action == 'txlist':
-            for tx_batch in self._try_indexers_iterable(
-                func=lambda indexer: indexer.get_transactions(
-                    chain_id=self.chain_id,
-                    account=account,
-                    period_or_hash=period_or_hash,
-                    action='txlist',
-                ),
-            ):
+            for tx_batch in transactions_iterator:
                 for tx in tx_batch:
                     self.block_to_timestamp_cache.add(key=tx.block_number, value=tx.timestamp)
 
                 yield tx_batch
         else:
-            yield from self._try_indexers_iterable(
+            yield from transactions_iterator
+
+    @overload
+    def get_transactions_with_source(
+            self,
+            account: ChecksumEvmAddress | None,
+            action: Literal['txlistinternal'],
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
+    ) -> tuple[Iterator[list[EvmInternalTransaction]], str]:
+        ...
+
+    @overload
+    def get_transactions_with_source(
+            self,
+            account: ChecksumEvmAddress | None,
+            action: Literal['txlist'],
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
+    ) -> tuple[Iterator[list[EvmTransaction]], str]:
+        ...
+
+    def get_transactions_with_source(
+            self,
+            account: ChecksumEvmAddress | None,
+            action: Literal['txlist', 'txlistinternal'],
+            period_or_hash: TimestampOrBlockRange | EVMTxHash | None = None,
+            tx_timestamp: Timestamp | None = None,
+    ) -> tuple[Iterator[list[EvmTransaction]] | Iterator[list[EvmInternalTransaction]], str]:
+        """Like get_transactions(), but also returns the indexer source name used."""
+        if action == 'txlistinternal':
+            return self._try_indexers_iterable_with_source(
                 func=lambda indexer: indexer.get_transactions(
                     chain_id=self.chain_id,
                     account=account,
                     period_or_hash=period_or_hash,
                     action='txlistinternal',
+                    tx_timestamp=tx_timestamp,
                 ),
             )
+
+        return self._try_indexers_iterable_with_source(
+            func=lambda indexer: indexer.get_transactions(
+                chain_id=self.chain_id,
+                account=account,
+                period_or_hash=period_or_hash,
+                action='txlist',
+                tx_timestamp=tx_timestamp,
+            ),
+        )
 
     def get_token_transaction_hashes(
             self,
@@ -1672,6 +1720,11 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         - NoAvailableIndexers if there are no indexers available
         - RequestTooLargeError to allow callers to retry with smaller chunks
         """
+        result, _ = self._try_indexers_with_name(func=func)
+        return result
+
+    def _try_indexers_with_name(self, func: Callable[[EtherscanLikeApi], T]) -> tuple[T, str]:
+        """Like _try_indexers, but also returns the indexer name used for the query."""
         if len(ordered_indexers := self._get_indexers_in_order()) == 0:
             if not self._no_indexer_notified:
                 self._no_indexer_notified = True
@@ -1687,7 +1740,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
                 continue  # was removed while looping
 
             try:
-                return func(indexer)
+                result = func(indexer)
             except ChainNotSupported as e:
                 if self.available_indexers.pop(indexer_name, None) is not None:
                     log.warning(  # removed the indexer
@@ -1700,6 +1753,8 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             except (RemoteError, DeserializationError) as e:
                 log.warning(f'Failed to query {indexer.name} due to {e!s}. Trying next indexer.')
                 errors.append((indexer.name, e))
+            else:
+                return result, indexer.name
 
         raise RemoteError(
             f'Failed to query any indexer. '
@@ -1711,6 +1766,14 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             func: Callable[[EtherscanLikeApi], Iterator[T]],
     ) -> Iterator[T]:
         """Wrapper for _try_indexers that returns an iterator instead of a single value."""
+        generator, _ = self._try_indexers_iterable_with_source(func=func)
+        yield from generator
+
+    def _try_indexers_iterable_with_source(
+            self,
+            func: Callable[[EtherscanLikeApi], Iterator[T]],
+    ) -> tuple[Iterator[T], str]:
+        """Like _try_indexers_iterable, but also returns the indexer name used."""
         def _query_indexer_iterator(indexer: EtherscanLikeApi) -> Iterator[T]:
             """Consume the first item in the iterator returned by `func` so if it fails the
             exception is raised immediately, and _try_indexers goes to the next indexer.
@@ -1720,7 +1783,7 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
             first_batch = next(generator)
             return itertools.chain([first_batch], generator)
 
-        yield from self._try_indexers(func=_query_indexer_iterator)
+        return self._try_indexers_with_name(func=_query_indexer_iterator)
 
 
 class EvmNodeInquirerWithProxies(EvmNodeInquirer):

@@ -33,7 +33,7 @@ describe('get-premium-button', () => {
     expect(button.text()).toContain('premium_settings.get');
   });
 
-  it('should show upgrade plan button for premium users', () => {
+  it('should not render for premium users', () => {
     store = usePremiumStore();
     const { premium } = storeToRefs(store);
     set(premium, true);
@@ -41,7 +41,6 @@ describe('get-premium-button', () => {
     wrapper = createWrapper();
 
     const button = wrapper.find('[data-cy=get-premium-button]');
-    expect(button.exists()).toBeTruthy();
-    expect(button.text()).toContain('premium_placeholder.current_plan');
+    expect(button.exists()).toBeFalsy();
   });
 });

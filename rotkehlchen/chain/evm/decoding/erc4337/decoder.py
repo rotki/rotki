@@ -7,7 +7,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     EvmDecodingOutput,
 )
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import bytes_to_address
@@ -26,16 +25,17 @@ class Erc4337Decoder(EvmDecoderInterface):
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[2])):
             return DEFAULT_EVM_DECODING_OUTPUT
 
+        native_token = self.node_inquirer.native_token
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.asset == A_ETH and
+                event.asset == native_token and
                 event.location_label == user_address and
                 event.address == entrypoint
             ):
                 event.event_subtype = HistoryEventSubType.FEE
-                event.notes = f'Spend {event.amount} ETH as ERC-4337 fee via {entrypoint}'
+                event.notes = f'Spend {event.amount} {native_token.symbol} as ERC-4337 fee via {entrypoint}'  # noqa: E501
                 return DEFAULT_EVM_DECODING_OUTPUT
 
         return DEFAULT_EVM_DECODING_OUTPUT

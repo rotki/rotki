@@ -25,8 +25,16 @@ export enum PrivacyMode {
   PRIVATE = 2,
 }
 
+export const PinnedNames = {
+  INTERNAL_TX_CONFLICTS: 'internal-tx-conflicts-pinned',
+  MATCH_ASSET_MOVEMENTS: 'match-asset-movements-pinned',
+  REPORT_ACTIONABLE_CARD: 'report-actionable-card',
+} as const;
+
+export type PinnedName = typeof PinnedNames[keyof typeof PinnedNames];
+
 export interface Pinned {
-  name: string;
+  name: PinnedName;
   props: Record<string, any>;
 }
 
@@ -56,6 +64,7 @@ export interface QueriedAddressPayload {
 }
 
 export enum PremiumFeature {
+  CLOUD_BACKUP = 'cloudBackup',
   ETH_STAKING_VIEW = 'ethStakingView',
   EVENT_ANALYSIS_VIEW = 'eventAnalysisView',
   GRAPHS_VIEW = 'graphsView',

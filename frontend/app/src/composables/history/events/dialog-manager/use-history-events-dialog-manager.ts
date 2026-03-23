@@ -2,6 +2,8 @@ import type { Ref } from 'vue';
 import type { DialogState } from './types';
 import { set } from '@vueuse/core';
 import { DIALOG_TYPES, type DialogShowOptions } from '@/components/history/events/dialog-types';
+import { useAreaVisibilityStore } from '@/store/session/visibility';
+import { PinnedNames } from '@/types/session';
 
 interface UseHistoryEventsDialogManager {
   show: (options: DialogShowOptions) => Promise<void>;
@@ -11,6 +13,7 @@ interface UseHistoryEventsDialogManager {
 
 export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
   const router = useRouter();
+  const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
 
   const currentDialog = ref<DialogState>({ type: 'closed' });
 
@@ -69,6 +72,13 @@ export function useHistoryEventsDialogManager(): UseHistoryEventsDialogManager {
       }
       case DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES:
         openDialog({ data: undefined, type: DIALOG_TYPES.CUSTOMIZED_EVENT_DUPLICATES });
+        break;
+      case DIALOG_TYPES.INTERNAL_TX_CONFLICTS:
+        if (get(pinned)?.name === PinnedNames.INTERNAL_TX_CONFLICTS) {
+          set(showPinned, true);
+          return;
+        }
+        openDialog({ data: undefined, type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
         break;
       case DIALOG_TYPES.MATCH_ASSET_MOVEMENTS:
         openDialog({ data: undefined, type: DIALOG_TYPES.MATCH_ASSET_MOVEMENTS });

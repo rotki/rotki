@@ -1,8 +1,10 @@
 import type { HistorySyncPayload } from '@/modules/sigil/types';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
+import { usePremiumHelper } from '@/composables/premium';
 import { logger } from '@/utils/logging';
 
 export function useHistorySyncHandler(): () => Promise<HistorySyncPayload | undefined> {
+  const { currentTier, premium } = usePremiumHelper();
   const { fetchHistoryEvents } = useHistoryEventsApi();
 
   return async () => {
@@ -24,6 +26,8 @@ export function useHistorySyncHandler(): () => Promise<HistorySyncPayload | unde
       const totalEvents = eventsResult.entriesTotal;
       const nonSpamEvents = eventsResult.entriesFound;
       return {
+        premium: get(premium),
+        plan: get(currentTier),
         totalEvents,
         spamEvents: totalEvents - nonSpamEvents,
         totalGroups: groupsResult.entriesFound,

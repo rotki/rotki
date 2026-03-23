@@ -154,7 +154,12 @@
         "error": "Failed to change cost basis fees settings: {message}"
       },
       "tax_free": "Tax free period {enabled}",
-      "tax_free_period": "Tax free period set to {period} days"
+      "tax_free_period": "Tax free period set to {period} days",
+      "use_asset_collections_in_cost_basis": {
+        "disabled": "Successfully disabled asset collections cost basis",
+        "enabled": "Successfully enabled asset collections cost basis",
+        "error": "Failed to change asset collections cost basis setting: {message}"
+      }
     },
     "validation": {
       "tax_free_days": "Please enter the number of days",
@@ -261,7 +266,8 @@
         "include_fees_in_cost_basis": "Take into account cost basis fees",
         "include_gas_costs": "Take into account Ethereum gas costs",
         "tax_free": "Is there a tax free period?",
-        "taxfree_after_period": "Tax free after how many days"
+        "taxfree_after_period": "Tax free after how many days",
+        "use_asset_collections_in_cost_basis": "Share cost basis across assets in the same collection"
       },
       "title": "Trade Settings"
     }
@@ -1521,6 +1527,7 @@
         "remove_asset": "Remove Asset",
         "return_wrapped": "Return Wrapped",
         "reward": "Reward",
+        "spam": "Spam",
         "spend": "Spend"
       },
       "history_event_type": {
@@ -2592,6 +2599,10 @@
       "api_key_missing_alert": "{indexer} is your first priority indexer but you don't have an API key configured. Queries may be slower or fail. Consider adding an API key for better performance.",
       "chain_order": "{chain} Indexer Order",
       "chain_updated": "{chain} indexer order updated",
+      "chain_warnings": {
+        "base_limited_indexers": "Blockscout is the only freely available indexer for Base. Consider setting it as your first priority. Blockscout is currently reindexing Base, so data may be temporarily incomplete.",
+        "optimism_blockscout": "Blockscout does not have properly indexed transactions for Optimism before the Bedrock upgrade. Pre-Bedrock transaction history may be incomplete when using Blockscout."
+      },
       "data_name": "indexer",
       "default_order": "Default Indexer Order",
       "default_tab": "Default",
@@ -3707,6 +3718,73 @@
       "only_metamask": "* Currently, only MetaMask supports multiple address selections. Other wallets only allow active address to be imported."
     }
   },
+  "internal_tx_conflicts": {
+    "actions": {
+      "clear_highlight": "Clear highlight",
+      "copy_error": "Copy error message",
+      "fix_redecode": "Fix & Redecode",
+      "pin": "Pin to sidebar",
+      "repull": "Repull",
+      "show_in_events": "Show in history events",
+      "unpin": "Unpin section"
+    },
+    "banner": {
+      "action": "Review",
+      "message": "{count} internal transaction conflict(s) need attention"
+    },
+    "columns": {
+      "chain": "Chain",
+      "last_error": "Last Error",
+      "last_retry": "Last Retry",
+      "reason": "Reason",
+      "timestamp": "Date",
+      "tx_hash": "Tx Hash"
+    },
+    "dialog": {
+      "description": "Internal transactions that were detected as conflicted or duplicated. The system will auto-retry periodically.",
+      "title": "Internal Transaction Conflicts"
+    },
+    "errors": {
+      "fetch": "Failed to fetch internal transaction conflicts: {error}",
+      "fetch_title": "Internal Tx Conflicts Error"
+    },
+    "notifications": {
+      "cancelled": "Resolution cancelled. {completed} of {total} conflicts resolved.",
+      "completed": "Successfully resolved all {total} conflicts.",
+      "completed_with_errors": "Resolved {completed} of {total} conflicts. {failed} failed.",
+      "progress": "Resolved {completed} of {total} conflicts...",
+      "started": "Resolving {total} internal transaction conflicts...",
+      "title": "Internal Tx Conflict Resolution"
+    },
+    "pinned": {
+      "title": "Internal Tx Conflicts"
+    },
+    "reasons": {
+      "all_zero_gas": "All zero gas",
+      "duplicate_exact_rows": "Duplicate exact rows",
+      "mixed_zero_gas": "Mixed zero gas",
+      "mixed_zero_gas_and_duplicate": "Mixed zero gas & duplicate",
+      "other": "Other"
+    },
+    "resolution": {
+      "cancel": "Cancel",
+      "progress": "Resolving {completed} of {total}...",
+      "resolve": "Repull and redecode",
+      "resolve_selected": "Resolve Selected ({count})"
+    },
+    "selection": {
+      "clear": "Clear",
+      "selected": "{count} selected"
+    },
+    "status": {
+      "never": "Never"
+    },
+    "tabs": {
+      "failed": "Failed",
+      "fixed": "Fixed",
+      "pending": "Pending"
+    }
+  },
   "kraken_page": {
     "loading": "Your Kraken staking information is loading...",
     "no_premium": "Upgrade to premium to access Kraken staking information",
@@ -4638,8 +4716,7 @@
   "premium_placeholder": {
     "current_plan": "{tier} plan",
     "free_description": "This feature requires a minimum of {tier} tier.",
-    "premium_description": "This feature requires a minimum of {tier} tier. Your current tier is {currentTier}.",
-    "upgrade_plan": "Upgrade plan"
+    "premium_description": "This feature requires a minimum of {tier} tier. Your current tier is {currentTier}."
   },
   "premium_settings": {
     "actions": {
@@ -4655,6 +4732,8 @@
       "statistic": "The statistics view is not available",
       "title": "Graphs are not available"
     },
+    "cloud_backup_unavailable": "Cloud backup is not available for your current plan. {link} to enable cloud sync.",
+    "cloud_backup_upgrade_link": "Upgrade your subscription",
     "current_plan_label": "Current plan:",
     "delete_confirmation": {
       "message": "Are you sure you want to delete the rotki premium keys for your account? If you want to re-enable premium you will have to enter your keys again.",
@@ -5117,6 +5196,8 @@
     "upload_tooltip": "Push your local database to the server and replace all data there"
   },
   "sync_indicator": {
+    "cloud_backup_unavailable": "Cloud backup is not available for your current plan. Upgrade to enable cloud sync.",
+    "cloud_backup_upgrade": "Upgrade plan",
     "db_upload_result": {
       "message": "We could not complete the upload because {reason}",
       "title": "Database sync attempt unsuccessful"
@@ -5358,6 +5439,7 @@
     "alerts": {
       "button": "Actions needed",
       "check_duplicate_events": "Check duplicate events",
+      "check_internal_conflicts": "Check internal tx conflicts",
       "check_unmatched_movements": "Check unmatched movements",
       "no_issues_found": "No issues found",
       "title": "There are actions needed for your events"
@@ -5413,14 +5495,9 @@
           "title": "Ignore Transaction in Accounting"
         },
         "reset": {
-          "custom_events_title": "Custom Events",
+          "custom_events_warning": "This transaction contains custom events. Redecoding will remove all custom events and regenerate them from the chain data.",
           "indexer_order_hint": "Change the order of indexers used when redecoding this transaction. This does not affect your settings.",
-          "indexer_order_title": "Indexer Order",
-          "message": "There are custom events in this transaction",
-          "options": {
-            "keep_custom_events": "Don't remove my custom events",
-            "remove_custom_events": "Remove custom events and redecode the transaction"
-          }
+          "indexer_order_title": "Indexer Order"
         },
         "unlink": {
           "message": "Are you sure you want to unlink these matched events? The matched event may need manual attention after unlinking.",

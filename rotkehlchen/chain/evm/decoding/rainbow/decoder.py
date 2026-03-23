@@ -15,6 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.errors.misc import DataIntegrityError, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -148,11 +149,18 @@ class RainbowDecoder(EvmDecoderInterface):
         # if we are dealing with eth swaps check the internal transfers of eth from/to
         # the rainbow router
         if self.node_inquirer.native_token in {out_event.asset, in_event.asset}:
-            for internal_tx in self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
-                tx_hash=transaction.tx_hash,
-                chain_id=self.base.evm_inquirer.chain_id,
-                user_address=string_to_evm_address(out_event.location_label),  # type: ignore[arg-type]  # location_label should always be set
-            ):
+            try:
+                internal_txs = self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
+                    tx_hash=transaction.tx_hash,
+                    chain_id=self.base.evm_inquirer.chain_id,
+                    tx_timestamp=transaction.timestamp,
+                    user_address=string_to_evm_address(out_event.location_label),  # type: ignore[arg-type]  # location_label should always be set
+                )
+            except (RemoteError, DataIntegrityError) as e:
+                log.error(f'Failed to get internal transactions for rainbow swap {transaction.tx_hash!s} due to {e!s}')  # noqa: E501
+                internal_txs = []
+
+            for internal_tx in internal_txs:
                 if ((
                     internal_tx.from_address == RAINBOW_ROUTER_CONTRACT and
                     internal_tx.to_address != out_event.location_label
@@ -184,7 +192,7 @@ class RainbowDecoder(EvmDecoderInterface):
             # check the event logs for the transfers made by the router to find if the fee was
             # taken from the asset sent or the asset received
             for log_event in all_logs:
-                if len(log_event.topics) != 3 or log_event.topics[0] == ERC20_OR_ERC721_TRANSFER:
+                if len(log_event.topics) != 3 or log_event.topics[0] != ERC20_OR_ERC721_TRANSFER:
                     continue  # we only look for transfers
 
                 if (

@@ -1,7 +1,9 @@
 import type { ExchangesSummaryPayload } from '@/modules/sigil/types';
+import { usePremiumHelper } from '@/composables/premium';
 import { useSessionSettingsStore } from '@/store/settings/session';
 
 export function useExchangesSummaryHandler(): () => ExchangesSummaryPayload {
+  const { currentTier, premium } = usePremiumHelper();
   const { connectedExchanges } = storeToRefs(useSessionSettingsStore());
 
   return () => {
@@ -13,6 +15,8 @@ export function useExchangesSummaryHandler(): () => ExchangesSummaryPayload {
     }
 
     return {
+      premium: get(premium),
+      plan: get(currentTier),
       exchangeCount: exchanges.length,
       ...exchangeCounts,
     };

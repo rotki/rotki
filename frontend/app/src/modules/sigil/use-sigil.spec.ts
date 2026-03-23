@@ -1,6 +1,7 @@
+import type { EffectScope } from 'vue';
 import type { SigilEventMap } from '@/modules/sigil/types';
 import { flushPromises } from '@vue/test-utils';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { sigilBus } from '@/modules/sigil/event-bus';
 
 const mockEnqueue = vi.fn().mockResolvedValue(undefined);
@@ -16,6 +17,7 @@ vi.mock('@/modules/sigil/use-sigil-queue', () => ({
 
 const mockSessionConfig: SigilEventMap['session_config'] = {
   premium: false,
+  plan: 'Free',
   appVersion: '1.0',
   mainCurrency: 'USD',
   language: 'en',
@@ -24,9 +26,9 @@ const mockSessionConfig: SigilEventMap['session_config'] = {
   priceOracles: '',
 };
 
-const mockExchangesSummary: SigilEventMap['exchanges_summary'] = { exchangeCount: 0 };
-const mockBalancesSummary: SigilEventMap['balances_summary'] = { hasManualBalances: false, distinctAssetCount: 0, totalAccounts: 0, totalChains: 0 };
-const mockHistorySync: SigilEventMap['history_sync'] = { totalEvents: 10, spamEvents: 2, totalGroups: 5 };
+const mockExchangesSummary: SigilEventMap['exchanges_summary'] = { premium: false, plan: 'Free', exchangeCount: 0 };
+const mockBalancesSummary: SigilEventMap['balances_summary'] = { premium: false, plan: 'Free', hasManualBalances: false, distinctAssetCount: 0, totalAccounts: 0, totalChains: 0 };
+const mockHistorySync: SigilEventMap['history_sync'] = { premium: false, plan: 'Free', totalEvents: 10, spamEvents: 2, totalGroups: 5 };
 
 vi.mock('@/modules/sigil/handlers/session-config', () => ({
   useSessionConfigHandler: vi.fn(() => (): SigilEventMap['session_config'] => ({ ...mockSessionConfig })),
@@ -69,6 +71,15 @@ vi.mock('@/store/main', () => ({
   })),
 }));
 
+const mockCapabilities = ref<Record<string, unknown> | undefined>({ currentTier: 'Free' });
+
+vi.mock('@/store/session/premium', () => ({
+  usePremiumStore: vi.fn(() => ({
+    $id: 'session/premium',
+    capabilities: mockCapabilities,
+  })),
+}));
+
 let afterEachCallback: ((to: any) => void) | undefined;
 const mockRemoveHook = vi.fn();
 
@@ -91,7 +102,10 @@ function activateSigil(): void {
 }
 
 describe('useSigil', () => {
+  let scope: EffectScope;
+
   beforeEach(() => {
+    scope = effectScope();
     mockEnqueue.mockClear();
     mockStartQueue.mockClear();
     mockStopQueue.mockClear();
@@ -99,13 +113,27 @@ describe('useSigil', () => {
     set(mockLogged, false);
     set(mockSubmitUsageAnalytics, false);
     set(mockIsDevelop, false);
+    set(mockCapabilities, { currentTier: 'Free' });
     afterEachCallback = undefined;
     sigilBus.all.clear();
   });
 
+  afterEach(() => {
+    scope.stop();
+  });
+
+  describe('shared instance', () => {
+    it('should return the same instance across multiple calls while active', () => {
+      activateSigil();
+      const instance1 = scope.run(() => useSigil());
+      const instance2 = scope.run(() => useSigil());
+      expect(instance1).toBe(instance2);
+    });
+  });
+
   describe('activation gate', () => {
     it('should not activate when not logged in', async () => {
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
       expect(mockStartQueue).not.toHaveBeenCalled();
     });
@@ -114,7 +142,7 @@ describe('useSigil', () => {
       set(mockLogged, true);
       set(mockSubmitUsageAnalytics, false);
 
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
       expect(mockStartQueue).not.toHaveBeenCalled();
     });
@@ -124,7 +152,7 @@ describe('useSigil', () => {
       set(mockSubmitUsageAnalytics, true);
       set(mockIsDevelop, true);
 
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
       expect(mockStartQueue).not.toHaveBeenCalled();
     });
@@ -132,7 +160,7 @@ describe('useSigil', () => {
     it('should activate when all conditions met', async () => {
       activateSigil();
 
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
       expect(mockStartQueue).toHaveBeenCalledOnce();
     });
@@ -141,7 +169,7 @@ describe('useSigil', () => {
   describe('deactivation', () => {
     it('should deactivate when user logs out', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       set(mockLogged, false);
@@ -152,7 +180,7 @@ describe('useSigil', () => {
 
     it('should deactivate when analytics toggled off', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       set(mockSubmitUsageAnalytics, false);
@@ -163,7 +191,7 @@ describe('useSigil', () => {
 
     it('should unregister router hook on deactivate', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       set(mockLogged, false);
@@ -176,11 +204,11 @@ describe('useSigil', () => {
   describe('chronicle one-shot', () => {
     it('should emit session_config and exchanges_summary on session:ready', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       sigilBus.emit('session:ready');
-      await nextTick();
+      await flushPromises();
 
       const eventNames = mockEnqueue.mock.calls.map(
         (call: unknown[]) => (call[0] as Record<string, unknown>).name,
@@ -191,7 +219,7 @@ describe('useSigil', () => {
 
     it('should emit balances_summary on balances:loaded', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       sigilBus.emit('balances:loaded');
@@ -205,7 +233,7 @@ describe('useSigil', () => {
 
     it('should emit history_sync on history:ready', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       sigilBus.emit('history:ready');
@@ -220,13 +248,13 @@ describe('useSigil', () => {
 
     it('should deduplicate repeated bus emissions', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       sigilBus.emit('session:ready');
       sigilBus.emit('session:ready');
       sigilBus.emit('session:ready');
-      await nextTick();
+      await flushPromises();
 
       const sessionCalls = mockEnqueue.mock.calls.filter(
         (call: unknown[]) => (call[0] as Record<string, unknown>).name === 'session_config',
@@ -236,11 +264,11 @@ describe('useSigil', () => {
 
     it('should reset deduplication after deactivate/reactivate cycle', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       sigilBus.emit('session:ready');
-      await nextTick();
+      await flushPromises();
 
       // Deactivate
       set(mockLogged, false);
@@ -252,7 +280,7 @@ describe('useSigil', () => {
       await nextTick();
 
       sigilBus.emit('session:ready');
-      await nextTick();
+      await flushPromises();
 
       const sessionCalls = mockEnqueue.mock.calls.filter(
         (call: unknown[]) => (call[0] as Record<string, unknown>).name === 'session_config',
@@ -265,7 +293,7 @@ describe('useSigil', () => {
     it('should register router afterEach on activate', async () => {
       const { router } = await import('@/router');
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       // eslint-disable-next-line @typescript-eslint/unbound-method
@@ -275,7 +303,7 @@ describe('useSigil', () => {
 
     it('should enqueue page views via router hook', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       mockEnqueue.mockClear();
@@ -295,7 +323,7 @@ describe('useSigil', () => {
 
     it('should redact unsafe route params', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       mockEnqueue.mockClear();
@@ -312,7 +340,7 @@ describe('useSigil', () => {
 
     it('should resolve safe params like location and exchange', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       mockEnqueue.mockClear();
@@ -331,11 +359,11 @@ describe('useSigil', () => {
   describe('chronicle payload', () => {
     it('should include event name and data in enqueued entry', async () => {
       activateSigil();
-      useSigil();
+      scope.run(() => useSigil());
       await nextTick();
 
       sigilBus.emit('session:ready');
-      await nextTick();
+      await flushPromises();
 
       const sessionCall = mockEnqueue.mock.calls.find(
         (call: unknown[]) => (call[0] as Record<string, unknown>).name === 'session_config',

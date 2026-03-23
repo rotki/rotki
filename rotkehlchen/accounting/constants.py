@@ -46,6 +46,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.INTEREST: {DEFAULT: EventCategory.INTEREST},
         HistoryEventSubType.CASHBACK: {DEFAULT: EventCategory.CASHBACK},
         HistoryEventSubType.REFUND: {DEFAULT: EventCategory.REFUND},
+        HistoryEventSubType.SPAM: {DEFAULT: EventCategory.SPAM},
     },
     HistoryEventType.DEPOSIT: {
         HistoryEventSubType.DEPOSIT_ASSET: {
@@ -184,9 +185,10 @@ EVENT_GROUPING_ORDER = {  # Determines how to group events when serializing for 
 # possible color values
 # success=green, error=red, warning=yellow/orangish, info=blue,
 # primary=our primary blue color, secondary=somewhat gray
-# Icons are taken from here: https://remixicon.com/
-# IMPORTANT: All icons added here need to also be packaged in the frontend
-# here frontend/app/src/plugins/rui/index.ts
+# Icons are taken from here: https://lucide.dev/icons/
+# IMPORTANT: All icons added here need to also be packaged in the frontend.
+# Run `pnpm run --filter rotki generate:backend-icons` to regenerate
+# and `pnpm run --filter rotki check:icons` to verify.
 EVENT_CATEGORY_DETAILS = {
     EventCategory.SEND: {DEFAULT: EventCategoryDetails(
         label='send',
@@ -387,6 +389,10 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.PROTOCOL_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
         label='protocol withdrawal',
         icon='lu-download',
+    )}, EventCategory.SPAM: {DEFAULT: EventCategoryDetails(
+        label='spam',
+        icon='lu-shield-alert',
+        color='error',
     )},
 }
 

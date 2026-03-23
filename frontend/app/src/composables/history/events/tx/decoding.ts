@@ -32,7 +32,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     pullAndRecodeTransactionRequest,
   } = useHistoryEventsApi();
 
-  const { runTask } = useTaskHandler();
+  const { cancelTaskByTaskType, runTask } = useTaskHandler();
   const { isTaskRunning } = useTaskStore();
   const {
     markDecodingCancelled,
@@ -165,14 +165,11 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     );
   };
 
-  const pullAndDecodeTransactions = async (payload: PullTransactionPayload): Promise<void> => {
-    const notifyUser = (error: string): void => notifyError(
-      t('actions.transactions_redecode.error.title'),
-      t('actions.transactions_redecode.error.description', {
-        error,
-      }),
-    );
-
+  /**
+   * Core decode function that throws on failure instead of notifying.
+   * Used by callers that need to handle errors themselves (e.g. conflict resolution).
+   */
+  const pullAndDecodeTransactionsRaw = async (payload: PullTransactionPayload): Promise<void> => {
     let taskMeta = {
       description: t('actions.transactions_redecode.task.single_description', {
         chain: getChainName(payload.chain),
@@ -201,12 +198,30 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         clearDependedSection();
       }
       else {
-        notifyUser(outcome.message ?? '');
+        throw new Error(outcome.message ?? t('actions.transactions_redecode.error.title'));
       }
     }
     else if (isActionableFailure(outcome)) {
-      logger.error(outcome.error);
-      notifyUser(outcome.message);
+      throw new Error(outcome.message);
+    }
+  };
+
+  /**
+   * Notifying wrapper — catches errors and shows notifications to the user.
+   * Used by the UI redecode flow where errors are displayed as toast messages.
+   */
+  const pullAndDecodeTransactions = async (payload: PullTransactionPayload): Promise<void> => {
+    try {
+      await pullAndDecodeTransactionsRaw(payload);
+    }
+    catch (error: any) {
+      logger.error(error);
+      notifyError(
+        t('actions.transactions_redecode.error.title'),
+        t('actions.transactions_redecode.error.description', {
+          error: error.message ?? error,
+        }),
+      );
     }
   };
 
@@ -313,11 +328,17 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     }
   };
 
+  async function cancelDecoding(): Promise<void> {
+    await cancelTaskByTaskType(TaskType.TRANSACTIONS_DECODING);
+  }
+
   return {
+    cancelDecoding,
     checkMissingEventsAndRedecode,
     decodeTransactionsTask,
     fetchUndecodedTransactionsBreakdown,
     fetchUndecodedTransactionsStatus,
+    pullAndDecodeTransactionsRaw,
     pullAndRecodeEthBlockEvents,
     pullAndRedecodeTransactions,
     redecodeTransactions,

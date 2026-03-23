@@ -31,8 +31,10 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
     SolanaTransactionsNotDecodedFilterQuery,
 )
+from rotkehlchen.db.internal_tx_conflicts import INTERNAL_TXS_TO_REPULL
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
+from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.api import PremiumAuthenticationError, PremiumPermissionError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
@@ -53,6 +55,9 @@ from rotkehlchen.tasks.calendar import (
     delete_past_calendar_entries,
     maybe_create_calendar_reminders,
     notify_reminders,
+)
+from rotkehlchen.tasks.internal_tx_conflicts import (
+    repull_internal_tx_conflicts,
 )
 from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.types import (
@@ -91,6 +96,7 @@ XPUB_DERIVATION_FREQUENCY = 3600  # every hour
 EVM_TX_QUERY_FREQUENCY = 3600  # every hour
 EXCHANGE_QUERY_FREQUENCY = 3600  # every hour
 PREMIUM_STATUS_CHECK = 3600  # every hour
+INTERNAL_TX_CONFLICT_REPULL_FREQUENCY = 3600  # every hour
 TX_RECEIPTS_QUERY_LIMIT = 500
 TX_DECODING_LIMIT = 500
 PREMIUM_CHECK_RETRY_LIMIT = 3
@@ -158,6 +164,7 @@ class TaskManager:
             self._maybe_schedule_exchange_history_query,
             self._maybe_schedule_evm_txreceipts,
             self._maybe_decode_transactions,
+            self._maybe_repull_internal_tx_conflicts,
             self._maybe_check_premium_status,
             self._maybe_check_data_updates,
             self._maybe_update_snapshot_balances,
@@ -711,6 +718,28 @@ class TaskManager:
             exception_is_error=True,
             method=autodetect_spam_assets_in_db,
             user_db=self.database,
+        )]
+
+    def _maybe_repull_internal_tx_conflicts(self) -> Optional[list[gevent.Greenlet]]:
+        with self.database.conn.read_ctx() as cursor:
+            if not table_exists(cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
+                return None
+
+        if should_run_periodic_task(
+            database=self.database,
+            key_name=DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS,
+            refresh_period=INTERNAL_TX_CONFLICT_REPULL_FREQUENCY,
+        ) is False:
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Repull internal tx conflicts',
+            exception_is_error=True,
+            method=repull_internal_tx_conflicts,
+            database=self.database,
+            chains_aggregator=self.chains_aggregator,
+            limit=INTERNAL_TXS_TO_REPULL,
         )]
 
     def _maybe_update_owned_assets(self) -> Optional[list[gevent.Greenlet]]:

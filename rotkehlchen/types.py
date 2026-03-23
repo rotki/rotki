@@ -362,7 +362,7 @@ class EvmTransaction:
         if not isinstance(other, EvmTransaction):
             return False
 
-        return hash(self) == hash(other)
+        return self.identifier == other.identifier
 
     def get_or_query_db_id(self, cursor: 'DBCursor') -> int:
         """Returns the DB identifier for the transaction. Assumes it exists in the DB"""
@@ -393,6 +393,7 @@ class EvmInternalTransaction(NamedTuple):
     value: int
     gas: int
     gas_used: int
+    source: str | None = None
 
     def __hash__(self) -> int:
         return hash(self.identifier)
@@ -401,7 +402,7 @@ class EvmInternalTransaction(NamedTuple):
         if not isinstance(other, EvmInternalTransaction):
             return False
 
-        return hash(self) == hash(other)
+        return self.identifier == other.identifier
 
     @property
     def identifier(self) -> str:

@@ -1,6 +1,7 @@
 import type { ComputedRef, Ref } from 'vue';
 import type { TaskMeta } from '@/modules/tasks/types';
 import type { ActionStatus } from '@/types/action';
+import type { LinkedMovementMatch } from '@/types/history/events';
 import type { HistoryEventCollectionRow, HistoryEventEntry } from '@/types/history/events/schemas';
 import { useHistoryEventsApi } from '@/composables/api/history/events';
 import { useAssetMovementMatchingApi } from '@/composables/api/history/events/asset-movement-matching';
@@ -40,6 +41,7 @@ interface UseUnmatchedAssetMovementsReturn {
   autoMatchLoading: ComputedRef<boolean>;
   autoMatchMinimumTier: Readonly<Ref<string | null>>;
   isAutoMatchAllowed: Readonly<Ref<boolean>>;
+  autoMatchMovement: (linkedMovement: LinkedMovementMatch) => Promise<boolean>;
   fetchUnmatchedAssetMovements: (onlyIgnored?: boolean) => Promise<void>;
   matchAssetMovement: (assetMovementId: number, matchedEventIds: number[]) => Promise<ActionStatus>;
   refreshUnmatchedAssetMovements: (skipIgnored?: boolean) => Promise<void>;
@@ -61,6 +63,7 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
 
   const { fetchHistoryEvents } = useHistoryEventsApi();
   const {
+    getAssetMovementMatches,
     getUnmatchedAssetMovements,
     matchAssetMovements: matchAssetMovementsApi,
     triggerAssetMovementMatching,
@@ -191,8 +194,19 @@ export const useUnmatchedAssetMovements = createSharedComposable((): UseUnmatche
     set(triggerAutoMatchLoading, false);
   };
 
+  async function autoMatchMovement(linkedMovement: LinkedMovementMatch): Promise<boolean> {
+    const { groupIdentifier, identifier, timeRange, tolerance } = linkedMovement;
+    const suggestions = await getAssetMovementMatches(groupIdentifier, timeRange, false, tolerance);
+    if (suggestions.closeMatches.length > 0) {
+      await matchAssetMovementsApi(identifier, suggestions.closeMatches);
+      return true;
+    }
+    return false;
+  }
+
   return {
     autoMatchLoading,
+    autoMatchMovement,
     autoMatchMinimumTier: assetMovementMatchingMinimumTier,
     fetchUnmatchedAssetMovements,
     isAutoMatchAllowed: isAssetMovementMatchingAllowed,

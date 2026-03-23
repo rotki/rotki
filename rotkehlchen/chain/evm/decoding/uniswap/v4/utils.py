@@ -53,6 +53,7 @@ def decode_uniswap_v4_like_swaps(
     if len(internal_txs := DBEvmTx(base_tools.database).get_evm_internal_transactions(
         parent_tx_hash=transaction.tx_hash,
         blockchain=base_tools.evm_inquirer.blockchain,
+        parent_tx_id=transaction.db_id,
     )) != 0:  # check internal txs for possible fees and use the wrapped native token to represent it.  # noqa: E501
         for internal_tx in internal_txs:
             if (

@@ -150,6 +150,56 @@ describe('modules/premium/use-feature-access', () => {
       expect(get(allowed)).toBe(false);
     });
 
+    it('should return allowed=true for CLOUD_BACKUP when maxBackupSizeMb > 0', () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, true);
+      set(capabilities, {
+        maxBackupSizeMb: 100,
+      });
+
+      const { allowed } = useFeatureAccess(PremiumFeature.CLOUD_BACKUP);
+
+      expect(get(allowed)).toBe(true);
+    });
+
+    it('should return allowed=false for CLOUD_BACKUP when maxBackupSizeMb is 0', () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, true);
+      set(capabilities, {
+        maxBackupSizeMb: 0,
+      });
+
+      const { allowed } = useFeatureAccess(PremiumFeature.CLOUD_BACKUP);
+
+      expect(get(allowed)).toBe(false);
+    });
+
+    it('should return allowed=false for CLOUD_BACKUP when maxBackupSizeMb is not set', () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, true);
+      set(capabilities, {});
+
+      const { allowed } = useFeatureAccess(PremiumFeature.CLOUD_BACKUP);
+
+      expect(get(allowed)).toBe(false);
+    });
+
+    it('should return null minimumTier for CLOUD_BACKUP', () => {
+      const store = usePremiumStore();
+      const { capabilities, premium } = storeToRefs(store);
+      set(premium, true);
+      set(capabilities, {
+        maxBackupSizeMb: 100,
+      });
+
+      const { minimumTier } = useFeatureAccess(PremiumFeature.CLOUD_BACKUP);
+
+      expect(get(minimumTier)).toBeNull();
+    });
+
     it('should work with reactive feature parameter', async () => {
       const store = usePremiumStore();
       const { capabilities, premium } = storeToRefs(store);

@@ -32,6 +32,7 @@ from rotkehlchen.db.filtering import (
     HistoryEventFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.internal_tx_conflicts import INTERNAL_TX_CONFLICT_ACTION_REPULL
 from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.etherscan import Etherscan
@@ -1504,6 +1505,18 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
         )
 
     # trigger the deletion of the transaction's data by redecoding it
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, fixed) '
+            'VALUES (?, ?, ?, ?)',
+            (
+                tx_hash,
+                ChainID.ETHEREUM.serialize_for_db(),
+                INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                0,
+            ),
+        )
+
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
         json={'async_query': False, 'chain': 'eth', 'tx_refs': [str(tx_hash)]},
@@ -1517,6 +1530,10 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
             filter_query=filter_query,
             aggregate_by_group_ids=False,
         )
+        assert cursor.execute(
+            'SELECT fixed FROM evm_internal_tx_conflicts WHERE transaction_hash=? AND chain=?',
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0] == 1
     assert events_before_redecoding == events_after_redecoding
 
 
@@ -1534,9 +1551,14 @@ def test_repulling_transaction_fetch_error_does_not_drop_existing_data(
     with rotki.data.db.conn.read_ctx() as cursor:
         tx_count_before = len(dbevmtx.get_transactions(cursor=cursor, filter_=tx_filter))
         receipt_before = dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=ChainID.ETHEREUM)  # noqa: E501
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
     internal_before = dbevmtx.get_evm_internal_transactions(
         parent_tx_hash=tx_hash,
         blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
     )
     assert tx_count_before == 1
     assert receipt_before is not None
@@ -1563,6 +1585,7 @@ def test_repulling_transaction_fetch_error_does_not_drop_existing_data(
     internal_after = dbevmtx.get_evm_internal_transactions(
         parent_tx_hash=tx_hash,
         blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
     )
 
     assert tx_count_after == tx_count_before
@@ -1580,9 +1603,15 @@ def test_repulling_transaction_internal_fetch_error_restores_previous_internal_t
     dbevmtx, transaction = _prepare_repull_test_transaction(rotki.data.db)
     tx_hash = transaction.tx_hash
 
+    with rotki.data.db.conn.read_ctx() as cursor:
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
     internal_before = dbevmtx.get_evm_internal_transactions(
         parent_tx_hash=tx_hash,
         blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
     )
     assert len(internal_before) > 0
     fresh_transaction = make_ethereum_transaction(
@@ -1622,6 +1651,7 @@ def test_repulling_transaction_internal_fetch_error_restores_previous_internal_t
     internal_after = dbevmtx.get_evm_internal_transactions(
         parent_tx_hash=tx_hash,
         blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
     )
     assert internal_after == internal_before
 
@@ -1640,9 +1670,14 @@ def test_repulling_transaction_internal_replace_failure_rolls_back_tx_data(
     with rotki.data.db.conn.read_ctx() as cursor:
         tx_before = dbevmtx.get_transactions(cursor=cursor, filter_=tx_filter)[0]
         receipt_before = dbevmtx.get_receipt(cursor=cursor, tx_hash=tx_hash, chain_id=ChainID.ETHEREUM)  # noqa: E501
+        parent_tx_id = cursor.execute(
+            'SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0]
     internal_before = dbevmtx.get_evm_internal_transactions(
         parent_tx_hash=tx_hash,
         blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
     )
     assert receipt_before is not None
     fresh_transaction = make_ethereum_transaction(
@@ -1666,7 +1701,7 @@ def test_repulling_transaction_internal_replace_failure_rolls_back_tx_data(
         patch.object(
             rotki.chains_aggregator.ethereum.transactions,
             '_query_internal_transactions_for_parent_hash',
-            return_value=(internal_before, None),
+            return_value=(internal_before, None, 'etherscan'),
         ),
         patch.object(
             rotki.chains_aggregator.ethereum.transactions,
@@ -1690,6 +1725,7 @@ def test_repulling_transaction_internal_replace_failure_rolls_back_tx_data(
     internal_after = dbevmtx.get_evm_internal_transactions(
         parent_tx_hash=tx_hash,
         blockchain=SupportedBlockchain.ETHEREUM,
+        parent_tx_id=parent_tx_id,
     )
     assert tx_after == tx_before
     assert receipt_after == receipt_before

@@ -15,6 +15,13 @@ Changelog
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
 * :feature:`10712` bitcoin events can now be filtered by address.
 * :feature:`10542` StakeDAO v2 votemarket events will now be properly decoded.
+* :feature:`-` Added an accounting rule to transfer cost basis between assets and applied it as a default for actions such as wrapping/unwrapping ETH, depositing to DeFi etc.
+* :bug:`11908` Individual pending task items now show a static icon instead of an indeterminate spinner, reducing visual noise when many tasks are running.
+* :bug:`11902` The redecode option is now available for exchange withdrawals with a linked on-chain transaction.
+* :feature:`11896` Indexer limitation warnings are now shown in the EVM Indexer Order settings for Optimism (Blockscout pre-Bedrock gaps) and Base (Blockscout as only free indexer).
+* :bug:`11901` The event_subtype filter (e.g. subtype=None) is no longer lost when navigating away from the history events page and back.
+* :bug:`-` Assets in the same collection now share cost basis, preventing false missing acquisition errors when the same asset is tracked under different identifiers.
+* :feature:`-` Sushiswap swaps should now be decoded on all EVM chains
 * :bug:`11854` Users can now unmark assets as spam or unignore them directly from the history events context menu, instead of having to navigate to the asset manager.
 * :bug:`-` Curve withdrawals with dynamic amount of assets will now be properly decoded.
 * :bug:`-` Morpho bundles deposits of ETH in multiple pools won't get mixed with WETH and appear multiple times or with negative values.
@@ -30,6 +37,7 @@ Changelog
 * :bug:`11782` Adding a new EVM account will no longer trigger a redundant initial balance fetch before token detection. Balances are now fetched only once after tokens are detected.
 * :feature:`-` Claiming Degen airdrop 1 will now be properly decoded by rotki.
 * :bug:`11788` Removing a sub-event from a multi-trade event group will no longer fail with a sequence index conflict error.
+* :bug:`11885` Blockscout will not be used to query internal transactions in OP for transactions before the bedrock upgrade.
 * :bug:`-` Claiming Pendle rewards from old pools, or claiming multiple rewards in one transaction should now be decoded properly by rotki.
 * :bug:`-` ETH staking historyMEV/proposer payout rewards are combined more reliably with block proposal even when beaconcha.in relay data is unavailable.
 * :bug:`11766` Value distribution graphs will now work correctly by fixing the schema types to match the backend response.
@@ -37,6 +45,7 @@ Changelog
 * :bug:`-` Beefy Finance harvest call rewards will now be properly decoded as part of the beefy side of a transaction.
 * :bug:`-` Beefy Finance staking and unstaking of vault tokens will now be properly decoded by rotki along with any potential rewards.
 * :bug:`-` Depositing via Pendle v3 router should be now properly decoded by rotki.
+* :bug:`-` Repulling wrong data from indexers won't delete local data.
 * :bug:`-` Bridging ETH from mainnet to Optimism will no longer duplicate the event under some weird circumstances.
 * :bug:`-` Historic event values will no longer incorrectly fallback to the current price when the historic price is not available.
 * :bug:`-` Curve deposits with add liquidity + stake will now be properly decoded.
@@ -54,10 +63,14 @@ Changelog
 * :bug:`-` ZKSynclite batch withdrawal on the ethereum side should now be properly decoded.
 * :bug:`-` Claiming AAVE rewards and immediately restaking them will now be properly decoded.
 * :bug:`-` Kyberswap swaps containing refunds will now be processed properly and deduct refund from original swap amount.
+* :bug:`-` Specific cases of rainbow swaps with fees will now also be properly decoded.
+* :feature:`-` Added a spam subtype event so you can manually tag and differentiate spam / phishing / address poisoning transactions.
 * :bug:`-` WETH Unwrapping in base will now be properly decoded.
 * :bug:`-` The rare case of balancer v2 swaps with repeated swap logs for a single events is now decoded properly.
 * :feature:`-` ERC4337 fee payments will now be properly understood by rotki
 * :bug:`-` 1inch swaps using Trader Joe Liquidity Book swap should now be properly decoded by rotki.
+* :bug:`-` Transactions routed through ERC-4337 bundlers and other smart contract wallet intermediaries should now be  properly understood.
+* :feature:`-` ERC-4337 fee detection should now work on all EVM chains, not just Ethereum.
 
 * :release:`1.42.0 <2025-02-20>`
 * :feature:`-` Octant v2 migration is now supported and GLM locked in v2 detected.

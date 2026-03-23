@@ -74,6 +74,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_SSF_GRAPH_MULTIPLIER,
     DEFAULT_TREAT_ETH2_AS_ETH,
     DEFAULT_UI_FLOATING_PRECISION,
+    DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS,
     ROTKEHLCHEN_DB_VERSION,
     DBSettings,
     ModifiableDBSettings,
@@ -132,6 +133,7 @@ TABLES_AT_INIT = [
     'evm_transactions_authorizations',
     'optimism_transactions',
     'evm_internal_transactions',
+    'evm_internal_tx_conflicts',
     'evmtx_receipts',
     'evmtx_receipt_logs',
     'evmtx_receipt_log_topics',
@@ -552,6 +554,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'asset_movement_time_range': DEFAULT_ASSET_MOVEMENT_TIME_RANGE,
         'suppress_missing_key_msg_services': [],
         'auto_create_profit_events': DEFAULT_AUTO_CREATE_PROFIT_EVENTS,
+        'use_asset_collections_in_cost_basis': DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 

@@ -121,6 +121,7 @@ from rotkehlchen.api.v1.schemas import (
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
     IntegerIdentifierSchema,
+    InternalTxConflictsSchema,
     LidoCsmNodeOperatorSchema,
     LocationAssetMappingsDeleteSchema,
     LocationAssetMappingsPostSchema,
@@ -304,7 +305,10 @@ from .types import ModuleWithBalances, ModuleWithStats, TaskName
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
-    from rotkehlchen.db.filtering import HistoryEventFilterQuery
+    from rotkehlchen.db.filtering import (
+        HistoryEventFilterQuery,
+        InternalTxConflictsFilterQuery,
+    )
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.exchanges.okx import OkxLocation
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
@@ -3710,6 +3714,22 @@ class RefetchTransactionsResource(BaseMethodView):
             async_query=async_query,
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
+        )
+
+
+class InternalTxConflictsResource(BaseMethodView):
+    get_schema = InternalTxConflictsSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(
+            self,
+            async_query: bool,
+            filter_query: 'InternalTxConflictsFilterQuery',
+    ) -> Response:
+        return self.rest_api.get_pending_internal_tx_repull_conflicts(
+            async_query=async_query,
+            filter_query=filter_query,
         )
 
 

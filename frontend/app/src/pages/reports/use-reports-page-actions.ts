@@ -12,6 +12,7 @@ import { TaskType } from '@/modules/tasks/task-type';
 import { useTaskHandler } from '@/modules/tasks/use-task-handler';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { useGeneralSettingsStore } from '@/store/settings/general';
+import { PinnedNames } from '@/types/session';
 import { downloadFileByTextContent } from '@/utils/download';
 
 interface UseReportsPageActionsOptions {
@@ -47,7 +48,7 @@ export function useReportsPageActions(options: UseReportsPageActionsOptions): Us
   const importDataLoading = shallowRef<boolean>(false);
 
   async function generate(period: ProfitLossReportPeriod): Promise<void> {
-    if (get(pinned)?.name === 'report-actionable-card')
+    if (get(pinned)?.name === PinnedNames.REPORT_ACTIONABLE_CARD)
       set(pinned, null);
 
     const formatDate = (timestamp: number): string =>
