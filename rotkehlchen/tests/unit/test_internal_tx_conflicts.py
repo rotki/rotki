@@ -13,12 +13,12 @@ from rotkehlchen.db.internal_tx_conflicts import (
     INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE,
     INTERNAL_TX_CONFLICT_ACTION_REPULL,
     INTERNAL_TX_CONFLICT_REPULL_REASON_OTHER,
-    INTERNAL_TXS_TO_REPULL,
     POPULATE_INTERNAL_TX_CONFLICTS_QUERY,
     clean_internal_tx_conflict,
     get_internal_tx_conflicts,
     is_tx_customized,
 )
+from rotkehlchen.db.settings import DEFAULT_INTERNAL_TXS_TO_REPULL
 from rotkehlchen.errors.misc import DataIntegrityError, InputError, RemoteError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -97,15 +97,15 @@ def test_repull_internal_tx_conflicts_batch_limit(database) -> None:
         repull_internal_tx_conflicts(
             database=database,
             chains_aggregator=cast('ChainsAggregator', object()),  # not used by the patched call
-            limit=INTERNAL_TXS_TO_REPULL,
+            limit=DEFAULT_INTERNAL_TXS_TO_REPULL,
         )
 
-    assert repull_mock.call_count == INTERNAL_TXS_TO_REPULL
+    assert repull_mock.call_count == DEFAULT_INTERNAL_TXS_TO_REPULL
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT COUNT(*) FROM evm_internal_tx_conflicts WHERE action=? AND fixed=1',
             (INTERNAL_TX_CONFLICT_ACTION_REPULL,),
-        ).fetchone()[0] == INTERNAL_TXS_TO_REPULL
+        ).fetchone()[0] == DEFAULT_INTERNAL_TXS_TO_REPULL
         assert cursor.execute(
             'SELECT COUNT(*) FROM key_value_cache WHERE name=?',
             (DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS.value,),
@@ -130,7 +130,7 @@ def test_repull_internal_tx_conflicts_sends_ws_message_after_fix(database) -> No
         repull_internal_tx_conflicts(
             database=database,
             chains_aggregator=cast('ChainsAggregator', object()),
-            limit=INTERNAL_TXS_TO_REPULL,
+            limit=DEFAULT_INTERNAL_TXS_TO_REPULL,
         )
 
     add_message_mock.assert_called_once_with(
@@ -217,7 +217,7 @@ def test_repull_internal_tx_conflicts_skip_customized(database) -> None:
                 get_transaction_by_hash_result=(tx, {'status': '0x1'}),
                 query_internal_return_value=([], None, ''),
             ),
-            limit=INTERNAL_TXS_TO_REPULL,
+            limit=DEFAULT_INTERNAL_TXS_TO_REPULL,
         )
 
     # is_tx_customized was called inside _repull_and_redecode_tx
@@ -256,7 +256,7 @@ def test_repull_internal_tx_conflicts_records_retry_error(database) -> None:
         repull_internal_tx_conflicts(
             database=database,
             chains_aggregator=cast('ChainsAggregator', object()),
-            limit=INTERNAL_TXS_TO_REPULL,
+            limit=DEFAULT_INTERNAL_TXS_TO_REPULL,
         )
 
     with database.conn.read_ctx() as cursor:
@@ -319,7 +319,7 @@ def test_repull_internal_pull_dataintegrity_updates_retry_fields(database) -> No
             get_transaction_by_hash_result=(_DummyTx(), {'status': '0x1'}),
             query_internal_side_effect=DataIntegrityError('empty internals payload'),
         ),
-        limit=INTERNAL_TXS_TO_REPULL,
+        limit=DEFAULT_INTERNAL_TXS_TO_REPULL,
     )
 
     with database.conn.read_ctx() as cursor:

@@ -839,7 +839,9 @@ Getting or modifying settings
               "asset_movement_amount_tolerance": "0.000001",
               "asset_movement_time_range": 54000,
               "suppress_missing_key_msg_services": ["etherscan"],
-              "auto_create_profit_events": false
+              "auto_create_profit_events": false,
+              "internal_txs_to_repull": 20,
+              "internal_tx_conflict_repull_frequency": 3600
           },
           "message": ""
       }
@@ -884,6 +886,8 @@ Getting or modifying settings
    :resjson int asset_movement_time_range: The time range before/after the asset movement (depending on if its a deposit/withdrawal) in which to check for possible matching events. Default is 54000 (15 hours). Note: there is also a 1 hour tolerance on the other side of the asset movement, since some exchanges do not provide accurate timestamps.
    :resjson list suppress_missing_key_msg_services: A list of services for which the missing api key WS message should be suppressed. Empty list by default.
    :resjson bool auto_create_profit_events: A boolean denoting whether profit history events are automatically created when protocol withdrawal events exceed deposits during historical balances processing. Default is ``false``.
+   :resjson int internal_txs_to_repull: The number of internal transaction conflicts to repull per periodic task run. Must be at least 1. Default is 20.
+   :resjson int internal_tx_conflict_repull_frequency: The frequency in seconds at which internal transaction conflicts are re-pulled. Must be at least 30. Default is 3600 (every hour).
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user
@@ -942,6 +946,8 @@ Getting or modifying settings
    :resjson int[optional] asset_movement_time_range: The time range before/after the asset movement (depending on if its a deposit/withdrawal) in which to check for possible matching events. Default is 54000 (15 hours). Note: there is also a 1 hour tolerance on the other side of the asset movement, since some exchanges do not provide accurate timestamps.
    :resjson list[optional] suppress_missing_key_msg_services: A list of services for which the missing api key WS message should be suppressed. Empty list by default.
    :resjson bool[optional] auto_create_profit_events: A boolean denoting whether profit history events are automatically created when protocol withdrawal events exceed deposits during historical balances processing.
+   :reqjson int[optional] internal_txs_to_repull: The number of internal transaction conflicts to repull per periodic task run. Must be at least 1. Default is 20.
+   :reqjson int[optional] internal_tx_conflict_repull_frequency: The frequency in seconds at which internal transaction conflicts are re-pulled. Must be at least 30. Default is 3600 (every hour).
 
    **Example Response**:
 
@@ -980,7 +986,9 @@ Getting or modifying settings
               "asset_movement_amount_tolerance": "0.000001",
               "asset_movement_time_range": 54000,
               "suppress_missing_key_msg_services": ["etherscan"],
-              "auto_create_profit_events": false
+              "auto_create_profit_events": false,
+              "internal_txs_to_repull": 20,
+              "internal_tx_conflict_repull_frequency": 3600
           },
           "message": ""
       }
