@@ -286,6 +286,17 @@ def count_pending_internal_tx_repull_conflicts(
     ).fetchone()[0]
 
 
+def get_pending_internal_tx_repull_conflicts_count(
+        cursor: 'DBCursor',
+        filter_query: 'InternalTxConflictsFilterQuery',
+) -> tuple[int, int]:
+    """Return (entries_found, entries_total) for internal tx repull conflicts."""
+    return (
+        count_pending_internal_tx_repull_conflicts(cursor=cursor, filter_query=filter_query),
+        cursor.execute('SELECT COUNT(*) FROM evm_internal_tx_conflicts').fetchone()[0],
+    )
+
+
 def set_internal_tx_conflict_fixed(
         write_cursor: 'DBCursor',
         tx_hash: EVMTxHash,
