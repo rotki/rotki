@@ -5,9 +5,7 @@ from typing import TYPE_CHECKING, Final, NamedTuple
 import gevent
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.internal_tx_conflicts import (
     INTERNAL_TX_CONFLICT_ACTION_REPULL,
     clean_internal_tx_conflict,
@@ -37,15 +35,21 @@ log = RotkehlchenLogsAdapter(logger)
 REPULL_BATCH_SIZE: Final = 5
 REPULL_LAUNCH_STAGGER_SECONDS: Final = 0.35
 REPULL_BETWEEN_BATCH_DELAY_SECONDS: Final = 0.25
+PARENT_TX_DATA_QUERY_CHUNK_SIZE: Final = 400  # 2 bind vars per entry (tx_hash, chain_id)
 
 
 class _RepullResult(NamedTuple):
     """Outcome for one repull worker run."""
-
     chain_id: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE'
     tx_hash: 'EVMTxHash'
     needs_decode: bool
     error: str | None
+
+
+class _ParentTxData(NamedTuple):
+    """Parent transaction metadata needed for internal tx repull."""
+    to_address: str | None
+    timestamp: int
 
 
 def _error_to_message(error: Exception) -> str:
@@ -91,65 +95,89 @@ def _mark_internal_tx_conflict_error(
         )
 
 
+def _query_parent_tx_data_batch(
+        database: 'DBHandler',
+        repull_entries: list[tuple['EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', 'EVMTxHash']],
+) -> dict[tuple['EVMTxHash', int], _ParentTxData]:
+    """Fetch parent tx metadata for a repull batch in one DB read transaction."""
+    if len(repull_entries) == 0:
+        return {}
+
+    result: dict[tuple[EVMTxHash, int], _ParentTxData] = {}
+    with database.conn.read_ctx() as cursor:
+        for chunk in get_chunks(repull_entries, PARENT_TX_DATA_QUERY_CHUNK_SIZE):
+            bindings = [
+                value
+                for chain_id, tx_hash in chunk
+                for value in (tx_hash, chain_id.serialize_for_db())
+            ]
+            rows = cursor.execute(
+                'SELECT tx_hash, chain_id, to_address, timestamp FROM evm_transactions '
+                f'WHERE (tx_hash, chain_id) IN ({", ".join(["(?, ?)"] * len(chunk))})',
+                bindings,
+            )
+            result.update({
+                (row[0], row[1]): _ParentTxData(to_address=row[2], timestamp=row[3]) for row in rows  # noqa: E501
+            })
+
+    return result
+
+
 def _repull_internal_tx_data(
         database: 'DBHandler',
         chains_aggregator: 'ChainsAggregator',
         chain_id: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
         tx_hash: 'EVMTxHash',
+        tx_data: _ParentTxData | None = None,
 ) -> bool:
-    """Repull tx and internals before replacing local rows.
+    """Repull internals before replacing local rows.
 
-    For customized transactions only the tx data and internals are refreshed
+    For customized transactions only internals are refreshed
     and this function returns True so that callers can skip redecoding.
     """
     chain = chain_id.to_blockchain()
     chain_manager = chains_aggregator.get_chain_manager(blockchain=chain)  # type: ignore[call-overload]
-    try:
-        if tx_hash == GENESIS_HASH:
-            transaction, _ = chain_manager.transactions.ensure_genesis_tx_data_exists()
-            raw_receipt_data = chain_manager.transactions.evm_inquirer.get_transaction_receipt(
-                tx_hash=tx_hash,
-            )
-        else:
-            transaction, raw_receipt_data = chain_manager.transactions.evm_inquirer.get_transaction_by_hash(  # noqa: E501
-                tx_hash=tx_hash,
-            )
-    except (RemoteError, DeserializationError) as e:
-        raise InputError(f'Failed to repull {chain.name.lower()} tx {tx_hash!s}. {e!s}') from e
+    if tx_data is None:
+        with database.conn.read_ctx() as cursor:
+            tx_row = cursor.execute(
+                'SELECT to_address, timestamp FROM evm_transactions WHERE tx_hash=? AND chain_id=?',  # noqa: E501
+                (tx_hash, chain_id.serialize_for_db()),
+            ).fetchone()
+        tx_data = None if tx_row is None else _ParentTxData(
+            to_address=tx_row[0],
+            timestamp=tx_row[1],
+        )
+
+    if tx_data is None:
+        raise InputError(
+            f'Failed to repull {chain.name.lower()} internals for tx {tx_hash!s}. '
+            f'The parent transaction was not found in the DB.',
+        )
 
     parent_hash_internal_txs: list[EvmInternalTransaction] = []
     indexer_source = ''
-    if transaction.to_address is not None:  # internals exist only for contract interactions
+    if tx_data.to_address is not None:  # internals exist only for contract interactions
         try:
-            parent_hash_internal_txs, _, indexer_source = (
-                chain_manager.transactions._query_internal_transactions_for_parent_hash(
-                    parent_tx_hash=tx_hash,
-                    address=None,
-                    return_queried_hashes=False,
-                    known_parent_timestamps={tx_hash: transaction.timestamp},
-                    tx_timestamp=transaction.timestamp,
-                )
+            parent_hash_internal_txs, _, indexer_source = chain_manager.transactions._query_internal_transactions_for_parent_hash(  # noqa: E501
+                parent_tx_hash=tx_hash,
+                address=None,
+                return_queried_hashes=False,
+                known_parent_timestamps={tx_hash: tx_data.timestamp},
+                tx_timestamp=tx_data.timestamp,
             )
         except (RemoteError, DeserializationError) as e:
             raise InputError(
                 f'Failed to repull {chain.name.lower()} internals for tx {tx_hash!s}. {e!s}',
             ) from e
 
-    dbevmtx = DBEvmTx(database)
-    with database.user_write() as write_cursor:
-        # Keep parent transaction rows/mappings intact and only refresh internals.
-        # We only add missing receipt data before replacing internals.
-        dbevmtx.add_or_ignore_receipt_data(
-            write_cursor=write_cursor,
-            chain_id=chain_id,
-            data=raw_receipt_data,
-        )
-        chain_manager.transactions._replace_internal_transactions_for_parent_hash(
-            write_cursor=write_cursor,
-            parent_tx_hash=tx_hash,
-            transactions=parent_hash_internal_txs,
-            indexer_source=indexer_source,
-        )
+        with database.user_write() as write_cursor:
+            # Keep parent transaction rows/mappings intact and only refresh internals.
+            chain_manager.transactions._replace_internal_transactions_for_parent_hash(
+                write_cursor=write_cursor,
+                parent_tx_hash=tx_hash,
+                transactions=parent_hash_internal_txs,
+                indexer_source=indexer_source,
+            )
 
     with database.conn.read_ctx() as cursor:
         return is_tx_customized(cursor=cursor, tx_hash=tx_hash, chain_id=chain_id)
@@ -160,6 +188,7 @@ def _repull_single_conflict(
         chains_aggregator: 'ChainsAggregator',
         chain_id: 'EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE',
         tx_hash: 'EVMTxHash',
+        tx_data: _ParentTxData | None = None,
 ) -> _RepullResult:
     """Repull one conflict and return a structured result for batch orchestration."""
     try:
@@ -168,6 +197,7 @@ def _repull_single_conflict(
             chains_aggregator=chains_aggregator,
             chain_id=chain_id,
             tx_hash=tx_hash,
+            tx_data=tx_data,
         )
     except (InputError, DataIntegrityError) as e:
         error_msg = _error_to_message(e)
@@ -197,11 +227,15 @@ def _process_repull_conflicts(
         ) -> dict['EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', list['EVMTxHash']]:
     """Run staggered repull workers and return tx hashes that need decode per chain."""
     to_decode_by_chain: dict[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, list[EVMTxHash]] = defaultdict(list)  # noqa: E501
+    tx_data_by_hash_and_chain = _query_parent_tx_data_batch(
+        database=database,
+        repull_entries=repull_entries,
+    )
     repull_chunks = list(get_chunks(repull_entries, REPULL_BATCH_SIZE))
     for chunk_idx, chunk in enumerate(repull_chunks):
-        greenlets: list[tuple[gevent.Greenlet, EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash]] = []  # noqa: E501
+        greenlets: list[gevent.Greenlet] = []
         for launch_idx, (chain_id, tx_hash) in enumerate(chunk):
-            greenlets.append((
+            greenlets.append(
                 gevent.spawn_later(
                     launch_idx * REPULL_LAUNCH_STAGGER_SECONDS,
                     _repull_single_conflict,
@@ -209,25 +243,24 @@ def _process_repull_conflicts(
                     chains_aggregator=chains_aggregator,
                     chain_id=chain_id,
                     tx_hash=tx_hash,
+                    tx_data=tx_data_by_hash_and_chain.get((tx_hash, chain_id.serialize_for_db())),
                 ),
-                chain_id,
-                tx_hash,
-            ))
+            )
 
-        gevent.joinall([greenlet for greenlet, _, _ in greenlets], raise_error=False)
-        for greenlet, chain_id, tx_hash in greenlets:
+        gevent.joinall(greenlets, raise_error=False)
+        for (chain_id, tx_hash), greenlet in zip(chunk, greenlets, strict=True):
             if (exception := greenlet.exception) is not None:
-                error_msg = _error_to_message(exception)
-                log.error(
-                    f'Unexpected failure in repull worker for internal tx conflict '
-                    f'{tx_hash!s} on {chain_id.to_name()} due to {error_msg}',
-                )
                 _mark_internal_tx_conflict_error(
                     database=database,
                     chain_id=chain_id,
                     tx_hash=tx_hash,
-                    error_msg=error_msg,
+                    error_msg=(error_msg := _error_to_message(exception)),
                 )
+                log.error(
+                    f'Unexpected failure in repull worker for internal tx conflict '
+                    f'{tx_hash!s} on {chain_id.to_name()} due to {error_msg}',
+                )
+
                 continue
 
             if (result := greenlet.value) is None:

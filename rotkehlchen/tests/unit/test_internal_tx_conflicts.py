@@ -25,6 +25,7 @@ from rotkehlchen.errors.misc import DataIntegrityError, InputError, RemoteError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tasks.internal_tx_conflicts import (
+    _query_parent_tx_data_batch,
     _repull_internal_tx_data,
     _RepullResult,
     repull_internal_tx_conflicts,
@@ -37,21 +38,13 @@ if TYPE_CHECKING:
 
 
 def make_dummy_chains_aggregator(
-        get_transaction_by_hash_result: tuple[Any, dict[str, str]],
         query_internal_side_effect: Exception | None = None,
         query_internal_return_value: tuple[Any, Any, str] | None = None,
         replace_internal_hook: Callable[..., None] | None = None,
         query_internal_hook: Callable[..., None] | None = None,
         chain_manager_by_blockchain: dict[Any, Any] | None = None,
 ) -> Any:
-    class _DummyInquirer:
-        def get_transaction_by_hash(self, tx_hash):
-            return get_transaction_by_hash_result
-
     class _DummyTransactions:
-        def __init__(self) -> None:
-            self.evm_inquirer = _DummyInquirer()
-
         def _query_internal_transactions_for_parent_hash(self, **kwargs):
             if query_internal_hook is not None:
                 query_internal_hook(**kwargs)
@@ -127,6 +120,65 @@ def test_repull_internal_tx_conflicts_batch_limit(database) -> None:
             'SELECT COUNT(*) FROM key_value_cache WHERE name=?',
             (DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS.value,),
         ).fetchone()[0] == 1
+
+
+def test_repull_internal_tx_conflicts_prefetches_parent_tx_data(database) -> None:
+    tx_hash = make_evm_tx_hash()
+    tx = EvmTransaction(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=(tx_ts := Timestamp(1700000000)),
+        block_number=1,
+        from_address=(sender := make_evm_address()),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    )
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[tx],
+            relevant_address=sender,
+        )
+        write_cursor.execute(
+            'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, fixed) VALUES(?, ?, ?, ?)',  # noqa: E501
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, 0),
+        )
+
+    captured_tx_data = []
+
+    def repull_side_effect(**kwargs):
+        captured_tx_data.append(kwargs['tx_data'])
+        return _RepullResult(
+            chain_id=kwargs['chain_id'],
+            tx_hash=kwargs['tx_hash'],
+            needs_decode=False,
+            error=None,
+        )
+
+    with (
+            patch(
+                'rotkehlchen.tasks.internal_tx_conflicts._query_parent_tx_data_batch',
+                wraps=_query_parent_tx_data_batch,
+            ) as prefetch_mock,
+            patch(
+                'rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict',
+                side_effect=repull_side_effect,
+            ),
+    ):
+        repull_internal_tx_conflicts(
+            database=database,
+            chains_aggregator=cast('ChainsAggregator', object()),
+            limit=DEFAULT_INTERNAL_TXS_TO_REPULL,
+        )
+
+    assert prefetch_mock.call_count == 1
+    assert len(captured_tx_data) == 1
+    assert captured_tx_data[0].timestamp == tx_ts
 
 
 def test_repull_internal_tx_conflicts_sends_ws_message_after_fix(database) -> None:
@@ -226,17 +278,13 @@ def test_repull_internal_tx_conflicts_skip_customized(database) -> None:
             ),
         )
 
-    with (
-        patch(
-            'rotkehlchen.tasks.internal_tx_conflicts.is_tx_customized',
-            wraps=is_tx_customized,
-        ) as customized_check,
-        patch.object(DBEvmTx, 'add_or_ignore_receipt_data'),
-    ):
+    with patch(
+        'rotkehlchen.tasks.internal_tx_conflicts.is_tx_customized',
+        wraps=is_tx_customized,
+    ) as customized_check:
         repull_internal_tx_conflicts(
             database=database,
             chains_aggregator=make_dummy_chains_aggregator(
-                get_transaction_by_hash_result=(tx, {'status': '0x1'}),
                 query_internal_return_value=([], None, ''),
             ),
             limit=DEFAULT_INTERNAL_TXS_TO_REPULL,
@@ -638,28 +686,13 @@ def test_repull_internal_tx_conflicts_batch_decode_emits_ws_fixed_messages(datab
 def test_repull_internal_tx_conflicts_batch_decode_failure_purges_cache_marks_fixed(
         database,
 ) -> None:
-    tx_hash1 = make_evm_tx_hash()
-    tx_hash2 = make_evm_tx_hash()
-    tx_hash3 = make_evm_tx_hash()
+    tx_hash1, tx_hash2, tx_hash3 = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()
     with database.user_write() as write_cursor:
         write_cursor.executemany(
             'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, fixed) VALUES(?, ?, ?, 0)',  # noqa: E501
             [
-                (
-                    tx_hash1,
-                    ChainID.ETHEREUM.serialize_for_db(),
-                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
-                ),
-                (
-                    tx_hash2,
-                    ChainID.ETHEREUM.serialize_for_db(),
-                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
-                ),
-                (
-                    tx_hash3,
-                    ChainID.ETHEREUM.serialize_for_db(),
-                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
-                ),
+                (tx_hash, ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL)
+                for tx_hash in (tx_hash1, tx_hash2, tx_hash3)
             ],
         )
 
@@ -701,52 +734,24 @@ def test_repull_internal_tx_conflicts_batch_decode_failure_purges_cache_marks_fi
         assert call_args.kwargs['location'] == Location.from_chain_id(ChainID.ETHEREUM)
 
     with database.conn.read_ctx() as cursor:
-        row1 = cursor.execute(
-            'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
-            'WHERE transaction_hash=? AND chain=?',
-            (tx_hash1, ChainID.ETHEREUM.serialize_for_db()),
-        ).fetchone()
-        row2 = cursor.execute(
-            'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
-            'WHERE transaction_hash=? AND chain=?',
-            (tx_hash2, ChainID.ETHEREUM.serialize_for_db()),
-        ).fetchone()
-        row3 = cursor.execute(
-            'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
-            'WHERE transaction_hash=? AND chain=?',
-            (tx_hash3, ChainID.ETHEREUM.serialize_for_db()),
-        ).fetchone()
-
-    assert row1 == (1, None)
-    assert row2 == (1, None)
-    assert row3 == (1, None)
+        for tx_hash in (tx_hash1, tx_hash2, tx_hash3):
+            assert cursor.execute(
+                'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
+                'WHERE transaction_hash=? AND chain=?',
+                (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+            ).fetchone() == (1, None)
 
 
 def test_repull_internal_tx_conflicts_batch_decode_failure_purge_isolates_failures(
         database,
 ) -> None:
-    tx_hash_ok1 = make_evm_tx_hash()
-    tx_hash_fail = make_evm_tx_hash()
-    tx_hash_ok2 = make_evm_tx_hash()
+    tx_hash_ok1, tx_hash_ok2, tx_hash_fail = make_evm_tx_hash(), make_evm_tx_hash(), make_evm_tx_hash()  # noqa: E501
     with database.user_write() as write_cursor:
         write_cursor.executemany(
             'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, fixed) VALUES(?, ?, ?, 0)',  # noqa: E501
             [
-                (
-                    tx_hash_ok1,
-                    ChainID.ETHEREUM.serialize_for_db(),
-                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
-                ),
-                (
-                    tx_hash_fail,
-                    ChainID.ETHEREUM.serialize_for_db(),
-                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
-                ),
-                (
-                    tx_hash_ok2,
-                    ChainID.ETHEREUM.serialize_for_db(),
-                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
-                ),
+                (tx_hash, ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL)
+                for tx_hash in (tx_hash_ok1, tx_hash_ok2, tx_hash_fail)
             ],
         )
 
@@ -783,52 +788,53 @@ def test_repull_internal_tx_conflicts_batch_decode_failure_purge_isolates_failur
         )
 
     with database.conn.read_ctx() as cursor:
-        ok1_row = cursor.execute(
-            'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
-            'WHERE transaction_hash=? AND chain=?',
-            (tx_hash_ok1, ChainID.ETHEREUM.serialize_for_db()),
-        ).fetchone()
+        for tx_hash in (tx_hash_ok1, tx_hash_ok2):
+            assert cursor.execute(
+                'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
+                'WHERE transaction_hash=? AND chain=?',
+                (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+            ).fetchone() == (1, None)
+
         fail_row = cursor.execute(
             'SELECT fixed, last_retry_ts, last_error FROM evm_internal_tx_conflicts '
             'WHERE transaction_hash=? AND chain=?',
             (tx_hash_fail, ChainID.ETHEREUM.serialize_for_db()),
         ).fetchone()
-        ok2_row = cursor.execute(
-            'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
-            'WHERE transaction_hash=? AND chain=?',
-            (tx_hash_ok2, ChainID.ETHEREUM.serialize_for_db()),
-        ).fetchone()
-
-    assert ok1_row == (1, None)
-    assert fail_row[0] == 0
-    assert fail_row[1] is not None
-    assert fail_row[2] == 'purge failed'
-    assert ok2_row == (1, None)
+        assert fail_row[0] == 0
+        assert fail_row[1] is not None
+        assert fail_row[2] == 'purge failed'
 
 
 def test_repull_internal_pull_dataintegrity_updates_retry_fields(database) -> None:
     tx_hash = make_evm_tx_hash()
+    tx = EvmTransaction(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000000),
+        block_number=1,
+        from_address=(sender := make_evm_address()),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    )
     with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[tx],
+            relevant_address=sender,
+        )
         write_cursor.execute(
             'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, repull_reason, fixed) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
-            (
-                tx_hash,
-                ChainID.ETHEREUM.serialize_for_db(),
-                INTERNAL_TX_CONFLICT_ACTION_REPULL,
-                INTERNAL_TX_CONFLICT_REPULL_REASON_OTHER,
-                0,
-            ),
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, INTERNAL_TX_CONFLICT_REPULL_REASON_OTHER, 0),  # noqa: E501
         )
-
-    class _DummyTx:
-        def __init__(self) -> None:
-            self.to_address = make_evm_address()
-            self.timestamp = Timestamp(1700000000)
 
     repull_internal_tx_conflicts(
         database=database,
         chains_aggregator=make_dummy_chains_aggregator(
-            get_transaction_by_hash_result=(_DummyTx(), {'status': '0x1'}),
             query_internal_side_effect=DataIntegrityError('empty internals payload'),
         ),
         limit=DEFAULT_INTERNAL_TXS_TO_REPULL,
@@ -894,7 +900,6 @@ def test_repull_fetch_failure_keeps_db_unchanged(database) -> None:
         _repull_internal_tx_data(
             database=database,
             chains_aggregator=make_dummy_chains_aggregator(
-                get_transaction_by_hash_result=(tx, {'status': '0x1'}),
                 query_internal_side_effect=RemoteError('fetch failed'),
             ),
             chain_id=ChainID.ETHEREUM,
@@ -934,20 +939,24 @@ def test_repull_internal_conflict_uses_indexer_source_from_internal_query(databa
         nonce=1,
     )
     captured_indexer_source = {}
-
-    with patch.object(DBEvmTx, 'add_or_ignore_receipt_data'):
-        _repull_internal_tx_data(
-            database=database,
-            chains_aggregator=make_dummy_chains_aggregator(
-                get_transaction_by_hash_result=(tx, {'status': '0x1'}),
-                query_internal_return_value=([], None, 'etherscan'),
-                replace_internal_hook=lambda **kwargs: captured_indexer_source.update(
-                    {'value': kwargs['indexer_source']},
-                ),
-            ),
-            chain_id=ChainID.ETHEREUM,
-            tx_hash=tx_hash,
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[tx],
+            relevant_address=tx.from_address,
         )
+
+    _repull_internal_tx_data(
+        database=database,
+        chains_aggregator=make_dummy_chains_aggregator(
+            query_internal_return_value=([], None, 'etherscan'),
+            replace_internal_hook=lambda **kwargs: captured_indexer_source.update(
+                {'value': kwargs['indexer_source']},
+            ),
+        ),
+        chain_id=ChainID.ETHEREUM,
+        tx_hash=tx_hash,
+    )
 
     assert captured_indexer_source['value'] == 'etherscan'
 
@@ -1045,17 +1054,21 @@ def test_repull_passes_tx_timestamp_to_internal_query(database) -> None:
         nonce=1,
     )
     captured_kwargs: dict[str, Any] = {}
-
-    with patch.object(DBEvmTx, 'add_or_ignore_receipt_data'):
-        _repull_internal_tx_data(
-            database=database,
-            chains_aggregator=make_dummy_chains_aggregator(
-                get_transaction_by_hash_result=(tx, {'status': '0x1'}),
-                query_internal_return_value=([], None, ''),
-                query_internal_hook=lambda **kwargs: captured_kwargs.update(kwargs),
-            ),
-            chain_id=ChainID.ETHEREUM,
-            tx_hash=tx_hash,
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[tx],
+            relevant_address=tx.from_address,
         )
+
+    _repull_internal_tx_data(
+        database=database,
+        chains_aggregator=make_dummy_chains_aggregator(
+            query_internal_return_value=([], None, ''),
+            query_internal_hook=lambda **kwargs: captured_kwargs.update(kwargs),
+        ),
+        chain_id=ChainID.ETHEREUM,
+        tx_hash=tx_hash,
+    )
 
     assert captured_kwargs.get('tx_timestamp') == tx_ts
