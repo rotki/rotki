@@ -1,18 +1,20 @@
 import type { Ref } from 'vue';
 import type { Collection } from '@/types/collection';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type InternalTxConflict, InternalTxConflictStatuses } from './types';
+import { type InternalTxConflict, type InternalTxConflictsCountResponse, InternalTxConflictStatuses } from './types';
 import { useInternalTxConflicts } from './use-internal-tx-conflicts';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
     fetchInternalTxConflicts: vi.fn<() => Promise<Collection<InternalTxConflict>>>(),
+    fetchInternalTxConflictsCount: vi.fn<() => Promise<InternalTxConflictsCountResponse>>(),
   },
 }));
 
 vi.mock('./internal-tx-conflicts-api', () => ({
   useInternalTxConflictsApi: (): object => ({
     fetchInternalTxConflicts: spies.fetchInternalTxConflicts,
+    fetchInternalTxConflictsCount: spies.fetchInternalTxConflictsCount,
   }),
 }));
 
@@ -86,6 +88,7 @@ describe('use-internal-tx-conflicts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     spies.fetchInternalTxConflicts.mockResolvedValue(createMockCollection());
+    spies.fetchInternalTxConflictsCount.mockResolvedValue({ entriesFound: 0, entriesTotal: 0 });
     composable = useInternalTxConflicts();
   });
 
@@ -94,17 +97,15 @@ describe('use-internal-tx-conflicts', () => {
   });
 
   describe('fetchPendingCount', () => {
-    it('updates pendingCount from API total', async () => {
-      spies.fetchInternalTxConflicts.mockResolvedValue(createMockCollection([], 4, 5));
+    it('updates pendingCount from POST count endpoint', async () => {
+      spies.fetchInternalTxConflictsCount.mockResolvedValue({ entriesFound: 4, entriesTotal: 5 });
 
       await composable.fetchPendingCount();
 
       expect(get(composable.pendingCount)).toBe(4);
-      expect(spies.fetchInternalTxConflicts).toHaveBeenCalledWith({
+      expect(spies.fetchInternalTxConflictsCount).toHaveBeenCalledWith({
         failed: false,
         fixed: false,
-        limit: 0,
-        offset: 0,
       });
     });
   });

@@ -42,7 +42,7 @@ interface UseInternalTxConflictsReturn {
 export const useInternalTxConflicts = createSharedComposable((): UseInternalTxConflictsReturn => {
   const { t } = useI18n({ useScope: 'global' });
   const { setMessage } = useMessageStore();
-  const { fetchInternalTxConflicts } = useInternalTxConflictsApi();
+  const { fetchInternalTxConflicts, fetchInternalTxConflictsCount } = useInternalTxConflictsApi();
 
   const pendingCount = ref<number>(0);
   const activeFilter = ref<InternalTxConflictStatus>(InternalTxConflictStatuses.PENDING);
@@ -77,13 +77,11 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
 
   async function fetchPendingCount(): Promise<void> {
     try {
-      const result = await fetchInternalTxConflicts({
+      const result = await fetchInternalTxConflictsCount({
         failed: false,
         fixed: false,
-        limit: 0,
-        offset: 0,
       });
-      set(pendingCount, result.found);
+      set(pendingCount, result.entriesFound);
     }
     catch (error: any) {
       logger.error('Failed to fetch internal tx conflicts pending count:', error);
