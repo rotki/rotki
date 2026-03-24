@@ -24,6 +24,7 @@ interface UseTransactionSyncReturn {
   syncAndReDecodeEvents: (chain: string, params: TransactionSyncParams) => Promise<void>;
   syncTransactionTask: (account: ChainAddress, type: TransactionChainType, trackProgress?: boolean) => Promise<void>;
   syncTransactionsByChains: (accounts: ChainAddress[], trackProgress?: boolean) => Promise<void>;
+  waitForDecoding: () => Promise<void>;
 }
 
 export function useTransactionSync(): UseTransactionSyncReturn {
@@ -153,9 +154,18 @@ export function useTransactionSync(): UseTransactionSyncReturn {
     );
   };
 
+  const waitForDecoding = async (): Promise<void> => new Promise((resolve) => {
+    if (queue.running === 0 && queue.pending === 0) {
+      resolve();
+      return;
+    }
+    queue.setOnCompletion(() => resolve());
+  });
+
   return {
     syncAndReDecodeEvents,
     syncTransactionsByChains,
     syncTransactionTask,
+    waitForDecoding,
   };
 }
