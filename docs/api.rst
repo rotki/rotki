@@ -2733,7 +2733,7 @@ Decode transactions that haven't been decoded yet
    :resjson string result.entries.group_identifier: Group identifier of history events linked to ``tx_hash``. ``null`` when no linked events are found.
    :resjson int result.entries.last_retry_ts: Unix timestamp of the most recent repull retry, or ``null`` if no retry has failed yet.
    :resjson string result.entries.last_error: Error from the most recent failed repull retry, or ``null`` if no retry has failed yet.
-   :resjson int result.entries_found: Number of entries returned in the current page.
+   :resjson int result.entries_found: Number of entries matching the applied filters. Ignores pagination.
    :resjson int result.entries_total: Total number of entries matching the applied filters.
    :resjson int result.entries_limit: Applied limit value. ``-1`` when no limit is provided.
    :reqjson int[optional] limit: Maximum number of rows to return.
@@ -2747,6 +2747,49 @@ Decode transactions that haven't been decoded yet
    :reqjson list[optional] order_by_attributes: List of attributes to order by. Valid values: ``chain``, ``tx_hash``, ``timestamp``, ``action``, ``repull_reason``, ``redecode_reason``, ``last_retry_ts``, ``last_error``. Defaults to ``["chain", "tx_hash"]``.
    :reqjson list[optional] ascending: List of booleans corresponding to each ``order_by_attributes`` entry. ``true`` for ascending, ``false`` for descending.
    :statuscode 200: Conflicts successfully returned.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Other error. Check error message for details.
+   :statuscode 500: Internal rotki error
+
+.. http:post:: /api/(version)/blockchains/transactions/internal/conflicts
+
+   Doing a POST on the internal transaction conflicts endpoint returns only the counts for unresolved
+   EVM transaction conflicts. Unlike GET, this endpoint does not return entries.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/blockchains/transactions/internal/conflicts HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": false, "fixed": false, "failed": false}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "entries_found": 2,
+              "entries_total": 3
+          },
+          "message": ""
+      }
+
+   :resjson int result.entries_found: Number of entries matching the applied filters.
+   :resjson int result.entries_total: Total number of internal tx conflict entries in the table, ignoring filters.
+   :reqjson string[optional] tx_hash: Filter rows by a specific EVM transaction hash.
+   :reqjson string[optional] chain: Filter rows by chain name (e.g. ``"ethereum"``, ``"optimism"``).
+   :reqjson int[optional] from_timestamp: Unix timestamp. Only count rows whose transaction timestamp is greater than or equal to this value. Defaults to ``0``.
+   :reqjson int[optional] to_timestamp: Unix timestamp. Only count rows whose transaction timestamp is less than or equal to this value. Defaults to current time. Rows without a known transaction timestamp are always included.
+   :reqjson bool[optional] fixed: If ``true``, count fixed rows. Defaults to ``false`` (unfixed rows).
+   :reqjson bool[optional] failed: If ``true``, count only rows with a recorded failed retry (`last_retry_ts` and `last_error` set).
+   :statuscode 200: Counts successfully returned.
    :statuscode 401: User is not logged in.
    :statuscode 409: Other error. Check error message for details.
    :statuscode 500: Internal rotki error
