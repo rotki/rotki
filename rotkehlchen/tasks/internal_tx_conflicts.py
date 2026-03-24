@@ -19,6 +19,7 @@ from rotkehlchen.db.internal_tx_conflicts import (
 from rotkehlchen.errors.misc import DataIntegrityError, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import Location
 from rotkehlchen.utils.misc import get_chunks, ts_now
 
 if TYPE_CHECKING:
@@ -47,9 +48,7 @@ class _RepullResult(NamedTuple):
     error: str | None
 
 
-def _error_to_message(
-        error: InputError | RemoteError | DeserializationError | DataIntegrityError,
-) -> str:
+def _error_to_message(error: Exception) -> str:
     """Normalize repull/decode exceptions to a user-facing retry message."""
     if isinstance(error, DataIntegrityError):
         return f'Indexer did not provide valid data: {error!s}'
@@ -170,7 +169,7 @@ def _repull_single_conflict(
             chain_id=chain_id,
             tx_hash=tx_hash,
         )
-    except (InputError, RemoteError, DeserializationError, DataIntegrityError) as e:
+    except (InputError, DataIntegrityError) as e:
         error_msg = _error_to_message(e)
         log.error(
             f'Failed to repull internal tx conflict {tx_hash!s} on '
@@ -195,25 +194,51 @@ def _process_repull_conflicts(
         database: 'DBHandler',
         chains_aggregator: 'ChainsAggregator',
         repull_entries: list[tuple['EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', 'EVMTxHash']],
-        to_decode_by_chain: dict['EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', list['EVMTxHash']],
-) -> None:
-    """Run repull entries in staggered greenlet batches and collect txs that need decode."""
+        ) -> dict['EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', list['EVMTxHash']]:
+    """Run staggered repull workers and return tx hashes that need decode per chain."""
+    to_decode_by_chain: dict[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, list[EVMTxHash]] = defaultdict(list)  # noqa: E501
     repull_chunks = list(get_chunks(repull_entries, REPULL_BATCH_SIZE))
     for chunk_idx, chunk in enumerate(repull_chunks):
-        greenlets = []
+        greenlets: list[tuple[gevent.Greenlet, EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash]] = []  # noqa: E501
         for launch_idx, (chain_id, tx_hash) in enumerate(chunk):
-            greenlets.append(gevent.spawn_later(
-                launch_idx * REPULL_LAUNCH_STAGGER_SECONDS,
-                _repull_single_conflict,
-                database=database,
-                chains_aggregator=chains_aggregator,
-                chain_id=chain_id,
-                tx_hash=tx_hash,
+            greenlets.append((
+                gevent.spawn_later(
+                    launch_idx * REPULL_LAUNCH_STAGGER_SECONDS,
+                    _repull_single_conflict,
+                    database=database,
+                    chains_aggregator=chains_aggregator,
+                    chain_id=chain_id,
+                    tx_hash=tx_hash,
+                ),
+                chain_id,
+                tx_hash,
             ))
 
-        gevent.joinall(greenlets, raise_error=True)
-        for greenlet in greenlets:
-            result = greenlet.get()
+        gevent.joinall([greenlet for greenlet, _, _ in greenlets], raise_error=False)
+        for greenlet, chain_id, tx_hash in greenlets:
+            if (exception := greenlet.exception) is not None:
+                error_msg = _error_to_message(exception)
+                log.error(
+                    f'Unexpected failure in repull worker for internal tx conflict '
+                    f'{tx_hash!s} on {chain_id.to_name()} due to {error_msg}',
+                )
+                _mark_internal_tx_conflict_error(
+                    database=database,
+                    chain_id=chain_id,
+                    tx_hash=tx_hash,
+                    error_msg=error_msg,
+                )
+                continue
+
+            if (result := greenlet.value) is None:
+                _mark_internal_tx_conflict_error(
+                    database=database,
+                    chain_id=chain_id,
+                    tx_hash=tx_hash,
+                    error_msg='Repull worker finished without a result',
+                )
+                continue
+
             if result.error is not None:
                 _mark_internal_tx_conflict_error(
                     database=database,
@@ -236,13 +261,15 @@ def _process_repull_conflicts(
         if chunk_idx < len(repull_chunks) - 1:
             gevent.sleep(REPULL_BETWEEN_BATCH_DELAY_SECONDS)
 
+    return to_decode_by_chain
+
 
 def _decode_conflicts_in_batches(
         database: 'DBHandler',
         chains_aggregator: 'ChainsAggregator',
         to_decode_by_chain: dict['EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE', list['EVMTxHash']],
 ) -> None:
-    """Decode queued conflict tx hashes per-chain, with single-tx fallback on batch failure."""
+    """Decode queued conflict tx hashes per-chain in a single batch call per chain."""
     for chain_id, tx_hashes in to_decode_by_chain.items():
         chain = chain_id.to_blockchain()
         chain_manager = chains_aggregator.get_chain_manager(blockchain=chain)  # type: ignore[call-overload]
@@ -256,27 +283,28 @@ def _decode_conflicts_in_batches(
         except (InputError, RemoteError, DeserializationError, DataIntegrityError) as e:
             log.error(
                 f'Failed batch decode of internal tx conflicts on {chain_id.to_name()} due '
-                f'to {_error_to_message(e)}. Falling back to single tx decode',
+                f'to {_error_to_message(e)}. Purging cached decoded events for queued txs',
             )
             for tx_hash in tx_hashes:
                 try:
-                    chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
-                        tx_hashes=[tx_hash],
-                        send_ws_notifications=True,
+                    with database.conn.read_ctx() as cursor:
+                        context = chain_manager.transactions_decoder._load_transaction_context(
+                            cursor=cursor,
+                            tx_hash=tx_hash,
+                        )
+                    chain_manager.transactions_decoder._maybe_load_or_purge_events_from_db(
+                        transaction=context.transaction,
+                        tx_ref=tx_hash,
+                        location=Location.from_chain_id(chain_id),
                         ignore_cache=True,
                         delete_customized=False,
                     )
-                except (InputError, RemoteError, DeserializationError, DataIntegrityError) as single_error:  # noqa: E501
-                    error_msg = _error_to_message(single_error)
-                    log.error(
-                        f'Failed to decode internal tx conflict {tx_hash!s} on '
-                        f'{chain_id.to_name()} due to {error_msg}',
-                    )
+                except (InputError, RemoteError, DeserializationError, DataIntegrityError) as purge_error:  # noqa: E501
                     _mark_internal_tx_conflict_error(
                         database=database,
                         chain_id=chain_id,
                         tx_hash=tx_hash,
-                        error_msg=error_msg,
+                        error_msg=_error_to_message(purge_error),
                     )
                 else:
                     _mark_internal_tx_conflict_fixed(
@@ -321,12 +349,12 @@ def repull_internal_tx_conflicts(
                 )
             to_decode_by_chain[chain_id].append(tx_hash)
 
-    _process_repull_conflicts(
+    for chain_id, tx_hashes in _process_repull_conflicts(
         database=database,
         chains_aggregator=chains_aggregator,
         repull_entries=repull_entries,
-        to_decode_by_chain=to_decode_by_chain,
-    )
+    ).items():
+        to_decode_by_chain[chain_id].extend(tx_hashes)
     _decode_conflicts_in_batches(
         database=database,
         chains_aggregator=chains_aggregator,

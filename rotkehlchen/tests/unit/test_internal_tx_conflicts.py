@@ -1,6 +1,7 @@
+import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, call, patch
 
 import gevent
 import pytest
@@ -41,6 +42,7 @@ def make_dummy_chains_aggregator(
         query_internal_return_value: tuple[Any, Any, str] | None = None,
         replace_internal_hook: Callable[..., None] | None = None,
         query_internal_hook: Callable[..., None] | None = None,
+        chain_manager_by_blockchain: dict[Any, Any] | None = None,
 ) -> Any:
     class _DummyInquirer:
         def get_transaction_by_hash(self, tx_hash):
@@ -74,6 +76,11 @@ def make_dummy_chains_aggregator(
 
     class _DummyChainsAggregator:
         def get_chain_manager(self, blockchain):
+            if chain_manager_by_blockchain is not None and (
+                    chain_manager := chain_manager_by_blockchain.get(blockchain)
+            ) is not None:
+                return chain_manager
+
             return _DummyChainManager()
 
     return _DummyChainsAggregator()
@@ -291,6 +298,76 @@ def test_repull_internal_tx_conflicts_records_retry_error(database) -> None:
     assert row[2] == 'query failed'
 
 
+def test_repull_internal_tx_conflicts_unexpected_worker_exception_records_retry_error(
+        database,
+) -> None:
+    tx_hash_fail = make_evm_tx_hash()
+    tx_hash_ok = make_evm_tx_hash()
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, repull_reason, fixed) VALUES(?, ?, ?, ?, ?)',  # noqa: E501
+            [
+                (
+                    tx_hash_fail,
+                    ChainID.ETHEREUM.serialize_for_db(),
+                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                    INTERNAL_TX_CONFLICT_REPULL_REASON_OTHER,
+                    0,
+                ),
+                (
+                    tx_hash_ok,
+                    ChainID.ETHEREUM.serialize_for_db(),
+                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                    INTERNAL_TX_CONFLICT_REPULL_REASON_OTHER,
+                    0,
+                ),
+            ],
+        )
+
+    def worker(**kwargs) -> _RepullResult:
+        if kwargs['tx_hash'] == tx_hash_fail:
+            raise RuntimeError('unexpected failure')
+
+        return _RepullResult(
+            chain_id=kwargs['chain_id'],
+            tx_hash=kwargs['tx_hash'],
+            needs_decode=False,
+            error=None,
+        )
+
+    with (
+            patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_BATCH_SIZE', 5),
+            patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_LAUNCH_STAGGER_SECONDS', 0),
+            patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_BETWEEN_BATCH_DELAY_SECONDS', 0),
+            patch(
+                'rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict',
+                side_effect=worker,
+            ),
+    ):
+        repull_internal_tx_conflicts(
+            database=database,
+            chains_aggregator=cast('ChainsAggregator', object()),
+            limit=DEFAULT_INTERNAL_TXS_TO_REPULL,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        fail_row = cursor.execute(
+            'SELECT fixed, last_retry_ts, last_error FROM evm_internal_tx_conflicts '
+            'WHERE transaction_hash=? AND chain=?',
+            (tx_hash_fail, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()
+        ok_row = cursor.execute(
+            'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
+            'WHERE transaction_hash=? AND chain=?',
+            (tx_hash_ok, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()
+
+    assert fail_row[0] == 0
+    assert fail_row[1] is not None
+    assert fail_row[2] == 'unexpected failure'
+    assert ok_row == (1, None)
+
+
 def test_repull_internal_tx_conflicts_prioritizes_untried_rows(database) -> None:
     tx_hash_never_tried = make_evm_tx_hash()
     tx_hash_retried = make_evm_tx_hash()
@@ -339,12 +416,19 @@ def test_repull_internal_tx_conflicts_limits_concurrency_to_batch_size(database)
         )
 
     active_workers, max_workers = 0, 0
+    started_workers = 0
+    completion_count = 0
+    started_at_fifth_completion: int | None = None
 
     def worker(**kwargs) -> _RepullResult:
-        nonlocal active_workers, max_workers
+        nonlocal active_workers, max_workers, started_workers, completion_count, started_at_fifth_completion  # noqa: E501
+        started_workers += 1
         active_workers += 1
         max_workers = max(max_workers, active_workers)
         gevent.sleep(0.01)
+        completion_count += 1
+        if completion_count == 5:
+            started_at_fifth_completion = started_workers
         active_workers -= 1
         return _RepullResult(
             chain_id=kwargs['chain_id'],
@@ -354,12 +438,10 @@ def test_repull_internal_tx_conflicts_limits_concurrency_to_batch_size(database)
         )
 
     with (
+            patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_BATCH_SIZE', 5),
             patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_LAUNCH_STAGGER_SECONDS', 0),
             patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_BETWEEN_BATCH_DELAY_SECONDS', 0),
-            patch(
-                'rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict',
-                side_effect=worker,
-            ),
+            patch('rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict', side_effect=worker),  # noqa: E501
     ):
         repull_internal_tx_conflicts(
             database=database,
@@ -368,6 +450,7 @@ def test_repull_internal_tx_conflicts_limits_concurrency_to_batch_size(database)
         )
 
     assert max_workers == 5
+    assert started_at_fifth_completion == 5
 
 
 def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
@@ -387,13 +470,26 @@ def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
         )
 
     delays: list[float] = []
+    launched_hashes: list[bytes] = []
+    start_times: dict[bytes, float] = {}
+    original_spawn_later = gevent.spawn_later
+
+    def worker(**kwargs) -> _RepullResult:
+        start_times[kwargs['tx_hash']] = time.monotonic()
+        return _RepullResult(
+            chain_id=kwargs['chain_id'],
+            tx_hash=kwargs['tx_hash'],
+            needs_decode=False,
+            error=None,
+        )
 
     def spawn_later(delay, func, **kwargs):
         delays.append(delay)
-        return gevent.spawn(func, **kwargs)
+        launched_hashes.append(kwargs['tx_hash'])
+        return original_spawn_later(delay, func, **kwargs)
 
     with (
-            patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_LAUNCH_STAGGER_SECONDS', 0.2),
+            patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_LAUNCH_STAGGER_SECONDS', 0.03),
             patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_BETWEEN_BATCH_DELAY_SECONDS', 0),
             patch(
                 'rotkehlchen.tasks.internal_tx_conflicts.gevent.spawn_later',
@@ -401,12 +497,7 @@ def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
             ),
             patch(
                 'rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict',
-                side_effect=lambda **kwargs: _RepullResult(
-                    chain_id=kwargs['chain_id'],
-                    tx_hash=kwargs['tx_hash'],
-                    needs_decode=False,
-                    error=None,
-                ),
+                side_effect=worker,
             ),
     ):
         repull_internal_tx_conflicts(
@@ -415,7 +506,12 @@ def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
             limit=len(entries),
         )
 
-    assert delays == pytest.approx([0.0, 0.2, 0.4, 0.6, 0.8, 0.0, 0.2])
+    assert delays == pytest.approx([0.0, 0.03, 0.06, 0.09, 0.12, 0.0, 0.03])
+    first_batch_hashes = launched_hashes[:5]
+    first_batch_times = [start_times[tx_hash] for tx_hash in first_batch_hashes]
+    # Validate runtime staggering was respected and workers did not launch at once.
+    assert first_batch_times[-1] > first_batch_times[0]
+    assert max(first_batch_times) - min(first_batch_times) >= 0.04
 
 
 def test_repull_internal_tx_conflicts_decodes_in_chain_batches(database) -> None:
@@ -442,13 +538,18 @@ def test_repull_internal_tx_conflicts_decodes_in_chain_batches(database) -> None
     chains_aggregator = MagicMock()
     chains_aggregator.get_chain_manager.side_effect = lambda blockchain: chain_managers[blockchain]
 
-    with patch(
-            'rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict',
-            side_effect=lambda **kwargs: _RepullResult(
-                chain_id=kwargs['chain_id'],
-                tx_hash=kwargs['tx_hash'],
-                needs_decode=True,
-                error=None,
+    with (
+            patch(
+                'rotkehlchen.tasks.internal_tx_conflicts.clean_internal_tx_conflict',
+            ) as clean_mock,
+            patch(
+                'rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict',
+                side_effect=lambda **kwargs: _RepullResult(
+                    chain_id=kwargs['chain_id'],
+                    tx_hash=kwargs['tx_hash'],
+                    needs_decode=True,
+                    error=None,
+                ),
             ),
     ):
         repull_internal_tx_conflicts(
@@ -456,6 +557,10 @@ def test_repull_internal_tx_conflicts_decodes_in_chain_batches(database) -> None
             chains_aggregator=chains_aggregator,
             limit=10,
         )
+
+    assert clean_mock.call_count == 1
+    assert clean_mock.call_args.kwargs['chain_id'] == ChainID.ETHEREUM
+    assert clean_mock.call_args.kwargs['tx_hash'] == tx_hash_eth_fix
 
     eth_tx_hashes = ethereum_decoder.decode_and_get_transaction_hashes.call_args.kwargs[
         'tx_hashes'
@@ -474,7 +579,152 @@ def test_repull_internal_tx_conflicts_decodes_in_chain_batches(database) -> None
         ).fetchone()[0] == 3
 
 
-def test_repull_internal_tx_conflicts_batch_decode_fallback_isolates_failures(database) -> None:
+def test_repull_internal_tx_conflicts_batch_decode_emits_ws_fixed_messages(database) -> None:
+    tx_hash1 = make_evm_tx_hash()
+    tx_hash2 = make_evm_tx_hash()
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, fixed) VALUES(?, ?, ?, 0)',  # noqa: E501
+            [
+                (
+                    tx_hash1,
+                    ChainID.ETHEREUM.serialize_for_db(),
+                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                ),
+                (
+                    tx_hash2,
+                    ChainID.ETHEREUM.serialize_for_db(),
+                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                ),
+            ],
+        )
+
+    chain_manager = MagicMock(transactions_decoder=MagicMock())
+    chains_aggregator = MagicMock()
+    chains_aggregator.get_chain_manager.return_value = chain_manager
+    with (
+            patch.object(database.msg_aggregator, 'add_message') as add_message_mock,
+            patch(
+                'rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict',
+                side_effect=lambda **kwargs: _RepullResult(
+                    chain_id=kwargs['chain_id'],
+                    tx_hash=kwargs['tx_hash'],
+                    needs_decode=True,
+                    error=None,
+                ),
+            ),
+    ):
+        repull_internal_tx_conflicts(
+            database=database,
+            chains_aggregator=chains_aggregator,
+            limit=10,
+        )
+
+    add_message_mock.assert_has_calls(
+        [
+            call(
+                message_type=WSMessageType.INTERNAL_TX_FIXED,
+                data={'chain': ChainID.ETHEREUM.to_name(), 'tx_hash': str(tx_hash1)},
+            ),
+            call(
+                message_type=WSMessageType.INTERNAL_TX_FIXED,
+                data={'chain': ChainID.ETHEREUM.to_name(), 'tx_hash': str(tx_hash2)},
+            ),
+        ],
+        any_order=True,
+    )
+
+
+def test_repull_internal_tx_conflicts_batch_decode_failure_purges_cache_marks_fixed(
+        database,
+) -> None:
+    tx_hash1 = make_evm_tx_hash()
+    tx_hash2 = make_evm_tx_hash()
+    tx_hash3 = make_evm_tx_hash()
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO evm_internal_tx_conflicts(transaction_hash, chain, action, fixed) VALUES(?, ?, ?, 0)',  # noqa: E501
+            [
+                (
+                    tx_hash1,
+                    ChainID.ETHEREUM.serialize_for_db(),
+                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                ),
+                (
+                    tx_hash2,
+                    ChainID.ETHEREUM.serialize_for_db(),
+                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                ),
+                (
+                    tx_hash3,
+                    ChainID.ETHEREUM.serialize_for_db(),
+                    INTERNAL_TX_CONFLICT_ACTION_REPULL,
+                ),
+            ],
+        )
+
+    ethereum_decoder = MagicMock()
+    ethereum_decoder.decode_and_get_transaction_hashes.side_effect = RemoteError(
+        'batch decode failed',
+    )
+    ethereum_decoder._load_transaction_context.return_value = MagicMock(
+        transaction=MagicMock(),
+    )
+    chain_manager = MagicMock(transactions_decoder=ethereum_decoder)
+    chains_aggregator = MagicMock()
+    chains_aggregator.get_chain_manager.return_value = chain_manager
+
+    with patch(
+            'rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict',
+            side_effect=lambda **kwargs: _RepullResult(
+                chain_id=kwargs['chain_id'],
+                tx_hash=kwargs['tx_hash'],
+                needs_decode=True,
+                error=None,
+            ),
+    ):
+        repull_internal_tx_conflicts(
+            database=database,
+            chains_aggregator=chains_aggregator,
+            limit=10,
+        )
+
+    batch_call_kwargs = ethereum_decoder.decode_and_get_transaction_hashes.call_args.kwargs
+    assert set(batch_call_kwargs['tx_hashes']) == {tx_hash1, tx_hash2, tx_hash3}
+    assert batch_call_kwargs['send_ws_notifications'] is True
+    assert batch_call_kwargs['ignore_cache'] is True
+    assert batch_call_kwargs['delete_customized'] is False
+    assert ethereum_decoder._maybe_load_or_purge_events_from_db.call_count == 3
+    for call_args in ethereum_decoder._maybe_load_or_purge_events_from_db.call_args_list:
+        assert call_args.kwargs['ignore_cache'] is True
+        assert call_args.kwargs['delete_customized'] is False
+        assert call_args.kwargs['location'] == Location.from_chain_id(ChainID.ETHEREUM)
+
+    with database.conn.read_ctx() as cursor:
+        row1 = cursor.execute(
+            'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
+            'WHERE transaction_hash=? AND chain=?',
+            (tx_hash1, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()
+        row2 = cursor.execute(
+            'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
+            'WHERE transaction_hash=? AND chain=?',
+            (tx_hash2, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()
+        row3 = cursor.execute(
+            'SELECT fixed, last_error FROM evm_internal_tx_conflicts '
+            'WHERE transaction_hash=? AND chain=?',
+            (tx_hash3, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()
+
+    assert row1 == (1, None)
+    assert row2 == (1, None)
+    assert row3 == (1, None)
+
+
+def test_repull_internal_tx_conflicts_batch_decode_failure_purge_isolates_failures(
+        database,
+) -> None:
     tx_hash_ok1 = make_evm_tx_hash()
     tx_hash_fail = make_evm_tx_hash()
     tx_hash_ok2 = make_evm_tx_hash()
@@ -501,16 +751,18 @@ def test_repull_internal_tx_conflicts_batch_decode_fallback_isolates_failures(da
         )
 
     ethereum_decoder = MagicMock()
+    ethereum_decoder.decode_and_get_transaction_hashes.side_effect = RemoteError(
+        'batch decode failed',
+    )
+    ethereum_decoder._load_transaction_context.return_value = MagicMock(
+        transaction=MagicMock(),
+    )
 
-    def decode_side_effect(**kwargs):
-        tx_hashes = kwargs['tx_hashes']
-        if len(tx_hashes) > 1:
-            raise RemoteError('batch decode failed')
-        if tx_hashes[0] == tx_hash_fail:
-            raise RemoteError('single decode failed')
-        return []
+    def purge_side_effect(**kwargs) -> None:
+        if kwargs['tx_ref'] == tx_hash_fail:
+            raise InputError('purge failed')
 
-    ethereum_decoder.decode_and_get_transaction_hashes.side_effect = decode_side_effect
+    ethereum_decoder._maybe_load_or_purge_events_from_db.side_effect = purge_side_effect
     chain_manager = MagicMock(transactions_decoder=ethereum_decoder)
     chains_aggregator = MagicMock()
     chains_aggregator.get_chain_manager.return_value = chain_manager
@@ -537,7 +789,8 @@ def test_repull_internal_tx_conflicts_batch_decode_fallback_isolates_failures(da
             (tx_hash_ok1, ChainID.ETHEREUM.serialize_for_db()),
         ).fetchone()
         fail_row = cursor.execute(
-            'SELECT fixed, last_retry_ts, last_error FROM evm_internal_tx_conflicts WHERE transaction_hash=? AND chain=?',  # noqa: E501
+            'SELECT fixed, last_retry_ts, last_error FROM evm_internal_tx_conflicts '
+            'WHERE transaction_hash=? AND chain=?',
             (tx_hash_fail, ChainID.ETHEREUM.serialize_for_db()),
         ).fetchone()
         ok2_row = cursor.execute(
@@ -549,7 +802,7 @@ def test_repull_internal_tx_conflicts_batch_decode_fallback_isolates_failures(da
     assert ok1_row == (1, None)
     assert fail_row[0] == 0
     assert fail_row[1] is not None
-    assert fail_row[2] == 'single decode failed'
+    assert fail_row[2] == 'purge failed'
     assert ok2_row == (1, None)
 
 
