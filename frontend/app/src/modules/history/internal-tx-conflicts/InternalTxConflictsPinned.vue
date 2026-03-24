@@ -3,6 +3,7 @@ import type { Nullable } from '@rotki/common';
 import type { InternalTxConflict } from './types';
 import type { Pinned } from '@/types/session';
 import { startPromise } from '@shared/utils';
+import InternalTxConflictRepullSettings from '@/components/settings/general/InternalTxConflictRepullSettings.vue';
 import { HighlightTargetTypes, useHistoryEventNavigation } from '@/composables/history/events/use-history-event-navigation';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import InternalTxConflictsContent from './InternalTxConflictsContent.vue';
@@ -22,6 +23,7 @@ const { clearAllHighlightTargets, highlightTargets, requestNavigation, setHighli
 const { cancelResolution, progress } = useInternalTxConflictResolution();
 
 const activeTxHash = ref<string | undefined>(highlightedTxHash);
+const showSettings = ref<boolean>(false);
 const isRunning = computed<boolean>(() => get(progress).isRunning);
 
 function setPinned(pin: Nullable<Pinned>): void {
@@ -140,6 +142,26 @@ onUnmounted(() => {
               variant="text"
               icon
               size="sm"
+              @click="showSettings = !showSettings"
+            >
+              <RuiIcon
+                size="20"
+                class="text-white"
+                name="lu-settings"
+              />
+            </RuiButton>
+          </template>
+          {{ t('internal_tx_conflicts.actions.settings') }}
+        </RuiTooltip>
+        <RuiTooltip
+          :popper="{ placement: 'bottom' }"
+          :open-delay="400"
+        >
+          <template #activator>
+            <RuiButton
+              variant="text"
+              icon
+              size="sm"
               @click="unpin()"
             >
               <RuiIcon
@@ -152,6 +174,13 @@ onUnmounted(() => {
           {{ t('internal_tx_conflicts.actions.unpin') }}
         </RuiTooltip>
       </template>
+    </div>
+
+    <div
+      v-if="showSettings"
+      class="px-2 pt-2 border-b border-default"
+    >
+      <InternalTxConflictRepullSettings compact />
     </div>
 
     <InternalTxConflictsContent

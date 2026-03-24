@@ -25,6 +25,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const historicalPriceOracles = useComputedRef(settings, 'historicalPriceOracles');
   const ssfGraphMultiplier = useComputedRef(settings, 'ssfGraphMultiplier');
   const inferZeroTimedBalances = useComputedRef(settings, 'inferZeroTimedBalances');
+  const internalTxConflictRepullFrequency = useComputedRef(settings, 'internalTxConflictRepullFrequency');
+  const internalTxsToRepull = useComputedRef(settings, 'internalTxsToRepull');
   const nonSyncingExchanges = useComputedRef(settings, 'nonSyncingExchanges');
   const evmchainsToSkipDetection = useComputedRef(settings, 'evmchainsToSkipDetection');
   const evmIndexersOrder = useComputedRef(settings, 'evmIndexersOrder');
@@ -84,6 +86,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     floatingPrecision: uiFloatingPrecision,
     historicalPriceOracles,
     inferZeroTimedBalances,
+    internalTxConflictRepullFrequency,
+    internalTxsToRepull,
     ksmRpcEndpoint,
     nonSyncingExchanges,
     oraclePenaltyDuration,

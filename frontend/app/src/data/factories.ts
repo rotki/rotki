@@ -28,6 +28,8 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     evmIndexersOrder: {},
     historicalPriceOracles: [],
     inferZeroTimedBalances: false,
+    internalTxConflictRepullFrequency: Defaults.DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY,
+    internalTxsToRepull: Defaults.DEFAULT_INTERNAL_TXS_TO_REPULL,
     ksmRpcEndpoint: Defaults.KSM_RPC_ENDPOINT,
     mainCurrency,
     nonSyncingExchanges: [],

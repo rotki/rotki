@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { InternalTxConflict } from './types';
+import InternalTxConflictRepullSettings from '@/components/settings/general/InternalTxConflictRepullSettings.vue';
 import CardTitle from '@/components/typography/CardTitle.vue';
 import { useAreaVisibilityStore } from '@/store/session/visibility';
 import { PinnedNames } from '@/types/session';
@@ -9,6 +10,7 @@ const modelValue = defineModel<boolean>({ default: false });
 
 const { t } = useI18n({ useScope: 'global' });
 
+const showSettings = ref<boolean>(false);
 const { pinned } = storeToRefs(useAreaVisibilityStore());
 
 function closeDialog(): void {
@@ -63,6 +65,21 @@ function showInEvents(conflict: InternalTxConflict): void {
                 <RuiButton
                   variant="text"
                   icon
+                  @click="showSettings = !showSettings"
+                >
+                  <RuiIcon name="lu-settings" />
+                </RuiButton>
+              </template>
+              {{ t('internal_tx_conflicts.actions.settings') }}
+            </RuiTooltip>
+            <RuiTooltip
+              :popper="{ placement: 'bottom' }"
+              :open-delay="400"
+            >
+              <template #activator>
+                <RuiButton
+                  variant="text"
+                  icon
                   @click="pinSection()"
                 >
                   <RuiIcon name="lu-pin" />
@@ -80,6 +97,13 @@ function showInEvents(conflict: InternalTxConflict): void {
           </div>
         </div>
       </template>
+
+      <div
+        v-if="showSettings"
+        class="px-4 pt-4 border-b border-default"
+      >
+        <InternalTxConflictRepullSettings compact />
+      </div>
 
       <InternalTxConflictsContent
         class="my-4"

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import AutoCreateProfitEventsSetting from '@/components/settings/general/AutoCreateProfitEventsSetting.vue';
+import InternalTxConflictRepullSettings from '@/components/settings/general/InternalTxConflictRepullSettings.vue';
 import SettingCategory from '@/components/settings/SettingCategory.vue';
 
 const HistoryEventsSkippedExternalEvents = defineAsyncComponent(
@@ -18,6 +19,7 @@ const { t } = useI18n({ useScope: 'global' });
       {{ t('general_settings.history_event.subtitle') }}
     </template>
     <AutoCreateProfitEventsSetting />
+    <InternalTxConflictRepullSettings />
     <HistoryEventsSkippedExternalEvents />
   </SettingCategory>
 </template>

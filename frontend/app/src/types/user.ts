@@ -66,6 +66,8 @@ const GeneralSettings = z.object({
   evmIndexersOrder: z.record(z.string(), z.array(EvmIndexerEnum)),
   historicalPriceOracles: z.array(PriceOracleEnum),
   inferZeroTimedBalances: z.boolean(),
+  internalTxConflictRepullFrequency: z.number().int().min(30).default(Defaults.DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY),
+  internalTxsToRepull: z.number().int().min(1).default(Defaults.DEFAULT_INTERNAL_TXS_TO_REPULL),
   ksmRpcEndpoint: z.string(),
   mainCurrency: z.string().transform((currency) => {
     const { findCurrency } = useCurrencies();
@@ -188,6 +190,8 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     evmIndexersOrder: settings.evmIndexersOrder,
     historicalPriceOracles: settings.historicalPriceOracles,
     inferZeroTimedBalances: settings.inferZeroTimedBalances,
+    internalTxConflictRepullFrequency: settings.internalTxConflictRepullFrequency,
+    internalTxsToRepull: settings.internalTxsToRepull,
     ksmRpcEndpoint: settings.ksmRpcEndpoint,
     mainCurrency: settings.mainCurrency,
     nonSyncingExchanges: settings.nonSyncingExchanges,
