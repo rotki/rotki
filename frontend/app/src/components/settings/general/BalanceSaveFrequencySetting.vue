@@ -5,6 +5,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { Constraints } from '@/data/constraints';
 import { Defaults } from '@/data/defaults';
+import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toMessages } from '@/utils/validation';
 
@@ -84,14 +85,7 @@ onMounted(() => {
           @update:model-value="callIfValid($event, update)"
         />
 
-        <RuiButton
-          class="mt-1 ml-2"
-          variant="text"
-          icon
-          @click="reset(updateImmediate)"
-        >
-          <RuiIcon name="lu-history" />
-        </RuiButton>
+        <SettingResetConfirmButton @confirm="reset(updateImmediate)" />
       </div>
     </template>
   </SettingsOption>

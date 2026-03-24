@@ -5052,6 +5052,12 @@
   "settings": {
     "go_to_section": "Go to section",
     "not_saved": "Setting not saved",
+    "reset_confirm": {
+      "cancel": "Cancel",
+      "confirm": "Reset",
+      "message": "Reset to default?",
+      "tooltip": "Reset to default"
+    },
     "saved": "Setting saved",
     "security_settings": {
       "subtitle": "Manage your account security",
