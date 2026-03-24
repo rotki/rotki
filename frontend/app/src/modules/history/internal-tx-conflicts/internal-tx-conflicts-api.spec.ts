@@ -140,5 +140,49 @@ describe('modules/history/internal-tx-conflicts/internal-tx-conflicts-api', () =
           .toThrow();
       });
     });
+
+    describe('fetchInternalTxConflictsCount', () => {
+      it('sends POST with correct payload and returns counts', async () => {
+        let capturedBody: Record<string, unknown> | undefined;
+
+        server.use(
+          http.post(`${backendUrl}/api/1/blockchains/transactions/internal/conflicts`, async ({ request }) => {
+            capturedBody = await request.json() as Record<string, unknown>;
+            return HttpResponse.json({
+              result: {
+                entries_found: 178,
+                entries_total: 237,
+              },
+              message: '',
+            });
+          }),
+        );
+
+        const { fetchInternalTxConflictsCount } = useInternalTxConflictsApi();
+        const result = await fetchInternalTxConflictsCount({ failed: false, fixed: false });
+
+        expect(capturedBody).toBeDefined();
+        expect(capturedBody!.fixed).toBe(false);
+        expect(capturedBody!.failed).toBe(false);
+        expect(result.entriesFound).toBe(178);
+        expect(result.entriesTotal).toBe(237);
+      });
+
+      it('throws on HTTP error response', async () => {
+        server.use(
+          http.post(`${backendUrl}/api/1/blockchains/transactions/internal/conflicts`, () =>
+            HttpResponse.json({
+              result: null,
+              message: 'Server error',
+            }, { status: HTTPStatus.INTERNAL_SERVER_ERROR })),
+        );
+
+        const { fetchInternalTxConflictsCount } = useInternalTxConflictsApi();
+
+        await expect(fetchInternalTxConflictsCount({ failed: false, fixed: false }))
+          .rejects
+          .toThrow();
+      });
+    });
   });
 });

@@ -50,3 +50,17 @@ export interface InternalTxConflictsRequestPayload extends PaginationRequestPayl
   fromTimestamp?: number;
   toTimestamp?: number;
 }
+
+export interface InternalTxConflictsCountPayload {
+  txHash?: string;
+  chain?: string;
+  fixed?: boolean;
+  failed?: boolean;
+  fromTimestamp?: number;
+  toTimestamp?: number;
+}
+
+export interface InternalTxConflictsCountResponse {
+  entriesFound: number;
+  entriesTotal: number;
+}
