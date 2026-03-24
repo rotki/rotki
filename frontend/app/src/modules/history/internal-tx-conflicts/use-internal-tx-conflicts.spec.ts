@@ -88,7 +88,7 @@ describe('use-internal-tx-conflicts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     spies.fetchInternalTxConflicts.mockResolvedValue(createMockCollection());
-    spies.fetchInternalTxConflictsCount.mockResolvedValue({ entriesFound: 0, entriesTotal: 0 });
+    spies.fetchInternalTxConflictsCount.mockResolvedValue({ pending: 0, failed: 0 });
     composable = useInternalTxConflicts();
   });
 
@@ -96,17 +96,15 @@ describe('use-internal-tx-conflicts', () => {
     vi.restoreAllMocks();
   });
 
-  describe('fetchPendingCount', () => {
-    it('updates pendingCount from POST count endpoint', async () => {
-      spies.fetchInternalTxConflictsCount.mockResolvedValue({ entriesFound: 4, entriesTotal: 5 });
+  describe('fetchCounts', () => {
+    it('updates pendingCount and failedCount from POST count endpoint', async () => {
+      spies.fetchInternalTxConflictsCount.mockResolvedValue({ pending: 4, failed: 2 });
 
-      await composable.fetchPendingCount();
+      await composable.fetchCounts();
 
       expect(get(composable.pendingCount)).toBe(4);
-      expect(spies.fetchInternalTxConflictsCount).toHaveBeenCalledWith({
-        failed: false,
-        fixed: false,
-      });
+      expect(get(composable.failedCount)).toBe(2);
+      expect(spies.fetchInternalTxConflictsCount).toHaveBeenCalledWith();
     });
   });
 

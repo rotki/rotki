@@ -26,8 +26,9 @@ function getStatusFilter(status: InternalTxConflictStatus): { failed?: boolean; 
 interface UseInternalTxConflictsReturn {
   activeFilter: Ref<InternalTxConflictStatus>;
   conflicts: ComputedRef<InternalTxConflict[]>;
+  failedCount: Ref<number>;
   fetchConflicts: () => Promise<void>;
-  fetchPendingCount: () => Promise<void>;
+  fetchCounts: () => Promise<void>;
   filters: WritableComputedRef<Filters>;
   handleConflictFixed: () => Promise<void>;
   loading: Ref<boolean>;
@@ -45,6 +46,7 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
   const { fetchInternalTxConflicts, fetchInternalTxConflictsCount } = useInternalTxConflictsApi();
 
   const pendingCount = ref<number>(0);
+  const failedCount = ref<number>(0);
   const activeFilter = ref<InternalTxConflictStatus>(InternalTxConflictStatuses.PENDING);
 
   const requestParams = computed<Partial<InternalTxConflictsRequestPayload>>(() => ({
@@ -75,16 +77,14 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
   const conflicts = computed<InternalTxConflict[]>(() => get(state).data);
   const totalFound = computed<number>(() => get(state).found);
 
-  async function fetchPendingCount(): Promise<void> {
+  async function fetchCounts(): Promise<void> {
     try {
-      const result = await fetchInternalTxConflictsCount({
-        failed: false,
-        fixed: false,
-      });
-      set(pendingCount, result.entriesFound);
+      const result = await fetchInternalTxConflictsCount();
+      set(pendingCount, result.pending);
+      set(failedCount, result.failed);
     }
     catch (error: any) {
-      logger.error('Failed to fetch internal tx conflicts pending count:', error);
+      logger.error('Failed to fetch internal tx conflicts counts:', error);
     }
   }
 
@@ -107,7 +107,7 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
   }
 
   async function handleConflictFixed(): Promise<void> {
-    await Promise.all([fetchPendingCount(), fetchConflicts()]);
+    await Promise.all([fetchCounts(), fetchConflicts()]);
   }
 
   watch(internalTxFixedSignal, () => {
@@ -117,8 +117,9 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
   return {
     activeFilter,
     conflicts,
+    failedCount,
     fetchConflicts,
-    fetchPendingCount,
+    fetchCounts,
     filters,
     handleConflictFixed,
     loading,
