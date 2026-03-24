@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { Defaults } from '@/data/defaults';
+import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const { compact = false } = defineProps<{
@@ -67,15 +68,10 @@ onMounted(() => {
             :error-messages="error"
             @update:model-value="update($event ? parseInt($event) : $event)"
           />
-          <RuiButton
-            :class="compact ? 'ml-1' : 'mt-1 ml-2'"
-            variant="text"
-            icon
-            :size="compact ? 'sm' : undefined"
-            @click="resetBatchSize(updateImmediate)"
-          >
-            <RuiIcon name="lu-history" />
-          </RuiButton>
+          <SettingResetConfirmButton
+            :compact="compact"
+            @confirm="resetBatchSize(updateImmediate)"
+          />
         </div>
       </template>
     </SettingsOption>
@@ -111,15 +107,10 @@ onMounted(() => {
             :error-messages="error"
             @update:model-value="update($event ? Number.parseFloat($event) * SECONDS_PER_MINUTE : $event)"
           />
-          <RuiButton
-            :class="compact ? 'ml-1' : 'mt-1 ml-2'"
-            variant="text"
-            icon
-            :size="compact ? 'sm' : undefined"
-            @click="resetFrequency(updateImmediate)"
-          >
-            <RuiIcon name="lu-history" />
-          </RuiButton>
+          <SettingResetConfirmButton
+            :compact="compact"
+            @confirm="resetFrequency(updateImmediate)"
+          />
         </div>
       </template>
     </SettingsOption>

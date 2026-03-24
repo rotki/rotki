@@ -6,6 +6,7 @@ import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { useValidation } from '@/composables/validation';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { Defaults } from '@/data/defaults';
+import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 import { toMessages } from '@/utils/validation';
 
@@ -89,23 +90,10 @@ onMounted(() => {
             </RuiButton>
           </template>
         </RuiTextField>
-        <RuiTooltip
-          :popper="{ placement: 'top' }"
-          :open-delay="400"
-          class="ml-2"
-        >
-          <template #activator>
-            <RuiButton
-              class="mt-1"
-              variant="text"
-              icon
-              @click="updateImmediate(defaultDateDisplayFormat)"
-            >
-              <RuiIcon name="lu-history" />
-            </RuiButton>
-          </template>
-          {{ t('general_settings.date_display_tooltip') }}
-        </RuiTooltip>
+        <SettingResetConfirmButton
+          :tooltip="t('general_settings.date_display_tooltip')"
+          @confirm="updateImmediate(defaultDateDisplayFormat)"
+        />
       </div>
     </SettingsOption>
   </div>
