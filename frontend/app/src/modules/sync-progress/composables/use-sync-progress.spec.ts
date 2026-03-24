@@ -201,6 +201,40 @@ describe('useSyncProgress', () => {
       expect(decodingValue[0].progress).toBe(50);
     });
 
+    it('should not update sync progress after stopDecodingSyncProgress is called', () => {
+      const historyStore = useHistoryStore();
+      historyStore.resetDecodingSyncProgress();
+      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+
+      // Stop sync progress (simulates the finally block running)
+      historyStore.stopDecodingSyncProgress();
+
+      // Simulate a late WS update arriving after stop
+      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
+
+      const { decoding } = useSyncProgress();
+      const decodingValue = get(decoding);
+
+      // The sync progress should still show the old value (50), not the updated one (100)
+      expect(decodingValue).toHaveLength(1);
+      expect(decodingValue[0].processed).toBe(50);
+    });
+
+    it('should continue updating sync progress while decodingSyncing is true', () => {
+      const historyStore = useHistoryStore();
+      historyStore.resetDecodingSyncProgress();
+      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 0));
+      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      historyStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
+
+      const { decoding } = useSyncProgress();
+      const decodingValue = get(decoding);
+
+      // All updates should have been applied while decodingSyncing was true
+      expect(decodingValue).toHaveLength(1);
+      expect(decodingValue[0].processed).toBe(100);
+    });
+
     it('should filter out chains with total 0', () => {
       const historyStore = useHistoryStore();
       historyStore.resetDecodingSyncProgress();

@@ -34,7 +34,7 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
   const { resetDecodingSyncProgress, resetUndecodedTransactionsStatus, stopDecodingSyncProgress } = useHistoryStore();
   const { isDecodableChains } = useSupportedChains();
 
-  const { syncTransactionsByChains } = useTransactionSync();
+  const { syncTransactionsByChains, waitForDecoding } = useTransactionSync();
   const { queryAllExchangeEvents, queryOnlineEvent } = useRefreshHandlers();
   const { onHistoryFinished, onHistoryStarted } = useSchedulerState();
 
@@ -170,6 +170,10 @@ export function useRefreshTransactions(): UseRefreshTransactionsReturn {
           logger.error(error);
         }
       }
+
+      // Wait for any queued decode tasks to finish before proceeding,
+      // so that WS progress updates are not dropped by stopDecodingSyncProgress()
+      await waitForDecoding();
 
       queue.queue('fetch-undecoded-transactions-breakdown', fetchUndecodedTransactionsBreakdown);
 
