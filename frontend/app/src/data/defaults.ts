@@ -42,6 +42,8 @@ export const Defaults = {
   DISPLAY_DATE_IN_LOCALTIME: true,
   DOT_RPC_ENDPOINT: '', // same as Kusama, must be set by user
   FLOATING_PRECISION: 2,
+  DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY: 3600,
+  DEFAULT_INTERNAL_TXS_TO_REPULL: 20,
   KSM_RPC_ENDPOINT: 'http://localhost:9933',
 } as const;
 
