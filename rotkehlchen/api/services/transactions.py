@@ -23,6 +23,7 @@ from rotkehlchen.db.filtering import (
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.internal_tx_conflicts import (
+    count_pending_internal_tx_repull_conflicts,
     get_pending_internal_tx_repull_conflicts,
     get_pending_internal_tx_repull_conflicts_count,
     is_tx_customized,
@@ -601,10 +602,13 @@ class TransactionsService:
                     cursor=cursor,
                     filter_query=filter_query,
                 )
-                entries_found, entries_total = get_pending_internal_tx_repull_conflicts_count(
+                entries_found = count_pending_internal_tx_repull_conflicts(
                     cursor=cursor,
                     filter_query=filter_query,
                 )
+                entries_total = cursor.execute(
+                    'SELECT COUNT(*) FROM evm_internal_tx_conflicts',
+                ).fetchone()[0]
 
         return {
             'result': {
@@ -632,21 +636,17 @@ class TransactionsService:
 
     def get_pending_internal_tx_repull_conflicts_count(
             self,
-            filter_query: InternalTxConflictsFilterQuery,
     ) -> dict[str, Any]:
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             if not table_exists(cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
-                entries_found = entries_total = 0
+                pending = failed = 0
             else:
-                entries_found, entries_total = get_pending_internal_tx_repull_conflicts_count(
-                    cursor=cursor,
-                    filter_query=filter_query,
-                )
+                pending, failed = get_pending_internal_tx_repull_conflicts_count(cursor=cursor)
 
         return {
             'result': {
-                'entries_found': entries_found,
-                'entries_total': entries_total,
+                'pending': pending,
+                'failed': failed,
             },
             'message': '',
             'status_code': HTTPStatus.OK,

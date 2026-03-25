@@ -3718,7 +3718,7 @@ class RefetchTransactionsResource(BaseMethodView):
 
 class InternalTxConflictsResource(BaseMethodView):
     get_schema = InternalTxConflictsSchema()
-    post_schema = InternalTxConflictsSchema()
+    post_schema = AsyncQueryArgumentSchema()
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
@@ -3737,11 +3737,9 @@ class InternalTxConflictsResource(BaseMethodView):
     def post(
             self,
             async_query: bool,
-            filter_query: 'InternalTxConflictsFilterQuery',
     ) -> Response:
         return self.rest_api.get_pending_internal_tx_repull_conflicts_count(
             async_query=async_query,
-            filter_query=filter_query,
         )
 
 

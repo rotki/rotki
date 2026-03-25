@@ -321,6 +321,7 @@ def test_post_pending_internal_tx_conflicts_count_endpoint(
             [
                 (make_evm_tx_hash(), ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS, None, 0, None, None),  # noqa: E501
                 (make_evm_tx_hash(), ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS, None, 0, 1700000100, 'indexer error'),  # noqa: E501
+                (make_evm_tx_hash(), ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS, None, 0, 1700000200, None),  # noqa: E501
                 (make_evm_tx_hash(), ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_REPULL, INTERNAL_TX_CONFLICT_REPULL_REASON_ALL_ZERO_GAS, None, 1, None, None),  # noqa: E501
             ],
         )
@@ -328,9 +329,9 @@ def test_post_pending_internal_tx_conflicts_count_endpoint(
     result = cast('dict[str, Any]', assert_proper_response_with_result(
         response=requests.post(
             api_url_for(rotkehlchen_api_server, 'internaltxconflictsresource'),
-            json={'async_query': False, 'fixed': False, 'failed': False},
+            json={'async_query': False},
         ),
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=False,
     ))
-    assert result == {'entries_found': 2, 'entries_total': 3}
+    assert result == {'pending': 1, 'failed': 2}

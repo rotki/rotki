@@ -3391,11 +3391,8 @@ class RestAPI:
     @async_api_call()
     def get_pending_internal_tx_repull_conflicts_count(
             self,
-            filter_query: InternalTxConflictsFilterQuery,
     ) -> dict[str, Any]:
-        return self.transactions_service.get_pending_internal_tx_repull_conflicts_count(
-            filter_query=filter_query,
-        )
+        return self.transactions_service.get_pending_internal_tx_repull_conflicts_count()
 
     def addresses_interacted_before(
             self,
