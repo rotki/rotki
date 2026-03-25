@@ -73,7 +73,7 @@ def data_migration_20(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             swap_events_cursor = cursor.execute("""
                 SELECT
                     identifier,
-                    event_identifier,
+                    group_identifier,
                     timestamp,
                     location,
                     location_label,
@@ -157,7 +157,7 @@ def data_migration_20(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                 for update in updates_to_apply:
                     try:
                         write_cursor.execute(
-                            'UPDATE history_events SET event_identifier = ? WHERE identifier = ?',
+                            'UPDATE history_events SET group_identifier = ? WHERE identifier = ?',
                             update,
                         )
                     except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
@@ -184,7 +184,7 @@ def data_migration_20(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         placeholders = ','.join('?' * len(location_hashes))
         with db.conn.read_ctx() as cursor:
             if (affected_events_count := cursor.execute(
-                f'SELECT COUNT(*) FROM history_events WHERE event_identifier IN ({placeholders})',
+                f'SELECT COUNT(*) FROM history_events WHERE group_identifier IN ({placeholders})',
                 location_hashes,
             ).fetchone()[0]) == 0:
                 log.debug('no trades affected by v1.39.0 upgrade bug')
@@ -261,14 +261,14 @@ def data_migration_20(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
         old_db_conn.close()
         with db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
-                f'DELETE FROM history_events WHERE event_identifier IN ({placeholders})',
+                f'DELETE FROM history_events WHERE group_identifier IN ({placeholders})',
                 location_hashes,
             )
             log.debug(f'removed {affected_events_count} incorrectly imported events')
             for event in recovered_events:
                 try:
                     write_cursor.execute(
-                        'INSERT INTO history_events(entry_type, event_identifier, '
+                        'INSERT INTO history_events(entry_type, group_identifier, '
                         'sequence_index, timestamp, location, location_label, asset, amount, '
                         'notes, type, subtype, extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',  # noqa: E501
                         (
