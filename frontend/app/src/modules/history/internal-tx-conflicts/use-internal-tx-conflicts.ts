@@ -31,6 +31,7 @@ interface UseInternalTxConflictsReturn {
   fetchCounts: () => Promise<void>;
   filters: WritableComputedRef<Filters>;
   handleConflictFixed: () => Promise<void>;
+  issueCount: ComputedRef<number>;
   loading: Ref<boolean>;
   matchers: ComputedRef<Matcher[]>;
   pagination: WritableComputedRef<TablePaginationData>;
@@ -47,6 +48,7 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
 
   const pendingCount = ref<number>(0);
   const failedCount = ref<number>(0);
+  const issueCount = computed<number>(() => get(pendingCount) + get(failedCount));
   const activeFilter = ref<InternalTxConflictStatus>(InternalTxConflictStatuses.PENDING);
 
   const requestParams = computed<Partial<InternalTxConflictsRequestPayload>>(() => ({
@@ -122,6 +124,7 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
     fetchCounts,
     filters,
     handleConflictFixed,
+    issueCount,
     loading,
     matchers,
     pagination,
