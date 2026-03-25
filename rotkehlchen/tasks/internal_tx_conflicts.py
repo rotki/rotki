@@ -9,6 +9,7 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.internal_tx_conflicts import (
     INTERNAL_TX_CONFLICT_ACTION_REPULL,
     clean_internal_tx_conflict,
+    clean_internal_tx_rows,
     get_internal_tx_conflicts,
     is_tx_customized,
     set_internal_tx_conflict_fixed,
@@ -384,13 +385,29 @@ def repull_internal_tx_conflicts(
         if action == INTERNAL_TX_CONFLICT_ACTION_REPULL:
             repull_entries.append((chain_id, tx_hash))
         else:  # fix_redecode
-            with database.user_write() as write_cursor:
-                clean_internal_tx_conflict(
-                    write_cursor=write_cursor,
-                    tx_hash=tx_hash,
+            with database.conn.read_ctx() as cursor:
+                tx_is_customized = is_tx_customized(cursor=cursor, tx_hash=tx_hash, chain_id=chain_id)  # noqa: E501
+            if tx_is_customized:
+                # Only repair internal tx rows; preserve customized events
+                with database.user_write() as write_cursor:
+                    clean_internal_tx_rows(
+                        write_cursor=write_cursor,
+                        tx_hash=tx_hash,
+                        chain_id=chain_id,
+                    )
+                _mark_internal_tx_conflict_fixed(
+                    database=database,
                     chain_id=chain_id,
+                    tx_hash=tx_hash,
                 )
-            to_decode_by_chain[chain_id].append(tx_hash)
+            else:
+                with database.user_write() as write_cursor:
+                    clean_internal_tx_conflict(
+                        write_cursor=write_cursor,
+                        tx_hash=tx_hash,
+                        chain_id=chain_id,
+                    )
+                to_decode_by_chain[chain_id].append(tx_hash)
 
     for chain_id, tx_hashes in _process_repull_conflicts(
         database=database,

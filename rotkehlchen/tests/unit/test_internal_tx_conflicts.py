@@ -1115,3 +1115,89 @@ def test_repull_skips_previously_failed_entries(database) -> None:
             'SELECT COUNT(*) FROM key_value_cache WHERE name=?',
             (DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS.value,),
         ).fetchone()[0] == 1
+
+
+def test_fix_redecode_preserves_customized_events(database) -> None:
+    """Regression: fix_redecode must not delete customized events.
+
+    Previously clean_internal_tx_conflict unconditionally deleted all events
+    and TX_DECODED for a transaction, even when some events were customized by
+    the user.  The fix checks is_tx_customized before cleaning; for customized
+    txs only the bad internal tx rows are repaired and the conflict is marked
+    fixed without touching events."""
+    tx_hash = make_evm_tx_hash()
+    tx = EvmTransaction(
+        tx_hash=tx_hash,
+        chain_id=ChainID.ETHEREUM,
+        timestamp=Timestamp(1700000000),
+        block_number=1,
+        from_address=(sender := make_evm_address()),
+        to_address=make_evm_address(),
+        value=0,
+        gas=1,
+        gas_price=1,
+        gas_used=1,
+        input_data=b'',
+        nonce=1,
+    )
+    with database.user_write() as write_cursor:
+        DBEvmTx(database).add_transactions(
+            write_cursor=write_cursor,
+            evm_transactions=[tx],
+            relevant_address=sender,
+        )
+        write_cursor.execute(
+            'INSERT INTO evm_internal_tx_conflicts'
+            '(transaction_hash, chain, action, fixed) VALUES(?, ?, ?, ?)',
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db(), INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE, 0),  # noqa: E501
+        )
+        # Insert a customized event linked to this tx
+        write_cursor.execute(
+            'INSERT INTO history_events('
+            'identifier, entry_type, group_identifier, sequence_index, timestamp, '
+            'location, location_label, asset, amount, notes, type, subtype, extra_data, ignored) '
+            'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                888_001,
+                HistoryBaseEntryType.EVM_EVENT.serialize_for_db(),
+                f'10{tx_hash!s}',
+                0,
+                1700000000,
+                Location.ETHEREUM.serialize_for_db(),
+                sender,
+                A_ETH.identifier,
+                '1',
+                'user edited receive',
+                HistoryEventType.TRADE.serialize(),
+                HistoryEventSubType.RECEIVE.serialize(),
+                None,
+                0,
+            ),
+        )
+        write_cursor.execute(
+            'INSERT INTO chain_events_info(identifier, tx_ref, counterparty, address) '
+            'VALUES(?, ?, ?, ?)',
+            (888_001, tx_hash, None, None),
+        )
+        write_cursor.execute(
+            'INSERT INTO history_events_mappings(parent_identifier, name, value) VALUES(?, ?, ?)',
+            (888_001, HISTORY_MAPPING_KEY_STATE, HistoryMappingState.CUSTOMIZED.serialize_for_db()),  # noqa: E501
+        )
+
+    repull_internal_tx_conflicts(
+        database=database,
+        chains_aggregator=make_dummy_chains_aggregator(),
+        limit=DEFAULT_INTERNAL_TXS_TO_REPULL,
+    )
+
+    with database.conn.read_ctx() as cursor:
+        # Conflict is marked fixed
+        assert cursor.execute(
+            'SELECT fixed FROM evm_internal_tx_conflicts WHERE transaction_hash=? AND chain=?',
+            (tx_hash, ChainID.ETHEREUM.serialize_for_db()),
+        ).fetchone()[0] == 1
+        # Customized event is preserved
+        assert cursor.execute(
+            'SELECT notes FROM history_events WHERE identifier=?',
+            (888_001,),
+        ).fetchone()[0] == 'user edited receive'

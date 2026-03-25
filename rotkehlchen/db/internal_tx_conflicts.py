@@ -114,19 +114,15 @@ def is_tx_customized(
     ).fetchone()[0] > 0
 
 
-def clean_internal_tx_conflict(
+def clean_internal_tx_rows(
         write_cursor: 'DBCursor',
         tx_hash: EVMTxHash,
         chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
 ) -> None:
-    """Delete invalid/duplicate internals and queue decode-only refresh.
+    """Delete only invalid/duplicate internal tx rows without touching events or TX_DECODED.
 
-    TX_INTERNALS_QUERIED is intentionally not cleared for fix_redecode actions because
-    these transactions are repaired in-place and do not need an internal repull.
-
-    For non-customized transactions we also remove decoded history events linked to this tx
-    so the next decode recreates them from the repaired internals.
-    """
+    Used for customized transactions where we want to repair the internal tx data
+    but preserve user-edited events."""
     write_cursor.execute("""
     WITH fix_txs AS (
       SELECT identifier AS parent_tx
@@ -154,6 +150,22 @@ def clean_internal_tx_conflict(
       WHERE gas = '0' OR rn > 1
     )
     """, (tx_hash, chain_id.serialize_for_db()))
+
+
+def clean_internal_tx_conflict(
+        write_cursor: 'DBCursor',
+        tx_hash: EVMTxHash,
+        chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+) -> None:
+    """Delete invalid/duplicate internals and queue decode-only refresh.
+
+    TX_INTERNALS_QUERIED is intentionally not cleared for fix_redecode actions because
+    these transactions are repaired in-place and do not need an internal repull.
+
+    For non-customized transactions we also remove decoded history events linked to this tx
+    so the next decode recreates them from the repaired internals.
+    """
+    clean_internal_tx_rows(write_cursor, tx_hash, chain_id)
 
     write_cursor.execute(
         'DELETE FROM history_events WHERE identifier IN ('
