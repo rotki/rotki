@@ -1072,3 +1072,46 @@ def test_repull_passes_tx_timestamp_to_internal_query(database) -> None:
     )
 
     assert captured_kwargs.get('tx_timestamp') == tx_ts
+
+
+def test_repull_skips_previously_failed_entries(database) -> None:
+    """Entries with last_retry_ts set (previously failed) are skipped by the task."""
+    entries = [
+        (
+            make_evm_tx_hash(),
+            ChainID.ETHEREUM.serialize_for_db(),
+            INTERNAL_TX_CONFLICT_ACTION_REPULL,
+            0,
+            1700000000,  # last_retry_ts
+            'some error',
+        )
+        for _ in range(5)
+    ]
+    with database.user_write() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO evm_internal_tx_conflicts'
+            '(transaction_hash, chain, action, fixed, last_retry_ts, last_error) '
+            'VALUES(?, ?, ?, ?, ?, ?)',
+            entries,
+        )
+
+    with patch(
+            'rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict',
+    ) as repull_mock:
+        repull_internal_tx_conflicts(
+            database=database,
+            chains_aggregator=cast('ChainsAggregator', object()),
+            limit=10,
+        )
+
+    repull_mock.assert_not_called()
+    with database.conn.read_ctx() as cursor:
+        # Verify entries are still unfixed
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_internal_tx_conflicts WHERE fixed=0',
+        ).fetchone()[0] == 5
+        # Verify the throttle timestamp is still written to avoid repeated scheduling
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM key_value_cache WHERE name=?',
+            (DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS.value,),
+        ).fetchone()[0] == 1

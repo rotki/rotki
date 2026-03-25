@@ -366,7 +366,17 @@ def repull_internal_tx_conflicts(
             cursor=read_cursor,
             fixed=False,
             limit=limit,
+            skip_retried=True,
         )
+
+    if len(entries) == 0:
+        with database.user_write() as write_cursor:
+            database.set_static_cache(
+                write_cursor=write_cursor,
+                name=DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS,
+                value=ts_now(),
+            )
+        return
 
     repull_entries: list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash]] = []
     to_decode_by_chain: dict[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, list[EVMTxHash]] = defaultdict(list)  # noqa: E501

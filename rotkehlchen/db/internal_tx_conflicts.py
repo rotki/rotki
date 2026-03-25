@@ -177,23 +177,22 @@ def get_internal_tx_conflicts(
         fixed: bool,
         action: str | None = None,
         limit: int | None = None,
+        skip_retried: bool = False,
 ) -> list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, str]]:
-    """Get internal tx conflict entries. When action is None, returns all action types."""
+    """Get internal tx conflict entries. When action is None, returns all action types.
+    When skip_retried is True, entries with last_retry_ts set are excluded."""
     query = (
         'SELECT chain, transaction_hash, action FROM evm_internal_tx_conflicts '
         'WHERE fixed=? '
     )
     bindings: tuple[object, ...] = (int(fixed),)
+    if skip_retried:
+        query += 'AND last_retry_ts IS NULL '
     if action is not None:
         query += 'AND action=? '
         bindings = (*bindings, action)
 
-    query += (
-        'ORDER BY '
-        'CASE WHEN last_retry_ts IS NULL THEN 0 ELSE 1 END, '
-        'last_retry_ts ASC, '
-        'chain, transaction_hash'
-    )
+    query += 'ORDER BY chain, transaction_hash'
     if limit is not None:
         query += ' LIMIT ?'
         bindings = (*bindings, limit)
