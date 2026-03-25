@@ -33,8 +33,9 @@ const { t } = useI18n({ useScope: 'global' });
 
 const {
   conflicts,
+  failedCount,
   fetchConflicts,
-  fetchPendingCount,
+  fetchCounts,
   filters,
   loading,
   matchers,
@@ -127,7 +128,7 @@ function getReasonLabel(row: InternalTxConflict): string {
 }
 
 async function refreshData(): Promise<void> {
-  await Promise.all([fetchConflicts(), fetchPendingCount()]);
+  await Promise.all([fetchConflicts(), fetchCounts()]);
 }
 
 function onResolveOne(conflict: InternalTxConflict): void {
@@ -144,7 +145,7 @@ watch(activeTab, (tab) => {
 });
 
 onBeforeMount(() => {
-  startPromise(Promise.all([fetchPendingCount(), fetchConflicts()]));
+  startPromise(Promise.all([fetchCounts(), fetchConflicts()]));
 });
 
 defineExpose({
@@ -172,6 +173,14 @@ defineExpose({
       </RuiTab>
       <RuiTab>
         {{ t('internal_tx_conflicts.tabs.failed') }}
+        <RuiChip
+          v-if="failedCount > 0"
+          color="error"
+          size="sm"
+          class="ml-2 !px-0.5 !py-0"
+        >
+          {{ failedCount }}
+        </RuiChip>
       </RuiTab>
       <RuiTab>
         {{ t('internal_tx_conflicts.tabs.fixed') }}

@@ -142,30 +142,23 @@ describe('modules/history/internal-tx-conflicts/internal-tx-conflicts-api', () =
     });
 
     describe('fetchInternalTxConflictsCount', () => {
-      it('sends POST with correct payload and returns counts', async () => {
-        let capturedBody: Record<string, unknown> | undefined;
-
+      it('sends POST and returns pending and failed counts', async () => {
         server.use(
-          http.post(`${backendUrl}/api/1/blockchains/transactions/internal/conflicts`, async ({ request }) => {
-            capturedBody = await request.json() as Record<string, unknown>;
-            return HttpResponse.json({
+          http.post(`${backendUrl}/api/1/blockchains/transactions/internal/conflicts`, () =>
+            HttpResponse.json({
               result: {
-                entries_found: 178,
-                entries_total: 237,
+                pending: 178,
+                failed: 12,
               },
               message: '',
-            });
-          }),
+            })),
         );
 
         const { fetchInternalTxConflictsCount } = useInternalTxConflictsApi();
-        const result = await fetchInternalTxConflictsCount({ failed: false, fixed: false });
+        const result = await fetchInternalTxConflictsCount();
 
-        expect(capturedBody).toBeDefined();
-        expect(capturedBody!.fixed).toBe(false);
-        expect(capturedBody!.failed).toBe(false);
-        expect(result.entriesFound).toBe(178);
-        expect(result.entriesTotal).toBe(237);
+        expect(result.pending).toBe(178);
+        expect(result.failed).toBe(12);
       });
 
       it('throws on HTTP error response', async () => {
@@ -179,7 +172,7 @@ describe('modules/history/internal-tx-conflicts/internal-tx-conflicts-api', () =
 
         const { fetchInternalTxConflictsCount } = useInternalTxConflictsApi();
 
-        await expect(fetchInternalTxConflictsCount({ failed: false, fixed: false }))
+        await expect(fetchInternalTxConflictsCount())
           .rejects
           .toThrow();
       });

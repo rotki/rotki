@@ -30,7 +30,7 @@ const noIssuesFeedback = ref<IssueCheckType>();
 
 const { refreshUnmatchedAssetMovements, unmatchedCount, ignoredCount } = useUnmatchedAssetMovements();
 const { fetchCustomizedEventDuplicates, totalCount: duplicatesCount } = useCustomizedEventDuplicates();
-const { pendingCount: internalConflictsCount, fetchPendingCount } = useInternalTxConflicts();
+const { pendingCount: internalConflictsCount, fetchCounts } = useInternalTxConflicts();
 
 const { start: startFeedbackTimeout, stop: stopFeedbackTimeout } = useTimeoutFn(() => {
   set(noIssuesFeedback, undefined);
@@ -79,7 +79,7 @@ async function checkDuplicates(): Promise<void> {
 async function checkInternalConflicts(): Promise<void> {
   set(checkingType, 'internalConflicts');
   try {
-    await fetchPendingCount();
+    await fetchCounts();
     if (get(internalConflictsCount) > 0) {
       set(menuOpen, false);
       emit('show:dialog', { type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
