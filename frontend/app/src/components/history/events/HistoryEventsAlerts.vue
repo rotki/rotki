@@ -45,8 +45,7 @@ const {
   manualReviewGroupIds,
 } = useCustomizedEventDuplicates();
 
-const { fetchCounts, pendingCount: internalConflictsCount } = useInternalTxConflicts();
-
+const { fetchCounts, issueCount: internalConflictsCount } = useInternalTxConflicts();
 const showUnmatchedMovements = computed<boolean>(() => !get(autoMatchLoading) && get(unmatchedCount) > 0);
 const showAutoFixDuplicates = computed<boolean>(() => get(autoFixCount) > 0);
 const showManualReviewDuplicates = computed<boolean>(() => get(manualReviewCount) > 0);
