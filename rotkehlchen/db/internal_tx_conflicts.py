@@ -288,13 +288,14 @@ def count_pending_internal_tx_repull_conflicts(
 
 def get_pending_internal_tx_repull_conflicts_count(
         cursor: 'DBCursor',
-        filter_query: 'InternalTxConflictsFilterQuery',
 ) -> tuple[int, int]:
-    """Return (entries_found, entries_total) for internal tx repull conflicts."""
-    return (
-        count_pending_internal_tx_repull_conflicts(cursor=cursor, filter_query=filter_query),
-        cursor.execute('SELECT COUNT(*) FROM evm_internal_tx_conflicts').fetchone()[0],
-    )
+    """Return (pending_count, failed_count) for unresolved conflicts."""
+    return cursor.execute(
+        'SELECT '
+        'COALESCE(SUM(CASE WHEN fixed=0 AND last_retry_ts IS NULL THEN 1 ELSE 0 END), 0), '
+        'COALESCE(SUM(CASE WHEN fixed=0 AND last_retry_ts IS NOT NULL THEN 1 ELSE 0 END), 0) '
+        'FROM evm_internal_tx_conflicts',
+    ).fetchone()
 
 
 def set_internal_tx_conflict_fixed(

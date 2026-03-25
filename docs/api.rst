@@ -2753,8 +2753,9 @@ Decode transactions that haven't been decoded yet
 
 .. http:post:: /api/(version)/blockchains/transactions/internal/conflicts
 
-   Doing a POST on the internal transaction conflicts endpoint returns only the counts for unresolved
-   EVM transaction conflicts. Unlike GET, this endpoint does not return entries.
+   Doing a POST on the internal transaction conflicts endpoint returns only conflict counts split
+   by ``fixed`` status. Unlike GET, this endpoint does not return entries and does not accept
+   filter parameters.
 
    **Example Request**:
 
@@ -2764,7 +2765,7 @@ Decode transactions that haven't been decoded yet
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"async_query": false, "fixed": false, "failed": false}
+      {"async_query": false}
 
    **Example Response**:
 
@@ -2775,20 +2776,14 @@ Decode transactions that haven't been decoded yet
 
       {
           "result": {
-              "entries_found": 2,
-              "entries_total": 3
+              "pending": 2,
+              "failed": 1
           },
           "message": ""
       }
 
-   :resjson int result.entries_found: Number of entries matching the applied filters.
-   :resjson int result.entries_total: Total number of internal tx conflict entries in the table, ignoring filters.
-   :reqjson string[optional] tx_hash: Filter rows by a specific EVM transaction hash.
-   :reqjson string[optional] chain: Filter rows by chain name (e.g. ``"ethereum"``, ``"optimism"``).
-   :reqjson int[optional] from_timestamp: Unix timestamp. Only count rows whose transaction timestamp is greater than or equal to this value. Defaults to ``0``.
-   :reqjson int[optional] to_timestamp: Unix timestamp. Only count rows whose transaction timestamp is less than or equal to this value. Defaults to current time. Rows without a known transaction timestamp are always included.
-   :reqjson bool[optional] fixed: If ``true``, count fixed rows. Defaults to ``false`` (unfixed rows).
-   :reqjson bool[optional] failed: If ``true``, count only rows with a recorded failed retry (`last_retry_ts` and `last_error` set).
+   :resjson int result.pending: Number of rows with ``fixed = 0`` and ``last_retry_ts`` unset.
+   :resjson int result.failed: Number of rows with ``fixed = 0`` and ``last_retry_ts`` set.
    :statuscode 200: Counts successfully returned.
    :statuscode 401: User is not logged in.
    :statuscode 409: Other error. Check error message for details.
