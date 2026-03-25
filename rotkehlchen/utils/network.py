@@ -72,6 +72,10 @@ def create_session(max_backoff_secs: float = 30) -> requests.Session:
         # since we only care about connection errors/read errors that are solved just by
         # retrying set a low one.
         backoff_factor=1,
+        # Don't honor Retry-After headers from servers. Some APIs (e.g. Bitfinex
+        # behind Cloudflare) return Retry-After: 3600 on 503, causing urllib3 to
+        # sleep for a full hour. We handle retries at the application level instead.
+        respect_retry_after_header=False,
     ))
     session.mount('http://', adapter)
     session.mount('https://', adapter)
