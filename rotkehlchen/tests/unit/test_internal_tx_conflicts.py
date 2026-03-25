@@ -87,7 +87,7 @@ def test_repull_internal_tx_conflicts_batch_limit(database) -> None:
             INTERNAL_TX_CONFLICT_ACTION_REPULL,
             0,
         )
-        for _ in range(25)
+        for _ in range(DEFAULT_INTERNAL_TXS_TO_REPULL + 1)
     ]
     with database.user_write() as write_cursor:
         write_cursor.executemany(
