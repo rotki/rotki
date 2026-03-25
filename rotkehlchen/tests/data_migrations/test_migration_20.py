@@ -25,7 +25,7 @@ def _insert_swap_events(db: DBHandler, events: list[SwapEvent]) -> None:
     """Insert swap events with raw SQL to avoid dependencies on changing DB methods"""
     with db.user_write() as write_cursor:
         write_cursor.executemany(
-            'INSERT INTO history_events(event_identifier, sequence_index, timestamp, location, '
+            'INSERT INTO history_events(group_identifier, sequence_index, timestamp, location, '
             'location_label, asset, amount, notes, type, subtype, identifier, entry_type, '
             'extra_data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
             [(
@@ -125,7 +125,7 @@ def _init_v47_backup_conn(database, password: str | None) -> DBConnection:
     return backup_conn
 
 
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('use_custom_database', ['v48_rotkehlchen.db'])
 @pytest.mark.parametrize('data_migration_version', [19])
 def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
@@ -197,7 +197,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
     with database.conn.read_ctx() as cursor:
         # First swap has 3 different identifiers
         events1 = cursor.execute(
-            """SELECT event_identifier, subtype FROM history_events
+            """SELECT group_identifier, subtype FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?
                ORDER BY sequence_index""",
             (ts1, Location.BINANCE.serialize_for_db(),
@@ -211,7 +211,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
 
         # Second swap has 2 different identifiers
         events2 = cursor.execute(
-            """SELECT event_identifier, subtype FROM history_events
+            """SELECT group_identifier, subtype FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?
                ORDER BY sequence_index""",
             (ts2, Location.KRAKEN.serialize_for_db(),
@@ -224,7 +224,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
 
         # Correct swap already has same identifier
         correct_events_check = cursor.execute(
-            """SELECT event_identifier FROM history_events
+            """SELECT group_identifier FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?""",
             (3000000, Location.COINBASE.serialize_for_db(),
              HistoryBaseEntryType.SWAP_EVENT.serialize_for_db()),
@@ -243,7 +243,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
     with database.conn.read_ctx() as cursor:
         # First swap should now have same identifier (spend's identifier)
         events1_fixed = cursor.execute(
-            """SELECT event_identifier, subtype FROM history_events
+            """SELECT group_identifier, subtype FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?
                ORDER BY sequence_index""",
             (ts1, Location.BINANCE.serialize_for_db(),
@@ -256,7 +256,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
 
         # Second swap should now have same identifier
         events2_fixed = cursor.execute(
-            """SELECT event_identifier, subtype FROM history_events
+            """SELECT group_identifier, subtype FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?
                ORDER BY sequence_index""",
             (ts2, Location.KRAKEN.serialize_for_db(),
@@ -268,7 +268,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
 
         # Correct swap should remain unchanged
         correct_events_check = cursor.execute(
-            """SELECT event_identifier FROM history_events
+            """SELECT group_identifier FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?""",
             (3000000, Location.COINBASE.serialize_for_db(),
              HistoryBaseEntryType.SWAP_EVENT.serialize_for_db()),
@@ -276,7 +276,7 @@ def test_migration_20_fix_swap_identifiers(database: DBHandler) -> None:
         assert all(event[0] == correct_id for event in correct_events_check)
 
 
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('use_custom_database', ['v48_rotkehlchen.db'])
 @pytest.mark.parametrize('data_migration_version', [19])
 def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
@@ -358,7 +358,7 @@ def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
     # Verify the fix - each swap should be grouped correctly
     with database.conn.read_ctx() as cursor:
         all_events = cursor.execute(
-            """SELECT event_identifier, subtype, asset, amount FROM history_events
+            """SELECT group_identifier, subtype, asset, amount FROM history_events
                WHERE timestamp = ? AND location = ? AND entry_type = ?
                ORDER BY identifier""",
             (ts, location.serialize_for_db(),
@@ -384,7 +384,7 @@ def test_migration_20_edge_case_multiple_swaps(database: DBHandler) -> None:
 
 
 @pytest.mark.parametrize('use_custom_database', ['botched_v47_rotkehlchen.db'])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('data_migration_version', [19])
 def test_migration_20_recover_lost_trades(database: DBHandler) -> None:
     """Test that migration 20 correctly recovers trades lost during v1.39.0 upgrade.
@@ -430,15 +430,15 @@ def test_migration_20_recover_lost_trades(database: DBHandler) -> None:
     # comprehensive verification of the recovery results
     with database.conn.read_ctx() as cursor:
         assert cursor.execute(  # the trigger events should be removed
-            'SELECT COUNT(*) FROM history_events WHERE event_identifier = ?',
+            'SELECT COUNT(*) FROM history_events WHERE group_identifier = ?',
             (hash_id(str(Location.KRAKEN)),),
         ).fetchone()[0] == 0
 
         cursor.execute(  # fetch all recovered swap events
-            """SELECT timestamp, location, asset, amount, type, subtype, notes, event_identifier
+            """SELECT timestamp, location, asset, amount, type, subtype, notes, group_identifier
                FROM history_events
                WHERE entry_type = ?
-               GROUP BY event_identifier, sequence_index
+               GROUP BY group_identifier, sequence_index
             """,
             (HistoryBaseEntryType.SWAP_EVENT.serialize_for_db(),),
         )
@@ -466,7 +466,7 @@ def test_migration_20_recover_lost_trades(database: DBHandler) -> None:
 
 
 @pytest.mark.parametrize('use_custom_database', ['botched_v47_rotkehlchen.db'])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('data_migration_version', [19])
 def test_migration_20_recover_lost_trades_no_backup(database: DBHandler) -> None:
     """Test that recovery handles missing backup gracefully without data loss.
@@ -493,7 +493,7 @@ def test_migration_20_recover_lost_trades_no_backup(database: DBHandler) -> None
 
 
 @pytest.mark.parametrize('use_custom_database', ['botched_v47_rotkehlchen.db'])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('data_migration_version', [19])
 def test_migration_20_recover_lost_trades_wrong_password(database: DBHandler) -> None:
     """Test that recovery handles encrypted backup with wrong password gracefully.
