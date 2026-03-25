@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.42.1 <2025-03-25>`
 * :bug:`11935` Editing a manual balance to have duplicate names should no longer be possible.
 * :feature:`-` Added an accounting rule to transfer cost basis between assets and applied it as a default for actions such as wrapping/unwrapping ETH, depositing to DeFi etc.
 * :bug:`-` Upgrading an older rotki database won't cause data migration 20 to fail.
