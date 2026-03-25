@@ -13,6 +13,7 @@ from rotkehlchen.assets.converters import asset_from_okx
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.constants import OKX_LOCATION_KEY
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -201,7 +202,12 @@ class Okx(ExchangeInterface, ExchangeWithExtras, SignatureGeneratorMixin):
 
         log.debug(f'Querying OKX {url} with {method=}')
         try:
-            response = self.session.request(method=method, url=url, headers=headers)
+            response = self.session.request(
+                method=method,
+                url=url,
+                headers=headers,
+                timeout=CachedSettings().get_timeout_tuple(),
+            )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'{self.name} API request failed due to {e!s}') from e
         try:

@@ -13,6 +13,7 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.assets.converters import asset_from_woo
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -273,6 +274,7 @@ class Woo(ExchangeInterface, SignatureGeneratorMixin):
                 data=call_options if method == 'POST' else {},
                 params=call_options if method == 'GET' else {},
                 headers=headers,
+                timeout=CachedSettings().get_timeout_tuple(),
             )
             response_dict: dict = response.json()
         except requests.exceptions.RequestException as e:

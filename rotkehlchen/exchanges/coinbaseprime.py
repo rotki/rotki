@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -353,7 +354,12 @@ class Coinbaseprime(ExchangeInterface):
         }
         log.debug(f'Querying coinbase prime module {module}/{path} with {params=}')
         try:
-            response = self.session.get(url=uri, params=params, headers=headers)
+            response = self.session.get(
+                url=uri,
+                params=params,
+                headers=headers,
+                timeout=CachedSettings().get_timeout_tuple(),
+            )
         except requests.RequestException as e:
             raise RemoteError(f'Coinbase Prime API request failed due to {e}') from e
 
