@@ -51,7 +51,7 @@ RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/"
     uv run python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     PYTHONOPTIMIZE=2 uv run pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
-FROM nginx:1.26 AS runtime
+FROM nginx:1.28 AS runtime
 
 LABEL maintainer="Rotki Solutions GmbH <info@rotki.com>"
 
