@@ -154,9 +154,15 @@ describe('eventActionVisibility', () => {
       expect(shouldDeleteGroup(item, 0)).toBe(true);
     });
 
-    it('should delete group for online swap events (isGroupEditableHistoryEvent)', () => {
+    it('should delete group for online swap events at index 0', () => {
       const item = createSwapEvent();
       expect(shouldDeleteGroup(item, 0)).toBe(true);
+    });
+
+    it('should not delete group for online swap sub-events (index > 0)', () => {
+      const item = createSwapEvent();
+      expect(shouldDeleteGroup(item, 1)).toBe(false);
+      expect(shouldDeleteGroup(item, 2)).toBe(false);
     });
 
     it('should delete group for evm swap at index 0', () => {

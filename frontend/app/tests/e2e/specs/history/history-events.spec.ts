@@ -104,6 +104,35 @@ test.describe.serial('history events', () => {
     }).toPass({ timeout: 10000 });
   });
 
+  test('delete fee sub-event from online swap', async () => {
+    // The swap created earlier has 3 sub-events: spend, receive, fee.
+    // Expand it, delete the fee, and verify the swap group survives.
+    const rowsBeforeExpand = await page.getExpandedEventRows();
+    await page.expandSwap(0);
+
+    await expect(async () => {
+      const rows = await page.getExpandedEventRows();
+      expect(rows).toBeGreaterThanOrEqual(rowsBeforeExpand + 3);
+    }).toPass({ timeout: 10000 });
+
+    const rowsBefore = await page.getExpandedEventRows();
+
+    // The fee is the 3rd sub-event (index 2) within the expanded swap rows.
+    await page.deleteSubEvent(2);
+
+    await expect(async () => {
+      const rowsAfter = await page.getExpandedEventRows();
+      expect(rowsAfter).toBe(rowsBefore - 1);
+    }).toPass({ timeout: 10000 });
+
+    // The swap group should still exist (spend + receive remain)
+    await expect(async () => {
+      const swaps = await page.getSwapRows();
+      const expandedRows = await page.getExpandedEventRows();
+      expect(swaps + expandedRows).toBeGreaterThanOrEqual(1);
+    }).toPass({ timeout: 10000 });
+  });
+
   test('add asset movement event', async () => {
     await page.openAddDialog();
     await page.selectEntryType('asset movement event');
