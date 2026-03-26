@@ -108,6 +108,14 @@
       "evm_chain_name": "binance_sc"
     },
     {
+      "id": "hyperliquid",
+      "name": "Hyperliquid",
+      "type": "evm",
+      "native_token": "HYPE",
+      "image": "hyperliquid.svg",
+      "evm_chain_name": "hyperliquid"
+    },
+    {
       "id": "zksync_lite",
       "name": "ZKSync Lite",
       "type": "evmlike",

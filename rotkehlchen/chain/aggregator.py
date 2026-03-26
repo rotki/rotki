@@ -141,6 +141,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.chain.evm.proxies_inquirer import ProxyType
     from rotkehlchen.chain.gnosis.manager import GnosisManager
+    from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
     from rotkehlchen.chain.manager import (
         ChainManager,
         ChainManagerWithNodesMixin,
@@ -234,6 +235,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         HopBalances,
         GivethGnosisBalances,
     ),
+    ChainID.HYPERLIQUID: (),
     ChainID.SCROLL: (Compoundv3Balances,),
     ChainID.BINANCE_SC: (WoofiBalances,),
 }
@@ -252,6 +254,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             polygon_pos_manager: 'PolygonPOSManager',
             arbitrum_one_manager: 'ArbitrumOneManager',
             base_manager: 'BaseManager',
+            hyperliquid_manager: 'HyperliquidManager',
             gnosis_manager: 'GnosisManager',
             scroll_manager: 'ScrollManager',
             binance_sc_manager: 'BinanceSCManager',
@@ -278,6 +281,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.polygon_pos = polygon_pos_manager
         self.arbitrum_one = arbitrum_one_manager
         self.base = base_manager
+        self.hyperliquid = hyperliquid_manager
         self.gnosis = gnosis_manager
         self.scroll = scroll_manager
         self.binance_sc = binance_sc_manager
@@ -308,6 +312,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         self.polygon_pos_lock = Semaphore()
         self.arbitrum_one_lock = Semaphore()
         self.base_lock = Semaphore()
+        self.hyperliquid_lock = Semaphore()
         self.gnosis_lock = Semaphore()
         self.scroll_lock = Semaphore()
         self.binance_sc_lock = Semaphore()

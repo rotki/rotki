@@ -18,7 +18,16 @@ if TYPE_CHECKING:
 
 
 EMPTY_RESULT = {
-    'blockscout': {'ethereum': None, 'optimism': None, 'polygon_pos': None, 'arbitrum_one': None, 'base': None, 'gnosis': None, 'scroll': None},  # noqa: E501
+    'blockscout': {
+        'ethereum': None,
+        'optimism': None,
+        'polygon_pos': None,
+        'arbitrum_one': None,
+        'base': None,
+        'hyperliquid': None,
+        'gnosis': None,
+        'scroll': None,
+    },
 }
 
 

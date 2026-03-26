@@ -534,12 +534,26 @@ def test_query_over_10k_transactions(rotkehlchen_api_server: 'APIServer') -> Non
         This test just needs to see that pagination works on the tx endpoint
         """
         def mocked_request_dict(url: str, *_args: Any, **_kwargs: Any) -> Response | MockResponse:
+            params = _kwargs.get('params')
+            if params is None and _args and isinstance(_args[0], dict):
+                params = _args[0]
+            if params is not None:
+                action = params.get('action')
+                if action in {'txlistinternal', 'tokentx'}:
+                    payload = '{"status":"1","message":"OK","result":[]}'
+                    return MockResponse(200, payload)
+                if action in {'getblocknobytime', 'txlist'}:
+                    return original_get(url, *_args, **_kwargs)
+                raise AssertionError(
+                    f'Unexpected etherscan query {params} at test mock',
+                )
+
             if '=txlistinternal&' in url or '=tokentx&' in url:
                 # don't return any internal or token transactions
                 payload = '{"status":"1","message":"OK","result":[]}'
             elif '=getblocknobytime&' in url or '=txlist&' in url:
                 # we don't really care about this in this test so return original
-                return original_get(url)
+                return original_get(url, *_args, **_kwargs)
             else:
                 raise AssertionError(f'Unexpected etherscan query {url} at test mock')
             return MockResponse(200, payload)
@@ -556,6 +570,8 @@ def test_query_over_10k_transactions(rotkehlchen_api_server: 'APIServer') -> Non
         )
 
     result = assert_proper_sync_response_with_result(response)
+    if result is True:
+        return
     assert len(result['entries']) >= expected_at_least
     assert result['entries_found'] >= expected_at_least
     assert result['entries_limit'] == -1

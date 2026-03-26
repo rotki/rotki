@@ -23,12 +23,14 @@ from rotkehlchen.chain.solana.utils import is_solana_token_nft
 from rotkehlchen.constants.assets import (
     A_BSC_BNB,
     A_ETH,
+    A_HYPE,
     A_WBNB,
     A_WETH,
     A_WETH_ARB,
     A_WETH_BASE,
     A_WETH_OPT,
     A_WETH_SCROLL,
+    A_WHYPE,
     A_WPOL,
     A_WXDAI,
     A_XDAI,
@@ -720,7 +722,7 @@ def get_decimals(asset: CryptoAsset) -> int:
     May raise:
     - UnsupportedAsset if the given asset is not a native token or an ERC20 token
     """
-    if asset in (A_ETH, A_XDAI, A_BSC_BNB):
+    if asset in (A_ETH, A_XDAI, A_BSC_BNB, A_HYPE):
         return 18
     try:
         token = asset.resolve_to_evm_token()
@@ -753,6 +755,7 @@ CHAIN_TO_WRAPPED_TOKEN: Final = {
     SupportedBlockchain.ARBITRUM_ONE: A_WETH_ARB,
     SupportedBlockchain.OPTIMISM: A_WETH_OPT,
     SupportedBlockchain.BASE: A_WETH_BASE,
+    SupportedBlockchain.HYPERLIQUID: A_WHYPE,
     SupportedBlockchain.GNOSIS: A_WXDAI,
     SupportedBlockchain.POLYGON_POS: A_WPOL,
     SupportedBlockchain.BINANCE_SC: A_WBNB,

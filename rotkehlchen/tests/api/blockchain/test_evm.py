@@ -19,6 +19,7 @@ from rotkehlchen.constants.assets import A_AVAX, A_ETH
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.etherscan_like import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.unit.decoders.test_cowswap import BSC_NODES_TO_CONNECT
 from rotkehlchen.tests.utils.api import (
@@ -291,6 +292,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
             gnosis_addresses=[common_account, failing_account, already_added_to_all_chains],
             scroll_addresses=[common_account, failing_account],
             binance_sc_addresses=[common_account, failing_account],
+            hyperliquid_addresses=[common_account],
             zksync_lite_addresses=[common_account],
         )
         stack.enter_context(patched_modify_blockchain_accounts)
@@ -341,6 +343,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
                 'polygon_pos',
                 'arbitrum_one',
                 'base',
+                'hyperliquid',
                 'scroll',
                 'binance_sc',
                 'zksync_lite',
@@ -401,10 +404,17 @@ def test_detect_evm_accounts(
     The given account is everywhere. Note that it's not detected in BSC since none of the indexers
     support that chain with a free API key as of 2025-12-22.
     """
-    response = requests.post(api_url_for(
-        rotkehlchen_api_server,
-        'evmaccountsresource',
-    ))
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(
+            rotki.chains_aggregator.hyperliquid.node_inquirer.blockscout,
+            'has_activity',
+            return_value=HasChainActivity.TRANSACTIONS,
+        ))
+        response = requests.post(api_url_for(
+            rotkehlchen_api_server,
+            'evmaccountsresource',
+        ))
     assert_proper_response(response)
     websocket_connection.wait_until_messages_num(num=1, timeout=10)
     assert websocket_connection.messages_num() == 1
@@ -419,8 +429,8 @@ def test_detect_evm_accounts(
         {'chain': SupportedBlockchain.SCROLL.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.ZKSYNC_LITE.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.AVALANCHE.serialize(), 'address': ethereum_accounts[0]},
+        {'chain': SupportedBlockchain.HYPERLIQUID.serialize(), 'address': ethereum_accounts[0]},
     ], key=operator.itemgetter('chain', 'address'))
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
     with db.conn.read_ctx() as cursor:
         blockchain_accounts = db.get_blockchain_accounts(cursor)
@@ -433,6 +443,7 @@ def test_detect_evm_accounts(
     assert ethereum_accounts[0] in blockchain_accounts.scroll
     assert ethereum_accounts[0] in blockchain_accounts.zksync_lite
     assert ethereum_accounts[0] in blockchain_accounts.avax
+    assert ethereum_accounts[0] in blockchain_accounts.hyperliquid
 
 
 @pytest.mark.parametrize('have_decoders', [True])
@@ -536,6 +547,7 @@ def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
             gnosis_addresses=[common_account],
             scroll_addresses=[common_account],
             binance_sc_addresses=[common_account],
+            hyperliquid_addresses=[common_account],
             zksync_lite_addresses=[common_account],
         )
 
@@ -610,10 +622,22 @@ def test_adding_safe(rotkehlchen_api_server: 'APIServer', allow_base_routescan: 
     """Test adding a safe proxy. The address is deployed on arb and base only"""
     safe_address = string_to_evm_address('0x9d25AdBcffE28923E619f4Af88ECDe732c985b63')
     request_data = {'accounts': [{'address': safe_address}]}
-    response = requests.put(api_url_for(
-        rotkehlchen_api_server,
-        'evmaccountsresource',
-    ), json=request_data)
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with ExitStack() as stack:
+        stack.enter_context(patch.object(
+            rotki.chains_aggregator.hyperliquid.node_inquirer,
+            'is_contract',
+            return_value=False,
+        ))
+        stack.enter_context(patch.object(
+            rotki.chains_aggregator.hyperliquid.node_inquirer,
+            'has_activity',
+            return_value=HasChainActivity.NONE,
+        ))
+        response = requests.put(api_url_for(
+            rotkehlchen_api_server,
+            'evmaccountsresource',
+        ), json=request_data)
 
     result = assert_proper_sync_response_with_result(response)
     assert result == {
@@ -659,6 +683,7 @@ def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_ser
             gnosis_addresses=[addy],
             scroll_addresses=[addy],
             binance_sc_addresses=[addy],
+            hyperliquid_addresses=[addy],
         )
 
         response = requests.put(
@@ -667,7 +692,7 @@ def test_evm_account_addition_preserves_labels_across_chains(rotkehlchen_api_ser
         )
         result = assert_proper_sync_response_with_result(response)
         assert result == {
-            'added': {addy: ['optimism', 'polygon_pos', 'arbitrum_one', 'base', 'gnosis', 'scroll', 'binance_sc']},  # noqa: E501
+            'added': {addy: ['optimism', 'polygon_pos', 'arbitrum_one', 'base', 'hyperliquid', 'gnosis', 'scroll', 'binance_sc']},  # noqa: E501
             'existed': {addy: ['eth']},
         }
 

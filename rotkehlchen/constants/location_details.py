@@ -71,6 +71,7 @@ LOCATION_DETAILS: dict = {
     Location.POLYGON_POS: {'image': 'polygon_pos.svg'},
     Location.ARBITRUM_ONE: {'image': 'arbitrum_one.svg'},
     Location.BASE: {'image': 'base.svg'},
+    Location.HYPERLIQUID: {'image': 'hyperliquid.svg'},
     Location.GNOSIS: {'image': 'gnosis.svg'},
     Location.SCROLL: {'image': 'scroll.svg'},
     Location.BINANCE_SC: {'image': 'binance_sc.svg'},

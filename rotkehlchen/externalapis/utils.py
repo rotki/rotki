@@ -4,6 +4,7 @@ from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.binance_sc.constants import BINANCE_SC_GENESIS
+from rotkehlchen.chain.hyperliquid.constants import HYPERLIQUID_GENESIS
 from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import ConversionError, DeserializationError
@@ -74,6 +75,8 @@ def get_earliest_ts(chain_id: SUPPORTED_CHAIN_IDS) -> Timestamp:
             return Timestamp(1622243344)
         case ChainID.BASE:
             return Timestamp(1686789347)
+        case ChainID.HYPERLIQUID:
+            return HYPERLIQUID_GENESIS
         case ChainID.GNOSIS:
             return Timestamp(1539024185)
         case ChainID.SCROLL:

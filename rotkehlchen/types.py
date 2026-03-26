@@ -112,6 +112,7 @@ class ExternalService(SerializableEnumNameMixin):
     ARBITRUM_ONE_BLOCKSCOUT = auto()
     BASE_BLOCKSCOUT = auto()
     GNOSIS_BLOCKSCOUT = auto()
+    HYPERLIQUID_BLOCKSCOUT = auto()
     DEFILLAMA = auto()
     COINGECKO = auto()
     ALCHEMY = auto()
@@ -211,6 +212,7 @@ class ChainID(Enum):
     GNOSIS = 100
     POLYGON_POS = 137
     FANTOM = 250
+    HYPERLIQUID = 999
     BASE = 8453
     ARBITRUM_ONE = 42161
     AVALANCHE = 43114
@@ -263,6 +265,8 @@ class ChainID(Enum):
             label = 'Binance Smart Chain'
         elif self == ChainID.ARBITRUM_ONE:
             label = 'Arbitrum One'
+        elif self == ChainID.HYPERLIQUID:
+            label = 'Hyperliquid'
         elif self == ChainID.ARBITRUM_NOVA:
             label = 'Arbitrum Nova'
         elif self == ChainID.PULSECHAIN:
@@ -304,6 +308,7 @@ SUPPORTED_CHAIN_IDS = Literal[
     ChainID.POLYGON_POS,
     ChainID.ARBITRUM_ONE,
     ChainID.BASE,
+    ChainID.HYPERLIQUID,
     ChainID.GNOSIS,
     ChainID.SCROLL,
     ChainID.BINANCE_SC,
@@ -316,6 +321,7 @@ BLOCKSCOUT_TO_CHAINID = {
     ExternalService.POLYGON_POS_BLOCKSCOUT: ChainID.POLYGON_POS,
     ExternalService.ARBITRUM_ONE_BLOCKSCOUT: ChainID.ARBITRUM_ONE,
     ExternalService.BASE_BLOCKSCOUT: ChainID.BASE,
+    ExternalService.HYPERLIQUID_BLOCKSCOUT: ChainID.HYPERLIQUID,
     ExternalService.GNOSIS_BLOCKSCOUT: ChainID.GNOSIS,
     ExternalService.SCROLL_BLOCKSCOUT: ChainID.SCROLL,
 }
@@ -449,6 +455,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     POLYGON_POS = 'POLYGON_POS'
     ARBITRUM_ONE = 'ARBITRUM_ONE'
     BASE = 'BASE'
+    HYPERLIQUID = 'HYPERLIQUID'
     GNOSIS = 'GNOSIS'
     SCROLL = 'SCROLL'
     BINANCE_SC = 'BINANCE_SC'
@@ -497,6 +504,8 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return 'XDAI'
         if self == SupportedBlockchain.BINANCE_SC:
             return 'BNB'
+        if self == SupportedBlockchain.HYPERLIQUID:
+            return 'HYPE'
         if self == SupportedBlockchain.SOLANA:
             return 'SOL'
 
@@ -584,6 +593,7 @@ SUPPORTED_BLOCKCHAIN_NAMES_MAPPING = {
     SupportedBlockchain.POLYGON_POS: 'Polygon PoS',
     SupportedBlockchain.ARBITRUM_ONE: 'Arbitrum One',
     SupportedBlockchain.GNOSIS: 'Gnosis',
+    SupportedBlockchain.HYPERLIQUID: 'Hyperliquid',
     SupportedBlockchain.ZKSYNC_LITE: 'ZKSync Lite',
     SupportedBlockchain.BINANCE_SC: 'Binance Smart Chain',
 }
@@ -600,6 +610,7 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.POLYGON_POS: 'polygon_pos.svg',
     SupportedBlockchain.ARBITRUM_ONE: 'arbitrum_one.svg',
     SupportedBlockchain.BASE: 'base.svg',
+    SupportedBlockchain.HYPERLIQUID: 'hyperliquid.svg',
     SupportedBlockchain.GNOSIS: 'gnosis.svg',
     SupportedBlockchain.SCROLL: 'scroll.svg',
     SupportedBlockchain.ZKSYNC_LITE: 'zksync_lite.svg',
@@ -613,6 +624,7 @@ EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
     SupportedBlockchain.POLYGON_POS,
     SupportedBlockchain.ARBITRUM_ONE,
     SupportedBlockchain.BASE,
+    SupportedBlockchain.HYPERLIQUID,
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.BINANCE_SC,
@@ -643,6 +655,7 @@ EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
     ChainID.POLYGON_POS,
     ChainID.ARBITRUM_ONE,
     ChainID.BASE,
+    ChainID.HYPERLIQUID,
     ChainID.GNOSIS,
     ChainID.SCROLL,
     ChainID.BINANCE_SC,
@@ -655,6 +668,7 @@ CHAIN_IDS_WITH_BALANCE_PROTOCOLS = Literal[
     ChainID.ETHEREUM,
     ChainID.OPTIMISM,
     ChainID.BASE,
+    ChainID.HYPERLIQUID,
     ChainID.POLYGON_POS,
     ChainID.SCROLL,
     ChainID.GNOSIS,
@@ -668,6 +682,7 @@ SUPPORTED_EVM_CHAINS_TYPE = Literal[
     SupportedBlockchain.POLYGON_POS,
     SupportedBlockchain.ARBITRUM_ONE,
     SupportedBlockchain.BASE,
+    SupportedBlockchain.HYPERLIQUID,
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.BINANCE_SC,
@@ -690,6 +705,7 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.POLYGON_POS,
     SupportedBlockchain.ARBITRUM_ONE,
     SupportedBlockchain.BASE,
+    SupportedBlockchain.HYPERLIQUID,
     SupportedBlockchain.GNOSIS,
     SupportedBlockchain.SCROLL,
     SupportedBlockchain.ZKSYNC_LITE,
@@ -716,6 +732,7 @@ SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.POLYGON_POS: ChainID.POLYGON_POS,
     SupportedBlockchain.ARBITRUM_ONE: ChainID.ARBITRUM_ONE,
     SupportedBlockchain.BASE: ChainID.BASE,
+    SupportedBlockchain.HYPERLIQUID: ChainID.HYPERLIQUID,
     SupportedBlockchain.GNOSIS: ChainID.GNOSIS,
     SupportedBlockchain.SCROLL: ChainID.SCROLL,
     SupportedBlockchain.BINANCE_SC: ChainID.BINANCE_SC,
@@ -792,6 +809,7 @@ class Location(DBCharEnumMixIn):
     BINANCE_SC = 54  # on-chain Binance Smart Chain events
     SOLANA = 55
     AVALANCHE = 56  # on-chain Avalanche events
+    HYPERLIQUID = 57  # on-chain Hyperliquid events
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
@@ -806,6 +824,9 @@ class Location(DBCharEnumMixIn):
 
         if chain_id == ChainID.BASE:
             return Location.BASE
+
+        if chain_id == ChainID.HYPERLIQUID:
+            return Location.HYPERLIQUID
 
         if chain_id == ChainID.GNOSIS:
             return Location.GNOSIS
@@ -833,6 +854,8 @@ class Location(DBCharEnumMixIn):
             return ChainID.ARBITRUM_ONE.value
         if self == Location.BASE:
             return ChainID.BASE.value
+        if self == Location.HYPERLIQUID:
+            return ChainID.HYPERLIQUID.value
         if self == Location.GNOSIS:
             return ChainID.GNOSIS.value
         if self == Location.SCROLL:
@@ -856,6 +879,8 @@ class Location(DBCharEnumMixIn):
                 return Location.ARBITRUM_ONE
             case SupportedBlockchain.BASE:
                 return Location.BASE
+            case SupportedBlockchain.HYPERLIQUID:
+                return Location.HYPERLIQUID
             case SupportedBlockchain.GNOSIS:
                 return Location.GNOSIS
             case SupportedBlockchain.SCROLL:
@@ -886,7 +911,7 @@ class Location(DBCharEnumMixIn):
         return self in BITCOIN_LOCATIONS
 
 
-EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC]  # noqa: E501
+EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.HYPERLIQUID, Location.GNOSIS, Location.SCROLL, Location.BINANCE_SC]  # noqa: E501
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE, ...] = typing.get_args(EVM_LOCATIONS_TYPE)
 EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]
 EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_LOCATIONS_TYPE)
