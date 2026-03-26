@@ -16,7 +16,6 @@ export const GoogleCalendarAuthResultSchema = z.object({
 export type GoogleCalendarAuthResult = z.infer<typeof GoogleCalendarAuthResultSchema>;
 
 export const GoogleCalendarSyncResultSchema = z.object({
-  success: z.boolean(),
   calendarId: z.string(),
   eventsProcessed: z.number(),
   eventsCreated: z.number(),
