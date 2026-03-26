@@ -300,6 +300,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
         """Check ENS registration and renewal history events and create reminders if needed."""
         if len(ens_events := self.get_history_events(
             event_types=[
+                (HistoryEventType.SPEND, HistoryEventSubType.NONE),
                 (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
                 (HistoryEventType.RENEW, HistoryEventSubType.NONE),
             ],
