@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import GPV2_SETTLEMENT_ADDRESS
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import WeightedNode, string_to_evm_address
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.constants.assets import (
@@ -1324,6 +1325,47 @@ def test_cowswap_wrapped_eth_to_token(gnosis_inquirer, gnosis_accounts):
         amount=(fee_amount := FVal('0.022725682237174343')),
         location_label=user,
         notes=f'Spend {fee_amount} XDAI as a cowswap fee',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0xBA7551e55eB7513F209BeEE476C175D367d35e39']])
+def test_cowswap_gnosis_token_to_native_via_curve(gnosis_inquirer, gnosis_accounts):
+    """Test that swapping a token for native XDAI on gnosis via cowswap is decoded
+    correctly when the cowswap solver routes through a Curve pool. The Curve decoder
+    must not claim the native XDAI transfer from the settlement to the user."""
+    tx_hash = deserialize_evm_tx_hash('0xa251a5069f7bddf590381ed6716f122f09df18ac89a6479ca6086b7981539a7e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=[CPT_CURVE],
+    )
+    user_address = gnosis_accounts[0]
+    swap_amount, received_amount = '2741.986958894639299486', '2974.356631003171669712'
+    assert events == [EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=0,
+        timestamp=(timestamp := events[0].timestamp),
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),
+        amount=FVal(swap_amount),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} EURe in a cowswap market order',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
+    ), EvmSwapEvent(
+        tx_ref=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_XDAI,
+        amount=FVal(received_amount),
+        location_label=user_address,
+        notes=f'Receive {received_amount} XDAI as the result of a cowswap market order',
         counterparty=CPT_COWSWAP,
         address=GPV2_SETTLEMENT_ADDRESS,
     )]

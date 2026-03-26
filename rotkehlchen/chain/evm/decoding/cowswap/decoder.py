@@ -212,12 +212,17 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
         which represent the relevant trades.
         """
         related_transfer_events: dict[tuple[EventDirection, str, FVal], EvmEvent] = {}
+        # Secondary index for events at the settlement that were already claimed by
+        # other decoders (e.g. Curve marking a native receive as a pool withdrawal).
+        # Keyed by (symbol, amount) only, without direction.
+        settlement_events_by_asset: dict[tuple[str, FVal], EvmEvent] = {}
         for event in decoded_events:
+            if event.address != self.settlement_address:
+                continue
+
             if (
-                    (event.event_type in (HistoryEventType.SPEND, HistoryEventType.RECEIVE) or
-                     (event.event_type == HistoryEventType.TRADE and event.event_subtype in (HistoryEventSubType.SPEND, HistoryEventSubType.RECEIVE))  # noqa: E501
-                     ) and
-                    event.address == self.settlement_address
+                    event.event_type in (HistoryEventType.SPEND, HistoryEventType.RECEIVE) or
+                    (event.event_type == HistoryEventType.TRADE and event.event_subtype in (HistoryEventSubType.SPEND, HistoryEventSubType.RECEIVE))  # noqa: E501
             ):
                 direction = event.maybe_get_direction()
                 if direction is None:
@@ -226,16 +231,23 @@ class CowswapCommonDecoder(EvmDecoderInterface, abc.ABC):
 
                 # use symbols due to Monerium and its different versions
                 related_transfer_events[direction, event.asset.resolve_to_asset_with_symbol().symbol, event.amount] = event  # noqa: E501
+            elif event.location_label is not None and self.base.is_tracked(string_to_evm_address(event.location_label)):  # noqa: E501
+                settlement_events_by_asset[event.asset.resolve_to_asset_with_symbol().symbol, event.amount] = event  # noqa: E501
 
         trades_events: list[tuple[EvmEvent, EvmEvent, EvmEvent | None, CowswapSwapData]] = []
         for swap_data in all_swap_data:
             receive_event = related_transfer_events.get((EventDirection.IN, swap_data.to_asset.resolve_to_asset_with_symbol().symbol, swap_data.to_amount))  # noqa: E501
+            if receive_event is None:
+                # Check if the event was claimed by another decoder
+                receive_event = settlement_events_by_asset.get((swap_data.to_asset.resolve_to_asset_with_symbol().symbol, swap_data.to_amount))  # noqa: E501
             if receive_event is None:
                 continue
 
             if swap_data.from_asset != self.node_inquirer.native_token:
                 # If a token is spent, there has to be an event for that.
                 spend_event = related_transfer_events.get((EventDirection.OUT, swap_data.from_asset.resolve_to_asset_with_symbol().symbol, swap_data.from_amount + swap_data.fee_amount))  # noqa: E501
+                if spend_event is None:  # check if claimed by another decoder
+                    spend_event = settlement_events_by_asset.get((swap_data.from_asset.resolve_to_asset_with_symbol().symbol, swap_data.from_amount + swap_data.fee_amount))  # noqa: E501
                 if spend_event is None:
                     log.error(
                         f'Could not find a spend event of {swap_data.from_amount} '
