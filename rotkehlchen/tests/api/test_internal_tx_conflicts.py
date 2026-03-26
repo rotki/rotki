@@ -1,7 +1,13 @@
 from typing import TYPE_CHECKING, Any, cast
 
+import pytest
 import requests
 
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+    SerializableChainIndexerOrder,
+    string_to_evm_address,
+)
 from rotkehlchen.db.internal_tx_conflicts import (
     INTERNAL_TX_CONFLICT_ACTION_FIX_REDECODE,
     INTERNAL_TX_CONFLICT_ACTION_REPULL,
@@ -11,8 +17,9 @@ from rotkehlchen.db.internal_tx_conflicts import (
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
-from rotkehlchen.types import ChainID, Location, Timestamp
+from rotkehlchen.types import ChainID, Location, Timestamp, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -335,3 +342,70 @@ def test_post_pending_internal_tx_conflicts_count_endpoint(
         async_query=False,
     ))
     assert result == {'pending': 1, 'failed': 2}
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(order={ChainID.OPTIMISM: [EvmIndexer.BLOCKSCOUT]})}])  # noqa: E501
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('optimism_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_redecode_keeps_optimism_l1_fee_and_relevant_address(
+        rotkehlchen_api_server: 'APIServer',
+        optimism_accounts: list[str],
+) -> None:
+    """Decode an Optimism tx, assert L1 fee + address mapping in DB, then redecode and
+    ensure both remain unchanged.
+    """
+    tx_hash = deserialize_evm_tx_hash('0x1b3ace2628e40a360c8420ba7ff16bc10dce7a54f4a28dfcce97986eae62c0ed')  # noqa: E501
+    expected_l1_fee = 716831161
+    relevant_address = string_to_evm_address(optimism_accounts[0])
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    get_decoded_events_of_transaction(
+        evm_inquirer=rotki.chains_aggregator.optimism.node_inquirer,
+        tx_hash=tx_hash,
+        relevant_address=relevant_address,
+    )
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        l1_fee_before = cursor.execute(
+            'SELECT optimism_transactions.l1_fee FROM optimism_transactions '
+            'JOIN evm_transactions tx ON tx.identifier=optimism_transactions.tx_id '
+            'WHERE tx.tx_hash=? AND tx.chain_id=?',
+            (tx_hash, ChainID.OPTIMISM.serialize_for_db()),
+        ).fetchone()
+        relevant_mappings_before = cursor.execute(
+            'SELECT COUNT(*) FROM evmtx_address_mappings map '
+            'JOIN evm_transactions tx ON tx.identifier=map.tx_id '
+            'WHERE tx.tx_hash=? AND tx.chain_id=? AND map.address=?',
+            (tx_hash, ChainID.OPTIMISM.serialize_for_db(), relevant_address),
+        ).fetchone()
+    assert l1_fee_before is not None
+    assert int(l1_fee_before[0]) == expected_l1_fee
+    assert relevant_mappings_before is not None
+    assert relevant_mappings_before[0] == 1
+
+    assert assert_proper_response_with_result(
+        response=requests.put(
+            api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
+            json={'async_query': False, 'chain': 'optimism', 'tx_refs': [str(tx_hash)]},
+        ),
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=False,
+    ) is True
+    with rotki.data.db.conn.read_ctx() as cursor:
+        l1_fee_after = cursor.execute(
+            'SELECT optimism_transactions.l1_fee FROM optimism_transactions '
+            'JOIN evm_transactions tx ON tx.identifier=optimism_transactions.tx_id '
+            'WHERE tx.tx_hash=? AND tx.chain_id=?',
+            (tx_hash, ChainID.OPTIMISM.serialize_for_db()),
+        ).fetchone()
+        relevant_mappings_after = cursor.execute(
+            'SELECT COUNT(*) FROM evmtx_address_mappings map '
+            'JOIN evm_transactions tx ON tx.identifier=map.tx_id '
+            'WHERE tx.tx_hash=? AND tx.chain_id=? AND map.address=?',
+            (tx_hash, ChainID.OPTIMISM.serialize_for_db(), relevant_address),
+        ).fetchone()
+    assert l1_fee_after is not None
+    assert int(l1_fee_after[0]) == expected_l1_fee
+    assert relevant_mappings_after is not None
+    assert relevant_mappings_after[0] == 1

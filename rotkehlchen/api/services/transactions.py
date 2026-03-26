@@ -10,7 +10,7 @@ from sqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.assets.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
-from rotkehlchen.chain.evm.types import NodeName
+from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.db.cache import DBCacheDynamic
@@ -917,7 +917,7 @@ class TransactionsService:
         except DeserializationError as e:
             raise InputError(str(e)) from e
 
-        dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
+        dbevmtx = chain_manager.transactions.dbevmtx  # either DBL2WithL1FeesTx or DBEvmTx
         parent_hash_internal_txs: list[EvmInternalTransaction] = []
         indexer_source = 'unknown'
         if transaction.to_address is not None:  # internal transactions only through contracts
@@ -930,49 +930,29 @@ class TransactionsService:
                 tx_timestamp=transaction.timestamp,
             ))
 
+        db_tuple = (tx_ref, chain_manager.node_inquirer.chain_id.serialize_for_db())
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             tx_is_customized = is_tx_customized(cursor, tx_ref, chain_manager.node_inquirer.chain_id)  # noqa: E501
+            raw_relevant_address = cursor.execute(
+                'SELECT m.address FROM evm_transactions AS t '
+                'JOIN evmtx_address_mappings AS m ON m.tx_id = t.identifier '
+                'WHERE t.tx_hash = ? AND t.chain_id = ?',
+                db_tuple,
+            ).fetchone()
+            relevant_address = None if raw_relevant_address is None else string_to_evm_address(raw_relevant_address[0])  # noqa: E501
 
         if not delete_custom and tx_is_customized:
-            with self.rotkehlchen.data.db.user_write() as write_cursor:
-                write_cursor.execute(
-                    'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-                    (tx_ref, chain_manager.node_inquirer.chain_id.serialize_for_db()),
-                )
-                dbevmtx.add_transactions(
-                    write_cursor=write_cursor,
-                    evm_transactions=[transaction],
-                    relevant_address=None,
-                )
-                dbevmtx.add_or_ignore_receipt_data(
-                    write_cursor=write_cursor,
-                    chain_id=chain_manager.node_inquirer.chain_id,
-                    data=raw_receipt_data,
-                )
-                if transaction.to_address is not None:
-                    chain_manager.transactions._replace_internal_transactions_for_parent_hash(
-                        write_cursor=write_cursor,
-                        parent_tx_hash=tx_ref,
-                        transactions=parent_hash_internal_txs,
-                        indexer_source=indexer_source,
-                    )
-                if table_exists(write_cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
-                    set_internal_tx_conflict_fixed(
-                        write_cursor=write_cursor,
-                        tx_hash=tx_ref,
-                        chain_id=chain_manager.node_inquirer.chain_id,
-                    )
-            return
+            raise InputError(f'Tried to delete customized transaction {tx_ref} while delete custom is False')  # noqa: E501
 
         with self.rotkehlchen.data.db.user_write() as write_cursor:
             write_cursor.execute(
                 'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-                (tx_ref, chain_manager.node_inquirer.chain_id.serialize_for_db()),
+                db_tuple,
             )
-            dbevmtx.add_transactions(
+            dbevmtx.add_transactions(  # for chains with L2 fees it also saves the l1fee
                 write_cursor=write_cursor,
                 evm_transactions=[transaction],
-                relevant_address=None,
+                relevant_address=relevant_address,
             )
             dbevmtx.add_or_ignore_receipt_data(
                 write_cursor=write_cursor,
