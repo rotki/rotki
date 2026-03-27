@@ -407,9 +407,19 @@ def test_detect_evm_accounts(
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with ExitStack() as stack:
         stack.enter_context(patch.object(
+            rotki.chains_aggregator.hyperliquid.node_inquirer.etherscan,
+            'has_activity',
+            return_value=HasChainActivity.TRANSACTIONS,
+        ))
+        stack.enter_context(patch.object(
             rotki.chains_aggregator.hyperliquid.node_inquirer.blockscout,
             'has_activity',
             return_value=HasChainActivity.TRANSACTIONS,
+        ))
+        stack.enter_context(patch.object(
+            rotki.chains_aggregator.binance_sc.node_inquirer,
+            'has_activity',
+            return_value=HasChainActivity.NONE,
         ))
         response = requests.post(api_url_for(
             rotkehlchen_api_server,

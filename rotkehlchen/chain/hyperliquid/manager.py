@@ -1,16 +1,6 @@
-import logging
-from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
-from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
-from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
-from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.chain.evm.manager import EvmManager
 
 from .accountant import HyperliquidAccountingAggregator
 from .decoding.decoder import HyperliquidTransactionDecoder
@@ -22,15 +12,10 @@ if TYPE_CHECKING:
 
     from .node_inquirer import HyperliquidInquirer
 
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
-
-class HyperliquidManager(EvmManager, CurveManagerMixin):
+class HyperliquidManager(EvmManager):
     def __init__(
-            self,
-            node_inquirer: 'HyperliquidInquirer',
-            premium: 'Premium | None' = None,
+            self, node_inquirer: 'HyperliquidInquirer', premium: 'Premium | None' = None,
     ) -> None:
         super().__init__(
             node_inquirer=node_inquirer,
@@ -57,37 +42,3 @@ class HyperliquidManager(EvmManager, CurveManagerMixin):
             ),
         )
         self.node_inquirer: HyperliquidInquirer
-
-    def query_balances(
-            self,
-            addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, BalanceSheet]:
-        """Query EVM on-chain balances plus Hyperliquid proprietary spot/perp balances."""
-        balances = super().query_balances(addresses)
-
-        api = HyperliquidAPI()
-        for address in addresses:
-            try:
-                proprietary_balances = api.query_balances(address=address)
-            except RemoteError as e:
-                log.error(f'Failed to query Hyperliquid proprietary balances for {address}: {e}')
-                continue
-
-            for asset, amount in proprietary_balances.items():
-                try:
-                    price = Inquirer.find_price(
-                        from_asset=asset,
-                        to_asset=CachedSettings().main_currency,
-                    )
-                except RemoteError:
-                    price = 0  # type: ignore[assignment]
-
-                if address not in balances:
-                    balances[address] = BalanceSheet()
-
-                balances[address].assets[asset][DEFAULT_BALANCE_LABEL] += Balance(
-                    amount=amount,
-                    value=amount * price,
-                )
-
-        return balances

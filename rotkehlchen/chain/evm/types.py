@@ -173,8 +173,8 @@ DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
         ChainID.OPTIMISM: BLOCKSCOUT_PRIORITY_ORDER,
         ChainID.BINANCE_SC: (EvmIndexer.ETHERSCAN,),  # Blockscout and Routescan do not support BSC (will only work with premium etherscan)  # noqa: E501
         ChainID.HYPERLIQUID: (
-            EvmIndexer.BLOCKSCOUT,
             EvmIndexer.ETHERSCAN,
+            EvmIndexer.BLOCKSCOUT,
         ),  # Routescan does not support Hyperliquid
     },
 )

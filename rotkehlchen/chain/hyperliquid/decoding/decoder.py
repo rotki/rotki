@@ -1,8 +1,8 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.base import BaseEvmDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EvmDecodingRules, EVMTransactionDecoder
+from rotkehlchen.constants.assets import A_HYPE
 from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 
 class HyperliquidTransactionDecoder(EVMTransactionDecoder):
-
     def __init__(
             self,
             database: 'DBHandler',
@@ -25,7 +24,7 @@ class HyperliquidTransactionDecoder(EVMTransactionDecoder):
             database=database,
             evm_inquirer=hyperliquid_inquirer,
             transactions=transactions,
-            value_asset=Asset('HYPE').resolve_to_asset_with_oracles(),
+            value_asset=A_HYPE.resolve_to_asset_with_oracles(),
             event_rules=[],
             misc_counterparties=[],
             base_tools=BaseEvmDecoderTools(
