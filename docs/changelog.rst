@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`11964` Resolving many internal transaction conflicts at once will no longer flood the frontend with duplicate refresh requests, reducing unnecessary network calls and improving responsiveness.
+* :bug:`-` rotki no longer gets stuck when querying Routescan transactions with more than 100 internal transactions.
 
 * :release:`1.42.1 <2025-03-26>`
 * :bug:`-` Asset icons in the Docker deployment will no longer fail to load due to an invalid base URL when constructing icon URLs.
