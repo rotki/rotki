@@ -13,7 +13,7 @@ from rotkehlchen.chain.ethereum.modules.eth2.constants import (
 )
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
-from rotkehlchen.chain.evm.types import EvmAccount
+from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.chain.gnosis.constants import GNOSIS_GENESIS
 from rotkehlchen.chain.optimism.constants import OPTIMISM_GENESIS
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_GENESIS
@@ -30,7 +30,6 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
 )
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.utils import get_query_chunks
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -414,56 +413,45 @@ class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTrans
             chain_id: ChainID,
     ) -> EvmTxReceipt | None:
         """Get the evm receipt for the given tx_hash and chain id"""
-        chain_id_serialized = chain_id.serialize_for_db()
-        result = cursor.execute(
-            'SELECT identifier from evm_transactions WHERE tx_hash=? AND chain_id=?',
-            (tx_hash, chain_id_serialized),
-        ).fetchone()
-        if result is None:
-            return None
-        tx_id = result[0]
-        result = cursor.execute(
-            'SELECT contract_address, status, type from evmtx_receipts WHERE tx_id=?',
-            (tx_id,),
-        ).fetchone()
-        if result is None:
+        if (result := cursor.execute(
+            'SELECT T.identifier, R.contract_address, R.status, R.type '
+            'FROM evm_transactions AS T INNER JOIN evmtx_receipts AS R ON T.identifier=R.tx_id '
+            'WHERE T.tx_hash=? AND T.chain_id=?',
+            (tx_hash, chain_id.serialize_for_db()),
+        ).fetchone()) is None:
             return None
 
+        tx_id = result[0]
         tx_receipt = EvmTxReceipt(
             tx_hash=tx_hash,
             chain_id=chain_id,
-            contract_address=result[0],
-            status=bool(result[1]),  # works since value is either 0 or 1
-            tx_type=result[2],
+            contract_address=result[1],
+            status=bool(result[2]),  # works since value is either 0 or 1
+            tx_type=result[3],
         )
 
-        cursor.execute(
-            'SELECT identifier, log_index, data, address from evmtx_receipt_logs WHERE tx_id=?',
+        logs_data: dict[int, tuple[int, bytes, str]] = {}
+        topics_by_log: dict[int, list[bytes]] = {}
+        for log_id, log_index, data, address, topic in cursor.execute(
+            'SELECT L.identifier, L.log_index, L.data, L.address, T.topic '
+            'FROM evmtx_receipt_logs AS L '
+            'LEFT JOIN evmtx_receipt_log_topics AS T ON L.identifier=T.log '
+            'WHERE L.tx_id=? ORDER BY L.log_index, T.topic_index ASC',
             (tx_id,),
-        )
-        log_rows, log_ids = [], []
-        for row in cursor:
-            log_rows.append(row)
-            log_ids.append(row[0])
+        ):
+            if log_id not in logs_data:
+                logs_data[log_id] = (log_index, data, address)
+                topics_by_log[log_id] = []
+            if topic is not None:
+                topics_by_log[log_id].append(topic)
 
-        topics_by_log: dict[int, list[bytes]] = {log_id: [] for log_id in log_ids}
-        if log_ids:
-            with self.db.conn.read_ctx() as other_cursor:
-                for bindings, placeholders in get_query_chunks(log_ids):
-                    for log_id, topic in other_cursor.execute(
-                        'SELECT log, topic from evmtx_receipt_log_topics '
-                        f'WHERE log IN ({placeholders}) ORDER BY log, topic_index ASC',
-                        bindings,
-                    ):
-                        topics_by_log[log_id].append(topic)
-
-        for log_id, log_index, data, address in log_rows:
+        for log_id, (log_index, data, address) in logs_data.items():
             tx_receipt_log = EvmTxReceiptLog(
                 log_index=log_index,
                 data=data,
-                address=address,
+                address=string_to_evm_address(address),
             )
-            tx_receipt_log.topics = topics_by_log.get(log_id, [])
+            tx_receipt_log.topics = topics_by_log[log_id]
             if (
                 len(tx_receipt_log.topics) == 0 and
                 tx_receipt_log.address not in (
