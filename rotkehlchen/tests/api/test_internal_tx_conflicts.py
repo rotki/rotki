@@ -344,7 +344,7 @@ def test_post_pending_internal_tx_conflicts_count_endpoint(
     assert result == {'pending': 1, 'failed': 2}
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(match_on=['uri', 'method', 'raw_body'], filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('db_settings', [{'evm_indexers_order': SerializableChainIndexerOrder(order={ChainID.OPTIMISM: [EvmIndexer.BLOCKSCOUT]})}])  # noqa: E501
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('optimism_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
