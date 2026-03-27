@@ -839,7 +839,9 @@ Getting or modifying settings
               "asset_movement_amount_tolerance": "0.000001",
               "asset_movement_time_range": 54000,
               "suppress_missing_key_msg_services": ["etherscan"],
-              "auto_create_profit_events": false
+              "auto_create_profit_events": false,
+              "internal_txs_to_repull": 20,
+              "internal_tx_conflict_repull_frequency": 3600
           },
           "message": ""
       }
@@ -884,6 +886,8 @@ Getting or modifying settings
    :resjson int asset_movement_time_range: The time range before/after the asset movement (depending on if its a deposit/withdrawal) in which to check for possible matching events. Default is 54000 (15 hours). Note: there is also a 1 hour tolerance on the other side of the asset movement, since some exchanges do not provide accurate timestamps.
    :resjson list suppress_missing_key_msg_services: A list of services for which the missing api key WS message should be suppressed. Empty list by default.
    :resjson bool auto_create_profit_events: A boolean denoting whether profit history events are automatically created when protocol withdrawal events exceed deposits during historical balances processing. Default is ``false``.
+   :resjson int internal_txs_to_repull: The number of internal transaction conflicts to repull per periodic task run. Must be at least 1. Default is 20.
+   :resjson int internal_tx_conflict_repull_frequency: The frequency in seconds at which internal transaction conflicts are re-pulled. Must be at least 30. Default is 3600 (every hour).
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user
@@ -942,6 +946,8 @@ Getting or modifying settings
    :resjson int[optional] asset_movement_time_range: The time range before/after the asset movement (depending on if its a deposit/withdrawal) in which to check for possible matching events. Default is 54000 (15 hours). Note: there is also a 1 hour tolerance on the other side of the asset movement, since some exchanges do not provide accurate timestamps.
    :resjson list[optional] suppress_missing_key_msg_services: A list of services for which the missing api key WS message should be suppressed. Empty list by default.
    :resjson bool[optional] auto_create_profit_events: A boolean denoting whether profit history events are automatically created when protocol withdrawal events exceed deposits during historical balances processing.
+   :reqjson int[optional] internal_txs_to_repull: The number of internal transaction conflicts to repull per periodic task run. Must be at least 1. Default is 20.
+   :reqjson int[optional] internal_tx_conflict_repull_frequency: The frequency in seconds at which internal transaction conflicts are re-pulled. Must be at least 30. Default is 3600 (every hour).
 
    **Example Response**:
 
@@ -980,7 +986,9 @@ Getting or modifying settings
               "asset_movement_amount_tolerance": "0.000001",
               "asset_movement_time_range": 54000,
               "suppress_missing_key_msg_services": ["etherscan"],
-              "auto_create_profit_events": false
+              "auto_create_profit_events": false,
+              "internal_txs_to_repull": 20,
+              "internal_tx_conflict_repull_frequency": 3600
           },
           "message": ""
       }
@@ -2725,7 +2733,7 @@ Decode transactions that haven't been decoded yet
    :resjson string result.entries.group_identifier: Group identifier of history events linked to ``tx_hash``. ``null`` when no linked events are found.
    :resjson int result.entries.last_retry_ts: Unix timestamp of the most recent repull retry, or ``null`` if no retry has failed yet.
    :resjson string result.entries.last_error: Error from the most recent failed repull retry, or ``null`` if no retry has failed yet.
-   :resjson int result.entries_found: Number of entries returned in the current page.
+   :resjson int result.entries_found: Number of entries matching the applied filters. Ignores pagination.
    :resjson int result.entries_total: Total number of entries matching the applied filters.
    :resjson int result.entries_limit: Applied limit value. ``-1`` when no limit is provided.
    :reqjson int[optional] limit: Maximum number of rows to return.
@@ -2739,6 +2747,44 @@ Decode transactions that haven't been decoded yet
    :reqjson list[optional] order_by_attributes: List of attributes to order by. Valid values: ``chain``, ``tx_hash``, ``timestamp``, ``action``, ``repull_reason``, ``redecode_reason``, ``last_retry_ts``, ``last_error``. Defaults to ``["chain", "tx_hash"]``.
    :reqjson list[optional] ascending: List of booleans corresponding to each ``order_by_attributes`` entry. ``true`` for ascending, ``false`` for descending.
    :statuscode 200: Conflicts successfully returned.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: Other error. Check error message for details.
+   :statuscode 500: Internal rotki error
+
+.. http:post:: /api/(version)/blockchains/transactions/internal/conflicts
+
+   Doing a POST on the internal transaction conflicts endpoint returns only conflict counts split
+   by ``fixed`` status. Unlike GET, this endpoint does not return entries and does not accept
+   filter parameters.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/blockchains/transactions/internal/conflicts HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"async_query": false}
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": {
+              "pending": 2,
+              "failed": 1
+          },
+          "message": ""
+      }
+
+   :resjson int result.pending: Number of rows with ``fixed = 0`` and ``last_retry_ts`` unset.
+   :resjson int result.failed: Number of rows with ``fixed = 0`` and ``last_retry_ts`` set.
+   :statuscode 200: Counts successfully returned.
    :statuscode 401: User is not logged in.
    :statuscode 409: Other error. Check error message for details.
    :statuscode 500: Internal rotki error

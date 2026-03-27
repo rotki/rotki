@@ -19,6 +19,7 @@ from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_f
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -210,6 +211,7 @@ class Bitfinex(ExchangeInterface, SignatureGeneratorMixin):
                     method=method,
                     url=request_url,
                     headers=headers,
+                    timeout=CachedSettings().get_timeout_tuple(),
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(

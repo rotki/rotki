@@ -85,6 +85,8 @@ DEFAULT_ASSET_MOVEMENT_AMOUNT_TOLERANCE: Final = FVal('0.005')
 DEFAULT_ASSET_MOVEMENT_TIME_RANGE: Final = HOUR_IN_SECONDS * 20
 DEFAULT_AUTO_CREATE_PROFIT_EVENTS: Final = False
 DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS: Final = True
+DEFAULT_INTERNAL_TXS_TO_REPULL: Final = 100
+DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY: Final = 900  # every 15 mins
 
 LIST_KEYS: Final = (
     'current_price_oracles',
@@ -129,6 +131,8 @@ INTEGER_KEYS: Final = (
     'oracle_penalty_threshold_count',
     'oracle_penalty_duration',
     'asset_movement_time_range',
+    'internal_txs_to_repull',
+    'internal_tx_conflict_repull_frequency',
 )
 STRING_KEYS: Final = (
     'ksm_rpc_endpoint',
@@ -195,6 +199,8 @@ CachedDBSettingsFieldNames = Literal[
     'suppress_missing_key_msg_services',
     'auto_create_profit_events',
     'use_asset_collections_in_cost_basis',
+    'internal_txs_to_repull',
+    'internal_tx_conflict_repull_frequency',
 ]
 
 DBSettingsFieldTypes = (
@@ -268,6 +274,8 @@ class DBSettings:
     suppress_missing_key_msg_services: list[ExternalService] = field(default_factory=list)
     auto_create_profit_events: bool = DEFAULT_AUTO_CREATE_PROFIT_EVENTS
     use_asset_collections_in_cost_basis: bool = DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS
+    internal_txs_to_repull: int = DEFAULT_INTERNAL_TXS_TO_REPULL
+    internal_tx_conflict_repull_frequency: int = DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -336,6 +344,8 @@ class ModifiableDBSettings(NamedTuple):
     suppress_missing_key_msg_services: list[ExternalService] | None = None
     auto_create_profit_events: bool | None = None
     use_asset_collections_in_cost_basis: bool | None = None
+    internal_txs_to_repull: int | None = None
+    internal_tx_conflict_repull_frequency: int | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}

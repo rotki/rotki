@@ -85,6 +85,7 @@ function getGeneralTab(routes: SettingsRoutes, t: T): TabGroup {
     { categoryId: SettingsCategoryIds.HISTORY_EVENT, children: [
       { texts: [t('general_settings.history_event.title')], keywords: [t('general_settings.history_event.subtitle')] },
       { texts: [t('general_settings.history_event.title'), t('general_settings.history_event.auto_create_profit_events.title')], highlightId: SettingsHighlightIds.AUTO_CREATE_PROFIT_EVENTS },
+      { texts: [t('general_settings.history_event.title'), t('general_settings.history_event.internal_tx_conflicts.title')], highlightId: SettingsHighlightIds.INTERNAL_TX_CONFLICT_REPULL },
       { texts: [t('general_settings.history_event.title'), t('general_settings.history_event.skipped_events.title')], keywords: [t('general_settings.history_event.skipped_events.subtitle')], highlightId: SettingsHighlightIds.SKIPPED_EVENTS },
     ] },
     { categoryId: SettingsCategoryIds.EXTERNAL_SERVICE, children: [

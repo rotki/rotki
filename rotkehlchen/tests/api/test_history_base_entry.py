@@ -96,6 +96,7 @@ def assert_editing_works(
         sequence_index: int,
         autoedited: dict[str, Any] | None = None,
         also_redecode: bool = False,
+        delete_custom: bool = False,
 ) -> None:
     """A function to assert editing works per entry type. If autoedited is given
     then we check that some fields, given in autoedited, were automatically edited
@@ -158,7 +159,7 @@ def assert_editing_works(
     # are still correctly shown and not deleted
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'transactionsdecodingresource'),
-        json={'chain': 'eth', 'tx_refs': [str(entry.tx_ref)], 'delete_custom': False},
+        json={'chain': 'eth', 'tx_refs': [str(entry.tx_ref)], 'delete_custom': delete_custom},
     )
     assert_simple_ok_response(response)
     assert_event_got_edited(entry)
@@ -322,7 +323,7 @@ def test_add_edit_delete_entries(
             status_code=HTTPStatus.BAD_REQUEST,
         )
     # Test that editing works for the various event types
-    assert_editing_works(entry, rotkehlchen_api_server, db, 4, also_redecode=True)  # evm event
+    assert_editing_works(entry, rotkehlchen_api_server, db, 4, also_redecode=False, delete_custom=True)  # evm event. We set also_redecode=False because with True the related events get deleted since the event is customized  # noqa: E501
     assert_editing_works(entries[5], rotkehlchen_api_server, db, 5)  # history event
     assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'notes': 'Exit validator 1001 with 1500.1 ETH', 'group_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
     assert_editing_works(entries[7], rotkehlchen_api_server, db, 7, {'notes': 'Deposit 1500.1 ETH to validator 1001'})  # eth deposit event  # noqa: E501

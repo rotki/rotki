@@ -22,7 +22,6 @@ INTERNAL_TX_CONFLICT_REPULL_REASON_OTHER: Final = 'other'
 INTERNAL_TX_CONFLICT_REDECODE_REASON_MIXED_ZERO_GAS: Final = 'mixed_zero_gas'
 INTERNAL_TX_CONFLICT_REDECODE_REASON_DUPLICATE_EXACT_ROWS: Final = 'duplicate_exact_rows'
 INTERNAL_TX_CONFLICT_REDECODE_REASON_MIXED_ZERO_GAS_AND_DUPLICATE: Final = 'mixed_zero_gas_and_duplicate'  # noqa: E501
-INTERNAL_TXS_TO_REPULL: Final = 20
 
 
 POPULATE_INTERNAL_TX_CONFLICTS_QUERY: Final = """
@@ -115,19 +114,15 @@ def is_tx_customized(
     ).fetchone()[0] > 0
 
 
-def clean_internal_tx_conflict(
+def clean_internal_tx_rows(
         write_cursor: 'DBCursor',
         tx_hash: EVMTxHash,
         chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
 ) -> None:
-    """Delete invalid/duplicate internals and queue decode-only refresh.
+    """Delete only invalid/duplicate internal tx rows without touching events or TX_DECODED.
 
-    TX_INTERNALS_QUERIED is intentionally not cleared for fix_redecode actions because
-    these transactions are repaired in-place and do not need an internal repull.
-
-    For non-customized transactions we also remove decoded history events linked to this tx
-    so the next decode recreates them from the repaired internals.
-    """
+    Used for customized transactions where we want to repair the internal tx data
+    but preserve user-edited events."""
     write_cursor.execute("""
     WITH fix_txs AS (
       SELECT identifier AS parent_tx
@@ -156,6 +151,22 @@ def clean_internal_tx_conflict(
     )
     """, (tx_hash, chain_id.serialize_for_db()))
 
+
+def clean_internal_tx_conflict(
+        write_cursor: 'DBCursor',
+        tx_hash: EVMTxHash,
+        chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+) -> None:
+    """Delete invalid/duplicate internals and queue decode-only refresh.
+
+    TX_INTERNALS_QUERIED is intentionally not cleared for fix_redecode actions because
+    these transactions are repaired in-place and do not need an internal repull.
+
+    For non-customized transactions we also remove decoded history events linked to this tx
+    so the next decode recreates them from the repaired internals.
+    """
+    clean_internal_tx_rows(write_cursor, tx_hash, chain_id)
+
     write_cursor.execute(
         'DELETE FROM history_events WHERE identifier IN ('
         'SELECT h.identifier FROM history_events h '
@@ -178,23 +189,22 @@ def get_internal_tx_conflicts(
         fixed: bool,
         action: str | None = None,
         limit: int | None = None,
+        skip_retried: bool = False,
 ) -> list[tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, EVMTxHash, str]]:
-    """Get internal tx conflict entries. When action is None, returns all action types."""
+    """Get internal tx conflict entries. When action is None, returns all action types.
+    When skip_retried is True, entries with last_retry_ts set are excluded."""
     query = (
         'SELECT chain, transaction_hash, action FROM evm_internal_tx_conflicts '
         'WHERE fixed=? '
     )
     bindings: tuple[object, ...] = (int(fixed),)
+    if skip_retried:
+        query += 'AND last_retry_ts IS NULL '
     if action is not None:
         query += 'AND action=? '
         bindings = (*bindings, action)
 
-    query += (
-        'ORDER BY '
-        'CASE WHEN last_retry_ts IS NULL THEN 0 ELSE 1 END, '
-        'last_retry_ts ASC, '
-        'chain, transaction_hash'
-    )
+    query += 'ORDER BY chain, transaction_hash'
     if limit is not None:
         query += ' LIMIT ?'
         bindings = (*bindings, limit)
@@ -285,6 +295,18 @@ def count_pending_internal_tx_repull_conflicts(
         f'SELECT COUNT(*) FROM evm_internal_tx_conflicts c {INTERNAL_TX_CONFLICTS_JOIN}' + filter_str,  # noqa: E501
         bindings,
     ).fetchone()[0]
+
+
+def get_pending_internal_tx_repull_conflicts_count(
+        cursor: 'DBCursor',
+) -> tuple[int, int]:
+    """Return (pending_count, failed_count) for unresolved conflicts."""
+    return cursor.execute(
+        'SELECT '
+        'COALESCE(SUM(CASE WHEN fixed=0 AND last_retry_ts IS NULL THEN 1 ELSE 0 END), 0), '
+        'COALESCE(SUM(CASE WHEN fixed=0 AND last_retry_ts IS NOT NULL THEN 1 ELSE 0 END), 0) '
+        'FROM evm_internal_tx_conflicts',
+    ).fetchone()
 
 
 def set_internal_tx_conflict_fixed(

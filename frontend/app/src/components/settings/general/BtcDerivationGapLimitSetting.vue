@@ -2,6 +2,7 @@
 import SettingsItem from '@/components/settings/controls/SettingsItem.vue';
 import SettingsOption from '@/components/settings/controls/SettingsOption.vue';
 import { Defaults } from '@/data/defaults';
+import SettingResetConfirmButton from '@/modules/settings/SettingResetConfirmButton.vue';
 import { useGeneralSettingsStore } from '@/store/settings/general';
 
 const DEFAULT = Defaults.BTC_DERIVATION_GAP_LIMIT;
@@ -49,14 +50,7 @@ onMounted(() => {
           :error-messages="error"
           @update:model-value="update($event ? parseInt($event) : $event)"
         />
-        <RuiButton
-          class="mt-1 ml-2"
-          variant="text"
-          icon
-          @click="reset(updateImmediate)"
-        >
-          <RuiIcon name="lu-history" />
-        </RuiButton>
+        <SettingResetConfirmButton @confirm="reset(updateImmediate)" />
       </div>
     </SettingsOption>
   </SettingsItem>

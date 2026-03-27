@@ -1,18 +1,20 @@
 import type { Ref } from 'vue';
 import type { Collection } from '@/types/collection';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type InternalTxConflict, InternalTxConflictStatuses } from './types';
+import { type InternalTxConflict, type InternalTxConflictsCountResponse, InternalTxConflictStatuses } from './types';
 import { useInternalTxConflicts } from './use-internal-tx-conflicts';
 
 const { spies } = vi.hoisted(() => ({
   spies: {
     fetchInternalTxConflicts: vi.fn<() => Promise<Collection<InternalTxConflict>>>(),
+    fetchInternalTxConflictsCount: vi.fn<() => Promise<InternalTxConflictsCountResponse>>(),
   },
 }));
 
 vi.mock('./internal-tx-conflicts-api', () => ({
   useInternalTxConflictsApi: (): object => ({
     fetchInternalTxConflicts: spies.fetchInternalTxConflicts,
+    fetchInternalTxConflictsCount: spies.fetchInternalTxConflictsCount,
   }),
 }));
 
@@ -86,6 +88,7 @@ describe('use-internal-tx-conflicts', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     spies.fetchInternalTxConflicts.mockResolvedValue(createMockCollection());
+    spies.fetchInternalTxConflictsCount.mockResolvedValue({ pending: 0, failed: 0 });
     composable = useInternalTxConflicts();
   });
 
@@ -93,19 +96,15 @@ describe('use-internal-tx-conflicts', () => {
     vi.restoreAllMocks();
   });
 
-  describe('fetchPendingCount', () => {
-    it('updates pendingCount from API total', async () => {
-      spies.fetchInternalTxConflicts.mockResolvedValue(createMockCollection([], 4, 5));
+  describe('fetchCounts', () => {
+    it('updates pendingCount and failedCount from POST count endpoint', async () => {
+      spies.fetchInternalTxConflictsCount.mockResolvedValue({ pending: 4, failed: 2 });
 
-      await composable.fetchPendingCount();
+      await composable.fetchCounts();
 
       expect(get(composable.pendingCount)).toBe(4);
-      expect(spies.fetchInternalTxConflicts).toHaveBeenCalledWith({
-        failed: false,
-        fixed: false,
-        limit: 0,
-        offset: 0,
-      });
+      expect(get(composable.failedCount)).toBe(2);
+      expect(spies.fetchInternalTxConflictsCount).toHaveBeenCalledWith();
     });
   });
 

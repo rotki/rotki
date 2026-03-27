@@ -14,7 +14,7 @@ const { t } = useI18n({ useScope: 'global' });
 
 const { autoMatchLoading, unmatchedCount } = useUnmatchedAssetMovements();
 const { actionableCount: duplicatesCount } = useCustomizedEventDuplicates();
-const { pendingCount: internalConflictsCount } = useInternalTxConflicts();
+const { issueCount: internalConflictsCount } = useInternalTxConflicts();
 
 const totalIssuesCount = computed<number>(() => get(unmatchedCount) + get(duplicatesCount) + get(internalConflictsCount));
 const hasIssues = computed<boolean>(() => !get(autoMatchLoading) && get(totalIssuesCount) > 0);

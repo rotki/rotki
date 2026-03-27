@@ -1,5 +1,5 @@
 import type { MaybeRef } from 'vue';
-import type { InternalTxConflict, InternalTxConflictsRequestPayload } from './types';
+import type { InternalTxConflict, InternalTxConflictsCountResponse, InternalTxConflictsRequestPayload } from './types';
 import type { Collection, CollectionResponse } from '@/types/collection';
 import { api } from '@/modules/api/rotki-api';
 import { mapCollectionResponse } from '@/utils/collection';
@@ -7,6 +7,7 @@ import { nonEmptyProperties } from '@/utils/data';
 
 interface UseInternalTxConflictsApiReturn {
   fetchInternalTxConflicts: (payload: MaybeRef<InternalTxConflictsRequestPayload>) => Promise<Collection<InternalTxConflict>>;
+  fetchInternalTxConflictsCount: () => Promise<InternalTxConflictsCountResponse>;
 }
 
 export function useInternalTxConflictsApi(): UseInternalTxConflictsApiReturn {
@@ -20,5 +21,8 @@ export function useInternalTxConflictsApi(): UseInternalTxConflictsApiReturn {
     return mapCollectionResponse(response);
   };
 
-  return { fetchInternalTxConflicts };
+  const fetchInternalTxConflictsCount = async (): Promise<InternalTxConflictsCountResponse> =>
+    api.post<InternalTxConflictsCountResponse>('/blockchains/transactions/internal/conflicts');
+
+  return { fetchInternalTxConflicts, fetchInternalTxConflictsCount };
 }

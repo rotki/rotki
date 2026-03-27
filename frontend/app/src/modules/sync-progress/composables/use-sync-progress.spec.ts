@@ -202,6 +202,40 @@ describe('useSyncProgress', () => {
       expect(decodingValue[0].progress).toBe(50);
     });
 
+    it('should not update sync progress after stopDecodingSyncProgress is called', () => {
+      const decodingStatusStore = useDecodingStatusStore();
+      decodingStatusStore.resetDecodingSyncProgress();
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+
+      // Stop sync progress (simulates the finally block running)
+      decodingStatusStore.stopDecodingSyncProgress();
+
+      // Simulate a late WS update arriving after stop
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
+
+      const { decoding } = useSyncProgress();
+      const decodingValue = get(decoding);
+
+      // The sync progress should still show the old value (50), not the updated one (100)
+      expect(decodingValue).toHaveLength(1);
+      expect(decodingValue[0].processed).toBe(50);
+    });
+
+    it('should continue updating sync progress while decodingSyncing is true', () => {
+      const decodingStatusStore = useDecodingStatusStore();
+      decodingStatusStore.resetDecodingSyncProgress();
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 0));
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 50));
+      decodingStatusStore.setUndecodedTransactionsStatus(createDecodingStatus('eth', 100, 100));
+
+      const { decoding } = useSyncProgress();
+      const decodingValue = get(decoding);
+
+      // All updates should have been applied while decodingSyncing was true
+      expect(decodingValue).toHaveLength(1);
+      expect(decodingValue[0].processed).toBe(100);
+    });
+
     it('should filter out chains with total 0', () => {
       const decodingStatusStore = useDecodingStatusStore();
       decodingStatusStore.resetDecodingSyncProgress();

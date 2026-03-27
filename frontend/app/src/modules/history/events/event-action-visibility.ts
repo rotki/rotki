@@ -32,9 +32,8 @@ export function hideDeleteAction(item: HistoryEventEntry, index: number, complet
 }
 
 export function shouldDeleteGroup(item: HistoryEventEntry, index: number): boolean {
-  if (isGroupEditableHistoryEvent(item))
-    return true;
+  if (isSwapTypeEvent(item.entryType))
+    return index === 0;
 
-  // For EVM/Solana swap primary events (index 0), delete the whole group
-  return isSwapTypeEvent(item.entryType) && index === 0;
+  return isGroupEditableHistoryEvent(item);
 }

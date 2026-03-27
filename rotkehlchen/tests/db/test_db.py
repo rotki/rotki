@@ -63,6 +63,8 @@ from rotkehlchen.db.settings import (
     DEFAULT_INCLUDE_FEES_IN_COST_BASIS,
     DEFAULT_INCLUDE_GAS_COSTS,
     DEFAULT_INFER_ZERO_TIMED_BALANCES,
+    DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY,
+    DEFAULT_INTERNAL_TXS_TO_REPULL,
     DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_MAIN_CURRENCY,
     DEFAULT_ORACLE_PENALTY_DURATION,
@@ -555,6 +557,8 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'suppress_missing_key_msg_services': [],
         'auto_create_profit_events': DEFAULT_AUTO_CREATE_PROFIT_EVENTS,
         'use_asset_collections_in_cost_basis': DEFAULT_USE_ASSET_COLLECTIONS_IN_COST_BASIS,
+        'internal_txs_to_repull': DEFAULT_INTERNAL_TXS_TO_REPULL,
+        'internal_tx_conflict_repull_frequency': DEFAULT_INTERNAL_TX_CONFLICT_REPULL_FREQUENCY,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 

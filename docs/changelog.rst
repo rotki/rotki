@@ -15,7 +15,12 @@ Changelog
 * :feature:`10868` Farcaster Pro Purchases will now be properly understood by rotki.
 * :feature:`10712` bitcoin events can now be filtered by address.
 * :feature:`10542` StakeDAO v2 votemarket events will now be properly decoded.
+
+* :release:`1.42.1 <2025-03-26>`
+* :bug:`-` Asset icons in the Docker deployment will no longer fail to load due to an invalid base URL when constructing icon URLs.
+* :bug:`11935` Editing a manual balance to have duplicate names should no longer be possible.
 * :feature:`-` Added an accounting rule to transfer cost basis between assets and applied it as a default for actions such as wrapping/unwrapping ETH, depositing to DeFi etc.
+* :bug:`-` Upgrading an older rotki database won't cause data migration 20 to fail.
 * :bug:`11908` Individual pending task items now show a static icon instead of an indeterminate spinner, reducing visual noise when many tasks are running.
 * :bug:`11902` The redecode option is now available for exchange withdrawals with a linked on-chain transaction.
 * :feature:`11896` Indexer limitation warnings are now shown in the EVM Indexer Order settings for Optimism (Blockscout pre-Bedrock gaps) and Base (Blockscout as only free indexer).

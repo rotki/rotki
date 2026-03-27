@@ -43,8 +43,7 @@ const {
   manualReviewGroupIds,
 } = useCustomizedEventDuplicates();
 
-const { fetchPendingCount, pendingCount: internalConflictsCount } = useInternalTxConflicts();
-
+const { fetchCounts, issueCount: internalConflictsCount } = useInternalTxConflicts();
 const showUnmatchedMovements = computed<boolean>(() => !get(autoMatchLoading) && get(unmatchedCount) > 0);
 const showAutoFixDuplicates = computed<boolean>(() => get(autoFixCount) > 0);
 const showManualReviewDuplicates = computed<boolean>(() => get(manualReviewCount) > 0);
@@ -86,7 +85,7 @@ watchImmediate(loading, async (isLoading) => {
     await Promise.all([
       refreshUnmatchedAssetMovements(),
       fetchCustomizedEventDuplicates(),
-      fetchPendingCount(),
+      fetchCounts(),
     ]);
   }
 });

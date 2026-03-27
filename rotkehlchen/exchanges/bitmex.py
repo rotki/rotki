@@ -13,6 +13,7 @@ from rotkehlchen.assets.utils import normalized_fval_value_decimals, symbol_to_a
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -241,7 +242,11 @@ class Bitmex(ExchangeInterface, SignatureGeneratorMixin):
         request_url = self.uri + request_path
         log.debug('Bitmex API Query', request_url=request_url)
         try:
-            response = self.session.get(url=request_url, headers=headers)
+            response = self.session.get(
+                url=request_url,
+                headers=headers,
+                timeout=CachedSettings().get_timeout_tuple(),
+            )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Bitmex API request failed due to {e!s}') from e
 

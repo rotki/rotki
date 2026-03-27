@@ -124,7 +124,6 @@ describe('composables/api/settings/google-calendar', () => {
           requestMethod = request.method;
           return HttpResponse.json({
             result: {
-              success: true,
               calendar_id: 'calendar-id-abc',
               events_processed: 100,
               events_created: 25,
@@ -139,7 +138,6 @@ describe('composables/api/settings/google-calendar', () => {
       const result = await syncCalendar();
 
       expect(requestMethod).toBe('POST');
-      expect(result.success).toBe(true);
       expect(result.calendarId).toBe('calendar-id-abc');
       expect(result.eventsProcessed).toBe(100);
       expect(result.eventsCreated).toBe(25);

@@ -31,7 +31,6 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsNotDecodedFilterQuery,
     SolanaTransactionsNotDecodedFilterQuery,
 )
-from rotkehlchen.db.internal_tx_conflicts import INTERNAL_TXS_TO_REPULL
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.solanatx import DBSolanaTx
 from rotkehlchen.db.utils import table_exists
@@ -96,7 +95,6 @@ XPUB_DERIVATION_FREQUENCY = 3600  # every hour
 EVM_TX_QUERY_FREQUENCY = 3600  # every hour
 EXCHANGE_QUERY_FREQUENCY = 3600  # every hour
 PREMIUM_STATUS_CHECK = 3600  # every hour
-INTERNAL_TX_CONFLICT_REPULL_FREQUENCY = 3600  # every hour
 TX_RECEIPTS_QUERY_LIMIT = 500
 TX_DECODING_LIMIT = 500
 PREMIUM_CHECK_RETRY_LIMIT = 3
@@ -725,10 +723,11 @@ class TaskManager:
             if not table_exists(cursor, 'evm_internal_tx_conflicts'):  # temporary table, to be removed in a future release  # noqa: E501
                 return None
 
+        cached_settings = CachedSettings().get_settings()
         if should_run_periodic_task(
             database=self.database,
             key_name=DBCacheStatic.LAST_INTERNAL_TX_CONFLICTS_REPULL_TS,
-            refresh_period=INTERNAL_TX_CONFLICT_REPULL_FREQUENCY,
+            refresh_period=cached_settings.internal_tx_conflict_repull_frequency,
         ) is False:
             return None
 
@@ -739,7 +738,7 @@ class TaskManager:
             method=repull_internal_tx_conflicts,
             database=self.database,
             chains_aggregator=self.chains_aggregator,
-            limit=INTERNAL_TXS_TO_REPULL,
+            limit=cached_settings.internal_txs_to_repull,
         )]
 
     def _maybe_update_owned_assets(self) -> Optional[list[gevent.Greenlet]]:

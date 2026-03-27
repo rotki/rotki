@@ -139,4 +139,41 @@ describe('useInternalTxConflictsApi', () => {
         .toThrow();
     });
   });
+
+  describe('fetchInternalTxConflictsCount', () => {
+    it('should send POST and return pending and failed counts', async () => {
+      server.use(
+        http.post(`${backendUrl}/api/1/blockchains/transactions/internal/conflicts`, () =>
+          HttpResponse.json({
+            result: {
+              pending: 178,
+              failed: 12,
+            },
+            message: '',
+          })),
+      );
+
+      const { fetchInternalTxConflictsCount } = useInternalTxConflictsApi();
+      const result = await fetchInternalTxConflictsCount();
+
+      expect(result.pending).toBe(178);
+      expect(result.failed).toBe(12);
+    });
+
+    it('should throw on HTTP error response', async () => {
+      server.use(
+        http.post(`${backendUrl}/api/1/blockchains/transactions/internal/conflicts`, () =>
+          HttpResponse.json({
+            result: null,
+            message: 'Server error',
+          }, { status: HTTPStatus.INTERNAL_SERVER_ERROR })),
+      );
+
+      const { fetchInternalTxConflictsCount } = useInternalTxConflictsApi();
+
+      await expect(fetchInternalTxConflictsCount())
+        .rejects
+        .toThrow();
+    });
+  });
 });

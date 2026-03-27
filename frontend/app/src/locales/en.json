@@ -3163,6 +3163,21 @@
           "error": "Error setting auto create profit events"
         }
       },
+      "internal_tx_conflicts": {
+        "batch_size": {
+          "error": "Error setting internal transactions to repull",
+          "label": "Transactions per batch",
+          "subtitle": "Number of internal transaction conflicts to process per periodic task run.",
+          "title": "Internal transactions to repull"
+        },
+        "frequency": {
+          "error": "Error setting internal tx conflict repull frequency",
+          "label": "Repull frequency (minutes)",
+          "subtitle": "How often (in minutes) the system automatically attempts to repull conflicting internal transactions.",
+          "title": "Conflict repull frequency"
+        },
+        "title": "Internal tx conflict repull"
+      },
       "skipped_events": {
         "subtitle": "View and manage skipped external events",
         "title": "Skipped External Events"
@@ -3725,6 +3740,7 @@
       "fix_redecode": "Fix & Redecode",
       "pin": "Pin to sidebar",
       "repull": "Repull",
+      "settings": "Toggle settings",
       "show_in_events": "Show in history events",
       "unpin": "Unpin section"
     },
@@ -5054,6 +5070,12 @@
   "settings": {
     "go_to_section": "Go to section",
     "not_saved": "Setting not saved",
+    "reset_confirm": {
+      "cancel": "Cancel",
+      "confirm": "Reset",
+      "message": "Reset to default?",
+      "tooltip": "Reset to default"
+    },
     "saved": "Setting saved",
     "search": {
       "no_results": "No settings found",

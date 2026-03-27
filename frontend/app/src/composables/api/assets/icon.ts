@@ -17,13 +17,13 @@ interface UseAssetIconApiReturn {
 
 export function useAssetIconApi(): UseAssetIconApiReturn {
   const assetImageUrl = (identifier: string, randomString?: string | number): string => {
-    const url = new URL('/assets/icon', defaultApiUrls.colibriApiUrl);
-    url.searchParams.set('asset_id', identifier);
+    const params = new URLSearchParams();
+    params.set('asset_id', identifier);
 
     if (randomString)
-      url.searchParams.set('t', String(randomString));
+      params.set('t', String(randomString));
 
-    return url.toString();
+    return `${defaultApiUrls.colibriApiUrl}/assets/icon?${params.toString()}`;
   };
 
   const checkAsset = async (identifier: string, options: CheckAssetOptions): Promise<number> => {

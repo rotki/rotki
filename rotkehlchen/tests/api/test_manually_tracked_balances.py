@@ -837,3 +837,55 @@ def test_update_manual_balance_label(rotkehlchen_api_server: 'APIServer') -> Non
         expected_balances=expected_balances,
         returned_balances=result['balances'],
     )
+
+
+def test_edit_manual_balance_duplicate_label(rotkehlchen_api_server: 'APIServer') -> None:
+    """Test that editing a manually tracked balance to use a label that already
+    exists for a different entry is prevented"""
+    _populate_tags(rotkehlchen_api_server)
+    balances = _populate_initial_balances(rotkehlchen_api_server)
+    balances.sort(key=itemgetter('identifier'))
+
+    # Try to edit the second balance to have the same label as the first
+    balance_to_edit = balances[1].copy()
+    balance_to_edit['label'] = balances[0]['label']
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'manuallytrackedbalancesresource',
+        ), json={'balances': [balance_to_edit]},
+    )
+    assert_error_response(
+        response=response,
+        contained_in_msg=f'A manually tracked balance entry with label "{balances[0]["label"]}" already exists',  # noqa: E501
+        status_code=HTTPStatus.BAD_REQUEST,
+    )
+
+    # Verify balances are unchanged
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'manuallytrackedbalancesresource',
+        ),
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert_balances_match(
+        expected_balances=balances,
+        returned_balances=result['balances'],
+    )
+
+    # Verify that editing a balance to keep its own label works fine
+    balance_to_edit = balances[0].copy()
+    balance_to_edit['amount'] = '999'
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'manuallytrackedbalancesresource',
+        ), json={'balances': [balance_to_edit]},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    balances[0]['amount'] = '999'
+    assert_balances_match(
+        expected_balances=balances,
+        returned_balances=result['balances'],
+    )

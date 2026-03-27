@@ -22,7 +22,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n({ useScope: 'global' });
 
-type IssueCheckType = 'unmatched' | 'duplicates' | 'internalConflicts';
+type IssueCheckType = 'unmatched' | 'duplicates';
 
 const menuOpen = ref<boolean>(false);
 const checkingType = ref<IssueCheckType>();
@@ -30,7 +30,7 @@ const noIssuesFeedback = ref<IssueCheckType>();
 
 const { refreshUnmatchedAssetMovements, unmatchedCount, ignoredCount } = useUnmatchedAssetMovements();
 const { fetchCustomizedEventDuplicates, totalCount: duplicatesCount } = useCustomizedEventDuplicates();
-const { pendingCount: internalConflictsCount, fetchPendingCount } = useInternalTxConflicts();
+const { issueCount: internalConflictsCount } = useInternalTxConflicts();
 
 const { start: startFeedbackTimeout, stop: stopFeedbackTimeout } = useTimeoutFn(() => {
   set(noIssuesFeedback, undefined);
@@ -76,21 +76,9 @@ async function checkDuplicates(): Promise<void> {
   }
 }
 
-async function checkInternalConflicts(): Promise<void> {
-  set(checkingType, 'internalConflicts');
-  try {
-    await fetchPendingCount();
-    if (get(internalConflictsCount) > 0) {
-      set(menuOpen, false);
-      emit('show:dialog', { type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
-    }
-    else {
-      showNoIssuesFeedback('internalConflicts');
-    }
-  }
-  finally {
-    set(checkingType, undefined);
-  }
+function checkInternalConflicts(): void {
+  set(menuOpen, false);
+  emit('show:dialog', { type: DIALOG_TYPES.INTERNAL_TX_CONFLICTS });
 }
 </script>
 
@@ -225,8 +213,6 @@ async function checkInternalConflicts(): Promise<void> {
       <RuiButton
         variant="list"
         :disabled="processing || !!checkingType"
-        :loading="checkingType === 'internalConflicts'"
-        :color="noIssuesFeedback === 'internalConflicts' ? 'success' : undefined"
         @click.stop="checkInternalConflicts()"
       >
         <template #prepend>
@@ -238,10 +224,10 @@ async function checkInternalConflicts(): Promise<void> {
             offset-y="4"
             offset-x="-4"
           >
-            <RuiIcon :name="noIssuesFeedback === 'internalConflicts' ? 'lu-circle-check' : 'lu-git-merge'" />
+            <RuiIcon name="lu-git-merge" />
           </RuiBadge>
         </template>
-        {{ noIssuesFeedback === 'internalConflicts' ? t('transactions.alerts.no_issues_found') : t('transactions.alerts.check_internal_conflicts') }}
+        {{ t('transactions.alerts.check_internal_conflicts') }}
       </RuiButton>
     </div>
   </RuiMenu>

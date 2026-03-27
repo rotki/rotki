@@ -70,6 +70,7 @@ const mockDecodingStatusStore = {
 
 const mockTransactionSync = {
   syncTransactionsByChains: vi.fn().mockResolvedValue(undefined),
+  waitForDecoding: vi.fn().mockResolvedValue(undefined),
 };
 
 const mockSupportedChains = {
@@ -561,6 +562,24 @@ describe('useRefreshTransactions', () => {
       await refreshTransactions();
 
       expect(callOrder.indexOf('onHistoryStarted')).toBeLessThan(callOrder.indexOf('syncTransactionsByChains'));
+    });
+
+    it('should wait for decoding to complete before stopping decoding sync progress', async () => {
+      const callOrder: string[] = [];
+
+      mockTransactionSync.waitForDecoding.mockImplementation(async () => {
+        callOrder.push('waitForDecoding');
+      });
+      mockDecodingStatusStore.stopDecodingSyncProgress.mockImplementation(() => {
+        callOrder.push('stopDecodingSyncProgress');
+      });
+
+      const { refreshTransactions } = scope.run(() => useRefreshTransactions())!;
+
+      await refreshTransactions();
+
+      expect(mockTransactionSync.waitForDecoding).toHaveBeenCalledTimes(1);
+      expect(callOrder.indexOf('waitForDecoding')).toBeLessThan(callOrder.indexOf('stopDecodingSyncProgress'));
     });
 
     it('should call onHistoryFinished after all operations complete', async () => {

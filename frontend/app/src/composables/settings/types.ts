@@ -24,6 +24,7 @@ export const SettingsHighlightIds = {
   EXPLORERS: 'setting-explorers',
   GLOBALDB_INFO: 'setting-globaldb-info',
   GRAPH_BASIS: 'setting-graph-basis',
+  INTERNAL_TX_CONFLICT_REPULL: 'setting-internal-tx-conflict-repull',
   LANGUAGE: 'setting-language',
   LOG_LEVEL: 'setting-log-level',
   MIN_OUT_OF_SYNC_PERIOD: 'setting-min-out-of-sync-period',

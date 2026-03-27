@@ -50,3 +50,8 @@ export interface InternalTxConflictsRequestPayload extends PaginationRequestPayl
   fromTimestamp?: number;
   toTimestamp?: number;
 }
+
+export interface InternalTxConflictsCountResponse {
+  pending: number;
+  failed: number;
+}

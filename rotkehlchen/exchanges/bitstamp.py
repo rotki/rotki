@@ -16,6 +16,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import maybe_set_transaction_extra_data
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -555,6 +556,7 @@ class Bitstamp(ExchangeInterface, SignatureGeneratorMixin):
                 url=request_url,
                 data=data,
                 headers=headers,
+                timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
             raise RemoteError(

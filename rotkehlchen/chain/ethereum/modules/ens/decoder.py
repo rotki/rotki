@@ -228,8 +228,6 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
                 event.amount in expected_amounts
             ):
                 event.amount = amount
-                event.event_type = HistoryEventType.TRADE
-                event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = CPT_ENS
                 event.notes = f'Register ENS name {fullname} for {amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
                 event.extra_data = {'name': fullname, 'expires': expires}
@@ -253,12 +251,16 @@ class EnsDecoder(GovernableDecoderInterface, EnsCommonDecoder):
             del context.decoded_events[index]
 
         if receive_event is not None:
+            spend_event.event_type = HistoryEventType.TRADE
+            spend_event.event_subtype = HistoryEventSubType.SPEND
             maybe_reshuffle_events(
                 ordered_events=[spend_event, receive_event],
                 events_list=context.decoded_events,
             )
+            return EvmDecodingOutput(process_swaps=True)
 
-        return EvmDecodingOutput(process_swaps=True)
+        spend_event.event_subtype = HistoryEventSubType.NONE
+        return DEFAULT_EVM_DECODING_OUTPUT
 
     def _decode_name_renewed(self, context: DecoderContext) -> EvmDecodingOutput:
         try:

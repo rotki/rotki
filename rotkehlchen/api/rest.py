@@ -3401,6 +3401,12 @@ class RestAPI:
             filter_query=filter_query,
         )
 
+    @async_api_call()
+    def get_pending_internal_tx_repull_conflicts_count(
+            self,
+    ) -> dict[str, Any]:
+        return self.transactions_service.get_pending_internal_tx_repull_conflicts_count()
+
     def addresses_interacted_before(
             self,
             from_address: ChecksumEvmAddress,
