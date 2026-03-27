@@ -472,6 +472,12 @@ class EtherscanLikeApi(ABC):
         if len(result) != expected_page_size:
             return None
 
+        if 'txhash' in options and (page := options.get('page')) is not None:
+            with suppress(TypeError, ValueError):
+                options['page'] = str(int(page) + 1)
+                return options
+            return None
+
         # else we hit the limit. Query once more with startblock being the last
         # block we got. There may be duplicate entries if there are more than one
         # entries for that last block but they should be filtered
