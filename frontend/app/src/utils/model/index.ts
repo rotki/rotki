@@ -1,6 +1,5 @@
 import type { Ref, WritableComputedRef } from 'vue';
 import { type BigNumber, bigNumberify } from '@rotki/common';
-import { kebabCase } from 'es-toolkit';
 
 export function useBigNumberModel(model: WritableComputedRef<BigNumber | null | undefined>): WritableComputedRef<string> {
   return computed<string>({
@@ -14,33 +13,6 @@ export function useBigNumberModel(model: WritableComputedRef<BigNumber | null | 
       set(model, value ? bigNumberify(value) : null);
     },
   });
-}
-
-export function usePropVModel<
-  P extends object,
-  K extends keyof P,
-  S extends P[K] extends object ? keyof P[K] : never,
-  Name extends string,
->(props: P, key: K, subKey: S, emit?: (name: Name, ...args: any[]) => void): WritableComputedRef<P[K][S]> {
-  const keyStr = key.toString();
-  const eventName = `update:${keyStr === 'modelValue' ? keyStr : kebabCase(keyStr)}` as Name;
-  return computed({
-    get() {
-      return props[key][subKey];
-    },
-    set(value: P[K][S]) {
-      emit?.(eventName, { ...props[key], [subKey]: value });
-    },
-  });
-}
-
-export function useSimplePropVModel<
-  T,
-  P extends { modelValue: T },
-  S extends P['modelValue'] extends object ? keyof P['modelValue'] : never,
-  Name extends string,
->(props: P, subKey: S, emit?: (name: Name, ...args: any[]) => void): WritableComputedRef<P['modelValue'][S]> {
-  return usePropVModel(props, 'modelValue', subKey, emit);
 }
 
 export function nullDefined<T>(comp: WritableComputedRef<T | null>): WritableComputedRef<T | undefined> {
