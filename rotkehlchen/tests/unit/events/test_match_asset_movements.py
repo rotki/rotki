@@ -1019,9 +1019,9 @@ def test_exchange_deposit_sai_to_dai_credit(database: 'DBHandler') -> None:
     [
         (Asset('eip155:1/erc20:0x48c80F1f4D53D5951e5D5438B54Cba84f29F32a5'), A_REP),  # old REP -> REPv2  # noqa: E501
         (A_REP, Asset('eip155:1/erc20:0x48c80F1f4D53D5951e5D5438B54Cba84f29F32a5')),  # REPv2 -> old REP  # noqa: E501
-        (A_MKR, Asset('eip155:1/erc20:0x56072C95FAA701256059aa122697B133aDEd9279')),  # MKR -> SKY  # noqa: E501
-        (Asset('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d'), A_GLM),  # GNT -> GLM  # noqa: E501
-        (A_GLM, Asset('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d')),  # GLM -> GNT  # noqa: E501
+        (A_MKR, Asset('eip155:1/erc20:0x56072C95FAA701256059aa122697B133aDEd9279')),  # MKR -> SKY
+        (Asset('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d'), A_GLM),  # GNT -> GLM
+        (A_GLM, Asset('eip155:1/erc20:0xa74476443119A942dE498590Fe1f2454d7D4aC0d')),  # GLM -> GNT
     ],
 )
 def test_manual_matchable_asset_pairs(

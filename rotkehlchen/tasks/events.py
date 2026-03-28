@@ -1388,7 +1388,7 @@ def _find_close_matches(
         ):
             continue
 
-        # Check for matching amount, or matching amount + fee for deposits. The fee doesn't need  # noqa: E501
+        # Check for matching amount, or matching amount + fee for deposits. The fee doesn't need
         # to be included for withdrawals since the onchain event will happen after the fee is
         # already deducted and the amount should always match the main asset movement amount.
         # Also allow a small tolerance as long as the received amount is less
@@ -1453,7 +1453,7 @@ def _find_close_matches(
                     tx_ref_matches.append(match)
 
                 if match.counterparty is None or match.counterparty == CPT_MONERIUM:
-                    # Events with a counterparty are usually not the correct match since they are  # noqa: E501
+                    # Events with a counterparty are usually not the correct match since they are
                     # part of a properly decoded onchain operation. Monerium is an exception.
                     counterparty_matches.append(match)
 

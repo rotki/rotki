@@ -35,8 +35,8 @@ REWARD_TOPICS = {
     REWARD_PAID_TOPIC,
 }
 
-# example transaction: https://etherscan.io/tx/0xe03d27127fda879144ea4cc587470bd37040be9921ff6a90f48d4efd0cb4fe13#eventlog  # noqa: E501
-# data about abras is taken from: https://github.com/convex-eth/platform/blob/eb87f1fddcf5efcc4294f564b58cca7ac4ccbc90/contracts/contracts.json  # noqa: E501
+# example transaction: https://etherscan.io/tx/0xe03d27127fda879144ea4cc587470bd37040be9921ff6a90f48d4efd0cb4fe13#eventlog
+# data about abras is taken from: https://github.com/convex-eth/platform/blob/eb87f1fddcf5efcc4294f564b58cca7ac4ccbc90/contracts/contracts.json
 CONVEX_ABRAS_HEX = {  # using set since we only need to check if an address is "in" these pools
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xd9$\x94\xcb\x92\x1e\\\r:9\xea\x88\xd0\x14{\xbd\x82\xe5\x10\x08',
     b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00YX\xa8\xdb}\xfe\x0c\xc4\x93\x82 \x90i\xb0\x0fT\xe1y)\xc2',  # noqa: E501
@@ -45,8 +45,8 @@ CONVEX_ABRAS_HEX = {  # using set since we only need to check if an address is "
 }
 
 
-# Example transaction: https://etherscan.io/tx/0x5e62ce39159fcdf528905d044e5387c8f21a1eca015d08cebc652bfb9c183611  # noqa: E501
-# Data taken from: https://etherscan.io/find-similar-contracts?a=0x7091dbb7fcba54569ef1387ac89eb2a5c9f6d2ea  # noqa: E501
+# Example transaction: https://etherscan.io/tx/0x5e62ce39159fcdf528905d044e5387c8f21a1eca015d08cebc652bfb9c183611
+# Data taken from: https://etherscan.io/find-similar-contracts?a=0x7091dbb7fcba54569ef1387ac89eb2a5c9f6d2ea
 # Convex might use virtual rewards pool as well as regular rewards, so we need to handle it.
 CONVEX_VIRTUAL_REWARDS = [
     string_to_evm_address('0x7091dbb7fcbA54569eF1387Ac89Eb2a5C9F6d2EA'),

@@ -11,7 +11,7 @@ CURVE_COUNTERPARTY_DETAILS: Final = CounterpartyDetails(
     label='Curve.fi',
     image='curve.png',
 )
-# For information about different types of pools see https://docs.curve.finance/factory/overview/  # noqa: E501
+# For information about different types of pools see https://docs.curve.finance/factory/overview/
 # Used by Stableswap https://docs.curve.finance/factory/stableswap/overview/#implementations
 ADD_LIQUIDITY_2_ASSETS: Final = b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\xf0E9\x91\xe9Xs\xf5+\xff\r!\xaf@y\xa7h'  # noqa: E501
 ADD_LIQUIDITY_2_ASSETS_OPTIMIZED: Final = b'q\x96\xcb\xf6=\xf1\xf2\xec c\x8eh>\xbeQ\xd1\x82`\xbeQ\x05\x92\xee\x1e.\xfe?<\xfdL3\xe9'  # in CurveTwocryptoOptimized  # noqa: E501

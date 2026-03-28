@@ -976,7 +976,7 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
             asset=A_ETH,
             balance_type=BalanceType.ASSET,
         )
-    assert len(all_data) == 319  # 5 from db + 312 ssf_graph_multiplier zeros + 2 inferred zeros  # noqa: E501
+    assert len(all_data) == 319  # 5 from db + 312 ssf_graph_multiplier zeros + 2 inferred zeros
     data.logout()
 
 

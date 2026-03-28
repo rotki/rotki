@@ -685,8 +685,8 @@ def test_get_events(rotkehlchen_api_server: 'APIServer') -> None:
     db_history_events = DBHistoryEvents(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     with db_history_events.db.user_write() as cursor:
         for limit, exclude_ignored, total, found in (
-            (None, False, 8, 8),  # premium without ignoring assets, we get all the events  # noqa: E501
-            (None, True, 3, 3),  # premium with ignoring assets (ETH), we get only 3 events  # noqa: E501
+            (None, False, 8, 8),  # premium without ignoring assets, we get all the events
+            (None, True, 3, 3),  # premium with ignoring assets (ETH), we get only 3 events
             (3, False, 8, 3),  # free limit (3) without ignoring assets, total events are 8 but we get only 3 (limited)  # noqa: E501
             (3, True, 3, 3),  # free limit (3) with ignoring assets, total events are 3, all shown (limit not exceeded)  # noqa: E501
             (1, False, 8, 1),  # free limit (1) without ignoring assets, total events are 8 but we get only 1 (limited)  # noqa: E501
@@ -1969,7 +1969,7 @@ def test_add_edit_solana_swap_events(rotkehlchen_api_server: 'APIServer') -> Non
             cursor=cursor,
             filter_query=HistoryEventFilterQuery.make(),
             aggregate_by_group_ids=False,
-        )) == [SolanaSwapEvent(  # 2 spend + 1 receive + 1 fee + 1 spend + 1 receive = 6 events  # noqa: E501
+        )) == [SolanaSwapEvent(  # 2 spend + 1 receive + 1 fee + 1 spend + 1 receive = 6 events
             tx_ref=signature,
             identifier=1,
             group_identifier=str(signature),

@@ -401,7 +401,7 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
                 'gas_estimate',
                 'ens_name_to_address',  # we do our own handling for ens names
         ):
-            # https://github.com/ethereum/web3.py/blob/bba87a283d802bbebbfe3f8c7dc47560c7a08583/web3/middleware/validation.py#L137-L142  # noqa: E501
+            # https://github.com/ethereum/web3.py/blob/bba87a283d802bbebbfe3f8c7dc47560c7a08583/web3/middleware/validation.py#L137-L142
             with suppress(ValueError):  # If not existing raises ValueError, so ignore
                 web3.middleware_onion.remove(middleware)
 

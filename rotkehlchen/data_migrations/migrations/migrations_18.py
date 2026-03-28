@@ -170,7 +170,7 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
                 if token.protocol == SPAM_PROTOCOL:  # remove the spam protocol if it was set
                     set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=False)
 
-            with rotki.data.db.user_write() as write_cursor:  # remove it from the ignored assets  # noqa: E501
+            with rotki.data.db.user_write() as write_cursor:  # remove it from the ignored assets
                 rotki.data.db.remove_from_ignored_assets(
                     write_cursor=write_cursor,
                     asset=token,

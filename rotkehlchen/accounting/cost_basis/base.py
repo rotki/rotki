@@ -795,7 +795,7 @@ class CostBasisCalculator(CustomizableDateMixin):
     ) -> None:
         ...
 
-    @overload  # not sure why we need this overload too -> https://github.com/python/mypy/issues/6113  # noqa: E501
+    @overload  # not sure why we need this overload too -> https://github.com/python/mypy/issues/6113
     def spend_asset(
             self,
             originating_event_id: int | None,

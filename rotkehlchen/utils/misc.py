@@ -188,7 +188,7 @@ def combine_nested_dicts_inplace(
     Returns the modified `a` for method chaining.
     """
     for outer_key, inner_dict_b in b.items():
-        if outer_key not in a:  # create new inner dict with same default factory as b's inner dict  # noqa: E501
+        if outer_key not in a:  # create new inner dict with same default factory as b's inner dict
             a[outer_key] = defaultdict(inner_dict_b.default_factory)
 
         inner_dict_a = a[outer_key]

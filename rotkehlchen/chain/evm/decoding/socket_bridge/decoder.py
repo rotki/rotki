@@ -83,7 +83,7 @@ class SocketBridgeDecoder(EvmDecoderInterface):
                 event.amount == amount and
                 event.event_type == HistoryEventType.SPEND
             ):
-                if self.base.is_tracked(receiver):  # if receiver is not tracked we are spending it  # noqa: E501
+                if self.base.is_tracked(receiver):  # if receiver is not tracked we are spending it
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.BRIDGE
 

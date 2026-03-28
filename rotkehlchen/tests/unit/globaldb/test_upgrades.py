@@ -1340,7 +1340,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler, messages_aggregator):
         sql_vm_instructions_cb=0,
     )
     with backup_connection.write_ctx() as write_cursor:
-        write_cursor.execute("INSERT INTO settings VALUES('is_backup', 'Yes')")  # mark as a backup  # noqa: E501
+        write_cursor.execute("INSERT INTO settings VALUES('is_backup', 'Yes')")  # mark as a backup
     backup_connection.close()
 
     globaldb = create_globaldb(globaldb._data_directory, 0, messages_aggregator)  # Now the backup should be used  # noqa: E501

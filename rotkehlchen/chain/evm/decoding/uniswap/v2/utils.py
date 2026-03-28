@@ -345,7 +345,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             resolved_asset == pool_token and
             event.event_type == HistoryEventType.SPEND and
             event.event_subtype == HistoryEventSubType.NONE and
-            event.address == tx_log.address  # the recipient of the transfer is the pool  # noqa: E501
+            event.address == tx_log.address  # the recipient of the transfer is the pool
         ):
             event.counterparty = counterparty
             event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
