@@ -206,14 +206,14 @@ def test_asset_updates_consistency_with_packaged_db(
         )
 
     missing_in_updates = []
-    # find all the asset collections that are present in asset updates but not in packaged DB  # noqa: E501
+    # find all the asset collections that are present in asset updates but not in packaged DB
     missing_in_packaged_db = [
         f'Asset collection id: {group_id} ({updated_collections[group_id][1]}) not found in packaged DB.'  # noqa: E501
         for group_id in updated_collections
         if group_id not in packaged_collections
     ]
 
-    # find all the asset collections that are present in packaged DB but not in asset updates  # noqa: E501
+    # find all the asset collections that are present in packaged DB but not in asset updates
     for group_id in packaged_collections:
         if group_id not in updated_collections:
             assert None not in (packaged_collections[group_id][i] for i in (0, 1))

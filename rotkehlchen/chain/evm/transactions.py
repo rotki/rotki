@@ -1247,7 +1247,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     end_ts=Timestamp(0),
                 )
 
-            added_tx = self.dbevmtx.get_transactions(  # Check whether the genesis tx was added  # noqa: E501
+            added_tx = self.dbevmtx.get_transactions(  # Check whether the genesis tx was added
                 cursor=cursor,
                 filter_=EvmTransactionsFilterQuery.make(tx_hash=GENESIS_HASH, chain_id=self.evm_inquirer.chain_id),  # noqa: E501
             )
@@ -1294,7 +1294,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 # If the transaction is not in the DB then query it and add it
                 transaction, tx_receipt = self.get_or_create_transaction(cursor=cursor, tx_hash=tx_hash, relevant_address=None)  # noqa: E501
 
-            if transaction.to_address is not None:  # internal transactions only through contracts  # noqa: E501
+            if transaction.to_address is not None:  # internal transactions only through contracts
                 self._query_and_save_internal_transactions_for_parent_hash(
                     address=None,  # get all internal transactions for the parent hash
                     parent_tx_hash=tx_hash,

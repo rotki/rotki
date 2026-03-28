@@ -83,7 +83,7 @@ class Quickswapv3LikeLPDecoder(EvmDecoderInterface):
             # Returns LP position info in a tuple starting as follows:
             # nonce, operator, token0, token1, ...
             # The other values differ depending on the version (we only use token0 & token1).
-            # V3: https://docs.quickswap.exchange/technical-reference/smart-contracts/v3/position-manager#positions  # noqa: E501
+            # V3: https://docs.quickswap.exchange/technical-reference/smart-contracts/v3/position-manager#positions
             # V4: see QUICKSWAP_V4_NFT_MANAGER_ABI (the quickswap docs do not yet include V4 technical reference)  # noqa: E501
             lp_position_info = self.node_inquirer.call_contract(
                 contract_address=self.nft_manager,

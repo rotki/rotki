@@ -61,7 +61,7 @@ if TYPE_CHECKING:
 
 
 class DBEvmTx(DBCommonTx[ChecksumEvmAddress, EvmTransaction, EVMTxHash, EvmTransactionsFilterQuery, EvmTransactionsNotDecodedFilterQuery]):  # noqa: E501
-    # Index in the SQL result tuple where authorization fields (nonce, delegated_address) begin  # noqa: E501
+    # Index in the SQL result tuple where authorization fields (nonce, delegated_address) begin
     AUTHORIZATION_DATA_START_INDEX: ClassVar[int] = 13
 
     def add_transactions(

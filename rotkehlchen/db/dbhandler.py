@@ -572,7 +572,7 @@ class DBHandler:
         Returns the Path of the new temp DB file
         """
         tempdbpath = Path(tempdbfile.name)
-        tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051  # noqa: E501
+        tempdbfile.close()  # close the file to allow re-opening by export_unencrypted in windows https://github.com/rotki/rotki/issues/5051
 
         # flush the wal file to have up to date information when exporting data
         self.conn.wal_checkpoint()

@@ -167,7 +167,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         if api_key:
             self.session.headers.update({'X-API-KEY': api_key})
         self.base_url = 'https://api3.loopring.io/api/v3/'
-        # Taken from https://github.com/Loopring/protocols/blob/master/packages/loopring_v3/deployment_mainnet_v3.6.md  # noqa: E501
+        # Taken from https://github.com/Loopring/protocols/blob/master/packages/loopring_v3/deployment_mainnet_v3.6.md
         # Same result as the https://docs3.loopring.io/en/dex_apis/getTokens.html endpoint
         # but since it's guaranteed to stay the same at least until a new rollup version
         # we keep it hard coded here to save on queries

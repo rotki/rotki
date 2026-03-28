@@ -2123,7 +2123,7 @@ class AsyncFilePathSchema(AsyncQueryArgumentSchema):
         so that it can be read with the same code
         """
         if isinstance(data['filepath'], FileStorage):
-            # TODO cleanup: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=65410141  # noqa: E501
+            # TODO cleanup: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=65410141
             _, tmpfilepath = tempfile.mkstemp()
             data['filepath'].save(tmpfilepath)
             data['filepath'] = Path(tmpfilepath)

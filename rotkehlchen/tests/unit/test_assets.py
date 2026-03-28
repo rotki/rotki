@@ -564,8 +564,8 @@ def test_cryptocompare_asset_support(cryptocompare):
         strethaddress_to_identifier('0x86B69F38BEA3e02f68fF88534bc61EC60E772b19'),  # NEVER SURRENDER but OFFICIAL TRUMP in CC  # noqa: E501
         strethaddress_to_identifier('0x31d4Eb09a216e181eC8a43ce79226A487D6F0BA9'),  # USDM but Mountain Protocol in CC  # noqa: E501
         'solana/token:99ouK5YUK3JPGCPX9joNtHsMU7NPpU7w91JN4kdQ97po',  # AI Community but Sleepless in CC  # noqa: E501
-        'solana/token:9jaZhJM6nMHTo4hY9DGabQ1HNuUWhJtm7js1fmKMVpkN',  # AMC but AI Meta Coin in CC  # noqa: E501
-        'solana/token:DKu9kykSfbN5LBfFXtNNDPaX35o4Fv6vJ9FKk7pZpump',  # Ava AI but Travala in CC  # noqa: E501
+        'solana/token:9jaZhJM6nMHTo4hY9DGabQ1HNuUWhJtm7js1fmKMVpkN',  # AMC but AI Meta Coin in CC
+        'solana/token:DKu9kykSfbN5LBfFXtNNDPaX35o4Fv6vJ9FKk7pZpump',  # Ava AI but Travala in CC
         'solana/token:FuQASH8ps9NPeDu4h3rVtMBygKYoSiSTZ4uSiA5tpump',  # Banana for Scale but Banana Gun in CC  # noqa: E501
         'solana/token:FaUKsgcuqAd9sCaFz3if7ia1DasaxVoNPTXWFs2GScWN',  # DONALDCAT but Dogechain in CC  # noqa: E501
         'solana/token:EXA537HSBVpsFijENbt6Muuy9AADUN8dUmYKD4oKbjJE',  # Eggdog but Goose Finance in CC  # noqa: E501
@@ -576,11 +576,11 @@ def test_cryptocompare_asset_support(cryptocompare):
         'solana/token:BgpZ9cXE2dRMTUPhroffbMQm3q8QTLpRorpHYeJspump',  # This Is Fine but Refinable in CC  # noqa: E501
         'solana/token:AFbX8oGjGpmVFywbVouvhQSRmiW2aR1mohfahi4Y2AdB',  # Green Satoshi Token but CoinGhost in CC  # noqa: E501
         'solana/token:864YJRb3JAVARC4FNuDtPKFxdEsYRbB39Nwxkzudxy46',  # Habibi (Sol) but The Habibiz in CC  # noqa: E501
-        'solana/token:CymqTrLSVZ97v87Z4W3dkF4ipZE1kYyeasmN2VckUL4J',  # i dont know but IDK in CC  # noqa: E501
-        'solana/token:H53UGEyBrB9easo9ego8yYk7o4Zq1G5cCtkxD3E3hZav',  # MixMob but Maximine in CC  # noqa: E501
-        'solana/token:H1aN3vcvB68eaFPbMkoAss3vnfi4AhP5C2dpnrZzdBc7',  # Myra but Mytheria in CC  # noqa: E501
-        'solana/token:7yZFFUhq9ac7DY4WobLL539pJEUbMnQ5AGQQuuEMpump',  # OBOT but Obortech in CC  # noqa: E501
-        'solana/token:SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa',  # Sendcoin but Suilend in CC  # noqa: E501
+        'solana/token:CymqTrLSVZ97v87Z4W3dkF4ipZE1kYyeasmN2VckUL4J',  # i dont know but IDK in CC
+        'solana/token:H53UGEyBrB9easo9ego8yYk7o4Zq1G5cCtkxD3E3hZav',  # MixMob but Maximine in CC
+        'solana/token:H1aN3vcvB68eaFPbMkoAss3vnfi4AhP5C2dpnrZzdBc7',  # Myra but Mytheria in CC
+        'solana/token:7yZFFUhq9ac7DY4WobLL539pJEUbMnQ5AGQQuuEMpump',  # OBOT but Obortech in CC
+        'solana/token:SENDdRQtYMWaQrBroBrJ2Q53fgVuq95CV9UPGEvpCxa',  # Sendcoin but Suilend in CC
         'solana/token:8XVXzmsMMw7ufa8RC21fHcDP6TGti5y3ZidQinnYurqr',  # Laughing shoe but ShoeFy in CC  # noqa: E501
         'solana/token:8Nd3TZJfxt9yYKiPmYp6S5DhLftG3bwSqdW3KJwArb',  # Spodermen but Spoody Man in CC  # noqa: E501
     )

@@ -512,7 +512,7 @@ class Poloniex(ExchangeInterface, SignatureGeneratorMixin):
                 fee = AssetAmount(
                     asset=asset,
                     amount=deserialize_fval_or_zero(movement_data['fee']),
-                )  # amount should be total amount withdrawn including the fee according to https://api-docs.poloniex.com/spot/api/private/wallet  # noqa: E501
+                )  # amount should be total amount withdrawn including the fee according to https://api-docs.poloniex.com/spot/api/private/wallet
                 amount -= fee.amount
                 if amount <= 0:
                     msg = 'Found a poloniex withdrawal with fee > amount.'

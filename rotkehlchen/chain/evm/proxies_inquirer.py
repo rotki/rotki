@@ -67,7 +67,7 @@ class EvmProxiesInquirer:
         Checks whether given address is a proxy owned by any of the tracked accounts.
         If it is a proxy, it returns the owner of the proxy, otherwise `None`.
         """
-        self.get_accounts_having_proxy()  # calling to make sure that proxies are queried  # noqa: E501
+        self.get_accounts_having_proxy()  # calling to make sure that proxies are queried
         owner = None
         for proxy_type in ProxyType:
             if (owner := self.proxy_to_address[proxy_type].get(address)):

@@ -127,7 +127,7 @@ class CapabilityUnlocks(TypedDict):
 
 
 # keys that will be returned as part of the capabilities
-PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this due to https://github.com/python/mypy/issues/19961  # noqa: E501
+PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this due to https://github.com/python/mypy/issues/19961
     'eth_staking_view',
     'graphs_view',
     'event_analysis_view',

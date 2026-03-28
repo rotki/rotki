@@ -35,7 +35,7 @@ CURVE_DEPOSIT_CONTRACTS: Final = {
     string_to_evm_address('0x803A2B40c5a9BB2B86DD630B274Fa2A9202874C2'),  # curve musd
     string_to_evm_address('0x78CF256256C8089d68Cde634Cf7cDEFb39286470'),  # curve musd duplicate
     string_to_evm_address('0x1de7f0866e2c4adAC7b457c58Cc25c8688CDa1f2'),  # curve linkusd
-    string_to_evm_address('0xF6bDc2619FFDA72c537Cd9605e0A274Dc48cB1C9'),  # curve linkusd duplicate  # noqa: E501
+    string_to_evm_address('0xF6bDc2619FFDA72c537Cd9605e0A274Dc48cB1C9'),  # curve linkusd duplicate
     string_to_evm_address('0x09672362833d8f703D5395ef3252D4Bfa51c15ca'),  # curve husd
     string_to_evm_address('0x0a53FaDa2d943057C47A301D25a4D9b3B8e01e8E'),  # curve husd duplicate
     string_to_evm_address('0x64448B78561690B70E17CBE8029a3e5c1bB7136e'),  # curve gusd

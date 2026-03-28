@@ -45,7 +45,7 @@ def _update_rules(
         data_updater.update_accounting_rules(
             data=rules,
             version=version,
-            force_updates=False,  # TODO: This should adjust / go away. Related to https://github.com/orgs/rotki/projects/11?pane=issue&itemId=96831912  # noqa: E501
+            force_updates=False,  # TODO: This should adjust / go away. Related to https://github.com/orgs/rotki/projects/11?pane=issue&itemId=96831912
         )
 
 

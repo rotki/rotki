@@ -226,7 +226,7 @@ class MorphoCommonDecoder(EvmDecoderInterface, ReloadableDecoderMixin):
                 notes=f'Deposit {amount} {underlying_token.symbol} in a Morpho vault',
                 counterparty=CPT_MORPHO,
                 address=vault_token.evm_address,
-                extra_data={'vault': vault_token.evm_address},  # Used when querying balances  # noqa: E501
+                extra_data={'vault': vault_token.evm_address},  # Used when querying balances
             )
             context.decoded_events.append(deposit_event)
             spend_events.append(deposit_event)

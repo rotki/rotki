@@ -421,7 +421,7 @@ class BeaconChain(ExternalServiceWithRecommendedApiKey):
                             index=index,
                         )
 
-        except KeyError as e:  # raising and not continuing since if 1 key missing something is off  # noqa: E501
+        except KeyError as e:  # raising and not continuing since if 1 key missing something is off
             raise RemoteError(
                 f'Beaconcha.in produced blocks response error. Missing key entry {e!s}',
             ) from e

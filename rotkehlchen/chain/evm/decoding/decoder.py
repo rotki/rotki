@@ -866,11 +866,11 @@ class EVMTransactionDecoder(TransactionDecoder['EvmTransaction', EvmDecodingRule
         """Determine if a transfer or approval event is for an erc20 or erc721 token.
         Returns the token kind and id (or None for erc20) in a tuple, or None on error."""
         if self._is_non_conformant_erc721(tx_log.address):
-            return TokenKind.ERC721, str(int.from_bytes(tx_log.data[0:32]))  # token_id is in data  # noqa: E501
+            return TokenKind.ERC721, str(int.from_bytes(tx_log.data[0:32]))  # token_id is in data
         elif len(tx_log.topics) == 3:  # typical ERC20 has 2 indexed args
             return TokenKind.ERC20, None  # no token_id for erc20
         elif len(tx_log.topics) == 4:  # typical ERC721 has 3 indexed args
-            return TokenKind.ERC721, str(int.from_bytes(tx_log.topics[3]))  # token_id is in topics  # noqa: E501
+            return TokenKind.ERC721, str(int.from_bytes(tx_log.topics[3]))  # token_id is in topics
         else:
             log.debug(f'Failed to decode token with address {tx_log.address} due to inability to match token type')  # noqa: E501
             return None

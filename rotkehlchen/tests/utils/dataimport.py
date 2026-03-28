@@ -3158,7 +3158,7 @@ def assert_bitcoin_tax_trades_import_results(
         rotki: Rotkehlchen,
         csv_file_name: Literal['bitcoin_tax_trades.csv', 'bitcoin_tax_spending.csv'],
 ):
-    dummy_event_id = '1xyz'  # just a placeholder as comparison is done without this field  # noqa: E501
+    dummy_event_id = '1xyz'  # just a placeholder as comparison is done without this field
     expected_history_events: list[HistoryEvent | SwapEvent]
     if csv_file_name == 'bitcoin_tax_trades.csv':
         expected_history_events = [
@@ -3280,7 +3280,7 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
     expected_history_events = [
         AssetMovement(
             identifier=1,
-            group_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+            group_identifier='1xyz',  # just a placeholder as comparison is done without this field
             timestamp=TimestampMS(1643328780000),
             location=Location.BITSTAMP,
             asset=A_ETH,
@@ -3289,7 +3289,7 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
         ),
         SwapEvent(
             identifier=2,
-            group_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+            group_identifier='1xyz',  # just a placeholder as comparison is done without this field
             timestamp=TimestampMS(1643329860000),
             location=Location.BITSTAMP,
             asset=A_ETH,
@@ -3298,7 +3298,7 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
         ),
         SwapEvent(
             identifier=3,
-            group_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+            group_identifier='1xyz',  # just a placeholder as comparison is done without this field
             timestamp=TimestampMS(1643329860000),
             location=Location.BITSTAMP,
             asset=A_EUR,
@@ -3307,7 +3307,7 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
         ),
         SwapEvent(
             identifier=4,
-            group_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+            group_identifier='1xyz',  # just a placeholder as comparison is done without this field
             timestamp=TimestampMS(1643329860000),
             location=Location.BITSTAMP,
             asset=A_EUR,
@@ -3316,7 +3316,7 @@ def assert_bitstamp_trades_import_results(rotki: Rotkehlchen):
         ),
         AssetMovement(
             identifier=5,
-            group_identifier='1xyz',  # just a placeholder as comparison is done without this field  # noqa: E501
+            group_identifier='1xyz',  # just a placeholder as comparison is done without this field
             timestamp=TimestampMS(1643542800000),
             location=Location.BITSTAMP,
             asset=A_EUR,

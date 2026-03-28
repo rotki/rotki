@@ -12,7 +12,7 @@ def test_backend():
     proc = subprocess.Popen(
         # Only works with --logtarget stdout. Figure out why it does not work
         # without it. The message should be printed and logged, so it should not
-        # make a difference: https://github.com/rotki/rotki/blob/8830172fe3f46c0ec56f1e32a1c24be67018c1bf/rotkehlchen/api/server.py#L280-L282  # noqa: E501
+        # make a difference: https://github.com/rotki/rotki/blob/8830172fe3f46c0ec56f1e32a1c24be67018c1bf/rotkehlchen/api/server.py#L280-L282
         ['uv', 'run', 'python', '-m', 'rotkehlchen', '--logtarget', 'stdout'],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,

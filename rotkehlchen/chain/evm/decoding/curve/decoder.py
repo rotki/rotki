@@ -600,7 +600,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                     # when depositing in a gauge with deposit and stake
                     # we need to check if there is a transfer targeting the same contract address
                     # (should not be the user address) and if so save the address of the pool
-                    # example: https://gnosisscan.io/tx/0xcbeaaee59405d5f7fd456dc510f1b841cc1329cd9624255ce64c894ac6643bd7  # noqa: E501
+                    # example: https://gnosisscan.io/tx/0xcbeaaee59405d5f7fd456dc510f1b841cc1329cd9624255ce64c894ac6643bd7
                     for i_log in all_logs:
                         if (
                             i_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
@@ -758,7 +758,7 @@ class CurveCommonDecoder(EvmDecoderInterface, ReloadablePoolsAndGaugesDecoderMix
                 raw_sold_amount = int.from_bytes(context.tx_log.data[-64:-32])
 
             raw_bought_amount = int.from_bytes(context.tx_log.data[-32:])
-            # 11 if the router is new generation https://docs.curve.fi/router/CurveRouterNG/#route-and-swap-parameters  # noqa: E501
+            # 11 if the router is new generation https://docs.curve.fi/router/CurveRouterNG/#route-and-swap-parameters
             route_length = 11 if context.tx_log.topics[0] == EXCHANGE_NG else 9
 
             # Curve swap router logs route (a list of addresses) that was used. Route consists of
