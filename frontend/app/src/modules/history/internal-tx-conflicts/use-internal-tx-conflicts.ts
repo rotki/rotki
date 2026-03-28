@@ -112,9 +112,9 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
     await Promise.all([fetchCounts(), fetchConflicts()]);
   }
 
-  watch(internalTxFixedSignal, () => {
+  watchDebounced(internalTxFixedSignal, () => {
     startPromise(handleConflictFixed());
-  });
+  }, { debounce: 800 });
 
   return {
     activeFilter,
