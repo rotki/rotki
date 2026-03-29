@@ -934,6 +934,7 @@ class EvmTransactions(ABC):  # noqa: B024
                         tx_hashes=erc20_tx_hashes,
                     )
 
+            queried_to_ts = queried_from_ts
             for tx_hash in erc20_tx_hashes:
                 with self.database.conn.read_ctx() as cursor:
                     tx, _ = self.get_or_create_transaction(
@@ -946,16 +947,7 @@ class EvmTransactions(ABC):  # noqa: B024
                     existing_hashes.add(tx.tx_hash)
 
                 if period.range_type == 'timestamps':
-                    queried_to_ts = Timestamp(max(queried_from_ts, tx.timestamp))
-                    log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
-                    if update_ranges:  # update last queried time for the address
-                        with self.database.user_write() as write_cursor:
-                            self.dbranges.update_used_query_range(
-                                write_cursor=write_cursor,
-                                location_string=location_string,
-                                queried_ranges=[(queried_from_ts, queried_to_ts)],
-                            )
-
+                    queried_to_ts = Timestamp(max(queried_to_ts, tx.timestamp))
                     self.msg_aggregator.add_message(
                         message_type=WSMessageType.TRANSACTION_STATUS,
                         data={
@@ -966,7 +958,18 @@ class EvmTransactions(ABC):  # noqa: B024
                             'status': str(TransactionStatusStep.QUERYING_EVM_TOKENS_TRANSACTIONS),
                         },
                     )
-                    queried_from_ts = queried_to_ts
+
+            # Update the query range once per batch
+            if period.range_type == 'timestamps' and len(erc20_tx_hashes) > 0:
+                log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> update range {queried_from_ts} - {queried_to_ts}')  # noqa: E501
+                if update_ranges:
+                    with self.database.user_write() as write_cursor:
+                        self.dbranges.update_used_query_range(
+                            write_cursor=write_cursor,
+                            location_string=location_string,
+                            queried_ranges=[(queried_from_ts, queried_to_ts)],
+                        )
+                queried_from_ts = queried_to_ts
         return queried_hashes
 
     def address_has_been_spammed(self, address: ChecksumEvmAddress) -> bool:
