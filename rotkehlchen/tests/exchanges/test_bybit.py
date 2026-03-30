@@ -13,7 +13,12 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH_MATIC, A_USDC
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.exchanges.bybit import Bybit, bybit_symbol_to_base_quote
+from rotkehlchen.exchanges.bybit import (
+    BYBIT_LAUNCH_TS,
+    BYBIT_MAX_MOVEMENT_WINDOW,
+    Bybit,
+    bybit_symbol_to_base_quote,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.asset_movement import AssetMovement
 from rotkehlchen.history.events.structures.swap import SwapEvent
@@ -186,8 +191,8 @@ def test_query_balances(bybit_exchange: Bybit):
 @pytest.mark.freeze_time('2023-12-15 10:45:45 GMT')
 def test_trades(bybit_exchange: Bybit) -> None:
     mock_fn = bybit_account_mock(is_unified=True, calls={
-        'asset/deposit/query-record': [{'rows': []}],
-        'asset/withdraw/query-record': [{'rows': []}],
+        'asset/deposit/query-record': [{'rows': [], 'nextPageCursor': ''} for _ in range(13)],
+        'asset/withdraw/query-record': [{'rows': [], 'nextPageCursor': ''} for _ in range(13)],
         'order/history': [
             json.loads('{"nextPageCursor":"1573377285745286144%3A1702297188428%2C1573376610655280128%3A1702297107951","category":"spot","list":[{"symbol":"SOLUSDC","orderType":"Limit","orderLinkId":"1702297","orderId":"1573377285745286144","cancelType":"UNKNOWN","avgPrice":"69.71","stopOrderType":"","lastPriceOnCreated":"","orderStatus":"Filled","takeProfit":"0","cumExecValue":"8.29549","smpType":"None","triggerDirection":0,"blockTradeId":"","rejectReason":"EC_NoError","isLeverage":"0","price":"69.71","orderIv":"","createdTime":"1702297188428","tpTriggerBy":"","positionIdx":0,"timeInForce":"GTC","leavesValue":"0.00000","updatedTime":"1702297236826","side":"Buy","smpGroup":0,"triggerPrice":"0.00","cumExecFee":"0","slTriggerBy":"","leavesQty":"0.000","closeOnTrigger":false,"placeType":"","cumExecQty":"0.119","reduceOnly":false,"qty":"0.119","stopLoss":"0","smpOrderId":"","triggerBy":""},{"symbol":"SOLUSDC","orderType":"Limit","orderLinkId":"1702297166844","orderId":"1573377106254240768","cancelType":"CancelByUser","avgPrice":"","stopOrderType":"","lastPriceOnCreated":"","orderStatus":"Cancelled","takeProfit":"0","cumExecValue":"0.00000","smpType":"None","triggerDirection":0,"blockTradeId":"","rejectReason":"EC_PerCancelRequest","isLeverage":"0","price":"69.76","orderIv":"","createdTime":"1702297167031","tpTriggerBy":"","positionIdx":0,"timeInForce":"GTC","leavesValue":"0","updatedTime":"1702297176364","side":"Buy","smpGroup":0,"triggerPrice":"0.00","cumExecFee":"0","slTriggerBy":"","leavesQty":"0","closeOnTrigger":false,"placeType":"","cumExecQty":"0.000","reduceOnly":false,"qty":"0.120","stopLoss":"0","smpOrderId":"","triggerBy":""},{"symbol":"MATICUSDC","orderType":"Limit","orderLinkId":"1702297","orderId":"1573376610655280128","cancelType":"UNKNOWN","avgPrice":"0.8736","stopOrderType":"","lastPriceOnCreated":"","orderStatus":"Filled","takeProfit":"0","cumExecValue":"17.472000","smpType":"None","triggerDirection":0,"blockTradeId":"","rejectReason":"EC_NoError","isLeverage":"0","price":"0.8741","orderIv":"","createdTime":"1702297107951","tpTriggerBy":"","positionIdx":0,"timeInForce":"GTC","leavesValue":"0.010000","updatedTime":"1702297107954","side":"Buy","smpGroup":0,"triggerPrice":"0.0000","cumExecFee":"0","slTriggerBy":"","leavesQty":"0.00","closeOnTrigger":false,"placeType":"","cumExecQty":"20.00","reduceOnly":false,"qty":"20.00","stopLoss":"0","smpOrderId":"","triggerBy":""}]}'),
             json.loads('{"nextPageCursor":"","category":"spot","list":[]}'),
@@ -252,14 +257,20 @@ def test_trades(bybit_exchange: Bybit) -> None:
     )]
 
 
+@pytest.mark.freeze_time('2023-12-01 00:00:00 GMT')
 def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
-    """Test that withdrawals and deposits get correctly processed"""
+    """Test that withdrawals and deposits get correctly processed.
+    The queried window is [1701200010, 1701300880] (~1 day in Nov 2023). The withdrawal entry
+    has updateTime=1702628676 (Dec 2023) which falls outside this window, so the API returns
+    no withdrawals for the queried period.
+    """
     mock_fn = bybit_account_mock(is_unified=True, calls={
         'asset/deposit/query-record': [
             json.loads('{"rows":[{"coin":"USDC","chain":"OP.E","amount":"79.993947","txID":"0xe9bce05f14cb35eeb762ed5ce109ab4676ed1459480f6196c82060c4e0c63b27","status":3,"toAddress":"0x6f8a9d0210ea4ac4808d8fa15368fc330f12dd0c","tag":"","depositFee":"","successAt":"1701200911000","confirmations":"34","txIndex":"4","blockHash":"0xa44d2adc02e19cb38486f3ea86857fb54011d70f404ea4671ee3c0a64ca256d8","batchReleaseLimit":"100000","depositType":"0"},{"coin":"USDC","chain":"OP.E","amount":"20","txID":"0xc2433faf5938e4be896127a15815952e99b41412b8aa0fbe239ce24c8bc435ab","status":3,"toAddress":"0x6f8a9d0210ea4ac4808d8fa15368fc330f12dd0c","tag":"","depositFee":"","successAt":"1701200780000","confirmations":"34","txIndex":"6","blockHash":"0x0d3fee0a9110924848d4be9e25a96582c8276c02ba30c38f90f0c70012d60fbd","batchReleaseLimit":"100000","depositType":"0"}],"nextPageCursor":"eyJtaW5JRCI6MzQ4Nzg4MzUsIm1heElEIjozNDg3OTAzM30="}'),
         ],
         'asset/withdraw/query-record': [
-            json.loads('{"rows":[{"coin":"ETH","chain":"ARBI","amount":"0.0024","txID":"0xce631ee0a52326d16cea9a2f666f02be55ebbf9f93641d42a488c3c1fc2ebc8c","status":"success","toAddress":"0xDeEB02ADA5B089F851f2A1C0301d46631514D312","tag":"","withdrawFee":"0.0001","createTime":"1702628620000","updateTime":"1702628676000","withdrawId":"29848227","withdrawType":0}],"nextPageCursor":"eyJtaW5JRCI6Mjk4NDgyMjcsIm1heElEIjoyOTg0ODIyN30="}'),
+            # withdrawal updateTime (1702628676) is outside the queried window, so API returns empty  # noqa: E501
+            json.loads('{"rows":[],"nextPageCursor":""}'),
         ],
         'order/history': [json.loads('{"nextPageCursor":"","category":"spot","list":[]}')],
     })
@@ -289,7 +300,7 @@ def test_deposit_withdrawals(bybit_exchange: Bybit) -> None:
             unique_id='0xc2433faf5938e4be896127a15815952e99b41412b8aa0fbe239ce24c8bc435ab',
             extra_data={'transaction_id': '0xc2433faf5938e4be896127a15815952e99b41412b8aa0fbe239ce24c8bc435ab'},  # noqa: E501
         ),
-    ]
+    ]  # no withdrawal: its updateTime (1702628676) falls outside the queried window
 
 
 @pytest.mark.asset_test
@@ -348,6 +359,56 @@ def test_query_trades_range(bybit_exchange: Bybit) -> None:
     assert range_calls[0] == (oldest_plus_delta, oldest_plus_delta + DAY_IN_SECONDS * 7)
     assert range_calls[1][1] - range_calls[1][0] == DAY_IN_SECONDS * 7
     assert range_calls[-1][1] == end_ts
+
+
+def test_query_deposit_withdrawal_range(bybit_exchange: Bybit) -> None:
+    """Ensure deposits/withdrawals are queried in 30-day windows from
+    max(start_ts, BYBIT_LAUNCH_TS) to end_ts, and that start_ts values before
+    the launch date use the launch date as floor.
+    """
+    deposit_calls: list[tuple[int, int]] = []
+    withdraw_calls: list[tuple[int, int]] = []
+
+    def mock_fn(path: str, options: dict[str, Any]) -> dict[str, Any]:
+        if path == 'user/query-api':
+            return {'retCode': 0, 'retMsg': '', 'result': {'note': 'rotki', 'uta': 1, 'time': 0}}
+        if path == 'asset/deposit/query-record':
+            deposit_calls.append((options['startTime'] // 1000, options['endTime'] // 1000))
+            return {'rows': [], 'nextPageCursor': ''}
+        if path == 'asset/withdraw/query-record':
+            withdraw_calls.append((options['startTime'] // 1000, options['endTime'] // 1000))
+            return {'rows': [], 'nextPageCursor': ''}
+        return {'nextPageCursor': '', 'category': 'spot', 'list': []}
+
+    bybit_exchange.is_unified_account = True
+
+    # Query a range spanning 2.5 windows (75 days) starting after the Bybit launch
+    start_ts = Timestamp(BYBIT_LAUNCH_TS + DAY_IN_SECONDS * 5)
+    end_ts = Timestamp(start_ts + DAY_IN_SECONDS * 75)
+    expected_windows = [
+        (start_ts, start_ts + BYBIT_MAX_MOVEMENT_WINDOW),
+        (start_ts + BYBIT_MAX_MOVEMENT_WINDOW, start_ts + BYBIT_MAX_MOVEMENT_WINDOW * 2),
+        (start_ts + BYBIT_MAX_MOVEMENT_WINDOW * 2, end_ts),
+    ]
+
+    with patch.object(bybit_exchange, '_api_query', side_effect=mock_fn):
+        bybit_exchange.query_online_history_events(start_ts=start_ts, end_ts=end_ts)
+
+    assert deposit_calls == expected_windows
+    assert withdraw_calls == expected_windows
+
+    # When start_ts is before the Bybit launch, the launch date should be used as the floor
+    deposit_calls.clear()
+    withdraw_calls.clear()
+    end_ts_2 = Timestamp(BYBIT_LAUNCH_TS + DAY_IN_SECONDS * 10)
+
+    with patch.object(bybit_exchange, '_api_query', side_effect=mock_fn):
+        bybit_exchange.query_online_history_events(start_ts=Timestamp(0), end_ts=end_ts_2)
+
+    assert deposit_calls[0][0] == BYBIT_LAUNCH_TS
+    assert deposit_calls[-1][1] == end_ts_2
+    assert withdraw_calls[0][0] == BYBIT_LAUNCH_TS
+    assert withdraw_calls[-1][1] == end_ts_2
 
 
 def test_paginated_query_stops_without_cursor_on_full_page(bybit_exchange: Bybit) -> None:

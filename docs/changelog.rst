@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`11976` Bybit deposits and withdrawals older than 30 days will now be correctly imported.
 * :bug:`11964` Resolving many internal transaction conflicts at once will no longer flood the frontend with duplicate refresh requests, reducing unnecessary network calls and improving responsiveness.
 * :bug:`-` rotki no longer gets stuck when querying Routescan transactions with more than 100 internal transactions.
 
