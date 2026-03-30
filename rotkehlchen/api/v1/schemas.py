@@ -2210,10 +2210,6 @@ class AccountingReportExportSchema(AccountingReportsSchema):
         super().__init__(required_report_id=True)
 
 
-class HistoryExportingSchema(Schema):
-    directory_path = DirectoryField(required=True)
-
-
 class BlockchainAccountDataSchema(TagsSettingSchema):
     address = NonEmptyStringField(required=True)
     label = EmptyAsNoneStringField(load_default=None)
@@ -3393,10 +3389,6 @@ class BinanceMarketsSchema(Schema):
 
 class AppInfoSchema(Schema):
     check_for_updates = fields.Boolean(load_default=False)
-
-
-class IdentifiersListSchema(Schema):
-    identifiers = fields.List(fields.Integer(), required=True)
 
 
 class HistoryEventsDeletionSchema(HistoryEventFilterSchema):

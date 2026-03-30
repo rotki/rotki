@@ -11,7 +11,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     CHAINS_WITH_NODES_TYPE,
     SUPPORTED_CHAIN_IDS,
-    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ChainID,
     ChecksumEvmAddress,
     SupportedBlockchain,
@@ -96,11 +95,6 @@ class WeightedNode:
 class EvmAccount(NamedTuple):
     address: ChecksumEvmAddress
     chain_id: SUPPORTED_CHAIN_IDS | None = None
-
-
-class EvmlikeAccount(NamedTuple):
-    address: ChecksumEvmAddress
-    chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None = None
 
 
 ASSET_ID_RE = re.compile(r'eip155:(.*?)/(.*?):(.*)')

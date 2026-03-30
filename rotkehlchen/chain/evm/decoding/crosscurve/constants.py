@@ -10,10 +10,6 @@ CROSSCURVE_CPT_DETAILS: Final = CounterpartyDetails(
     image='crosscurve.svg',
 )
 
-# PortalV2 — same address on all chains
-PORTAL_V2: Final = string_to_evm_address('0xAc8f44ceCa92b2a4b30360E5bd3043850a0FFcbE')
-# SynthesisV2 — same address on all chains
-SYNTHESIS_V2: Final = string_to_evm_address('0xf370D9Ed0141207e81321158393Eea5D8a50CC72')
 # UnifiedRouterV2 — deployed on Ethereum, BSC, Polygon, Avalanche, Optimism, Arbitrum, Fantom
 UNIFIED_ROUTER_V2: Final = string_to_evm_address('0xfa43DE785dd3Cd0ef3dAE0dD2b8bE3F1B5112d1a')
 # UnifiedRouterV2 — deployed on Base, Gnosis, Linea, Sonic and other newer chains

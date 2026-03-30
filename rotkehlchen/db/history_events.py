@@ -1753,45 +1753,6 @@ class DBHistoryEvents:
             ignored_group_identifiers=events_result.ignored_group_identifiers,
         )
 
-    def rows_missing_prices_in_base_entries(
-            self,
-            filter_query: HistoryBaseEntryFilterQuery,
-    ) -> list[tuple[str, FVal, Asset, Timestamp]]:
-        """
-        Get missing prices for history base entries based on filter query
-        """
-        query, bindings = filter_query.prepare()
-        query = f'SELECT history_events.identifier, amount, asset, timestamp {ALL_EVENTS_DATA_JOIN}' + query  # noqa: E501
-        result = []
-        with self.db.conn.read_ctx() as cursor:
-            cursor.execute(query, bindings)
-            for identifier, amount_raw, asset_identifier, timestamp in cursor:
-                try:
-                    amount = deserialize_fval(
-                        value=amount_raw,
-                        name='historic base entry usd_value query',
-                        location='query_missing_prices',
-                    )
-                    result.append(
-                        (
-                            identifier,
-                            amount,
-                            Asset(asset_identifier).check_existence(),
-                            ts_ms_to_sec(TimestampMS(timestamp)),
-                        ),
-                    )
-                except DeserializationError as e:
-                    log.error(
-                        f'Failed to read value from historic base entry {identifier} '
-                        f'with amount. {e!s}',
-                    )
-                except UnknownAsset as e:
-                    log.error(
-                        f'Failed to read asset from historic base entry {identifier} '
-                        f'with asset identifier {asset_identifier}. {e!s}',
-                    )
-        return result
-
     def get_entries_assets_history_events(
             self,
             cursor: 'DBCursor',

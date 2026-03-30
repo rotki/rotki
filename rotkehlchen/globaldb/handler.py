@@ -839,27 +839,6 @@ class GlobalDBHandler:
         )
 
     @staticmethod
-    def get_solana_tokens(
-            exceptions: set[SolanaAddress] | None = None,
-            protocol: str | None = None,
-            ignore_spam: bool = True,
-    ) -> list[SolanaToken]:
-        """Gets all solana tokens from the DB
-
-        Can also accept filtering parameters.
-        - List of addresses to ignore via exceptions
-        - Protocol for which to return tokens
-        - ignore_spam (default True) to filter out "spam protocol" assets
-        """
-        return GlobalDBHandler._get_tokens_from_db(
-            table_name='solana_tokens',
-            token_class=SolanaToken,
-            exceptions=exceptions,
-            protocol=protocol,
-            ignore_spam=ignore_spam,
-        )
-
-    @staticmethod
     def get_evm_tokens(
             chain_id: ChainID,
             exceptions: set[ChecksumEvmAddress] | None = None,
