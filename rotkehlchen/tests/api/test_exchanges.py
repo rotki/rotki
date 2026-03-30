@@ -1047,7 +1047,7 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges: 'APISe
         with (
             rotki.data.db.conn.read_ctx() as cursor,
             patch('rotkehlchen.exchanges.coinbase.CoinbaseKeyType.detect_type'),
-        ):  # reinitialize the exchanges, to see the edited credentials are loaded from the DB  # noqa: E501
+        ):  # reinitialize the exchanges, to see the edited credentials are loaded from the DB
             rotki.exchange_manager.delete_all_exchanges()
             exchange_credentials = rotki.data.db.get_exchange_credentials(cursor)
             rotki.exchange_manager.initialize_exchanges(

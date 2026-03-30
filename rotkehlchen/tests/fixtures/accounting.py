@@ -36,7 +36,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 @pytest.fixture(name='use_clean_caching_directory')
 def fixture_use_clean_caching_directory():
     """If this is set to True then a clean test user directory will be used."""
-    if sys.platform == 'win32':  # need clean data dir only in Windows TODO: Figure out why # noqa: E501
+    if sys.platform == 'win32':  # need clean data dir only in Windows TODO: Figure out why
         return True
     return False
 

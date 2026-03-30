@@ -74,7 +74,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
         and part of the collateral deposited is lost too. Those two events happen as transfers in
         a transaction started by the liquidator.
         """
-        if not self.base.is_tracked(bytes_to_address(context.tx_log.topics[3])):  # liquidator  # noqa: E501
+        if not self.base.is_tracked(bytes_to_address(context.tx_log.topics[3])):  # liquidator
             return
 
         amounts = [  # payback amount and liquidation amount
@@ -312,7 +312,7 @@ class Aavev3LikeCommonDecoder(Commonv2v3LikeDecoder):
                     interest_events_in_order.append(earned_event)
                     interest_event_lookup[earned_event.asset].append(earned_event)
 
-        if len(supply_events) != 0 and len(receive_events) != 0:  # re-assign the receive amount  # noqa: E501
+        if len(supply_events) != 0 and len(receive_events) != 0:  # re-assign the receive amount
             grouped_receive_events: dict[tuple[Asset, ChecksumEvmAddress | None], list[EvmEvent]] = defaultdict(list)  # noqa: E501
             for receive_event in receive_events:
                 grouped_receive_events[

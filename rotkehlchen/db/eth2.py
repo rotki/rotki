@@ -578,7 +578,7 @@ class DBEth2:
         # recreate the withdrawals pnl to only include pnl in that timeframe.
         for v_index, balances in withdrawals_pnl_over_time.items():
             for ts, balance in balances.items():
-                if from_ts_ms <= ts <= to_ts_ms:  # only count pnl within the specified range  # noqa: E501
+                if from_ts_ms <= ts <= to_ts_ms:  # only count pnl within the specified range
                     withdrawals_pnl[v_index] += balance
 
         return balances_over_time, withdrawals_pnl, exits_pnl

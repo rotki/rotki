@@ -275,7 +275,7 @@ def test_staking_v2_with_liquity_proxy(rotkehlchen_api_server: APIServer, ethere
     assert result[user]['balances']['eth_rewards']['amount'] == '0'
     assert result[user]['balances']['lusd_rewards']['amount'] == '0'
     assert result[user]['proxies'][proxy]['staked']['amount'] == '104.48'
-    assert result[user]['proxies'][proxy]['staked']['asset'] == A_LQTY.identifier  # liquity # noqa: E501
+    assert result[user]['proxies'][proxy]['staked']['asset'] == A_LQTY.identifier  # liquity
     assert result[user]['proxies'][proxy]['eth_rewards']['amount'] == '0.000006209393760577'
     assert result[user]['proxies'][proxy]['lusd_rewards']['amount'] == '0.002367116256741337'
 

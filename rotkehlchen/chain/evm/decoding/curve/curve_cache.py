@@ -428,22 +428,6 @@ def get_lp_and_gauge_token_addresses(
     return addresses
 
 
-def get_curve_pool_gauge_address(
-        pool_address: ChecksumEvmAddress,
-        chain_id: ChainID,
-) -> ChecksumEvmAddress | None:
-    """Reads the db to get the gauge address for the given pool address"""
-    chain_id_str = str(chain_id.serialize_for_db())
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        if (gauge_address := globaldb_get_unique_cache_value(
-            cursor=cursor,
-            key_parts=(CacheType.CURVE_GAUGE_ADDRESS, chain_id_str, pool_address),
-        )) is None:
-            return None
-
-    return string_to_evm_address(gauge_address)
-
-
 def get_curve_address_from_cache(
         cursor: 'DBCursor',
         cache_type: CacheType,

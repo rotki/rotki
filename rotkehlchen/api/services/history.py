@@ -361,11 +361,17 @@ class HistoryService:
             )
             hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
             ignored_ids = self.rotkehlchen.data.db.get_ignored_action_ids(cursor=cursor)
+            # entries_total is the unfiltered row/group count for the whole table. If it is
+            # already at or below the tier limit then the filtered count must also be, so the
+            # DISTINCT … LIMIT N window subquery can never truncate results and can be skipped.
+            # This does NOT fire when only the filtered subset would fit — we would need an
+            # extra query to know that, which is not worth it here.
+            effective_entries_limit = None if entries_total <= entries_limit else entries_limit
             _, processed_events_result, joined_group_ids, entries_found, entries_with_limit, entries_total, ignored_group_identifiers = self._query_history_events_with_matched_processing(  # noqa: E501
                 cursor=cursor,
                 dbevents=dbevents,
                 filter_query=filter_query,
-                entries_limit=entries_limit,
+                entries_limit=effective_entries_limit,
                 aggregate_by_group_ids=aggregate_by_group_ids,
                 match_exact_events=True,
                 entries_total=entries_total,

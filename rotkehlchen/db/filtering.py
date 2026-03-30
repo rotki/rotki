@@ -1689,14 +1689,6 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
     def get_join_query() -> str:
         return ETH_STAKING_EVENT_JOIN
 
-    @staticmethod
-    def get_count_query() -> str:
-        return f'SELECT COUNT(*) {ETH_STAKING_EVENT_JOIN}'
-
-
-class EthBlockEventFilterQuery(EthStakingEventFilterQuery):
-    pass
-
 
 class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery):
     @classmethod

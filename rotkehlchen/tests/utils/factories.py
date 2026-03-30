@@ -13,7 +13,6 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.calendar import CalendarEntry
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthBlockEvent, EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -22,7 +21,6 @@ from rotkehlchen.types import (
     AddressbookEntry,
     ApiKey,
     ApiSecret,
-    BlockchainAddress,
     BTCAddress,
     BTCTxId,
     ChainID,
@@ -30,7 +28,6 @@ from rotkehlchen.types import (
     Eth2PubKey,
     EvmTransaction,
     EVMTxHash,
-    HexColorCode,
     Location,
     SolanaAddress,
     SupportedBlockchain,
@@ -286,34 +283,6 @@ UNIT_BTC_ADDRESS2 = BTCAddress('1CounterpartyXXXXXXXXXXXXXXXUWLpVr')
 UNIT_BTC_ADDRESS3 = BTCAddress('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
 
 ZERO_ETH_ADDRESS = string_to_evm_address('0x' + '0' * 40)
-
-
-def make_google_calendar_entry(
-        identifier: int = 1,
-        name: str = 'Test Event',
-        description: str = 'Test Description',
-        timestamp: Timestamp | None = None,
-        counterparty: str | None = None,
-        address: BlockchainAddress | None = None,
-        blockchain: SupportedBlockchain | None = None,
-        color: HexColorCode | None = None,
-        auto_delete: bool = False,
-) -> CalendarEntry:
-    """Create a test CalendarEntry for Google Calendar sync tests."""
-    if timestamp is None:
-        timestamp = Timestamp(ts_now() + 86400)  # Tomorrow
-
-    return CalendarEntry(
-        name=name,
-        timestamp=timestamp,
-        description=description,
-        counterparty=counterparty,
-        address=address,
-        blockchain=blockchain,
-        color=color,
-        auto_delete=auto_delete,
-        identifier=identifier,
-    )
 
 
 def make_solana_address() -> SolanaAddress:

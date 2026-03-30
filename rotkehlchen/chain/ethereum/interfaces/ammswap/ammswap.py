@@ -11,11 +11,8 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.ethereum.interfaces.ammswap.types import (
-    AddressToLPBalances,
-    AssetToPrice,
-)
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AddressToLPBalances
 from rotkehlchen.chain.ethereum.modules.uniswap.utils import uniswap_lp_token_balances
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -36,10 +33,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-UNISWAP_TRADES_PREFIX = 'uniswap_trades'
-SUSHISWAP_TRADES_PREFIX = 'sushiswap_trades'
 
 
 class AMMSwapPlatform:
@@ -63,28 +56,6 @@ class AMMSwapPlatform:
         self.premium = premium
         self.msg_aggregator = msg_aggregator
         self.data_directory = database.user_data_dir.parent
-
-    @staticmethod
-    def _get_known_asset_price(
-            known_assets: set[EvmToken],
-            unknown_assets: set[EvmToken],
-    ) -> AssetToPrice:
-        """Get the tokens prices via Inquirer
-
-        Given an asset, if `find_usd_price()` returns zero, it will be added
-        into `unknown_assets`.
-        """
-        asset_price: AssetToPrice = {}
-
-        for known_asset in known_assets:
-            asset_usd_price = Inquirer.find_usd_price(known_asset)
-
-            if asset_usd_price != ZERO_PRICE:
-                asset_price[known_asset.evm_address] = asset_usd_price
-            else:
-                unknown_assets.add(known_asset)
-
-        return asset_price
 
     def _get_lp_addresses(
             self,

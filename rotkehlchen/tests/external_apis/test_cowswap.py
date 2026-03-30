@@ -13,7 +13,7 @@ def test_get_data_from_database(database):
 
 
 def test_handles_missing_fullappdata():
-    # Data taken from https://api.cow.fi/xdai/api/v1/orders/0x246d4707213a3d4bab8e7cae568cb458b81b3a9f05c014c1b6f7b537c788b5205089007dec8e93f891dcb908c9e2af8d9dedb72e68d95aa4  # noqa: E501
+    # Data taken from https://api.cow.fi/xdai/api/v1/orders/0x246d4707213a3d4bab8e7cae568cb458b81b3a9f05c014c1b6f7b537c788b5205089007dec8e93f891dcb908c9e2af8d9dedb72e68d95aa4
     order_data = {
         'creationDate': '2025-09-28T15:51:30Z',
         'owner': '0x5089007dec8e93f891dcb908c9e2af8d9dedb72e',

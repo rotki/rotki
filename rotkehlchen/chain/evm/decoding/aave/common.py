@@ -258,7 +258,7 @@ class Commonv2v3LikeDecoder(EvmDecoderInterface):
             asset=token,
         )
         rate_mode = int.from_bytes(tx_log.data[64:96])
-        # Aave uses ray math https://docs.aave.com/developers/v/1.0/developing-on-aave/important-considerations#ray-math  # noqa: E501
+        # Aave uses ray math https://docs.aave.com/developers/v/1.0/developing-on-aave/important-considerations#ray-math
         # To get the rate we have to divide the value by 1e27. And then multiply by 100 to get the percentage.  # noqa: E501
         rate = int.from_bytes(tx_log.data[96:128]) / FVal(RAY) * 100
         notes = f'Borrow {amount} {token.symbol} from {self.label} with {"stable" if rate_mode == 1 else "variable"} APY {rate.num:.2f}%'  # noqa: E501

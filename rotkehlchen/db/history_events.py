@@ -26,7 +26,6 @@ from rotkehlchen.db.constants import (
     ETH_STAKING_EVENT_FIELDS,
     ETH_STAKING_EVENT_NULL_FIELDS,
     ETH_STAKING_FIELD_LENGTH,
-    GROUP_HAS_IGNORED_ASSETS_FIELD,
     HISTORY_BASE_ENTRY_FIELDS,
     HISTORY_BASE_ENTRY_LENGTH,
     HISTORY_MAPPING_KEY_STATE,
@@ -997,10 +996,11 @@ class DBHistoryEvents:
         chain_fields, staking_fields, join_clause = DBHistoryEvents._build_events_query_parts(
             filter_query=filter_query,
         )
-        # group_has_ignored_assets is added at the END so existing slicing logic is not affected.
-        # It's computed via a window function to detect groups with ignored assets even when
-        # those rows are filtered out by exclude_ignored_assets.
-        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {chain_fields}, {staking_fields}, {GROUP_HAS_IGNORED_ASSETS_FIELD} {join_clause}'  # noqa: E501
+        # group_has_ignored_assets is NOT included here. It used to be a window function
+        # (MAX(ignored) OVER (PARTITION BY group_identifier)) which forced a full table scan
+        # before LIMIT could be applied. Instead, we run a targeted post-query lookup
+        # only for the group_identifiers that ended up in the current page.
+        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {chain_fields}, {staking_fields} {join_clause}'  # noqa: E501
         if aggregate_by_group_ids:
             exclusion_sql, exclusion_bindings = _build_matched_movement_exclusion(filter_query)
             filters, query_bindings = filter_query.prepare(
@@ -1374,7 +1374,6 @@ class DBHistoryEvents:
         cursor.execute(base_query, filters_bindings)
         output_grouped: list[tuple[int, HistoryBaseEntry]] = []
         output_flat: list[HistoryBaseEntry] = []
-        ignored_group_identifiers: set[str] = set()
         has_entries_count_column = (
             include_entries_with_limit_count and aggregate_by_group_ids is False
         )
@@ -1384,19 +1383,16 @@ class DBHistoryEvents:
             type_idx = 1
         data_start_idx = type_idx + 1
         failed_to_deserialize = False
-        # Fixed position of group_has_ignored_assets (after entry_type, base, chain, staking).
-        # JOINs like state_markers may add columns at the end, so we use fixed index.
-        group_has_ignored_assets_idx = (
-            type_idx + 1 + HISTORY_BASE_ENTRY_LENGTH +
-            CHAIN_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH
-        )
+        # End of the meaningful data columns (base + chain + staking).
+        # group_has_ignored_assets is no longer embedded in the query. Instead we do a
+        # targeted post-loop lookup for only the current-page group_identifiers, which
+        # lets SQLite use LIMIT early termination without evaluating a window function
+        # over all rows first.
+        data_end_idx = data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + ETH_STAKING_FIELD_LENGTH  # noqa: E501
 
         for entry in cursor:
             if has_entries_count_column and entries_with_limit_count is None:
                 entries_with_limit_count = int(entry[0])
-            # group_has_ignored_assets is computed via MAX(ignored) OVER window function,
-            # so it detects groups with ignored assets even when those rows are filtered out.
-            group_has_ignored_assets = entry[group_has_ignored_assets_idx] == 1
             entry_type = HistoryBaseEntryType(entry[type_idx])
             try:
                 deserialized_event: HistoryBaseEntry
@@ -1447,7 +1443,7 @@ class DBHistoryEvents:
                         entry[data_start_idx + HISTORY_BASE_ENTRY_LENGTH + 1:data_start_idx + HISTORY_BASE_ENTRY_LENGTH + CHAIN_FIELD_LENGTH + 1],  # noqa: E501
                     )
                 else:
-                    data = entry[data_start_idx:group_has_ignored_assets_idx]
+                    data = entry[data_start_idx:data_end_idx]
                     deserialized_event = (
                         AssetMovement if entry_type == HistoryBaseEntryType.ASSET_MOVEMENT_EVENT else  # noqa: E501
                         SwapEvent if entry_type == HistoryBaseEntryType.SWAP_EVENT else
@@ -1460,9 +1456,6 @@ class DBHistoryEvents:
                 failed_to_deserialize = True
                 continue
 
-            if group_has_ignored_assets:
-                ignored_group_identifiers.add(deserialized_event.group_identifier)
-
             if aggregate_by_group_ids is True:
                 output_grouped.append((entry[0], deserialized_event))
             else:
@@ -1473,6 +1466,24 @@ class DBHistoryEvents:
                 'Could not deserialize one or more history event(s). '
                 'Try redecoding the event(s) or check the logs for more details.',
             )
+
+        # Determine which of the returned groups have any ignored assets. We do this as
+        # a targeted lookup on only the current-page group_identifiers rather than via a
+        # window function over all rows, allowing LIMIT early-termination in the data query.
+        if aggregate_by_group_ids:
+            page_group_ids = {event.group_identifier for _, event in output_grouped}
+        else:
+            page_group_ids = {event.group_identifier for event in output_flat}
+        ignored_group_identifiers: set[str] = set()
+        if page_group_ids:
+            placeholders = ','.join('?' * len(page_group_ids))
+            ignored_group_identifiers = {
+                row[0] for row in cursor.execute(
+                    f'SELECT DISTINCT group_identifier FROM history_events '
+                    f'WHERE group_identifier IN ({placeholders}) AND ignored=1',
+                    list(page_group_ids),
+                )
+            }
 
         if aggregate_by_group_ids is True:
             return HistoryEventsResult(
@@ -1724,72 +1735,23 @@ class DBHistoryEvents:
             entries_limit=entries_limit,
             aggregate_by_group_ids=aggregate_by_group_ids,
             match_exact_events=match_exact_events,
-            include_entries_with_limit_count=aggregate_by_group_ids is False,
+            include_entries_with_limit_count=False,  # use separate lightweight count query
         )
-        if events_result.entries_with_limit_count is not None:
-            count_with_limit = events_result.entries_with_limit_count
-            if need_entries_found is False or entries_limit is None:
-                count_without_limit = count_with_limit
-            else:
-                count_without_limit, _ = self.get_history_events_count(
-                    cursor=cursor,
-                    query_filter=filter_query,
-                    entries_limit=None,
-                    aggregate_by_group_ids=aggregate_by_group_ids,
-                )
-        else:
-            count_without_limit, count_with_limit = self.get_history_events_count(
-                cursor=cursor,
-                query_filter=filter_query,
-                entries_limit=entries_limit,
-                aggregate_by_group_ids=aggregate_by_group_ids,
-                need_count_without_limit=need_entries_found,
-            )
+        # Always use a separate lightweight count query (no COUNT(*) OVER() window in data
+        # query) so that SQLite can apply LIMIT early-termination in the data query.
+        count_without_limit, count_with_limit = self.get_history_events_count(
+            cursor=cursor,
+            query_filter=filter_query,
+            entries_limit=entries_limit,
+            aggregate_by_group_ids=aggregate_by_group_ids,
+            need_count_without_limit=need_entries_found,
+        )
         return HistoryEventsWithCountResult(
             events=events_result.events,
             entries_found=count_without_limit,
             entries_with_limit=count_with_limit,
             ignored_group_identifiers=events_result.ignored_group_identifiers,
         )
-
-    def rows_missing_prices_in_base_entries(
-            self,
-            filter_query: HistoryBaseEntryFilterQuery,
-    ) -> list[tuple[str, FVal, Asset, Timestamp]]:
-        """
-        Get missing prices for history base entries based on filter query
-        """
-        query, bindings = filter_query.prepare()
-        query = f'SELECT history_events.identifier, amount, asset, timestamp {ALL_EVENTS_DATA_JOIN}' + query  # noqa: E501
-        result = []
-        with self.db.conn.read_ctx() as cursor:
-            cursor.execute(query, bindings)
-            for identifier, amount_raw, asset_identifier, timestamp in cursor:
-                try:
-                    amount = deserialize_fval(
-                        value=amount_raw,
-                        name='historic base entry usd_value query',
-                        location='query_missing_prices',
-                    )
-                    result.append(
-                        (
-                            identifier,
-                            amount,
-                            Asset(asset_identifier).check_existence(),
-                            ts_ms_to_sec(TimestampMS(timestamp)),
-                        ),
-                    )
-                except DeserializationError as e:
-                    log.error(
-                        f'Failed to read value from historic base entry {identifier} '
-                        f'with amount. {e!s}',
-                    )
-                except UnknownAsset as e:
-                    log.error(
-                        f'Failed to read asset from historic base entry {identifier} '
-                        f'with asset identifier {asset_identifier}. {e!s}',
-                    )
-        return result
 
     def get_entries_assets_history_events(
             self,

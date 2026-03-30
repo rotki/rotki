@@ -154,15 +154,6 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
         """
         return len(self.rpc_mapping) != 0
 
-    def get_own_node(self) -> WEB3_NODE_TYPE | None:
-        """Returns a single connected node that is labeled as owned.
-        If there aren't owned nodes it returns None.
-        """
-        for node, rpc_node in self.rpc_mapping.items():
-            if node.owned:
-                return rpc_node.rpc_client
-        return None
-
     def get_own_node_info(self) -> NodeName | None:
         """Get the node info for the any connected rpc node"""
         for node in self.rpc_mapping:
@@ -401,7 +392,7 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
                 'gas_estimate',
                 'ens_name_to_address',  # we do our own handling for ens names
         ):
-            # https://github.com/ethereum/web3.py/blob/bba87a283d802bbebbfe3f8c7dc47560c7a08583/web3/middleware/validation.py#L137-L142  # noqa: E501
+            # https://github.com/ethereum/web3.py/blob/bba87a283d802bbebbfe3f8c7dc47560c7a08583/web3/middleware/validation.py#L137-L142
             with suppress(ValueError):  # If not existing raises ValueError, so ignore
                 web3.middleware_onion.remove(middleware)
 

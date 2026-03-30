@@ -144,7 +144,7 @@ class Uniswapv3CommonDecoder(EvmDecoderInterface):
         position_id = int.from_bytes(context.tx_log.topics[1])
         try:
             # Returns a tuple containing information about the state of the LP position.
-            # https://docs.uniswap.org/contracts/v3/reference/periphery/NonfungiblePositionManager#positions  # noqa: E501
+            # https://docs.uniswap.org/contracts/v3/reference/periphery/NonfungiblePositionManager#positions
             # 0 -> position.nonce,
             # 1 -> position.operator,
             # 2 -> poolKey.token0, <--- Used. The first token in the pool

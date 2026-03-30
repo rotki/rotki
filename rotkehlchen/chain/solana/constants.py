@@ -34,8 +34,8 @@ METADATA_LAYOUT_2022: Final = Struct(
     'uri' / Prefixed(Int32ul, GreedyBytes),
 )
 # Layout for parsing metadata from a token's metadata PDA.
-# https://github.com/metaplex-foundation/mpl-token-metadata/blob/main/programs/token-metadata/program/src/state/metadata.rs#L68  # noqa: E501
-# https://github.com/metaplex-foundation/mpl-token-metadata/blob/main/programs/token-metadata/program/src/state/data.rs#L6  # noqa: E501
+# https://github.com/metaplex-foundation/mpl-token-metadata/blob/main/programs/token-metadata/program/src/state/metadata.rs#L68
+# https://github.com/metaplex-foundation/mpl-token-metadata/blob/main/programs/token-metadata/program/src/state/data.rs#L6
 METADATA_LAYOUT_LEGACY: Final = Struct(
     'key' / Int8ul,
     *METADATA_LAYOUT_2022.subcons,

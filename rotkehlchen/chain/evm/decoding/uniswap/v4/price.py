@@ -68,7 +68,7 @@ def get_uniswap_v4_position_price(
         )[0]
         # Decode tick_lower and tick_upper from uint256 positionInfo
         # Layout: poolId: 25 bytes, tickUpper: 3 bytes, tickLower: 3 bytes, hasSubscriber: 1 byte
-        # See https://docs.uniswap.org/contracts/v4/reference/periphery/libraries/PositionInfoLibrary  # noqa: E501
+        # See https://docs.uniswap.org/contracts/v4/reference/periphery/libraries/PositionInfoLibrary
         position_bytes = position_info.to_bytes(32)
         tick_lower = int.from_bytes(position_bytes[28:31], signed=True)
         tick_upper = int.from_bytes(position_bytes[25:28], signed=True)

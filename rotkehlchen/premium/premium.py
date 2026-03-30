@@ -122,43 +122,6 @@ class PremiumCapabilities(TypedDict):
     monerium: PremiumFeatureCapability
 
 
-class CapabilityUnlocks(TypedDict):
-    unlocks: dict[str, str]
-
-
-# keys that will be returned as part of the capabilities
-PREMIUM_CAPABILITIES_KEYS: Final[tuple[Literal[  # the type is defined like this due to https://github.com/python/mypy/issues/19961  # noqa: E501
-    'eth_staking_view',
-    'graphs_view',
-    'event_analysis_view',
-    'asset_movement_matching',
-    'gnosispay',
-    'monerium',
-], ...]] = (
-    'eth_staking_view',
-    'graphs_view',
-    'event_analysis_view',
-    'asset_movement_matching',
-    'gnosispay',
-    'monerium',
-)
-PREMIUM_LIMITS_KEYS: Final[tuple[Literal[
-    'limit_of_devices',
-    'pnl_events_limit',
-    'max_backup_size_mb',
-    'history_events_limit',
-    'reports_lookup_limit',
-    'eth_staked_limit',
-], ...]] = (
-    'limit_of_devices',
-    'pnl_events_limit',
-    'max_backup_size_mb',
-    'history_events_limit',
-    'reports_lookup_limit',
-    'eth_staked_limit',
-)
-
-
 class UserLimitType(Enum):
     """Enum of the different limits enforced by tiers"""
     HISTORY_EVENTS = 'history_events_limit'

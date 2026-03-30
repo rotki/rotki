@@ -2123,7 +2123,7 @@ class AsyncFilePathSchema(AsyncQueryArgumentSchema):
         so that it can be read with the same code
         """
         if isinstance(data['filepath'], FileStorage):
-            # TODO cleanup: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=65410141  # noqa: E501
+            # TODO cleanup: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=65410141
             _, tmpfilepath = tempfile.mkstemp()
             data['filepath'].save(tmpfilepath)
             data['filepath'] = Path(tmpfilepath)
@@ -2208,10 +2208,6 @@ class AccountingReportExportSchema(AccountingReportsSchema):
 
     def __init__(self) -> None:
         super().__init__(required_report_id=True)
-
-
-class HistoryExportingSchema(Schema):
-    directory_path = DirectoryField(required=True)
 
 
 class BlockchainAccountDataSchema(TagsSettingSchema):
@@ -3393,10 +3389,6 @@ class BinanceMarketsSchema(Schema):
 
 class AppInfoSchema(Schema):
     check_for_updates = fields.Boolean(load_default=False)
-
-
-class IdentifiersListSchema(Schema):
-    identifiers = fields.List(fields.Integer(), required=True)
 
 
 class HistoryEventsDeletionSchema(HistoryEventFilterSchema):

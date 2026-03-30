@@ -286,27 +286,6 @@ def get_donation_event_params(
     return new_type, expected_type, expected_address, expected_location_label, notes
 
 
-def get_protocol_token_addresses(
-        protocol: str,
-        chain_id: ChainID,
-        existing_tokens: set[ChecksumEvmAddress],
-) -> set[ChecksumEvmAddress]:
-    """Load all tokens for a given protocol and chain from the global db if the count in the db
-    differs from the count of existing tokens. Otherwise return the existing tokens.
-    """
-    with GlobalDBHandler().conn.read_ctx() as cursor:
-        query_body = 'FROM evm_tokens WHERE protocol=? AND chain=?'
-        bindings = (protocol, chain_id.serialize_for_db())
-
-        cursor.execute(f'SELECT COUNT(*) {query_body}', bindings)
-        if cursor.fetchone()[0] == len(existing_tokens):
-            return existing_tokens
-
-        # else we are missing new tokens. Load all from db.
-        cursor.execute(f'SELECT protocol, address {query_body}', bindings)
-        return {string_to_evm_address(row[1]) for row in cursor}
-
-
 def get_address_to_address_dict_from_cache(
         cache_type: GeneralCacheType,
         chain_id: ChainID,
