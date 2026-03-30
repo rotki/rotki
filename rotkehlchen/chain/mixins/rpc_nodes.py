@@ -154,15 +154,6 @@ class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
         """
         return len(self.rpc_mapping) != 0
 
-    def get_own_node(self) -> WEB3_NODE_TYPE | None:
-        """Returns a single connected node that is labeled as owned.
-        If there aren't owned nodes it returns None.
-        """
-        for node, rpc_node in self.rpc_mapping.items():
-            if node.owned:
-                return rpc_node.rpc_client
-        return None
-
     def get_own_node_info(self) -> NodeName | None:
         """Get the node info for the any connected rpc node"""
         for node in self.rpc_mapping:

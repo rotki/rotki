@@ -29,7 +29,6 @@ from rotkehlchen.chain.evm.constants import (
     EIP7702_DELEGATION_CODE_LENGTH,
     EIP7702_DELEGATION_PREFIX,
     ERC20_PROPERTIES,
-    ERC20_PROPERTIES_NUM,
     ERC721_PROPERTIES,
     FAKE_GENESIS_TX_RECEIPT,
     GENESIS_HASH,
@@ -1159,37 +1158,6 @@ class EvmNodeInquirer(EVMRPCMixin, LockableQueryMixIn):
         if decode_result is False:
             return output
         return [contract.decode(x, method_name, arguments[0]) for x in output]
-
-    def get_multiple_erc20_contract_info(self, addresses: list[ChecksumEvmAddress]) -> None:
-        """Query the token information for multiple ERC20 addresses and save them in cache"""
-        if len(addresses) == 0:
-            return
-
-        contract = EvmContract(address=addresses[0], abi=self.contracts.erc20_abi, deployed_block=0)  # noqa: E501
-
-        for addresses_chunk in get_chunks(addresses, 8):  # chunk number seems to be highest that can work with etherscan url limit  # noqa: E501
-            calls = [(address, contract.encode(method_name=prop)) for address in addresses_chunk for prop in ERC20_PROPERTIES]  # noqa: E501
-
-            try:
-                # Output contains call status and result
-                output = self.multicall_2(require_success=False, calls=calls)
-            except RemoteError:
-                # If something happens in the connection the output should have
-                # the same length as the tuple of properties * addresses
-                output = [(False, b'')] * ERC20_PROPERTIES_NUM * len(addresses_chunk)
-
-            for idx, single_output in enumerate(get_chunks(output, ERC20_PROPERTIES_NUM)):
-                address = addresses_chunk[idx]
-                try:
-                    info = self._process_and_create_erc20_info(
-                        output=single_output,
-                        address=address,
-                    )
-                except NotERC20Conformant:
-                    log.warning(f'{address} on {self.chain_name} is not a valid ERC20 token. Skipping')  # noqa: E501
-                    continue
-
-                self.contract_info_erc20_cache.add(address, info)
 
     def _process_and_create_erc20_info(
             self,

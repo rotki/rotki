@@ -9,7 +9,6 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn, SerializableEnumNameMixin
-from rotkehlchen.utils.serialization import rlk_jsondumps
 
 
 class SchemaEventType(DBCharEnumMixIn):
@@ -90,21 +89,6 @@ class NamedJson(NamedTuple):
             ) from e
 
         return cls.deserialize(event_type=event_type, data=data)
-
-    def to_db_tuple(self) -> NamedJsonDBTuple:
-        """May raise:
-
-        - DeserializationError if something fails during conversion to the DB tuple
-        """
-        event_type = self.event_type.serialize_for_db()
-        try:
-            string_data = rlk_jsondumps(self.data)
-        except (OverflowError, ValueError, TypeError) as e:
-            raise DeserializationError(
-                f'Could not dump json to string for NamedJson. Error was {e!s}',
-            ) from e
-
-        return event_type, string_data
 
 
 class MissingAcquisition(NamedTuple):

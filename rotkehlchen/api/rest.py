@@ -3154,39 +3154,6 @@ class RestAPI:
 
         return api_response(_wrap_in_ok_result(result=result))
 
-    def get_historical_asset_amounts_event_metrics(
-            self,
-            asset: Asset | None,
-            collection_id: int | None,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        """Get historical asset amounts via the event metrics table.
-        TODO (balances): Replace get_historical_asset_amounts with this.
-        """
-        assets: tuple[Asset, ...]
-        if asset is not None:
-            assets = (asset,)
-        else:  # collection_id is present due to validation.
-            with GlobalDBHandler().conn.read_ctx() as cursor:
-                cursor.execute(
-                    'SELECT asset FROM multiasset_mappings WHERE collection_id=?',
-                    (collection_id,),
-                )
-                assets = tuple(Asset(row[0]) for row in cursor)
-
-        processing_required, amounts = HistoricalBalancesManager(self.rotkehlchen.data.db).get_assets_amounts_event_metrics(  # noqa: E501
-            assets=assets,
-            from_ts=from_timestamp,
-            to_ts=to_timestamp,
-        )
-
-        result: dict[str, Any] = {'processing_required': processing_required}
-        if amounts is not None:
-            result['times'] = list(amounts)
-            result['values'] = [str(x) for x in amounts.values()]
-        return api_response(_wrap_in_ok_result(result=result))
-
     @async_api_call()
     def trigger_task(self, task: TaskName) -> dict[str, Any]:
         """Trigger the specified async task."""
