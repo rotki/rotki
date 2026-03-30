@@ -74,6 +74,22 @@ class TokenAccountInfo(NamedTuple):
     amount: int
 
 
+class StakeAccountInfo(NamedTuple):
+    """Parsed stake account information from the Solana Stake Program.
+    https://github.com/solana-labs/solana/blob/master/sdk/program/src/stake/state.rs
+    """
+    lamports: int  # total lamports in the stake account (from account info, not data)
+    staker: SolanaAddress
+    withdrawer: SolanaAddress
+    voter: SolanaAddress | None  # only present for delegated stake accounts (state == 2)
+
+
+# Minimum size for an initialized stake account (state + Meta)
+STAKE_ACCOUNT_META_SIZE: Final = 124  # 4 (state) + 8 (rent_exempt) + 32 (staker) + 32 (withdrawer) + 8 + 8 + 32 (lockup)  # noqa: E501
+# Size including delegation data
+STAKE_ACCOUNT_DELEGATED_SIZE: Final = 196  # Meta(124) + Delegation(32 + 8 + 8 + 8 + 8) + credits_observed(8)  # noqa: E501
+
+
 class MetadataInfo(NamedTuple):
     """Token metadata information. Only including the fields we use for now.
     Decoded from several different layouts in decode_token_metadata.
@@ -265,6 +281,46 @@ def deserialize_solana_instruction_from_rpc(
         accounts=[account_keys[i] for i in raw_instruction.accounts],
         data=b58decode(raw_instruction.data),
         program_id=account_keys[raw_instruction.program_id_index],
+    )
+
+
+def deserialize_stake_account(account_data: bytes, lamports: int) -> StakeAccountInfo:
+    """Deserializes stake account data from the Solana Stake Program.
+
+    Stake account layout:
+    [0:4]     u32 - state enum (0=uninitialized, 1=initialized, 2=delegated, 3=rewards_pool)
+    [4:12]    u64 - rent_exempt_reserve
+    [12:44]   Pubkey - staker authority
+    [44:76]   Pubkey - withdrawer authority
+    [76:124]  Lockup (i64 + u64 + Pubkey)
+    For state == 2 (delegated):
+    [124:156] Pubkey - voter_pubkey
+    [156:164] u64 - delegated stake
+
+    May raise DeserializationError if the data is invalid.
+    """
+    if len(account_data) < STAKE_ACCOUNT_META_SIZE:
+        raise DeserializationError(
+            f'Solana stake account data must be at least {STAKE_ACCOUNT_META_SIZE} bytes, '
+            f'got {len(account_data)} bytes.',
+        )
+
+    state = int.from_bytes(account_data[0:4], byteorder='little')
+    if state == 0:  # uninitialized
+        raise DeserializationError('Stake account is uninitialized')
+
+    staker = bytes_to_solana_address(account_data[12:44])
+    withdrawer = bytes_to_solana_address(account_data[44:76])
+
+    voter = None
+    if state == 2 and len(account_data) >= STAKE_ACCOUNT_DELEGATED_SIZE:  # delegated
+        voter = bytes_to_solana_address(account_data[124:156])
+
+    return StakeAccountInfo(
+        lamports=lamports,
+        staker=staker,
+        withdrawer=withdrawer,
+        voter=voter,
     )
 
 

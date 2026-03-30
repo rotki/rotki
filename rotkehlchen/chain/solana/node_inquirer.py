@@ -8,7 +8,7 @@ from httpx import HTTPStatusError, ReadTimeout
 from solana.exceptions import SolanaRpcException
 from solana.rpc.api import Client
 from solana.rpc.core import RPCException
-from solana.rpc.types import TokenAccountOpts
+from solana.rpc.types import MemcmpOpts, TokenAccountOpts
 from solders.pubkey import Pubkey
 from solders.solders import (
     LOOKUP_TABLE_META_SIZE,
@@ -30,10 +30,12 @@ from rotkehlchen.chain.solana.utils import (
     ExtensionType,
     MetadataInfo,
     MintInfo,
+    StakeAccountInfo,
     decode_metadata_pointer,
     decode_token_metadata,
     deserialize_mint,
     deserialize_solana_instruction_from_rpc,
+    deserialize_stake_account,
     get_extension_data,
     get_metadata_account,
 )
@@ -47,7 +49,13 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import bytes_to_solana_address, get_chunks, ts_now
 
-from .constants import METADATA_LAYOUT_2022, METADATA_LAYOUT_LEGACY, METADATA_PROGRAM_IDS
+from .constants import (
+    METADATA_LAYOUT_2022,
+    METADATA_LAYOUT_LEGACY,
+    METADATA_PROGRAM_IDS,
+    STAKE_ACCOUNT_WITHDRAWER_OFFSET,
+    STAKE_PROGRAM_ID,
+)
 from .types import SolanaTransaction, pubkey_to_solana_address
 
 if TYPE_CHECKING:
@@ -351,6 +359,30 @@ class SolanaInquirer(SolanaRPCMixin):
             ata_accounts.extend(response.value)
 
         return ata_accounts
+
+    def get_stake_accounts(self, owner: SolanaAddress) -> list[StakeAccountInfo]:
+        """Query all stake accounts where the given address is the withdrawer authority.
+        Uses getProgramAccounts with a memcmp filter on the withdrawer field (offset 44).
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        response = self.query(
+            method=lambda client: client.get_program_accounts(
+                pubkey=STAKE_PROGRAM_ID,
+                filters=[MemcmpOpts(offset=STAKE_ACCOUNT_WITHDRAWER_OFFSET, bytes=owner)],
+            ),
+        )
+        stake_accounts = []
+        for keyed_account in response.value:
+            try:
+                stake_accounts.append(deserialize_stake_account(
+                    account_data=keyed_account.account.data,
+                    lamports=keyed_account.account.lamports,
+                ))
+            except DeserializationError as e:
+                log.error(f'Failed to parse solana stake account {keyed_account.pubkey} due to {e}')  # noqa: E501
+                continue
+
+        return stake_accounts
 
     def query_tx_signatures_for_address(
             self,
