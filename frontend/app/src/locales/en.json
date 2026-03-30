@@ -2634,6 +2634,11 @@
       "activate_tooltip": "Edit the api keys for the exchange.",
       "deactivate_tooltip": "Cancel the edit of the api keys for the exchange."
     },
+    "history_limit_warning": {
+      "bybit": "Bybit's API only allows querying trades from the past 2 years (unified account) or 180 days (classic account). Older trades cannot be retrieved.",
+      "cryptocom": "Crypto.com's API only allows querying trades from the past 6 months. Older trades cannot be retrieved.",
+      "htx": "HTX's API only allows querying trades from the past 120 days. Older trades cannot be retrieved."
+    },
     "name": {
       "non_empty": "The name field cannot be empty."
     },

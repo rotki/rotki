@@ -70,6 +70,17 @@ const experimental = useIsExperimentalExchange(() => get(modelValue).location);
 
 const showKeyWaitingTimeWarning = logicOr(isKraken, isCoinbase, isCoinbasePro);
 
+const historyLimitMessage = computed<string>(() => {
+  const { location } = get(modelValue);
+  if (location === 'bybit')
+    return t('exchange_keys_form.history_limit_warning.bybit');
+  if (location === 'htx')
+    return t('exchange_keys_form.history_limit_warning.htx');
+  if (location === 'cryptocom')
+    return t('exchange_keys_form.history_limit_warning.cryptocom');
+  return '';
+});
+
 const editMode = computed<boolean>(() => get(modelValue).mode === 'edit');
 
 const nameProp = useRefPropVModel(modelValue, 'name');
@@ -529,6 +540,14 @@ defineExpose({
     type="info"
   >
     {{ t('exchange_keys_form.waiting_time_warning') }}
+  </RuiAlert>
+
+  <RuiAlert
+    v-if="historyLimitMessage"
+    class="mt-4"
+    type="warning"
+  >
+    {{ historyLimitMessage }}
   </RuiAlert>
 
   <RuiAlert
