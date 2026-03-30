@@ -61,6 +61,10 @@ PAGINATION_LIMIT: Final = 50
 # It is also used to prevent replay attacks. its unit in ms
 # https://bybit-exchange.github.io/docs/v5/guide#parameters-for-authenticated-endpoints
 RECEIVE_WINDOW: Final = '10000'
+# Bybit launched in March 2018. Used as the floor when querying full deposit/withdrawal history.
+BYBIT_LAUNCH_TS: Final = Timestamp(1520000000)
+# The deposit/withdrawal API enforces a max 30-day window per request.
+BYBIT_MAX_MOVEMENT_WINDOW: Final = DAY_IN_SECONDS * 30
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -550,11 +554,9 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
         Process deposits/withdrawals from bybit. If any asset is unknown or we fail to
         deserialize an entry the error is logged and we skip the entry.
 
-        This logic doesn't filter by timestamp and instead processes all the entries
-        returned by the api discarding those that aren't in start_ts <= timestamp <= end_ts.
-        The reason is that the api is poorly designed and you can't know until when to query,
-        for any time range the api will return values and is not possible to know when the user
-        started to use the api.
+        The API enforces a max 30-day query window and defaults to the last 30 days when no
+        time range is given, so we iterate in 30-day windows from max(start_ts, launch date)
+        to end_ts.
         """
         log.debug(f'querying bybit online {query_for} with {start_ts=}-{end_ts=}')
         if query_for == HistoryEventType.DEPOSIT:
@@ -570,17 +572,26 @@ class Bybit(ExchangeInterface, SignatureGeneratorMixin):
             id_key = 'withdrawId'
             movement_subtype = HistoryEventSubType.SPEND
 
-        raw_data = self._paginated_api_query(
-            endpoint=endpoint,  # type: ignore  # mypy doesn't detect that the string is assigned once
-            options={'limit': PAGINATION_LIMIT},
-        )
+        # The API enforces a max 30-day window per request and defaults to the last 30 days
+        # when no time range is given. Iterate in 30-day windows from the floor to end_ts.
+        raw_data = []
+        window_start = Timestamp(max(start_ts, BYBIT_LAUNCH_TS))
+        while window_start < end_ts:
+            window_end = Timestamp(min(window_start + BYBIT_MAX_MOVEMENT_WINDOW, end_ts))
+            raw_data.extend(self._paginated_api_query(
+                endpoint=endpoint,  # type: ignore  # mypy doesn't detect that the string is assigned once
+                options={
+                    'limit': PAGINATION_LIMIT,
+                    'startTime': ts_sec_to_ms(window_start),
+                    'endTime': ts_sec_to_ms(window_end),
+                },
+            ))
+            window_start = window_end
 
         movements = []
         for movement in raw_data:
             if (timestamp_raw := movement.get(timestamp_key)) is not None:
                 timestamp = ts_ms_to_sec(TimestampMS(int(timestamp_raw)))
-                if not start_ts <= timestamp <= end_ts:
-                    continue  # skip if is not in range
             else:
                 continue  # skip missing timestamp
 
