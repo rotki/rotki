@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from solders.pubkey import Pubkey
 
@@ -17,7 +17,7 @@ from rotkehlchen.chain.solana.utils import deserialize_token_account, lamports_t
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
 from rotkehlchen.constants.assets import A_SOL
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.errors.misc import NotSPLConformant
+from rotkehlchen.errors.misc import NotSPLConformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
@@ -34,6 +34,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+STAKING_BALANCE_LABEL: Final = 'staking'
 
 
 class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWithNodesMixin[SolanaInquirer]):  # noqa: E501
@@ -78,6 +80,20 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
                 result[account] = lamports_to_sol(entry.lamports)
 
         return result
+
+    def get_staked_balance(self, account: SolanaAddress) -> FVal:
+        """Query the total staked SOL balance for the given account by summing
+        all stake accounts where the account is the withdrawer authority.
+        May raise RemoteError if there is a problem with querying the external service.
+        """
+        stake_accounts = self.node_inquirer.get_stake_accounts(owner=account)
+        if not stake_accounts:
+            return ZERO
+
+        total_lamports = sum(sa.lamports for sa in stake_accounts)
+        staked_balance = lamports_to_sol(total_lamports)
+        log.debug(f'Found {len(stake_accounts)} stake accounts for {account} with total staked balance {staked_balance} SOL')  # noqa: E501
+        return staked_balance
 
     def get_token_balances(self, account: SolanaAddress) -> dict[Asset, FVal]:
         """Query the token balances of the given account.
@@ -141,6 +157,15 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
                     amount=balance,
                     value=balance * token_prices[token],
                 )
+
+            try:
+                if (staked_balance := self.get_staked_balance(account)) != ZERO:
+                    chain_balances[account].assets[A_SOL][STAKING_BALANCE_LABEL] = Balance(
+                        amount=staked_balance,
+                        value=staked_balance * native_token_price,
+                    )
+            except RemoteError as e:
+                log.error(f'Failed to query staked SOL balance for {account} due to {e}')
 
         return dict(chain_balances)
 

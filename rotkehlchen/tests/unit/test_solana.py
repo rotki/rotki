@@ -14,9 +14,18 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_solana_token, get_solana_token
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
-from rotkehlchen.chain.solana.utils import MetadataInfo, MintInfo, is_solana_token_nft
+from rotkehlchen.chain.solana.utils import (
+    STAKE_ACCOUNT_DELEGATED_SIZE,
+    STAKE_ACCOUNT_META_SIZE,
+    MetadataInfo,
+    MintInfo,
+    StakeAccountInfo,
+    deserialize_stake_account,
+    is_solana_token_nft,
+)
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import InputError, RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.serialization.deserialize import deserialize_tx_signature
 from rotkehlchen.tests.utils.makerdao import FVal
 from rotkehlchen.types import SolanaAddress, SupportedBlockchain, Timestamp, TokenKind
@@ -340,3 +349,152 @@ def test_rate_limit_handling(
     # sure we don't loop forever if the query fails for non-rate-limit reasons.
     with pytest.raises(RemoteError):
         solana_inquirer.query(method=mock_method, call_order=call_order, only_archive_nodes=True)
+
+
+def _build_stake_account_data(
+        state: int,
+        staker: str,
+        withdrawer: str,
+        voter: str | None = None,
+) -> bytes:
+    """Build raw stake account data for testing.
+    Layout:
+    [0:4]     u32 state
+    [4:12]    u64 rent_exempt_reserve
+    [12:44]   Pubkey staker
+    [44:76]   Pubkey withdrawer
+    [76:124]  Lockup (i64 + u64 + Pubkey)
+    For state==2 (delegated):
+    [124:156] Pubkey voter_pubkey
+    [156:164] u64 delegated stake
+    [164:172] u64 activation_epoch
+    [172:180] u64 deactivation_epoch
+    [180:188] f64 warmup_cooldown_rate
+    [188:196] u64 credits_observed
+    """
+    import struct
+
+    from base58 import b58decode
+    data = bytearray()
+    data += struct.pack('<I', state)  # state enum
+    data += struct.pack('<Q', 2_282_880)  # rent_exempt_reserve
+    data += b58decode(staker)  # staker pubkey (32 bytes)
+    data += b58decode(withdrawer)  # withdrawer pubkey (32 bytes)
+    data += struct.pack('<q', 0)  # lockup timestamp
+    data += struct.pack('<Q', 0)  # lockup epoch
+    data += bytes(32)  # lockup custodian pubkey
+
+    if state == 2 and voter is not None:  # delegated
+        data += b58decode(voter)  # voter pubkey (32 bytes)
+        data += struct.pack('<Q', 5_000_000_000)  # delegated stake (5 SOL)
+        data += struct.pack('<Q', 100)  # activation_epoch
+        data += struct.pack('<Q', 18446744073709551615)  # deactivation_epoch (u64::MAX)
+        data += struct.pack('<d', 0.0)  # warmup_cooldown_rate
+        data += struct.pack('<Q', 0)  # credits_observed
+
+    return bytes(data)
+
+
+def test_deserialize_stake_account_delegated() -> None:
+    """Test deserialization of a delegated stake account."""
+    staker_addr = 'updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'
+    withdrawer_addr = 'updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'
+    voter_addr = '7Sys29UqSSRwczo8N4VZ3phNUtGhGdYTkKMGCR4bx6wH'
+
+    data = _build_stake_account_data(
+        state=2,
+        staker=staker_addr,
+        withdrawer=withdrawer_addr,
+        voter=voter_addr,
+    )
+    assert len(data) >= STAKE_ACCOUNT_DELEGATED_SIZE
+
+    result = deserialize_stake_account(account_data=data, lamports=8_000_000_000)
+    assert result == StakeAccountInfo(
+        lamports=8_000_000_000,
+        staker=SolanaAddress(staker_addr),
+        withdrawer=SolanaAddress(withdrawer_addr),
+        voter=SolanaAddress(voter_addr),
+    )
+
+
+def test_deserialize_stake_account_initialized() -> None:
+    """Test deserialization of an initialized (non-delegated) stake account."""
+    staker_addr = 'updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'
+    withdrawer_addr = 'FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa'
+
+    data = _build_stake_account_data(state=1, staker=staker_addr, withdrawer=withdrawer_addr)
+    assert len(data) >= STAKE_ACCOUNT_META_SIZE
+
+    result = deserialize_stake_account(account_data=data, lamports=3_000_000_000)
+    assert result == StakeAccountInfo(
+        lamports=3_000_000_000,
+        staker=SolanaAddress(staker_addr),
+        withdrawer=SolanaAddress(withdrawer_addr),
+        voter=None,
+    )
+
+
+def test_deserialize_stake_account_uninitialized() -> None:
+    """Test that uninitialized stake accounts raise DeserializationError."""
+    data = _build_stake_account_data(
+        state=0,
+        staker='updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM',
+        withdrawer='updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM',
+    )
+    with pytest.raises(DeserializationError, match='uninitialized'):
+        deserialize_stake_account(account_data=data, lamports=1_000_000)
+
+
+def test_deserialize_stake_account_too_short() -> None:
+    """Test that stake account data that is too short raises DeserializationError."""
+    with pytest.raises(DeserializationError, match='at least'):
+        deserialize_stake_account(account_data=bytes(50), lamports=1_000_000)
+
+
+def test_get_staked_balance(solana_manager: 'SolanaManager') -> None:
+    """Test that staked SOL balance is correctly computed from stake accounts."""
+    staker_addr = 'updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'
+    voter_addr = '7Sys29UqSSRwczo8N4VZ3phNUtGhGdYTkKMGCR4bx6wH'
+
+    stake_account_1 = _build_stake_account_data(
+        state=2, staker=staker_addr, withdrawer=staker_addr, voter=voter_addr,
+    )
+    stake_account_2 = _build_stake_account_data(
+        state=2, staker=staker_addr, withdrawer=staker_addr, voter=voter_addr,
+    )
+
+    mock_response = SimpleNamespace(value=[
+        SimpleNamespace(
+            pubkey='StakeAcc1111111111111111111111111111111111111',
+            account=SimpleNamespace(data=stake_account_1, lamports=5_000_000_000),
+        ),
+        SimpleNamespace(
+            pubkey='StakeAcc2222222222222222222222222222222222222',
+            account=SimpleNamespace(data=stake_account_2, lamports=3_000_000_000),
+        ),
+    ])
+
+    with patch.object(
+        solana_manager.node_inquirer,
+        'query',
+        return_value=mock_response,
+    ):
+        result = solana_manager.get_staked_balance(
+            account=SolanaAddress(staker_addr),
+        )
+        assert result == FVal('8')  # 5 + 3 SOL
+
+
+def test_get_staked_balance_no_accounts(solana_manager: 'SolanaManager') -> None:
+    """Test that zero is returned when there are no stake accounts."""
+    mock_response = SimpleNamespace(value=[])
+    with patch.object(
+        solana_manager.node_inquirer,
+        'query',
+        return_value=mock_response,
+    ):
+        result = solana_manager.get_staked_balance(
+            account=SolanaAddress('updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'),
+        )
+        assert result == ZERO

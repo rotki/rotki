@@ -18,6 +18,13 @@ from solders.pubkey import Pubkey
 
 SOLANA_GENESIS_BLOCK_HASH: Final = Hash.from_string('4sGjMW1sUnHzSxGspuhpqLDx6wiyjNtZAMdL4VZHirAn')
 
+# Native Solana Stake Program
+# https://docs.solanalabs.com/runtime/programs#stake-program
+STAKE_PROGRAM_ID: Final = Pubkey.from_string('Stake11111111111111111111111111111111111111')
+
+# Offsets within the stake account data for memcmp filters
+STAKE_ACCOUNT_WITHDRAWER_OFFSET: Final = 44  # Authorized.withdrawer pubkey
+
 # Used to derive the metadata PDA (Program Derived Address) for tokens in get_metadata_account
 METADATA_PROGRAM_IDS: Final = (
     Pubkey.from_string('metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s'),  # Official Metaplex
