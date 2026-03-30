@@ -99,6 +99,13 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             'during v51->v52 upgrade',
         )
 
+    @progress_step(description='Adding Hyperliquid location to the DB.')
+    def _add_hyperliquid_location(write_cursor: 'DBCursor') -> None:
+        write_cursor.execute(
+            'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
+            (Location.HYPERLIQUID.serialize_for_db(), 57),
+        )
+
     @progress_step(description='Adding UNIQUE constraint to manually_tracked_balances label column.')  # noqa: E501
     def _add_unique_label_constraint(write_cursor: 'DBCursor') -> None:
         """Add UNIQUE constraint to the label column of manually_tracked_balances.
