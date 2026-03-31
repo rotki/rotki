@@ -936,6 +936,19 @@ CREATE TABLE IF NOT EXISTS historical_balance_cache (
 );
 """
 
+DB_CREATE_BLOCKCHAIN_BALANCES_CACHE = """
+CREATE TABLE IF NOT EXISTS blockchain_balances_cache (
+    blockchain TEXT NOT NULL,
+    address TEXT NOT NULL,
+    asset TEXT NOT NULL,
+    label TEXT NOT NULL DEFAULT '',
+    category CHAR(1) NOT NULL DEFAULT('A'),
+    amount TEXT NOT NULL,
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    PRIMARY KEY (blockchain, address, asset, label, category)
+) WITHOUT ROWID;
+"""
+
 # Stores metrics for history events including balance, pnl, and cost_basis data.
 # Each row represents a metric for a specific bucket after the event is applied.
 # Bucket = (location, location_label, protocol, asset) where:
@@ -1071,6 +1084,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_LIDO_CSM_NODE_OPERATORS}
 {DB_CREATE_LIDO_CSM_NODE_OPERATOR_METRICS}
 {DB_CREATE_HISTORICAL_BALANCE_CACHE}
+{DB_CREATE_BLOCKCHAIN_BALANCES_CACHE}
 {DB_CREATE_INDEXES}
 COMMIT;
 PRAGMA foreign_keys=on;

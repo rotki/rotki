@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Unpack, cast, overload
 from gevent.lock import Semaphore
 from sqlcipher3 import dbapi2 as sqlcipher
 
-from rotkehlchen.accounting.structures.balance import BalanceType
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet, BalanceType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
@@ -23,6 +23,7 @@ from rotkehlchen.chain.accounts import (
     BlockchainAccounts,
     SingleBlockchainAccountData,
 )
+from rotkehlchen.chain.balances import BlockchainBalances
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import (
     XpubData,
@@ -40,6 +41,7 @@ from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import (
     AddressArgType,
     BinancePairLastTradeArgsType,
+    BlockchainArgType,
     DBCacheDynamic,
     DBCacheStatic,
     ExtraTxArgType,
@@ -874,6 +876,15 @@ class DBHandler:
     ) -> str | None:
         ...
 
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
+            **kwargs: Unpack[BlockchainArgType],
+    ) -> Timestamp | None:
+        ...
+
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
@@ -1031,6 +1042,16 @@ class DBHandler:
     ) -> None:
         ...
 
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_BLOCKCHAIN_BALANCES_QUERY_TS],
+            value: Timestamp,
+            **kwargs: Unpack[BlockchainArgType],
+    ) -> None:
+        ...
+
     def set_dynamic_cache(
             self,
             write_cursor: 'DBCursor',
@@ -1043,6 +1064,117 @@ class DBHandler:
             'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
             (name.get_db_key(**kwargs), value),
         )
+
+    def set_blockchain_balances_cache(
+            self,
+            write_cursor: 'DBCursor',
+            blockchain: SupportedBlockchain,
+            balances: dict[str, BalanceSheet | Balance],
+    ) -> None:
+        rows: list[tuple[str, str, str, str, str, str]] = []
+        for address, entry in balances.items():
+            if isinstance(entry, Balance):
+                rows.append((
+                    blockchain.serialize(),
+                    address,
+                    blockchain.get_native_token_id(),
+                    '',
+                    BalanceType.ASSET.serialize_for_db(),
+                    str(entry.amount),
+                ))
+                continue
+
+            for category, balance_mapping in (
+                (BalanceType.ASSET, entry.assets),
+                (BalanceType.LIABILITY, entry.liabilities),
+            ):
+                for asset, labeled_balances in balance_mapping.items():
+                    for label, balance in labeled_balances.items():
+                        rows.append((
+                            blockchain.serialize(),
+                            address,
+                            asset.identifier,
+                            label,
+                            category.serialize_for_db(),
+                            str(balance.amount),
+                        ))
+
+        if len(rows) == 0:
+            return
+
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO blockchain_balances_cache('
+            'blockchain, address, asset, label, category, amount'
+            ') VALUES (?, ?, ?, ?, ?, ?)',
+            rows,
+        )
+
+    def get_blockchain_balances_cache(
+            self,
+            cursor: 'DBCursor',
+            blockchain: SupportedBlockchain | None = None,
+            addresses: ListOfBlockchainAddresses | None = None,
+    ) -> BlockchainBalances:
+        query = (
+            'SELECT blockchain, address, asset, label, category, amount '
+            'FROM blockchain_balances_cache'
+        )
+        bindings: list[str] = []
+        conditions: list[str] = []
+        if blockchain is not None:
+            conditions.append('blockchain = ?')
+            bindings.append(blockchain.serialize())
+        if addresses:
+            placeholders = ', '.join('?' for _ in addresses)
+            conditions.append(f'address IN ({placeholders})')
+            bindings.extend(addresses)
+        if len(conditions) != 0:
+            query += f' WHERE {" AND ".join(conditions)}'
+        query += ' ORDER BY blockchain, address, asset, label'
+
+        result = BlockchainBalances(db=self)
+        for chain_str, address, asset_identifier, label, category, amount in cursor.execute(
+                query,
+                bindings,
+        ):
+            chain = SupportedBlockchain.deserialize(chain_str)
+            balance = Balance(amount=FVal(amount))
+            if chain.is_bitcoin():
+                cast('dict[BTCAddress, Balance]', result.get(chain))[address] += balance
+                continue
+
+            account_balances = cast(
+                'defaultdict[BlockchainAddress, BalanceSheet]',
+                result.get(chain),
+            )
+            target_mapping = (
+                account_balances[address].assets
+                if BalanceType.deserialize_from_db(category) == BalanceType.ASSET
+                else account_balances[address].liabilities
+            )
+            target_mapping[Asset(asset_identifier)][label] += balance
+
+        return result
+
+    def delete_blockchain_balances_cache(
+            self,
+            write_cursor: 'DBCursor',
+            blockchain: SupportedBlockchain | None = None,
+            address: BlockchainAddress | None = None,
+    ) -> None:
+        query = 'DELETE FROM blockchain_balances_cache'
+        bindings: list[str] = []
+        conditions: list[str] = []
+        if blockchain is not None:
+            conditions.append('blockchain = ?')
+            bindings.append(blockchain.serialize())
+        if address is not None:
+            conditions.append('address = ?')
+            bindings.append(address)
+        if len(conditions) != 0:
+            query += f' WHERE {" AND ".join(conditions)}'
+
+        write_cursor.execute(query, bindings)
 
     def get_historical_balance_cache(
             self,

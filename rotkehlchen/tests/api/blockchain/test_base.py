@@ -251,7 +251,7 @@ def test_query_blockchain_balances_ignore_cache(
         ethereum_accounts: list['ChecksumEvmAddress'],
         btc_accounts: list['BTCAddress'],
 ) -> None:
-    """Test that the query blockchain balances endpoint can ignore the cache"""
+    """Test that GET uses cache and POST refreshes balances."""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
@@ -270,8 +270,8 @@ def test_query_blockchain_balances_ignore_cache(
         setup.enter_blockchain_patches(stack)
         eth_mock = stack.enter_context(eth_query)
         tokens_mock = stack.enter_context(tokens_query)
-        # Query ETH and token balances once
-        response = requests.get(api_url_for(
+        # Refresh via POST and verify chain query happened once
+        response = requests.post(api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
             blockchain='ETH',
@@ -288,7 +288,7 @@ def test_query_blockchain_balances_ignore_cache(
         assert eth_mock.call_count == 1
         assert tokens_mock.call_count == 1
 
-        # Query again and make sure this time cache is used
+        # Query with GET and make sure cache is used (no chain query)
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
@@ -302,16 +302,17 @@ def test_query_blockchain_balances_ignore_cache(
             eth_balances=setup.eth_balances,
             token_balances=setup.token_balances,
             also_btc=False,
+            expect_non_zero_values=False,
         )
         assert eth_mock.call_count == 1
         assert tokens_mock.call_count == 1
 
-        # Finally query with ignoring the cache
+        # GET remains cache-only
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             'named_blockchain_balances_resource',
             blockchain='ETH',
-        ), json={'ignore_cache': True})
+        ))
         result = assert_proper_sync_response_with_result(response)
         assert_eth_balances_result(
             rotki=rotki,
@@ -320,9 +321,74 @@ def test_query_blockchain_balances_ignore_cache(
             eth_balances=setup.eth_balances,
             token_balances=setup.token_balances,
             also_btc=False,
+            expect_non_zero_values=False,
         )
-        assert eth_mock.call_count == 2
-        assert tokens_mock.call_count == 2
+        assert eth_mock.call_count == 1
+        assert tokens_mock.call_count == 1
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [2])
+def test_refresh_blockchain_balances_via_post(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+) -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    setup = setup_balances(rotki, ethereum_accounts=ethereum_accounts, btc_accounts=btc_accounts)
+    eth_query = patch.object(
+        rotki.chains_aggregator,
+        'query_eth_balances',
+        wraps=rotki.chains_aggregator.query_eth_balances,
+    )
+    tokens_query = patch.object(
+        rotki.chains_aggregator.ethereum,
+        'query_evm_tokens',
+        wraps=rotki.chains_aggregator.ethereum.query_evm_tokens,
+    )
+
+    with ExitStack() as stack:
+        setup.enter_blockchain_patches(stack)
+        eth_mock = stack.enter_context(eth_query)
+        tokens_mock = stack.enter_context(tokens_query)
+
+        refresh_result = assert_proper_sync_response_with_result(requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'named_blockchain_balances_resource',
+                blockchain='ETH',
+            ),
+        ))
+        assert 'last_refresh_ts' in refresh_result
+        assert_eth_balances_result(
+            rotki=rotki,
+            result=refresh_result,
+            eth_accounts=ethereum_accounts,
+            eth_balances=setup.eth_balances,
+            token_balances=setup.token_balances,
+            also_btc=False,
+        )
+        assert eth_mock.call_count == 1
+        assert tokens_mock.call_count == 1
+
+        cached_result = assert_proper_sync_response_with_result(requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'named_blockchain_balances_resource',
+                blockchain='ETH',
+            ),
+        ))
+        assert 'last_refresh_ts' in cached_result
+        assert_eth_balances_result(
+            rotki=rotki,
+            result=cached_result,
+            eth_accounts=ethereum_accounts,
+            eth_balances=setup.eth_balances,
+            token_balances=setup.token_balances,
+            also_btc=False,
+            expect_non_zero_values=False,
+        )
+        assert eth_mock.call_count == 1
+        assert tokens_mock.call_count == 1
 
 
 def _add_blockchain_accounts_test_start(

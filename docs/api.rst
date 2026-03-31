@@ -3489,13 +3489,13 @@ Querying onchain balances
 
    Query on-chain balances for tracked accounts. Specify a blockchain to query only that chain. Available blockchains: ``BTC``, ``BCH``, ``ETH``, ``ETH2``, ``KSM``, ``DOT``, ``AVAX``, ``SOL``.
 
-   When addresses are provided and cache is ignored, those addresses are queried fresh and combined with existing balances for the blockchain. Results include balances above the ``value_threshold`` if specified.
+   When addresses are provided, those addresses are read from the blockchain balances cache for the selected blockchain. Results include balances above the ``value_threshold`` if specified.
 
    .. note::
       This endpoint can be queried asynchronously using ``"async_query": true``.
 
    .. note::
-      This endpoint uses caching. Results are cached for ``CACHE_TIME``. Use ``ignore_cache: true`` to force fresh queries.
+      This endpoint is cache-only. To force a refresh use ``POST /api/(version)/balances/blockchains/(blockchain)/``.
 
    **Example Request**:
 
@@ -3505,10 +3505,8 @@ Querying onchain balances
       Host: localhost:5042
 
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
    :reqjson list[str] addresses: Optional. List of blockchain addresses to query balances for. If not provided, all tracked addresses are queried.
    :param bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :param bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not.
    :param list[str] addresses: Optional. List of blockchain addresses to query balances for. If not provided, all tracked addresses are queried.
    :query decimal value_threshold: Optional. If provided, only returns balances with value (in user's preferred currency) greater than this threshold.
 

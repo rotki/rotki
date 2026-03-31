@@ -50,6 +50,7 @@ def assert_btc_balances_result(
         btc_accounts: list['BTCAddress'],
         btc_balances: list[str],
         also_eth: bool,
+        expect_non_zero_values: bool = True,
 ) -> None:
     """Asserts for correct BTC blockchain balances when mocked in tests"""
     per_account = result['per_account']
@@ -69,7 +70,7 @@ def assert_btc_balances_result(
         assert FVal(standalone[account]['amount']) == balance
         if balance == ZERO:
             assert FVal(standalone[account]['value']) == ZERO
-        else:
+        elif expect_non_zero_values:
             assert FVal(standalone[account]['value']) > ZERO
 
     totals = result['totals'].get('assets', result['totals'])
@@ -82,7 +83,7 @@ def assert_btc_balances_result(
     assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['amount']) == expected_btc_total
     if expected_btc_total == ZERO:
         assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['value']) == ZERO
-    else:
+    elif expect_non_zero_values:
         assert FVal(totals['BTC'][DEFAULT_BALANCE_LABEL]['value']) > ZERO
 
 
@@ -95,6 +96,7 @@ def assert_eth_balances_result(
         also_btc: bool,
         expected_liabilities: dict[EvmToken, list[str]] | None = None,
         totals_only: bool = False,
+        expect_non_zero_values: bool = True,
 ) -> None:
     """Asserts for correct ETH blockchain balances when mocked in tests
 
@@ -115,7 +117,7 @@ def assert_eth_balances_result(
             assert amount == expected_amount
             if amount == ZERO:
                 assert value == ZERO
-            else:
+            elif expect_non_zero_values:
                 assert value > ZERO
             for token, balances in token_balances.items():
                 expected_token_amount = FVal(balances[idx])
