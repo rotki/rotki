@@ -11,9 +11,11 @@ from urllib.parse import urlparse
 
 import requests
 from ens import ENS
+from httpx import HTTPStatusError, ReadTimeout
 from solana.exceptions import SolanaRpcException
 from solana.rpc.api import Client
 from solana.rpc.core import RPCException
+from solana.rpc.types import MemcmpOpts
 from solders.solders import SerdeJSONError
 from typing_extensions import NamedTuple
 from web3 import HTTPProvider, Web3
@@ -22,7 +24,11 @@ from web3.middleware import ExtraDataToPOAMiddleware
 
 from rotkehlchen.chain.ethereum.constants import EVM_INDEXERS_NODE
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
-from rotkehlchen.chain.solana.constants import SOLANA_GENESIS_BLOCK_HASH
+from rotkehlchen.chain.solana.constants import (
+    SOLANA_GENESIS_BLOCK_HASH,
+    STAKE_ACCOUNT_WITHDRAWER_OFFSET,
+    STAKE_PROGRAM_ID,
+)
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
@@ -110,6 +116,7 @@ class RPCNode(NamedTuple, Generic[WEB3_NODE_TYPE]):
     rpc_client: WEB3_NODE_TYPE
     is_pruned: bool
     is_archive: bool
+    supports_program_accounts: bool = False
 
 
 class RPCManagerMixin(ABC, Generic[WEB3_NODE_TYPE]):
@@ -538,6 +545,7 @@ class SolanaRPCMixin(RPCManagerMixin['Client']):
             rpc_client=client,
             is_pruned=False,
             is_archive=self._is_archive(client),
+            supports_program_accounts=self._supports_program_accounts(client),
         )
 
         return True, ''
@@ -549,3 +557,22 @@ class SolanaRPCMixin(RPCManagerMixin['Client']):
             return client.get_block(0).value.blockhash == SOLANA_GENESIS_BLOCK_HASH
         except (RPCException, SolanaRpcException, SerdeJSONError):
             return False
+
+    @staticmethod
+    def _supports_program_accounts(client: Client) -> bool:
+        """Probe whether the node supports getProgramAccounts by issuing a minimal
+        query against the stake program with a filter guaranteed to match nothing
+        (zeroed-out withdrawer). If the node rejects the method we mark it as
+        unsupported so we never waste time retrying on it later."""
+        try:
+            client.get_program_accounts(
+                pubkey=STAKE_PROGRAM_ID,
+                filters=[MemcmpOpts(
+                    offset=STAKE_ACCOUNT_WITHDRAWER_OFFSET,
+                    bytes='11111111111111111111111111111111',  # system program address - no stake account has this as withdrawer  # noqa: E501
+                )],
+            )
+        except (RPCException, SolanaRpcException, SerdeJSONError, HTTPStatusError, ReadTimeout):
+            return False
+        else:
+            return True

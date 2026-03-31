@@ -107,6 +107,7 @@ class SolanaInquirer(SolanaRPCMixin):
             method: Callable[[Client], R],
             call_order: Sequence[WeightedNode] | None = None,
             only_archive_nodes: bool = False,
+            only_program_accounts_nodes: bool = False,
     ) -> R:
         """Request a method from solana using the provided or default call order.
         May raise RemoteError if unable to get a response from any node.
@@ -157,6 +158,10 @@ class SolanaInquirer(SolanaRPCMixin):
 
                 if only_archive_nodes and not rpc_node.is_archive:
                     log.debug(f'Skipping non-archive node {node_info.name} for solana query requiring only archive nodes')  # noqa: E501
+                    continue
+
+                if only_program_accounts_nodes and not rpc_node.supports_program_accounts:
+                    log.debug(f'Skipping solana node {node_info.name} that does not support getProgramAccounts')  # noqa: E501
                     continue
 
                 try:
@@ -370,6 +375,7 @@ class SolanaInquirer(SolanaRPCMixin):
                 pubkey=STAKE_PROGRAM_ID,
                 filters=[MemcmpOpts(offset=STAKE_ACCOUNT_WITHDRAWER_OFFSET, bytes=owner)],
             ),
+            only_program_accounts_nodes=True,
         )
         stake_accounts = []
         for keyed_account in response.value:
