@@ -80,6 +80,8 @@ class Blockscout(EtherscanLikeApi):
                 return 'https://explorer.optimism.io/api'
             case ChainID.BASE:
                 return 'https://base.blockscout.com/api'
+            case ChainID.HYPERLIQUID:
+                return 'https://www.hyperscan.com/api'
             case ChainID.ARBITRUM_ONE:
                 return 'https://arbitrum.blockscout.com/api'
             case ChainID.GNOSIS:

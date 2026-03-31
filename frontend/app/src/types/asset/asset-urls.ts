@@ -90,6 +90,12 @@ export const explorerUrls: AssetExplorerUrls = {
     token: 'https://scrollscan.com/token/',
     transaction: 'https://scrollscan.com/tx/',
   },
+  [Blockchain.HYPERLIQUID]: {
+    address: 'https://www.hyperscan.com/address/',
+    block: 'https://www.hyperscan.com/block/',
+    token: 'https://www.hyperscan.com/token/',
+    transaction: 'https://www.hyperscan.com/tx/',
+  },
   [Blockchain.SOLANA]: {
     address: 'https://solscan.io/account/',
     block: 'https://solscan.io/block/',

@@ -376,12 +376,11 @@ def test_upgrade_v4_v5(globaldb: GlobalDBHandler, messages_aggregator):
         )
         assert cursor.fetchone()[0] == 1
 
-        cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes')
-        assert cursor.fetchone()[0] == 10
-
         # check that we have five nodes for each chain
         nodes_file_path = Path(__file__).resolve().parent.parent.parent.parent / 'data' / 'nodes.json'  # noqa: E501
         nodes_info = json.loads(nodes_file_path.read_text(encoding='utf8'))
+        cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes')
+        assert cursor.fetchone()[0] == len(nodes_info)
         nodes_tuples_from_file = [
             (idx, node['name'], node['endpoint'], int(False), int(True), str(node['weight']), node['blockchain'])  # noqa: E501
             for idx, node in enumerate(nodes_info, start=1)

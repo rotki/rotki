@@ -29,6 +29,8 @@ from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.chain.gnosis.transactions import GnosisTransactions
+from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
+from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
 from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
@@ -93,6 +95,8 @@ def _initialize_and_yield_evm_inquirer_fixture(
         blockchain = SupportedBlockchain.SCROLL
     elif klass == BinanceSCInquirer:
         blockchain = SupportedBlockchain.BINANCE_SC
+    elif klass == HyperliquidInquirer:
+        blockchain = SupportedBlockchain.HYPERLIQUID
 
     EvmContracts.initialize_common_abis()
     nodes_to_connect_to = maybe_modify_rpc_nodes(database, blockchain, manager_connect_at_start)
@@ -235,6 +239,11 @@ def fixture_avax_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
+@pytest.fixture(name='hyperliquid_accounts')
+def fixture_hyperliquid_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='blockchain_accounts')
 def fixture_blockchain_accounts(
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -245,6 +254,7 @@ def fixture_blockchain_accounts(
         gnosis_accounts: list[ChecksumEvmAddress],
         scroll_accounts: list[ChecksumEvmAddress],
         binance_sc_accounts: list[ChecksumEvmAddress],
+        hyperliquid_accounts: list[ChecksumEvmAddress],
         zksync_lite_accounts: list[ChecksumEvmAddress],
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
@@ -262,6 +272,7 @@ def fixture_blockchain_accounts(
         gnosis=tuple(gnosis_accounts),
         scroll=tuple(scroll_accounts),
         binance_sc=tuple(binance_sc_accounts),
+        hyperliquid=tuple(hyperliquid_accounts),
         zksync_lite=tuple(zksync_lite_accounts),
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
@@ -588,6 +599,42 @@ def fixture_base_inquirer(
 @pytest.fixture(name='base_manager')
 def fixture_base_manager(base_inquirer):
     return BaseManager(node_inquirer=base_inquirer)
+
+
+@pytest.fixture(name='hyperliquid_manager_connect_at_start')
+def fixture_hyperliquid_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
+    """A sequence of nodes to connect to at the start of the test.
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
+    return ()
+
+
+@pytest.fixture(name='hyperliquid_inquirer')
+def fixture_hyperliquid_inquirer(
+        hyperliquid_manager_connect_at_start,
+        greenlet_manager,
+        database,
+        mock_other_web3,
+):
+    with ExitStack() as stack:
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=HyperliquidInquirer,
+            class_path='rotkehlchen.chain.hyperliquid.node_inquirer.HyperliquidInquirer',
+            manager_connect_at_start=hyperliquid_manager_connect_at_start,
+            greenlet_manager=greenlet_manager,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data={},  # Not used in hyperliquid. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
+            mocked_proxies=None,
+        )
+
+
+@pytest.fixture(name='hyperliquid_manager')
+def fixture_hyperliquid_manager(hyperliquid_inquirer):
+    return HyperliquidManager(node_inquirer=hyperliquid_inquirer)
 
 
 @pytest.fixture(name='gnosis_manager_connect_at_start')
@@ -917,6 +964,7 @@ def fixture_blockchain(
         polygon_pos_manager,
         arbitrum_one_manager,
         base_manager,
+        hyperliquid_manager,
         gnosis_manager,
         scroll_manager,
         binance_sc_manager,
@@ -956,6 +1004,7 @@ def fixture_blockchain(
         polygon_pos_manager=polygon_pos_manager,
         arbitrum_one_manager=arbitrum_one_manager,
         base_manager=base_manager,
+        hyperliquid_manager=hyperliquid_manager,
         gnosis_manager=gnosis_manager,
         scroll_manager=scroll_manager,
         binance_sc_manager=binance_sc_manager,

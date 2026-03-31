@@ -41,6 +41,8 @@ from rotkehlchen.chain.evm.names import NamePrioritizer
 from rotkehlchen.chain.evm.nodes import populate_rpc_nodes_in_database
 from rotkehlchen.chain.gnosis.manager import GnosisManager
 from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
+from rotkehlchen.chain.hyperliquid.manager import HyperliquidManager
+from rotkehlchen.chain.hyperliquid.node_inquirer import HyperliquidInquirer
 from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
@@ -438,6 +440,16 @@ class Rotkehlchen:
             ),
             base_manager=BaseManager(
                 node_inquirer=BaseInquirer(
+                    greenlet_manager=self.greenlet_manager,
+                    database=self.data.db,
+                    etherscan=etherscan,
+                    blockscout=blockscout,
+                    routescan=routescan,
+                ),
+                premium=self.premium,
+            ),
+            hyperliquid_manager=HyperliquidManager(
+                node_inquirer=HyperliquidInquirer(
                     greenlet_manager=self.greenlet_manager,
                     database=self.data.db,
                     etherscan=etherscan,

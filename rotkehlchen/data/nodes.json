@@ -78,5 +78,29 @@
         "owned": false,
         "active": true,
         "blockchain": "OPTIMISM"
+    },
+    {
+        "name": "hyperliquid",
+        "endpoint": "https://rpc.hyperliquid.xyz/evm",
+        "weight": 0.40,
+        "owned": false,
+        "active": true,
+        "blockchain": "HYPERLIQUID"
+    },
+    {
+        "name": "hyperliquid drpc",
+        "endpoint": "https://hyperliquid.drpc.org",
+        "weight": 0.30,
+        "owned": false,
+        "active": true,
+        "blockchain": "HYPERLIQUID"
+    },
+    {
+        "name": "hyperliquid onfinality",
+        "endpoint": "https://hyperliquid.api.onfinality.io/evm/public",
+        "weight": 0.20,
+        "owned": false,
+        "active": true,
+        "blockchain": "HYPERLIQUID"
     }
 ]

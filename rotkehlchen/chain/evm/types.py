@@ -32,6 +32,7 @@ class NodeName(NamedTuple):
     Some open nodes taken from here: https://ethereumnodes.com/
     Related issue: https://github.com/rotki/rotki/issues/1716
     """
+
     name: str
     endpoint: str
     owned: bool
@@ -165,5 +166,9 @@ DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
         ChainID.BASE: BLOCKSCOUT_PRIORITY_ORDER,
         ChainID.OPTIMISM: BLOCKSCOUT_PRIORITY_ORDER,
         ChainID.BINANCE_SC: (EvmIndexer.ETHERSCAN,),  # Blockscout and Routescan do not support BSC (will only work with premium etherscan)  # noqa: E501
+        ChainID.HYPERLIQUID: (
+            EvmIndexer.ETHERSCAN,
+            EvmIndexer.BLOCKSCOUT,
+        ),  # Routescan does not support Hyperliquid
     },
 )
