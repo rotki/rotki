@@ -25,7 +25,7 @@ from spl.token.constants import TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID
 
 from rotkehlchen.chain.constants import DEFAULT_RPC_TIMEOUT
 from rotkehlchen.chain.evm.types import WeightedNode
-from rotkehlchen.chain.mixins.rpc_nodes import SolanaRPCMixin
+from rotkehlchen.chain.mixins.rpc_nodes import SolanaNodeCapabilities, SolanaRPCMixin
 from rotkehlchen.chain.solana.utils import (
     ExtensionType,
     MetadataInfo,
@@ -88,6 +88,7 @@ class SolanaInquirer(SolanaRPCMixin):
         self.blockchain = SupportedBlockchain.SOLANA
         self.rpc_timeout = DEFAULT_RPC_TIMEOUT
         self.helius = helius
+        self.known_node_capabilities: dict[str, SolanaNodeCapabilities] = {}
         self.node_backoff_info: dict[str, tuple[Timestamp | None, int, int]] = {}
 
     def default_call_order(self) -> list['WeightedNode']:
@@ -98,6 +99,10 @@ class SolanaInquirer(SolanaRPCMixin):
         """
         call_order = super().default_call_order()
         if (helius_node := self.helius.maybe_get_rpc_node()) is not None:
+            self.known_node_capabilities[helius_node.node_info.name] = SolanaNodeCapabilities(
+                is_archive=True,
+                supports_program_accounts=True,
+            )
             call_order.append(helius_node)
 
         return call_order

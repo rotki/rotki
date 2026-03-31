@@ -42,6 +42,10 @@ def patch_solana_inquirer_nodes(
             target='rotkehlchen.chain.mixins.rpc_nodes.SolanaRPCMixin._is_archive',
             return_value=True,  # we know this node is an archive node.
         ))
+        stack.enter_context(patch(
+            target='rotkehlchen.chain.mixins.rpc_nodes.SolanaRPCMixin._supports_program_accounts',
+            return_value=True,  # we know this node supports getProgramAccounts.
+        ))
     else:
         stack.enter_context(patch(
             target='rotkehlchen.chain.mixins.rpc_nodes.SolanaRPCMixin.default_call_order',

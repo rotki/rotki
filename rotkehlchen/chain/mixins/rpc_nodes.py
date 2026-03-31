@@ -512,9 +512,17 @@ class EVMRPCMixin(RPCManagerMixin['Web3']):
         return ordered_list
 
 
+class SolanaNodeCapabilities(NamedTuple):
+    """Pre-declared capabilities for a Solana RPC node, used to skip slow probing
+    at connection time. Providers like Helius can declare these upfront."""
+    is_archive: bool
+    supports_program_accounts: bool
+
+
 class SolanaRPCMixin(RPCManagerMixin['Client']):
     blockchain: Literal[SupportedBlockchain.SOLANA]
     chain_name = SupportedBlockchain.SOLANA.serialize()
+    known_node_capabilities: dict[str, SolanaNodeCapabilities]
 
     def attempt_connect(
             self,
@@ -540,12 +548,19 @@ class SolanaRPCMixin(RPCManagerMixin['Client']):
                 f'Failed to connect to Solana RPC at {node.endpoint} due to {e}',
             )
 
+        if (capabilities := self.known_node_capabilities.get(node.name)) is not None:
+            is_archive = capabilities.is_archive
+            supports_program_accounts = capabilities.supports_program_accounts
+        else:
+            is_archive = self._is_archive(client)
+            supports_program_accounts = self._supports_program_accounts(client)
+
         log.info(f'Connected Solana node {node} at {node.endpoint}')
         self.rpc_mapping[node] = RPCNode(
             rpc_client=client,
             is_pruned=False,
-            is_archive=self._is_archive(client),
-            supports_program_accounts=self._supports_program_accounts(client),
+            is_archive=is_archive,
+            supports_program_accounts=supports_program_accounts,
         )
 
         return True, ''
