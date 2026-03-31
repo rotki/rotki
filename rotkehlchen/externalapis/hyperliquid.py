@@ -11,7 +11,7 @@ import requests
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
-from rotkehlchen.chain.arbitrum_one.modules.hyperliquid.constants import CPT_HYPER
+from rotkehlchen.chain.hyperliquid.constants import CPT_HYPER
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnknownCounterpartyMapping, WrongAssetType

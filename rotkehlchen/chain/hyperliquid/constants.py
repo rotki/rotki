@@ -4,6 +4,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import Timestamp, deserialize_evm_tx_hash
 
+CPT_HYPER: Final = 'hyperliquid'
 HYPERLIQUID_GENESIS: Final = Timestamp(1704067200)
 HYPERLIQUID_MULTICALL_ADDRESS: Final = string_to_evm_address('0xcA11bde05977b3631167028862bE2a173976CA11')  # noqa: E501
 ARCHIVE_NODE_CHECK_ADDRESS: Final = string_to_evm_address('0x04b0f18b9b1FF987C5D5e134516f449aA9a2E004')  # noqa: E501
