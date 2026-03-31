@@ -1276,7 +1276,6 @@ def test_balance_snapshot_saves_manual_prices_as_historical(
         assert FVal(price_str) == ONE
 
 
-@pytest.mark.freeze_time('2026-01-01 00:00:00 GMT')
 @pytest.mark.vcr(match_on=['solana_rpc_matcher'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
