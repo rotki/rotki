@@ -286,7 +286,7 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
         code into the EtherscanLikeApi class, which uses lowercase query parameters to work
         properly with Blockscout.
         """
-        if 'etherscan.io' not in r1.uri:
+        if 'etherscan.io' not in r1.uri and 'blockscout.com' not in r1.uri:
             return r1.uri == r2.uri and r1.method == r2.method
 
         # Check base URL (scheme + netloc + path) matches

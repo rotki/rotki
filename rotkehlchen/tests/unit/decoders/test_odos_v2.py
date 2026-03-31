@@ -755,9 +755,9 @@ def test_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x0a32d140700edb28165C88D1000A910c247dFDCA']])
-def test_swap_on_scroll(scroll_inquirer, scroll_accounts):
+def test_swap_on_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x442e968d8a5c6adb81bf087041ed3dd19dc2f20725044c7f9c435bf6234d9992')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     timestamp, swap_amount, received_amount, gas_fees = TimestampMS(1721305362000), '0.042810448486080933', '0.049288894534015152', '0.000033784756880726'  # noqa: E501

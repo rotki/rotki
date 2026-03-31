@@ -4,7 +4,11 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.chain.evm.types import (
+    EvmIndexer,
+)
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.externalapis.routescan import ROUTESCAN_SUPPORTED_CHAINS
 from rotkehlchen.types import ChainID, ExternalService
 from rotkehlchen.utils.misc import ts_now
@@ -53,4 +57,17 @@ def fixture_allow_base_routescan():
         target='rotkehlchen.externalapis.routescan.ROUTESCAN_SUPPORTED_CHAINS',
         new=ROUTESCAN_SUPPORTED_CHAINS + (ChainID.BASE,),
     ):
+        yield
+
+
+@pytest.fixture(name='allow_scroll_etherscan')
+def fixture_allow_scroll_etherscan():
+    """Etherscan no longer supports Scroll, so we've removed it from its supported chains.
+    Let's use this fixture to not fail old recorded tests. Can remove if we re-record
+    all tests that have this fixture.
+    """
+    test_warnings.warn(UserWarning('Temporarily allowing Etherscan for Scroll'))
+    cached = CachedSettings()
+    new_order = {**cached._evm_indexers_order_per_chain, ChainID.SCROLL: (EvmIndexer.ETHERSCAN,)}
+    with patch.object(type(cached), '_evm_indexers_order_per_chain', new_order):
         yield

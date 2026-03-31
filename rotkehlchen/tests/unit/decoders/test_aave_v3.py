@@ -952,9 +952,9 @@ def test_aave_v3_borrow_optimism(optimism_inquirer, optimism_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x3E6B4598E5bfeEc911f344E546C9EbFe4A00d770']])
-def test_aave_v3_repay_scroll(scroll_inquirer, scroll_accounts) -> None:
+def test_aave_v3_repay_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan) -> None:
     tx_hash = deserialize_evm_tx_hash('0x66010f353be60adaa004f839d37cecd22c35c580060eeaffb9a28ebe169e1692')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1711456958000)
@@ -1239,9 +1239,9 @@ def test_aave_v3_events_with_approval(polygon_pos_inquirer, polygon_pos_accounts
     assert events == expected_events
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x76111D2841b41B15e6F07fBae4796a82438D9c90']])
-def test_aave_v3_withdraw_eth(scroll_inquirer, scroll_accounts) -> None:
+def test_aave_v3_withdraw_eth(scroll_inquirer, scroll_accounts, allow_scroll_etherscan) -> None:
     """Test that withdrawing ETH from Aave gets decoded properly"""
     tx_hash = deserialize_evm_tx_hash('0x65cd06fd54a10052c3d9084d14d28c06e2bb328b1ec39730fab9284cb529d068')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
@@ -2355,9 +2355,9 @@ def test_aave_v3_deposit_pol(polygon_pos_inquirer, polygon_pos_accounts) -> None
     )]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x72534B92C950b9D4739919bFD5FAcd81397178eb']])
-def test_aave_v3_scroll_deposit_eth(scroll_inquirer, scroll_accounts) -> None:
+def test_aave_v3_scroll_deposit_eth(scroll_inquirer, scroll_accounts, allow_scroll_etherscan) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x76dd8a5b94409801fd86676be4d43913401eb407e3795facf063b7fb35c80e0e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     assert events == [EvmEvent(
