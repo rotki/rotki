@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`11068` rotki now also counts staked solana balances.
 * :feature:`11816` Support importing events from Coinledger CSV.
 * :feature:`-` Crosscurve events will now be properly decoded.
 * :feature:`-` Transactions involving stkGHO will now be decoded properly.

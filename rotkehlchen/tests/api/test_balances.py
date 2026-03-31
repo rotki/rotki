@@ -14,7 +14,7 @@ from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.aggregator import CHAIN_TO_BALANCE_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import MakerdaoVault
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL, ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_AVAX,
@@ -1279,18 +1279,6 @@ def test_balance_snapshot_saves_manual_prices_as_historical(
 @pytest.mark.vcr(match_on=['solana_rpc_matcher'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-@pytest.mark.parametrize('solana_nodes_connect_at_start', [(
-    WeightedNode(
-        node_info=NodeName(
-            name='publicnode',
-            endpoint='https://solana-rpc.publicnode.com/',
-            blockchain=SupportedBlockchain.SOLANA,
-            owned=False,
-        ),
-        weight=ONE,
-        active=True,
-    ),
-)])
 @pytest.mark.parametrize('solana_accounts', [[
     'FkzRQKW8Mzip4xXHamibLZB28sjqN9ZLFacQdbuVEYxa',
     '5DxRG8hTcBfeCL7pz7NVMZSeqrQAiDJ5pv5RR9pM84ey',
@@ -1308,6 +1296,29 @@ def test_solana_balances_multiple_accounts(
     assert result['assets']['SOL']['amount'] == '0.575169256'
     assert result['assets']['solana/token:EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v']['amount'] == '0.006302'  # USDC  # noqa: E501
     assert result['assets']['solana/token:2b1kV6DkPAnxd5ixfnxCpjxmKwqjjaYmCZfHsFu24GXo']['amount'] == '0.338918'  # Paypal USD  # noqa: E501
+
+
+@pytest.mark.vcr(match_on=['solana_rpc_matcher'])
+@pytest.mark.freeze_time('2026-03-31 08:00:00 GMT')
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('solana_accounts', [[
+    'Ho2Tst4ReVypbqBscy2zUeFyrrwvjtQeEbhoE7P1MHna',
+]])
+def test_solana_staking_balances(
+        rotkehlchen_api_server: 'APIServer',
+        solana_accounts: list['SolanaAddress'],
+) -> None:
+    """Test that querying balances for a solana account with staked SOL correctly
+    includes the staked balance"""
+    result = assert_proper_sync_response_with_result(requests.get(
+        api_url_for(rotkehlchen_api_server, 'blockchainbalancesresource'),
+        json={'blockchain': 'SOLANA', 'async_query': False},
+    ))
+    account_balances = result['per_account']['solana'][solana_accounts[0]]
+    sol_balances = account_balances['assets']['SOL']
+    assert sol_balances['address']['amount'] == '0.29973152'
+    assert sol_balances['staking']['amount'] == '5339.085328049'
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

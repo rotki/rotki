@@ -1,3 +1,4 @@
+import struct
 from collections.abc import Callable
 from contextlib import suppress
 from functools import partial
@@ -6,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from base58 import b58decode
 from httpx import HTTPStatusError, Response
 from solana.exceptions import SolanaRpcException
 from solana.rpc.api import Client
@@ -13,7 +15,7 @@ from solana.rpc.api import Client
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_solana_token, get_solana_token
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
-from rotkehlchen.chain.mixins.rpc_nodes import RPCNode
+from rotkehlchen.chain.mixins.rpc_nodes import RPCNode, SolanaNodeCapabilities
 from rotkehlchen.chain.solana.utils import (
     STAKE_ACCOUNT_DELEGATED_SIZE,
     STAKE_ACCOUNT_META_SIZE,
@@ -372,9 +374,6 @@ def _build_stake_account_data(
     [180:188] f64 warmup_cooldown_rate
     [188:196] u64 credits_observed
     """
-    import struct
-
-    from base58 import b58decode
     data = bytearray()
     data += struct.pack('<I', state)  # state enum
     data += struct.pack('<Q', 2_282_880)  # rent_exempt_reserve
@@ -498,3 +497,82 @@ def test_get_staked_balance_no_accounts(solana_manager: 'SolanaManager') -> None
             account=SolanaAddress('updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'),
         )
         assert result == ZERO
+
+
+def test_known_capabilities_skip_probing(
+        solana_inquirer: 'SolanaInquirer',
+) -> None:
+    """Test that nodes with pre-declared capabilities (e.g. Helius) skip the slow
+    _is_archive and _supports_program_accounts probes at connection time."""
+    node = NodeName(
+        name='known-provider',
+        endpoint='https://known-provider.example.com',
+        blockchain=SupportedBlockchain.SOLANA,
+        owned=False,
+    )
+    solana_inquirer.known_node_capabilities[node.name] = SolanaNodeCapabilities(
+        is_archive=True,
+        supports_program_accounts=True,
+    )
+    mock_client = MagicMock(spec=Client)
+    mock_client.is_connected.return_value = True
+    with (
+        patch(
+            target='rotkehlchen.chain.mixins.rpc_nodes.Client',
+            return_value=mock_client,
+        ),
+        patch(
+            target='rotkehlchen.chain.mixins.rpc_nodes.SolanaRPCMixin._is_archive',
+        ) as mock_is_archive,
+        patch(
+            target='rotkehlchen.chain.mixins.rpc_nodes.SolanaRPCMixin._supports_program_accounts',
+        ) as mock_supports_pa,
+    ):
+        success, _ = solana_inquirer.attempt_connect(node=node)
+
+    assert success is True
+    rpc_node = solana_inquirer.rpc_mapping[node]
+    assert rpc_node.supports_program_accounts is True
+    assert rpc_node.is_archive is True
+    mock_is_archive.assert_not_called()  # probes should be skipped
+    mock_supports_pa.assert_not_called()
+
+
+def test_stake_query_skips_unsupported_nodes(
+        solana_inquirer: 'SolanaInquirer',
+) -> None:
+    """Test that get_stake_accounts skips nodes that don't support getProgramAccounts
+    and only queries nodes that do."""
+    capable_node_info = NodeName(name='capable', endpoint='https://capable.example.com', blockchain=SupportedBlockchain.SOLANA, owned=False)  # noqa: E501
+    incapable_node_info = NodeName(name='incapable', endpoint='https://incapable.example.com', blockchain=SupportedBlockchain.SOLANA, owned=False)  # noqa: E501
+    mock_capable_client = MagicMock(spec=Client)
+    mock_incapable_client = MagicMock(spec=Client)
+
+    stake_data = _build_stake_account_data(
+        state=2,
+        staker=(staker := 'updtkJ8HAhh3rSkBCd3p9Z1Q74yJW4rMhSbScRskDPM'),
+        withdrawer=staker,
+        voter='7Sys29UqSSRwczo8N4VZ3phNUtGhGdYTkKMGCR4bx6wH',
+    )
+    mock_capable_client.get_program_accounts.return_value = SimpleNamespace(value=[
+        SimpleNamespace(
+            pubkey='StakeAcc1111111111111111111111111111111111111',
+            account=SimpleNamespace(data=stake_data, lamports=2_000_000_000),
+        ),
+    ])
+
+    solana_inquirer.rpc_mapping = {
+        incapable_node_info: RPCNode(rpc_client=mock_incapable_client, is_pruned=False, is_archive=False, supports_program_accounts=False),  # noqa: E501
+        capable_node_info: RPCNode(rpc_client=mock_capable_client, is_pruned=False, is_archive=False, supports_program_accounts=True),  # noqa: E501
+    }
+    call_order = [
+        WeightedNode(node_info=incapable_node_info, weight=ONE, active=True),
+        WeightedNode(node_info=capable_node_info, weight=ONE, active=True),
+    ]
+    with patch.object(solana_inquirer, 'default_call_order', return_value=call_order):
+        result = solana_inquirer.get_stake_accounts(owner=SolanaAddress(staker))
+
+    assert len(result) == 1
+    assert result[0].lamports == 2_000_000_000
+    mock_incapable_client.get_program_accounts.assert_not_called()
+    mock_capable_client.get_program_accounts.assert_called_once()

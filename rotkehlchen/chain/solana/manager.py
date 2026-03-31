@@ -1,7 +1,7 @@
 import logging
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Final
+from typing import TYPE_CHECKING
 
 from solders.pubkey import Pubkey
 
@@ -34,8 +34,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-STAKING_BALANCE_LABEL: Final = 'staking'
 
 
 class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWithNodesMixin[SolanaInquirer]):  # noqa: E501
@@ -86,8 +84,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
         all stake accounts where the account is the withdrawer authority.
         May raise RemoteError if there is a problem with querying the external service.
         """
-        stake_accounts = self.node_inquirer.get_stake_accounts(owner=account)
-        if not stake_accounts:
+        if not (stake_accounts := self.node_inquirer.get_stake_accounts(owner=account)):
             return ZERO
 
         total_lamports = sum(sa.lamports for sa in stake_accounts)
@@ -160,7 +157,7 @@ class SolanaManager(ChainManagerWithTransactions[SolanaAddress], ChainManagerWit
 
             try:
                 if (staked_balance := self.get_staked_balance(account)) != ZERO:
-                    chain_balances[account].assets[A_SOL][STAKING_BALANCE_LABEL] = Balance(
+                    chain_balances[account].assets[A_SOL]['staking'] = Balance(
                         amount=staked_balance,
                         value=staked_balance * native_token_price,
                     )
