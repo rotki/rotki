@@ -5,13 +5,20 @@ from typing import TYPE_CHECKING, Literal
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.manager import ExchangeManager
+from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import UserLimitType, get_user_limit
-from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
+from rotkehlchen.types import (
+    EVM_CHAINS_WITH_TRANSACTIONS,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import timestamp_to_date, ts_sec_to_ms
 
@@ -35,12 +42,15 @@ log = RotkehlchenLogsAdapter(logger)
 # base history entries
 #
 # Please, update this number each time a history query step is either added or removed
-NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = 3 + 3 * len(EVM_CHAINS_WITH_TRANSACTIONS)
+NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = (
+    3
+    + 3 * len(EVM_CHAINS_WITH_TRANSACTIONS)
+    + (1 if SupportedBlockchain.HYPERLIQUID in EVM_CHAINS_WITH_TRANSACTIONS else 0)
+)
 STEPS_PER_CEX = 5
 
 
 class HistoryQueryingManager:
-
     def __init__(
             self,
             user_directory: Path,
@@ -78,6 +88,58 @@ class HistoryQueryingManager:
         step += step_by
         self.progress = FVal(step / total_steps) * 100
         return step
+
+    def _query_hyperliquid_history(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
+        with self.db.conn.read_ctx() as cursor:
+            addresses = self.db.get_single_blockchain_addresses(
+                cursor=cursor,
+                blockchain=SupportedBlockchain.HYPERLIQUID,
+            )
+
+        if len(addresses) == 0:
+            return
+
+        hyperliquid = HyperliquidAPI()
+        ranges = DBQueryRanges(self.db)
+        history_db = DBHistoryEvents(self.db)
+
+        for address in addresses:
+            with self.db.conn.read_ctx() as cursor:
+                ranges_to_query = ranges.get_location_query_ranges(
+                    cursor=cursor,
+                    location_string=f'hyperliquid_{address}',
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                )
+
+            if len(ranges_to_query) == 0:
+                continue
+
+            for range_start, range_end in ranges_to_query:
+                try:
+                    events = hyperliquid.query_history_events(
+                        address=address,
+                        start_ts=range_start,
+                        end_ts=range_end,
+                    )
+                except RemoteError as e:
+                    log.error(
+                        f'Failed to query hyperliquid history for {address} '
+                        f'from {range_start} to {range_end} due to {e}',
+                    )
+                    self.msg_aggregator.add_error(
+                        f'Failed to query Hyperliquid history for {address}. '
+                        'Will retry in a future history query.',
+                    )
+                    continue
+
+                with self.db.user_write() as write_cursor:
+                    history_db.add_history_events(write_cursor=write_cursor, history=events)
+                    ranges.update_used_query_range(
+                        write_cursor=write_cursor,
+                        location_string=f'hyperliquid_{address}',
+                        queried_ranges=[(range_start, range_end)],
+                    )
 
     def query_history_events(
             self,
@@ -209,6 +271,11 @@ class HistoryQueryingManager:
 
             self.processing_state_name = f'Decoding {str_blockchain} raw transactions'
             evm_manager.transactions_decoder.get_and_decode_undecoded_transactions(limit=None)
+            step = self._increase_progress(step, total_steps)
+
+        if SupportedBlockchain.HYPERLIQUID in EVM_CHAINS_WITH_TRANSACTIONS:
+            self.processing_state_name = 'Querying Hyperliquid history'
+            self._query_hyperliquid_history(start_ts=Timestamp(0), end_ts=end_ts)
             step = self._increase_progress(step, total_steps)
 
         # include eth2 staking events
