@@ -52,7 +52,10 @@ class HyperliquidBalances(ProtocolWithBalance):
 
         hyperliquid = HyperliquidAPI()
         for user in addresses_with_deposits:
-            user_balances = hyperliquid.query_balances(address=user)
+            user_balances = hyperliquid.query_balances(
+                address=user,
+                include_discovered_dexs=False,
+            )
             for asset, amount in user_balances.items():
                 token_price = Inquirer.find_main_currency_price(asset)
                 balances[user].assets[asset][self.counterparty] += Balance(

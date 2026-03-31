@@ -36,7 +36,10 @@ def test_hyperliquid_protocol_balances_skip_accounts_tracked_on_hyperliquid_chai
         mock_inquirer.find_main_currency_price.return_value = FVal('1')
         result = balances_module.query_balances()
 
-    mock_api_cls.return_value.query_balances.assert_called_once_with(address=addr_arb_only)
+    mock_api_cls.return_value.query_balances.assert_called_once_with(
+        address=addr_arb_only,
+        include_discovered_dexs=False,
+    )
     assert addr_tracked not in result
     assert result[addr_arb_only].assets[Asset('USDC')]['hyperliquid'].amount == FVal('10')
     assert result[addr_arb_only].assets[Asset('USDC')]['hyperliquid'].value == FVal('10')

@@ -144,6 +144,51 @@ class HyperliquidAPI:
         self.session = create_session()
         self.arb_usdc = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
         self._spot_market_to_base_symbol: dict[int, str] | None = None
+        self._discovered_dex_names: list[str] | None = None
+
+    def _discover_available_dex_names(self) -> list[str]:
+        """Discover available HIP-3 perp DEX names from Hyperliquid's `perpDexs`.
+
+        References:
+        - https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals
+        - https://hyperliquid.gitbook.io/hyperliquid-docs/hyperliquid-improvement-proposals-hips/hip-3-builder-deployed-perpetuals
+        """
+        if self._discovered_dex_names is not None:
+            return self._discovered_dex_names
+
+        try:
+            data = self._post_info({'type': 'perpDexs'})
+        except RemoteError as e:
+            log.debug(f'Failed to auto-discover Hyperliquid DEXs due to {e}')
+            self._discovered_dex_names = []
+            return self._discovered_dex_names
+
+        if not isinstance(data, list):
+            log.error(
+                f'Hyperliquid perpDexs returned malformed response type '
+                f'{type(data).__name__}: {data!s}',
+            )
+            self._discovered_dex_names = []
+            return self._discovered_dex_names
+
+        discovered_names: set[str] = set()
+        for entry in data:
+            if entry is None:
+                continue
+
+            if isinstance(entry, dict) and isinstance((dex_name := entry.get('name')), str):
+                discovered_names.add(dex_name)
+
+        self._discovered_dex_names = sorted(discovered_names)
+        if len(self._discovered_dex_names) == 0:
+            log.info('Hyperliquid DEX discovery found only main DEX')
+        else:
+            log.info(
+                f"Hyperliquid DEX discovery found main DEX and HIP-3 DEXs: "
+                f"{', '.join(self._discovered_dex_names)}",
+            )
+
+        return self._discovered_dex_names
 
     def _post_info(self, payload: dict[str, Any]) -> Any:
         """Query hyperliquid info endpoint.
@@ -214,15 +259,20 @@ class HyperliquidAPI:
             self,
             address: ChecksumEvmAddress,
             account_type: Literal['clearinghouseState', 'spotClearinghouseState'],
+            dex_name: str | None = None,
     ) -> dict[str, Any]:
         """Query hyperliquid for balances.
 
         May raise:
             - RemoteError
         """
-        log.debug(f'Querying hyperliquid balances at {self.base_url}/info with {account_type=} and {address=}')  # noqa: E501
+        log.debug(f'Querying hyperliquid balances at {self.base_url}/info with {account_type=}, {address=} and {dex_name=}')  # noqa: E501
+        payload: dict[str, Any] = {'type': account_type, 'user': address}
+        if dex_name is not None:
+            payload['dex'] = dex_name
+
         if not isinstance(
-            (result := self._post_info({'type': account_type, 'user': address})),
+            (result := self._post_info(payload)),
             dict,
         ):
             raise RemoteError(
@@ -232,7 +282,11 @@ class HyperliquidAPI:
 
         return result
 
-    def query_balances(self, address: ChecksumEvmAddress) -> dict[Asset, FVal]:
+    def query_balances(
+            self,
+            address: ChecksumEvmAddress,
+            include_discovered_dexs: bool = True,
+    ) -> dict[Asset, FVal]:
         """
         Queries both spot and perp balances since they are returned in two different endpoints.
         Hyperliquid has two `accounts` for each address, one for spot and one for perpetuals.
@@ -241,39 +295,89 @@ class HyperliquidAPI:
         https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals#retrieve-users-perpetuals-account-summary
         """
         balances: defaultdict[Asset, FVal] = defaultdict(FVal)
-        try:
-            data = self._query(address=address, account_type='spotClearinghouseState')
-        except RemoteError as e:
-            log.error(f'Skipping spotClearinghouseState balances in hyperliquid of {address} due to {e}')  # noqa: E501
-            data = {}
+        self._query_balances_for_dex(
+            address=address,
+            dex_name=None,
+            include_spot=True,
+            balances=balances,
+        )
 
-        for asset_entry in data.get('balances', []):
+        if include_discovered_dexs is True:
+            # Hyperliquid spot balances are global for the user and may be repeated
+            # when querying with a HIP-3 dex context. Query spot once (main context),
+            # then aggregate only per-dex perp balances.
+            for dex_name in self._discover_available_dex_names():
+                self._query_balances_for_dex(
+                    address=address,
+                    dex_name=dex_name,
+                    include_spot=False,
+                    balances=balances,
+                )
+
+        return balances
+
+    def _query_balances_for_dex(
+            self,
+            address: ChecksumEvmAddress,
+            dex_name: str | None,
+            include_spot: bool,
+            balances: defaultdict[Asset, FVal],
+    ) -> None:
+        """Query spot and perp balances for a single hyperliquid dex context."""
+        dex_display = dex_name if dex_name is not None else 'main'
+        if include_spot is True:
             try:
-                if (balance := deserialize_fval(
-                    value=asset_entry['total'],
-                    name='spotClearinghouseState total balances',
-                    location='hyperliquid',
-                )) == ZERO:
+                data = self._query(
+                    address=address,
+                    account_type='spotClearinghouseState',
+                    dex_name=dex_name,
+                )
+            except RemoteError as e:
+                log.error(
+                    f'Skipping spotClearinghouseState balances in hyperliquid '
+                    f'for {address} and dex={dex_display} due to {e}',
+                )
+                data = {}
+
+            for asset_entry in data.get('balances', []):
+                try:
+                    if (
+                        balance := deserialize_fval(
+                            value=asset_entry['total'],
+                            name='spotClearinghouseState total balances',
+                            location='hyperliquid',
+                        )
+                    ) == ZERO:
+                        continue
+
+                    asset = asset_from_hyperliquid(asset_entry['coin'])
+                except (
+                    DeserializationError,
+                    UnknownAsset,
+                    WrongAssetType,
+                    KeyError,
+                    UnknownCounterpartyMapping,
+                ) as e:
+                    log.error(
+                        f'Failed to read balance {asset_entry} from hyperliquid '
+                        f'for dex={dex_display} due to {e}. Skipping',
+                    )
                     continue
 
-                asset = asset_from_hyperliquid(asset_entry['coin'])
-            except (
-                DeserializationError,
-                UnknownAsset,
-                WrongAssetType,
-                KeyError,
-                UnknownCounterpartyMapping,
-            ) as e:
-                log.error(f'Failed to read balance {asset_entry} from hyperliquid due to {e}. Skipping')  # noqa: E501
-                continue
-
-            if balance != ZERO:
-                balances[asset] += balance
+                if balance != ZERO:
+                    balances[asset] += balance
 
         try:
-            perp_data = self._query(address=address, account_type='clearinghouseState')
+            perp_data = self._query(
+                address=address,
+                account_type='clearinghouseState',
+                dex_name=dex_name,
+            )
         except RemoteError as e:
-            log.error(f'Skipping clearinghouseState hyperliquid balances of {address=} due to {e}')
+            log.error(
+                f'Skipping clearinghouseState hyperliquid balances '
+                f'of {address=} and dex={dex_display} due to {e}',
+            )
         else:
             try:
                 balances[self.arb_usdc] += deserialize_fval(
@@ -282,9 +386,10 @@ class HyperliquidAPI:
                     location='hyperliquid',
                 )
             except DeserializationError as e:
-                log.error(f'Failed to read hyperliquid crossMarginSummary due to {e}')
-
-        return balances
+                log.error(
+                    f'Failed to read hyperliquid crossMarginSummary '
+                    f'for dex={dex_display} due to {e}',
+                )
 
     @staticmethod
     def _entry_unique_id(entry: dict[str, Any]) -> str:
@@ -301,6 +406,7 @@ class HyperliquidAPI:
             self,
             entry: dict[str, Any],
             entry_time: int | None = None,
+            dex_name: str | None = None,
     ) -> EntryContext | None:
         if entry_time is None:
             try:
@@ -309,6 +415,8 @@ class HyperliquidAPI:
                 return None
 
         unique_id = self._entry_unique_id(entry)
+        if dex_name is not None:
+            unique_id = f'{dex_name}:{unique_id}'
         return EntryContext(
             entry=entry,
             timestamp=TimestampMS(entry_time),
@@ -424,6 +532,7 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            dex_name: str | None = None,
     ) -> Iterator[EntryContext]:
         """Query time-ranged entries and walk backwards to avoid API caps."""
         start_ms = int(start_ts * 1000)
@@ -431,17 +540,20 @@ class HyperliquidAPI:
         cursor_end = end_ms
         page = 0
         seen: set[str] = set()
+        dedup_prefix = dex_name if dex_name is not None else 'main'
 
         while cursor_end >= start_ms and page < HYPERLIQUID_MAX_HISTORY_PAGES:
             page += 1
-            data = self._post_info(
-                {
-                    'type': query_type,
-                    'user': address,
-                    'startTime': start_ms,
-                    'endTime': cursor_end,
-                },
-            )
+            payload: dict[str, Any] = {
+                'type': query_type,
+                'user': address,
+                'startTime': start_ms,
+                'endTime': cursor_end,
+            }
+            if dex_name is not None:
+                payload['dex'] = dex_name
+
+            data = self._post_info(payload)
             if not isinstance(data, list):
                 raise RemoteError(
                     f'Hyperliquid {query_type} returned malformed response type '
@@ -464,15 +576,24 @@ class HyperliquidAPI:
                     continue
 
                 if (unique_id := entry.get('hash') or entry.get('oid')) is not None:
-                    dedup_key = f'{entry_time}:{unique_id}'
+                    dedup_key = f'{dedup_prefix}:{entry_time}:{unique_id}'
                 else:
-                    dedup_key = f'{entry_time}:{json.dumps(entry, sort_keys=True, default=str)}'
+                    dedup_key = (
+                        f'{dedup_prefix}:{entry_time}:'
+                        f'{json.dumps(entry, sort_keys=True, default=str)}'
+                    )
 
                 if dedup_key in seen:
                     continue
                 seen.add(dedup_key)
 
-                if (context := self._entry_context(entry, entry_time=entry_time)) is None:
+                if (
+                    context := self._entry_context(
+                        entry,
+                        entry_time=entry_time,
+                        dex_name=dex_name,
+                    )
+                ) is None:
                     continue
                 yield context
 
@@ -581,6 +702,7 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            dex_name: str | None = None,
     ) -> list[HistoryBaseEntry]:
         events: list[HistoryBaseEntry] = []
         for context in self._iter_entries_by_time(
@@ -588,6 +710,7 @@ class HyperliquidAPI:
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
+            dex_name=dex_name,
         ):
             if (parsed := self._parse_funding_entry(context)) is None:
                 continue
@@ -619,6 +742,7 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            dex_name: str | None = None,
     ) -> list[HistoryBaseEntry]:
         events: list[HistoryBaseEntry] = []
         for context in self._iter_entries_by_time(
@@ -626,6 +750,7 @@ class HyperliquidAPI:
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
+            dex_name=dex_name,
         ):
             if (parsed := self._parse_ledger_entry(context)) is None:
                 continue
@@ -695,6 +820,7 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            dex_name: str | None = None,
     ) -> list[HistoryBaseEntry]:
         events: list[HistoryBaseEntry] = []
         for context in self._iter_entries_by_time(
@@ -702,9 +828,13 @@ class HyperliquidAPI:
             address=address,
             start_ts=start_ts,
             end_ts=end_ts,
+            dex_name=dex_name,
         ):
             if (parsed := self._parse_fill_entry(context)) is None:
                 continue
+
+            if dex_name is not None:
+                parsed.extra_data['dex'] = dex_name
 
             if parsed.is_spot_fill:
                 fee = None
@@ -772,17 +902,38 @@ class HyperliquidAPI:
             address: ChecksumEvmAddress,
             start_ts: Timestamp,
             end_ts: Timestamp,
+            include_discovered_dexs: bool = True,
     ) -> list[HistoryBaseEntry]:
         history: list[HistoryBaseEntry] = []
-        history.extend(
-            self._create_ledger_events(address=address, start_ts=start_ts, end_ts=end_ts),
-        )
-        history.extend(
-            self._create_funding_events(address=address, start_ts=start_ts, end_ts=end_ts),
-        )
-        history.extend(
-            self._create_fill_events(address=address, start_ts=start_ts, end_ts=end_ts),
-        )
+        dex_names: list[str | None] = [None]
+        if include_discovered_dexs is True:
+            dex_names.extend(self._discover_available_dex_names())
+
+        for dex_name in dex_names:
+            history.extend(
+                self._create_ledger_events(
+                    address=address,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    dex_name=dex_name,
+                ),
+            )
+            history.extend(
+                self._create_funding_events(
+                    address=address,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    dex_name=dex_name,
+                ),
+            )
+            history.extend(
+                self._create_fill_events(
+                    address=address,
+                    start_ts=start_ts,
+                    end_ts=end_ts,
+                    dex_name=dex_name,
+                ),
+            )
         history.sort(
             key=lambda event: (event.timestamp, event.group_identifier, event.sequence_index),
         )
