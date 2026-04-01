@@ -59,7 +59,6 @@ class ProcessedAccountingEvent:
     pnl: PNL
     cost_basis: CostBasisInfo | None
     index: int
-    direction: EventDirection = EventDirection.NEUTRAL
     # This is set only for some events to remember extra data that can be used later
     # such as the transaction hash of an event
     extra_data: dict[str, Any] = field(default_factory=dict)
@@ -132,11 +131,9 @@ class ProcessedAccountingEvent:
             'price': str(self.price),
             'pnl_taxable': str(self.pnl.taxable),
             'pnl_free': str(self.pnl.free),
-            'direction': self.direction.serialize(),
         }
         tx_hash = self.extra_data.get('tx_hash', None)
         if export_type == AccountingEventExportType.CSV:
-            direction_value = exported_dict.pop('direction')
             taxable_basis = free_basis = ''
             if self.cost_basis is not None:
                 taxable_basis, free_basis = self.cost_basis.to_string(ts_converter)
@@ -159,7 +156,9 @@ class ProcessedAccountingEvent:
                     ),
                     string=exported_dict['notes'],  # type: ignore [call-overload]  # exported_dict['notes'] is always a string
                 )
-            exported_dict['direction'] = direction_value
+            exported_dict['direction'] = self.extra_data.get(
+                'direction', EventDirection.NEUTRAL.serialize(),
+            )
         else:  # for the other types of export we include the cost basis information
             cost_basis = None
             if self.cost_basis is not None:
@@ -260,12 +259,6 @@ class ProcessedAccountingEvent:
                 cost_basis = None
             else:
                 cost_basis = CostBasisInfo.deserialize(data['cost_basis'])
-            direction_raw = data.get('direction')
-            direction = (
-                EventDirection.deserialize(direction_raw)
-                if direction_raw is not None
-                else EventDirection.NEUTRAL
-            )
             event = cls(
                 event_type=AccountingEventType.deserialize(data['type']),
                 notes=data['notes'],
@@ -278,7 +271,6 @@ class ProcessedAccountingEvent:
                 pnl=PNL(free=pnl_free, taxable=pnl_taxable),
                 cost_basis=cost_basis,
                 index=data['index'],
-                direction=direction,
                 extra_data=data['extra_data'],
             )
             event.count_cost_basis_pnl = data['count_cost_basis_pnl']

@@ -220,6 +220,7 @@ class CSVExporter(CustomizableDateMixin):
             'cost_basis_taxable': '',
             'pnl_free': '',
             'cost_basis_free': '',
+            'direction': '',
         }
         events.extend((template, template))  # separate with 2 new lines
 
