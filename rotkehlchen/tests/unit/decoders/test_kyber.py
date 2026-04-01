@@ -483,9 +483,9 @@ def test_kyber_aggregator_swap_polygon(polygon_pos_inquirer, polygon_pos_account
     assert events == expected_events
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x8C6270BB0D3d95Dad8581D6e9795Bb7089A34123']])
-def test_kyber_aggregator_swap_scroll(scroll_inquirer, scroll_accounts):
+def test_kyber_aggregator_swap_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
     tx_hash = deserialize_evm_tx_hash('0xd5c9011e2edd8b724eb3f0a691f5657eb7adb0d943be01b54b52a22b82df7062')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1714590811000)

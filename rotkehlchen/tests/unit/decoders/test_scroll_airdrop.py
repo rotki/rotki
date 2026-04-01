@@ -21,11 +21,12 @@ if TYPE_CHECKING:
     from rotkehlchen.types import ChecksumEvmAddress
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0xe247D2F39923E12C66f08b9C03a8E231087BDEFa']])
 def test_claim_scroll_airdop(
         scroll_inquirer: 'ScrollInquirer',
         scroll_accounts: list['ChecksumEvmAddress'],
+        allow_scroll_etherscan: None,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x7adb39abe532e0310840486ad9f03068d5a2fc7983f16e5cca16ff2be3899429')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
@@ -61,11 +62,12 @@ def test_claim_scroll_airdop(
     ]
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x19e4057A38a730be37c4DA690b103267AAE1d75d']])
 def test_receive_offchain_scroll_airdop(
         scroll_inquirer: 'ScrollInquirer',
         scroll_accounts: list['ChecksumEvmAddress'],
+        allow_scroll_etherscan: None,
 ) -> None:
     tx_hash = deserialize_evm_tx_hash('0x01b6968442cf9bbb5a24f04f385cbfc12bc7cf814d28b5083ba942f64ef9f076')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)

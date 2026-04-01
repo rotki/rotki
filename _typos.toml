@@ -78,6 +78,7 @@ ede = "ede"  # coinbase test json payload
 eit = "eit"
 datas = "datas"  # used in packaging
 
+Writeable = "Writeable"  # TypeScript utility type in frontend
 requeried = "requeried"
 othere = "othere"  # other exception
 queriable = "queriable"  # https://en.wiktionary.org/wiki/queriable

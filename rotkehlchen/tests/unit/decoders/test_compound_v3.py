@@ -409,9 +409,9 @@ def test_base_repay(base_inquirer, base_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0xe53Ca0bB4E6F22514Aa1c1ABFd9634d52A808546']])
-def test_scroll_withdraw(scroll_inquirer, scroll_accounts):
+def test_scroll_withdraw(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x0ec09157328bba439e276c83a2c3364c390d430b5bc0bddf3169d475b6fbfdee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=scroll_inquirer,

@@ -171,5 +171,6 @@ DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
         ChainID.BASE: BLOCKSCOUT_PRIORITY_ORDER,
         ChainID.OPTIMISM: BLOCKSCOUT_PRIORITY_ORDER,
         ChainID.BINANCE_SC: (EvmIndexer.ETHERSCAN,),  # Blockscout and Routescan do not support BSC (will only work with premium etherscan)  # noqa: E501
+        ChainID.SCROLL: (EvmIndexer.BLOCKSCOUT,),  # Etherscan removed scroll support. Routescan does not support it  # noqa: E501
     },
 )

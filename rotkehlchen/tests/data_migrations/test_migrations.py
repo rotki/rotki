@@ -525,6 +525,7 @@ def test_migration_14(
         rotkehlchen_api_server: 'APIServer',
         ethereum_accounts: list[ChecksumEvmAddress],
         websocket_connection: 'WebsocketReader',
+        allow_scroll_etherscan: None,
 ) -> None:
     """
     Test migration 14

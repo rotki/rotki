@@ -617,8 +617,8 @@ def test_adding_safe(rotkehlchen_api_server: 'APIServer', allow_base_routescan: 
 
     result = assert_proper_sync_response_with_result(response)
     assert result == {
-        'added': {safe_address: ['arbitrum_one', 'base']},
-        'failed': {safe_address: ['binance_sc']},  # currently no indexers support bsc with free api keys, so detection fails  # noqa: E501
+        'added': {safe_address: ['arbitrum_one']},
+        'failed': {safe_address: ['base', 'binance_sc']},  # currently no indexers support bsc or base with free api keys, so detection fails  # noqa: E501
     }
 
 

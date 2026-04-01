@@ -87,7 +87,7 @@ class Blockscout(EtherscanLikeApi):
             case ChainID.POLYGON_POS:
                 return 'https://polygon.blockscout.com/api'
             case ChainID.SCROLL:
-                return 'https://scroll.blockscout.com/api'
+                return 'https://scrollscan.com/api'
             case _:
                 raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
 
