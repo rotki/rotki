@@ -100,7 +100,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=0,
-            extra_data={'tx_ref': str(HASH1)},
+            extra_data={'tx_ref': str(HASH1), 'direction': 'out'},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Receive 1000 aDAI from AAVE v2',
@@ -113,7 +113,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=1,
-            extra_data={'tx_ref': str(HASH1)},
+            extra_data={'tx_ref': str(HASH1), 'direction': 'in'},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Return 1050 aDAI to AAVE v2',
@@ -126,7 +126,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=2,
-            extra_data={'tx_ref': str(HASH2)},
+            extra_data={'tx_ref': str(HASH2), 'direction': 'out'},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Gained 50 DAI on Aave v2 as interest rate for {USER_ADDRESS}',
@@ -139,7 +139,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             pnl=PNL(taxable=FVal(50), free=ZERO),  # $50 interest gained
             cost_basis=None,
             index=3,
-            extra_data={'tx_ref': str(HASH2)},
+            extra_data={'tx_ref': str(HASH2), 'direction': 'in'},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Withdraw 1050 DAI from AAVE v2',
@@ -152,7 +152,7 @@ def test_v2_withdraw(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=4,
-            extra_data={'tx_ref': str(HASH2)},
+            extra_data={'tx_ref': str(HASH2), 'direction': 'in'},
         ),
     ]
     expected_events[3].count_cost_basis_pnl = True  # can't be set by init()
@@ -234,7 +234,7 @@ def test_v2_payback(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=0,
-            extra_data={'tx_ref': str(HASH1)},
+            extra_data={'tx_ref': str(HASH1), 'direction': 'in'},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Borrow 1000 REN from AAVE v2 with variable APY 0.80%',
@@ -247,7 +247,7 @@ def test_v2_payback(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=1,
-            extra_data={'tx_ref': str(HASH1)},
+            extra_data={'tx_ref': str(HASH1), 'direction': 'in'},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Return 1050 variableDebtREN to AAVE v2',
@@ -260,7 +260,7 @@ def test_v2_payback(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=2,
-            extra_data={'tx_ref': str(HASH2)},
+            extra_data={'tx_ref': str(HASH2), 'direction': 'out'},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Lost 50 REN as debt during payback to Aave v2 loan for {USER_ADDRESS}',
@@ -279,7 +279,7 @@ def test_v2_payback(accountant: 'Accountant'):
                 is_complete=True,
             ),
             index=3,
-            extra_data={'tx_ref': str(HASH2)},
+            extra_data={'tx_ref': str(HASH2), 'direction': 'out'},
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes='Repay 1050 REN on AAVE v2',
@@ -292,7 +292,7 @@ def test_v2_payback(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=4,
-            extra_data={'tx_ref': str(HASH2)},
+            extra_data={'tx_ref': str(HASH2), 'direction': 'out'},
         ),
     ]
     expected_events[3].count_cost_basis_pnl = True  # can't be set by init()

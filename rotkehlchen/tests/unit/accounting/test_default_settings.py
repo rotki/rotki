@@ -174,9 +174,9 @@ def test_accounting_receive_settings(
         event_subtype=event_subtype,
         entry_type=entry_type,
     )
-    expected_extra_data = {}
+    expected_extra_data: dict[str, Any] = {'direction': 'in'}
     if entry_type == 'evm_event':
-        expected_extra_data = {'tx_ref': EXAMPLE_TX_HASH_HEX}
+        expected_extra_data['tx_ref'] = EXAMPLE_TX_HASH_HEX
 
     expected_event = ProcessedAccountingEvent(
         event_type=AccountingEventType.TRANSACTION_EVENT,
@@ -283,7 +283,7 @@ def test_accounting_spend_settings(
         pnl=PNL(taxable=taxable_pnl, free=ZERO),
         cost_basis=cost_basis,
         index=1,
-        extra_data={'tx_ref': EXAMPLE_TX_HASH_HEX},
+        extra_data={'tx_ref': EXAMPLE_TX_HASH_HEX, 'direction': 'out'},
     )
     expected_event.count_entire_amount_spend = is_taxable
     expected_event.count_cost_basis_pnl = is_taxable and (counterparty != CPT_GAS or include_crypto2crypto)  # noqa: E501
@@ -364,6 +364,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         extra_data={
             'tx_ref': EXAMPLE_TX_HASH_HEX,
             'group_id': f'{swap_spend_event.group_identifier}12',
+            'direction': 'out',
         },
     )
     expected_spend_event.count_entire_amount_spend = False
@@ -384,6 +385,7 @@ def test_accounting_swap_settings(accounting_pot: 'AccountingPot', counterparty:
         extra_data={
             'tx_ref': EXAMPLE_TX_HASH_HEX,
             'group_id': f'{swap_receive_event.group_identifier}12',
+            'direction': 'in',
         },
     )
     expected_receive_event.count_entire_amount_spend = False

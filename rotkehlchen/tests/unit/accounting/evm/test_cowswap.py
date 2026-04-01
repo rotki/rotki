@@ -76,9 +76,15 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
     for event in events_iterator:
         pot.events_accountant.process(event=event, events_iterator=events_iterator)  # type: ignore
 
-    extra_data = {
+    extra_data_out = {
         'group_id': '1' + str(tx_hash) + '12',
         'tx_ref': str(tx_hash),
+        'direction': 'out',
+    }
+    extra_data_in = {
+        'group_id': '1' + str(tx_hash) + '12',
+        'tx_ref': str(tx_hash),
+        'direction': 'in',
     }
     expected_processed_events = [
         ProcessedAccountingEvent(
@@ -93,7 +99,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
             pnl=PNL(taxable=FVal(swap_amount_str), free=ZERO),
             cost_basis=CostBasisInfo(taxable_amount=FVal(swap_amount_str), taxable_bought_cost=ZERO, taxfree_bought_cost=ZERO, matched_acquisitions=[], is_complete=False),  # noqa: E501
             index=0,
-            extra_data=extra_data,
+            extra_data=extra_data_out,
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.FEE,
             notes=f'Spend {fee_amount_str} WBTC as a cowswap fee',
@@ -106,7 +112,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=1,
-            extra_data=extra_data,
+            extra_data=extra_data_out,
         ), ProcessedAccountingEvent(
             event_type=AccountingEventType.TRANSACTION_EVENT,
             notes=f'Receive {receive_amount_str} USDC as the result of a swap in cowswap',
@@ -119,7 +125,7 @@ def test_cowswap_swap_with_fee(accountant: 'Accountant'):
             pnl=PNL(taxable=ZERO, free=ZERO),
             cost_basis=None,
             index=2,
-            extra_data=extra_data,
+            extra_data=extra_data_in,
         )]
     expected_processed_events[0].count_cost_basis_pnl = True  # since it's not settable at ctor
     assert pot.processed_events == expected_processed_events

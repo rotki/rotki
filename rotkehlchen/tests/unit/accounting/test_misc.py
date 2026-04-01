@@ -316,6 +316,7 @@ def test_fiat_income_taxable_pnl(
         pnl=PNL(taxable=event_amount, free=ZERO),
         cost_basis=None,
         index=0,
+        extra_data={'direction': 'in'},
     )
     expected_event.count_cost_basis_pnl = True
     _, events = accounting_create_and_process_history(
