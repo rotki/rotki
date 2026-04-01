@@ -651,9 +651,9 @@ def test_weth_deposit_optimism(optimism_inquirer, optimism_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x6247666Ea4C80083035214780978E9EBa4AA6Cf4']])
-def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts):
+def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x88f49633073a7667f93eb888ec2151c26f449cc10afca565a15f8df68ee20f82')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712239879000)
@@ -702,9 +702,9 @@ def test_weth_withdraw_scroll(scroll_inquirer, scroll_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(allow_playback_repeats=True, filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0xdFd21F8aA81c5787160F9a4B39357F5FE1c743DC']])
-def test_weth_deposit_scroll(scroll_inquirer, scroll_accounts):
+def test_weth_deposit_scroll(scroll_inquirer, scroll_accounts, allow_scroll_etherscan):
     tx_hash = deserialize_evm_tx_hash('0x1fa6d87801891fcea66a9be2d4fce1c52569c5ce30579fbe7de37eb05bd247f8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712239897000)

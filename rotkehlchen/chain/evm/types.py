@@ -170,5 +170,6 @@ DEFAULT_INDEXERS_ORDER: Final = SerializableChainIndexerOrder(
             EvmIndexer.ETHERSCAN,
             EvmIndexer.BLOCKSCOUT,
         ),  # Routescan does not support Hyperliquid
+        ChainID.SCROLL: (EvmIndexer.BLOCKSCOUT,),  # Etherscan removed scroll support. Routescan does not support it  # noqa: E501
     },
 )

@@ -8,6 +8,7 @@ from rotkehlchen.constants import DAY_IN_SECONDS
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.etherscan_like import EtherscanLikeApi, HasChainActivity
 from rotkehlchen.externalapis.routescan import ROUTESCAN_SUPPORTED_CHAINS, Routescan
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, Timestamp, deserialize_evm_tx_hash
 
@@ -119,6 +120,62 @@ def test_routescan_internal_by_txhash_uses_lower_offset(routescan: Routescan) ->
     query_options = query_mock.call_args.kwargs['options']
     assert query_options['page'] == '1'
     assert query_options['offset'] == '100'
+
+
+def test_routescan_internal_by_txhash_paginate_by_page(routescan: Routescan) -> None:
+    parent_tx_hash = make_evm_tx_hash()
+    requested_pages: list[str] = []
+
+    def mock_query(*args, **kwargs) -> list[dict[str, str]]:
+        page = kwargs['options']['page']
+        requested_pages.append(page)
+
+        if page == '1':
+            indices = range(100)
+        elif page == '2':
+            indices = range(100, 200)
+        elif page == '3':
+            indices = range(200, 255)
+        else:
+            return []
+
+        return [{
+            'blockNumber': str(123456 + idx),
+            'timeStamp': '1710000000',
+            'from': '0x56a1A34F0d33788ebA53e2706854A37A5F275536',
+            'to': '0x84e8EE8911c147755bD70084b6b4D1a5A8351476',
+            'value': '1',
+            'gas': '21000',
+            'gasUsed': '21000',
+            'traceId': str(idx),
+        } for idx in indices]
+
+    with patch.object(EtherscanLikeApi, '_query', side_effect=mock_query):
+        result = list(routescan.get_transactions(
+            chain_id=ChainID.OPTIMISM,
+            account=None,
+            action='txlistinternal',
+            period_or_hash=parent_tx_hash,
+        ))
+
+    assert requested_pages == ['1', '2', '3']
+    assert len(result) == 1
+    assert len(result[0]) == 255
+    assert all(tx.parent_tx_hash == parent_tx_hash for tx in result[0])
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_routescan_internal_by_txhash_optimism_regression(routescan: Routescan) -> None:
+    parent_tx_hash = deserialize_evm_tx_hash('0xa3b955a1264dc26d966f4f33242ae88eec7f2081fcfce8cd82377b16d51a9f2f')  # noqa: E501
+    result = list(routescan.get_transactions(
+        chain_id=ChainID.OPTIMISM,
+        account=None,
+        action='txlistinternal',
+        period_or_hash=parent_tx_hash,
+    ))
+    assert len(result) == 1
+    assert len(result[0]) == 255
+    assert all(tx.parent_tx_hash == parent_tx_hash for tx in result[0])
 
 
 def test_routescan_maybe_paginate_uses_request_offset(routescan: Routescan) -> None:

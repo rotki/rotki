@@ -48,6 +48,7 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
 
   const pendingCount = ref<number>(0);
   const failedCount = ref<number>(0);
+  const refreshing = ref<boolean>(false);
   const issueCount = computed<number>(() => get(pendingCount) + get(failedCount));
   const activeFilter = ref<InternalTxConflictStatus>(InternalTxConflictStatuses.PENDING);
 
@@ -109,12 +110,21 @@ export const useInternalTxConflicts = createSharedComposable((): UseInternalTxCo
   }
 
   async function handleConflictFixed(): Promise<void> {
-    await Promise.all([fetchCounts(), fetchConflicts()]);
+    if (get(refreshing))
+      return;
+
+    set(refreshing, true);
+    try {
+      await Promise.all([fetchCounts(), fetchConflicts()]);
+    }
+    finally {
+      set(refreshing, false);
+    }
   }
 
-  watch(internalTxFixedSignal, () => {
+  watchDebounced(internalTxFixedSignal, () => {
     startPromise(handleConflictFixed());
-  });
+  }, { debounce: 2000, maxWait: 10000 });
 
   return {
     activeFilter,
