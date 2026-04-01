@@ -308,7 +308,8 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
         code into the EtherscanLikeApi class, which uses lowercase query parameters to work
         properly with Blockscout.
         """
-        if 'etherscan.io' not in r1.uri and 'blockscout.com' not in r1.uri:
+        uri_pair = f'{r1.uri} {r2.uri}'
+        if 'etherscan.io' not in uri_pair and 'blockscout.com' not in uri_pair:
             return r1.uri == r2.uri and r1.method == r2.method
 
         # Check base URL (scheme + netloc + path) matches
@@ -322,10 +323,12 @@ def vcr_fixture(vcr: 'VCR') -> 'VCR':
             return False
 
         # Parse and normalize query parameters (lowercase keys)
+        # Ignore API key params since they can differ per test environment/session.
+        ignored_params = {'apikey', 'api_key'}
         return {
-            k.lower(): v for k, v in parse_qs(parsed1.query).items()
+            k.lower(): v for k, v in parse_qs(parsed1.query).items() if k.lower() not in ignored_params  # noqa: E501
         } == {
-            k.lower(): v for k, v in parse_qs(parsed2.query).items()
+            k.lower(): v for k, v in parse_qs(parsed2.query).items() if k.lower() not in ignored_params  # noqa: E501
         }
 
     vcr.register_matcher('alchemy_api_matcher', alchemy_api_matcher)
@@ -358,6 +361,7 @@ def vcr_config() -> dict[str, Any]:
         'record_mode': record_mode,
         'decode_compressed_response': True,
         'ignore_localhost': True,
+        'filter_query_parameters': ['apikey', 'api_key'],
         'match_on': ['etherscan_matcher'],
     }
 

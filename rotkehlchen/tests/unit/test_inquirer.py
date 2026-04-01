@@ -242,7 +242,7 @@ def test_parsing_forex_cache_works(
     assert inquirer._query_fiat_pair(A_EUR, A_JPY)[0] == price
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_fallback_to_coingecko(inquirer: Inquirer):
@@ -422,7 +422,7 @@ def test_price_underlying_tokens(inquirer, globaldb):
     assert price == FVal(67)
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
@@ -440,7 +440,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
     assert price is not None
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_uniswap_v2_like_lp_token_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
@@ -463,7 +463,7 @@ def test_find_uniswap_v2_like_lp_token_price(database: 'DBHandler', inquirer_def
     )).is_close('0.040227')
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_quickswap_algrebra_lp_token_price(database: 'DBHandler', inquirer_defi: 'Inquirer') -> None:  # noqa: E501
@@ -615,7 +615,7 @@ def test_find_kfee_price(inquirer):
     assert FVal(price) == FVal(0.01)
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_kfee_price_non_usd(inquirer):
     """Test that we can query KFEE price in non-USD currency"""
@@ -624,7 +624,7 @@ def test_find_kfee_price_non_usd(inquirer):
     assert kfee_eur_price.is_close(FVal(0.01) * usd_eur_rate), 'kfee price in EUR should be 0.01 USD * USD/EUR rate'  # noqa: E501
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_bsq_price_non_usd(inquirer: 'Inquirer') -> None:
     """Test that we can query BSQ price in non-USD currency"""
@@ -948,7 +948,7 @@ def test_find_yearn_v1_vault_token_price(inquirer_defi):
     assert inquirer_defi.find_usd_price(A_YV1_DAI).is_close(FVal(1.15431), max_diff=1e-5)
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_cache_is_hit_for_collection(inquirer: Inquirer):
     """Test that the price for a collection is saved to cache and not query for every asset"""
@@ -1697,7 +1697,7 @@ def test_find_woo_fi_supercharger_vault_token_price(
     assert inquirer_defi.find_usd_price(vault_token).is_close('0.142405', max_diff='1e-6')
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-10-21 18:00:00 GMT')
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
@@ -1713,7 +1713,7 @@ def test_fiat_to_fiat(inquirer):
         )
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_price_of_assets_in_collection(inquirer):
@@ -1732,7 +1732,7 @@ def test_price_of_assets_in_collection(inquirer):
     assert xdai_price == dai_price
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_errors_web3_logs():
     """
     1rpc.io/gnosis has a limit of 1000 logs per query. This test
@@ -1780,7 +1780,7 @@ def test_errors_web3_logs():
         assert count == math.ceil((end_block - start_block) / 999) + 1  # + 1 is the failed request
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_bsq_price(inquirer: 'Inquirer') -> None:
     """Test that we can query bisq for market prices"""
@@ -1789,7 +1789,7 @@ def test_bsq_price(inquirer: 'Inquirer') -> None:
     assert bsq_price.is_close(btc_price * BTC_PER_BSQ)
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_batch_price_query(inquirer: 'Inquirer'):
     """Test that finding multiple prices at once works as expected."""

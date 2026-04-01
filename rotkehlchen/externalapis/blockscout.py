@@ -1,7 +1,7 @@
 import logging
 import sys
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 import gevent
 import requests
@@ -21,12 +21,13 @@ from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_int
 from rotkehlchen.types import (
-    BLOCKSCOUT_TO_CHAINID,
+    BLOCKSCOUT_SUPPORTED_CHAINS,
     SUPPORTED_CHAIN_IDS,
     ApiKey,
     ChainID,
     ChecksumEvmAddress,
     EVMTxHash,
+    ExternalService,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -43,19 +44,29 @@ if TYPE_CHECKING:
 # Blockscout returns a maximum of 10000 transactions per request.
 # https://docs.blockscout.com/devs/apis/rpc/account#get-transactions-by-address
 BLOCKSCOUT_PAGINATION_LIMIT = 10000
+BLOCKSCOUT_PRO_API_BASE_URL = 'https://api.blockscout.com'
+BLOCKSCOUT_API_URLS: Final[dict[ChainID, str]] = {
+    chain_id: f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/api'
+    for chain_id in BLOCKSCOUT_SUPPORTED_CHAINS
+}
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class Blockscout(EtherscanLikeApi):
-    """Blockscout API handler https://eth.blockscout.com/api-docs"""
+class Blockscout(ExternalServiceWithApiKey, EtherscanLikeApi):
+    """Blockscout API handler for the Blockscout PRO multichain endpoints."""
 
     def __init__(
             self,
             database: 'DBHandler',
             msg_aggregator: MessagesAggregator,
     ) -> None:
+        ExternalServiceWithApiKey.__init__(
+            self,
+            database=database,
+            service_name=ExternalService.BLOCKSCOUT,
+        )
         EtherscanLikeApi.__init__(
             self,
             database=database,
@@ -66,41 +77,37 @@ class Blockscout(EtherscanLikeApi):
         )
         self.session = create_session()
         set_user_agent(self.session)
-        self.service_details: dict[ChainID, ExternalServiceWithApiKey] = {
-            chain_id: ExternalServiceWithApiKey(database=database, service_name=service_name)
-            for service_name, chain_id in BLOCKSCOUT_TO_CHAINID.items()
-        }
+        self.v2_api_urls: dict[ChainID, str] = {}
+        self.rpc_urls: dict[ChainID, str] = {}
+        for chain_id in BLOCKSCOUT_SUPPORTED_CHAINS:
+            api_url = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/api'
+            self.v2_api_urls[chain_id] = f'{api_url}/v2'
+            self.rpc_urls[chain_id] = f'{BLOCKSCOUT_PRO_API_BASE_URL}/{chain_id.serialize()}/json-rpc'  # noqa: E501
 
     @staticmethod
-    def _get_url(chain_id: ChainID) -> str:
-        match chain_id:
-            case ChainID.ETHEREUM:
-                return 'https://eth.blockscout.com/api'
-            case ChainID.OPTIMISM:
-                return 'https://explorer.optimism.io/api'
-            case ChainID.BASE:
-                return 'https://base.blockscout.com/api'
-            case ChainID.HYPERLIQUID:
-                return 'https://www.hyperscan.com/api'
-            case ChainID.ARBITRUM_ONE:
-                return 'https://arbitrum.blockscout.com/api'
-            case ChainID.GNOSIS:
-                return 'https://gnosis.blockscout.com/api'
-            case ChainID.POLYGON_POS:
-                return 'https://polygon.blockscout.com/api'
-            case ChainID.SCROLL:
-                return 'https://scrollscan.com/api'
-            case _:
-                raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
+    def _get_url(chain_id: SUPPORTED_CHAIN_IDS) -> str:
+        if (url := BLOCKSCOUT_API_URLS.get(chain_id)) is None:
+            raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
+        return url
+
+    def _get_v2_url(self, chain_id: ChainID) -> str:
+        if (url := self.v2_api_urls.get(chain_id)) is None:
+            raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
+
+        return url
+
+    def _get_rpc_url(self, chain_id: ChainID) -> str:
+        if (url := self.rpc_urls.get(chain_id)) is None:
+            raise ChainNotSupported(f'Blockscout does not support {chain_id.name}')
+
+        return url
 
     def _get_api_key_for_chain(self, chain_id: ChainID) -> ApiKey | None:
-        """Blockscout has different keys for each chain. Returns None if the requested
-        chain is not present in the service_details dict.
-        """
-        if (service_for_chain := self.service_details.get(chain_id)) is None:
+        """Blockscout uses the same api key for all supported chains."""
+        if chain_id not in BLOCKSCOUT_SUPPORTED_CHAINS:
             return None
 
-        return service_for_chain._get_api_key()
+        return api_key if (api_key := self._get_api_key()) else None
 
     @staticmethod
     def _build_query_params(
@@ -116,11 +123,15 @@ class Blockscout(EtherscanLikeApi):
             self,
             query_str: str,
             params: dict[str, Any] | None = None,
+            query_params: dict[str, Any] | None = None,
             timeout: tuple[int, int] | None = None,
             http_method: Literal['get', 'post'] = 'get',
     ) -> dict[str, Any]:
         """Shared logic between v1 and v2 for querying blockscout api"""
-        log.debug(f'Querying blockscout API for {query_str} with {params}')
+        log.debug(
+            f'Querying blockscout API for {query_str} with body {params} '
+            f'and query params {query_params}',
+        )
         times = (cached_settings := CachedSettings()).get_query_retry_limit()
         retries_num = times
         timeout = timeout or cached_settings.get_timeout_tuple()
@@ -128,11 +139,15 @@ class Blockscout(EtherscanLikeApi):
 
         while True:
             try:
+                request_kwargs: dict[str, Any] = {'timeout': timeout}
+                if query_params is not None:
+                    request_kwargs['params'] = query_params
+
+                request_kwargs['params' if http_method == 'get' else 'json'] = params
                 response = self.session.request(
                     method=http_method,
                     url=query_str,
-                    timeout=timeout,
-                    **{'params' if http_method == 'get' else 'json': params},  # type: ignore[arg-type]
+                    **request_kwargs,
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
@@ -306,7 +321,7 @@ class Blockscout(EtherscanLikeApi):
         - RemoteError due to problems querying blockscout
         """
         extra_args = {} if extra_args is None else extra_args
-        query_str = f'{self._get_url(chain_id)}/v2/{module}/{encoded_args}'
+        query_str = f'{self._get_v2_url(chain_id)}/{module}/{encoded_args}'
         if endpoint is not None:
             query_str += f'/{endpoint}'
         if (api_key := self._get_api_key_for_chain(chain_id)) is not None:
@@ -370,13 +385,14 @@ class Blockscout(EtherscanLikeApi):
             params = list(options.values())
 
         if 'result' not in (response := self._query_and_process(
-            query_str=f'{self._get_url(chain_id=chain_id)}/eth-rpc',
+            query_str=self._get_rpc_url(chain_id=chain_id),
             params={
                 'id': 0,
                 'jsonrpc': '2.0',
                 'method': method,
                 'params': params,
             },
+            query_params={'apikey': api_key} if (api_key := self._get_api_key_for_chain(chain_id)) is not None else None,  # noqa: E501
             http_method='post',
         )):
             raise RemoteError(f'Blockscout eth-rpc response contains no result: {response}')
@@ -585,33 +601,76 @@ class Blockscout(EtherscanLikeApi):
 
         May raise: RemoteError
         """
-        options = {'address': str(account), 'page': 1}
-        result = self._query(chain_id=chain_id, module='account', action='txlist', options=options)
-        if len(result) != 0:
+        result, missing_data = self._query_for_activity(
+            chain_id=chain_id,
+            account=account,
+            action='txlist',
+        )
+        if missing_data is True:
+            return HasChainActivity.NONE
+        if isinstance(result, list) and len(result) != 0:
             return HasChainActivity.TRANSACTIONS
 
-        result = self._query(chain_id=chain_id, module='account', action='txlistinternal', options=options)  # noqa: E501
-        if len(result) != 0:
+        result, missing_data = self._query_for_activity(
+            chain_id=chain_id,
+            account=account,
+            action='txlistinternal',
+        )
+        if missing_data is True:
+            return HasChainActivity.NONE
+        if isinstance(result, list) and len(result) != 0:
             return HasChainActivity.TRANSACTIONS
 
-        result = self._query(chain_id=chain_id, module='account', action='tokentx', options=options)  # noqa: E501
-        if len(result) != 0:
+        result, missing_data = self._query_for_activity(
+            chain_id=chain_id,
+            account=account,
+            action='tokentx',
+        )
+        if missing_data is True:
+            return HasChainActivity.NONE
+        if isinstance(result, list) and len(result) != 0:
             return HasChainActivity.TOKENS
 
         if chain_id in {ChainID.ETHEREUM, ChainID.GNOSIS, ChainID.POLYGON_POS}:
             # since ethereum, gnosis and polygon have a lot of spam transactions for addresses
             # that were never used we add as requirement that in those chains the user must have
             # some balance.
-            balance = self._query(
+            balance, missing_data = self._query_for_activity(
                 chain_id=chain_id,
-                module='account',
+                account=account,
                 action='balance',
-                options={'address': account},
             )
+            if missing_data is True:
+                return HasChainActivity.NONE
             if balance != 0:
                 return HasChainActivity.BALANCE
 
         return HasChainActivity.NONE
+
+    def _query_for_activity(
+            self,
+            chain_id: SUPPORTED_CHAIN_IDS,
+            account: ChecksumEvmAddress,
+            action: Literal['txlist', 'txlistinternal', 'tokentx', 'balance'],
+    ) -> tuple[list[dict[str, Any]] | int, bool]:
+        """Query a Blockscout account action for activity detection.
+
+        Returns a tuple of ``(result, missing_data)``. If blockscout returns the
+        custom ``status=2`` missing-data response, the query is treated as
+        inconclusive and ``missing_data`` is set to ``True``.
+        """
+        try:
+            return self._query(
+                chain_id=chain_id,
+                module='account',
+                action=action,
+                options={'address': str(account), 'page': 1},
+            ), False
+        except RemoteError as e:
+            if str(e).startswith('Blockscout is missing data for'):
+                return ([] if action != 'balance' else 0), True
+
+            raise
 
     def get_l1_fee(
             self,

@@ -866,7 +866,7 @@ def test_get_historical_netvalue_with_negative_balance_events(
         assert balances == expected_bal
 
 
-@pytest.mark.vcr(filter_query_parameters=['api_key'])
+@pytest.mark.vcr(filter_query_parameters=['apikey', 'api_key'])
 @pytest.mark.freeze_time('2025-03-06 00:00:00 GMT')
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_get_historical_prices_per_asset(

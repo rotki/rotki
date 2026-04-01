@@ -11,7 +11,6 @@ from typing import (
     Literal,
     NamedTuple,
     NewType,
-    Optional,
     TypeAlias,
     TypeVar,
     get_args,
@@ -107,22 +106,11 @@ class ExternalService(SerializableEnumNameMixin):
     THEGRAPH = auto()
     GNOSIS_PAY = auto()
     MONERIUM = auto()
-    OPTIMISM_BLOCKSCOUT = auto()
-    POLYGON_POS_BLOCKSCOUT = auto()
-    ARBITRUM_ONE_BLOCKSCOUT = auto()
-    BASE_BLOCKSCOUT = auto()
-    GNOSIS_BLOCKSCOUT = auto()
-    HYPERLIQUID_BLOCKSCOUT = auto()
     DEFILLAMA = auto()
     COINGECKO = auto()
     ALCHEMY = auto()
-    SCROLL_BLOCKSCOUT = auto()
     HELIUS = auto()
     ROUTESCAN = auto()
-
-    def get_chain_for_blockscout(self) -> Optional['ChainID']:
-        """If the service is a blockscout service return its chain"""
-        return BLOCKSCOUT_TO_CHAINID.get(self)
 
     def premium_only(self) -> bool:
         return self == ExternalService.GNOSIS_PAY
@@ -317,16 +305,16 @@ SUPPORTED_CHAIN_IDS = Literal[
 ]
 
 
-BLOCKSCOUT_TO_CHAINID = {
-    ExternalService.BLOCKSCOUT: ChainID.ETHEREUM,
-    ExternalService.OPTIMISM_BLOCKSCOUT: ChainID.OPTIMISM,
-    ExternalService.POLYGON_POS_BLOCKSCOUT: ChainID.POLYGON_POS,
-    ExternalService.ARBITRUM_ONE_BLOCKSCOUT: ChainID.ARBITRUM_ONE,
-    ExternalService.BASE_BLOCKSCOUT: ChainID.BASE,
-    ExternalService.HYPERLIQUID_BLOCKSCOUT: ChainID.HYPERLIQUID,
-    ExternalService.GNOSIS_BLOCKSCOUT: ChainID.GNOSIS,
-    ExternalService.SCROLL_BLOCKSCOUT: ChainID.SCROLL,
-}
+BLOCKSCOUT_SUPPORTED_CHAINS: Final = (
+    ChainID.ETHEREUM,
+    ChainID.OPTIMISM,
+    ChainID.POLYGON_POS,
+    ChainID.ARBITRUM_ONE,
+    ChainID.BASE,
+    ChainID.HYPERLIQUID,
+    ChainID.GNOSIS,
+    ChainID.SCROLL,
+)
 
 
 class EvmlikeChain(StrEnum):

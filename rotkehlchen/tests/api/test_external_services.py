@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -17,20 +17,6 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-EMPTY_RESULT = {
-    'blockscout': {
-        'ethereum': None,
-        'optimism': None,
-        'polygon_pos': None,
-        'arbitrum_one': None,
-        'base': None,
-        'hyperliquid': None,
-        'gnosis': None,
-        'scroll': None,
-    },
-}
-
-
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('include_cryptocompare_key', [False])
 @pytest.mark.parametrize('include_beaconchain_key', [False])
@@ -41,12 +27,11 @@ def test_add_get_external_service(rotkehlchen_api_server: 'APIServer') -> None:
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == EMPTY_RESULT
+    assert result == {}
 
     # Now add some data and see that the response shows they are added
-    expected_result: dict[str, Any] = {
+    expected_result = {
         'etherscan': {'api_key': 'key1'},
-        **EMPTY_RESULT,
         'cryptocompare': {'api_key': 'key2'},
     }
     data = {'services': [
@@ -109,9 +94,8 @@ def test_etherscan_re_enabled(rotkehlchen_api_server: 'APIServer') -> None:
 def test_delete_external_service(rotkehlchen_api_server: 'APIServer') -> None:
     """Tests that delete external service credentials works"""
     # Add some data and see that the response shows they are added
-    expected_result: dict[str, Any] = {
+    expected_result = {
         'etherscan': {'api_key': 'key1'},
-        **EMPTY_RESULT,
         'cryptocompare': {'api_key': 'key2'},
     }
     response = requests.put(
@@ -147,14 +131,14 @@ def test_delete_external_service(rotkehlchen_api_server: 'APIServer') -> None:
         json={'services': ['etherscan', 'cryptocompare']},
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == EMPTY_RESULT
+    assert result == {}
 
     # Query again and see that the modified services are returned
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == EMPTY_RESULT
+    assert result == {}
 
 
 def test_add_external_services_errors(rotkehlchen_api_server: 'APIServer') -> None:
