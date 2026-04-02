@@ -1,16 +1,18 @@
 import logging
+from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.constants import DEFAULT_BALANCE_LABEL
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, Price
 
 from .accountant import HyperliquidAccountingAggregator
 from .decoding.decoder import HyperliquidTransactionDecoder
@@ -60,9 +62,9 @@ class HyperliquidManager(EvmManager):
     def query_balances(
             self,
             addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, BalanceSheet]:
+    ) -> defaultdict[ChecksumEvmAddress, BalanceSheet]:
         """Query EVM on-chain balances plus Hyperliquid core spot/perp balances."""
-        balances = super().query_balances(addresses)
+        balances = defaultdict(BalanceSheet, super().query_balances(addresses))
 
         api = HyperliquidAPI()
         for address in addresses:
@@ -79,10 +81,7 @@ class HyperliquidManager(EvmManager):
                         to_asset=CachedSettings().main_currency,
                     )
                 except RemoteError:
-                    price = 0  # type: ignore[assignment]
-
-                if address not in balances:
-                    balances[address] = BalanceSheet()
+                    price = Price(ZERO)
 
                 balances[address].assets[asset][DEFAULT_BALANCE_LABEL] += Balance(
                     amount=amount,

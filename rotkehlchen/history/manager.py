@@ -43,9 +43,7 @@ log = RotkehlchenLogsAdapter(logger)
 #
 # Please, update this number each time a history query step is either added or removed
 NUM_HISTORY_QUERY_STEPS_EXCL_EXCHANGES = (
-    3
-    + 3 * len(EVM_CHAINS_WITH_TRANSACTIONS)
-    + (1 if SupportedBlockchain.HYPERLIQUID in EVM_CHAINS_WITH_TRANSACTIONS else 0)
+    3 + 3 * len(EVM_CHAINS_WITH_TRANSACTIONS) + 1  # Hyperliquid core queries
 )
 STEPS_PER_CEX = 5
 

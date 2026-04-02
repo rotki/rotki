@@ -2,9 +2,10 @@ from unittest.mock import call, patch
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.externalapis.hyperliquid import HyperliquidAPI
+from rotkehlchen.externalapis.hyperliquid import EntryContext, HyperliquidAPI, ParsedFillEntry
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import Timestamp
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.types import AssetAmount, Timestamp, TimestampMS
 
 
 def test_dex_discovery_parses_and_caches_perp_dexs() -> None:
@@ -92,3 +93,73 @@ def test_query_history_events_queries_discovered_dexs() -> None:
         call(address=address, start_ts=start_ts, end_ts=end_ts, dex_name=None),
         call(address=address, start_ts=start_ts, end_ts=end_ts, dex_name='xyz'),
     ]
+
+
+def test_create_fill_events_maps_negative_perp_fee_to_cashback() -> None:
+    api = HyperliquidAPI()
+    address = string_to_evm_address('0x7fC1b7863251Ac7F83c7a4E83ccd00d129Ee844c')
+    context = EntryContext(
+        entry={},
+        timestamp=TimestampMS(1700000000000),
+        unique_id='u1',
+        group_identifier='g1',
+    )
+    parsed = ParsedFillEntry(
+        context=context,
+        raw_coin='BTC',
+        is_spot_fill=False,
+        spend=AssetAmount(api.hyperliquid_usdc, FVal('100')),
+        receive=AssetAmount(api.hyperliquid_usdc, FVal('99')),
+        fee_amount=FVal('-0.25'),
+        fee_asset=api.hyperliquid_usdc,
+        direction='Open Long',
+        extra_data={},
+    )
+
+    with (
+        patch.object(api, '_iter_entries_by_time', return_value=iter([context])),
+        patch.object(api, '_parse_fill_entry', return_value=parsed),
+    ):
+        events = api._create_fill_events(
+            address=address, start_ts=Timestamp(1), end_ts=Timestamp(2),
+        )
+
+    assert len(events) == 3
+    assert events[2].event_type == HistoryEventType.RECEIVE
+    assert events[2].event_subtype == HistoryEventSubType.CASHBACK
+    assert events[2].amount == FVal('0.25')
+
+
+def test_create_fill_events_maps_negative_spot_fee_to_cashback() -> None:
+    api = HyperliquidAPI()
+    address = string_to_evm_address('0x7fC1b7863251Ac7F83c7a4E83ccd00d129Ee844c')
+    context = EntryContext(
+        entry={},
+        timestamp=TimestampMS(1700000000000),
+        unique_id='u2',
+        group_identifier='g2',
+    )
+    parsed = ParsedFillEntry(
+        context=context,
+        raw_coin='@1',
+        is_spot_fill=True,
+        spend=AssetAmount(api.hyperliquid_usdc, FVal('50')),
+        receive=AssetAmount(api.hyperliquid_usdc, FVal('49.9')),
+        fee_amount=FVal('-0.1'),
+        fee_asset=api.hyperliquid_usdc,
+        direction='Buy',
+        extra_data={},
+    )
+
+    with (
+        patch.object(api, '_iter_entries_by_time', return_value=iter([context])),
+        patch.object(api, '_parse_fill_entry', return_value=parsed),
+    ):
+        events = api._create_fill_events(
+            address=address, start_ts=Timestamp(1), end_ts=Timestamp(2),
+        )
+
+    assert len(events) == 3
+    assert events[2].event_type == HistoryEventType.RECEIVE
+    assert events[2].event_subtype == HistoryEventSubType.CASHBACK
+    assert events[2].amount == FVal('0.1')

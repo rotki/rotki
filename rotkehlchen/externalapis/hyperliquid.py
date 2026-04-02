@@ -4,7 +4,7 @@ from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass
 from http import HTTPStatus
-from typing import Any, Final, Literal, NotRequired, TypedDict, cast
+from typing import Any, Final, Literal, NotRequired, TypedDict
 
 import gevent
 import requests
@@ -25,7 +25,11 @@ from rotkehlchen.history.events.structures.swap import create_swap_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.utils import create_group_identifier_from_unique_id
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_fval
+from rotkehlchen.serialization.deserialize import (
+    deserialize_fval,
+    deserialize_int_from_str,
+    deserialize_timestamp_ms_from_intms,
+)
 from rotkehlchen.types import (
     AssetAmount,
     ChecksumEvmAddress,
@@ -33,6 +37,7 @@ from rotkehlchen.types import (
     Timestamp,
     TimestampMS,
 )
+from rotkehlchen.utils.misc import ts_sec_to_ms
 from rotkehlchen.utils.network import create_session
 
 logger = logging.getLogger(__name__)
@@ -105,6 +110,8 @@ class FillEntry(TypedDict):
 
 @dataclass(frozen=True)
 class EntryContext:
+    """Normalized metadata shared by all events derived from one raw API entry."""
+
     entry: dict[str, Any]
     timestamp: TimestampMS
     unique_id: str
@@ -139,10 +146,12 @@ class ParsedFillEntry:
 
 
 class HyperliquidAPI:
+    """Client for Hyperliquid `info` endpoint balances and user history APIs."""
+
     def __init__(self) -> None:
         self.base_url = 'https://api.hyperliquid.xyz'
         self.session = create_session()
-        self.arb_usdc = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')
+        self.hyperliquid_usdc = Asset('eip155:42161/erc20:0xaf88d065e77c8cC2239327C5EDb3A432268e5831')  # noqa: E501
         self._spot_market_to_base_symbol: dict[int, str] | None = None
         self._discovered_dex_names: list[str] | None = None
 
@@ -157,26 +166,15 @@ class HyperliquidAPI:
             return self._discovered_dex_names
 
         try:
-            data = self._post_info({'type': 'perpDexs'})
+            data = self._query_list(payload={'type': 'perpDexs'}, query_name='perpDexs')
         except RemoteError as e:
             log.debug(f'Failed to auto-discover Hyperliquid DEXs due to {e}')
             self._discovered_dex_names = []
             return self._discovered_dex_names
 
-        if not isinstance(data, list):
-            log.error(
-                f'Hyperliquid perpDexs returned malformed response type '
-                f'{type(data).__name__}: {data!s}',
-            )
-            self._discovered_dex_names = []
-            return self._discovered_dex_names
-
         discovered_names: set[str] = set()
         for entry in data:
-            if entry is None:
-                continue
-
-            if isinstance(entry, dict) and isinstance((dex_name := entry.get('name')), str):
+            if isinstance((dex_name := entry.get('name')), str):
                 discovered_names.add(dex_name)
 
         self._discovered_dex_names = sorted(discovered_names)
@@ -255,13 +253,41 @@ class HyperliquidAPI:
 
         raise AssertionError('unreachable')
 
+    def _query_dict(self, payload: dict[str, Any], query_name: str) -> dict[str, Any]:
+        """Query `/info` and enforce a dictionary response.
+
+        May raise:
+            - RemoteError
+        """
+        if not isinstance((result := self._post_info(payload)), dict):
+            raise RemoteError(
+                f'Hyperliquid {query_name} returned malformed response type '
+                f'{type(result).__name__}: {result!s}',
+            )
+
+        return result
+
+    def _query_list(self, payload: dict[str, Any], query_name: str) -> list[dict[str, Any]]:
+        """Query `/info` and enforce a list response of dictionaries.
+
+        May raise:
+            - RemoteError
+        """
+        if not isinstance((result := self._post_info(payload)), list):
+            raise RemoteError(
+                f'Hyperliquid {query_name} returned malformed response type '
+                f'{type(result).__name__}: {result!s}',
+            )
+
+        return [entry for entry in result if isinstance(entry, dict)]
+
     def _query(
             self,
             address: ChecksumEvmAddress,
             account_type: Literal['clearinghouseState', 'spotClearinghouseState'],
             dex_name: str | None = None,
     ) -> dict[str, Any]:
-        """Query hyperliquid for balances.
+        """Query one Hyperliquid balance endpoint for a user and optional DEX context.
 
         May raise:
             - RemoteError
@@ -271,25 +297,17 @@ class HyperliquidAPI:
         if dex_name is not None:
             payload['dex'] = dex_name
 
-        if not isinstance(
-            (result := self._post_info(payload)),
-            dict,
-        ):
-            raise RemoteError(
-                f'Hyperliquid {account_type} returned malformed response type '
-                f'{type(result).__name__}: {result!s}',
-            )
-
-        return result
+        return self._query_dict(payload=payload, query_name=account_type)
 
     def query_balances(
             self,
             address: ChecksumEvmAddress,
             include_discovered_dexs: bool = True,
     ) -> dict[Asset, FVal]:
-        """
-        Queries both spot and perp balances since they are returned in two different endpoints.
-        Hyperliquid has two `accounts` for each address, one for spot and one for perpetuals.
+        """Query Hyperliquid Core balances for one user address.
+
+        Aggregates balances from `spotClearinghouseState` and `clearinghouseState`.
+        When enabled, discovered HIP-3 DEX contexts are queried as well.
 
         https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/spot#retrieve-a-users-token-balances
         https://hyperliquid.gitbook.io/hyperliquid-docs/for-developers/api/info-endpoint/perpetuals#retrieve-users-perpetuals-account-summary
@@ -323,7 +341,7 @@ class HyperliquidAPI:
             include_spot: bool,
             balances: defaultdict[Asset, FVal],
     ) -> None:
-        """Query spot and perp balances for a single hyperliquid dex context."""
+        """Query spot and perp balances for one Hyperliquid DEX context."""
         dex_display = dex_name if dex_name is not None else 'main'
         if include_spot is True:
             try:
@@ -380,7 +398,7 @@ class HyperliquidAPI:
             )
         else:
             try:
-                balances[self.arb_usdc] += deserialize_fval(
+                balances[self.hyperliquid_usdc] += deserialize_fval(
                     value=perp_data.get('crossMarginSummary', {}).get('accountValue', 0),
                     name='clearinghouseState total balances',
                     location='hyperliquid',
@@ -393,10 +411,16 @@ class HyperliquidAPI:
 
     @staticmethod
     def _entry_unique_id(entry: dict[str, Any]) -> str:
-        return str(entry.get('hash') or entry.get('oid') or entry.get('time'))
+        """Return a stable per-entry identifier for grouping and deduplication."""
+        if isinstance((entry_hash := entry.get('hash')), str):
+            return entry_hash
+        if isinstance((order_id := entry.get('oid')), str):
+            return order_id
+        return str(entry.get('time'))
 
     @staticmethod
     def _entry_group_identifier(unique_id: str) -> str:
+        """Create the rotki group identifier used for events from one entry."""
         return create_group_identifier_from_unique_id(
             location=Location.HYPERLIQUID,
             unique_id=unique_id,
@@ -408,10 +432,11 @@ class HyperliquidAPI:
             entry_time: int | None = None,
             dex_name: str | None = None,
     ) -> EntryContext | None:
+        """Build normalized context for a raw hyperliquid history entry."""
         if entry_time is None:
             try:
-                entry_time = int(entry['time'])
-            except (KeyError, TypeError, ValueError):
+                entry_time = deserialize_timestamp_ms_from_intms(entry.get('time'))
+            except DeserializationError:
                 return None
 
         unique_id = self._entry_unique_id(entry)
@@ -436,6 +461,7 @@ class HyperliquidAPI:
             notes: str,
             extra_data: dict[str, Any] | None = None,
     ) -> HistoryEvent:
+        """Create a normalized history event for Hyperliquid Core activity."""
         return HistoryEvent(
             group_identifier=context.group_identifier,
             sequence_index=sequence_index,
@@ -461,6 +487,7 @@ class HyperliquidAPI:
             amount: FVal,
             location_label: ChecksumEvmAddress,
     ) -> AssetMovement:
+        """Create a deposit or withdrawal asset movement from ledger activity."""
         return AssetMovement(
             timestamp=context.timestamp,
             location=Location.HYPERLIQUID,
@@ -471,19 +498,20 @@ class HyperliquidAPI:
             location_label=location_label,
         )
 
-    def _get_spot_market_base_symbol(self, market: int) -> str | None:
+    def _populate_spot_market_cache(self) -> None:
+        """Populate the in-memory spot market id to base symbol cache from `spotMeta`.
+
+        This stays as a lazy in-memory cache on purpose: the metadata is only needed
+        when parsing spot fills, and keeping constructor setup free of API calls avoids
+        network I/O when a caller only needs balances or DEX discovery.
+        """
         if self._spot_market_to_base_symbol is None:
             try:
-                data = self._post_info({'type': 'spotMeta'})
+                data = self._query_dict(payload={'type': 'spotMeta'}, query_name='spotMeta')
             except RemoteError as e:
                 log.error(f'Failed to query hyperliquid spot metadata due to {e}')
-                return None
-
-            if not isinstance(data, dict):
-                log.error(
-                    f'Hyperliquid spotMeta returned malformed response type {type(data).__name__}',
-                )
-                return None
+                self._spot_market_to_base_symbol = {}
+                return
 
             token_index_to_symbol: dict[int, str] = {}
             for entry in data.get('tokens', []):
@@ -511,19 +539,27 @@ class HyperliquidAPI:
 
             self._spot_market_to_base_symbol = market_to_base_symbol
 
+    def _get_spot_market_base_symbol(self, market: int) -> str | None:
+        """Return a spot market base symbol, populating the metadata cache if needed."""
+        self._populate_spot_market_cache()
+        if self._spot_market_to_base_symbol is None:
+            return None
+
         return self._spot_market_to_base_symbol.get(market)
 
     def _resolve_fill_coin(self, coin: str) -> str | None:
+        """Resolve Hyperliquid fill market notation to the underlying asset symbol."""
         if coin.startswith('@'):
             try:
-                market = int(coin[1:])
-            except ValueError:
+                market = deserialize_int_from_str(coin[1:], 'hyperliquid fill coin')
+            except DeserializationError:
                 return None
             return self._get_spot_market_base_symbol(market)
 
         return coin
 
-    def _deserialize_amount(self, value: str, name: str) -> FVal:
+    def _deserialize_amount(self, value: Any, name: str) -> FVal:
+        """Deserialize a numeric value coming from Hyperliquid payloads."""
         return deserialize_fval(value=value, name=name, location='hyperliquid')
 
     def _iter_entries_by_time(
@@ -534,9 +570,16 @@ class HyperliquidAPI:
             end_ts: Timestamp,
             dex_name: str | None = None,
     ) -> Iterator[EntryContext]:
-        """Query time-ranged entries and walk backwards to avoid API caps."""
-        start_ms = int(start_ts * 1000)
-        end_ms = int(end_ts * 1000)
+        """Query a user history endpoint in pages and iterate unique entries.
+
+        The API caps each response, so this method paginates backwards by reducing
+        `endTime` to one millisecond before the oldest item in the previous page.
+
+        May raise:
+            - RemoteError
+        """
+        start_ms = ts_sec_to_ms(start_ts)
+        end_ms = ts_sec_to_ms(end_ts)
         cursor_end = end_ms
         page = 0
         seen: set[str] = set()
@@ -544,6 +587,8 @@ class HyperliquidAPI:
 
         while cursor_end >= start_ms and page < HYPERLIQUID_MAX_HISTORY_PAGES:
             page += 1
+            # The API returns a bounded page, so keep `startTime` fixed and move
+            # `endTime` backwards until we cover the requested range.
             payload: dict[str, Any] = {
                 'type': query_type,
                 'user': address,
@@ -553,33 +598,24 @@ class HyperliquidAPI:
             if dex_name is not None:
                 payload['dex'] = dex_name
 
-            data = self._post_info(payload)
-            if not isinstance(data, list):
-                raise RemoteError(
-                    f'Hyperliquid {query_type} returned malformed response type '
-                    f'{type(data).__name__}: {data!s}',
-                )
-
-            page_entries = cast('list[dict[str, Any]]', data)
+            page_entries = self._query_list(payload=payload, query_name=query_type)
             if len(page_entries) == 0:
                 break
 
             oldest_time = cursor_end
             for entry in page_entries:
                 try:
-                    entry_time = int(entry['time'])
-                except (KeyError, TypeError, ValueError):
+                    entry_time_ms = deserialize_timestamp_ms_from_intms(entry.get('time'))
+                except DeserializationError:
                     continue
 
-                oldest_time = min(oldest_time, entry_time)
-                if entry_time < start_ms or entry_time > end_ms:
-                    continue
+                oldest_time = min(oldest_time, entry_time_ms)
 
                 if (unique_id := entry.get('hash') or entry.get('oid')) is not None:
-                    dedup_key = f'{dedup_prefix}:{entry_time}:{unique_id}'
+                    dedup_key = f'{dedup_prefix}:{entry_time_ms}:{unique_id}'
                 else:
                     dedup_key = (
-                        f'{dedup_prefix}:{entry_time}:'
+                        f'{dedup_prefix}:{entry_time_ms}:'
                         f'{json.dumps(entry, sort_keys=True, default=str)}'
                     )
 
@@ -590,7 +626,7 @@ class HyperliquidAPI:
                 if (
                     context := self._entry_context(
                         entry,
-                        entry_time=entry_time,
+                        entry_time=entry_time_ms,
                         dex_name=dex_name,
                     )
                 ) is None:
@@ -599,11 +635,15 @@ class HyperliquidAPI:
 
             if oldest_time >= cursor_end:
                 break
-            cursor_end = oldest_time - 1
+            cursor_end = TimestampMS(oldest_time - 1)
 
     def _parse_funding_entry(self, context: EntryContext) -> ParsedFundingEntry | None:
+        """Parse a `userFunding` entry into a normalized funding payload."""
         try:
-            delta = cast('FundingEntry', context.entry).get('delta', {})
+            delta = context.entry.get('delta', {})
+            if not isinstance(delta, dict):
+                return None
+
             amount = self._deserialize_amount(delta['usdc'], 'funding usdc')
         except (KeyError, DeserializationError) as e:
             log.error(f'Failed to parse hyperliquid funding entry {context.entry} due to {e}')
@@ -614,8 +654,11 @@ class HyperliquidAPI:
         return ParsedFundingEntry(context=context, amount=amount)
 
     def _parse_ledger_entry(self, context: EntryContext) -> ParsedLedgerEntry | None:
-        entry = cast('LedgerEntry', context.entry)
-        delta = entry.get('delta', {})
+        """Parse a `userNonFundingLedgerUpdates` entry into a normalized payload."""
+        delta = context.entry.get('delta', {})
+        if not isinstance(delta, dict):
+            return None
+
         entry_type = delta.get('type')
         raw_amount = delta.get('usdc') or delta.get('amount')
         if raw_amount is None:
@@ -643,37 +686,45 @@ class HyperliquidAPI:
         )
 
     def _parse_fill_entry(self, context: EntryContext) -> ParsedFillEntry | None:
+        """Parse a `userFillsByTime` entry into swap or perp trade data."""
         try:
-            entry = cast('FillEntry', context.entry)
-            raw_coin = str(entry['coin'])
-            coin = self._resolve_fill_coin(raw_coin)
+            if not isinstance((raw_coin := context.entry.get('coin')), str):
+                return None
+
+            if raw_coin.startswith('@'):
+                coin = self._resolve_fill_coin(raw_coin)
+            elif ':' in raw_coin:  # HIP-3 builder-deployed perps use {dex}:{coin}
+                coin = raw_coin.split(':', maxsplit=1)[1]
+            else:
+                coin = raw_coin
             if coin is None:
                 return None
 
-            price = self._deserialize_amount(entry['px'], 'fill price')
-            size = self._deserialize_amount(entry['sz'], 'fill size')
+            price = self._deserialize_amount(context.entry['px'], 'fill price')
+            size = self._deserialize_amount(context.entry['sz'], 'fill size')
             if size == ZERO:
                 return None
 
-            is_buy = str(entry.get('side', '')).lower() in {'b', 'buy'}
+            is_buy = str(context.entry.get('side', '')).lower() in {'b', 'buy'}
             base_asset = asset_from_hyperliquid(coin)
-            quote_asset = asset_from_hyperliquid('USDC')
+            quote_asset = self.hyperliquid_usdc
             notional = price * size
             spend = AssetAmount(quote_asset, notional) if is_buy else AssetAmount(base_asset, size)
-            receive = (
-                AssetAmount(base_asset, size) if is_buy else AssetAmount(quote_asset, notional)
-            )
-            fee_amount = self._deserialize_amount(entry.get('fee', '0'), 'fill fee')
-            fee_asset = asset_from_hyperliquid(str(entry.get('feeToken', 'USDC')))
-            direction = str(entry.get('dir') or ('Buy' if is_buy else 'Sell'))
+            receive = AssetAmount(base_asset, size) if is_buy else AssetAmount(quote_asset, notional)  # noqa: E501
+            fee_amount = self._deserialize_amount(context.entry.get('fee', '0'), 'fill fee')
+            if (fee_token := context.entry.get('feeToken')) in (None, 'USDC'):
+                fee_asset = self.hyperliquid_usdc
+            else:
+                fee_asset = asset_from_hyperliquid(str(fee_token))
+            direction = str(context.entry.get('dir') or ('Buy' if is_buy else 'Sell'))
             extra_data: dict[str, Any] = {
                 'market': raw_coin,
-                'side': str(entry.get('side', '')).upper(),
+                'side': str(context.entry.get('side', '')).upper(),
                 'direction': direction,
             }
-            if 'liquidation' in entry:
-                extra_data['liquidation'] = bool(entry['liquidation'])
-            if (closed_pnl := entry.get('closedPnl')) is not None:
+            if 'liquidation' in context.entry:
+                extra_data['liquidation'] = bool(context.entry['liquidation'])
+            if (closed_pnl := context.entry.get('closedPnl')) is not None:
                 extra_data['closed_pnl'] = str(closed_pnl)
         except (
             KeyError,
@@ -704,6 +755,7 @@ class HyperliquidAPI:
             end_ts: Timestamp,
             dex_name: str | None = None,
     ) -> list[HistoryBaseEntry]:
+        """Convert funding entries in the requested range to rotki history events."""
         events: list[HistoryBaseEntry] = []
         for context in self._iter_entries_by_time(
             query_type='userFunding',
@@ -723,12 +775,8 @@ class HyperliquidAPI:
                     context=parsed.context,
                     sequence_index=0,
                     event_type=event_type,
-                    event_subtype=(
-                        HistoryEventSubType.INTEREST
-                        if event_type == HistoryEventType.RECEIVE
-                        else HistoryEventSubType.NONE
-                    ),
-                    asset=asset_from_hyperliquid('USDC'),
+                    event_subtype=HistoryEventSubType.INTEREST if event_type == HistoryEventType.RECEIVE else HistoryEventSubType.NONE,  # noqa: E501
+                    asset=self.hyperliquid_usdc,
                     amount=abs(parsed.amount),
                     location_label=address,
                     notes='Hyperliquid funding payment',
@@ -744,6 +792,7 @@ class HyperliquidAPI:
             end_ts: Timestamp,
             dex_name: str | None = None,
     ) -> list[HistoryBaseEntry]:
+        """Convert ledger updates in the requested range to rotki events."""
         events: list[HistoryBaseEntry] = []
         for context in self._iter_entries_by_time(
             query_type='userNonFundingLedgerUpdates',
@@ -822,6 +871,7 @@ class HyperliquidAPI:
             end_ts: Timestamp,
             dex_name: str | None = None,
     ) -> list[HistoryBaseEntry]:
+        """Convert fill entries in the requested range to swap or trade events."""
         events: list[HistoryBaseEntry] = []
         for context in self._iter_entries_by_time(
             query_type='userFillsByTime',
@@ -838,8 +888,8 @@ class HyperliquidAPI:
 
             if parsed.is_spot_fill:
                 fee = None
-                if parsed.fee_amount != ZERO:
-                    fee = AssetAmount(parsed.fee_asset, abs(parsed.fee_amount))
+                if parsed.fee_amount > ZERO:
+                    fee = AssetAmount(parsed.fee_asset, parsed.fee_amount)
                 events.extend(
                     create_swap_events(
                         timestamp=parsed.context.timestamp,
@@ -851,6 +901,23 @@ class HyperliquidAPI:
                         location_label=address,
                     ),
                 )
+                if parsed.fee_amount < ZERO:
+                    # Hyperliquid fee can be negative for maker fills (rebate paid to trader).
+                    # References:
+                    # - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/fees#maker-rebates
+                    events.append(
+                        self._make_history_event(
+                            context=parsed.context,
+                            sequence_index=2,
+                            event_type=HistoryEventType.RECEIVE,
+                            event_subtype=HistoryEventSubType.CASHBACK,
+                            asset=parsed.fee_asset,
+                            amount=abs(parsed.fee_amount),
+                            location_label=address,
+                            notes='Hyperliquid maker rebate',
+                            extra_data=parsed.extra_data,
+                        ),
+                    )
                 continue
 
             events.extend(
@@ -880,7 +947,7 @@ class HyperliquidAPI:
                 ],
             )
 
-            if parsed.fee_amount != ZERO:
+            if parsed.fee_amount > ZERO:
                 events.append(
                     self._make_history_event(
                         context=parsed.context,
@@ -894,6 +961,24 @@ class HyperliquidAPI:
                         extra_data=parsed.extra_data,
                     ),
                 )
+            elif parsed.fee_amount < ZERO:
+                # Hyperliquid maker rebates are represented as negative fee amounts.
+                # We map this as incoming cashback instead of outgoing fee.
+                # References:
+                # - https://hyperliquid.gitbook.io/hyperliquid-docs/trading/fees#maker-rebates
+                events.append(
+                    self._make_history_event(
+                        context=parsed.context,
+                        sequence_index=2,
+                        event_type=HistoryEventType.RECEIVE,
+                        event_subtype=HistoryEventSubType.CASHBACK,
+                        asset=parsed.fee_asset,
+                        amount=abs(parsed.fee_amount),
+                        location_label=address,
+                        notes='Hyperliquid maker rebate',
+                        extra_data=parsed.extra_data,
+                    ),
+                )
 
         return events
 
@@ -904,6 +989,12 @@ class HyperliquidAPI:
             end_ts: Timestamp,
             include_discovered_dexs: bool = True,
     ) -> list[HistoryBaseEntry]:
+        """Query Hyperliquid Core history entries and convert them to rotki events.
+
+        Includes ledger updates, funding payments, and fills for main and discovered
+        HIP-3 DEXs when requested.
+        """
+        self._populate_spot_market_cache()
         history: list[HistoryBaseEntry] = []
         dex_names: list[str | None] = [None]
         if include_discovered_dexs is True:
