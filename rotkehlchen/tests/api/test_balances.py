@@ -1277,6 +1277,7 @@ def test_balance_snapshot_saves_manual_prices_as_historical(
 
 
 @pytest.mark.vcr(match_on=['solana_rpc_matcher'])
+@pytest.mark.freeze_time('2026-04-01 08:00:00 GMT')
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('solana_accounts', [[
