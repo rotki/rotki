@@ -2,7 +2,7 @@ import type { ComputedRef, DeepReadonly, MaybeRefOrGetter, Ref } from 'vue';
 import type ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import type { ConfirmationMessage } from '@/modules/history/events/composables/use-deletion-strategies';
 import type { ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
-import { assert, toCapitalCase, transformCase } from '@rotki/common';
+import { toCapitalCase } from '@rotki/common';
 import { useExternalServicesApi } from '@/composables/api/settings/external-services-api';
 import { useConfirmStore } from '@/store/confirm';
 import { useSessionAuthStore } from '@/store/session/auth';
@@ -10,13 +10,7 @@ import { DialogType } from '@/types/dialogs';
 import { getErrorMessage } from '@/utils/error-handling';
 import { logger } from '@/utils/logging';
 
-function getName(name: ExternalServiceName, chain?: string): string {
-  if (name === 'blockscout') {
-    assert(chain, `chain is missing for ${name}`);
-    if (chain === 'ethereum')
-      return name;
-    return `${chain}_${name}`;
-  }
+function getName(name: ExternalServiceName, _chain?: string): string {
   return name;
 }
 
@@ -48,28 +42,10 @@ export const useExternalApiKeys = createSharedComposable((): UseExternalApiKeysR
 
   const { logged } = storeToRefs(useSessionAuthStore());
 
-  function getBlockscoutApiKey(items: ExternalServiceKeys, chain: string): string {
-    const itemService = items.blockscout;
-    const transformedChainId = transformCase(chain, true);
-
-    if (itemService && transformedChainId in itemService) {
-      const chainData = itemService[transformedChainId];
-      if (chainData && 'apiKey' in chainData)
-        return chainData.apiKey || '';
-    }
-
-    return '';
-  }
-
-  function getApiKey(name: ExternalServiceName, chain?: string): string {
+  function getApiKey(name: ExternalServiceName, _chain?: string): string {
     const items = get(keys);
     if (!items)
       return '';
-
-    if (name === 'blockscout') {
-      assert(chain, `missing chain for ${name}`);
-      return getBlockscoutApiKey(items, chain);
-    }
 
     const itemService = items[name];
     if (itemService && 'apiKey' in itemService)

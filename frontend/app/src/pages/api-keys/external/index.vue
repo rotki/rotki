@@ -14,7 +14,7 @@ const services = [
     name: 'etherscan',
   },
   {
-    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BlockscoutApiKeys.vue')),
+    component: defineAsyncComponent(() => import('@/components/settings/api-keys/external/BlockscoutApiKey.vue')),
     name: 'blockscout',
   },
   {

@@ -195,11 +195,8 @@ const missingApiKeyIndexer = computed<string | null>(() => {
     if (!get(etherscanApiKey))
       return toCapitalCase(EvmIndexer.ETHERSCAN);
   }
-  else if (firstIndexer === EvmIndexer.BLOCKSCOUT) {
-    const tab = get(activeTab);
-    const chainId = tab === DEFAULT_TAB ? 'ethereum' : tab;
-    if (!getApiKey('blockscout', chainId))
-      return toCapitalCase(EvmIndexer.BLOCKSCOUT);
+  else if (firstIndexer === EvmIndexer.BLOCKSCOUT && !getApiKey('blockscout')) {
+    return toCapitalCase(EvmIndexer.BLOCKSCOUT);
   }
 
   return null;
@@ -215,9 +212,7 @@ function navigateToApiKeys(): void {
     router.push({ path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(), query: { service: EvmIndexer.ETHERSCAN } });
   }
   else if (firstIndexer === EvmIndexer.BLOCKSCOUT) {
-    const tab = get(activeTab);
-    const chainId = tab === DEFAULT_TAB ? 'ethereum' : tab;
-    router.push({ path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(), query: { service: EvmIndexer.BLOCKSCOUT, location: chainId } });
+    router.push({ path: Routes.API_KEYS_EXTERNAL_SERVICES.toString(), query: { service: EvmIndexer.BLOCKSCOUT } });
   }
 }
 
