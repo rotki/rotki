@@ -25,6 +25,8 @@ BALANCER_V3_SUPPORTED_CHAINS: Final = (
     ChainID.ARBITRUM_ONE,
     ChainID.BASE,
     ChainID.ETHEREUM,
-    ChainID.OPTIMISM,
     ChainID.GNOSIS,
+    ChainID.HYPERLIQUID,
+    ChainID.MONAD,
+    ChainID.OPTIMISM,
 )
