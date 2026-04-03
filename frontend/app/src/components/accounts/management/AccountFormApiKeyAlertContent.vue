@@ -3,7 +3,7 @@ import type { RouteLocationRaw } from 'vue-router';
 import { Routes } from '@/router/routes';
 
 const { service } = defineProps<{
-  service: 'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc';
+  service: 'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | 'blockscout';
 }>();
 
 const { t } = useI18n({ useScope: 'global' });
@@ -18,7 +18,10 @@ const message = computed<string>(() => {
   if (service === 'beaconchain')
     return t('external_services.beaconchain.api_key_message');
 
-  return t('external_services.helius.api_key_message');
+  if (service === 'helius')
+    return t('external_services.helius.api_key_message');
+
+  return t('external_services.blockscout.api_key_message');
 });
 
 const [DefineOptionBlock, ReuseOptionBlock] = createReusableTemplate<{

@@ -2740,9 +2740,10 @@
       "title": "Beaconcha.in"
     },
     "blockscout": {
-      "delete_tooltip": "Deletes the {chain} Blockscout API key",
+      "api_key_message": "Blockscout API key is needed to query historical EVM transactions.",
+      "delete_tooltip": "Deletes the Blockscout API key",
       "description": "Alternative to Etherscan for querying EVM blockchain balances and transactions.",
-      "hint": "Enter your {chain} Blockscout API key",
+      "hint": "Enter your Blockscout API key",
       "title": "Blockscout"
     },
     "coingecko": {

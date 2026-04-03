@@ -78,7 +78,7 @@ function shouldShowEtherscanWarning(selectedChain: string): boolean {
   return isEtherscanTopPriority(selectedChain);
 }
 
-const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | undefined>(() => {
+const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | 'blockscout' | undefined>(() => {
   const selectedChain = get(chain);
   const currentModelValue = get(modelValue);
 
@@ -95,6 +95,9 @@ const missingApiKeyService = computed<'etherscan' | 'helius' | 'beaconchain' | '
 
   if (!getApiKey('etherscan') && shouldShowEtherscanWarning(selectedChain))
     return 'etherscan';
+
+  if (!getApiKey('blockscout') && shouldShowEtherscanWarning(selectedChain))
+    return 'blockscout';
 
   if (isSolanaChains(selectedChain) && !getApiKey('helius'))
     return 'helius';
@@ -122,7 +125,7 @@ type WarningType = 'solana' | 'apiKey' | 'binance';
 
 interface WarningItem {
   type: WarningType;
-  service?: 'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc';
+  service?: 'etherscan' | 'helius' | 'beaconchain' | 'consensusRpc' | 'blockscout';
 }
 
 const warnings = computed<WarningItem[]>(() => {

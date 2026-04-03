@@ -248,7 +248,7 @@ const ApiKey = z.object({
 export const ExternalServiceKeys = z.object({
   alchemy: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
-  blockscout: z.record(z.string(), ApiKey.nullable()).optional(),
+  blockscout: ApiKey.optional(),
   coingecko: ApiKey.optional(),
   covalent: ApiKey.optional(),
   cryptocompare: ApiKey.optional(),
