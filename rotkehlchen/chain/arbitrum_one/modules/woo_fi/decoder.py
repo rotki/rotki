@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.woo_fi.decoder import WooFiCommonDecoder, WooVaultInfo
+from rotkehlchen.chain.evm.decoding.woo_fi.decoder import WooFiStakingDecoder, WooVaultInfo
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
@@ -9,7 +9,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class WooFiDecoder(WooFiCommonDecoder):
+class WooFiDecoder(WooFiStakingDecoder):
 
     def __init__(
             self,

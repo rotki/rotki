@@ -90,6 +90,8 @@ CURVE_CHAIN_ID = {
     ChainID.GNOSIS: 'xdai',
     ChainID.BASE: 'base',
     ChainID.BINANCE_SC: 'bsc',
+    ChainID.HYPERLIQUID: 'hyperliquid',
+    ChainID.MONAD: 'monad',
 }
 CURVE_CHAIN_ID_TYPE = Literal[
     ChainID.ETHEREUM,
@@ -99,6 +101,8 @@ CURVE_CHAIN_ID_TYPE = Literal[
     ChainID.GNOSIS,
     ChainID.BASE,
     ChainID.BINANCE_SC,
+    ChainID.HYPERLIQUID,
+    ChainID.MONAD,
 ]
 CURVE_CHAIN_IDS: tuple[CURVE_CHAIN_ID_TYPE, ...] = get_args(CURVE_CHAIN_ID_TYPE)
 CURVE_METAREGISTRY_METHODS = [

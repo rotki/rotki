@@ -81,9 +81,6 @@ class WooFiCommonDecoder(EvmDecoderInterface):
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             earn_vaults: list[WooVaultInfo],
-            woo_token_address: 'ChecksumEvmAddress',
-            stake_v1_address: 'ChecksumEvmAddress | None' = None,
-            stake_v2_address: 'ChecksumEvmAddress | None' = None,
     ) -> None:
         """Common decoder for the WOOFi protocol.
         `earn_tokens` is a list of WooVaultInfo tuples. Each tuple contains the address of the
@@ -96,10 +93,6 @@ class WooFiCommonDecoder(EvmDecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.woo_token_address = woo_token_address
-        self.stake_v1_address = stake_v1_address
-        self.stake_v2_address = stake_v2_address
-        self.rewarder_addresses: dict[int, ChecksumEvmAddress] = {}
         self.superchargers = {}
         self.withdrawal_managers = {}
         for earn_vault in earn_vaults:
@@ -579,6 +572,49 @@ class WooFiCommonDecoder(EvmDecoderInterface):
 
         return DEFAULT_EVM_DECODING_OUTPUT
 
+    # -- DecoderInterface methods
+
+    def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
+        return {
+            WOO_ROUTER_V2: (self._decode_swap,),
+            WOO_CROSS_SWAP_ROUTER_V5: (self._decode_cross_swap_router_events,),
+        } | dict.fromkeys(self.superchargers, (self._decode_supercharger_events,)) \
+        | dict.fromkeys(self.withdrawal_managers, (self._decode_withdraw,))
+
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (CounterpartyDetails(
+            identifier=CPT_WOO_FI,
+            label=CPT_WOO_FI_LABEL,
+            image='woo_fi.svg',
+        ),)
+
+
+class WooFiStakingDecoder(WooFiCommonDecoder):
+    """Extends WooFiCommonDecoder with WOO token staking functionality for chains
+    that have WOO staking contracts deployed."""
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseEvmDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+            earn_vaults: list[WooVaultInfo],
+            woo_token_address: 'ChecksumEvmAddress',
+            stake_v1_address: 'ChecksumEvmAddress | None' = None,
+            stake_v2_address: 'ChecksumEvmAddress | None' = None,
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+            earn_vaults=earn_vaults,
+        )
+        self.woo_token_address = woo_token_address
+        self.stake_v1_address = stake_v1_address
+        self.stake_v2_address = stake_v2_address
+        self.rewarder_addresses: dict[int, ChecksumEvmAddress] = {}
+
     def _decode_stake_unstake_vault_token(
             self,
             context: DecoderContext,
@@ -988,23 +1024,10 @@ class WooFiCommonDecoder(EvmDecoderInterface):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
-        mappings = {
-            WOO_ROUTER_V2: (self._decode_swap,),
-            WOO_CROSS_SWAP_ROUTER_V5: (self._decode_cross_swap_router_events,),
-            WOO_REWARD_MASTER_CHEF: (self._decode_master_chef_events,),
-        } | dict.fromkeys(self.superchargers, (self._decode_supercharger_events,)) \
-        | dict.fromkeys(self.withdrawal_managers, (self._decode_withdraw,))
+        mappings = super().addresses_to_decoders()
+        mappings[WOO_REWARD_MASTER_CHEF] = (self._decode_master_chef_events,)
         if self.stake_v1_address is not None:
             mappings[self.stake_v1_address] = (self._decode_stake_v1_events,)
         if self.stake_v2_address is not None:
             mappings[self.stake_v2_address] = (self._decode_stake_v2_events,)
-
         return mappings
-
-    @staticmethod
-    def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(
-            identifier=CPT_WOO_FI,
-            label=CPT_WOO_FI_LABEL,
-            image='woo_fi.svg',
-        ),)

@@ -39,19 +39,22 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseEvmDecoderTools',
             msg_aggregator: 'MessagesAggregator',
-            router_address: ChecksumEvmAddress,
-            flash_wallet_address: ChecksumEvmAddress,
+            router_address: ChecksumEvmAddress | None = None,
+            flash_wallet_address: ChecksumEvmAddress | None = None,
             settler_routers_addresses: set[ChecksumEvmAddress] | None = None,
     ) -> None:
         """router_address is the main point of contact with the 0x protocol.
         flash_wallet_address is a contract that can execute arbitrary calls from 0x router_address.
-        Docs: https://0x.org/docs/introduction/0x-cheat-sheet#exchange-proxy-addresses"""
+        Docs: https://0x.org/docs/introduction/0x-cheat-sheet#exchange-proxy-addresses
+        Both router_address and flash_wallet_address may be None on settler-only chains."""
         super().__init__(evm_inquirer, base_tools, msg_aggregator)
         self.evm_txns = EvmTransactions(self.node_inquirer, self.base.database)
         self.router_address = router_address
         self.settler_routers_addresses = settler_routers_addresses
         self.flash_wallet_address = flash_wallet_address
-        self.router_addresses_set = {self.router_address}
+        self.router_addresses_set: set[ChecksumEvmAddress] = set()
+        if self.router_address is not None:
+            self.router_addresses_set.add(self.router_address)
         if self.settler_routers_addresses:
             self.router_addresses_set |= self.settler_routers_addresses
 
@@ -179,6 +182,8 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
             return decoded_events  # not a 0x related transaction
 
         for zero_x_address in (self.router_address, self.flash_wallet_address):
+            if zero_x_address is None:
+                continue
             if (
                 not sent_asset.is_evm_token() and  # sent_asset is native currency
                 zero_x_address in send_address_to_events and  # is sent to 0x
@@ -222,6 +227,7 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
 
             if (  # sent_token is transferred from tracked sender to 0x
                 send_event is not None and
+                self.flash_wallet_address is not None and
                 send_event.asset.is_evm_token() and
                 i_log.address == send_event.asset.evm_address and  # type: ignore[attr-defined]  # is EVM token
                 i_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
@@ -241,7 +247,7 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
 
     def _decode_meta_tx_swap(self, context: 'DecoderContext') -> EvmDecodingOutput:
         """Decodes the swap event from the 0x router contract via executeMetaTransactionV2."""
-        if context.tx_log.topics[0] != METATX_ZEROX or context.tx_log.address != self.router_address:  # noqa: E501
+        if self.router_address is None or context.tx_log.topics[0] != METATX_ZEROX or context.tx_log.address != self.router_address:  # noqa: E501
             return DEFAULT_EVM_DECODING_OUTPUT
 
         # using [] for cases with multiple dexes, where multiple send/receive events exist
@@ -262,6 +268,7 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
             ) or (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
+                self.flash_wallet_address is not None and
                 event.address == self.flash_wallet_address
             )):
                 receive_events.append(event)
@@ -270,7 +277,7 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
-                if event.address == self.flash_wallet_address:
+                if self.flash_wallet_address is not None and event.address == self.flash_wallet_address:  # noqa: E501
                     send_events.append(event)
                 else:
                     fee_event = event
@@ -294,6 +301,8 @@ class ZeroxCommonDecoder(EvmDecoderInterface):
         return dict.fromkeys(self.router_addresses_set, CPT_ZEROX)
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        if self.router_address is None:
+            return {}
         return {self.router_address: (self._decode_meta_tx_swap,)}
 
     @staticmethod
