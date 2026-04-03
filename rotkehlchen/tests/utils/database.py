@@ -1,3 +1,4 @@
+import base64
 import os
 import random
 from dataclasses import asdict
@@ -45,6 +46,19 @@ def maybe_include_etherscan_key(db: DBHandler, include_etherscan_key: bool) -> N
             credentials=[ExternalServiceApiCredentials(
                 service=ExternalService.ETHERSCAN,
                 api_key=ApiKey(eth_api_key),
+            )])
+
+
+def maybe_include_blockscout_key(db: DBHandler, include_blockscout_key: bool) -> None:
+    if not include_blockscout_key:
+        return
+
+    with db.user_write() as write_cursor:
+        db.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.BLOCKSCOUT,
+                api_key=ApiKey(base64.b64decode(b'cHJvYXBpX2h5Mm1ycDNsbDFwQlVrUWxqR3RNVHNPWXVodEswdUJRaXhLOXNIM1JaSlBWRHBlVjBZMThaMzJnYmg5V0FTZlV4X0NvMnBo').decode()),
             )])
 
 

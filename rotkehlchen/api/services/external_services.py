@@ -3,7 +3,7 @@ from typing import Any
 
 from rotkehlchen.premium.premium import has_premium_check
 from rotkehlchen.rotkehlchen import Rotkehlchen
-from rotkehlchen.types import BLOCKSCOUT_TO_CHAINID, ExternalService, ExternalServiceApiCredentials
+from rotkehlchen.types import ExternalService, ExternalServiceApiCredentials
 
 
 class ExternalServicesService:
@@ -13,13 +13,9 @@ class ExternalServicesService:
     def _build_payload(self) -> dict[str, Any]:
         credentials_list = self.rotkehlchen.data.db.get_all_external_service_credentials()
         response_dict: dict[str, Any] = {}
-        response_dict['blockscout'] = {chain_id.to_name(): None for chain_id in BLOCKSCOUT_TO_CHAINID.values()}  # noqa: E501
         for credential in credentials_list:
             name, key_info = credential.serialize_for_api()
-            if (chain := credential.service.get_chain_for_blockscout()) is not None:
-                response_dict['blockscout'][chain.to_name()] = key_info
-            else:
-                response_dict[name] = key_info
+            response_dict[name] = key_info
         return response_dict
 
     def get_services(self) -> dict[str, Any]:

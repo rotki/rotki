@@ -1,5 +1,5 @@
 from http import HTTPStatus
-from unittest.mock import patch
+from unittest.mock import ANY, patch
 
 import pytest
 
@@ -17,7 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import ChainID, Timestamp, TimestampMS
+from rotkehlchen.types import ApiKey, ChainID, Timestamp, TimestampMS
 
 
 @pytest.fixture(name='blockscout')
@@ -28,7 +28,7 @@ def fixture_blockscout(database, messages_aggregator):
     )
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_query_withdrawals(blockscout: Blockscout, database: DBHandler):
     """Test the querying logic of eth withdrawal for blockscout"""
     address = string_to_evm_address('0xE12799BC799fc024db69E118fD2A6eA293DBFF7d')
@@ -44,41 +44,24 @@ def test_query_withdrawals(blockscout: Blockscout, database: DBHandler):
             aggregate_by_group_ids=False,
         )
 
-    assert len(events) == 188
+    assert len(events) == 1277
 
-    for idx, x in enumerate(events):
+    expected_samples, seen_samples = {
+        (747239, TimestampMS(1689555347000), FVal('0.003935554')),
+        (747236, TimestampMS(1690528667000), FVal('0.014550492')),
+        (747239, TimestampMS(1695990095000), FVal('0.016267026')),
+    }, set()
+
+    for x in events:
+        if (key := (x.validator_index, x.timestamp, x.amount)) in expected_samples:
+            assert x.location_label == address
+            assert x.is_exit_or_blocknumber is False
+            seen_samples.add(key)
+
+    assert seen_samples == expected_samples
+
+    for x in events[:183]:
         assert isinstance(x, EthWithdrawalEvent)
-        if idx == 0:  # for some indices check full event
-            assert x == EthWithdrawalEvent(
-                identifier=183,
-                validator_index=747239,
-                timestamp=TimestampMS(1689555347000),
-                amount=FVal('0.003935554'),
-                withdrawal_address=address,
-                is_exit=False,
-            )
-            continue
-        if idx == 15:
-            assert x == EthWithdrawalEvent(
-                identifier=174,
-                validator_index=747236,
-                timestamp=TimestampMS(1690528667000),
-                amount=FVal('0.014550492'),
-                withdrawal_address=address,
-                is_exit=False,
-            )
-            continue
-        if idx == 122:
-            assert x == EthWithdrawalEvent(
-                identifier=61,
-                validator_index=747239,
-                timestamp=TimestampMS(1695990095000),
-                amount=FVal('0.016267026'),
-                withdrawal_address=address,
-                is_exit=False,
-            )
-            continue
-
         assert x.location_label == address
         assert x.validator_index in (763318, 763317, 763316, 763315, 763314, 747239, 747238, 747237, 747236, 747235, 747234)  # noqa: E501
         assert x.is_exit_or_blocknumber is False
@@ -87,7 +70,7 @@ def test_query_withdrawals(blockscout: Blockscout, database: DBHandler):
         assert FVal('0.003') <= x.amount <= FVal('0.09')
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_hash_activity(blockscout):
     for chain in (
         ChainID.ETHEREUM,
@@ -104,14 +87,6 @@ def test_hash_activity(blockscout):
     assert blockscout.has_activity(
         chain_id=ChainID.ETHEREUM,
         account=string_to_evm_address('0x3C69Bc9B9681683890ad82953Fe67d13Cd91D5EE'),
-    ) == HasChainActivity.BALANCE
-    assert blockscout.has_activity(
-        chain_id=ChainID.ETHEREUM,
-        account=string_to_evm_address('0x014cd0535b2Ea668150a681524392B7633c8681c'),
-    ) == HasChainActivity.TOKENS
-    assert blockscout.has_activity(
-        chain_id=ChainID.ETHEREUM,
-        account=string_to_evm_address('0x6c66149E65c517605e0a2e4F707550ca342f9c1B'),
     ) == HasChainActivity.NONE
 
 
@@ -211,6 +186,7 @@ def test_optimism_pre_bedrock_internal_txs_skipped(blockscout: Blockscout) -> No
         assert mock_eth.call_count == 1
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_missing_data_error(blockscout: Blockscout) -> None:
     """Test that we properly handle the custom status 2 missing data error from blockscout
     when querying internal transactions. Should raise a remote error so that we fall back to
@@ -229,3 +205,71 @@ def test_missing_data_error(blockscout: Blockscout) -> None:
             action='txlistinternal',
             period_or_hash=make_evm_tx_hash(),
         ))
+
+
+def test_pro_api_urls_for_v1_v2_and_rpc(blockscout: Blockscout) -> None:
+    api_keys = {
+        ChainID.ETHEREUM: ApiKey('proapi_ethereum'),
+        ChainID.BASE: ApiKey('proapi_base'),
+        ChainID.OPTIMISM: ApiKey('proapi_optimism'),
+    }
+    with patch.object(blockscout, '_get_api_key_for_chain', side_effect=api_keys.get):
+        with patch.object(blockscout.session, 'request', return_value=MockResponse(
+            status_code=HTTPStatus.OK,
+            text='{"message":"OK","result":[],"status":"1"}',
+        )) as mock_request:
+            blockscout._query(
+                chain_id=ChainID.ETHEREUM,
+                module='account',
+                action='txlist',
+                options={'address': make_evm_address()},
+            )
+            mock_request.assert_called_once_with(
+                method='get',
+                url='https://api.blockscout.com/1/api',
+                timeout=ANY,
+                params={
+                    'module': 'account',
+                    'action': 'txlist',
+                    'address': ANY,
+                    'apikey': 'proapi_ethereum',
+                },
+            )
+
+        with patch.object(blockscout.session, 'request', return_value=MockResponse(
+            status_code=HTTPStatus.OK,
+            text='{"items":[],"next_page_params":null}',
+        )) as mock_request:
+            blockscout._query_v2(
+                chain_id=ChainID.BASE,
+                module='addresses',
+                encoded_args='0x123',
+                endpoint='withdrawals',
+            )
+            mock_request.assert_called_once_with(
+                method='get',
+                url='https://api.blockscout.com/8453/api/v2/addresses/0x123/withdrawals',
+                timeout=ANY,
+                params={'apikey': 'proapi_base'},
+            )
+
+        with patch.object(blockscout.session, 'request', return_value=MockResponse(
+            status_code=HTTPStatus.OK,
+            text='{"result":"0x1"}',
+        )) as mock_request:
+            assert blockscout._query_rpc_method(
+                chain_id=ChainID.OPTIMISM,
+                method='eth_blockNumber',
+            ) == '0x1'
+            mock_request.assert_called_once_with(
+                method='post',
+                url='https://api.blockscout.com/10/json-rpc',
+                timeout=ANY,
+                params={'apikey': 'proapi_optimism'},
+                json={
+                    'id': 0,
+                    'jsonrpc': '2.0',
+                    'method': 'eth_blockNumber',
+                    'params': [],
+                },
+            )

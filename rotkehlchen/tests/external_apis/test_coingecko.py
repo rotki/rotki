@@ -26,7 +26,7 @@ def assert_coin_data_same(given, expected, compare_description=False):
     assert given.image_url == expected.image_url
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_asset_data(session_coingecko):
     expected_data = CoingeckoAssetData(
         identifier='bitcoin',
@@ -50,7 +50,7 @@ def test_asset_data(session_coingecko):
         session_coingecko.asset_data(EvmToken('eip155:1/erc20:0x1844b21593262668B7248d0f57a220CaaBA46ab9').to_coingecko())  # PRL, a token without coingecko page  # noqa: E501
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_coingecko_historical_price(session_coingecko):
     price = session_coingecko.query_historical_price(
         from_asset=A_ETH,
@@ -60,7 +60,7 @@ def test_coingecko_historical_price(session_coingecko):
     assert price == Price(FVal('2065.603754353392'))
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-10-11 12:00:00 GMT')
 def test_coingecko_with_api_key(database):
     with database.user_write() as write_cursor:  # add the api key to the DB
@@ -95,7 +95,7 @@ def test_coingecko_with_api_key(database):
     assert result == FVal('3295.1477375227337')
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_coingecko_query_multiple_current_prices(session_coingecko: 'Coingecko'):
     assert session_coingecko.query_multiple_current_prices(
         from_assets=[

@@ -46,7 +46,7 @@ WETH_MAINNET_ADDRESS = string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD908
 WETH_ARB_ADDRESS = string_to_evm_address('0x82aF49447D8a07e3bd95BD0d56f35241523fBab1')
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x4B078a6A7026C32D2D6Aff763E2F37336cf552Dd']])
 def test_weth_deposit(ethereum_inquirer):
     """
@@ -101,7 +101,7 @@ def test_weth_deposit(ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x4b2975AfF4DeF34D3Cd4f4759b45faF738D790D3']])
 def test_weth_withdrawal(ethereum_inquirer):
     """
@@ -156,7 +156,7 @@ def test_weth_withdrawal(ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC4DdFf531132d32b47eC938AcfA28E354769A806']])
 def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     """
@@ -224,7 +224,7 @@ def test_weth_interaction_with_protocols_deposit(database, ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xDea6866A866C60d68fFDFc6178C12fCFdb9d0D47']])
 def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
     """
@@ -279,7 +279,7 @@ def test_weth_interaction_with_protocols_withdrawal(ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xF5f5C8924db9aa5E70Bdf7842473Ee8C7F1F4c9d']])
 def test_weth_interaction_errors(ethereum_inquirer):
     """
@@ -332,7 +332,7 @@ def test_weth_interaction_errors(ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_wxdai_unwrap(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
@@ -386,7 +386,7 @@ def test_wxdai_unwrap(gnosis_inquirer, gnosis_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xd6f585378F3232E440B165AD56658bFcA76D1B32']])
 def test_wxdai_wrap(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
@@ -440,7 +440,7 @@ def test_wxdai_wrap(gnosis_inquirer, gnosis_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xBE6660FBE96B61B72Bf35FFaB40eB2CA886A7f85']])
 def test_weth_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc19c7e1e0af7819b1922a287d034540e8f8dba4e065317d6483d48ac27e727e9')  # noqa: E501
@@ -494,7 +494,7 @@ def test_weth_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x7aBAee8F04EFd689961115f7A28bAA2E73Be6703']])
 def test_weth_deposit_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0x57cc837c6f3d84c8fa3db8a7405f7244f11d32152159edf5ba79f5a7c34919b8')  # noqa: E501
@@ -896,7 +896,7 @@ def test_weth_withdraw_base_without_transfer_log(
     )]
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x33C0Aae5b2b6Eae2a6286B3a6621B55DcC02dC9e']])
 def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
     tx_hash = deserialize_evm_tx_hash('0xba581391d417a6dcc31031f1cf7cba6e63b701a8680828445ffdde73777843e1')  # noqa: E501
@@ -950,7 +950,7 @@ def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xdAA9E3CA7500d7Ba3855dF9d8BCCde229C13919e']])
 def test_wmatic_withdraw_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe90ed71875ff44ea45ea960d006ec4c0ccb86506cba494471aba4ba9dc86123f')  # noqa: E501

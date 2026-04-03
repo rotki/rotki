@@ -20,6 +20,7 @@ from rotkehlchen.tests.utils.database import (
     add_settings_to_test_db,
     add_tags_to_test_db,
     maybe_include_beaconchain_key,
+    maybe_include_blockscout_key,
     maybe_include_cryptocompare_key,
     maybe_include_etherscan_key,
     mock_db_schema_sanity_check,
@@ -60,6 +61,11 @@ def fixture_include_etherscan_key() -> bool:
     return True
 
 
+@pytest.fixture(name='include_blockscout_key')
+def fixture_include_blockscout_key() -> bool:
+    return True
+
+
 @pytest.fixture(name='include_beaconchain_key')
 def fixture_include_beaconchain_key() -> bool:
     return True
@@ -90,6 +96,7 @@ def _init_database(
         include_etherscan_key: bool,
         include_beaconchain_key: bool,
         include_cryptocompare_key: bool,
+        include_blockscout_key: bool,
         tags: list[dict[str, Any]],
         manually_tracked_balances: list[ManuallyTrackedBalance],
         data_migration_version: int,
@@ -125,6 +132,7 @@ def _init_database(
     add_settings_to_test_db(db, db_settings, ignored_assets, data_migration_version)
     add_blockchain_accounts_to_db(db, blockchain_accounts)
     maybe_include_etherscan_key(db, include_etherscan_key)
+    maybe_include_blockscout_key(db, include_blockscout_key)
     maybe_include_beaconchain_key(db, include_beaconchain_key)
     maybe_include_cryptocompare_key(db, include_cryptocompare_key)
     add_tags_to_test_db(db, tags)
@@ -144,6 +152,7 @@ def database(
         ignored_assets,
         blockchain_accounts,
         include_etherscan_key,
+        include_blockscout_key,
         include_beaconchain_key,
         include_cryptocompare_key,
         tags,
@@ -166,6 +175,7 @@ def database(
             ignored_assets=ignored_assets,
             blockchain_accounts=blockchain_accounts,
             include_etherscan_key=include_etherscan_key,
+            include_blockscout_key=include_blockscout_key,
             include_beaconchain_key=include_beaconchain_key,
             include_cryptocompare_key=include_cryptocompare_key,
             tags=tags,

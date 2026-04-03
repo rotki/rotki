@@ -661,14 +661,8 @@ Getting or modifying external services API credentials
 
       {
          "result":{
-            "etherscan":{
-               "ethereum": {"api_key":"key1"},
-               "arbitrum_one": {"api_key":"key3"},
-               "optimism": null, "polygon_pos" null, "gnosis": null, "scroll": null
-            },
-            "blockscout": {
-                "ethereum": null, "optimism": null, "polygon_pos": null, "arbitrum_one": null, "base": null, "gnosis": null
-            },
+            "etherscan":{"api_key":"key1"},
+            "blockscout":{"api_key":"key2"},
             "cryptocompare": {"api_key":"boooookey"},
             "opensea": {"api_key":"goooookey"},
             "monerium": {"username":"Ben", "password":"secure"}
@@ -676,7 +670,7 @@ Getting or modifying external services API credentials
          "message":""
       }
 
-   :resjson object result: The result object contains as many entries as the external services. Each entry's key is the name and the value is another object of the form ``{"api_key": "foo"}``. For etherscan services all are grouped under the ``etherscan`` key. Same for blockscout. They both contain all possible api keys that etherscan and blockscout can have. For keys that the user does not have in etherscan and blockscout it returns null. The ``monerium`` service has a different structure than the rest. Has ``username`` and ``password`` keys. The  ``gnosis_pay`` service at the moment is hacky. Need to provide the auth js session token in place of the api key.
+   :resjson object result: The result object contains as many entries as the external services. Each entry's key is the name and the value is another object of the form ``{"api_key": "foo"}``. The ``monerium`` service has a different structure than the rest. Has ``username`` and ``password`` keys. The  ``gnosis_pay`` service at the moment is hacky. Need to provide the auth js session token in place of the api key.
    :statuscode 200: Querying of external service credentials was successful
    :statuscode 401: There is no logged in user
    :statuscode 500: Internal rotki error

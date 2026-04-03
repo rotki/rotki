@@ -20,6 +20,16 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 NOTES_ADDRESS_MARKER_RE = re.compile(r'\b(?:to|from)\b\s+(.+)$')
+BLOCKSCOUT_SERVICES_TO_DELETE = (
+    'blockscout',
+    'optimism_blockscout',
+    'polygon_pos_blockscout',
+    'arbitrum_one_blockscout',
+    'base_blockscout',
+    'gnosis_blockscout',
+    'hyperliquid_blockscout',
+    'scroll_blockscout',
+)
 
 
 def _extract_addresses_from_notes(location: Location, notes: str) -> list[str]:
@@ -145,5 +155,12 @@ def upgrade_v51_to_v52(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
             insert_order='(asset, label, amount, location, category)',
         )
         write_cursor.switch_foreign_keys('ON')
+
+    @progress_step(description='Deleting legacy blockscout api key credentials.')
+    def _delete_legacy_blockscout_credentials(write_cursor: 'DBCursor') -> None:
+        write_cursor.executemany(
+            'DELETE FROM external_service_credentials WHERE name=?',
+            [(service_name,) for service_name in BLOCKSCOUT_SERVICES_TO_DELETE],
+        )
 
     perform_userdb_upgrade_steps(db=db, progress_handler=progress_handler, should_vacuum=True)

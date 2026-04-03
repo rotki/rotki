@@ -63,6 +63,7 @@ from rotkehlchen.tests.utils.database import (
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.types import (
     ChainID,
+    ExternalService,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -4033,6 +4034,17 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
             "SELECT COUNT(*) FROM location WHERE location = 'z' AND seq = 58",
         ).fetchone()[0] == 0
 
+        write_cursor.executemany(
+            'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) '
+            'VALUES(?, ?, ?)',
+            [
+                (ExternalService.BLOCKSCOUT.name.lower(), 'legacy-blockscout-key', None),
+                ('optimism_blockscout', 'legacy-optimism-key', None),
+                ('base_blockscout', 'legacy-base-key', None),
+                (ExternalService.ETHERSCAN.name.lower(), 'etherscan-key', None),
+            ],
+        )
+
     db_v51.logout()
     db = _init_db_with_target_version(
         target_version=52,
@@ -4079,6 +4091,9 @@ def test_upgrade_db_51_to_52(user_data_dir, messages_aggregator):
             ('My wallet (3)',),
             ('Unique balance',),
         ]
+        assert cursor.execute(
+            'SELECT name, api_key FROM external_service_credentials ORDER BY name',
+        ).fetchall() == [('etherscan', 'etherscan-key')]
 
         # Verify UNIQUE constraint is enforced — inserting a duplicate label should fail
         with pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
