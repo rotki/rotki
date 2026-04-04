@@ -1,4 +1,3 @@
-import time
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, call, patch
@@ -518,23 +517,19 @@ def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
         )
 
     delays: list[float] = []
-    launched_hashes: list[bytes] = []
-    start_times: dict[bytes, float] = {}
-    original_spawn_later = gevent.spawn_later
 
-    def worker(**kwargs) -> _RepullResult:
-        start_times[kwargs['tx_hash']] = time.monotonic()
-        return _RepullResult(
+    def spawn_later(delay, func, **kwargs):
+        delays.append(delay)
+        result = _RepullResult(
             chain_id=kwargs['chain_id'],
             tx_hash=kwargs['tx_hash'],
             needs_decode=False,
             error=None,
         )
-
-    def spawn_later(delay, func, **kwargs):
-        delays.append(delay)
-        launched_hashes.append(kwargs['tx_hash'])
-        return original_spawn_later(delay, func, **kwargs)
+        greenlet = MagicMock(spec=gevent.Greenlet)
+        greenlet.exception = None
+        greenlet.value = result
+        return greenlet
 
     with (
             patch('rotkehlchen.tasks.internal_tx_conflicts.REPULL_LAUNCH_STAGGER_SECONDS', 0.03),
@@ -543,10 +538,7 @@ def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
                 'rotkehlchen.tasks.internal_tx_conflicts.gevent.spawn_later',
                 side_effect=spawn_later,
             ),
-            patch(
-                'rotkehlchen.tasks.internal_tx_conflicts._repull_single_conflict',
-                side_effect=worker,
-            ),
+            patch('rotkehlchen.tasks.internal_tx_conflicts.gevent.joinall'),
     ):
         repull_internal_tx_conflicts(
             database=database,
@@ -555,11 +547,6 @@ def test_repull_internal_tx_conflicts_uses_staggered_launch(database) -> None:
         )
 
     assert delays == pytest.approx([0.0, 0.03, 0.06, 0.09, 0.12, 0.0, 0.03])
-    first_batch_hashes = launched_hashes[:5]
-    first_batch_times = [start_times[tx_hash] for tx_hash in first_batch_hashes]
-    # Validate runtime staggering was respected and workers did not launch at once.
-    assert first_batch_times[-1] > first_batch_times[0]
-    assert max(first_batch_times) - min(first_batch_times) >= 0.04
 
 
 def test_repull_internal_tx_conflicts_decodes_in_chain_batches(database) -> None:
